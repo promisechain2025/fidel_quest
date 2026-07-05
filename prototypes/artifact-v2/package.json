@@ -9,7 +9,8 @@
     "framer-motion": "^12.42.2",
     "lucide-react": "^0.513.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

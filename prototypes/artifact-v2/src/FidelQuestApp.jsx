@@ -20,7 +20,8 @@
    module in the fidel_quest repository, not hand-typed.
    ========================================================================== */
 
-import { useReducer, useCallback, useEffect, useMemo, useState } from 'react'
+import { useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import * as THREE from 'three'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -848,7 +849,7 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner })
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-extrabold">Letter Runner</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              Feed Kokeb letters — outrun the Letter Muncher!
+              A 3D run through Ethiopia and Eritrea — feed Kokeb, outrun the Muncher!
             </span>
           </span>
           {runnerBest.fed > 0 && (
@@ -1295,68 +1296,603 @@ function runnerReducer(ctx, event) {
   return runnerTransition(ctx, event).next
 }
 
+/* ============================================================================
+   §8b LETTER RUNNER — 3D WORLD (three.js)
+   A lane-runner rendered in WebGL. Every level is set in a famous place in
+   Ethiopia or Eritrea, built procedurally from primitives — no image assets,
+   so the artifact stays self-contained. The pure runner machine (§4b) is
+   untouched: steering Kokeb into a lane gate dispatches the same FEED event
+   the 2D buttons used to send.
+   ========================================================================== */
+
+const LANE_X = [-2.4, 0, 2.4]
+const CHUNK = 48
+const CHUNK_COUNT = 7
+
+export const PLACES = [
+  { id: 'lalibela', name: 'Lalibela', country: 'Ethiopia', sky: 0x9cc9e8, ground: 0x96653f, fog: [45, 170] },
+  { id: 'aksum', name: 'Aksum', country: 'Ethiopia', sky: 0xaed4ea, ground: 0xb99b62, fog: [45, 170] },
+  { id: 'simien', name: 'Simien Mountains', country: 'Ethiopia', sky: 0x9fc6e0, ground: 0x5e8f4e, fog: [40, 150] },
+  { id: 'gondar', name: 'Gondar', country: 'Ethiopia', sky: 0xa9cfe6, ground: 0x7c8a56, fog: [45, 170] },
+  { id: 'asmara', name: 'Asmara', country: 'Eritrea', sky: 0xb7d8ea, ground: 0x9aa0a8, fog: [45, 170] },
+  { id: 'massawa', name: 'Massawa', country: 'Eritrea', sky: 0xa5d8ee, ground: 0xe2d3b3, fog: [50, 180] },
+]
+export const placeForLevel = (level) => PLACES[(level - 1) % PLACES.length]
+
+/* ── canvas-drawn textures (glyph signs, Kokeb, the Muncher) ── */
+
+function canvasTexture(size, draw) {
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  draw(c.getContext('2d'), size)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+function glyphTexture(char) {
+  return canvasTexture(256, (g, s) => {
+    g.fillStyle = '#fffdf6'
+    g.beginPath()
+    g.roundRect(8, 8, s - 16, s - 16, 36)
+    g.fill()
+    g.lineWidth = 10
+    g.strokeStyle = '#e0b25a'
+    g.stroke()
+    g.fillStyle = '#3c3529'
+    g.font = `900 ${s * 0.62}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+    g.textAlign = 'center'
+    g.textBaseline = 'middle'
+    g.fillText(char, s / 2, s / 2 + s * 0.03)
+  })
+}
+
+function starPath(g, cx, cy, outer, inner) {
+  g.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner
+    const a = -Math.PI / 2 + (i * Math.PI) / 5
+    g[i === 0 ? 'moveTo' : 'lineTo'](cx + r * Math.cos(a), cy + r * Math.sin(a))
+  }
+  g.closePath()
+}
+
+function kokebTexture(mood = 'happy') {
+  return canvasTexture(256, (g, s) => {
+    starPath(g, s / 2, s / 2 + 10, s * 0.46, s * 0.20)
+    g.fillStyle = '#ffc800'
+    g.fill()
+    g.lineWidth = 8
+    g.strokeStyle = '#e0a400'
+    g.stroke()
+    g.fillStyle = '#7c5200'
+    const eyeY = s * 0.44
+    g.beginPath()
+    g.ellipse(s * 0.42, eyeY, 8, mood === 'happy' ? 12 : 8, 0, 0, 7)
+    g.ellipse(s * 0.58, eyeY, 8, mood === 'happy' ? 12 : 8, 0, 0, 7)
+    g.fill()
+    g.beginPath()
+    g.lineWidth = 9
+    g.lineCap = 'round'
+    if (mood === 'happy') g.arc(s / 2, s * 0.5, s * 0.09, 0.25 * Math.PI, 0.75 * Math.PI)
+    else g.arc(s / 2, s * 0.62, s * 0.07, 1.25 * Math.PI, 1.75 * Math.PI)
+    g.stroke()
+  })
+}
+
+function muncherTexture() {
+  return canvasTexture(256, (g, s) => {
+    g.beginPath()
+    g.arc(s / 2, s / 2, s * 0.44, 0, 7)
+    g.fillStyle = '#4a3f63'
+    g.fill()
+    for (const ex of [s * 0.38, s * 0.62]) {
+      g.beginPath()
+      g.arc(ex, s * 0.4, s * 0.09, 0, 7)
+      g.fillStyle = '#fff'
+      g.fill()
+      g.beginPath()
+      g.arc(ex + 4, s * 0.42, s * 0.045, 0, 7)
+      g.fillStyle = '#1c1530'
+      g.fill()
+    }
+    g.fillStyle = '#fff'
+    for (let i = 0; i < 4; i++) {
+      const x = s * 0.3 + i * s * 0.135
+      g.beginPath()
+      g.moveTo(x, s * 0.62)
+      g.lineTo(x + s * 0.065, s * 0.78)
+      g.lineTo(x + s * 0.13, s * 0.62)
+      g.closePath()
+      g.fill()
+    }
+  })
+}
+
+function ringTexture() {
+  return canvasTexture(128, (g, s) => {
+    g.lineWidth = 10
+    g.strokeStyle = '#ffc800'
+    g.beginPath()
+    g.arc(s / 2, s / 2, s * 0.42, 0, 7)
+    g.stroke()
+  })
+}
+
+/* ── tiny mesh helpers ── */
+
+const MATS = new Map()
+function mat(color) {
+  if (!MATS.has(color)) MATS.set(color, new THREE.MeshLambertMaterial({ color }))
+  return MATS.get(color)
+}
+function box(g, w, h, d, color, x, y, z, ry = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color))
+  m.position.set(x, y, z)
+  m.rotation.y = ry
+  g.add(m)
+  return m
+}
+function cyl(g, rt, rb, h, color, x, y, z, seg = 10) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(color))
+  m.position.set(x, y, z)
+  g.add(m)
+  return m
+}
+function cone(g, r, h, color, x, y, z, seg = 8) {
+  const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), mat(color))
+  m.position.set(x, y, z)
+  g.add(m)
+  return m
+}
+function sph(g, r, color, x, y, z) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat(color))
+  m.position.set(x, y, z)
+  g.add(m)
+  return m
+}
+
+/* ── procedural landmarks; i is the chunk index for deterministic variety ── */
+
+function acacia(g, x, z, s = 1) {
+  cyl(g, 0.12 * s, 0.2 * s, 2.2 * s, 0x6b4a2d, x, 1.1 * s, z, 6)
+  cone(g, 2.1 * s, 0.9 * s, 0x4f7a34, x, 2.6 * s, z, 9)
+}
+function palm(g, x, z, s = 1) {
+  cyl(g, 0.1 * s, 0.18 * s, 3 * s, 0x8a6a45, x, 1.5 * s, z, 6)
+  cone(g, 1.4 * s, 0.8 * s, 0x3f7d3a, x, 3.2 * s, z, 7)
+  sph(g, 0.42 * s, 0x2f6330, x, 3 * s, z)
+}
+
+function chunkLalibela(g, i) {
+  // Red-rock mounds and, on alternating chunks, the sunken cross church.
+  for (const side of [-1, 1]) {
+    cone(g, 2.6, 3 + ((i * 7 + side) % 3), 0x7d4b2a, side * (11 + ((i * 5) % 4)), 1.4, -10, 7)
+    cone(g, 1.8, 2.2, 0x8f5a34, side * (15 + ((i * 3) % 5)), 1.1, -30, 6)
+    sph(g, 1, 0x6f4225, side * 9, 0.4, -40)
+  }
+  if (i % 2 === 0) {
+    const side = i % 4 === 0 ? -1 : 1
+    const px = side * 13
+    box(g, 13, 0.3, 13, 0x5b3018, px, 0.16, -22) // the excavated pit rim
+    box(g, 9.5, 0.2, 9.5, 0x3c1f0e, px, 0.32, -22)
+    box(g, 6.4, 1.7, 2.1, 0xa06a3c, px, 1.15, -22) // Bete Giyorgis cross arms
+    box(g, 2.1, 1.7, 6.4, 0xa06a3c, px, 1.15, -22)
+    box(g, 5.4, 0.35, 1.6, 0x7d4b24, px, 2.2, -22) // cross relief on the roof
+    box(g, 1.6, 0.35, 5.4, 0x7d4b24, px, 2.2, -22)
+  }
+  acacia(g, -18 - ((i * 11) % 5), -44, 0.9)
+}
+
+function chunkAksum(g, i) {
+  // The stelae field: tall carved obelisks and acacia savanna.
+  for (const side of [-1, 1]) {
+    const h = 7 + ((i * 5 + side * 3) % 7)
+    const x = side * (9 + ((i * 3) % 4))
+    cyl(g, 0.55, 0.95, h, 0xb0a58c, x, h / 2, -14, 4)
+    sph(g, 0.62, 0xb0a58c, x, h + 0.1, -14)
+    cyl(g, 0.5, 0.7, 2.2, 0x9c9179, side * 14, 1.1, -34, 4)
+    box(g, 1.8, 0.5, 1.8, 0x9c9179, side * 11, 0.25, -42)
+  }
+  acacia(g, 17 + ((i * 7) % 4), -24, 1.1)
+  acacia(g, -19 - ((i * 5) % 4), -8, 0.9)
+}
+
+function chunkSimien(g, i) {
+  // Highland escarpment: layered peaks pushed out beyond the track.
+  for (const side of [-1, 1]) {
+    cone(g, 9 + ((i * 3 + side) % 4), 11 + ((i * 7) % 6), 0x55794a, side * (22 + ((i * 5) % 6)), 5, -26, 7)
+    cone(g, 6, 8, 0x6b8f5b, side * 16, 3.6, -44, 6)
+    cone(g, 3.4, 4, 0x7fa06a, side * 12, 1.9, -8, 6)
+  }
+  sph(g, 0.8, 0x8a9a7a, 8, 0.3, -36)
+  sph(g, 0.6, 0x8a9a7a, -7, 0.25, -16)
+  acacia(g, 10 + ((i * 3) % 3), -50, 0.8)
+}
+
+function chunkGondar(g, i) {
+  // Fasil Ghebbi: round dome-capped towers and crenellated walls.
+  if (i % 2 === 0) {
+    const side = i % 4 === 0 ? 1 : -1
+    const px = side * 12
+    box(g, 10, 2.6, 1.2, 0x8a6b4f, px, 1.3, -24)
+    for (let t = 0; t < 5; t++) box(g, 0.9, 0.7, 1.3, 0x8a6b4f, px - 4 + t * 2, 2.95, -24)
+    cyl(g, 1.5, 1.7, 5.4, 0x96775a, px - 5.5, 2.7, -24, 12)
+    sph(g, 1.5, 0xa8886a, px - 5.5, 5.6, -24)
+    cyl(g, 1.2, 1.4, 4.2, 0x96775a, px + 5.5, 2.1, -24, 12)
+    sph(g, 1.2, 0xa8886a, px + 5.5, 4.4, -24)
+  }
+  for (const side of [-1, 1]) acacia(g, side * (16 + ((i * 5) % 4)), -42, 1)
+  cone(g, 2.2, 2.6, 0x5e7d4e, -10, 1.3, -6, 7)
+}
+
+function chunkAsmara(g, i) {
+  // Art-deco boulevard; every other chunk carries the winged Fiat Tagliero.
+  const pastels = [0xe8c9a0, 0xd8a7a0, 0xc9d3c0, 0xd9c9ae]
+  for (const side of [-1, 1]) {
+    const h = 3.5 + ((i * 3 + (side + 1)) % 3)
+    box(g, 5, h, 6, pastels[(i + side + 2) % 4], side * 13, h / 2, -34)
+    box(g, 4, h * 0.7, 5, pastels[(i + side + 3) % 4], side * 12, h * 0.35, -12)
+    palm(g, side * 8, -24, 1)
+    palm(g, side * 8.5, -46, 0.9)
+  }
+  if (i % 2 === 1) {
+    const px = 11
+    box(g, 2.2, 5.4, 2.2, 0xf0e8d8, px, 2.7, -22) // the central tower
+    box(g, 9, 0.35, 2.6, 0xf0e8d8, px - 4.5, 3.6, -22) // cantilevered wings
+    box(g, 9, 0.35, 2.6, 0xf0e8d8, px + 4.5, 3.6, -22)
+    box(g, 1.4, 0.8, 1.4, 0xc94f3f, px, 5.8, -22)
+  }
+}
+
+function chunkMassawa(g, i) {
+  // Red Sea port: white coral-stone arches on the left, open sea to the right.
+  box(g, 60, 0.12, CHUNK, 0x2e86b8, 26, 0.06, -CHUNK / 2 + 4) // the sea
+  const bx = -(10 + ((i * 3) % 3))
+  const h = 3 + ((i * 5) % 2)
+  box(g, 6, h, 5, 0xf2ead8, bx, h / 2, -18)
+  cyl(g, 1.1, 1.1, 2.4, 0xe8dfc8, bx + 2, 1.2, -14, 12)
+  sph(g, 1.1, 0xf2ead8, bx + 2, 2.5, -14)
+  box(g, 5, 2.6, 4, 0xefe5d0, bx - 1, 1.3, -38)
+  palm(g, -8, -30, 1)
+  palm(g, -9, -6, 0.85)
+  // dhow with a lateen sail
+  const sx = 18 + ((i * 7) % 8)
+  box(g, 2.6, 0.5, 1, 0x7a5230, sx, 0.4, -26)
+  cone(g, 1.1, 2.4, 0xf6f1e4, sx, 1.9, -26, 3)
+}
+
+const CHUNK_BUILDERS = {
+  lalibela: chunkLalibela,
+  aksum: chunkAksum,
+  simien: chunkSimien,
+  gondar: chunkGondar,
+  asmara: chunkAsmara,
+  massawa: chunkMassawa,
+}
+
+/* ── the world ── */
+
+class RunnerWorld {
+  constructor(canvas, onGate) {
+    this.onGate = onGate
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    this.scene = new THREE.Scene()
+    this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
+    this.camera.position.set(0, 3.6, 7.6)
+    this.camera.lookAt(0, 1.2, -12)
+
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
+    const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
+    sun.position.set(-6, 12, 4)
+    this.scene.add(sun)
+
+    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
+    this.ground.rotation.x = -Math.PI / 2
+    this.ground.position.z = -200
+    this.scene.add(this.ground)
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xcfc0a0 }))
+    this.track.rotation.x = -Math.PI / 2
+    this.track.position.set(0, 0.02, -200)
+    this.scene.add(this.track)
+
+    this.playerTexHappy = kokebTexture('happy')
+    this.playerTexWorried = kokebTexture('worried')
+    this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
+    this.player.scale.set(2.3, 2.3, 1)
+    this.player.position.set(0, 1.25, 0)
+    this.scene.add(this.player)
+
+    this.ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture(), transparent: true, opacity: 0 }))
+    this.ring.position.copy(this.player.position)
+    this.scene.add(this.ring)
+
+    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: muncherTexture(), transparent: true }))
+    this.muncher.scale.set(1.9, 1.9, 1)
+    this.muncher.position.set(1.4, 1.1, 5.9)
+    this.scene.add(this.muncher)
+
+    this.chunks = []
+    this.gate = null
+    this.laneIndex = 1
+    this.speed = 13
+    this.threat = 0 // 0..RUNNER_QPL wrong feeds
+    this.bossMode = null // null | 'win' | 'lose'
+    this.ringT = -1
+    this.t = 0
+    this.disposed = false
+    this.reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
+
+  setPlace(place) {
+    this.scene.background = new THREE.Color(place.sky)
+    this.scene.fog = new THREE.Fog(place.sky, place.fog[0], place.fog[1])
+    this.ground.material = mat(place.ground)
+    for (const c of this.chunks) this.scene.remove(c)
+    this.chunks = []
+    const build = CHUNK_BUILDERS[place.id]
+    for (let k = 0; k < CHUNK_COUNT; k++) {
+      const g = new THREE.Group()
+      build(g, k)
+      // lane dashes ride along in the chunk so the ground reads as moving
+      for (let d = 0; d < 6; d++) {
+        box(g, 0.18, 0.02, 1.6, 0xfff6dd, -1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xfff6dd, 1.2, 0.05, -4 - d * 8)
+      }
+      g.position.z = -k * CHUNK + 10
+      this.scene.add(g)
+      this.chunks.push(g)
+    }
+  }
+
+  setQuestion(options) {
+    this.clearGate()
+    const g = new THREE.Group()
+    for (let lane = 0; lane < 3; lane++) {
+      const form = INDEXES.byAudioKey.get(options[lane])
+      const sign = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.9, 1.9),
+        new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true }),
+      )
+      sign.position.set(LANE_X[lane], 1.75, 0)
+      g.add(sign)
+      cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
+    }
+    box(g, 8.4, 0.22, 0.22, 0xe0b25a, 0, 3, 0)
+    cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
+    cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
+    g.position.z = -105
+    this.gate = g
+    this.gatePassed = false
+    this.scene.add(g)
+  }
+
+  clearGate() {
+    if (this.gate) {
+      this.scene.remove(this.gate)
+      this.gate = null
+    }
+  }
+
+  burst() {
+    this.ringT = 0
+  }
+
+  tick(dt, running) {
+    if (this.disposed) return
+    this.t += dt
+    const dz = running ? this.speed * dt : this.speed * dt * 0.25
+
+    for (const c of this.chunks) {
+      c.position.z += dz
+      if (c.position.z > CHUNK + 14) c.position.z -= CHUNK_COUNT * CHUNK
+    }
+    if (this.gate) {
+      this.gate.position.z += dz
+      if (!this.gatePassed && this.gate.position.z >= -0.2) {
+        this.gatePassed = true
+        this.onGate(this.laneIndex)
+      }
+      if (this.gate.position.z > 12) this.clearGate()
+    }
+
+    const px = LANE_X[this.laneIndex]
+    this.player.position.x += (px - this.player.position.x) * Math.min(1, dt * 10)
+    this.player.position.y = 1.25 + (this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.22)
+
+    // The Muncher: closer with every wrong feed; lunges or flees at the boss.
+    let mz = 6.2 - this.threat * 0.85
+    let my = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7) * 0.12)
+    if (this.bossMode === 'lose') {
+      mz = 0.4
+      my = 1.25
+    }
+    if (this.bossMode === 'win') {
+      mz = 10.5
+      my = 5.5 + this.t * 0.01
+    }
+    this.muncher.position.z += (mz - this.muncher.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2.5))
+    this.muncher.position.x += (this.player.position.x * 0.75 - this.muncher.position.x) * Math.min(1, dt * 2)
+    this.muncher.position.y = my
+    const mscale = this.bossMode === 'lose' ? 3.1 : 1.9
+    this.muncher.scale.x += (mscale - this.muncher.scale.x) * Math.min(1, dt * 4)
+    this.muncher.scale.y = this.muncher.scale.x
+
+    if (this.ringT >= 0) {
+      this.ringT += dt
+      const k = this.ringT / 0.55
+      if (k >= 1) {
+        this.ringT = -1
+        this.ring.material.opacity = 0
+      } else {
+        this.ring.position.set(this.player.position.x, this.player.position.y, 0.1)
+        this.ring.scale.setScalar(1.2 + k * 3.2)
+        this.ring.material.opacity = 1 - k
+      }
+    }
+
+    this.renderer.render(this.scene, this.camera)
+  }
+
+  setMood(worried) {
+    this.player.material.map = worried ? this.playerTexWorried : this.playerTexHappy
+    this.player.material.needsUpdate = true
+  }
+
+  resize(w, h) {
+    this.renderer.setSize(w, h, false)
+    this.camera.aspect = w / h
+    this.camera.updateProjectionMatrix()
+  }
+
+  dispose() {
+    this.disposed = true
+    this.renderer.dispose()
+  }
+}
+
+/* ── the 3D runner screen ── */
+
 function Runner({ seed, soundOn, onExit, onRetry }) {
   const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+  const canvasRef = useRef(null)
+  const wrapRef = useRef(null)
+  const worldRef = useRef(null)
+  const ctxRef = useRef(ctx)
+  ctxRef.current = ctx
+  const [lane, setLane] = useState(1)
+  const [webglOk, setWebglOk] = useState(true)
+  const [banner, setBanner] = useState(true)
+
   const question = selectRunnerQuestion(ctx)
   const targetForm = question ? formOf(question.target) : null
+  const place = placeForLevel(ctx.level)
+  const running = ctx.status === RunnerState.RUNNING
+  const feeding = ctx.status === RunnerState.FEEDING
+  const boss = ctx.status === RunnerState.BOSS
+  const destroyed = ctx.status === RunnerState.DESTROYED
 
-  // New question: say the target's sound.
+  const steerTo = useCallback((target) => {
+    setLane(() => {
+      const next = Math.max(0, Math.min(2, target))
+      if (worldRef.current) worldRef.current.laneIndex = next
+      return next
+    })
+  }, [])
+  const steer = useCallback((delta) => {
+    setLane((l) => {
+      const next = Math.max(0, Math.min(2, l + delta))
+      if (worldRef.current) worldRef.current.laneIndex = next
+      return next
+    })
+  }, [])
+
+  // World lifecycle.
   useEffect(() => {
-    if (ctx.status === RunnerState.RUNNING) playForm(targetForm, soundOn)
+    let world
+    try {
+      world = new RunnerWorld(canvasRef.current, (laneIdx) => {
+        const q = selectRunnerQuestion(ctxRef.current)
+        if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
+      })
+    } catch {
+      setWebglOk(false)
+      return undefined
+    }
+    worldRef.current = world
+    let raf
+    let last = performance.now()
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000)
+      last = now
+      const st = ctxRef.current.status
+      world.tick(dt, st === RunnerState.RUNNING)
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    const ro = new ResizeObserver(() => {
+      const r = wrapRef.current?.getBoundingClientRect()
+      if (r) world.resize(r.width, r.height)
+    })
+    ro.observe(wrapRef.current)
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') steer(-1)
+      if (e.key === 'ArrowRight') steer(1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      window.removeEventListener('keydown', onKey)
+      world.dispose()
+      worldRef.current = null
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Level changes re-dress the world and show the destination banner.
+  useEffect(() => {
+    const world = worldRef.current
+    if (!world) return undefined
+    world.setPlace(place)
+    world.speed = Math.min(30, 16 + (ctx.level - 1) * 2.2)
+    setBanner(true)
+    const t = setTimeout(() => setBanner(false), 1900)
+    return () => clearTimeout(t)
+  }, [ctx.level, webglOk]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Machine-state side effects drive the 3D scene.
+  useEffect(() => {
+    const world = worldRef.current
+    if (!world) return undefined
+    world.threat = ctx.wrong
+    if (running) {
+      world.bossMode = null
+      world.setMood(false)
+      world.setQuestion(question.options)
+      playForm(targetForm, soundOn)
+    }
+    if (feeding) {
+      world.clearGate()
+      playEffect(ctx.lastFeed?.good ? 'good' : 'bad', soundOn)
+      if (ctx.lastFeed?.good) world.burst()
+      else world.setMood(true)
+      const t = setTimeout(() => dispatch({ type: RunnerEvent.FEED_DONE }), 900)
+      return () => clearTimeout(t)
+    }
+    if (boss) {
+      world.bossMode = ctx.survivedBoss ? 'win' : 'lose'
+      world.setMood(!ctx.survivedBoss)
+      playEffect(ctx.survivedBoss ? 'win' : 'bad', soundOn)
+      const t = setTimeout(() => dispatch({ type: RunnerEvent.BOSS_DONE }), 2200)
+      return () => clearTimeout(t)
+    }
+    return undefined
   }, [ctx.status, ctx.qIndex, ctx.level]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Feed result: chime, brief animation, then back to running (or the boss).
   useEffect(() => {
-    if (ctx.status !== RunnerState.FEEDING) return undefined
-    playEffect(ctx.lastFeed?.good ? 'good' : 'bad', soundOn)
-    const t = setTimeout(() => dispatch({ type: RunnerEvent.FEED_DONE }), 850)
-    return () => clearTimeout(t)
-  }, [ctx.status, ctx.qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Boss encounter plays out, then resolves to level-up or destruction.
-  useEffect(() => {
-    if (ctx.status !== RunnerState.BOSS) return undefined
-    playEffect(ctx.survivedBoss ? 'win' : 'bad', soundOn)
-    const t = setTimeout(() => dispatch({ type: RunnerEvent.BOSS_DONE }), 2100)
-    return () => clearTimeout(t)
-  }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Persist the best run when it ends.
-  useEffect(() => {
-    if (ctx.status !== RunnerState.DESTROYED) return
+    if (!destroyed) return
     const best = loadRunnerBest()
     if (ctx.fed > best.fed) saveRunnerBest({ fed: ctx.fed, level: ctx.level })
-  }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [destroyed]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (ctx.status === RunnerState.DESTROYED) {
+  if (destroyed) {
     return <RunnerDestroyed ctx={ctx} onRetry={onRetry} onExit={onExit} />
   }
 
-  const feeding = ctx.status === RunnerState.FEEDING
-  const boss = ctx.status === RunnerState.BOSS
-
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-8 pt-5">
-      <header className="flex items-center gap-3">
+    <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
+      <header className="flex items-center gap-2">
         <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
-        <span className="rounded-xl px-2.5 py-1 text-sm font-black text-white" style={{ background: 'var(--sky)' }}>
-          Level {ctx.level}
+        <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
+          L{ctx.level} · {place.name}
         </span>
         <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={`Power ${ctx.correct}, Muncher ${ctx.wrong}, of ${RUNNER_QPL} meals`}>
           {Array.from({ length: RUNNER_QPL }, (_, i) => {
             const state = i < ctx.correct ? 'power' : i < ctx.correct + ctx.wrong ? 'muncher' : 'empty'
-            return (
-              <motion.span
-                key={i}
-                className="block h-3.5 w-3.5 rounded-full"
-                animate={{
-                  background: state === 'power' ? 'var(--go)' : state === 'muncher' ? 'var(--bad)' : 'var(--line)',
-                  scale: state === 'empty' ? 0.8 : 1,
-                }}
-              />
-            )
+            return <motion.span key={i} className="block h-3.5 w-3.5 rounded-full" animate={{ background: state === 'power' ? 'var(--go)' : state === 'muncher' ? 'var(--bad)' : 'var(--line)', scale: state === 'empty' ? 0.8 : 1 }} />
           })}
         </div>
         <span className="mono flex items-center gap-1 rounded-xl px-2.5 py-1 text-sm font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-label={`${ctx.fed} letters fed`}>
@@ -1365,11 +1901,45 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
         </span>
       </header>
 
-      <RunnerScene ctx={ctx} />
+      <div ref={wrapRef} className="relative mt-3 min-h-0 flex-1 overflow-hidden rounded-3xl border-2" style={{ borderColor: 'var(--line)' }}>
+        {webglOk ? (
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 h-full w-full"
+            onPointerDown={(e) => {
+              const r = e.currentTarget.getBoundingClientRect()
+              steerTo(Math.min(2, Math.floor(((e.clientX - r.left) / r.width) * 3)))
+            }}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center p-6 text-center font-bold" style={{ color: 'var(--muted)' }}>
+            3D graphics are not available on this device. Try the lesson levels instead!
+          </div>
+        )}
+        <AnimatePresence>
+          {banner && (
+            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-4 text-center">
+              <span className="rounded-2xl px-4 py-2 text-sm font-black uppercase tracking-widest text-white" style={{ background: 'rgba(0,0,0,0.45)' }}>
+                Level {ctx.level} — {place.name}, {place.country}
+              </span>
+            </motion.div>
+          )}
+          {boss && (
+            <motion.div key="bosscap" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
+              <span className="rounded-2xl px-4 py-2 text-base font-black uppercase tracking-wider text-white" style={{ background: ctx.survivedBoss ? 'var(--go)' : 'var(--bad)' }}>
+                {ctx.survivedBoss ? 'Kokeb’s letter power wins!' : 'The Letter Muncher attacks!'}
+              </span>
+            </motion.div>
+          )}
+          {feeding && !ctx.lastFeed?.good && (
+            <motion.div key="flash" className="pointer-events-none absolute inset-0" style={{ background: 'var(--bad)' }} initial={{ opacity: 0.4 }} animate={{ opacity: 0 }} transition={{ duration: 0.6 }} />
+          )}
+        </AnimatePresence>
+      </div>
 
-      <div className="mt-4 flex flex-col gap-4" style={{ opacity: boss ? 0.25 : 1, transition: 'opacity 0.3s' }}>
-        <p className="text-center text-lg font-extrabold" aria-live="polite">
-          Feed Kokeb{' '}
+      <div className="mt-3 flex flex-col gap-2.5">
+        <p className="text-center font-extrabold" aria-live="polite">
+          Steer Kokeb through{' '}
           <button
             type="button"
             onClick={() => playForm(targetForm, soundOn)}
@@ -1381,117 +1951,20 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
             <Volume2 className="h-5 w-5" aria-hidden="true" />“{targetForm?.sound}”
           </button>
         </p>
-        <div className="grid grid-cols-3 gap-3">
-          {question?.options.map((key) => {
-            const form = formOf(key)
-            const fedThis = feeding && ctx.lastFeed?.audioKey === key
-            return (
-              <motion.button
-                key={`${ctx.level}-${ctx.qIndex}-${key}`}
-                type="button"
-                disabled={feeding || boss}
-                onClick={() => dispatch({ type: RunnerEvent.FEED, payload: { audioKey: key } })}
-                animate={
-                  fedThis
-                    ? ctx.lastFeed.good
-                      ? { y: -90, scale: 0.4, opacity: 0 }
-                      : { x: [0, -8, 8, -5, 5, 0] }
-                    : {}
-                }
-                transition={{ duration: fedThis && ctx.lastFeed.good ? 0.55 : 0.4 }}
-                className={`chunk geez flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
-                style={{
-                  background: fedThis && !ctx.lastFeed.good ? 'var(--bad-soft)' : 'var(--card)',
-                  borderColor: fedThis && !ctx.lastFeed.good ? 'var(--bad)' : 'var(--line)',
-                  color: fedThis && !ctx.lastFeed.good ? 'var(--bad-ink)' : 'var(--ink)',
-                  boxShadow: '0 5px 0 var(--line)',
-                  '--chunk-depth': '5px',
-                  outlineColor: 'var(--sky)',
-                }}
-                aria-label={`Feed the letter that says ${form.sound}`}
-              >
-                {form.char}
-              </motion.button>
-            )
-          })}
+        <div className="flex items-center gap-2.5">
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move left" onClick={() => steer(-1)}>
+            <ChevronLeft className="h-8 w-8" aria-hidden="true" />
+          </Chunky>
+          <div className="flex gap-1.5" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="block h-2.5 w-6 rounded-full" style={{ background: i === lane ? 'var(--accent)' : 'var(--line)' }} />
+            ))}
+          </div>
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move right" onClick={() => steer(1)}>
+            <ChevronLeft className="h-8 w-8 rotate-180" aria-hidden="true" />
+          </Chunky>
         </div>
       </div>
-    </div>
-  )
-}
-
-function RunnerScene({ ctx }) {
-  const boss = ctx.status === RunnerState.BOSS
-  const feeding = ctx.status === RunnerState.FEEDING
-  const stumble = feeding && ctx.lastFeed && !ctx.lastFeed.good
-  const powered = feeding && ctx.lastFeed?.good
-  // The Muncher creeps toward Kokeb with every wrong feed; at the boss it lunges.
-  const muncherX = boss ? (ctx.survivedBoss ? 30 : 118) : ctx.wrong * 30
-  const runDur = Math.max(1.1, 3 - (ctx.level - 1) * 0.35)
-
-  return (
-    <div className="relative mt-4 h-56 overflow-hidden rounded-3xl border-2" style={{ borderColor: 'var(--line)', background: 'linear-gradient(to bottom, var(--sky) -60%, var(--paper) 75%)', '--run-dur': `${runDur}s` }} aria-hidden="true">
-      {/* drifting clouds */}
-      <div className="fq-scroll absolute left-0 top-4 h-10 w-[200%]" style={{ animationDuration: `${runDur * 4}s` }}>
-        {[8, 34, 58, 82, 108, 134, 158, 182].map((left, i) => (
-          <span key={i} className="absolute rounded-full" style={{ left: `${left / 2}%`, top: i % 2 ? 2 : 14, width: 44 + (i % 3) * 14, height: 14, background: 'var(--card)', opacity: 0.9 }} />
-        ))}
-      </div>
-
-      {/* scrolling ground */}
-      <div className="absolute inset-x-0 bottom-0 h-12" style={{ background: 'var(--go-soft)' }} />
-      <div className="fq-scroll absolute bottom-0 left-0 h-12 w-[200%]" style={{ background: 'repeating-linear-gradient(to right, transparent 0 34px, var(--go) 34px 38px)', opacity: 0.35 }} />
-
-      {/* the Letter Muncher */}
-      <motion.div
-        className="absolute bottom-9"
-        animate={{ x: muncherX, y: boss && ctx.survivedBoss ? -160 : 0, rotate: boss && ctx.survivedBoss ? -220 : 0, opacity: boss && ctx.survivedBoss ? 0 : 1 }}
-        transition={{ type: 'spring', stiffness: 160, damping: 16 }}
-        style={{ left: -26 }}
-      >
-        <Muncher agitated={stumble || boss} />
-      </motion.div>
-
-      {/* Kokeb the runner */}
-      <motion.div
-        className="absolute bottom-10 left-1/2 -translate-x-1/2"
-        animate={
-          boss && !ctx.survivedBoss
-            ? { rotate: 360, y: -30, scale: 0.6, opacity: 0.4 }
-            : stumble
-              ? { rotate: [0, -16, 10, 0], y: [0, 2, 0] }
-              : { y: [0, -12, 0], rotate: 0 }
-        }
-        transition={
-          boss && !ctx.survivedBoss
-            ? { duration: 1.6 }
-            : stumble
-              ? { duration: 0.5 }
-              : { duration: 0.55, repeat: Infinity, ease: 'easeInOut' }
-        }
-      >
-        <motion.div animate={powered ? { scale: [1, 1.35, 1.1] } : { scale: 1 }} transition={{ duration: 0.5 }}>
-          {powered && (
-            <motion.span className="absolute -inset-3 rounded-full" style={{ border: '3px solid var(--star)' }} initial={{ scale: 0.6, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.6 }} />
-          )}
-          <Kokeb size={64 + Math.min(ctx.correct * 5, 25)} mood={stumble || (boss && !ctx.survivedBoss) ? 'worried' : 'happy'} />
-        </motion.div>
-      </motion.div>
-
-      {/* boss caption */}
-      <AnimatePresence>
-        {boss && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-x-0 top-3 text-center text-sm font-black uppercase tracking-wider"
-            style={{ color: ctx.survivedBoss ? 'var(--go-ink)' : 'var(--bad-ink)' }}
-          >
-            {ctx.survivedBoss ? 'Kokeb’s letter power wins!' : 'The Letter Muncher attacks!'}
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -1529,7 +2002,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         Munched!
       </h1>
       <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        The Letter Muncher caught Kokeb on level {ctx.level}. Feed her more correct letters to keep her strong!
+        The Letter Muncher caught Kokeb in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed her more correct letters to keep her strong!
       </p>
 
       <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
