@@ -785,13 +785,18 @@ function JibbyPeek({ show }) {
 function CameraRig({ mode, session, sessionsCompleted }) {
   const { camera } = useThree()
   const look = useRef(new THREE.Vector3(0, 1, 0))
+  const t = useRef(0)
   useFrame((_, dt) => {
+    t.current += dt
     const k = Math.min(1, dt * 2.2)
     let target, lookAt
     if (mode === 'map') {
       const mid = (Math.min(sessionsCompleted, SESSIONS.length - 1) * ISLAND_GAP) / 2
-      target = new THREE.Vector3(mid, 7.5, 17.5)
-      lookAt = new THREE.Vector3(mid, 0.6, 0)
+      // Idle drift: the archipelago breathes instead of freezing in place.
+      const sway = Math.sin(t.current * 0.2) * 1.7
+      const bob = Math.sin(t.current * 0.13) * 0.5
+      target = new THREE.Vector3(mid + sway, 7.5 + bob, 17.5)
+      lookAt = new THREE.Vector3(mid + sway * 0.35, 0.6, 0)
     } else {
       const p = islandPos(session - 1)
       target = new THREE.Vector3(p[0] + 0.4, 4.4, p[2] + 9.2)
@@ -802,6 +807,48 @@ function CameraRig({ mode, session, sessionsCompleted }) {
     camera.lookAt(look.current)
   })
   return null
+}
+
+/** On the map, Anbessa hops across the bridges to the frontier island. */
+function MapAnbessa({ mode, sessionsCompleted }) {
+  const group = useRef(null)
+  const frontier = islandPos(Math.min(sessionsCompleted, SESSIONS.length - 1))
+  const target = useMemo(() => new THREE.Vector3(frontier[0] - 2.2, 1.35, frontier[2] + 2.1), [frontier[0], frontier[2]]) // eslint-disable-line react-hooks/exhaustive-deps
+  const pos = useRef(null)
+  if (pos.current === null) pos.current = target.clone() // spawn at home, walk only on later progress
+  useFrame(() => {
+    if (!group.current) return
+    const walking = pos.current.distanceTo(target) > 0.15
+    if (walking) pos.current.lerp(target, 0.016)
+    const now = performance.now()
+    const hop = walking ? Math.abs(Math.sin(now / 115)) * 0.4 : Math.sin(now / 520) * 0.07
+    group.current.position.set(pos.current.x, pos.current.y + hop, pos.current.z)
+  })
+  if (mode !== 'map') return null
+  return (
+    <group ref={group}>
+      <Billboard>
+        <mesh>
+          <planeGeometry args={[1.9, 1.9]} />
+          <meshBasicMaterial map={lazyTex('anbessa', 256, drawAnbessa)} transparent depthWrite={false} />
+        </mesh>
+      </Billboard>
+      <Billboard position={[0.95, 1.25, 0]}>
+        <mesh>
+          <planeGeometry args={[0.65, 0.65]} />
+          <meshBasicMaterial
+            map={lazyTex('star', 128, (g, sz) => {
+              starPath(g, sz / 2, sz / 2, sz * 0.42, sz * 0.18)
+              g.fillStyle = '#ffc800'
+              g.fill()
+            })}
+            transparent
+            depthWrite={false}
+          />
+        </mesh>
+      </Billboard>
+    </group>
+  )
 }
 
 function Clouds() {
@@ -833,6 +880,7 @@ function Scene({ st, dispatch, soundOn }) {
       <ambientLight intensity={0.75} color="#fff4e0" />
       <directionalLight castShadow position={[8, 14, 6]} intensity={1.6} color="#fff2d8" shadow-mapSize={[1024, 1024]} shadow-camera-left={-20} shadow-camera-right={40} shadow-camera-top={20} shadow-camera-bottom={-20} />
       <CameraRig mode={st.mode} session={st.session} sessionsCompleted={st.sessionsCompleted} />
+      <MapAnbessa mode={st.mode} sessionsCompleted={st.sessionsCompleted} />
       <Clouds />
       {SESSIONS.map((s, i) => (
         <Island key={s.n} session={s} index={i} unlocked={i <= st.sessionsCompleted} active={st.session === s.n} cleared={st.sessionsCompleted >= s.n} mode={st.mode} st={st} dispatch={dispatch} soundOn={soundOn} />
