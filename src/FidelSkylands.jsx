@@ -33,6 +33,7 @@ import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
 import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
+import { LOW_END } from './platform/quality'
 
 /* ============================================================================
    §1 DATA
@@ -659,7 +660,7 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
             <meshStandardMaterial color={unlocked ? '#4f9a44' : '#9aa89a'} roughness={0.8} emissive={active ? '#2f7a2a' : '#000'} emissiveIntensity={active ? 0.35 : 0} />
           </mesh>
         ))}
-        {active && <Sparkles count={26} scale={[5, 4, 4]} position={[0, 3.2, 0]} size={4} speed={0.5} color="#ffe9a0" />}
+        {active && <Sparkles count={LOW_END ? 10 : 26} scale={[5, 4, 4]} position={[0, 3.2, 0]} size={4} speed={0.5} color="#ffe9a0" />}
 
         {/* fruit */}
         {(isLearning || isGame) &&
@@ -860,7 +861,7 @@ function Clouds() {
   })
   return (
     <group ref={group}>
-      {Array.from({ length: 9 }, (_, i) => (
+      {Array.from({ length: LOW_END ? 5 : 9 }, (_, i) => (
         <mesh key={i} position={[((i * 13) % 60) - 10, 5.5 + ((i * 7) % 5), -14 - ((i * 5) % 9)]}>
           <sphereGeometry args={[1.6 + (i % 3) * 0.7, 10, 8]} />
           <meshStandardMaterial color="#ffffff" transparent opacity={0.85} flatShading />
@@ -956,7 +957,7 @@ export default function FidelSkylands({ onExit }) {
 
   return (
     <div className="fixed inset-0" style={{ background: 'var(--paper)' }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
+      <Canvas shadows={!LOW_END} dpr={LOW_END ? [1, 1.25] : [1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
         <Scene st={st} dispatch={dispatch} soundOn={soundOn} />
       </Canvas>
 

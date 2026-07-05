@@ -28,6 +28,8 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import GhostHand from './GhostHand'
+import { t, getLang, setLang } from './platform/i18n'
+import { LOW_END } from './platform/quality'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
@@ -842,6 +844,18 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
         </div>
         <button
           type="button"
+          onClick={() => {
+            setLang(getLang() === 'am' ? 'en' : 'am')
+            window.location.reload()
+          }}
+          aria-label={getLang() === 'am' ? 'Switch to English' : 'ወደ አማርኛ ቀይር'}
+          className={`chunk mr-2 flex h-11 items-center justify-center rounded-2xl px-3 text-sm font-black ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+        >
+          {getLang() === 'am' ? 'EN' : 'አማ'}
+        </button>
+        <button
+          type="button"
           onClick={onToggleSound}
           aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
           aria-pressed={soundOn}
@@ -858,11 +872,11 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
         </motion.div>
         <h1 className="mt-2 text-4xl font-black tracking-tight">Fidel Quest</h1>
         <p className="mt-1 font-semibold" style={{ color: 'var(--muted)' }}>
-          Learn the Amharic alphabet with Anbessa the lion cub
+          {t('tagline', 'Learn the Amharic alphabet with Anbessa the lion cub')}
         </p>
         {champion && (
           <div className="mt-3 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
-            <Sparkles className="h-5 w-5" aria-hidden="true" /> Fidel Champion — every star earned!
+            <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion — every star earned!')}
           </div>
         )}
       </div>
@@ -883,9 +897,9 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
               <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-lg font-extrabold">Star Practice</span>
+              <span className="block text-lg font-extrabold">{t('practiceTitle', 'Star Practice')}</span>
               <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-                {troubleCount} tricky {troubleCount === 1 ? 'letter' : 'letters'} to make strong
+                {t('practiceSub', `${troubleCount} tricky ${troubleCount === 1 ? 'letter' : 'letters'} to make strong`, { n: troubleCount })}
               </span>
             </span>
           </button>
@@ -901,9 +915,9 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <Flame className="h-7 w-7" fill="currentColor" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">Letter Runner</span>
+            <span className="block text-lg font-extrabold">{t('runnerTitle', 'Letter Runner')}</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              A 3D run through Ethiopia and Eritrea — feed Anbessa, outrun Jibby the hyena!
+              {t('runnerSub', 'A 3D run through Ethiopia and Eritrea — feed Anbessa, outrun Jibby the hyena!')}
             </span>
           </span>
           {runnerBest.fed > 0 && (
@@ -923,9 +937,9 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <TreePine className="h-7 w-7" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">Fidel Skylands</span>
+            <span className="block text-lg font-extrabold">{t('skylandsTitle', 'Fidel Skylands')}</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              A 3D island quest — grow the tree, pluck letters, beat Jibby
+              {t('skylandsSub', 'A 3D island quest — grow the tree, pluck letters, beat Jibby')}
             </span>
           </span>
         </button>
@@ -940,9 +954,9 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <Pencil className="h-7 w-7" aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">Classic Game</span>
+            <span className="block text-lg font-extrabold">{t('classicTitle', 'Classic Game')}</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              Chant the orders, trace letters, learn first words
+              {t('classicSub', 'Chant the orders, trace letters, learn first words')}
             </span>
           </span>
         </button>
@@ -957,9 +971,9 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <BookOpen className="h-7 w-7" aria-hidden="true" />
           </span>
           <span className="min-w-0">
-            <span className="block text-lg font-extrabold">Letter Explorer</span>
+            <span className="block text-lg font-extrabold">{t('explorerTitle', 'Letter Explorer')}</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              Tap any of the 231 letters to hear it
+              {t('explorerSub', 'Tap any of the 231 letters to hear it')}
             </span>
           </span>
         </button>
@@ -971,7 +985,7 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
         className={`mx-auto mt-6 text-sm font-extrabold underline-offset-2 hover:underline ${FOCUS}`}
         style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}
       >
-        For grown-ups: progress and tips
+        {t('grownups', 'For grown-ups: progress and tips')}
       </button>
     </div>
   )
@@ -986,9 +1000,9 @@ function LevelCard({ level, earned, unlocked, onPlay }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            Level {level.n}
+            {t('level', 'Level')} {level.n}
           </p>
-          <h2 className="text-lg font-extrabold leading-tight">{level.title}</h2>
+          <h2 className="text-lg font-extrabold leading-tight">{t(`${level.id}.title`, level.title)}</h2>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
             {level.blurb}
           </p>
@@ -1009,7 +1023,7 @@ function LevelCard({ level, earned, unlocked, onPlay }) {
         ))}
         {!unlocked && (
           <span className="ml-auto text-xs font-bold" style={{ color: 'var(--muted)' }}>
-            Earn a star on Level {level.n - 1} to unlock
+            {t('lockHint', `Earn a star on Level ${level.n - 1} to unlock`, { n: level.n - 1 })}
           </span>
         )}
       </div>
@@ -1273,7 +1287,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
       <main className="flex flex-1 flex-col justify-center gap-6 py-6">
         <div className="text-center">
           <p className="text-lg font-extrabold">
-            Which letter says{' '}
+            {t('whichLetter', 'Which letter says')}{' '}
             <button
               type="button"
               onClick={() => playForm(targetForm, soundOn)}
@@ -1324,7 +1338,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
         <div className="h-6 text-center" aria-live="polite">
           {presenting && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold" style={{ color: 'var(--muted)' }}>
-              Listen…
+              {t('listen', 'Listen…')}
             </motion.p>
           )}
         </div>
@@ -1335,7 +1349,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
       <AnimatePresence>
         {yourTurn && (
           <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
-            Your turn!
+            {t('yourTurn', 'Your turn!')}
           </motion.p>
         )}
       </AnimatePresence>
@@ -1365,14 +1379,14 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-lg font-black" style={{ color: success ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
-                {success ? (ctx.streak >= 3 ? `Amazing! ${ctx.streak} in a row!` : 'Nice!') : 'Not quite!'}
+                {success ? (ctx.streak >= 3 ? t('amazing', `Amazing! ${ctx.streak} in a row!`, { n: ctx.streak }) : t('nice', 'Nice!')) : t('notQuite', 'Not quite!')}
               </p>
               <p className="font-bold" style={{ color: success ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
-                <span className="geez text-xl">{targetForm?.char}</span> says “{targetForm?.sound}”{error && ' — listen and try again'}
+                <span className="geez text-xl">{targetForm?.char}</span> {t('saysWord', 'says')} “{targetForm?.sound}”{error && t('tryAgain', ' — listen and try again')}
               </p>
             </div>
             <Chunky tone={success ? 'go' : 'bad'} className="shrink-0 px-6 py-3.5 text-sm uppercase" onClick={onContinue} data-tut="continue">
-              {success ? 'Continue' : 'Got it'}
+              {success ? t('continue', 'Continue') : t('gotIt', 'Got it')}
             </Chunky>
           </div>
         </motion.div>
@@ -1392,15 +1406,15 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
       </motion.div>
 
       <motion.h1 className="mt-4 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--go-ink)' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        {stars === null ? 'Practice complete!' : 'Level complete!'}
+        {stars === null ? t('practiceComplete', 'Practice complete!') : t('levelComplete', 'Level complete!')}
       </motion.h1>
       <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
-        {level.title}
+        {t(`${level.id}.title`, level.title)}
       </p>
 
       {stars === null ? (
         <p className="mt-5 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-          Those tricky letters are getting stronger. Kokeb is proud of you!
+          {t('practicePraise', 'Those tricky letters are getting stronger. Kokeb is proud of you!')}
         </p>
       ) : (
       <div className="mt-5 flex items-end gap-2" aria-label={`${stars} of 3 stars earned`}>
@@ -1420,7 +1434,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
       <motion.div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
         <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            First-try
+            {t('firstTry', 'First-try')}
           </p>
           <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>
             {accuracy}%
@@ -1428,7 +1442,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
         </div>
         <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            Best streak
+            {t('bestStreak', 'Best streak')}
           </p>
           <p className="mono flex items-center justify-center gap-1 text-2xl font-black" style={{ color: 'var(--accent)' }}>
             <Flame className="h-6 w-6" fill="currentColor" aria-hidden="true" />
@@ -1439,10 +1453,10 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
 
       <motion.div className="mt-8 flex w-full max-w-sm flex-col gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
-          Continue
+          {t('continue', 'Continue')}
         </Chunky>
         <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
-          Play again
+          {t('playAgain', 'Play again')}
         </Chunky>
       </motion.div>
     </div>
@@ -1998,8 +2012,8 @@ const CHUNK_BUILDERS = {
 class RunnerWorld {
   constructor(canvas, onGate) {
     this.onGate = onGate
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_END })
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
     this.camera.position.set(0, 3.6, 7.6)
@@ -2417,7 +2431,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
 
       <div className="mt-3 flex flex-col gap-2.5">
         <p className="text-center font-extrabold" aria-live="polite">
-          Steer Anbessa into{' '}
+          {t('steerInto', 'Steer Anbessa into')}{' '}
           <button
             type="button"
             onClick={() => playForm(targetForm, soundOn)}
@@ -2473,7 +2487,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         <Muncher size={96} />
       </motion.div>
       <h1 className="mt-5 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--bad-ink)' }}>
-        Munched!
+        {t('munched', 'Munched!')}
       </h1>
       <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
         Jibby the hyena caught Anbessa in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed him more correct letters to keep him strong!
@@ -2501,10 +2515,10 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
 
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
-          Run again
+          {t('runAgain', 'Run again')}
         </Chunky>
         <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onExit}>
-          Home
+          {t('home', 'Home')}
         </Chunky>
       </div>
     </div>
