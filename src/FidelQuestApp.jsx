@@ -843,7 +843,7 @@ function Chunky({ tone = 'go', className = '', style, children, depth = 4, ...pr
 
 /* ── Shared: character sprites (canvas art rendered into the DOM) ── */
 
-function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
+export function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
   const ref = useRef(null)
   useEffect(() => {
     const c = ref.current

@@ -22,14 +22,14 @@
    the UI dispatches TOUCH events and renders the phase.
    ========================================================================== */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
-import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
+import { rngNext, rngShuffle, Hero, Sprite2D, drawAnbessa, drawHyena } from './FidelQuestApp'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -247,14 +247,19 @@ export function groupMastered(learn, group) {
 }
 
 /* ============================================================================
-   §3 UI
+   §3 UI — every phase is a mini-game
+   MEET     Bubble Pop: the letter drifts in a wobbling bubble; pop it
+   FORWARD/ Star Constellation: slide finger star-to-star across a night
+   BACKWARD band; a glowing trail draws behind the finger
+   ECHO     Feed Anbessa: touch the spoken cookie and it flies to his mouth
+   SHUFFLE  Jibby the Thief: he creeps toward the cookies each round; grab
+            the spoken letter and he retreats (tension, never punishment)
+   The machine (§1) is untouched - these are pure presentation.
    ========================================================================== */
 
-/** Touch-sensitive letter row: sliding a finger across plays each letter. */
-function SlideRow({ keys, activeKey, doneKeys, hintKey, onTouch, big = false }) {
-  const rowRef = useRef(null)
+/** Shared slide/touch resolution: fingers, not clicks. */
+function useSlideTouch(onTouch) {
   const lastRef = useRef(null)
-
   const touchAt = useCallback(
     (clientX, clientY) => {
       const el = document.elementFromPoint(clientX, clientY)
@@ -268,57 +273,216 @@ function SlideRow({ keys, activeKey, doneKeys, hintKey, onTouch, big = false }) 
     },
     [onTouch],
   )
+  return {
+    style: { touchAction: 'none' },
+    onPointerDown: (e) => {
+      lastRef.current = null
+      touchAt(e.clientX, e.clientY)
+    },
+    onPointerMove: (e) => {
+      if (e.buttons > 0 || e.pointerType === 'touch') touchAt(e.clientX, e.clientY)
+    },
+    onPointerUp: () => {
+      lastRef.current = null
+    },
+  }
+}
+
+/** MEET: pop the drifting bubble to hear the letter. */
+function BubbleMeet({ ctx, onTouch }) {
+  const form = formOf(ctx.forms[ctx.idx])
+  const met = ctx.forms.slice(0, ctx.idx)
+  if (!form) return null
+  return (
+    <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex w-full flex-col items-center gap-5">
+      <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
+        {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
+      </p>
+      <div className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #bfe6f7, #e8f6fd)' }}>
+        <motion.button
+          type="button"
+          onPointerDown={() => onTouch(form.audioKey)}
+          initial={{ x: '-30%', y: 30, scale: 0.5 }}
+          animate={{
+            x: ['-25%', '25%', '-15%', '20%', '-25%'],
+            y: [26, 60, 14, 52, 26],
+            scale: [1, 1.05, 0.97, 1.04, 1],
+          }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          className={`geez absolute left-1/2 top-4 flex h-44 w-44 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
+          style={{
+            background: 'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(190,229,247,0.55) 38%, rgba(120,190,230,0.35) 100%)',
+            border: '3px solid rgba(255,255,255,0.9)',
+            boxShadow: 'inset -8px -10px 24px rgba(70,150,200,0.35), 0 10px 22px rgba(70,150,200,0.25)',
+            color: 'var(--ink)',
+            touchAction: 'none',
+            outlineColor: 'var(--sky)',
+          }}
+          aria-label={`Pop the bubble to hear ${form.sound}`}
+        >
+          {form.char}
+          <span className="absolute left-7 top-6 h-6 w-10 rotate-[-25deg] rounded-full bg-white/80" aria-hidden="true" />
+        </motion.button>
+      </div>
+      <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
+        {form.sound}
+      </p>
+      {/* Anbessa's shelf of collected letters */}
+      <div className="flex min-h-12 items-end gap-2">
+        <Hero size={48} />
+        {met.map((k) => (
+          <motion.span key={k} initial={{ scale: 0 }} animate={{ scale: 1 }} className="geez flex h-11 w-9 items-center justify-center rounded-xl border-2 text-xl font-black" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', borderColor: 'var(--go)' }}>
+            {formOf(k)?.char}
+          </motion.span>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
+/** Star positions along a gentle wave (percent coordinates). */
+const STAR_POINTS = [8, 22, 36, 50, 64, 78, 92].map((left, i) => ({
+  left,
+  top: 38 + Math.sin(i * 1.9) * 20,
+}))
+
+/** FORWARD/BACKWARD: draw the family constellation with a finger. */
+function StarTrail({ ctx, onTouch }) {
+  const forward = ctx.phase === LearnPhase.FORWARD
+  const handlers = useSlideTouch(onTouch)
+  const doneKeys = forward ? ctx.forms.slice(0, ctx.idx) : ctx.forms.slice(ctx.idx + 1)
+  const activeKey = ctx.forms[ctx.idx]
+  const donePoints = ctx.forms
+    .map((k, i) => ({ k, p: STAR_POINTS[i] }))
+    .filter(({ k }) => doneKeys.includes(k) || k === activeKey)
+  const ordered = forward ? donePoints : donePoints.slice().reverse()
 
   return (
-    <div
-      ref={rowRef}
-      className="flex flex-wrap justify-center gap-2"
-      style={{ touchAction: 'none' }}
-      onPointerDown={(e) => {
-        lastRef.current = null
-        touchAt(e.clientX, e.clientY)
-      }}
-      onPointerMove={(e) => {
-        if (e.buttons > 0 || e.pointerType === 'touch') touchAt(e.clientX, e.clientY)
-      }}
-      onPointerUp={() => {
-        lastRef.current = null
-      }}
-    >
-      {keys.map((key) => {
-        const form = formOf(key)
-        const done = doneKeys.includes(key)
-        const active = key === activeKey
-        const hinted = key === hintKey
-        return (
+    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
+      <p className="flex items-center gap-2 text-lg font-extrabold">
+        {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
+        {t('starHint', 'Slide star to star and draw the constellation')}
+      </p>
+      <div {...handlers} className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #1b2b4a, #2c3f66)' }}>
+        {/* twinkle dust */}
+        {[12, 30, 55, 70, 88, 42, 62].map((left, i) => (
+          <motion.span key={i} className="absolute h-1 w-1 rounded-full bg-white" style={{ left: `${left}%`, top: `${(i * 31) % 80 + 6}%` }} animate={{ opacity: [0.2, 0.9, 0.2] }} transition={{ duration: 2 + (i % 3), repeat: Infinity }} aria-hidden="true" />
+        ))}
+        {/* the drawn trail */}
+        <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polyline
+            points={ordered.map(({ p }) => `${p.left},${p.top}`).join(' ')}
+            fill="none"
+            stroke="#ffc800"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.9"
+          />
+        </svg>
+        {ctx.forms.map((k, i) => {
+          const p = STAR_POINTS[i]
+          const done = doneKeys.includes(k)
+          const active = k === activeKey
+          const form = formOf(k)
+          return (
+            <motion.div
+              key={k}
+              data-form={k}
+              role="button"
+              tabIndex={0}
+              aria-label={`Star ${form?.sound}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onTouch(k)
+              }}
+              animate={active ? { scale: [1, 1.18, 1], transition: { duration: 0.9, repeat: Infinity } } : { scale: 1 }}
+              className={`geez absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center text-2xl font-black ${FOCUS}`}
+              style={{
+                left: `${p.left}%`,
+                top: `${p.top}%`,
+                color: done || active ? '#7c5200' : '#dbe6ff',
+                clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+                background: done ? 'var(--star)' : active ? '#ffe08a' : 'rgba(150,170,220,0.45)',
+                outlineColor: 'var(--sky)',
+              }}
+            >
+              {form?.char}
+            </motion.div>
+          )
+        })}
+      </div>
+    </motion.div>
+  )
+}
+
+/** ECHO/SHUFFLE: cookies + Anbessa (feeding) + Jibby (the thief). */
+function CookieField({ ctx, flyKey, onTouch }) {
+  const isShuffle = ctx.phase === LearnPhase.SHUFFLE
+  const handlers = useSlideTouch(onTouch)
+  const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
+  return (
+    <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
+      <p className="text-lg font-extrabold">
+        {isShuffle ? t('catchHint', 'Jibby wants the cookies! Grab the one you hear') : t('feedHint', 'Feed Anbessa the cookie Kokeb says')}{' '}
+        <span className="mono" style={{ color: 'var(--muted)' }}>
+          {ctx.round + 1}/{roundLimit}
+        </span>
+      </p>
+      <div {...handlers} className="relative w-full rounded-3xl border-2 p-4 pb-2" style={{ ...handlers.style, background: 'var(--card)', borderColor: 'var(--line)' }}>
+        <div className="flex flex-wrap justify-center gap-3">
+          {ctx.order.map((k, i) => {
+            const form = formOf(k)
+            const hinted = ctx.wrongs >= 2 && k === ctx.target
+            const flying = k === flyKey
+            return (
+              <motion.div
+                key={`${ctx.round}-${k}`}
+                data-form={k}
+                role="button"
+                tabIndex={0}
+                aria-label={`Cookie ${form?.sound}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') onTouch(k)
+                }}
+                animate={
+                  flying
+                    ? { y: 130, x: 0, scale: 0.2, opacity: 0, transition: { duration: 0.5 } }
+                    : hinted
+                      ? { scale: [1, 1.15, 1], transition: { duration: 0.8, repeat: Infinity } }
+                      : { y: [0, -5 - (i % 3) * 2, 0], transition: { duration: 1.6 + (i % 3) * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 } }
+                }
+                className={`geez relative flex h-16 w-16 select-none items-center justify-center rounded-full border-4 text-3xl font-black ${FOCUS}`}
+                style={{
+                  background: 'radial-gradient(circle at 35% 30%, #f2c98a, #d99a4e)',
+                  borderColor: hinted ? 'var(--accent)' : '#b97f3c',
+                  color: '#5b3a12',
+                  boxShadow: '0 4px 0 #a06a30',
+                  outlineColor: 'var(--sky)',
+                }}
+              >
+                {form?.char}
+              </motion.div>
+            )
+          })}
+        </div>
+        {/* Jibby creeps in during SHUFFLE rounds */}
+        {isShuffle && (
           <motion.div
-            key={key}
-            data-form={key}
-            role="button"
-            tabIndex={0}
-            aria-label={`Letter ${form?.sound}`}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onTouch(key)
-            }}
-            animate={
-              active || hinted
-                ? { scale: [1, 1.12, 1], transition: { duration: 0.8, repeat: Infinity } }
-                : { scale: 1 }
-            }
-            className={`geez flex select-none items-center justify-center rounded-2xl border-2 font-black ${big ? 'h-20 w-16 text-4xl' : 'h-16 w-12 text-3xl'} ${FOCUS}`}
-            style={{
-              background: done ? 'var(--go-soft)' : active || hinted ? 'var(--accent)' : 'var(--card)',
-              color: done ? 'var(--go-ink)' : active || hinted ? '#fff' : 'var(--ink)',
-              borderColor: done ? 'var(--go)' : active || hinted ? 'var(--accent-deep)' : 'var(--line)',
-              boxShadow: `0 4px 0 ${done ? 'var(--go)' : active || hinted ? 'var(--accent-deep)' : 'var(--line)'}`,
-              outlineColor: 'var(--sky)',
-            }}
+            key={`jibby-${ctx.round}`}
+            className="pointer-events-none absolute -right-2 top-1/3"
+            initial={{ x: 90, rotate: 8 }}
+            animate={{ x: 14 }}
+            transition={{ duration: 6.5, ease: 'linear' }}
+            aria-hidden="true"
           >
-            {form?.char}
+            <Sprite2D draw={drawHyena} size={64} />
           </motion.div>
-        )
-      })}
-    </div>
+        )}
+        <div className="mt-2 flex justify-center">
+          {!isShuffle && <Sprite2D draw={drawAnbessa} size={72} />}
+        </div>
+      </div>
+    </motion.div>
   )
 }
 
@@ -334,6 +498,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     () => (stone.type === 'family' ? learnInitial(stone.id, seed) : mixInitial(stone.families, seed)),
   )
   const [burst, setBurst] = useState(0)
+  const [flyKey, setFlyKey] = useState(null)
   const prevPhase = useRef(ctx.phase)
 
   const touch = useCallback(
@@ -342,8 +507,16 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       playForm(formOf(key), soundOn)
       if (ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE) {
         recordAnswer(ctx.target, key, 'learn')
-        if (correct) setBurst((b) => b + 1)
-        else if (!correct) playEffect('bad', soundOn)
+        if (correct) {
+          setBurst((b) => b + 1)
+          setFlyKey(key)
+          setTimeout(() => {
+            setFlyKey(null)
+            dispatch(key)
+          }, 480)
+          return
+        }
+        playEffect('bad', soundOn)
       } else if (advanced) {
         setBurst((b) => b + 1)
       }
@@ -373,13 +546,6 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     return undefined
   }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const meetForm = ctx.phase === LearnPhase.MEET ? formOf(ctx.forms[ctx.idx]) : null
-  const doneKeys =
-    ctx.phase === LearnPhase.FORWARD
-      ? ctx.forms.slice(0, ctx.idx)
-      : ctx.phase === LearnPhase.BACKWARD
-        ? ctx.forms.slice(ctx.idx + 1)
-        : []
   const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
   const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE].indexOf(ctx.phase)
 
@@ -399,63 +565,11 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         </span>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-8 py-6 text-center">
+      <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
         <AnimatePresence mode="wait">
-          {ctx.phase === LearnPhase.MEET && meetForm && (
-            <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.15, transition: { duration: 0.1 } }} className="flex flex-col items-center gap-6">
-              <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
-                {t('meetHint', 'Touch the letter to hear it')} · {ctx.idx + 1}/7
-              </p>
-              <motion.button
-                type="button"
-                onPointerDown={() => touch(meetForm.audioKey)}
-                animate={{ scale: [1, 1.06, 1] }}
-                transition={{ duration: 1.4, repeat: Infinity }}
-                className={`geez flex h-52 w-52 items-center justify-center rounded-[3rem] border-4 text-9xl font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', borderColor: 'var(--accent)', boxShadow: '0 8px 0 var(--accent-deep)', outlineColor: 'var(--sky)', touchAction: 'none' }}
-                aria-label={`Touch to hear ${meetForm.sound}`}
-              >
-                {meetForm.char}
-              </motion.button>
-              <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
-                {meetForm.sound}
-              </p>
-              <SlideRow keys={ctx.forms.slice(0, ctx.idx)} activeKey={null} doneKeys={ctx.forms.slice(0, ctx.idx)} hintKey={null} onTouch={touch} />
-            </motion.div>
-          )}
-
-          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && (
-            <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-6">
-              <p className="flex items-center gap-2 text-lg font-extrabold">
-                {ctx.phase === LearnPhase.FORWARD ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />}
-                {t('slideHint', 'Slide your finger along the letters')}
-              </p>
-              <SlideRow keys={ctx.forms} activeKey={ctx.forms[ctx.idx]} doneKeys={doneKeys} hintKey={null} onTouch={touch} big />
-            </motion.div>
-          )}
-
-          {spoken && (
-            <motion.div key={`${ctx.phase}-row`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-6">
-              <p className="text-lg font-extrabold">
-                {ctx.phase === LearnPhase.ECHO ? t('echoHint', 'Kokeb says... touch that letter!') : t('shuffleHint', 'All mixed up! Find the letter you hear')}
-                {' '}
-                <span className="mono" style={{ color: 'var(--muted)' }}>
-                  {ctx.round + 1}/{ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds}
-                </span>
-              </p>
-              <button
-                type="button"
-                onClick={() => playForm(formOf(ctx.target), soundOn)}
-                className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white ${FOCUS}`}
-                style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', outlineColor: 'var(--accent)' }}
-                aria-label="Play the sound again"
-              >
-                <Volume2 className="h-8 w-8" aria-hidden="true" />
-              </button>
-              <SlideRow keys={ctx.order} activeKey={null} doneKeys={[]} hintKey={ctx.wrongs >= 2 ? ctx.target : null} onTouch={touch} big />
-            </motion.div>
-          )}
-
+          {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={touch} />}
+          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StarTrail key={ctx.phase} ctx={ctx} onTouch={touch} />}
+          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} flyKey={flyKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.DONE && (
             <motion.div key="done" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
               <Hero size={120} />
@@ -473,7 +587,18 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           )}
         </AnimatePresence>
 
-        {/* touch burst */}
+        {spoken && (
+          <button
+            type="button"
+            onClick={() => playForm(formOf(ctx.target), soundOn)}
+            className={`chunk flex h-14 w-14 items-center justify-center rounded-full text-white ${FOCUS}`}
+            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', outlineColor: 'var(--accent)' }}
+            aria-label="Play the sound again"
+          >
+            <Volume2 className="h-7 w-7" aria-hidden="true" />
+          </button>
+        )}
+
         <AnimatePresence>
           {burst > 0 && (
             <motion.div key={burst} className="pointer-events-none fixed inset-x-0 top-24 flex justify-center" initial={{ opacity: 1, y: 0, scale: 0.6 }} animate={{ opacity: 0, y: -34, scale: 1.25 }} transition={{ duration: 0.7 }} aria-hidden="true">
