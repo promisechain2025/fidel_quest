@@ -16,6 +16,8 @@ import FidelQuestApp, {
   runnerTransition,
   selectRunnerQuestion,
   INDEXES,
+  buildPracticeQueue,
+  isLevelUnlocked,
 } from './FidelQuestApp'
 
 beforeEach(() => {
@@ -135,5 +137,65 @@ describe('app shell', () => {
     expect(screen.getByText('Classic Game')).toBeInTheDocument()
     expect(screen.getByText('Letter Explorer')).toBeInTheDocument()
     expect(FIDEL_FAMILIES).toHaveLength(33)
+  })
+})
+
+describe('vowel levels and Star Practice', () => {
+  it('vowel questions isolate the vowel within one family, deterministically', () => {
+    const level = LEVELS.find((l) => l.id === 'level-5')
+    for (let seed = 1; seed <= 10; seed++) {
+      const [queue] = buildQuestionQueue(level, seed)
+      expect(queue).toHaveLength(level.questionCount)
+      for (const q of queue) {
+        const fid = q.target.slice(0, q.target.lastIndexOf('-'))
+        expect(q.options).toContain(q.target)
+        expect(new Set(q.options).size).toBe(q.options.length)
+        for (const o of q.options) expect(o.startsWith(fid + '-')).toBe(true)
+        const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
+        expect(new Set(sounds).size).toBe(q.options.length)
+      }
+    }
+    expect(JSON.stringify(buildQuestionQueue(level, 42))).toBe(JSON.stringify(buildQuestionQueue(level, 42)))
+  })
+
+  it('level 5 unlocks off level 4 like every other level', () => {
+    expect(isLevelUnlocked({ 'level-4': { stars: 1 } }, 4)).toBe(true)
+    expect(isLevelUnlocked({}, 4)).toBe(false)
+  })
+
+  it('builds practice from trouble letters with confusion partners as options', () => {
+    const events = []
+    for (let i = 0; i < 6; i++) events.push({ k: 'ha-1', p: i < 4 ? 'se-1' : 'ha-1', m: 'lesson', d: 1 })
+    for (let i = 0; i < 4; i++) events.push({ k: 'qe-1', p: i < 2 ? 'be-1' : 'qe-1', m: 'lesson', d: 1 })
+    const queue = buildPracticeQueue(events, 42)
+    expect(queue).toHaveLength(8)
+    const targets = new Set(queue.map((q) => q.target))
+    expect(targets).toEqual(new Set(['ha-1', 'qe-1']))
+    const haQuestion = queue.find((q) => q.target === 'ha-1')
+    expect(haQuestion.options).toContain('se-1') // the actual confusion
+    for (const q of queue) {
+      expect(q.options).toContain(q.target)
+      const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
+      expect(new Set(sounds).size).toBe(q.options.length)
+    }
+    expect(buildPracticeQueue([], 42)).toEqual([])
+    expect(JSON.stringify(buildPracticeQueue(events, 7))).toBe(JSON.stringify(buildPracticeQueue(events, 7)))
+  })
+
+  it('the machine runs a preset practice queue to completion', () => {
+    const queue = [
+      { target: 'ha-1', options: ['ha-1', 'le-1', 'me-1'] },
+      { target: 'le-1', options: ['le-1', 'be-1', 'te-1'] },
+    ]
+    let ctx = transition(initialContext(3), { type: GameEvent.START_LEVEL, payload: { levelId: 'practice', seed: 3, queue } }).next
+    expect(ctx.status).toBe(GameState.PRESENTATION)
+    let guard = 0
+    while (ctx.status !== GameState.LEVEL_COMPLETE && guard++ < 20) {
+      if (ctx.status === GameState.PRESENTATION) ctx = transition(ctx, { type: GameEvent.PRESENTATION_DONE }).next
+      else if (ctx.status === GameState.AWAITING_INPUT) ctx = transition(ctx, { type: GameEvent.SELECT_OPTION, payload: { audioKey: ctx.queue[ctx.cursor].target } }).next
+      else ctx = transition(ctx, { type: GameEvent.FEEDBACK_DONE }).next
+    }
+    expect(ctx.status).toBe(GameState.LEVEL_COMPLETE)
+    expect(ctx.history).toHaveLength(2)
   })
 })

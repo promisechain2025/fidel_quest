@@ -19,7 +19,8 @@ import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
-const levelOf = (familyIndex) => Math.min(LEVELS.length, Math.floor(familyIndex / 8) + 1)
+const levelOf = (form) =>
+  form.order > 1 ? Math.min(8, Math.floor(form.familyIndex / 8) + 5) : Math.min(4, Math.floor(form.familyIndex / 8) + 1)
 
 const GATE_NUMBERS = [
   { word: 'thirty-five', value: 35, decoys: [53, 45] },

@@ -67,7 +67,7 @@ describe('selectors', () => {
         'ha-1': { char: 'ሀ', sound: 'ha', familyName: 'Ha', familyId: 'ha', familyIndex: 0 },
         'se-1': { char: 'ሰ', sound: 'sa', familyName: 'Se', familyId: 'se', familyIndex: 6 },
       })[key]
-    const tip = tipFor('ha-1', confusions(events), formOf, (i) => Math.min(4, Math.floor(i / 8) + 1))
+    const tip = tipFor('ha-1', confusions(events), formOf, (f) => Math.min(4, Math.floor(f.familyIndex / 8) + 1))
     expect(tip.text).toContain('ሰ')
     expect(tip.text).toContain('Ha family')
     expect(tip.level).toBe(1)

@@ -104,7 +104,7 @@ export function tipFor(troubleKey, allConfusions, formOf, levelOf) {
   const form = formOf(troubleKey)
   if (!form) return null
   const confusion = allConfusions.find((c) => c.heard === troubleKey)
-  const level = levelOf(form.familyIndex)
+  const level = levelOf(form)
   const lines = []
   if (confusion) {
     const other = formOf(confusion.picked)

@@ -25,7 +25,7 @@ import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
-import { recordAnswer } from './platform/telemetry'
+import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
@@ -60,14 +60,22 @@ import {
    the active language pack (src/packs/*) into these legacy shapes. */
 export { ORDERS, FIDEL_FAMILIES, deriveForms, deriveIndexes, ALL_FORMS, INDEXES } from './platform/ethiopic'
 
-/** Level definitions: base (1st-order) letters in four groups. */
+/** Level definitions. Levels 1-4 teach the base (1st-order) letters in
+   four groups; levels 5-8 revisit the same groups across ALL SEVEN vocal
+   orders — same consonant, different vowel mark — which is how the abugida
+   actually works. */
 export const LEVELS = Object.freeze([
-  { id: 'level-1', n: 1, title: 'First Letters', blurb: 'Meet the first eight Fidel', from: 0, to: 8 },
-  { id: 'level-2', n: 2, title: 'More Letters', blurb: 'Eight new friends', from: 8, to: 16 },
-  { id: 'level-3', n: 3, title: 'Even More Letters', blurb: 'The middle of the table', from: 16, to: 24 },
-  { id: 'level-4', n: 4, title: 'The Last Letters', blurb: 'Finish the whole alphabet', from: 24, to: 33 },
+  { id: 'level-1', n: 1, kind: 'base', title: 'First Letters', blurb: 'Meet the first eight Fidel', from: 0, to: 8 },
+  { id: 'level-2', n: 2, kind: 'base', title: 'More Letters', blurb: 'Eight new friends', from: 8, to: 16 },
+  { id: 'level-3', n: 3, kind: 'base', title: 'Even More Letters', blurb: 'The middle of the table', from: 16, to: 24 },
+  { id: 'level-4', n: 4, kind: 'base', title: 'The Last Letters', blurb: 'Finish the whole alphabet', from: 24, to: 33 },
+  { id: 'level-5', n: 5, kind: 'orders', title: 'Vowel Magic', blurb: 'Same letter, seven sounds', from: 0, to: 8 },
+  { id: 'level-6', n: 6, kind: 'orders', title: 'More Vowel Magic', blurb: 'New families, all their sounds', from: 8, to: 16 },
+  { id: 'level-7', n: 7, kind: 'orders', title: 'Deep Vowels', blurb: 'The middle families, every order', from: 16, to: 24 },
+  { id: 'level-8', n: 8, kind: 'orders', title: 'Vowel Master', blurb: 'All 231 letters conquered', from: 24, to: 33 },
 ].map((l) => ({
   ...l,
+  families: FIDEL_FAMILIES.slice(l.from, l.to).map((f) => f.id),
   pool: FIDEL_FAMILIES.slice(l.from, l.to).map((f) => `${f.id}-1`),
   questionCount: 8,
   optionCount: 4,
@@ -135,7 +143,7 @@ export function initialContext(seed = 1) {
 
 const TRANSITIONS = {
   [GameState.IDLE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed }) => startLevel(ctx, levelId, seed),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
   },
   [GameState.PRESENTATION]: {
     [GameEvent.PRESENTATION_DONE]: (ctx) => ({ ...ctx, status: GameState.AWAITING_INPUT }),
@@ -180,7 +188,7 @@ const TRANSITIONS = {
     [GameEvent.EXIT]: exitToIdle,
   },
   [GameState.LEVEL_COMPLETE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed }) => startLevel(ctx, levelId, seed),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
     [GameEvent.EXIT]: exitToIdle,
   },
 }
@@ -189,10 +197,15 @@ function exitToIdle(ctx) {
   return { ...initialContext(ctx.seed), status: GameState.IDLE }
 }
 
-function startLevel(ctx, levelId, seed) {
+function startLevel(ctx, levelId, seed, presetQueue) {
+  const effectiveSeed = seed ?? ctx.seed
+  // A preset queue (adaptive practice) bypasses the level table; it is
+  // still pure - the caller built it from ledger + seed.
+  if (presetQueue && presetQueue.length) {
+    return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState: effectiveSeed, queue: presetQueue }
+  }
   const level = LEVELS.find((l) => l.id === levelId)
   if (!level) return null
-  const effectiveSeed = seed ?? ctx.seed
   const [queue, rngState] = buildQuestionQueue(level, effectiveSeed)
   return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState, queue }
 }
@@ -211,6 +224,28 @@ export function transition(ctx, event) {
 
 export function buildQuestionQueue(level, seed) {
   let rngState = seed
+  if (level.kind === 'orders') {
+    // Target any of the group's 7-order cells; distractors are OTHER ORDERS
+    // OF THE SAME FAMILY, so the only difference the child hears and sees
+    // is the vowel. Twin letters are irrelevant here by construction.
+    let cells
+    ;[cells, rngState] = rngShuffle(
+      level.families.flatMap((fid) => ORDERS.map((o) => `${fid}-${o.index}`)),
+      rngState,
+    )
+    const queue = cells.slice(0, level.questionCount).map((target) => {
+      const fid = target.slice(0, target.lastIndexOf('-'))
+      let siblings
+      ;[siblings, rngState] = rngShuffle(
+        ORDERS.map((o) => `${fid}-${o.index}`).filter((k) => k !== target),
+        rngState,
+      )
+      let options
+      ;[options, rngState] = rngShuffle([target, ...siblings.slice(0, level.optionCount - 1)], rngState)
+      return { target, options }
+    })
+    return [queue, rngState]
+  }
   let targets
   ;[targets, rngState] = rngShuffle(level.pool, rngState)
   targets = targets.slice(0, level.questionCount)
@@ -233,6 +268,56 @@ export function buildQuestionQueue(level, seed) {
     return { target, options }
   })
   return [queue, rngState]
+}
+
+/**
+ * Star Practice: a queue built from the child's own trouble letters, with
+ * their actual confusion partners as distractors when twin-safe. Pure in
+ * (events, seed). Empty when there is nothing worth practicing yet.
+ */
+export function buildPracticeQueue(events, seed, count = 8) {
+  const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 5 })
+  if (!trouble.length) return []
+  const pairs = confusions(events, { minCount: 1, limit: 12 })
+  let rngState = seed
+  let targets = Array.from({ length: count }, (_, i) => trouble[i % trouble.length].key)
+  ;[targets, rngState] = rngShuffle(targets, rngState)
+  const queue = targets.map((target) => {
+    const form = INDEXES.byAudioKey.get(target)
+    const confused = pairs
+      .filter((p) => p.heard === target)
+      .map((p) => p.picked)
+      .filter((k) => {
+        const other = INDEXES.byAudioKey.get(k)
+        return other && other.sound !== form.sound
+      })
+    const groupStart = Math.floor(form.familyIndex / 8) * 8
+    let peers
+    ;[peers, rngState] = rngShuffle(
+      FIDEL_FAMILIES.slice(groupStart, Math.min(groupStart + 8, FIDEL_FAMILIES.length))
+        .map((f) => `${f.id}-${form.order}`)
+        .filter((k) => {
+          const other = INDEXES.byAudioKey.get(k)
+          return k !== target && other && other.sound !== form.sound && !confused.includes(k)
+        }),
+      rngState,
+    )
+    // Build options greedily with UNIQUE SOUNDS - confusion partners first,
+    // then peers - so twins (e.g. Se/Sse) never co-occur in one question.
+    const usedSounds = new Set([form.sound])
+    const picked = [target]
+    for (const k of [...confused, ...peers]) {
+      if (picked.length >= 4) break
+      const other = INDEXES.byAudioKey.get(k)
+      if (!other || usedSounds.has(other.sound) || picked.includes(k)) continue
+      usedSounds.add(other.sound)
+      picked.push(k)
+    }
+    let options
+    ;[options, rngState] = rngShuffle(picked, rngState)
+    return { target, options }
+  })
+  return queue
 }
 
 export const selectQuestion = (ctx) => ctx.queue[ctx.cursor] ?? null
@@ -385,6 +470,18 @@ export function runInvariants() {
       Array.from({ length: 25 }, (_, s) => buildQuestionQueue(level, s + 1)[0]).every((queue) =>
         queue.every((q) => q.options.every((o) => o === q.target || soundOf(o) !== soundOf(q.target))),
       ),
+    )
+  }
+
+  for (const level of LEVELS.filter((l) => l.kind === 'orders')) {
+    const [queue] = buildQuestionQueue(level, 42)
+    check(
+      `${level.id}: options isolate the vowel within one family`,
+      queue.every((q) => {
+        const fid = q.target.slice(0, q.target.lastIndexOf('-'))
+        const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
+        return q.options.every((k) => k.startsWith(fid + '-')) && new Set(sounds).size === q.options.length
+      }),
     )
   }
 
@@ -544,6 +641,14 @@ export default function FidelQuestApp() {
     setScreen({ name: 'lesson', levelId })
   }, [])
 
+  const startPractice = useCallback(() => {
+    const seed = (Date.now() % 1000000) | 1
+    const queue = buildPracticeQueue(loadLedger(), seed)
+    if (!queue.length) return
+    setRunSeed(seed)
+    setScreen({ name: 'practice', queue })
+  }, [])
+
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
@@ -563,6 +668,7 @@ export default function FidelQuestApp() {
                 onSkylands={() => setScreen({ name: 'skylands' })}
                 onClassic={() => setScreen({ name: 'classic' })}
                 onGrownUps={() => setScreen({ name: 'grownups' })}
+                onPracticeMode={startPractice}
               />
             </Screen>
           )}
@@ -612,6 +718,18 @@ export default function FidelQuestApp() {
                   setRunSeed((Date.now() % 1000000) | 1)
                   setScreen({ name: 'runner' })
                 }}
+              />
+            </Screen>
+          )}
+          {screen.name === 'practice' && (
+            <Screen key={`practice-${runSeed}`}>
+              <Lesson
+                level={{ id: 'practice', n: '★', title: 'Star Practice' }}
+                seed={runSeed}
+                soundOn={soundOn}
+                practiceQueue={screen.queue}
+                onFinish={() => setScreen({ name: 'home' })}
+                onReplay={startPractice}
               />
             </Screen>
           )}
@@ -706,8 +824,9 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode }) {
   const runnerBest = loadRunnerBest()
+  const troubleCount = useMemo(() => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length, [])
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
   const maxStars = LEVELS.length * 3
   const champion = totalStars === maxStars
@@ -752,6 +871,25 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
         {LEVELS.map((level, i) => (
           <LevelCard key={level.id} level={level} earned={progress[level.id]?.stars ?? 0} unlocked={isLevelUnlocked(progress, i)} onPlay={() => onPlay(level.id)} />
         ))}
+
+        {troubleCount > 0 && (
+          <button
+            type="button"
+            onClick={onPracticeMode}
+            className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+            style={{ background: 'var(--card)', border: '2px solid var(--accent)', boxShadow: '0 4px 0 var(--accent)', outlineColor: 'var(--sky)' }}
+          >
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--star)', color: '#7c5200' }}>
+              <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-lg font-extrabold">Star Practice</span>
+              <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+                {troubleCount} tricky {troubleCount === 1 ? 'letter' : 'letters'} to make strong
+              </span>
+            </span>
+          </button>
+        )}
 
         <button
           type="button"
@@ -844,7 +982,7 @@ function LevelCard({ level, earned, unlocked, onPlay }) {
     <div className="relative overflow-hidden rounded-3xl border-2 p-5" style={{ background: 'var(--card)', borderColor: 'var(--line)', opacity: unlocked ? 1 : 0.72 }}>
       <div className="flex items-center gap-4">
         <div className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl font-black text-white" style={{ background: unlocked ? 'var(--accent)' : 'var(--muted)' }} aria-hidden="true">
-          {formOf(level.pool[0]).char}
+          {formOf(level.kind === 'orders' ? `${level.families[0]}-2` : level.pool[0]).char}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
@@ -1010,8 +1148,9 @@ function machineReducer(ctx, event) {
   return transition(ctx, event).next
 }
 
-function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
-  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed } }).next)
+function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null }) {
+  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
+  const isPractice = level.id === 'practice'
 
   // Shadow tutorial: on first open the Ghost Hand plays one question of the
   // REAL machine, then the level restarts fresh and the child takes over.
@@ -1069,25 +1208,26 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
     const q = ctx.queue[ctx.cursor]
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q && !demoRef.current) recordAnswer(q.target, q.target, 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
-      if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (ctx.status === GameState.LEVEL_COMPLETE) {
+    const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
     return (
       <LevelComplete
         level={level}
         accuracy={accuracy}
-        stars={starsForAccuracy(accuracy)}
+        stars={isPractice ? null : starsForAccuracy(accuracy)}
         bestStreak={ctx.bestStreak}
-        onContinue={() => onFinish(level.id, { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy })}
+        onContinue={() => onFinish(level.id, result)}
         onReplay={() => {
-          onFinish(level.id, { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy })
+          onFinish(level.id, result)
           onReplay()
         }}
       />
@@ -1252,12 +1392,17 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
       </motion.div>
 
       <motion.h1 className="mt-4 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--go-ink)' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        Level complete!
+        {stars === null ? 'Practice complete!' : 'Level complete!'}
       </motion.h1>
       <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
         {level.title}
       </p>
 
+      {stars === null ? (
+        <p className="mt-5 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+          Those tricky letters are getting stronger. Kokeb is proud of you!
+        </p>
+      ) : (
       <div className="mt-5 flex items-end gap-2" aria-label={`${stars} of 3 stars earned`}>
         {[0, 1, 2].map((i) => (
           <motion.div key={i} initial={{ scale: 0, rotate: -30 }} animate={{ scale: i < stars ? 1 : 0.72, rotate: 0 }} transition={{ delay: 0.35 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
@@ -1270,6 +1415,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           </motion.div>
         ))}
       </div>
+      )}
 
       <motion.div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
         <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
