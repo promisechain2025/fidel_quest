@@ -24,6 +24,7 @@ import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, us
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -50,82 +51,10 @@ import {
    §1 DATA LAYER
    ========================================================================== */
 
-/** The seven vocalized orders of the abugida, as taught in Ethiopian schools. */
-export const ORDERS = Object.freeze([
-  { index: 1, geezName: "Ge'ez", vowel: 'a' },
-  { index: 2, geezName: "Ka'ib", vowel: 'u' },
-  { index: 3, geezName: 'Sals', vowel: 'ee' },
-  { index: 4, geezName: "Rab'", vowel: 'aa' },
-  { index: 5, geezName: 'Hams', vowel: 'ay' },
-  { index: 6, geezName: 'Sadis', vowel: 'ih' }, // the bare-consonant order
-  { index: 7, geezName: "Sab'", vowel: 'o' },
-])
-
-/** Canonical table: 33 consonant families in traditional abugida order. */
-export const FIDEL_FAMILIES = Object.freeze([
-  {"id":"ha","name":"Ha","consonant":"h","chars":"ሀሁሂሃሄህሆ","nickname":"Haleta Ha"},
-  {"id":"le","name":"Le","consonant":"l","chars":"ለሉሊላሌልሎ","labial":"ሏ","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
-  {"id":"hha","name":"Hha","consonant":"h","chars":"ሐሑሒሓሔሕሖ","nickname":"Hameru Hha","twinOf":"Ha"},
-  {"id":"me","name":"Me","consonant":"m","chars":"መሙሚማሜምሞ","labial":"ሟ","word":{"geez":"ማር","latin":"mar","meaning":"honey","picture":"🍯"}},
-  {"id":"sse","name":"Sse","consonant":"s","chars":"ሠሡሢሣሤሥሦ","nickname":"Nigusu Sse","twinOf":"Se","word":{"geez":"ሠዓሊ","latin":"seali","meaning":"painter","picture":"🎨"}},
-  {"id":"re","name":"Re","consonant":"r","chars":"ረሩሪራሬርሮ","labial":"ሯ","word":{"geez":"ሩዝ","latin":"ruz","meaning":"rice","picture":"🍚"}},
-  {"id":"se","name":"Se","consonant":"s","chars":"ሰሱሲሳሴስሶ","nickname":"Isatu Se","labial":"ሷ","word":{"geez":"ሳር","latin":"sar","meaning":"grass","picture":"🌿"}},
-  {"id":"she","name":"She","consonant":"sh","chars":"ሸሹሺሻሼሽሾ","labial":"ሿ","word":{"geez":"ሻይ","latin":"shai","meaning":"tea","picture":"🍵"}},
-  {"id":"qe","name":"Qe","consonant":"q","chars":"ቀቁቂቃቄቅቆ","labial":"ቋ","word":{"geez":"ቀይ","latin":"qey","meaning":"red","picture":"🔴"}},
-  {"id":"be","name":"Be","consonant":"b","chars":"በቡቢባቤብቦ","labial":"ቧ","word":{"geez":"ቤት","latin":"biet","meaning":"house","picture":"🏠"}},
-  {"id":"te","name":"Te","consonant":"t","chars":"ተቱቲታቴትቶ","labial":"ቷ","word":{"geez":"ተራራ","latin":"terara","meaning":"mountain","picture":"⛰️"}},
-  {"id":"che","name":"Che","consonant":"ch","chars":"ቸቹቺቻቼችቾ","labial":"ቿ","word":{"geez":"ቸኮሌት","latin":"chokolet","meaning":"chocolate","picture":"🍫"}},
-  {"id":"kha","name":"Kha","consonant":"h","chars":"ኀኁኂኃኄኅኆ","nickname":"Bizuhanu Kha","twinOf":"Ha","labial":"ኋ"},
-  {"id":"ne","name":"Ne","consonant":"n","chars":"ነኑኒናኔንኖ","labial":"ኗ","word":{"geez":"ንብ","latin":"nib","meaning":"bee","picture":"🐝"}},
-  {"id":"nye","name":"Nye","consonant":"ny","chars":"ኘኙኚኛኜኝኞ","labial":"ኟ"},
-  {"id":"a","name":"A","consonant":"","chars":"አኡኢኣኤእኦ","nickname":"Alfau A","word":{"geez":"አሳ","latin":"asa","meaning":"fish","picture":"🐟"}},
-  {"id":"ke","name":"Ke","consonant":"k","chars":"ከኩኪካኬክኮ","labial":"ኳ","word":{"geez":"ኮከብ","latin":"kokeb","meaning":"star","picture":"⭐"}},
-  {"id":"khe","name":"Khe","consonant":"kh","chars":"ኸኹኺኻኼኽኾ"},
-  {"id":"we","name":"We","consonant":"w","chars":"ወዉዊዋዌውዎ","word":{"geez":"ውሻ","latin":"wisha","meaning":"dog","picture":"🐕"}},
-  {"id":"ae","name":"Ae","consonant":"","chars":"ዐዑዒዓዔዕዖ","nickname":"Aynu Ae","twinOf":"A","word":{"geez":"ዓይን","latin":"ayin","meaning":"eye","picture":"👁️"}},
-  {"id":"ze","name":"Ze","consonant":"z","chars":"ዘዙዚዛዜዝዞ","labial":"ዟ","word":{"geez":"ዛፍ","latin":"zaf","meaning":"tree","picture":"🌳"}},
-  {"id":"zhe","name":"Zhe","consonant":"zh","chars":"ዠዡዢዣዤዥዦ"},
-  {"id":"ye","name":"Ye","consonant":"y","chars":"የዩዪያዬይዮ"},
-  {"id":"de","name":"De","consonant":"d","chars":"ደዱዲዳዴድዶ","labial":"ዷ","word":{"geez":"ድመት","latin":"dimet","meaning":"cat","picture":"🐈"}},
-  {"id":"je","name":"Je","consonant":"j","chars":"ጀጁጂጃጄጅጆ","labial":"ጇ","word":{"geez":"ጆሮ","latin":"joro","meaning":"ear","picture":"👂"}},
-  {"id":"ge","name":"Ge","consonant":"g","chars":"ገጉጊጋጌግጎ","labial":"ጓ","word":{"geez":"ግመል","latin":"gimel","meaning":"camel","picture":"🐫"}},
-  {"id":"the","name":"The","consonant":"t'","chars":"ጠጡጢጣጤጥጦ","labial":"ጧ","word":{"geez":"ጥርስ","latin":"tirs","meaning":"tooth","picture":"🦷"}},
-  {"id":"chhe","name":"Chhe","consonant":"ch'","chars":"ጨጩጪጫጬጭጮ","labial":"ጯ","word":{"geez":"ጨረቃ","latin":"chereqa","meaning":"moon","picture":"🌙"}},
-  {"id":"ppe","name":"Ppe","consonant":"p'","chars":"ጰጱጲጳጴጵጶ"},
-  {"id":"tse","name":"Tse","consonant":"ts'","chars":"ጸጹጺጻጼጽጾ","nickname":"Tselotu Tse","labial":"ጿ","word":{"geez":"ጸሎት","latin":"tselot","meaning":"prayer","picture":"🙏"}},
-  {"id":"ttse","name":"Ttse","consonant":"ts'","chars":"ፀፁፂፃፄፅፆ","nickname":"Tsehayu Ttse","twinOf":"Tse","word":{"geez":"ፀሐይ","latin":"tsehay","meaning":"sun","picture":"☀️"}},
-  {"id":"fe","name":"Fe","consonant":"f","chars":"ፈፉፊፋፌፍፎ","labial":"ፏ","word":{"geez":"ፈረስ","latin":"feres","meaning":"horse","picture":"🐎"}},
-  {"id":"pe","name":"Pe","consonant":"p","chars":"ፐፑፒፓፔፕፖ","word":{"geez":"ፓፓያ","latin":"papaya","meaning":"papaya","picture":"🥭"}},
-])
-
-/** Derive the flat list of vocalized forms. Pure. */
-export function deriveForms(families = FIDEL_FAMILIES, orders = ORDERS) {
-  return families.flatMap((family, familyIndex) =>
-    Array.from(family.chars).map((char, i) => ({
-      char,
-      familyId: family.id,
-      familyName: family.name,
-      familyIndex,
-      order: orders[i].index,
-      sound: family.consonant + orders[i].vowel,
-      audioKey: `${family.id}-${orders[i].index}`,
-    })),
-  )
-}
-
-/** Derive lookup indexes. Pure. */
-export function deriveIndexes(forms) {
-  const byChar = new Map()
-  const byAudioKey = new Map()
-  for (const form of forms) {
-    byChar.set(form.char, form)
-    byAudioKey.set(form.audioKey, form)
-  }
-  return { byChar, byAudioKey }
-}
-
-export const ALL_FORMS = deriveForms()
-export const INDEXES = deriveIndexes(ALL_FORMS)
+/* Script and language data flow from the Ethiopic Engine platform layer:
+   the language-invariant glyph table (src/script/ethiopic.js) merged with
+   the active language pack (src/packs/*) into these legacy shapes. */
+export { ORDERS, FIDEL_FAMILIES, deriveForms, deriveIndexes, ALL_FORMS, INDEXES } from './platform/ethiopic'
 
 /** Level definitions: base (1st-order) letters in four groups. */
 export const LEVELS = Object.freeze([

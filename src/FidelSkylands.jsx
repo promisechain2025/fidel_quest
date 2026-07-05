@@ -29,51 +29,18 @@ import { Float, Sparkles, Billboard } from '@react-three/drei'
 import { useSpring, animated, config as springConfig } from '@react-spring/three'
 import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
+import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 
 /* ============================================================================
    §1 DATA
    ========================================================================== */
 
-const FIDEL_FAMILIES = Object.freeze([
-  {"id":"ha","name":"Ha","consonant":"h","chars":"ሀሁሂሃሄህሆ","nickname":"Haleta Ha"},
-  {"id":"le","name":"Le","consonant":"l","chars":"ለሉሊላሌልሎ","labial":"ሏ","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
-  {"id":"hha","name":"Hha","consonant":"h","chars":"ሐሑሒሓሔሕሖ","nickname":"Hameru Hha","twinOf":"Ha"},
-  {"id":"me","name":"Me","consonant":"m","chars":"መሙሚማሜምሞ","labial":"ሟ","word":{"geez":"ማር","latin":"mar","meaning":"honey","picture":"🍯"}},
-  {"id":"sse","name":"Sse","consonant":"s","chars":"ሠሡሢሣሤሥሦ","nickname":"Nigusu Sse","twinOf":"Se","word":{"geez":"ሠዓሊ","latin":"seali","meaning":"painter","picture":"🎨"}},
-  {"id":"re","name":"Re","consonant":"r","chars":"ረሩሪራሬርሮ","labial":"ሯ","word":{"geez":"ሩዝ","latin":"ruz","meaning":"rice","picture":"🍚"}},
-  {"id":"se","name":"Se","consonant":"s","chars":"ሰሱሲሳሴስሶ","nickname":"Isatu Se","labial":"ሷ","word":{"geez":"ሳር","latin":"sar","meaning":"grass","picture":"🌿"}},
-  {"id":"she","name":"She","consonant":"sh","chars":"ሸሹሺሻሼሽሾ","labial":"ሿ","word":{"geez":"ሻይ","latin":"shai","meaning":"tea","picture":"🍵"}},
-  {"id":"qe","name":"Qe","consonant":"q","chars":"ቀቁቂቃቄቅቆ","labial":"ቋ","word":{"geez":"ቀይ","latin":"qey","meaning":"red","picture":"🔴"}},
-  {"id":"be","name":"Be","consonant":"b","chars":"በቡቢባቤብቦ","labial":"ቧ","word":{"geez":"ቤት","latin":"biet","meaning":"house","picture":"🏠"}},
-  {"id":"te","name":"Te","consonant":"t","chars":"ተቱቲታቴትቶ","labial":"ቷ","word":{"geez":"ተራራ","latin":"terara","meaning":"mountain","picture":"⛰️"}},
-  {"id":"che","name":"Che","consonant":"ch","chars":"ቸቹቺቻቼችቾ","labial":"ቿ","word":{"geez":"ቸኮሌት","latin":"chokolet","meaning":"chocolate","picture":"🍫"}},
-  {"id":"kha","name":"Kha","consonant":"h","chars":"ኀኁኂኃኄኅኆ","nickname":"Bizuhanu Kha","twinOf":"Ha","labial":"ኋ"},
-  {"id":"ne","name":"Ne","consonant":"n","chars":"ነኑኒናኔንኖ","labial":"ኗ","word":{"geez":"ንብ","latin":"nib","meaning":"bee","picture":"🐝"}},
-  {"id":"nye","name":"Nye","consonant":"ny","chars":"ኘኙኚኛኜኝኞ","labial":"ኟ"},
-  {"id":"a","name":"A","consonant":"","chars":"አኡኢኣኤእኦ","nickname":"Alfau A","word":{"geez":"አሳ","latin":"asa","meaning":"fish","picture":"🐟"}},
-  {"id":"ke","name":"Ke","consonant":"k","chars":"ከኩኪካኬክኮ","labial":"ኳ","word":{"geez":"ኮከብ","latin":"kokeb","meaning":"star","picture":"⭐"}},
-  {"id":"khe","name":"Khe","consonant":"kh","chars":"ኸኹኺኻኼኽኾ"},
-  {"id":"we","name":"We","consonant":"w","chars":"ወዉዊዋዌውዎ","word":{"geez":"ውሻ","latin":"wisha","meaning":"dog","picture":"🐕"}},
-  {"id":"ae","name":"Ae","consonant":"","chars":"ዐዑዒዓዔዕዖ","nickname":"Aynu Ae","twinOf":"A","word":{"geez":"ዓይን","latin":"ayin","meaning":"eye","picture":"👁️"}},
-  {"id":"ze","name":"Ze","consonant":"z","chars":"ዘዙዚዛዜዝዞ","labial":"ዟ","word":{"geez":"ዛፍ","latin":"zaf","meaning":"tree","picture":"🌳"}},
-  {"id":"zhe","name":"Zhe","consonant":"zh","chars":"ዠዡዢዣዤዥዦ"},
-  {"id":"ye","name":"Ye","consonant":"y","chars":"የዩዪያዬይዮ"},
-  {"id":"de","name":"De","consonant":"d","chars":"ደዱዲዳዴድዶ","labial":"ዷ","word":{"geez":"ድመት","latin":"dimet","meaning":"cat","picture":"🐈"}},
-  {"id":"je","name":"Je","consonant":"j","chars":"ጀጁጂጃጄጅጆ","labial":"ጇ","word":{"geez":"ጆሮ","latin":"joro","meaning":"ear","picture":"👂"}},
-  {"id":"ge","name":"Ge","consonant":"g","chars":"ገጉጊጋጌግጎ","labial":"ጓ","word":{"geez":"ግመል","latin":"gimel","meaning":"camel","picture":"🐫"}},
-  {"id":"the","name":"The","consonant":"t'","chars":"ጠጡጢጣጤጥጦ","labial":"ጧ","word":{"geez":"ጥርስ","latin":"tirs","meaning":"tooth","picture":"🦷"}},
-  {"id":"chhe","name":"Chhe","consonant":"ch'","chars":"ጨጩጪጫጬጭጮ","labial":"ጯ","word":{"geez":"ጨረቃ","latin":"chereqa","meaning":"moon","picture":"🌙"}},
-  {"id":"ppe","name":"Ppe","consonant":"p'","chars":"ጰጱጲጳጴጵጶ"},
-  {"id":"tse","name":"Tse","consonant":"ts'","chars":"ጸጹጺጻጼጽጾ","nickname":"Tselotu Tse","labial":"ጿ","word":{"geez":"ጸሎት","latin":"tselot","meaning":"prayer","picture":"🙏"}},
-  {"id":"ttse","name":"Ttse","consonant":"ts'","chars":"ፀፁፂፃፄፅፆ","nickname":"Tsehayu Ttse","twinOf":"Tse","word":{"geez":"ፀሐይ","latin":"tsehay","meaning":"sun","picture":"☀️"}},
-  {"id":"fe","name":"Fe","consonant":"f","chars":"ፈፉፊፋፌፍፎ","labial":"ፏ","word":{"geez":"ፈረስ","latin":"feres","meaning":"horse","picture":"🐎"}},
-  {"id":"pe","name":"Pe","consonant":"p","chars":"ፐፑፒፓፔፕፖ","word":{"geez":"ፓፓያ","latin":"papaya","meaning":"papaya","picture":"🥭"}},
-])
+/* Families come from the Ethiopic Engine (script table + active pack). */
 
 /** Base (1st-order) form of every family: the teaching unit of this game. */
 const BASE_FORMS = FIDEL_FAMILIES.map((f, i) => ({
   char: Array.from(f.chars)[0],
-  sound: `${f.consonant}a`,
+  sound: f.consonant + PACK_ORDERS[0].vowel,
   audioKey: `${f.id}-1`,
   familyIndex: i,
 }))

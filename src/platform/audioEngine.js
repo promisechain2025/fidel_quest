@@ -51,6 +51,15 @@ export class AudioEngine {
     this.listeners = { missing: new Set(), play: new Set() }
   }
 
+  /** Retarget to a different audio pack (language switch). */
+  setSource({ audioBase, manifestUrl }) {
+    if (audioBase) this.audioBase = audioBase
+    if (manifestUrl) this.manifestUrl = manifestUrl
+    this.manifest = undefined
+    this.missing.clear()
+    this.buffers.clear()
+  }
+
   on(event, fn) {
     this.listeners[event]?.add(fn)
     return () => this.listeners[event]?.delete(fn)
