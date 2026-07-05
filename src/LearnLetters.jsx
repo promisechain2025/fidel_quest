@@ -30,6 +30,7 @@ import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero, Sprite2D, drawAnbessa, drawHyena } from './FidelQuestApp'
+import FidelTracePad from './components/FidelTracePad'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -44,6 +45,7 @@ export const LearnPhase = Object.freeze({
   BACKWARD: 'BACKWARD',
   ECHO: 'ECHO',
   SHUFFLE: 'SHUFFLE',
+  TRACE: 'TRACE',
   DONE: 'DONE',
 })
 
@@ -185,7 +187,16 @@ export function learnTransition(ctx, key) {
           correct: true,
         }
       }
-      return { next: { ...touched, phase: LearnPhase.DONE, target: null }, advanced: true, correct: true }
+      // Families finish by carving the base letter; mixes are done here.
+      return {
+        next: { ...touched, phase: ctx.kind === 'family' ? LearnPhase.TRACE : LearnPhase.DONE, target: null },
+        advanced: true,
+        correct: true,
+      }
+    }
+    case LearnPhase.TRACE: {
+      if (key !== '__traced__') return { next: touched, advanced: false, correct: false }
+      return { next: { ...touched, phase: LearnPhase.DONE }, advanced: true, correct: true }
     }
     default:
       return { next: ctx, advanced: false, correct: false }
@@ -547,7 +558,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
-  const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE].indexOf(ctx.phase)
+  const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE, LearnPhase.TRACE].indexOf(ctx.phase)
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-5">
@@ -556,7 +567,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           <ChevronLeft className="h-6 w-6" />
         </button>
         <div className="flex flex-1 justify-center gap-1.5" aria-label="Lesson steps">
-          {(stone.type === 'family' ? [0, 1, 2, 3, 4] : [4]).map((i) => (
+          {(stone.type === 'family' ? [0, 1, 2, 3, 4, 5] : [4]).map((i) => (
             <span key={i} className="block h-2.5 w-8 rounded-full" style={{ background: phaseIndex > i || ctx.phase === LearnPhase.DONE ? 'var(--go)' : phaseIndex === i ? 'var(--accent)' : 'var(--line)' }} />
           ))}
         </div>
@@ -570,6 +581,26 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={touch} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StarTrail key={ctx.phase} ctx={ctx} onTouch={touch} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} flyKey={flyKey} onTouch={touch} />}
+          {ctx.phase === LearnPhase.TRACE && (
+            <motion.div key="trace" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
+              <p className="text-lg font-extrabold">{t('traceHint', 'Now carve it! Trace the letter with your finger')}</p>
+              <FidelTracePad
+                char={formOf(`${ctx.familyId}-1`)?.char}
+                labels={{
+                  clear: t('traceClear', 'Clear'),
+                  check: t('traceCheck', 'Check'),
+                  instruction: '',
+                  unsupported: '-',
+                }}
+                onScored={(r) => {
+                  // Celebration-grade acceptance: covering the letter wins,
+                  // even with a four-year-old's overshoot (stray is fine).
+                  if (r.stars >= 1 || r.coverage >= 0.55) touch('__traced__')
+                  else playEffect('bad', soundOn)
+                }}
+              />
+            </motion.div>
+          )}
           {ctx.phase === LearnPhase.DONE && (
             <motion.div key="done" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
               <Hero size={120} />

@@ -32,6 +32,9 @@ describe('the step machine', () => {
     expect(ctx.phase).toBe(LearnPhase.SHUFFLE)
     expect(ctx.order).not.toEqual(ctx.forms) // scrambled (33! chance aside)
     for (let i = 0; i < SHUFFLE_ROUNDS; i++) ctx = learnTransition(ctx, ctx.target).next
+    expect(ctx.phase).toBe(LearnPhase.TRACE)
+    expect(learnTransition(ctx, 'ha-3').advanced).toBe(false) // only tracing finishes
+    ctx = learnTransition(ctx, '__traced__').next
     expect(ctx.phase).toBe(LearnPhase.DONE)
   })
 
@@ -49,7 +52,7 @@ describe('the step machine', () => {
       let ctx = learnInitial('me', seed)
       const targets = []
       for (let i = 0; i < 21; i++) ctx = learnTransition(ctx, ctx.forms[ctx.idx]).next
-      while (ctx.phase !== LearnPhase.DONE) {
+      while (ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE) {
         targets.push(ctx.target)
         ctx = learnTransition(ctx, ctx.target).next
       }
