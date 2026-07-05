@@ -163,6 +163,23 @@ export function buildQuiz(n, seed) {
   return questions
 }
 
+/**
+ * Jibby's Snack Attack: the boss review. He steals three letters from
+ * EARLIER sessions (the review material); level 1 steals from its own pool.
+ * Stolen letters have pairwise-distinct sounds so each is findable by ear.
+ */
+export function pickStolen(n, seed) {
+  const pool = cumulativePool(Math.max(1, n - 1))
+  const [shuffled] = rngShuffle(pool, (seed ^ 0x9e37) | 1)
+  const chosen = []
+  for (const k of shuffled) {
+    if (chosen.length === 3) break
+    const sound = FORM_BY_KEY.get(k).sound
+    if (!chosen.some((c) => FORM_BY_KEY.get(c).sound === sound)) chosen.push(k)
+  }
+  return chosen
+}
+
 /* ============================================================================
    §3 PROGRESSION — the strict cumulative unlocking machine
    sessionsCompleted (persisted) = islands whose GAME level has been beaten.
@@ -193,7 +210,7 @@ export const canLearn = (st, n) => n >= 1 && n <= SESSIONS.length && n <= st.ses
 export const canPlay = (st, n) => n >= 1 && n <= SESSIONS.length && st.learnedSessions >= n && n <= st.sessionsCompleted + 1
 
 function initialState() {
-  return { ...loadSave(), mode: 'map', session: 0, heard: [], quiz: null, qIndex: 0, phase: null, correct: 0, burstId: 0 }
+  return { ...loadSave(), mode: 'map', session: 0, heard: [], quiz: null, qIndex: 0, phase: null, correct: 0, burstId: 0, stolen: [] }
 }
 
 function reducer(st, a) {
@@ -207,24 +224,38 @@ function reducer(st, a) {
       if (st.mode !== 'learning' || st.heard.length < SESSIONS[st.session - 1].pool.length) return st
       const learnedSessions = Math.max(st.learnedSessions, st.session)
       persist({ sessionsCompleted: st.sessionsCompleted, learnedSessions })
-      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed), stolen: pickStolen(st.session, a.seed), qIndex: 0, phase: 'question', correct: 0 }
     }
     case 'OPEN_GAME':
       if (!canPlay(st, a.n)) return st
-      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed), stolen: pickStolen(a.n, a.seed), qIndex: 0, phase: 'question', correct: 0 }
     case 'PLUCK': {
-      if (st.mode !== 'game' || st.phase !== 'question') return st
-      const q = st.quiz[st.qIndex]
-      if (!q.options.includes(a.key)) return st
-      const good = a.key === q.target
-      return { ...st, phase: good ? 'good' : 'bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+      if (st.mode !== 'game') return st
+      if (st.phase === 'question') {
+        const q = st.quiz[st.qIndex]
+        if (!q.options.includes(a.key)) return st
+        const good = a.key === q.target
+        return { ...st, phase: good ? 'good' : 'bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+      }
+      if (st.phase === 'boss') {
+        if (!st.stolen.includes(a.key)) return st
+        const good = a.key === st.stolen[0]
+        return { ...st, phase: good ? 'boss-good' : 'boss-bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+      }
+      return st
     }
     case 'FEEDBACK_DONE': {
       if (st.phase === 'bad') return { ...st, phase: 'question' } // retry same letter
+      if (st.phase === 'boss-bad') return { ...st, phase: 'boss' }
+      if (st.phase === 'boss-good') {
+        const stolen = st.stolen.slice(1)
+        if (stolen.length > 0) return { ...st, stolen, phase: 'boss' }
+        const sessionsCompleted = Math.max(st.sessionsCompleted, st.session)
+        persist({ sessionsCompleted, learnedSessions: st.learnedSessions })
+        return { ...st, stolen, sessionsCompleted, phase: 'complete' }
+      }
       if (st.qIndex + 1 < st.quiz.length) return { ...st, qIndex: st.qIndex + 1, phase: 'question' }
-      const sessionsCompleted = Math.max(st.sessionsCompleted, st.session)
-      persist({ sessionsCompleted, learnedSessions: st.learnedSessions })
-      return { ...st, sessionsCompleted, phase: 'complete' }
+      return { ...st, phase: 'boss' } // Jibby's Snack Attack: win the stolen letters back
     }
     case 'TO_MAP':
       return { ...st, mode: 'map', session: 0, quiz: null, phase: null }
@@ -628,16 +659,21 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
   const isLearning = active && mode === 'learning'
   const isGame = active && mode === 'game'
   const question = isGame && st.phase !== 'complete' ? st.quiz[st.qIndex] : null
+  const bossing = isGame && typeof st.phase === 'string' && st.phase.startsWith('boss')
 
   // Fruit set: learning shows the session pool; the game shows the current
   // question's cumulative options. Ring layout around the foliage.
-  const fruitKeys = isLearning ? session.pool : question ? question.options : session.pool.slice(0, 5)
+  const fruitKeys = isLearning ? session.pool : bossing ? st.stolen : question ? question.options : session.pool.slice(0, 5)
   // Fruit hang on the CAMERA-FACING side of the canopy in two arcs, so every
   // option is always visible and pluckable (a back-of-tree fruit would be
   // unreachable by the pointer raycaster and could make a question unwinnable).
   const ring = useMemo(
     () =>
       fruitKeys.map((key, i) => {
+        if (bossing) {
+          // Stolen fruit hover in Jibby's clutches, low and center-front.
+          return { key, p: [(i - (fruitKeys.length - 1) / 2) * 1.05, 1.9 + (i % 2) * 0.28, 2.4] }
+        }
         // Rows of four keep every fruit inside a narrow portrait frustum.
         const row = Math.floor(i / 4)
         const col = i % 4
@@ -647,7 +683,7 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
           p: [(col - (inRow - 1) / 2) * 0.98, 4.35 - row * 1.12 + (col % 2) * 0.2, 1.28 + ((i * 13) % 3) * 0.14],
         }
       }),
-    [fruitKeys.join('|')], // eslint-disable-line react-hooks/exhaustive-deps
+    [fruitKeys.join('|'), bossing], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   const rock = unlocked ? session.rock : '#8d8d94'
@@ -658,7 +694,7 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
       if (isLearning) {
         playKey(key, soundOn)
         dispatch({ type: 'HEAR', key })
-      } else if (isGame && st.phase === 'question') {
+      } else if (isGame && (st.phase === 'question' || st.phase === 'boss')) {
         dispatch({ type: 'PLUCK', key })
       }
     },
@@ -702,13 +738,24 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
               position={p}
               color={sessionOfKey(key).fruit}
               heard={isLearning && st.heard.includes(key)}
-              state={isGame && st.phase !== 'question' && key === st.quiz[st.qIndex].target && st.phase === 'good' ? 'correct' : isGame && st.phase === 'bad' ? 'wrong' : 'idle'}
+              state={
+                !isGame
+                  ? 'idle'
+                  : st.phase === 'good' && key === st.quiz[st.qIndex].target
+                    ? 'correct'
+                    : st.phase === 'boss-good' && key === st.stolen[0]
+                      ? 'correct'
+                      : st.phase === 'bad' || st.phase === 'boss-bad'
+                        ? 'wrong'
+                        : 'idle'
+              }
               onPluck={pluck}
             />
           ))}
 
         {/* correct-answer burst */}
-        {isGame && st.phase === 'good' && <Burst key={st.burstId} position={[0, 3.4, 1]} color="#ffc800" />}
+        {isGame && (st.phase === 'good' || st.phase === 'boss-good') && <Burst key={st.burstId} position={[0, st.phase === 'boss-good' ? 2.4 : 3.4, 1.6]} color="#ffc800" />}
+        {bossing && <JibbyBoss remaining={st.stolen.length} agitated={st.phase === 'boss-bad'} />}
 
         {/* Anbessa waits on the active island; Jibby pops up on a wrong pluck */}
         {active && (
@@ -764,6 +811,26 @@ function Island({ session, index, unlocked, active, cleared, mode, st, dispatch,
         )}
       </group>
     </Float>
+  )
+}
+
+/** Boss mode: Jibby looms front and center, shrinking with each rescue. */
+function JibbyBoss({ remaining, agitated }) {
+  const { s, y } = useSpring({
+    s: 1.35 + remaining * 0.3 + (agitated ? 0.22 : 0),
+    y: 3.15,
+    from: { s: 0.2, y: -1.2 },
+    config: springConfig.wobbly,
+  })
+  return (
+    <animated.group position-x={0} position-z={1.7} position-y={y} scale={s}>
+      <Billboard>
+        <mesh>
+          <planeGeometry args={[1.6, 1.6]} />
+          <meshBasicMaterial map={lazyTex('jibby', 256, drawJibby)} transparent depthWrite={false} />
+        </mesh>
+      </Billboard>
+    </animated.group>
   )
 }
 
@@ -920,16 +987,18 @@ export default function FidelSkylands() {
 
   const question = st.mode === 'game' && st.phase && st.phase !== 'complete' ? st.quiz[st.qIndex] : null
   const targetForm = question ? FORM_BY_KEY.get(question.target) : null
+  const bossForm = st.stolen && st.stolen.length ? FORM_BY_KEY.get(st.stolen[0]) : null
   const session = st.session ? SESSIONS[st.session - 1] : null
 
   // Speak each new question; advance feedback on a timer.
   useEffect(() => {
     if (st.mode === 'game' && st.phase === 'question') playKey(question.target, soundOn)
-  }, [st.mode, st.phase, st.qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (st.mode === 'game' && st.phase === 'boss' && bossForm) playKey(bossForm.audioKey, soundOn)
+  }, [st.mode, st.phase, st.qIndex, st.stolen && st.stolen.length]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (st.phase === 'good' || st.phase === 'bad') {
-      playFx(st.phase === 'good' ? 'good' : 'bad', soundOn)
-      const t = setTimeout(() => dispatch({ type: 'FEEDBACK_DONE' }), st.phase === 'good' ? 950 : 1100)
+    if (['good', 'bad', 'boss-good', 'boss-bad'].includes(st.phase)) {
+      playFx(st.phase.endsWith('good') ? 'good' : 'bad', soundOn)
+      const t = setTimeout(() => dispatch({ type: 'FEEDBACK_DONE' }), st.phase.endsWith('good') ? 950 : 1100)
       return () => clearTimeout(t)
     }
     if (st.phase === 'complete') playFx('win', soundOn)
@@ -1043,6 +1112,25 @@ export default function FidelSkylands() {
                   Jibby giggles — listen again for “{targetForm.sound}”
                 </p>
               )}
+              {st.phase === 'boss' && bossForm && (
+                <p className="font-bold">
+                  <span className="font-black" style={{ color: 'var(--bad-ink)' }}>Jibby stole {st.stolen.length} letters!</span>{' '}
+                  Win back the one that says{' '}
+                  <button type="button" onClick={() => playKey(bossForm.audioKey, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                    🔊 “{bossForm.sound}”
+                  </button>
+                </p>
+              )}
+              {st.phase === 'boss-good' && bossForm && (
+                <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+                  Rescued! {bossForm.char} says “{bossForm.sound}”
+                </p>
+              )}
+              {st.phase === 'boss-bad' && bossForm && (
+                <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
+                  Jibby holds on tight — listen again for “{bossForm.sound}”
+                </p>
+              )}
             </div>
           )}
 
@@ -1052,7 +1140,7 @@ export default function FidelSkylands() {
                 Island cleared!
               </p>
               <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
-                {st.quiz.length} letters mastered · {st.session < SESSIONS.length ? `the bridge to ${SESSIONS[st.session].place} has grown!` : 'every skyland is free!'}
+                {st.quiz.length} letters + 3 rescued from Jibby · {st.session < SESSIONS.length ? `the bridge to ${SESSIONS[st.session].place} has grown!` : 'every skyland is free!'}
               </p>
               <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} mt-3 px-8 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
                 Continue
