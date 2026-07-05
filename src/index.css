@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Same dark-mode strategy as the PromiseChain UI the game was extracted
+ * from: a `.dark` class on <html> drives every `dark:` variant. The game
+ * currently ships light-only, but its markup already carries dark: classes. */
+@variant dark (&:where(.dark, .dark *));
