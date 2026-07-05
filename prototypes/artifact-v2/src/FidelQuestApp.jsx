@@ -22,6 +22,7 @@
 
 import { useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
+import FidelSkylands from './FidelSkylands'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -36,6 +37,7 @@ import {
   BookOpen,
   Check,
   RotateCcw,
+  TreePine,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -685,12 +687,18 @@ export default function FidelQuestApp() {
                   setRunSeed((Date.now() % 1000000) | 1)
                   setScreen({ name: 'runner' })
                 }}
+                onSkylands={() => setScreen({ name: 'skylands' })}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
               <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
+            </Screen>
+          )}
+          {screen.name === 'skylands' && (
+            <Screen key="skylands">
+              <FidelSkylands onExit={() => setScreen({ name: 'home' })} />
             </Screen>
           )}
           {screen.name === 'runner' && (
@@ -797,7 +805,7 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands }) {
   const runnerBest = loadRunnerBest()
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
   const maxStars = LEVELS.length * 3
@@ -864,6 +872,23 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner })
               Best {runnerBest.fed}
             </span>
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={onSkylands}
+          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--go)', color: '#fff' }}>
+            <TreePine className="h-7 w-7" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">Fidel Skylands</span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              A 3D island quest — grow the tree, pluck letters, beat Jibby
+            </span>
+          </span>
         </button>
 
         <button

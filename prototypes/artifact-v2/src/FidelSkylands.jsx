@@ -965,7 +965,7 @@ function Scene({ st, dispatch, soundOn }) {
 
 const BTN = 'chunk rounded-2xl font-extrabold tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-export default function FidelSkylands() {
+export default function FidelSkylands({ onExit }) {
   const [st, dispatch] = useReducer(reducer, undefined, initialState)
   const [soundOn, setSoundOn] = useState(() => {
     try {
@@ -1018,6 +1018,11 @@ export default function FidelSkylands() {
       {/* ── HUD ── */}
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <header className="flex items-center gap-2 p-3">
+          {st.mode === 'map' && onExit && (
+            <button type="button" onClick={onExit} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+              Home
+            </button>
+          )}
           {st.mode !== 'map' && (
             <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
               Map
