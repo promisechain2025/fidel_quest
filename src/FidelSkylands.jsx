@@ -30,6 +30,7 @@ import { useSpring, animated, config as springConfig } from '@react-spring/three
 import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
+import { recordAnswer } from './platform/telemetry'
 
 /* ============================================================================
    §1 DATA
@@ -203,12 +204,12 @@ function reducer(st, a) {
         const q = st.quiz[st.qIndex]
         if (!q.options.includes(a.key)) return st
         const good = a.key === q.target
-        return { ...st, phase: good ? 'good' : 'bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+        return { ...st, phase: good ? 'good' : 'bad', lastPick: a.key, correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
       }
       if (st.phase === 'boss') {
         if (!st.stolen.includes(a.key)) return st
         const good = a.key === st.stolen[0]
-        return { ...st, phase: good ? 'boss-good' : 'boss-bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+        return { ...st, phase: good ? 'boss-good' : 'boss-bad', lastPick: a.key, correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
       }
       return st
     }
@@ -927,6 +928,8 @@ export default function FidelSkylands({ onExit }) {
   useEffect(() => {
     if (['good', 'bad', 'boss-good', 'boss-bad'].includes(st.phase)) {
       playFx(st.phase.endsWith('good') ? 'good' : 'bad', soundOn)
+      const heard = st.phase.startsWith('boss') ? st.stolen[0] : st.quiz[st.qIndex].target
+      if (heard && st.lastPick) recordAnswer(heard, st.lastPick, 'sky')
       const t = setTimeout(() => dispatch({ type: 'FEEDBACK_DONE' }), st.phase.endsWith('good') ? 950 : 1100)
       return () => clearTimeout(t)
     }

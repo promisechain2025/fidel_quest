@@ -25,6 +25,8 @@ import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
+import { recordAnswer } from './platform/telemetry'
+import GrownUps from './GrownUps'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -558,12 +560,22 @@ export default function FidelQuestApp() {
                 }}
                 onSkylands={() => setScreen({ name: 'skylands' })}
                 onClassic={() => setScreen({ name: 'classic' })}
+                onGrownUps={() => setScreen({ name: 'grownups' })}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
-              <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
+              <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} initialFamily={screen.family ?? null} />
+            </Screen>
+          )}
+          {screen.name === 'grownups' && (
+            <Screen key="grownups">
+              <GrownUps
+                onBack={() => setScreen({ name: 'home' })}
+                onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
+                onReplayLevel={(levelId) => startLesson(levelId)}
+              />
             </Screen>
           )}
           {screen.name === 'classic' && (
@@ -692,7 +704,7 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps }) {
   const runnerBest = loadRunnerBest()
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
   const maxStars = LEVELS.length * 3
@@ -812,6 +824,15 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
           </span>
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onGrownUps}
+        className={`mx-auto mt-6 text-sm font-extrabold underline-offset-2 hover:underline ${FOCUS}`}
+        style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}
+      >
+        For grown-ups: progress and tips
+      </button>
     </div>
   )
 }
@@ -858,8 +879,8 @@ function LevelCard({ level, earned, unlocked, onPlay }) {
 
 /* ── Explore Mode ── */
 
-function Explore({ soundOn, onBack }) {
-  const [openFamily, setOpenFamily] = useState(null)
+function Explore({ soundOn, onBack, initialFamily = null }) {
+  const [openFamily, setOpenFamily] = useState(initialFamily)
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
   return (
@@ -1007,8 +1028,15 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
 
   // Feedback sounds fire on state entry.
   useEffect(() => {
-    if (ctx.status === GameState.SUCCESS_BURST) playEffect('good', soundOn)
-    if (ctx.status === GameState.ERROR_RECOVERY) playEffect('bad', soundOn)
+    const q = ctx.queue[ctx.cursor]
+    if (ctx.status === GameState.SUCCESS_BURST) {
+      playEffect('good', soundOn)
+      if (q) recordAnswer(q.target, q.target, 'lesson')
+    }
+    if (ctx.status === GameState.ERROR_RECOVERY) {
+      playEffect('bad', soundOn)
+      if (q) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], 'lesson')
+    }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -2076,6 +2104,8 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
     if (feeding) {
       world.clearGate()
       playEffect(ctx.lastFeed?.good ? 'good' : 'bad', soundOn)
+      const fedQ = ctx.queue[ctx.qIndex]
+      if (fedQ && ctx.lastFeed) recordAnswer(fedQ.target, ctx.lastFeed.audioKey, 'runner')
       if (ctx.lastFeed?.good) world.burst()
       else world.setMood(true)
       const t = setTimeout(() => dispatch({ type: RunnerEvent.FEED_DONE }), 900)
