@@ -303,7 +303,8 @@ function playKey(key, enabled) {
   if (!enabled) return
   const form = FORM_BY_KEY.get(key)
   try {
-    const a = new Audio(`/audio/fidel/letters/${key}.mp3`)
+    const embedded = typeof window !== 'undefined' && window.FIDEL_AUDIO && window.FIDEL_AUDIO[key]
+    const a = new Audio(embedded || `/audio/fidel/letters/${key}.mp3`)
     a.addEventListener('error', () => toneFor(form), { once: true })
     a.play().catch(() => toneFor(form))
   } catch {

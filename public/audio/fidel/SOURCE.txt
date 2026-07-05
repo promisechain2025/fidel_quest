@@ -1,0 +1,16 @@
+Provenance of these audio clips
+===============================
+
+Generated with espeak-ng (Amharic voice, via the text2wav WASM build),
+peak-normalized and encoded to 48 kbps mono MP3. Synthesized placeholder
+voice: clear and correctly keyed, but robotic. Replace any file with a
+human recording of the same name and the apps pick it up automatically.
+
+Note: espeak-ng is GPL-3.0 (the engine); these generated waveforms are
+program output. If the project ever needs certainty for commercial
+distribution, replace with recorded audio.
+
+Do NOT source clips by scraping Google Translate TTS - that violates
+Google's Terms of Service. Legitimate upgrade paths: record a native
+speaker, or use a licensed TTS API (e.g. Google Cloud TTS am-ET) with
+your own account.

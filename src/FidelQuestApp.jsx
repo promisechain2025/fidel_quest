@@ -552,7 +552,10 @@ function playFormTone(form) {
 export function playForm(form, enabled = true) {
   if (!enabled || !form) return
   try {
-    const audio = new Audio(`/audio/fidel/letters/${form.audioKey}.mp3`)
+    // Artifact builds carry clips inline on window.FIDEL_AUDIO (data URIs);
+    // the deployed app serves the same files from public/audio.
+    const embedded = typeof window !== 'undefined' && window.FIDEL_AUDIO && window.FIDEL_AUDIO[form.audioKey]
+    const audio = new Audio(embedded || `/audio/fidel/letters/${form.audioKey}.mp3`)
     audio.volume = 0.9
     const fallback = () => playFormTone(form)
     audio.addEventListener('error', fallback, { once: true })
