@@ -1,0 +1,1018 @@
+/* ============================================================================
+   FIDEL SKYLANDS — a 3D cumulative-progression Amharic alphabet game
+   ----------------------------------------------------------------------------
+   Concept: a chain of floating islands, each themed after a famous place in
+   Ethiopia or Eritrea, and each growing a magical Fidel tree whose fruit are
+   letters. Learning phase: tap every fruit to hear it. Game phase: pluck the
+   fruit that matches the sound you hear — drawn CUMULATIVELY from the current
+   session plus every earlier session. Beating an island springs a plank
+   bridge to the next one and the sky warms.
+
+   Single-file by design. Section map:
+     §1 DATA          sessions of the Ge'ez table (generated, test-verified)
+     §2 QUESTIONS     seeded RNG + cumulative, twin-safe question factory
+     §3 PROGRESSION   strict state machine; sessionsCompleted gates content
+     §4 SOUND         mp3 placeholder contract with Web Audio fallback tones
+     §5 ART           canvas-drawn characters and glyph textures
+     §6 3D SCENE      R3F islands, trees, fruit, bridges, particle physics
+     §7 UI            2D HUD overlay + app shell
+
+   Physics note: rapier/cannon need WASM/workers that an offline artifact
+   cannot fetch, so the "physics" here is hand-rolled — gravity-integrated
+   particle bursts and spring dynamics (@react-spring/three) — which keeps
+   the file fully self-contained.
+   ========================================================================== */
+
+import { useEffect, useMemo, useReducer, useRef, useState, useCallback } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Float, Sparkles, Billboard } from '@react-three/drei'
+import { useSpring, animated, config as springConfig } from '@react-spring/three'
+import * as THREE from 'three'
+
+/* ============================================================================
+   §1 DATA
+   ========================================================================== */
+
+const FIDEL_FAMILIES = Object.freeze([
+  {"id":"ha","name":"Ha","consonant":"h","chars":"ሀሁሂሃሄህሆ","nickname":"Haleta Ha"},
+  {"id":"le","name":"Le","consonant":"l","chars":"ለሉሊላሌልሎ","labial":"ሏ","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
+  {"id":"hha","name":"Hha","consonant":"h","chars":"ሐሑሒሓሔሕሖ","nickname":"Hameru Hha","twinOf":"Ha"},
+  {"id":"me","name":"Me","consonant":"m","chars":"መሙሚማሜምሞ","labial":"ሟ","word":{"geez":"ማር","latin":"mar","meaning":"honey","picture":"🍯"}},
+  {"id":"sse","name":"Sse","consonant":"s","chars":"ሠሡሢሣሤሥሦ","nickname":"Nigusu Sse","twinOf":"Se","word":{"geez":"ሠዓሊ","latin":"seali","meaning":"painter","picture":"🎨"}},
+  {"id":"re","name":"Re","consonant":"r","chars":"ረሩሪራሬርሮ","labial":"ሯ","word":{"geez":"ሩዝ","latin":"ruz","meaning":"rice","picture":"🍚"}},
+  {"id":"se","name":"Se","consonant":"s","chars":"ሰሱሲሳሴስሶ","nickname":"Isatu Se","labial":"ሷ","word":{"geez":"ሳር","latin":"sar","meaning":"grass","picture":"🌿"}},
+  {"id":"she","name":"She","consonant":"sh","chars":"ሸሹሺሻሼሽሾ","labial":"ሿ","word":{"geez":"ሻይ","latin":"shai","meaning":"tea","picture":"🍵"}},
+  {"id":"qe","name":"Qe","consonant":"q","chars":"ቀቁቂቃቄቅቆ","labial":"ቋ","word":{"geez":"ቀይ","latin":"qey","meaning":"red","picture":"🔴"}},
+  {"id":"be","name":"Be","consonant":"b","chars":"በቡቢባቤብቦ","labial":"ቧ","word":{"geez":"ቤት","latin":"biet","meaning":"house","picture":"🏠"}},
+  {"id":"te","name":"Te","consonant":"t","chars":"ተቱቲታቴትቶ","labial":"ቷ","word":{"geez":"ተራራ","latin":"terara","meaning":"mountain","picture":"⛰️"}},
+  {"id":"che","name":"Che","consonant":"ch","chars":"ቸቹቺቻቼችቾ","labial":"ቿ","word":{"geez":"ቸኮሌት","latin":"chokolet","meaning":"chocolate","picture":"🍫"}},
+  {"id":"kha","name":"Kha","consonant":"h","chars":"ኀኁኂኃኄኅኆ","nickname":"Bizuhanu Kha","twinOf":"Ha","labial":"ኋ"},
+  {"id":"ne","name":"Ne","consonant":"n","chars":"ነኑኒናኔንኖ","labial":"ኗ","word":{"geez":"ንብ","latin":"nib","meaning":"bee","picture":"🐝"}},
+  {"id":"nye","name":"Nye","consonant":"ny","chars":"ኘኙኚኛኜኝኞ","labial":"ኟ"},
+  {"id":"a","name":"A","consonant":"","chars":"አኡኢኣኤእኦ","nickname":"Alfau A","word":{"geez":"አሳ","latin":"asa","meaning":"fish","picture":"🐟"}},
+  {"id":"ke","name":"Ke","consonant":"k","chars":"ከኩኪካኬክኮ","labial":"ኳ","word":{"geez":"ኮከብ","latin":"kokeb","meaning":"star","picture":"⭐"}},
+  {"id":"khe","name":"Khe","consonant":"kh","chars":"ኸኹኺኻኼኽኾ"},
+  {"id":"we","name":"We","consonant":"w","chars":"ወዉዊዋዌውዎ","word":{"geez":"ውሻ","latin":"wisha","meaning":"dog","picture":"🐕"}},
+  {"id":"ae","name":"Ae","consonant":"","chars":"ዐዑዒዓዔዕዖ","nickname":"Aynu Ae","twinOf":"A","word":{"geez":"ዓይን","latin":"ayin","meaning":"eye","picture":"👁️"}},
+  {"id":"ze","name":"Ze","consonant":"z","chars":"ዘዙዚዛዜዝዞ","labial":"ዟ","word":{"geez":"ዛፍ","latin":"zaf","meaning":"tree","picture":"🌳"}},
+  {"id":"zhe","name":"Zhe","consonant":"zh","chars":"ዠዡዢዣዤዥዦ"},
+  {"id":"ye","name":"Ye","consonant":"y","chars":"የዩዪያዬይዮ"},
+  {"id":"de","name":"De","consonant":"d","chars":"ደዱዲዳዴድዶ","labial":"ዷ","word":{"geez":"ድመት","latin":"dimet","meaning":"cat","picture":"🐈"}},
+  {"id":"je","name":"Je","consonant":"j","chars":"ጀጁጂጃጄጅጆ","labial":"ጇ","word":{"geez":"ጆሮ","latin":"joro","meaning":"ear","picture":"👂"}},
+  {"id":"ge","name":"Ge","consonant":"g","chars":"ገጉጊጋጌግጎ","labial":"ጓ","word":{"geez":"ግመል","latin":"gimel","meaning":"camel","picture":"🐫"}},
+  {"id":"the","name":"The","consonant":"t'","chars":"ጠጡጢጣጤጥጦ","labial":"ጧ","word":{"geez":"ጥርስ","latin":"tirs","meaning":"tooth","picture":"🦷"}},
+  {"id":"chhe","name":"Chhe","consonant":"ch'","chars":"ጨጩጪጫጬጭጮ","labial":"ጯ","word":{"geez":"ጨረቃ","latin":"chereqa","meaning":"moon","picture":"🌙"}},
+  {"id":"ppe","name":"Ppe","consonant":"p'","chars":"ጰጱጲጳጴጵጶ"},
+  {"id":"tse","name":"Tse","consonant":"ts'","chars":"ጸጹጺጻጼጽጾ","nickname":"Tselotu Tse","labial":"ጿ","word":{"geez":"ጸሎት","latin":"tselot","meaning":"prayer","picture":"🙏"}},
+  {"id":"ttse","name":"Ttse","consonant":"ts'","chars":"ፀፁፂፃፄፅፆ","nickname":"Tsehayu Ttse","twinOf":"Tse","word":{"geez":"ፀሐይ","latin":"tsehay","meaning":"sun","picture":"☀️"}},
+  {"id":"fe","name":"Fe","consonant":"f","chars":"ፈፉፊፋፌፍፎ","labial":"ፏ","word":{"geez":"ፈረስ","latin":"feres","meaning":"horse","picture":"🐎"}},
+  {"id":"pe","name":"Pe","consonant":"p","chars":"ፐፑፒፓፔፕፖ","word":{"geez":"ፓፓያ","latin":"papaya","meaning":"papaya","picture":"🥭"}},
+])
+
+/** Base (1st-order) form of every family: the teaching unit of this game. */
+const BASE_FORMS = FIDEL_FAMILIES.map((f, i) => ({
+  char: Array.from(f.chars)[0],
+  sound: `${f.consonant}a`,
+  audioKey: `${f.id}-1`,
+  familyIndex: i,
+}))
+const FORM_BY_KEY = new Map(BASE_FORMS.map((f) => [f.audioKey, f]))
+
+const SESSION_FRUIT = ['#ff7a59', '#ffc24b', '#8ed069', '#5db7ff']
+
+export const SESSIONS = [
+  {
+    n: 1, title: 'First Letters', place: 'Lalibela', country: 'Ethiopia',
+    rock: '#9a6a45', grass: '#8fbf5a', landmark: 'lalibela',
+  },
+  {
+    n: 2, title: 'More Letters', place: 'Aksum', country: 'Ethiopia',
+    rock: '#b3905c', grass: '#a8c060', landmark: 'aksum',
+  },
+  {
+    n: 3, title: 'Even More Letters', place: 'Simien Mountains', country: 'Ethiopia',
+    rock: '#7d8a63', grass: '#6fae58', landmark: 'simien',
+  },
+  {
+    n: 4, title: 'The Last Letters', place: 'Massawa', country: 'Eritrea',
+    rock: '#c9b489', grass: '#9fc987', landmark: 'massawa',
+  },
+].map((s, i) => ({
+  ...s,
+  fruit: SESSION_FRUIT[i],
+  pool: BASE_FORMS.slice(i * 8, i === 3 ? 33 : i * 8 + 8).map((f) => f.audioKey),
+}))
+
+/** Cumulative pool for game level n: sessions 1..n. */
+const cumulativePool = (n) => SESSIONS.slice(0, n).flatMap((s) => s.pool)
+const sessionOfKey = (key) => SESSIONS.find((s) => s.pool.includes(key))
+
+/* ============================================================================
+   §2 QUESTIONS (seeded, cumulative, twin-safe)
+   ========================================================================== */
+
+function rngNext(state) {
+  let t = (state + 0x6d2b79f5) | 0
+  let r = Math.imul(t ^ (t >>> 15), 1 | t)
+  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
+  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
+}
+function rngShuffle(items, state) {
+  const out = items.slice()
+  for (let i = out.length - 1; i > 0; i--) {
+    let v
+    ;[v, state] = rngNext(state)
+    const j = Math.floor(v * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return [out, state]
+}
+
+/**
+ * Level n quiz: 5+n questions over the cumulative pool. Twin letters that
+ * share a sound are never shown together. Recent-session letters are
+ * guaranteed at least half the questions so new material gets practiced.
+ */
+export function buildQuiz(n, seed) {
+  const pool = cumulativePool(n)
+  const fresh = SESSIONS[n - 1].pool
+  const older = pool.filter((k) => !fresh.includes(k))
+  const count = 5 + n
+  const optionCount = Math.min(4 + Math.ceil(n / 2), 6)
+  let state = seed
+  let freshShuffled, olderShuffled
+  ;[freshShuffled, state] = rngShuffle(fresh, state)
+  ;[olderShuffled, state] = rngShuffle(older, state)
+  const freshCount = Math.min(freshShuffled.length, Math.ceil(count / 2))
+  let targets = [...freshShuffled.slice(0, freshCount), ...olderShuffled.slice(0, count - freshCount)]
+  // Cycle if a session pool is smaller than its quota (defensive).
+  while (targets.length < count) targets.push(freshShuffled[targets.length % freshShuffled.length])
+  ;[targets, state] = rngShuffle(targets, state)
+
+  const questions = targets.map((target) => {
+    const sound = FORM_BY_KEY.get(target).sound
+    let distractors
+    ;[distractors, state] = rngShuffle(
+      pool.filter((k) => k !== target && FORM_BY_KEY.get(k).sound !== sound),
+      state,
+    )
+    let options
+    ;[options, state] = rngShuffle([target, ...distractors.slice(0, optionCount - 1)], state)
+    return { target, options }
+  })
+  return questions
+}
+
+/* ============================================================================
+   §3 PROGRESSION — the strict cumulative unlocking machine
+   sessionsCompleted (persisted) = islands whose GAME level has been beaten.
+   learnedSessions = learning phases finished. Guards:
+     - learning n is open iff n <= sessionsCompleted + 1
+     - game n is open iff learnedSessions >= n (learn before you play)
+     - game n draws questions from sessions 1..n (see §2)
+   ========================================================================== */
+
+const SAVE_KEY = 'fq3.skylands'
+function loadSave() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}
+    return { sessionsCompleted: s.sessionsCompleted | 0, learnedSessions: s.learnedSessions | 0 }
+  } catch {
+    return { sessionsCompleted: 0, learnedSessions: 0 }
+  }
+}
+function persist(save) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save))
+  } catch {
+    /* session-only */
+  }
+}
+
+export const canLearn = (st, n) => n >= 1 && n <= SESSIONS.length && n <= st.sessionsCompleted + 1
+export const canPlay = (st, n) => n >= 1 && n <= SESSIONS.length && st.learnedSessions >= n && n <= st.sessionsCompleted + 1
+
+function initialState() {
+  return { ...loadSave(), mode: 'map', session: 0, heard: [], quiz: null, qIndex: 0, phase: null, correct: 0, burstId: 0 }
+}
+
+function reducer(st, a) {
+  switch (a.type) {
+    case 'OPEN_LEARNING':
+      if (!canLearn(st, a.n)) return st
+      return { ...st, mode: 'learning', session: a.n, heard: [] }
+    case 'HEAR':
+      return st.heard.includes(a.key) ? st : { ...st, heard: [...st.heard, a.key] }
+    case 'FINISH_LEARNING': {
+      if (st.mode !== 'learning' || st.heard.length < SESSIONS[st.session - 1].pool.length) return st
+      const learnedSessions = Math.max(st.learnedSessions, st.session)
+      persist({ sessionsCompleted: st.sessionsCompleted, learnedSessions })
+      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+    }
+    case 'OPEN_GAME':
+      if (!canPlay(st, a.n)) return st
+      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+    case 'PLUCK': {
+      if (st.mode !== 'game' || st.phase !== 'question') return st
+      const q = st.quiz[st.qIndex]
+      if (!q.options.includes(a.key)) return st
+      const good = a.key === q.target
+      return { ...st, phase: good ? 'good' : 'bad', correct: st.correct + (good ? 1 : 0), burstId: good ? st.burstId + 1 : st.burstId }
+    }
+    case 'FEEDBACK_DONE': {
+      if (st.phase === 'bad') return { ...st, phase: 'question' } // retry same letter
+      if (st.qIndex + 1 < st.quiz.length) return { ...st, qIndex: st.qIndex + 1, phase: 'question' }
+      const sessionsCompleted = Math.max(st.sessionsCompleted, st.session)
+      persist({ sessionsCompleted, learnedSessions: st.learnedSessions })
+      return { ...st, sessionsCompleted, phase: 'complete' }
+    }
+    case 'TO_MAP':
+      return { ...st, mode: 'map', session: 0, quiz: null, phase: null }
+    default:
+      return st
+  }
+}
+
+/* ============================================================================
+   §4 SOUND — placeholder mp3s with deterministic fallback chimes
+   ========================================================================== */
+
+let audioCtx = null
+function getCtx() {
+  const C = window.AudioContext || window.webkitAudioContext
+  if (!C) return null
+  try {
+    audioCtx = audioCtx || new C()
+    if (audioCtx.state === 'suspended') audioCtx.resume()
+    return audioCtx
+  } catch {
+    return null
+  }
+}
+function note(ctx, f, at, dur, peak = 0.16, type = 'sine') {
+  const o = ctx.createOscillator()
+  const g = ctx.createGain()
+  o.type = type
+  o.frequency.value = f
+  g.gain.setValueAtTime(0.0001, at)
+  g.gain.exponentialRampToValueAtTime(peak, at + 0.02)
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+  o.connect(g).connect(ctx.destination)
+  o.start(at)
+  o.stop(at + dur + 0.05)
+}
+function toneFor(form) {
+  const ctx = getCtx()
+  if (!ctx) return
+  const base = 262 * Math.pow(2, (form.familyIndex % 13) / 13)
+  note(ctx, base, ctx.currentTime, 0.22)
+  note(ctx, base * 1.28, ctx.currentTime + 0.16, 0.3)
+}
+function playKey(key, enabled) {
+  if (!enabled) return
+  const form = FORM_BY_KEY.get(key)
+  try {
+    const a = new Audio(`/audio/fidel/letters/${key}.mp3`)
+    a.addEventListener('error', () => toneFor(form), { once: true })
+    a.play().catch(() => toneFor(form))
+  } catch {
+    toneFor(form)
+  }
+}
+function playFx(kind, enabled) {
+  if (!enabled) return
+  const ctx = getCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  if (kind === 'good') [523, 784].forEach((f, i) => note(ctx, f, t + i * 0.1, 0.22, 0.13, 'triangle'))
+  if (kind === 'bad') [220, 180].forEach((f, i) => note(ctx, f, t + i * 0.12, 0.26, 0.1, 'sawtooth'))
+  if (kind === 'win') [523, 659, 784, 1047].forEach((f, i) => note(ctx, f, t + i * 0.12, 0.3, 0.15, 'triangle'))
+}
+
+/* ============================================================================
+   §5 ART — canvas textures shared by sprites and the HUD
+   ========================================================================== */
+
+function makeCanvas(size, draw) {
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  draw(c.getContext('2d'), size)
+  return c
+}
+function tex(size, draw) {
+  const t = new THREE.CanvasTexture(makeCanvas(size, draw))
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+function starPath(g, cx, cy, ro, ri) {
+  g.beginPath()
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? ro : ri
+    const a = -Math.PI / 2 + (i * Math.PI) / 5
+    g[i === 0 ? 'moveTo' : 'lineTo'](cx + r * Math.cos(a), cy + r * Math.sin(a))
+  }
+  g.closePath()
+}
+
+const TEXTURES = {}
+function lazyTex(name, size, draw) {
+  if (!TEXTURES[name]) TEXTURES[name] = tex(size, draw)
+  return TEXTURES[name]
+}
+function glyphTex(char) {
+  if (!TEXTURES[char]) {
+    TEXTURES[char] = tex(128, (g, s) => {
+      g.fillStyle = '#3c2a10'
+      g.font = `900 ${s * 0.78}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+      g.textAlign = 'center'
+      g.textBaseline = 'middle'
+      g.strokeStyle = '#fff'
+      g.lineWidth = s * 0.09
+      g.strokeText(char, s / 2, s / 2 + s * 0.04)
+      g.fillText(char, s / 2, s / 2 + s * 0.04)
+    })
+  }
+  return TEXTURES[char]
+}
+
+function drawAnbessa(g, s) {
+  const cx = s / 2
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.roundRect(cx - s * 0.15, s * 0.58, s * 0.3, s * 0.32, s * 0.13)
+  g.fill()
+  g.fillStyle = '#ffdfae'
+  g.beginPath()
+  g.ellipse(cx, s * 0.76, s * 0.1, s * 0.11, 0, 0, 7)
+  g.fill()
+  starPath(g, cx, s * 0.72, s * 0.062, s * 0.028)
+  g.fillStyle = '#ffc800'
+  g.fill()
+  g.fillStyle = '#d97706'
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2
+    g.beginPath()
+    g.arc(cx + Math.cos(a) * s * 0.28, s * 0.4 + Math.sin(a) * s * 0.28, s * 0.1, 0, 7)
+    g.fill()
+  }
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#f7a83c'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.17, s * 0.07, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.arc(cx, s * 0.4, s * 0.265, 0, 7)
+  g.fill()
+  g.fillStyle = '#ffe9c8'
+  g.beginPath()
+  g.ellipse(cx, s * 0.475, s * 0.115, s * 0.085, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
+  g.fill()
+  g.strokeStyle = '#8a5a00'
+  g.lineWidth = s * 0.014
+  g.lineCap = 'round'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
+    g.stroke()
+  }
+  g.fillStyle = '#3c2a10'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, s * 0.038, 0, 0, 7)
+    g.fill()
+  }
+}
+
+function drawJibby(g, s) {
+  const cx = s / 2
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#8a7d6a'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#9a8b76'
+  g.beginPath()
+  g.arc(cx, s * 0.43, s * 0.28, 0, 7)
+  g.fill()
+  g.fillStyle = '#6e614f'
+  for (const [px, py] of [[0.3, 0.3], [0.68, 0.27], [0.74, 0.42]]) {
+    g.beginPath()
+    g.arc(px * s, py * s, 0.024 * s, 0, 7)
+    g.fill()
+  }
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.05, s * 0.042, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#241c12'
+    g.beginPath()
+    g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#c9b99d'
+  g.beginPath()
+  g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
+  g.fill()
+  g.strokeStyle = '#3a2d1c'
+  g.lineWidth = s * 0.016
+  g.beginPath()
+  g.moveTo(cx - s * 0.12, s * 0.575)
+  g.quadraticCurveTo(cx, s * 0.655, cx + s * 0.12, s * 0.575)
+  g.stroke()
+  g.fillStyle = '#fff'
+  for (let i = 0; i < 4; i++) {
+    const x = cx - s * 0.105 + i * s * 0.056
+    const y = s * (0.585 + Math.sin((i / 3) * Math.PI) * 0.028)
+    g.beginPath()
+    g.moveTo(x, y)
+    g.lineTo(x + s * 0.028, y + s * 0.05)
+    g.lineTo(x + s * 0.056, y)
+    g.closePath()
+    g.fill()
+  }
+}
+
+/* ============================================================================
+   §6 3D SCENE
+   ========================================================================== */
+
+const ISLAND_GAP = 11
+const islandPos = (i) => [i * ISLAND_GAP, 0, i % 2 === 1 ? -2.2 : 0]
+const SKY_BY_PROGRESS = ['#a9dcf5', '#ffe6bd', '#ffd6a0', '#f2bfd8', '#a9c7f2']
+
+function Landmark({ kind, rock }) {
+  switch (kind) {
+    case 'lalibela':
+      return (
+        <group position={[-2.3, 0.55, 1.6]} scale={0.62}>
+          <mesh castShadow position={[0, 0.3, 0]}>
+            <boxGeometry args={[2.4, 0.6, 0.8]} />
+            <meshStandardMaterial color="#a06a3c" />
+          </mesh>
+          <mesh castShadow position={[0, 0.3, 0]}>
+            <boxGeometry args={[0.8, 0.6, 2.4]} />
+            <meshStandardMaterial color="#a06a3c" />
+          </mesh>
+        </group>
+      )
+    case 'aksum':
+      return (
+        <group position={[-2.4, 0.5, 1.4]} scale={0.7}>
+          <mesh castShadow position={[0, 1.4, 0]}>
+            <cylinderGeometry args={[0.28, 0.45, 2.8, 4]} />
+            <meshStandardMaterial color="#b0a58c" />
+          </mesh>
+          <mesh castShadow position={[0.9, 0.7, 0.4]}>
+            <cylinderGeometry args={[0.2, 0.32, 1.4, 4]} />
+            <meshStandardMaterial color="#a39877" />
+          </mesh>
+        </group>
+      )
+    case 'simien':
+      return (
+        <group position={[-2.4, 0.4, 1.5]} scale={0.75}>
+          <mesh castShadow position={[0, 0.9, 0]}>
+            <coneGeometry args={[1.1, 1.8, 6]} />
+            <meshStandardMaterial color="#55794a" />
+          </mesh>
+          <mesh castShadow position={[1, 0.6, 0.3]}>
+            <coneGeometry args={[0.7, 1.2, 6]} />
+            <meshStandardMaterial color="#6b8f5b" />
+          </mesh>
+        </group>
+      )
+    case 'massawa':
+      return (
+        <group position={[-2.3, 0.45, 1.5]} scale={0.65}>
+          <mesh castShadow position={[0, 0.55, 0]}>
+            <boxGeometry args={[1.8, 1.1, 1.2]} />
+            <meshStandardMaterial color="#f2ead8" />
+          </mesh>
+          <mesh castShadow position={[0.7, 1.35, 0]}>
+            <sphereGeometry args={[0.45, 12, 10]} />
+            <meshStandardMaterial color="#f2ead8" />
+          </mesh>
+          <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[2.6, 20]} />
+            <meshStandardMaterial color="#2e86b8" />
+          </mesh>
+        </group>
+      )
+    default:
+      return null
+  }
+}
+
+/** A letter fruit hanging in the tree. Springy, pluckable, glyph-labelled. */
+function Fruit({ form, position, color, state, heard, onPluck }) {
+  // state: 'idle' | 'correct' | 'wrong'
+  const [hover, setHover] = useState(false)
+  const { scale, pos } = useSpring({
+    scale: state === 'correct' ? 0.1 : hover ? 1.25 : 1,
+    pos: state === 'correct' ? [0, 5.6, 0] : position,
+    config: state === 'correct' ? springConfig.stiff : springConfig.wobbly,
+  })
+  const wobble = useRef(0)
+  const inner = useRef(null)
+  useFrame((_, dt) => {
+    if (!inner.current) return
+    if (state === 'wrong') wobble.current = Math.min(1, wobble.current + dt * 6)
+    else wobble.current = Math.max(0, wobble.current - dt * 4)
+    inner.current.rotation.z = Math.sin(performance.now() / 60) * 0.35 * wobble.current
+  })
+  return (
+    <animated.group position={pos} scale={scale}>
+      <group ref={inner}>
+        {/* stem */}
+        <mesh position={[0, 0.5, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.4, 5]} />
+          <meshStandardMaterial color="#5c8a3c" />
+        </mesh>
+        <mesh
+          castShadow
+          onClick={(e) => {
+            e.stopPropagation()
+            onPluck(form.audioKey)
+          }}
+          onPointerOver={(e) => {
+            e.stopPropagation()
+            setHover(true)
+            document.body.style.cursor = 'pointer'
+          }}
+          onPointerOut={() => {
+            setHover(false)
+            document.body.style.cursor = 'auto'
+          }}
+        >
+          <sphereGeometry args={[0.44, 20, 16]} />
+          <meshStandardMaterial color={color} roughness={0.35} emissive={heard ? color : '#000'} emissiveIntensity={heard ? 0.35 : 0} />
+        </mesh>
+        <Billboard position={[0, 0, 0.46]}>
+          <mesh>
+            <planeGeometry args={[0.62, 0.62]} />
+            <meshBasicMaterial map={glyphTex(form.char)} transparent depthWrite={false} />
+          </mesh>
+        </Billboard>
+      </group>
+    </animated.group>
+  )
+}
+
+/** Gravity-integrated particle burst — the hand-rolled physics moment. */
+function Burst({ position, color }) {
+  const ref = useRef(null)
+  const parts = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => ({
+        vel: new THREE.Vector3(Math.sin(i * 2.4) * (1.6 + (i % 3)), 2.6 + ((i * 7) % 5) * 0.5, Math.cos(i * 2.4) * (1.6 + ((i + 1) % 3))),
+        pos: new THREE.Vector3(...position),
+      })),
+    [], // eslint-disable-line react-hooks/exhaustive-deps
+  )
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const life = useRef(0)
+  useFrame((_, dt) => {
+    life.current += dt
+    parts.forEach((p, i) => {
+      p.vel.y -= 9.8 * dt // gravity
+      p.pos.addScaledVector(p.vel, dt)
+      dummy.position.copy(p.pos)
+      const s = Math.max(0.001, 0.11 * (1 - life.current / 1.1))
+      dummy.scale.setScalar(s)
+      dummy.updateMatrix()
+      ref.current.setMatrixAt(i, dummy.matrix)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+  })
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, 22]}>
+      <sphereGeometry args={[1, 6, 5]} />
+      <meshBasicMaterial color={color} />
+    </instancedMesh>
+  )
+}
+
+/** Plank bridge that springs into place when an island is beaten. */
+function Bridge({ from, built }) {
+  const a = islandPos(from)
+  const b = islandPos(from + 1)
+  return (
+    <group>
+      {Array.from({ length: 7 }, (_, i) => {
+        const t = (i + 0.5) / 7
+        return <Plank key={i} x={a[0] + (b[0] - a[0]) * t} z={a[2] + (b[2] - a[2]) * t} y={0.2 - Math.sin(t * Math.PI) * 0.25} built={built} delay={i * 90} />
+      })}
+    </group>
+  )
+}
+function Plank({ x, y, z, built, delay }) {
+  const { scale } = useSpring({ scale: built ? 1 : 0, delay, config: springConfig.wobbly })
+  return (
+    <animated.mesh castShadow position={[x, y, z]} scale={scale} rotation={[0, Math.PI / 2, 0]}>
+      <boxGeometry args={[1.1, 0.14, 1.5]} />
+      <meshStandardMaterial color="#b07c4a" />
+    </animated.mesh>
+  )
+}
+
+function Island({ session, index, unlocked, active, cleared, mode, st, dispatch, soundOn }) {
+  const pos = islandPos(index)
+  const isLearning = active && mode === 'learning'
+  const isGame = active && mode === 'game'
+  const question = isGame && st.phase !== 'complete' ? st.quiz[st.qIndex] : null
+
+  // Fruit set: learning shows the session pool; the game shows the current
+  // question's cumulative options. Ring layout around the foliage.
+  const fruitKeys = isLearning ? session.pool : question ? question.options : session.pool.slice(0, 5)
+  // Fruit hang on the CAMERA-FACING side of the canopy in two arcs, so every
+  // option is always visible and pluckable (a back-of-tree fruit would be
+  // unreachable by the pointer raycaster and could make a question unwinnable).
+  const ring = useMemo(
+    () =>
+      fruitKeys.map((key, i) => {
+        // Rows of four keep every fruit inside a narrow portrait frustum.
+        const row = Math.floor(i / 4)
+        const col = i % 4
+        const inRow = Math.min(4, fruitKeys.length - row * 4)
+        return {
+          key,
+          p: [(col - (inRow - 1) / 2) * 0.98, 4.35 - row * 1.12 + (col % 2) * 0.2, 1.28 + ((i * 13) % 3) * 0.14],
+        }
+      }),
+    [fruitKeys.join('|')], // eslint-disable-line react-hooks/exhaustive-deps
+  )
+
+  const rock = unlocked ? session.rock : '#8d8d94'
+  const grass = unlocked ? session.grass : '#a5a8ab'
+
+  const pluck = useCallback(
+    (key) => {
+      if (isLearning) {
+        playKey(key, soundOn)
+        dispatch({ type: 'HEAR', key })
+      } else if (isGame && st.phase === 'question') {
+        dispatch({ type: 'PLUCK', key })
+      }
+    },
+    [isLearning, isGame, st.phase, soundOn, dispatch],
+  )
+
+  return (
+    <Float speed={1.1} rotationIntensity={0.04} floatIntensity={0.5}>
+      <group position={pos}>
+        {/* island body */}
+        <mesh castShadow receiveShadow position={[0, -1.6, 0]}>
+          <cylinderGeometry args={[3.6, 0.9, 3, 8]} />
+          <meshStandardMaterial color={rock} flatShading />
+        </mesh>
+        <mesh receiveShadow position={[0, 0.02, 0]}>
+          <cylinderGeometry args={[3.7, 3.7, 0.35, 20]} />
+          <meshStandardMaterial color={grass} />
+        </mesh>
+
+        {unlocked && <Landmark kind={session.landmark} rock={rock} />}
+
+        {/* the Fidel tree */}
+        <mesh castShadow position={[0, 1.1, 0]}>
+          <cylinderGeometry args={[0.22, 0.42, 2.1, 8]} />
+          <meshStandardMaterial color="#7a4a26" />
+        </mesh>
+        {[[0, 3.3, 0, 1.5], [-1.1, 2.8, 0.4, 1.05], [1.05, 2.9, -0.3, 1.1]].map(([x, y, z, r], i) => (
+          <mesh key={i} castShadow position={[x, y, z]}>
+            <sphereGeometry args={[r, 18, 14]} />
+            <meshStandardMaterial color={unlocked ? '#4f9a44' : '#9aa89a'} roughness={0.8} emissive={active ? '#2f7a2a' : '#000'} emissiveIntensity={active ? 0.35 : 0} />
+          </mesh>
+        ))}
+        {active && <Sparkles count={26} scale={[5, 4, 4]} position={[0, 3.2, 0]} size={4} speed={0.5} color="#ffe9a0" />}
+
+        {/* fruit */}
+        {(isLearning || isGame) &&
+          ring.map(({ key, p }) => (
+            <Fruit
+              key={`${st.qIndex}-${key}`}
+              form={FORM_BY_KEY.get(key)}
+              position={p}
+              color={sessionOfKey(key).fruit}
+              heard={isLearning && st.heard.includes(key)}
+              state={isGame && st.phase !== 'question' && key === st.quiz[st.qIndex].target && st.phase === 'good' ? 'correct' : isGame && st.phase === 'bad' ? 'wrong' : 'idle'}
+              onPluck={pluck}
+            />
+          ))}
+
+        {/* correct-answer burst */}
+        {isGame && st.phase === 'good' && <Burst key={st.burstId} position={[0, 3.4, 1]} color="#ffc800" />}
+
+        {/* Anbessa waits on the active island; Jibby pops up on a wrong pluck */}
+        {active && (
+          <>
+            <Billboard position={[2.5, 1.15, 1.7]}>
+              <mesh>
+                <planeGeometry args={[1.9, 1.9]} />
+                <meshBasicMaterial map={lazyTex('anbessa', 256, drawAnbessa)} transparent depthWrite={false} />
+              </mesh>
+            </Billboard>
+            <JibbyPeek show={isGame && st.phase === 'bad'} />
+          </>
+        )}
+
+        {/* lock badge on locked islands */}
+        {!unlocked && (
+          <Billboard position={[0, 3.4, 1.4]}>
+            <mesh>
+              <planeGeometry args={[1.3, 1.3]} />
+              <meshBasicMaterial
+                map={lazyTex('lock', 128, (g, sz) => {
+                  g.fillStyle = 'rgba(60,53,41,0.85)'
+                  g.beginPath()
+                  g.roundRect(sz * 0.3, sz * 0.42, sz * 0.4, sz * 0.34, sz * 0.08)
+                  g.fill()
+                  g.lineWidth = sz * 0.08
+                  g.strokeStyle = 'rgba(60,53,41,0.85)'
+                  g.beginPath()
+                  g.arc(sz / 2, sz * 0.42, sz * 0.14, Math.PI, 0)
+                  g.stroke()
+                })}
+                transparent
+                depthWrite={false}
+              />
+            </mesh>
+          </Billboard>
+        )}
+        {cleared && (
+          <Billboard position={[-2.6, 3.6, 0.6]}>
+            <mesh>
+              <planeGeometry args={[1, 1]} />
+              <meshBasicMaterial
+                map={lazyTex('star', 128, (g, sz) => {
+                  starPath(g, sz / 2, sz / 2, sz * 0.42, sz * 0.18)
+                  g.fillStyle = '#ffc800'
+                  g.fill()
+                })}
+                transparent
+                depthWrite={false}
+              />
+            </mesh>
+          </Billboard>
+        )}
+      </group>
+    </Float>
+  )
+}
+
+function JibbyPeek({ show }) {
+  const { y } = useSpring({ y: show ? 1.35 : -1.4, config: springConfig.wobbly })
+  return (
+    <animated.group position-x={-2.6} position-z={1.9} position-y={y}>
+      <Billboard>
+        <mesh>
+          <planeGeometry args={[1.7, 1.7]} />
+          <meshBasicMaterial map={lazyTex('jibby', 256, drawJibby)} transparent depthWrite={false} />
+        </mesh>
+      </Billboard>
+    </animated.group>
+  )
+}
+
+/** Camera: overview of the archipelago on the map, close-up on an island. */
+function CameraRig({ mode, session, sessionsCompleted }) {
+  const { camera } = useThree()
+  const look = useRef(new THREE.Vector3(0, 1, 0))
+  useFrame((_, dt) => {
+    const k = Math.min(1, dt * 2.2)
+    let target, lookAt
+    if (mode === 'map') {
+      const mid = (Math.min(sessionsCompleted, SESSIONS.length - 1) * ISLAND_GAP) / 2
+      target = new THREE.Vector3(mid, 7.5, 17.5)
+      lookAt = new THREE.Vector3(mid, 0.6, 0)
+    } else {
+      const p = islandPos(session - 1)
+      target = new THREE.Vector3(p[0] + 0.4, 4.4, p[2] + 9.2)
+      lookAt = new THREE.Vector3(p[0], 2.4, p[2])
+    }
+    camera.position.lerp(target, k)
+    look.current.lerp(lookAt, k)
+    camera.lookAt(look.current)
+  })
+  return null
+}
+
+function Clouds() {
+  const group = useRef(null)
+  useFrame((_, dt) => {
+    if (group.current) group.current.children.forEach((c, i) => {
+      c.position.x += dt * (0.25 + (i % 3) * 0.12)
+      if (c.position.x > 50) c.position.x = -18
+    })
+  })
+  return (
+    <group ref={group}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <mesh key={i} position={[((i * 13) % 60) - 10, 5.5 + ((i * 7) % 5), -14 - ((i * 5) % 9)]}>
+          <sphereGeometry args={[1.6 + (i % 3) * 0.7, 10, 8]} />
+          <meshStandardMaterial color="#ffffff" transparent opacity={0.85} flatShading />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function Scene({ st, dispatch, soundOn }) {
+  const sky = SKY_BY_PROGRESS[Math.min(st.sessionsCompleted, SKY_BY_PROGRESS.length - 1)]
+  return (
+    <>
+      <color attach="background" args={[sky]} />
+      <fog attach="fog" args={[sky, 26, 60]} />
+      <ambientLight intensity={0.75} color="#fff4e0" />
+      <directionalLight castShadow position={[8, 14, 6]} intensity={1.6} color="#fff2d8" shadow-mapSize={[1024, 1024]} shadow-camera-left={-20} shadow-camera-right={40} shadow-camera-top={20} shadow-camera-bottom={-20} />
+      <CameraRig mode={st.mode} session={st.session} sessionsCompleted={st.sessionsCompleted} />
+      <Clouds />
+      {SESSIONS.map((s, i) => (
+        <Island key={s.n} session={s} index={i} unlocked={i <= st.sessionsCompleted} active={st.session === s.n} cleared={st.sessionsCompleted >= s.n} mode={st.mode} st={st} dispatch={dispatch} soundOn={soundOn} />
+      ))}
+      {SESSIONS.slice(0, -1).map((s, i) => (
+        <Bridge key={i} from={i} built={st.sessionsCompleted >= s.n} />
+      ))}
+    </>
+  )
+}
+
+/* ============================================================================
+   §7 UI — HUD overlay + app shell
+   ========================================================================== */
+
+const BTN = 'chunk rounded-2xl font-extrabold tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
+
+export default function FidelSkylands() {
+  const [st, dispatch] = useReducer(reducer, undefined, initialState)
+  const [soundOn, setSoundOn] = useState(() => {
+    try {
+      return localStorage.getItem('fq3.sound') !== '0'
+    } catch {
+      return true
+    }
+  })
+  const toggleSound = () => {
+    setSoundOn((v) => {
+      try {
+        localStorage.setItem('fq3.sound', v ? '0' : '1')
+      } catch {
+        /* session-only */
+      }
+      return !v
+    })
+  }
+
+  const question = st.mode === 'game' && st.phase && st.phase !== 'complete' ? st.quiz[st.qIndex] : null
+  const targetForm = question ? FORM_BY_KEY.get(question.target) : null
+  const session = st.session ? SESSIONS[st.session - 1] : null
+
+  // Speak each new question; advance feedback on a timer.
+  useEffect(() => {
+    if (st.mode === 'game' && st.phase === 'question') playKey(question.target, soundOn)
+  }, [st.mode, st.phase, st.qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (st.phase === 'good' || st.phase === 'bad') {
+      playFx(st.phase === 'good' ? 'good' : 'bad', soundOn)
+      const t = setTimeout(() => dispatch({ type: 'FEEDBACK_DONE' }), st.phase === 'good' ? 950 : 1100)
+      return () => clearTimeout(t)
+    }
+    if (st.phase === 'complete') playFx('win', soundOn)
+    return undefined
+  }, [st.phase, st.qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const allHeard = st.mode === 'learning' && st.heard.length >= session.pool.length
+  const nextLearn = st.sessionsCompleted + 1
+  const champion = st.sessionsCompleted >= SESSIONS.length
+
+  return (
+    <div className="fixed inset-0" style={{ background: 'var(--paper)' }}>
+      <Canvas shadows dpr={[1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
+        <Scene st={st} dispatch={dispatch} soundOn={soundOn} />
+      </Canvas>
+
+      {/* ── HUD ── */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col">
+        <header className="flex items-center gap-2 p-3">
+          {st.mode !== 'map' && (
+            <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+              Map
+            </button>
+          )}
+          <span className="rounded-2xl px-3 py-1.5 text-sm font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+            {st.mode === 'map' && 'Fidel Skylands'}
+            {st.mode === 'learning' && `Session ${st.session} · ${session.place}`}
+            {st.mode === 'game' && `Level ${st.session} · ${session.place}`}
+          </span>
+          <span className="ml-auto flex items-center gap-1 rounded-2xl px-3 py-1.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-label={`${st.sessionsCompleted} of ${SESSIONS.length} islands cleared`}>
+            <span aria-hidden="true" style={{ color: 'var(--star)' }}>★</span>
+            {st.sessionsCompleted}/{SESSIONS.length}
+          </span>
+          <button type="button" onClick={toggleSound} aria-pressed={soundOn} aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'} className={`${BTN} pointer-events-auto px-3 py-1.5 text-sm`} style={{ background: 'var(--card)', color: 'var(--muted)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+            {soundOn ? '🔊' : '🔇'}
+          </button>
+        </header>
+
+        <div className="mt-auto p-3">
+          {st.mode === 'map' && (
+            <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+              {champion ? (
+                <p className="text-center text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+                  All four skylands cleared — Anbessa is a Fidel Champion!
+                </p>
+              ) : (
+                <>
+                  <p className="text-center font-bold">
+                    <span className="font-black">{SESSIONS[nextLearn - 1].place}, {SESSIONS[nextLearn - 1].country}</span>
+                    {' — '}
+                    {st.learnedSessions >= nextLearn ? `ready for Level ${nextLearn}: it tests Sessions 1–${nextLearn}!` : `learn Session ${nextLearn}'s letters to wake the tree.`}
+                  </p>
+                  <div className="mt-3 flex justify-center gap-2">
+                    <button type="button" onClick={() => dispatch({ type: 'OPEN_LEARNING', n: nextLearn })} className={`${BTN} pointer-events-auto px-5 py-3`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)' }}>
+                      Learn Session {nextLearn}
+                    </button>
+                    <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1 })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                      Play Level {nextLearn}
+                    </button>
+                  </div>
+                  {st.sessionsCompleted > 0 && (
+                    <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                      Replay: {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
+                        <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1 })} className="pointer-events-auto mx-1 underline">
+                          Level {s.n}
+                        </button>
+                      ))}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {st.mode === 'learning' && (
+            <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+              <p className="font-bold">
+                Tap every fruit to hear its letter —{' '}
+                <span className="mono font-black" style={{ color: 'var(--sky)' }}>
+                  {st.heard.length}/{session.pool.length}
+                </span>
+              </p>
+              <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1 })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                {allHeard ? `Start Level ${st.session} quest` : 'Listen to them all first'}
+              </button>
+            </div>
+          )}
+
+          {st.mode === 'game' && st.phase !== 'complete' && (
+            <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} aria-live="polite">
+              <div className="mb-2 flex justify-center gap-1.5">
+                {st.quiz.map((_, i) => (
+                  <span key={i} className="block h-2.5 w-2.5 rounded-full" style={{ background: i < st.qIndex ? 'var(--go)' : i === st.qIndex ? 'var(--accent)' : 'var(--line)' }} />
+                ))}
+              </div>
+              {st.phase === 'question' && (
+                <p className="font-bold">
+                  Pluck the fruit that says{' '}
+                  <button type="button" onClick={() => playKey(question.target, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                    🔊 “{targetForm.sound}”
+                  </button>
+                </p>
+              )}
+              {st.phase === 'good' && (
+                <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+                  Yes! {targetForm.char} says “{targetForm.sound}”
+                </p>
+              )}
+              {st.phase === 'bad' && (
+                <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
+                  Jibby giggles — listen again for “{targetForm.sound}”
+                </p>
+              )}
+            </div>
+          )}
+
+          {st.phase === 'complete' && (
+            <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-5 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+              <p className="text-2xl font-black uppercase" style={{ color: 'var(--go-ink)' }}>
+                Island cleared!
+              </p>
+              <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
+                {st.quiz.length} letters mastered · {st.session < SESSIONS.length ? `the bridge to ${SESSIONS[st.session].place} has grown!` : 'every skyland is free!'}
+              </p>
+              <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} mt-3 px-8 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                Continue
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
