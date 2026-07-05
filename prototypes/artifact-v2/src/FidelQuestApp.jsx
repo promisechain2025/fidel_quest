@@ -762,28 +762,35 @@ function Chunky({ tone = 'go', className = '', style, children, depth = 4, ...pr
   )
 }
 
-/* ── Shared: star mascot (Kokeb) ── */
+/* ── Shared: character sprites (canvas art rendered into the DOM) ── */
 
-function Kokeb({ size = 96, mood = 'happy' }) {
+function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const c = ref.current
+    if (!c) return
+    c.width = c.height = 256
+    const g = c.getContext('2d')
+    if (!g) return
+    g.clearRect(0, 0, 256, 256)
+    draw(g, 256, mood)
+  }, [draw, mood])
+  return <canvas ref={ref} className={className} style={{ width: size, height: size }} aria-hidden="true" />
+}
+
+/** Anbessa the lion cub with Kokeb the star bobbing at his shoulder. */
+function Hero({ size = 104, mood = 'happy' }) {
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
-      <Star className="absolute inset-0 h-full w-full drop-shadow-lg" style={{ color: 'var(--star)', fill: 'var(--star)' }} strokeWidth={1} />
-      <div className="absolute inset-0 flex items-center justify-center" style={{ paddingTop: size * 0.14 }}>
-        <div className="flex flex-col items-center" style={{ gap: size * 0.02 }}>
-          <div className="flex" style={{ gap: size * 0.12 }}>
-            <span className="rounded-full" style={{ width: size * 0.07, height: mood === 'happy' ? size * 0.09 : size * 0.07, background: '#7c5200' }} />
-            <span className="rounded-full" style={{ width: size * 0.07, height: mood === 'happy' ? size * 0.09 : size * 0.07, background: '#7c5200' }} />
-          </div>
-          <div
-            style={{
-              width: size * 0.2,
-              height: size * 0.1,
-              borderBottom: `${Math.max(2, size * 0.035)}px solid #7c5200`,
-              borderRadius: '0 0 50% 50%',
-            }}
-          />
-        </div>
-      </div>
+      <Sprite2D draw={drawAnbessa} mood={mood} size={size} />
+      <motion.div
+        className="absolute"
+        style={{ right: -size * 0.08, top: -size * 0.04 }}
+        animate={{ y: [0, -size * 0.05, 0], rotate: [0, 10, 0] }}
+        transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <Star style={{ width: size * 0.3, height: size * 0.3, color: 'var(--star)', fill: 'var(--star)' }} strokeWidth={1} />
+      </motion.div>
     </div>
   )
 }
@@ -819,11 +826,11 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner })
 
       <div className="mt-6 flex flex-col items-center text-center">
         <motion.div initial={{ scale: 0.7, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 14 }}>
-          <Kokeb size={104} />
+          <Hero size={116} />
         </motion.div>
         <h1 className="mt-2 text-4xl font-black tracking-tight">Fidel Quest</h1>
         <p className="mt-1 font-semibold" style={{ color: 'var(--muted)' }}>
-          Learn the Amharic alphabet with Kokeb the Star
+          Learn the Amharic alphabet with Anbessa the lion cub
         </p>
         {champion && (
           <div className="mt-3 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
@@ -849,7 +856,7 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner })
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-extrabold">Letter Runner</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              A 3D run through Ethiopia and Eritrea — feed Kokeb, outrun the Muncher!
+              A 3D run through Ethiopia and Eritrea — feed Anbessa, outrun Jibby the hyena!
             </span>
           </span>
           {runnerBest.fed > 0 && (
@@ -1235,7 +1242,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
     <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
       <Confetti />
       <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
-        <Kokeb size={120} />
+        <span className="flex items-end gap-3"><Sprite2D draw={drawZebra} size={84} /><Hero size={124} /></span>
       </motion.div>
 
       <motion.h1 className="mt-4 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--go-ink)' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
@@ -1357,56 +1364,316 @@ function starPath(g, cx, cy, outer, inner) {
   g.closePath()
 }
 
-function kokebTexture(mood = 'happy') {
-  return canvasTexture(256, (g, s) => {
-    starPath(g, s / 2, s / 2 + 10, s * 0.46, s * 0.20)
-    g.fillStyle = '#ffc800'
-    g.fill()
-    g.lineWidth = 8
-    g.strokeStyle = '#e0a400'
-    g.stroke()
-    g.fillStyle = '#7c5200'
-    const eyeY = s * 0.44
+/* ── character art ──
+   All characters are drawn in code so the same art feeds both the DOM
+   screens (via <Sprite2D/>) and the WebGL sprites (via charTexture). */
+
+/** Anbessa the lion cub — the hero. Chibi proportions, star on his chest. */
+export function drawAnbessa(g, s, mood = 'happy') {
+  const cx = s / 2
+  // tail with a tuft
+  g.strokeStyle = '#e08300'
+  g.lineWidth = s * 0.04
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx + s * 0.14, s * 0.8)
+  g.quadraticCurveTo(cx + s * 0.34, s * 0.82, cx + s * 0.33, s * 0.66)
+  g.stroke()
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.arc(cx + s * 0.33, s * 0.64, s * 0.045, 0, 7)
+  g.fill()
+  // body
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.roundRect(cx - s * 0.15, s * 0.58, s * 0.3, s * 0.32, s * 0.13)
+  g.fill()
+  // belly
+  g.fillStyle = '#ffdfae'
+  g.beginPath()
+  g.ellipse(cx, s * 0.76, s * 0.1, s * 0.11, 0, 0, 7)
+  g.fill()
+  // paws
+  g.fillStyle = '#e08300'
+  for (const px of [-0.08, 0.08]) {
     g.beginPath()
-    g.ellipse(s * 0.42, eyeY, 8, mood === 'happy' ? 12 : 8, 0, 0, 7)
-    g.ellipse(s * 0.58, eyeY, 8, mood === 'happy' ? 12 : 8, 0, 0, 7)
+    g.ellipse(cx + px * s, s * 0.895, s * 0.05, s * 0.028, 0, 0, 7)
     g.fill()
+  }
+  // Kokeb's little brother: the star on his chest
+  starPath(g, cx, s * 0.72, s * 0.062, s * 0.028)
+  g.fillStyle = '#ffc800'
+  g.fill()
+  g.lineWidth = s * 0.012
+  g.strokeStyle = '#e0a400'
+  g.stroke()
+  // mane
+  g.fillStyle = '#d97706'
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2
     g.beginPath()
-    g.lineWidth = 9
-    g.lineCap = 'round'
-    if (mood === 'happy') g.arc(s / 2, s * 0.5, s * 0.09, 0.25 * Math.PI, 0.75 * Math.PI)
-    else g.arc(s / 2, s * 0.62, s * 0.07, 1.25 * Math.PI, 1.75 * Math.PI)
+    g.arc(cx + Math.cos(a) * s * 0.28, s * 0.4 + Math.sin(a) * s * 0.28, s * 0.1, 0, 7)
+    g.fill()
+  }
+  // ears
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#f7a83c'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.17, s * 0.07, 0, 7)
+    g.fill()
+    g.fillStyle = '#ffdfae'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.175, s * 0.038, 0, 7)
+    g.fill()
+  }
+  // head
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.arc(cx, s * 0.4, s * 0.265, 0, 7)
+  g.fill()
+  // cheeks
+  g.fillStyle = 'rgba(255,120,80,0.35)'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.16, s * 0.46, s * 0.035, 0, 7)
+    g.fill()
+  }
+  // muzzle
+  g.fillStyle = '#ffe9c8'
+  g.beginPath()
+  g.ellipse(cx, s * 0.475, s * 0.115, s * 0.085, 0, 0, 7)
+  g.fill()
+  // nose
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
+  g.fill()
+  // mouth
+  g.strokeStyle = '#8a5a00'
+  g.lineWidth = s * 0.014
+  g.lineCap = 'round'
+  if (mood === 'happy') {
+    g.beginPath()
+    g.arc(cx - s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
     g.stroke()
-  })
+    g.beginPath()
+    g.arc(cx + s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
+    g.stroke()
+  } else {
+    g.fillStyle = '#8a5a00'
+    g.beginPath()
+    g.ellipse(cx, s * 0.5, s * 0.024, s * 0.03, 0, 0, 7)
+    g.fill()
+  }
+  // eyes
+  g.fillStyle = '#3c2a10'
+  const eyeH = mood === 'happy' ? s * 0.038 : s * 0.026
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, eyeH, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.1 - s * 0.008, s * 0.365, s * 0.009, 0, 7)
+    g.fill()
+    g.fillStyle = '#3c2a10'
+  }
+  if (mood !== 'happy') {
+    // worried brows
+    g.strokeStyle = '#3c2a10'
+    g.lineWidth = s * 0.012
+    for (const side of [-1, 1]) {
+      g.beginPath()
+      g.moveTo(cx + side * s * 0.14, s * 0.315)
+      g.lineTo(cx + side * s * 0.06, s * 0.335)
+      g.stroke()
+    }
+  }
 }
 
-function muncherTexture() {
-  return canvasTexture(256, (g, s) => {
+/** Jibby the hyena — the Letter Muncher. Mischievous, not scary. */
+export function drawHyena(g, s, mood = 'grin') {
+  const cx = s / 2
+  // big rounded ears
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#8a7d6a'
     g.beginPath()
-    g.arc(s / 2, s / 2, s * 0.44, 0, 7)
-    g.fillStyle = '#4a3f63'
+    g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
     g.fill()
-    for (const ex of [s * 0.38, s * 0.62]) {
-      g.beginPath()
-      g.arc(ex, s * 0.4, s * 0.09, 0, 7)
-      g.fillStyle = '#fff'
-      g.fill()
-      g.beginPath()
-      g.arc(ex + 4, s * 0.42, s * 0.045, 0, 7)
-      g.fillStyle = '#1c1530'
-      g.fill()
-    }
+    g.fillStyle = '#57493a'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.18, s * 0.185, s * 0.045, s * 0.07, side * 0.25, 0, 7)
+    g.fill()
+  }
+  // scruffy crest
+  g.fillStyle = '#57493a'
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath()
+    g.moveTo(cx + i * s * 0.055 - s * 0.03, s * 0.185)
+    g.lineTo(cx + i * s * 0.055, s * 0.1)
+    g.lineTo(cx + i * s * 0.055 + s * 0.03, s * 0.185)
+    g.closePath()
+    g.fill()
+  }
+  // head
+  g.fillStyle = '#9a8b76'
+  g.beginPath()
+  g.arc(cx, s * 0.43, s * 0.28, 0, 7)
+  g.fill()
+  // spots
+  g.fillStyle = '#6e614f'
+  for (const [px, py, pr] of [[0.3, 0.3, 0.028], [0.68, 0.27, 0.024], [0.74, 0.42, 0.02], [0.26, 0.46, 0.022]]) {
+    g.beginPath()
+    g.arc(px * s, py * s, pr * s, 0, 7)
+    g.fill()
+  }
+  // heavy brow
+  g.strokeStyle = '#57493a'
+  g.lineWidth = s * 0.03
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.16, s * 0.3)
+  g.quadraticCurveTo(cx, s * 0.27, cx + s * 0.16, s * 0.3)
+  g.stroke()
+  // mischievous eyes
+  for (const side of [-1, 1]) {
     g.fillStyle = '#fff'
-    for (let i = 0; i < 4; i++) {
-      const x = s * 0.3 + i * s * 0.135
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.05, s * 0.042, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#241c12'
+    g.beginPath()
+    g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
+    g.fill()
+  }
+  // muzzle
+  g.fillStyle = '#c9b99d'
+  g.beginPath()
+  g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
+  g.fill()
+  // nose
+  g.fillStyle = '#3a2d1c'
+  g.beginPath()
+  g.ellipse(cx, s * 0.485, s * 0.045, s * 0.03, 0, 0, 7)
+  g.fill()
+  // the letter-munching grin
+  if (mood === 'agitated') {
+    g.fillStyle = '#3a2216'
+    g.beginPath()
+    g.ellipse(cx, s * 0.6, s * 0.11, s * 0.075, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    for (let i = 0; i < 3; i++) {
+      const x = cx - s * 0.075 + i * s * 0.075
       g.beginPath()
-      g.moveTo(x, s * 0.62)
-      g.lineTo(x + s * 0.065, s * 0.78)
-      g.lineTo(x + s * 0.13, s * 0.62)
+      g.moveTo(x, s * 0.545)
+      g.lineTo(x + s * 0.037, s * 0.6)
+      g.lineTo(x + s * 0.075, s * 0.545)
       g.closePath()
       g.fill()
     }
-  })
+  } else {
+    g.strokeStyle = '#3a2d1c'
+    g.lineWidth = s * 0.016
+    g.beginPath()
+    g.moveTo(cx - s * 0.12, s * 0.575)
+    g.quadraticCurveTo(cx, s * 0.655, cx + s * 0.12, s * 0.575)
+    g.stroke()
+    g.fillStyle = '#fff'
+    for (let i = 0; i < 4; i++) {
+      const x = cx - s * 0.105 + i * s * 0.056
+      const y = s * (0.585 + Math.sin((i / 3) * Math.PI) * 0.028)
+      g.beginPath()
+      g.moveTo(x, y)
+      g.lineTo(x + s * 0.028, y + s * 0.05)
+      g.lineTo(x + s * 0.056, y)
+      g.closePath()
+      g.fill()
+    }
+  }
+}
+
+/** A friendly Grevy's zebra — cheers Anbessa on and grazes by the track. */
+export function drawZebra(g, s) {
+  const cx = s / 2
+  // ears
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#f6f3ec'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.15, s * 0.15, s * 0.055, s * 0.1, side * 0.2, 0, 7)
+    g.fill()
+    g.fillStyle = '#2b2b2b'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.15, s * 0.095, s * 0.035, s * 0.045, side * 0.2, 0, 7)
+    g.fill()
+  }
+  // mane crest
+  g.fillStyle = '#2b2b2b'
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath()
+    g.arc(cx + i * s * 0.06, s * 0.155, s * 0.038, 0, 7)
+    g.fill()
+  }
+  // head
+  g.fillStyle = '#f6f3ec'
+  g.beginPath()
+  g.ellipse(cx, s * 0.44, s * 0.24, s * 0.3, 0, 0, 7)
+  g.fill()
+  // stripes
+  g.strokeStyle = '#2b2b2b'
+  g.lineWidth = s * 0.032
+  g.lineCap = 'round'
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 3; i++) {
+      g.beginPath()
+      g.moveTo(cx + side * s * (0.1 + i * 0.055), s * 0.2)
+      g.quadraticCurveTo(cx + side * s * (0.22 + i * 0.05), s * (0.3 + i * 0.05), cx + side * s * (0.17 + i * 0.045), s * (0.42 + i * 0.04))
+      g.stroke()
+    }
+  }
+  // eyes
+  g.fillStyle = '#241c12'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.1, s * 0.42, s * 0.03, s * 0.042, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.1 - s * 0.008, s * 0.408, s * 0.01, 0, 7)
+    g.fill()
+    g.fillStyle = '#241c12'
+  }
+  // muzzle
+  g.fillStyle = '#4a4038'
+  g.beginPath()
+  g.ellipse(cx, s * 0.63, s * 0.135, s * 0.105, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#241c12'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.055, s * 0.615, s * 0.016, s * 0.022, 0, 0, 7)
+    g.fill()
+  }
+  // smile
+  g.strokeStyle = '#241c12'
+  g.lineWidth = s * 0.014
+  g.beginPath()
+  g.arc(cx, s * 0.655, s * 0.05, 0.2 * Math.PI, 0.8 * Math.PI)
+  g.stroke()
+}
+
+/** Draw-function -> WebGL sprite texture. */
+function charTexture(draw, mood) {
+  return canvasTexture(256, (g, s) => draw(g, s, mood))
+}
+
+let ZEBRA_TEX = null
+function zebraAt(g, x, z, scale = 2) {
+  ZEBRA_TEX = ZEBRA_TEX || charTexture(drawZebra)
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: ZEBRA_TEX, transparent: true }))
+  sp.scale.set(scale, scale, 1)
+  sp.position.set(x, scale * 0.45, z)
+  g.add(sp)
 }
 
 function ringTexture() {
@@ -1496,6 +1763,7 @@ function chunkAksum(g, i) {
   }
   acacia(g, 17 + ((i * 7) % 4), -24, 1.1)
   acacia(g, -19 - ((i * 5) % 4), -8, 0.9)
+  if (i % 2 === 0) zebraAt(g, 15 + ((i * 5) % 4), -20, 2)
 }
 
 function chunkSimien(g, i) {
@@ -1508,6 +1776,7 @@ function chunkSimien(g, i) {
   sph(g, 0.8, 0x8a9a7a, 8, 0.3, -36)
   sph(g, 0.6, 0x8a9a7a, -7, 0.25, -16)
   acacia(g, 10 + ((i * 3) % 3), -50, 0.8)
+  if (i % 3 === 0) zebraAt(g, -12, -28, 1.8)
 }
 
 function chunkGondar(g, i) {
@@ -1523,6 +1792,7 @@ function chunkGondar(g, i) {
     sph(g, 1.2, 0xa8886a, px + 5.5, 4.4, -24)
   }
   for (const side of [-1, 1]) acacia(g, side * (16 + ((i * 5) % 4)), -42, 1)
+  if (i % 3 === 1) zebraAt(g, 14, -8, 1.9)
   cone(g, 2.2, 2.6, 0x5e7d4e, -10, 1.3, -6, 7)
 }
 
@@ -1597,8 +1867,8 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    this.playerTexHappy = kokebTexture('happy')
-    this.playerTexWorried = kokebTexture('worried')
+    this.playerTexHappy = charTexture(drawAnbessa, 'happy')
+    this.playerTexWorried = charTexture(drawAnbessa, 'worried')
     this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
     this.player.scale.set(2.3, 2.3, 1)
     this.player.position.set(0, 1.25, 0)
@@ -1608,7 +1878,21 @@ class RunnerWorld {
     this.ring.position.copy(this.player.position)
     this.scene.add(this.ring)
 
-    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: muncherTexture(), transparent: true }))
+    // Kokeb the star rides along above Anbessa, brightening with his power.
+    this.buddy = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
+      starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
+      g.fillStyle = '#ffc800'
+      g.fill()
+      g.lineWidth = 6
+      g.strokeStyle = '#e0a400'
+      g.stroke()
+    }), transparent: true }))
+    this.buddy.scale.set(0.8, 0.8, 1)
+    this.buddy.position.set(-1.1, 2.8, 0)
+    this.scene.add(this.buddy)
+    this.power = 0
+
+    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: charTexture(drawHyena), transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
     this.scene.add(this.muncher)
@@ -1732,6 +2016,11 @@ class RunnerWorld {
       }
     }
 
+    const bs = 0.7 + this.power * 0.13 + (this.reduced ? 0 : Math.sin(this.t * 5) * 0.05)
+    this.buddy.scale.set(bs, bs, 1)
+    this.buddy.position.set(this.player.position.x - 1.15, this.player.position.y + 1.5, 0)
+    this.buddy.material.rotation = Math.sin(this.t * 2.2) * 0.25
+
     this.renderer.render(this.scene, this.camera)
   }
 
@@ -1846,6 +2135,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
     const world = worldRef.current
     if (!world) return undefined
     world.threat = ctx.wrong
+    world.power = ctx.correct
     if (running) {
       world.bossMode = null
       world.setMood(false)
@@ -1927,7 +2217,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
           {boss && (
             <motion.div key="bosscap" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
               <span className="rounded-2xl px-4 py-2 text-base font-black uppercase tracking-wider text-white" style={{ background: ctx.survivedBoss ? 'var(--go)' : 'var(--bad)' }}>
-                {ctx.survivedBoss ? 'Kokeb’s letter power wins!' : 'The Letter Muncher attacks!'}
+                {ctx.survivedBoss ? 'Anbessa’s letter power wins!' : 'Jibby the hyena attacks!'}
               </span>
             </motion.div>
           )}
@@ -1939,7 +2229,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
 
       <div className="mt-3 flex flex-col gap-2.5">
         <p className="text-center font-extrabold" aria-live="polite">
-          Steer Kokeb through{' '}
+          Steer Anbessa into{' '}
           <button
             type="button"
             onClick={() => playForm(targetForm, soundOn)}
@@ -1969,23 +2259,11 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
   )
 }
 
-/** The enemy: a shadowy blob with a big zigzag mouth. Drawn in code. */
-function Muncher({ agitated = false, size = 56 }) {
+/** Jibby the hyena, drawn from the same art as his 3D sprite. */
+function Muncher({ size = 56 }) {
   return (
-    <motion.div animate={agitated ? { scale: [1, 1.15, 1] } : { y: [0, -6, 0] }} transition={agitated ? { duration: 0.4 } : { duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
-      <div className="relative rounded-full" style={{ width: size, height: size, background: '#4a3f63', boxShadow: 'inset -6px -6px 0 rgba(0,0,0,0.25)' }}>
-        <span className="absolute rounded-full bg-white" style={{ left: size * 0.22, top: size * 0.24, width: size * 0.16, height: size * 0.16 }}>
-          <span className="absolute rounded-full" style={{ left: '30%', top: '30%', width: '55%', height: '55%', background: '#1c1530' }} />
-        </span>
-        <span className="absolute rounded-full bg-white" style={{ right: size * 0.22, top: size * 0.24, width: size * 0.16, height: size * 0.16 }}>
-          <span className="absolute rounded-full" style={{ left: '30%', top: '30%', width: '55%', height: '55%', background: '#1c1530' }} />
-        </span>
-        <div className="absolute inset-x-0 flex justify-center" style={{ bottom: size * 0.16, gap: 0 }}>
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} style={{ width: 0, height: 0, borderLeft: `${size * 0.09}px solid transparent`, borderRight: `${size * 0.09}px solid transparent`, borderTop: `${size * 0.14}px solid #fff` }} />
-          ))}
-        </div>
-      </div>
+    <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
+      <Sprite2D draw={drawHyena} size={size} />
     </motion.div>
   )
 }
@@ -2002,7 +2280,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         Munched!
       </h1>
       <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        The Letter Muncher caught Kokeb in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed her more correct letters to keep her strong!
+        Jibby the hyena caught Anbessa in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed him more correct letters to keep him strong!
       </p>
 
       <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
