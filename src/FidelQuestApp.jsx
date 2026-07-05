@@ -27,6 +27,7 @@ import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
+import LearnLetters, { loadLearn, groupMastered } from './LearnLetters'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END } from './platform/quality'
@@ -709,6 +710,7 @@ export default function FidelQuestApp() {
                 onGrownUps={() => setScreen({ name: 'grownups' })}
                 onPracticeMode={startPractice}
                 onWords={startWords}
+                onLearn={() => setScreen({ name: 'learn' })}
               />
             </Screen>
           )}
@@ -759,6 +761,11 @@ export default function FidelQuestApp() {
                   setScreen({ name: 'runner' })
                 }}
               />
+            </Screen>
+          )}
+          {screen.name === 'learn' && (
+            <Screen key="learn">
+              <LearnLetters soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
             </Screen>
           )}
           {screen.name === 'words' && (
@@ -851,7 +858,7 @@ function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
 }
 
 /** Anbessa the lion cub with Kokeb the star bobbing at his shoulder. */
-function Hero({ size = 104, mood = 'happy' }) {
+export function Hero({ size = 104, mood = 'happy' }) {
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
       <Sprite2D draw={drawAnbessa} mood={mood} size={size} />
@@ -869,7 +876,8 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode, onWords }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode, onWords, onLearn }) {
+  const learn = useMemo(() => loadLearn(), [])
   const runnerBest = loadRunnerBest()
   const troubleCount = useMemo(() => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length, [])
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
@@ -925,9 +933,37 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
       </div>
 
       <div className="mt-8 flex flex-col gap-4">
-        {LEVELS.map((level, i) => (
-          <LevelCard key={level.id} level={level} earned={progress[level.id]?.stars ?? 0} unlocked={isLevelUnlocked(progress, i)} onPlay={() => onPlay(level.id)} />
-        ))}
+        <button
+          type="button"
+          onClick={onLearn}
+          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--accent)', boxShadow: '0 4px 0 var(--accent)', outlineColor: 'var(--sky)' }}
+        >
+          <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl font-black text-white" style={{ background: 'var(--accent)' }} aria-hidden="true">
+            ሀ
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">{t('learnTitle', 'Letter Steps')}</span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('learnSub', 'Learn every letter, one step at a time')} · {learn.mastered.length}/33
+            </span>
+          </span>
+        </button>
+
+        {LEVELS.map((level, i) => {
+          const chainOk = isLevelUnlocked(progress, i)
+          const learnOk = level.kind !== 'base' || groupMastered(learn, level.n) || !!progress[level.id]
+          return (
+            <LevelCard
+              key={level.id}
+              level={level}
+              earned={progress[level.id]?.stars ?? 0}
+              unlocked={chainOk && learnOk}
+              needsLearning={chainOk && !learnOk}
+              onPlay={() => onPlay(level.id)}
+            />
+          )
+        })}
 
         {troubleCount > 0 && (
           <button
@@ -1051,7 +1087,7 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
   )
 }
 
-function LevelCard({ level, earned, unlocked, onPlay }) {
+function LevelCard({ level, earned, unlocked, needsLearning = false, onPlay }) {
   return (
     <div className="relative overflow-hidden rounded-3xl border-2 p-5" style={{ background: 'var(--card)', borderColor: 'var(--line)', opacity: unlocked ? 1 : 0.72 }}>
       <div className="flex items-center gap-4">
@@ -1083,7 +1119,9 @@ function LevelCard({ level, earned, unlocked, onPlay }) {
         ))}
         {!unlocked && (
           <span className="ml-auto text-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('lockHint', `Earn a star on Level ${level.n - 1} to unlock`, { n: level.n - 1 })}
+            {needsLearning
+              ? t('learnFirst', 'Learn these letters in Letter Steps first')
+              : t('lockHint', `Earn a star on Level ${level.n - 1} to unlock`, { n: level.n - 1 })}
           </span>
         )}
       </div>
