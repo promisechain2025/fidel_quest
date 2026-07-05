@@ -18,6 +18,9 @@ import FidelQuestApp, {
   INDEXES,
   buildPracticeQueue,
   isLevelUnlocked,
+  buildWordQueue,
+  WORDS,
+  WORD_BY_LATIN,
 } from './FidelQuestApp'
 
 beforeEach(() => {
@@ -197,5 +200,30 @@ describe('vowel levels and Star Practice', () => {
     }
     expect(ctx.status).toBe(GameState.LEVEL_COMPLETE)
     expect(ctx.history).toHaveLength(2)
+  })
+})
+
+describe('First Words', () => {
+  it('builds word questions with distinct pictures and deterministic seeds', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const queue = buildWordQueue(seed)
+      expect(queue).toHaveLength(6)
+      for (const q of queue) {
+        expect(q.options).toContain(q.target)
+        expect(new Set(q.options).size).toBe(q.options.length)
+        const pictures = q.options.map((l) => WORD_BY_LATIN.get(l).picture)
+        expect(new Set(pictures).size).toBe(pictures.length)
+      }
+    }
+    expect(JSON.stringify(buildWordQueue(42))).toBe(JSON.stringify(buildWordQueue(42)))
+  })
+
+  it('covers every word with audio in the manifest', () => {
+    expect(WORDS.length).toBeGreaterThanOrEqual(25)
+    for (const w of WORDS) {
+      expect(typeof w.picture).toBe('string')
+      expect(typeof w.meaning).toBe('string')
+      expect(Array.from(w.geez).length).toBeGreaterThan(0)
+    }
   })
 })

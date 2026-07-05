@@ -60,6 +60,8 @@ const STRINGS = {
     'level-6.title': 'ተጨማሪ የአናባቢ አስማት',
     'level-7.title': 'ጥልቅ አናባቢዎች',
     'level-8.title': 'የአናባቢ ጌታ',
+    wordsTitle: 'መጀመሪያ ቃላት',
+    wordsSub: 'ቃሉን ያዳምጡ፣ ሥዕሉን ይንኩ',
   },
 }
 

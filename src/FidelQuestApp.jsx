@@ -322,6 +322,31 @@ export function buildPracticeQueue(events, seed, count = 8) {
   return queue
 }
 
+/** First Words: the 25 kid words as machine-compatible questions. Options
+   are word latins; pictures are guaranteed distinct within a question. */
+export const WORDS = FIDEL_FAMILIES.filter((f) => f.word).map((f, _, arr) => ({
+  ...f.word,
+  familyId: f.id,
+  familyIndex: FIDEL_FAMILIES.findIndex((x) => x.id === f.id),
+}))
+export const WORD_BY_LATIN = new Map(WORDS.map((w) => [w.latin, w]))
+
+export function buildWordQueue(seed, count = 6) {
+  let rngState = seed
+  let shuffled
+  ;[shuffled, rngState] = rngShuffle(WORDS, rngState)
+  return shuffled.slice(0, Math.min(count, WORDS.length)).map((target) => {
+    let others
+    ;[others, rngState] = rngShuffle(
+      WORDS.filter((w) => w.latin !== target.latin && w.picture !== target.picture),
+      rngState,
+    )
+    let options
+    ;[options, rngState] = rngShuffle([target.latin, ...others.slice(0, 2).map((w) => w.latin)], rngState)
+    return { target: target.latin, options }
+  })
+}
+
 export const selectQuestion = (ctx) => ctx.queue[ctx.cursor] ?? null
 export const selectProgress = (ctx) => ({ answered: ctx.history.length, total: ctx.queue.length })
 export const selectAccuracy = (ctx) => {
@@ -612,6 +637,13 @@ const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outli
 
 export default function FidelQuestApp() {
   const [screen, setScreen] = useState({ name: 'home' })
+  useEffect(() => {
+    try {
+      document.documentElement.lang = getLang()
+    } catch {
+      /* non-browser */
+    }
+  }, [])
   const [progress, setProgress] = useState(loadProgress)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
@@ -643,6 +675,11 @@ export default function FidelQuestApp() {
     setScreen({ name: 'lesson', levelId })
   }, [])
 
+  const startWords = useCallback(() => {
+    setRunSeed((Date.now() % 1000000) | 1)
+    setScreen({ name: 'words' })
+  }, [])
+
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
     const queue = buildPracticeQueue(loadLedger(), seed)
@@ -671,6 +708,7 @@ export default function FidelQuestApp() {
                 onClassic={() => setScreen({ name: 'classic' })}
                 onGrownUps={() => setScreen({ name: 'grownups' })}
                 onPracticeMode={startPractice}
+                onWords={startWords}
               />
             </Screen>
           )}
@@ -721,6 +759,11 @@ export default function FidelQuestApp() {
                   setScreen({ name: 'runner' })
                 }}
               />
+            </Screen>
+          )}
+          {screen.name === 'words' && (
+            <Screen key={`words-${runSeed}`}>
+              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={() => setScreen({ name: 'home' })} onReplay={startWords} />
             </Screen>
           )}
           {screen.name === 'practice' && (
@@ -826,7 +869,7 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode, onWords }) {
   const runnerBest = loadRunnerBest()
   const troubleCount = useMemo(() => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length, [])
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
@@ -940,6 +983,23 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <span className="block text-lg font-extrabold">{t('skylandsTitle', 'Fidel Skylands')}</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
               {t('skylandsSub', 'A 3D island quest — grow the tree, pluck letters, beat Jibby')}
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onWords}
+          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+        >
+          <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: 'var(--go)' }} aria-hidden="true">
+            ቃል
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">{t('wordsTitle', 'First Words')}</span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('wordsSub', 'Hear the word, tap its picture')}
             </span>
           </span>
         </button>
@@ -1371,6 +1431,7 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
           className="fixed inset-x-0 bottom-0 z-40"
           style={{ background: success ? 'var(--go-soft)' : 'var(--bad-soft)' }}
           role="alertdialog"
+          aria-live="assertive"
           aria-label={success ? 'Correct answer' : 'Wrong answer'}
         >
           <div className="mx-auto flex max-w-xl items-center gap-4 px-5 py-6">
@@ -2522,6 +2583,135 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         </Chunky>
       </div>
     </div>
+  )
+}
+
+/* ── First Words: hear the word, tap its picture ── */
+
+function WordMatch({ seed, soundOn, onFinish, onReplay }) {
+  const [ctx, dispatch] = useReducer(machineReducer, undefined, () =>
+    transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed) } }).next,
+  )
+  const question = selectQuestion(ctx)
+  const word = question ? WORD_BY_LATIN.get(question.target) : null
+  const progress = selectProgress(ctx)
+
+  useEffect(() => {
+    if (ctx.status !== GameState.PRESENTATION || !word) return undefined
+    audioPlayWord(word, soundOn)
+    const timer = setTimeout(() => dispatch({ type: GameEvent.PRESENTATION_DONE }), 1400)
+    return () => clearTimeout(timer)
+  }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (ctx.status === GameState.SUCCESS_BURST) {
+      playEffect('good', soundOn)
+      if (word) recordAnswer(`word:${word.latin}`, `word:${word.latin}`, 'words')
+      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
+      return () => clearTimeout(timer)
+    }
+    if (ctx.status === GameState.ERROR_RECOVERY) {
+      playEffect('bad', soundOn)
+      if (word) recordAnswer(`word:${word.latin}`, `word:${ctx.wrongPicks[ctx.wrongPicks.length - 1]}`, 'words')
+      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
+      return () => clearTimeout(timer)
+    }
+    if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
+    return undefined
+  }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (ctx.status === GameState.LEVEL_COMPLETE) {
+    return (
+      <LevelComplete
+        level={{ id: 'words', title: t('wordsTitle', 'First Words') }}
+        accuracy={selectAccuracy(ctx)}
+        stars={null}
+        bestStreak={ctx.bestStreak}
+        onContinue={() => onFinish()}
+        onReplay={() => {
+          onFinish()
+          onReplay()
+        }}
+      />
+    )
+  }
+
+  const busy = ctx.status !== GameState.AWAITING_INPUT
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-5">
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <X className="h-6 w-6" />
+        </button>
+        <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Words progress">
+          {Array.from({ length: progress.total }, (_, i) => (
+            <motion.div key={i} className="h-full flex-1 rounded-full" animate={{ background: i < progress.answered ? 'var(--go)' : i === ctx.cursor ? 'var(--accent)' : 'var(--line)' }} />
+          ))}
+        </div>
+      </header>
+
+      <main className="flex flex-1 flex-col justify-center gap-7 py-6 text-center" aria-live="polite">
+        <div>
+          <p className="geez text-6xl font-black">{word?.geez}</p>
+          <button
+            type="button"
+            onClick={() => audioPlayWord(word, soundOn)}
+            className={`chunk mt-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-white ${FOCUS}`}
+            style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+            aria-label={`Play the word ${word?.latin} again`}
+          >
+            <Volume2 className="h-5 w-5" aria-hidden="true" />
+            {word?.latin}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {question?.options.map((latin) => {
+            const option = WORD_BY_LATIN.get(latin)
+            const isTarget = latin === question.target
+            const showGood = ctx.status === GameState.SUCCESS_BURST && isTarget
+            const showBad = ctx.status === GameState.ERROR_RECOVERY && latin === ctx.wrongPicks[ctx.wrongPicks.length - 1]
+            const dead = ctx.wrongPicks.includes(latin)
+            return (
+              <motion.button
+                key={`${ctx.cursor}-${latin}`}
+                type="button"
+                disabled={busy || dead}
+                onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: latin } })}
+                animate={showBad ? { x: [0, -8, 8, -5, 5, 0] } : showGood ? { scale: [1, 1.12, 1] } : {}}
+                transition={{ duration: 0.4 }}
+                className={`chunk flex h-28 items-center justify-center rounded-3xl border-2 text-6xl ${FOCUS}`}
+                style={{
+                  background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'var(--card)',
+                  borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
+                  boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)'}`,
+                  '--chunk-depth': '5px',
+                  opacity: dead && !showBad ? 0.35 : 1,
+                  outlineColor: 'var(--sky)',
+                }}
+                aria-label={`Picture of ${option?.meaning}`}
+              >
+                <span aria-hidden="true">{option?.picture}</span>
+              </motion.button>
+            )
+          })}
+        </div>
+
+        <p className="h-6 font-bold" style={{ color: ctx.status === GameState.SUCCESS_BURST ? 'var(--go-ink)' : ctx.status === GameState.ERROR_RECOVERY ? 'var(--bad-ink)' : 'var(--muted)' }}>
+          {ctx.status === GameState.SUCCESS_BURST && `${t('nice', 'Nice!')} ${word?.geez} = ${word?.meaning}`}
+          {ctx.status === GameState.ERROR_RECOVERY && t('notQuite', 'Not quite!')}
+          {ctx.status === GameState.PRESENTATION && t('listen', 'Listen…')}
+        </p>
+      </main>
+    </div>
+  )
+}
+
+function audioPlayWord(word, enabled) {
+  if (!word) return
+  import('./platform/audioEngine').then(({ audio }) =>
+    audio.play(`words/${word.latin}`, { enabled, chime: { familyIndex: word.familyIndex, order: 1 } }),
   )
 }
 

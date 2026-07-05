@@ -66,6 +66,12 @@ function Gate({ onOpen }) {
             onPointerDown={startHold}
             onPointerUp={cancelHold}
             onPointerLeave={cancelHold}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold()
+            }}
+            onKeyUp={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') cancelHold()
+            }}
             className={`relative h-28 w-28 rounded-full font-extrabold text-white ${FOCUS}`}
             style={{ background: 'var(--sky)', outlineColor: 'var(--accent)' }}
           >
