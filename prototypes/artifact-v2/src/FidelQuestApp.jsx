@@ -304,6 +304,110 @@ export const starsForAccuracy = (accuracy) => (accuracy >= 90 ? 3 : accuracy >= 
 const formOf = (audioKey) => INDEXES.byAudioKey.get(audioKey)
 
 /* ============================================================================
+   §4b LETTER RUNNER MACHINE
+   Endless-runner mode: feed Kokeb the correct letter and she gains power;
+   feed her the wrong one and the Letter Muncher gains ground. At the end of
+   every RUNNER_QPL-question level the Muncher attacks: power (correct feeds)
+   must beat its strength (wrong feeds) or the run is destroyed. Survive and
+   the run speeds up into the next level, cycling through the whole fidel.
+   Pure and seeded, like the lesson machine.
+   ========================================================================== */
+
+export const RunnerState = Object.freeze({
+  RUNNING: 'RUNNING',
+  FEEDING: 'FEEDING',
+  BOSS: 'BOSS',
+  DESTROYED: 'DESTROYED',
+})
+
+export const RunnerEvent = Object.freeze({
+  FEED: 'FEED',
+  FEED_DONE: 'FEED_DONE',
+  BOSS_DONE: 'BOSS_DONE',
+})
+
+export const RUNNER_QPL = 5 // questions ("meals") per level
+
+function runnerLevelSpec(level) {
+  // Cycle the four letter groups; option count stays kid-friendly at 3.
+  return {
+    pool: LEVELS[(level - 1) % LEVELS.length].pool,
+    questionCount: RUNNER_QPL,
+    optionCount: 3,
+  }
+}
+
+export function runnerInitial(seed = 1) {
+  const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(1), seed)
+  return {
+    status: RunnerState.RUNNING,
+    seed,
+    rngState,
+    level: 1,
+    queue,
+    qIndex: 0,
+    correct: 0, // power this level
+    wrong: 0, // Muncher strength this level
+    fed: 0, // total correct feeds this run (the score)
+    survivedBoss: false,
+    lastFeed: null, // { audioKey, good }
+  }
+}
+
+const RUNNER_TRANSITIONS = {
+  [RunnerState.RUNNING]: {
+    [RunnerEvent.FEED]: (ctx, { audioKey }) => {
+      const q = ctx.queue[ctx.qIndex]
+      if (!q || !q.options.includes(audioKey)) return null
+      const good = audioKey === q.target
+      return {
+        ...ctx,
+        status: RunnerState.FEEDING,
+        correct: ctx.correct + (good ? 1 : 0),
+        wrong: ctx.wrong + (good ? 0 : 1),
+        fed: ctx.fed + (good ? 1 : 0),
+        lastFeed: { audioKey, good },
+      }
+    },
+  },
+  [RunnerState.FEEDING]: {
+    [RunnerEvent.FEED_DONE]: (ctx) =>
+      ctx.qIndex + 1 < ctx.queue.length
+        ? { ...ctx, status: RunnerState.RUNNING, qIndex: ctx.qIndex + 1 }
+        : { ...ctx, status: RunnerState.BOSS, survivedBoss: ctx.correct > ctx.wrong },
+  },
+  [RunnerState.BOSS]: {
+    [RunnerEvent.BOSS_DONE]: (ctx) => {
+      if (!ctx.survivedBoss) return { ...ctx, status: RunnerState.DESTROYED }
+      const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.level + 1), ctx.rngState)
+      return {
+        ...ctx,
+        status: RunnerState.RUNNING,
+        level: ctx.level + 1,
+        queue,
+        rngState,
+        qIndex: 0,
+        correct: 0,
+        wrong: 0,
+        survivedBoss: false,
+        lastFeed: null,
+      }
+    },
+  },
+  [RunnerState.DESTROYED]: {},
+}
+
+export function runnerTransition(ctx, event) {
+  const handler = RUNNER_TRANSITIONS[ctx.status]?.[event.type]
+  if (!handler) return { next: ctx, accepted: false }
+  const result = handler(ctx, event.payload ?? {})
+  if (result === null) return { next: ctx, accepted: false }
+  return { next: result, accepted: true }
+}
+
+export const selectRunnerQuestion = (ctx) => ctx.queue[ctx.qIndex] ?? null
+
+/* ============================================================================
    §5 INVARIANT SUITE — self-tests at module load; failures land in console
    ========================================================================== */
 
@@ -360,6 +464,28 @@ export function runInvariants() {
     }
   }
   check('Headless playthrough reaches LEVEL_COMPLETE', sim.status === GameState.LEVEL_COMPLETE && sim.history.length === 8)
+
+  // Runner: all-correct run survives the boss and levels up with a fresh queue.
+  let run = runnerInitial(11)
+  for (let i = 0; i < RUNNER_QPL; i++) {
+    run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: selectRunnerQuestion(run).target } }).next
+    run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+  }
+  check('Runner: perfect level reaches BOSS with power 5', run.status === RunnerState.BOSS && run.correct === 5 && run.survivedBoss)
+  run = runnerTransition(run, { type: RunnerEvent.BOSS_DONE }).next
+  check('Runner: surviving the boss levels up and resets power', run.status === RunnerState.RUNNING && run.level === 2 && run.correct === 0 && run.fed === 5)
+
+  // Runner: a mostly-wrong level is destroyed at the boss.
+  let doomed = runnerInitial(13)
+  for (let i = 0; i < RUNNER_QPL; i++) {
+    const q = selectRunnerQuestion(doomed)
+    const wrongKey = q.options.find((o) => o !== q.target)
+    doomed = runnerTransition(doomed, { type: RunnerEvent.FEED, payload: { audioKey: wrongKey } }).next
+    doomed = runnerTransition(doomed, { type: RunnerEvent.FEED_DONE }).next
+  }
+  doomed = runnerTransition(doomed, { type: RunnerEvent.BOSS_DONE }).next
+  check('Runner: losing the boss destroys the run', doomed.status === RunnerState.DESTROYED)
+  check('Runner: DESTROYED is terminal', runnerTransition(doomed, { type: RunnerEvent.FEED, payload: { audioKey: 'ha-1' } }).accepted === false)
 
   return checks
 }
@@ -476,6 +602,22 @@ export function mergeResult(progress, levelId, result) {
     },
   }
 }
+const RUNNER_KEY = 'fq2.runner'
+export function loadRunnerBest() {
+  try {
+    return JSON.parse(localStorage.getItem(RUNNER_KEY)) || { fed: 0, level: 0 }
+  } catch {
+    return { fed: 0, level: 0 }
+  }
+}
+function saveRunnerBest(best) {
+  try {
+    localStorage.setItem(RUNNER_KEY, JSON.stringify(best))
+  } catch {
+    /* session-only */
+  }
+}
+
 function loadSoundOn() {
   try {
     return localStorage.getItem(SOUND_KEY) !== '0'
@@ -538,12 +680,29 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onPlay={startLesson}
                 onExplore={() => setScreen({ name: 'explore' })}
+                onRunner={() => {
+                  setRunSeed((Date.now() % 1000000) | 1)
+                  setScreen({ name: 'runner' })
+                }}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
               <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
+            </Screen>
+          )}
+          {screen.name === 'runner' && (
+            <Screen key={`runner-${runSeed}`}>
+              <Runner
+                seed={runSeed}
+                soundOn={soundOn}
+                onExit={() => setScreen({ name: 'home' })}
+                onRetry={() => {
+                  setRunSeed((Date.now() % 1000000) | 1)
+                  setScreen({ name: 'runner' })
+                }}
+              />
             </Screen>
           )}
           {screen.name === 'lesson' && (
@@ -630,7 +789,8 @@ function Kokeb({ size = 96, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner }) {
+  const runnerBest = loadRunnerBest()
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
   const maxStars = LEVELS.length * 3
   const champion = totalStars === maxStars
@@ -675,6 +835,28 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore }) {
         {LEVELS.map((level, i) => (
           <LevelCard key={level.id} level={level} earned={progress[level.id]?.stars ?? 0} unlocked={isLevelUnlocked(progress, i)} onPlay={() => onPlay(level.id)} />
         ))}
+
+        <button
+          type="button"
+          onClick={onRunner}
+          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--accent)', color: '#fff' }}>
+            <Flame className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">Letter Runner</span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              Feed Kokeb letters — outrun the Letter Muncher!
+            </span>
+          </span>
+          {runnerBest.fed > 0 && (
+            <span className="mono shrink-0 rounded-xl px-2.5 py-1 text-sm font-black" style={{ background: 'var(--accent)', color: '#fff' }} aria-label={`Best: ${runnerBest.fed} letters`}>
+              Best {runnerBest.fed}
+            </span>
+          )}
+        </button>
 
         <button
           type="button"
@@ -1103,6 +1285,281 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           Play again
         </Chunky>
       </motion.div>
+    </div>
+  )
+}
+
+/* ── Letter Runner ── */
+
+function runnerReducer(ctx, event) {
+  return runnerTransition(ctx, event).next
+}
+
+function Runner({ seed, soundOn, onExit, onRetry }) {
+  const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+  const question = selectRunnerQuestion(ctx)
+  const targetForm = question ? formOf(question.target) : null
+
+  // New question: say the target's sound.
+  useEffect(() => {
+    if (ctx.status === RunnerState.RUNNING) playForm(targetForm, soundOn)
+  }, [ctx.status, ctx.qIndex, ctx.level]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Feed result: chime, brief animation, then back to running (or the boss).
+  useEffect(() => {
+    if (ctx.status !== RunnerState.FEEDING) return undefined
+    playEffect(ctx.lastFeed?.good ? 'good' : 'bad', soundOn)
+    const t = setTimeout(() => dispatch({ type: RunnerEvent.FEED_DONE }), 850)
+    return () => clearTimeout(t)
+  }, [ctx.status, ctx.qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Boss encounter plays out, then resolves to level-up or destruction.
+  useEffect(() => {
+    if (ctx.status !== RunnerState.BOSS) return undefined
+    playEffect(ctx.survivedBoss ? 'win' : 'bad', soundOn)
+    const t = setTimeout(() => dispatch({ type: RunnerEvent.BOSS_DONE }), 2100)
+    return () => clearTimeout(t)
+  }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist the best run when it ends.
+  useEffect(() => {
+    if (ctx.status !== RunnerState.DESTROYED) return
+    const best = loadRunnerBest()
+    if (ctx.fed > best.fed) saveRunnerBest({ fed: ctx.fed, level: ctx.level })
+  }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (ctx.status === RunnerState.DESTROYED) {
+    return <RunnerDestroyed ctx={ctx} onRetry={onRetry} onExit={onExit} />
+  }
+
+  const feeding = ctx.status === RunnerState.FEEDING
+  const boss = ctx.status === RunnerState.BOSS
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-8 pt-5">
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <X className="h-6 w-6" />
+        </button>
+        <span className="rounded-xl px-2.5 py-1 text-sm font-black text-white" style={{ background: 'var(--sky)' }}>
+          Level {ctx.level}
+        </span>
+        <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={`Power ${ctx.correct}, Muncher ${ctx.wrong}, of ${RUNNER_QPL} meals`}>
+          {Array.from({ length: RUNNER_QPL }, (_, i) => {
+            const state = i < ctx.correct ? 'power' : i < ctx.correct + ctx.wrong ? 'muncher' : 'empty'
+            return (
+              <motion.span
+                key={i}
+                className="block h-3.5 w-3.5 rounded-full"
+                animate={{
+                  background: state === 'power' ? 'var(--go)' : state === 'muncher' ? 'var(--bad)' : 'var(--line)',
+                  scale: state === 'empty' ? 0.8 : 1,
+                }}
+              />
+            )
+          })}
+        </div>
+        <span className="mono flex items-center gap-1 rounded-xl px-2.5 py-1 text-sm font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-label={`${ctx.fed} letters fed`}>
+          <Sparkles className="h-4 w-4" style={{ color: 'var(--star)' }} aria-hidden="true" />
+          {ctx.fed}
+        </span>
+      </header>
+
+      <RunnerScene ctx={ctx} />
+
+      <div className="mt-4 flex flex-col gap-4" style={{ opacity: boss ? 0.25 : 1, transition: 'opacity 0.3s' }}>
+        <p className="text-center text-lg font-extrabold" aria-live="polite">
+          Feed Kokeb{' '}
+          <button
+            type="button"
+            onClick={() => playForm(targetForm, soundOn)}
+            disabled={boss}
+            className={`chunk inline-flex items-center gap-1.5 rounded-xl px-3 py-1 align-middle text-white ${FOCUS}`}
+            style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+            aria-label={`Play the sound ${targetForm?.sound} again`}
+          >
+            <Volume2 className="h-5 w-5" aria-hidden="true" />“{targetForm?.sound}”
+          </button>
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {question?.options.map((key) => {
+            const form = formOf(key)
+            const fedThis = feeding && ctx.lastFeed?.audioKey === key
+            return (
+              <motion.button
+                key={`${ctx.level}-${ctx.qIndex}-${key}`}
+                type="button"
+                disabled={feeding || boss}
+                onClick={() => dispatch({ type: RunnerEvent.FEED, payload: { audioKey: key } })}
+                animate={
+                  fedThis
+                    ? ctx.lastFeed.good
+                      ? { y: -90, scale: 0.4, opacity: 0 }
+                      : { x: [0, -8, 8, -5, 5, 0] }
+                    : {}
+                }
+                transition={{ duration: fedThis && ctx.lastFeed.good ? 0.55 : 0.4 }}
+                className={`chunk geez flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
+                style={{
+                  background: fedThis && !ctx.lastFeed.good ? 'var(--bad-soft)' : 'var(--card)',
+                  borderColor: fedThis && !ctx.lastFeed.good ? 'var(--bad)' : 'var(--line)',
+                  color: fedThis && !ctx.lastFeed.good ? 'var(--bad-ink)' : 'var(--ink)',
+                  boxShadow: '0 5px 0 var(--line)',
+                  '--chunk-depth': '5px',
+                  outlineColor: 'var(--sky)',
+                }}
+                aria-label={`Feed the letter that says ${form.sound}`}
+              >
+                {form.char}
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RunnerScene({ ctx }) {
+  const boss = ctx.status === RunnerState.BOSS
+  const feeding = ctx.status === RunnerState.FEEDING
+  const stumble = feeding && ctx.lastFeed && !ctx.lastFeed.good
+  const powered = feeding && ctx.lastFeed?.good
+  // The Muncher creeps toward Kokeb with every wrong feed; at the boss it lunges.
+  const muncherX = boss ? (ctx.survivedBoss ? 30 : 118) : ctx.wrong * 30
+  const runDur = Math.max(1.1, 3 - (ctx.level - 1) * 0.35)
+
+  return (
+    <div className="relative mt-4 h-56 overflow-hidden rounded-3xl border-2" style={{ borderColor: 'var(--line)', background: 'linear-gradient(to bottom, var(--sky) -60%, var(--paper) 75%)', '--run-dur': `${runDur}s` }} aria-hidden="true">
+      {/* drifting clouds */}
+      <div className="fq-scroll absolute left-0 top-4 h-10 w-[200%]" style={{ animationDuration: `${runDur * 4}s` }}>
+        {[8, 34, 58, 82, 108, 134, 158, 182].map((left, i) => (
+          <span key={i} className="absolute rounded-full" style={{ left: `${left / 2}%`, top: i % 2 ? 2 : 14, width: 44 + (i % 3) * 14, height: 14, background: 'var(--card)', opacity: 0.9 }} />
+        ))}
+      </div>
+
+      {/* scrolling ground */}
+      <div className="absolute inset-x-0 bottom-0 h-12" style={{ background: 'var(--go-soft)' }} />
+      <div className="fq-scroll absolute bottom-0 left-0 h-12 w-[200%]" style={{ background: 'repeating-linear-gradient(to right, transparent 0 34px, var(--go) 34px 38px)', opacity: 0.35 }} />
+
+      {/* the Letter Muncher */}
+      <motion.div
+        className="absolute bottom-9"
+        animate={{ x: muncherX, y: boss && ctx.survivedBoss ? -160 : 0, rotate: boss && ctx.survivedBoss ? -220 : 0, opacity: boss && ctx.survivedBoss ? 0 : 1 }}
+        transition={{ type: 'spring', stiffness: 160, damping: 16 }}
+        style={{ left: -26 }}
+      >
+        <Muncher agitated={stumble || boss} />
+      </motion.div>
+
+      {/* Kokeb the runner */}
+      <motion.div
+        className="absolute bottom-10 left-1/2 -translate-x-1/2"
+        animate={
+          boss && !ctx.survivedBoss
+            ? { rotate: 360, y: -30, scale: 0.6, opacity: 0.4 }
+            : stumble
+              ? { rotate: [0, -16, 10, 0], y: [0, 2, 0] }
+              : { y: [0, -12, 0], rotate: 0 }
+        }
+        transition={
+          boss && !ctx.survivedBoss
+            ? { duration: 1.6 }
+            : stumble
+              ? { duration: 0.5 }
+              : { duration: 0.55, repeat: Infinity, ease: 'easeInOut' }
+        }
+      >
+        <motion.div animate={powered ? { scale: [1, 1.35, 1.1] } : { scale: 1 }} transition={{ duration: 0.5 }}>
+          {powered && (
+            <motion.span className="absolute -inset-3 rounded-full" style={{ border: '3px solid var(--star)' }} initial={{ scale: 0.6, opacity: 1 }} animate={{ scale: 1.8, opacity: 0 }} transition={{ duration: 0.6 }} />
+          )}
+          <Kokeb size={64 + Math.min(ctx.correct * 5, 25)} mood={stumble || (boss && !ctx.survivedBoss) ? 'worried' : 'happy'} />
+        </motion.div>
+      </motion.div>
+
+      {/* boss caption */}
+      <AnimatePresence>
+        {boss && (
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-x-0 top-3 text-center text-sm font-black uppercase tracking-wider"
+            style={{ color: ctx.survivedBoss ? 'var(--go-ink)' : 'var(--bad-ink)' }}
+          >
+            {ctx.survivedBoss ? 'Kokeb’s letter power wins!' : 'The Letter Muncher attacks!'}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+/** The enemy: a shadowy blob with a big zigzag mouth. Drawn in code. */
+function Muncher({ agitated = false, size = 56 }) {
+  return (
+    <motion.div animate={agitated ? { scale: [1, 1.15, 1] } : { y: [0, -6, 0] }} transition={agitated ? { duration: 0.4 } : { duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
+      <div className="relative rounded-full" style={{ width: size, height: size, background: '#4a3f63', boxShadow: 'inset -6px -6px 0 rgba(0,0,0,0.25)' }}>
+        <span className="absolute rounded-full bg-white" style={{ left: size * 0.22, top: size * 0.24, width: size * 0.16, height: size * 0.16 }}>
+          <span className="absolute rounded-full" style={{ left: '30%', top: '30%', width: '55%', height: '55%', background: '#1c1530' }} />
+        </span>
+        <span className="absolute rounded-full bg-white" style={{ right: size * 0.22, top: size * 0.24, width: size * 0.16, height: size * 0.16 }}>
+          <span className="absolute rounded-full" style={{ left: '30%', top: '30%', width: '55%', height: '55%', background: '#1c1530' }} />
+        </span>
+        <div className="absolute inset-x-0 flex justify-center" style={{ bottom: size * 0.16, gap: 0 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <span key={i} style={{ width: 0, height: 0, borderLeft: `${size * 0.09}px solid transparent`, borderRight: `${size * 0.09}px solid transparent`, borderTop: `${size * 0.14}px solid #fff` }} />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function RunnerDestroyed({ ctx, onRetry, onExit }) {
+  const best = loadRunnerBest()
+  const isBest = ctx.fed >= best.fed && ctx.fed > 0
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-10 text-center">
+      <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 240, damping: 14 }}>
+        <Muncher size={96} />
+      </motion.div>
+      <h1 className="mt-5 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--bad-ink)' }}>
+        Munched!
+      </h1>
+      <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+        The Letter Muncher caught Kokeb on level {ctx.level}. Feed her more correct letters to keep her strong!
+      </p>
+
+      <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
+        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            Letters fed
+          </p>
+          <p className="mono flex items-center justify-center gap-1 text-2xl font-black" style={{ color: 'var(--go-ink)' }}>
+            <Sparkles className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />
+            {ctx.fed}
+          </p>
+        </div>
+        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            {isBest ? 'New best!' : 'Best'}
+          </p>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>
+            {Math.max(best.fed, ctx.fed)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
+          Run again
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onExit}>
+          Home
+        </Chunky>
+      </div>
     </div>
   )
 }

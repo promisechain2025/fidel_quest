@@ -117,6 +117,18 @@ body {
   box-shadow: 0 0 0 var(--chunk-edge, transparent) !important;
 }
 
+/* Letter Runner: infinitely scrolling ground/scenery strips. The strip is
+   two copies of the same pattern; translating -50% loops seamlessly.
+   --run-dur shrinks as levels speed up. */
+@keyframes fq-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.fq-scroll {
+  animation: fq-scroll var(--run-dur, 3s) linear infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
