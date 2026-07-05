@@ -75,8 +75,29 @@ merged into one app -> promoted to the shipped product with tests, CI, and
 docs -> full synthesized Amharic voice. Every step was verified by driving
 the real app in a browser before shipping.
 
+## Product platform (the four pillars)
+
+- **AudioEngine** (src/platform/audioEngine.js): manifest-driven source
+  cascade (memory pack -> static mp3 -> deterministic chime), buffer-cached
+  playback with cross-fades, memoized misses, deterministic preloading.
+- **Ethiopic Engine** (src/script/ + src/packs/ + src/platform/ethiopic.js):
+  language-invariant glyph table joined with language packs (sounds, twins,
+  names, words, audio locations) into the legacy shapes; validatePack runs
+  in CI so listen-question ambiguity is a build failure. Draft Tigrinya
+  pack included (needs native review).
+- **Learning telemetry + Grown-Ups** (src/platform/telemetry.js,
+  src/GrownUps.jsx): capped answer ledger written at shell seams; pure
+  selectors for mastery, trouble letters, and the confusion matrix; parent
+  gate (hold + number-word match), heat grid, tips with deep links, reset.
+- **Shadow tutorial** (src/platform/tutorial.js, src/GhostHand.jsx): on
+  first open a canvas-drawn Ghost Hand drives the REAL machine (fixed demo
+  seed) through one beat, then control yields ("Your turn!"). Lesson and
+  runner get full demos; Skylands a non-blocking hint. Demo answers are
+  excluded from telemetry; reduced-motion users skip straight to play.
+
 ## Open items
 
-- Native-speaker recordings (drop-in replacement per SOURCE.txt)
+- Native-speaker recordings (drop-in replacement per SOURCE.txt), and a
+  recorded Tigrinya audio pack once packs/ti.js passes native review
 - Android/iOS builds via the Capacitor scaffold
 - GitHub default branch switch to `main` (repo settings)

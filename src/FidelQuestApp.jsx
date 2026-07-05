@@ -27,6 +27,8 @@ import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
 import GrownUps from './GrownUps'
+import GhostHand from './GhostHand'
+import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -1011,10 +1013,46 @@ function machineReducer(ctx, event) {
 function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed } }).next)
 
+  // Shadow tutorial: on first open the Ghost Hand plays one question of the
+  // REAL machine, then the level restarts fresh and the child takes over.
+  const [demo, setDemo] = useState(() => !hasOnboarded('lesson') && !prefersReducedMotion())
+  const demoRef = useRef(demo)
+  demoRef.current = demo
+  const [hand, setHand] = useState({ x: null, y: null })
+  const [yourTurn, setYourTurn] = useState(false)
+  const endDemo = useCallback(() => {
+    markOnboarded('lesson')
+    setDemo(false)
+    setHand({ x: null, y: null })
+    setYourTurn(true)
+    setTimeout(() => setYourTurn(false), 1700)
+    dispatch({ type: GameEvent.EXIT })
+    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1 } })
+  }, [level.id, seed])
+  useEffect(() => {
+    if (!hasOnboarded('lesson') && prefersReducedMotion()) markOnboarded('lesson')
+  }, [])
+
   const question = selectQuestion(ctx)
   const targetForm = question ? formOf(question.target) : null
   const progress = selectProgress(ctx)
   const accuracy = selectAccuracy(ctx)
+
+  // Demo driver: dispatches the correct events on a timeline while the
+  // overlay owns input. The machine cannot tell a ghost from a child.
+  useEffect(() => {
+    if (!demo) return undefined
+    const timers = []
+    if (ctx.status === GameState.AWAITING_INPUT && question) {
+      timers.push(setTimeout(() => setHand(tutTargetCenter(`opt-${question.target}`) || { x: null, y: null }), 550))
+      timers.push(setTimeout(() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: question.target } }), 2000))
+    }
+    if (ctx.status === GameState.SUCCESS_BURST) {
+      timers.push(setTimeout(() => setHand(tutTargetCenter('continue') || { x: null, y: null }), 450))
+      timers.push(setTimeout(() => endDemo(), 1700))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [demo, ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // PRESENTATION: play the prompt, then auto-advance to input.
   useEffect(() => {
@@ -1031,11 +1069,11 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
     const q = ctx.queue[ctx.cursor]
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q) recordAnswer(q.target, q.target, 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, q.target, 'lesson')
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
-      if (q) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1135,6 +1173,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
                   outlineColor: 'var(--sky)',
                 }}
                 aria-label={`Choose the letter that says ${form.sound}`}
+                data-tut={`opt-${key}`}
               >
                 {form.char}
               </motion.button>
@@ -1152,6 +1191,14 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
       </main>
 
       <FeedbackSheet ctx={ctx} targetForm={targetForm} onContinue={() => dispatch({ type: GameEvent.FEEDBACK_DONE })} />
+      {demo && <GhostHand x={hand.x} y={hand.y} visible onSkip={endDemo} />}
+      <AnimatePresence>
+        {yourTurn && (
+          <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+            Your turn!
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -1184,7 +1231,7 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
                 <span className="geez text-xl">{targetForm?.char}</span> says “{targetForm?.sound}”{error && ' — listen and try again'}
               </p>
             </div>
-            <Chunky tone={success ? 'go' : 'bad'} className="shrink-0 px-6 py-3.5 text-sm uppercase" onClick={onContinue}>
+            <Chunky tone={success ? 'go' : 'bad'} className="shrink-0 px-6 py-3.5 text-sm uppercase" onClick={onContinue} data-tut="continue">
               {success ? 'Continue' : 'Got it'}
             </Chunky>
           </div>
@@ -2012,6 +2059,21 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
   const [lane, setLane] = useState(1)
   const [webglOk, setWebglOk] = useState(true)
   const [banner, setBanner] = useState(true)
+  const [demo, setDemo] = useState(() => !hasOnboarded('runner') && !prefersReducedMotion())
+  const demoRef = useRef(demo)
+  demoRef.current = demo
+  const [hand, setHand] = useState({ x: null, y: null })
+  const [yourTurn, setYourTurn] = useState(false)
+  const endDemo = useCallback(() => {
+    markOnboarded('runner')
+    setDemo(false)
+    setHand({ x: null, y: null })
+    setYourTurn(true)
+    setTimeout(() => setYourTurn(false), 1700)
+  }, [])
+  useEffect(() => {
+    if (!hasOnboarded('runner') && prefersReducedMotion()) markOnboarded('runner')
+  }, [])
 
   const question = selectRunnerQuestion(ctx)
   const targetForm = question ? formOf(question.target) : null
@@ -2105,7 +2167,8 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
       world.clearGate()
       playEffect(ctx.lastFeed?.good ? 'good' : 'bad', soundOn)
       const fedQ = ctx.queue[ctx.qIndex]
-      if (fedQ && ctx.lastFeed) recordAnswer(fedQ.target, ctx.lastFeed.audioKey, 'runner')
+      if (fedQ && ctx.lastFeed && !demoRef.current) recordAnswer(fedQ.target, ctx.lastFeed.audioKey, 'runner')
+      if (demoRef.current) endDemo()
       if (ctx.lastFeed?.good) world.burst()
       else world.setMood(true)
       const t = setTimeout(() => dispatch({ type: RunnerEvent.FEED_DONE }), 900)
@@ -2120,6 +2183,24 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
     }
     return undefined
   }, [ctx.status, ctx.qIndex, ctx.level]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Demo driver: nudge Anbessa toward the correct gate, one tap at a time.
+  useEffect(() => {
+    if (!demo || ctx.status !== RunnerState.RUNNING || !question) return undefined
+    const correctLane = question.options.indexOf(question.target)
+    const t = setInterval(() => {
+      if (lane < correctLane) {
+        setHand(tutTargetCenter('steer-right') || { x: null, y: null })
+        steer(1)
+      } else if (lane > correctLane) {
+        setHand(tutTargetCenter('steer-left') || { x: null, y: null })
+        steer(-1)
+      } else {
+        setHand({ x: null, y: null })
+      }
+    }, 750)
+    return () => clearInterval(t)
+  }, [demo, ctx.status, ctx.qIndex, lane]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!destroyed) return
@@ -2203,7 +2284,15 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
           </button>
         </p>
         <div className="flex items-center gap-2.5">
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move left" onClick={() => steer(-1)}>
+          {demo && <GhostHand x={hand.x} y={hand.y} visible onSkip={endDemo} />}
+          <AnimatePresence>
+            {yourTurn && (
+              <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+                Your turn!
+              </motion.p>
+            )}
+          </AnimatePresence>
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move left" onClick={() => steer(-1)} data-tut="steer-left">
             <ChevronLeft className="h-8 w-8" aria-hidden="true" />
           </Chunky>
           <div className="flex gap-1.5" aria-hidden="true">
@@ -2211,7 +2300,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
               <span key={i} className="block h-2.5 w-6 rounded-full" style={{ background: i === lane ? 'var(--accent)' : 'var(--line)' }} />
             ))}
           </div>
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move right" onClick={() => steer(1)}>
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move right" onClick={() => steer(1)} data-tut="steer-right">
             <ChevronLeft className="h-8 w-8 rotate-180" aria-hidden="true" />
           </Chunky>
         </div>

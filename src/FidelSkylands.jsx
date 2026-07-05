@@ -31,6 +31,8 @@ import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
+import GhostHand from './GhostHand'
+import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
 
 /* ============================================================================
    §1 DATA
@@ -915,6 +917,17 @@ export default function FidelSkylands({ onExit }) {
     })
   }
 
+  const [hint, setHint] = useState(() => !hasOnboarded('skylands') && !prefersReducedMotion())
+  useEffect(() => {
+    if (!hasOnboarded('skylands') && prefersReducedMotion()) markOnboarded('skylands')
+  }, [])
+  useEffect(() => {
+    if (hint && st.mode === 'learning' && st.heard.length > 0) {
+      markOnboarded('skylands')
+      setHint(false)
+    }
+  }, [hint, st.mode, st.heard.length])
+
   const question = st.mode === 'game' && st.phase && st.phase !== 'complete' ? st.quiz[st.qIndex] : null
   const targetForm = question ? FORM_BY_KEY.get(question.target) : null
   const bossForm = st.stolen && st.stolen.length ? FORM_BY_KEY.get(st.stolen[0]) : null
@@ -946,6 +959,10 @@ export default function FidelSkylands({ onExit }) {
       <Canvas shadows dpr={[1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
         <Scene st={st} dispatch={dispatch} soundOn={soundOn} />
       </Canvas>
+
+      {hint && st.mode === 'learning' && typeof window !== 'undefined' && (
+        <GhostHand x={window.innerWidth / 2 + 30} y={window.innerHeight * 0.38} visible blocking={false} />
+      )}
 
       {/* ── HUD ── */}
       <div className="pointer-events-none absolute inset-0 flex flex-col">
