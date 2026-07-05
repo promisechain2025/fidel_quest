@@ -4,6 +4,20 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: {
+    // Split the heavy engines so app-code changes don't bust their cache.
+    chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'three-vendor': ['three'],
+          'r3f-vendor': ['@react-three/fiber', '@react-three/drei', '@react-spring/three'],
+          'motion-vendor': ['framer-motion'],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

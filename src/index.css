@@ -1,6 +1,138 @@
 @import "tailwindcss";
 
-/* Same dark-mode strategy as the PromiseChain UI the game was extracted
- * from: a `.dark` class on <html> drives every `dark:` variant. The game
- * currently ships light-only, but its markup already carries dark: classes. */
+/* Class-based dark variant kept for the Classic game's dark: styles. */
 @variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Duolingo-inspired system: saturated feedback colors on warm paper, every
+   primary action a chunky "3D" button. Accent (amber) is the brand; the
+   green/red/blue are semantic and never used decoratively.
+   Theme resolution: OS via media query; viewer toggle via data-theme wins. */
+:root {
+  --paper: #fdf9f2;
+  --ink: #3c3529;
+  --muted: #9b8b76;
+  --card: #ffffff;
+  --line: #e5dcc9;
+  --accent: #ff9600;
+  --accent-deep: #e08300;
+  --star: #ffc800;
+  --go: #58cc02;
+  --go-deep: #46a302;
+  --go-soft: #d7ffb8;
+  --go-ink: #58a700;
+  --bad: #ff4b4b;
+  --bad-deep: #ea2b2b;
+  --bad-soft: #ffdfe0;
+  --bad-ink: #ea2b2b;
+  --sky: #1cb0f6;
+  --sky-deep: #1899d6;
+  --overlay: rgba(60, 53, 41, 0.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #131f24;
+    --ink: #f1f7fb;
+    --muted: #8c9da6;
+    --card: #1b2b33;
+    --line: #37464f;
+    --accent: #ff9600;
+    --accent-deep: #cc7800;
+    --star: #ffc800;
+    --go: #58cc02;
+    --go-deep: #3f9302;
+    --go-soft: #17301a;
+    --go-ink: #79d631;
+    --bad: #ff5252;
+    --bad-deep: #d13c3c;
+    --bad-soft: #3a1c1f;
+    --bad-ink: #ff7b7b;
+    --sky: #1cb0f6;
+    --sky-deep: #1480b3;
+    --overlay: rgba(0, 0, 0, 0.55);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131f24;
+  --ink: #f1f7fb;
+  --muted: #8c9da6;
+  --card: #1b2b33;
+  --line: #37464f;
+  --accent: #ff9600;
+  --accent-deep: #cc7800;
+  --star: #ffc800;
+  --go: #58cc02;
+  --go-deep: #3f9302;
+  --go-soft: #17301a;
+  --go-ink: #79d631;
+  --bad: #ff5252;
+  --bad-deep: #d13c3c;
+  --bad-soft: #3a1c1f;
+  --bad-ink: #ff7b7b;
+  --sky: #1cb0f6;
+  --sky-deep: #1480b3;
+  --overlay: rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="light"] {
+  --paper: #fdf9f2;
+  --ink: #3c3529;
+  --muted: #9b8b76;
+  --card: #ffffff;
+  --line: #e5dcc9;
+  --accent: #ff9600;
+  --accent-deep: #e08300;
+  --star: #ffc800;
+  --go: #58cc02;
+  --go-deep: #46a302;
+  --go-soft: #d7ffb8;
+  --go-ink: #58a700;
+  --bad: #ff4b4b;
+  --bad-deep: #ea2b2b;
+  --bad-soft: #ffdfe0;
+  --bad-ink: #ea2b2b;
+  --sky: #1cb0f6;
+  --sky-deep: #1899d6;
+  --overlay: rgba(60, 53, 41, 0.4);
+}
+
+html, body { background: var(--paper); color: var(--ink); }
+body {
+  font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Quicksand',
+    system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.geez {
+  font-family: 'Noto Sans Ethiopic', 'Abyssinica SIL', 'Kefa', 'Ebrima',
+    system-ui, sans-serif;
+}
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chunky press-down buttons: the shadow is the "3D" bottom edge. */
+.chunk {
+  transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.15s ease;
+  will-change: transform;
+}
+.chunk:active:not(:disabled) {
+  transform: translateY(var(--chunk-depth, 4px));
+  box-shadow: 0 0 0 var(--chunk-edge, transparent) !important;
+}
+
+/* Letter Runner (2D fallback strips) — seamless loop by translating -50%. */
+@keyframes fq-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.fq-scroll {
+  animation: fq-scroll var(--run-dur, 3s) linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

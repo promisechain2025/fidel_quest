@@ -36,6 +36,17 @@ export default [
     },
   },
   {
+    // The mode modules are deliberately single-file (data + machines +
+    // screens together, like pages/AmharicFidelGame.jsx) and FidelSkylands
+    // renders React Three Fiber JSX, whose three.js props (position, args,
+    // castShadow, ...) are unknown to the react plugin.
+    files: ['src/FidelQuestApp.jsx', 'src/FidelSkylands.jsx'],
+    rules: {
+      'react/no-unknown-property': 'off',
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['**/*.test.{js,jsx}', 'src/test/**'],
     languageOptions: {
       globals: {

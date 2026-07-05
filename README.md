@@ -1,26 +1,36 @@
 # Fidel Quest
 
 An Amharic alphabet (Fidel) learning game for kids. Fully client-side: no
-backend, no accounts — progress lives in `localStorage`.
+backend, no accounts — progress lives in `localStorage`. Installable as a
+PWA and works offline.
 
-The game was originally built inside the PromiseChain UI repository (branch
-`claude/amharic-fidel-game-989vis`, route `/learn/fidel`) and extracted here
-because it is a standalone mobile product, not part of the remittance app.
+## Five modes, one home screen
 
-## What is in the box
+- **Lesson Levels 1–4** — Duolingo-style listen-and-pick quizzes over all 33
+  base letters, with stars, streaks, star-gated unlocks, and celebrations.
+- **Letter Runner** — a 3D lane runner through famous places in Ethiopia and
+  Eritrea (Lalibela, Aksum, the Simien Mountains, Gondar, Asmara, Massawa).
+  Steer Anbessa into the gate with the letter that says the sound; wrong
+  gates bring Jibby the hyena closer, and every level ends in a showdown.
+- **Fidel Skylands** — a React Three Fiber island quest. Learn a session's
+  letters (tap every fruit on the island's glowing tree), then beat a quiz
+  drawn cumulatively from all unlocked sessions. Clearing an island grows a
+  bridge to the next; Jibby ends each quiz by stealing review letters you
+  must win back.
+- **Classic Game** — the original Fidel Quest: chant the seven orders, trace
+  letters on a canvas pad, learn first words.
+- **Letter Explorer** — tap-to-hear reference for all 231 vocalized forms.
 
-- Full 33-family Fidel table (231 core forms plus labialized bonus forms)
-- Levels: explore/chant mode, listen-and-pick quizzes, tracing pad, first words
-- Bilingual UI (Amharic / English), stars, streaks, champion banner
-- The whole game deliberately lives in `src/pages/AmharicFidelGame.jsx`
-  (data module and trace pad are split out); see the header comment there
-  for the design brief and the audio file contract
+Characters: **Anbessa** the lion cub, **Kokeb** the star, **Jibby** the
+hyena, and zebra friends — all drawn in code (canvas), no image assets.
 
 ## Stack
 
 - React 19 + Vite 6, JSX (no TypeScript)
 - TailwindCSS 4 (`@tailwindcss/vite`)
-- `vite-plugin-pwa` for installable/offline web builds
+- `framer-motion` for 2D UI; `three` for the runner; `@react-three/fiber`,
+  `@react-three/drei`, `@react-spring/three` for Skylands
+- `vite-plugin-pwa` for installable/offline builds
 - Capacitor scaffold for native Android/iOS wrappers
 - Vitest + Testing Library
 
@@ -31,16 +41,15 @@ npm install
 npm run dev            # vite dev server
 npm run build          # production build (also generates the PWA service worker)
 npm run preview        # serve the production build
-npm run test           # vitest watch
 npm run test -- --run  # one-shot test run
 npm run lint           # eslint
 ```
 
 ## Audio
 
-The game plays letter and word clips from predictable paths under
-`public/audio/fidel/` and degrades gracefully (Web Audio fallback tones) when
-a clip is missing. Drop recordings in and they just work:
+Every mode plays letter clips from predictable paths under
+`public/audio/fidel/` and degrades gracefully (deterministic Web Audio
+chimes) when a clip is missing. Drop recordings in and the whole app speaks:
 
 - Letters: `public/audio/fidel/letters/<family>-<order>.mp3` (e.g. `le-1.mp3`)
 - Words: `public/audio/fidel/words/<wordKey>.mp3`
@@ -49,8 +58,6 @@ The exact key for any character is `form.audioKey` in
 `src/data/fidelGameData.js`.
 
 ## Native builds (Capacitor)
-
-The web app is the source of truth; native shells are generated:
 
 ```
 npm run build

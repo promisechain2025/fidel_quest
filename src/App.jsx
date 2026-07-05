@@ -1,6 +1,7 @@
-import AmharicFidelGame from './pages/AmharicFidelGame'
+import FidelQuestApp from './FidelQuestApp'
 
-// The game is the whole app: no router, no auth, no backend.
+// The whole product: lesson levels, 3D Letter Runner, Fidel Skylands,
+// Classic game, and the Letter Explorer, behind one home screen.
 export default function App() {
-  return <AmharicFidelGame />
+  return <FidelQuestApp />
 }

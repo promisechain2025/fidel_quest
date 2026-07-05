@@ -20,9 +20,13 @@
    module in the fidel_quest repository, not hand-typed.
    ========================================================================== */
 
-import { useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
+
+// The original Fidel Quest game (chant mode, tracing pad, first words) lives
+// on as the Classic mode; lazy so the heavy page stays out of the home chunk.
+const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -38,6 +42,7 @@ import {
   Check,
   RotateCcw,
   TreePine,
+  Pencil,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -688,12 +693,30 @@ export default function FidelQuestApp() {
                   setScreen({ name: 'runner' })
                 }}
                 onSkylands={() => setScreen({ name: 'skylands' })}
+                onClassic={() => setScreen({ name: 'classic' })}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
               <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
+            </Screen>
+          )}
+          {screen.name === 'classic' && (
+            <Screen key="classic">
+              <div className="relative">
+                <Suspense fallback={null}>
+                  <AmharicFidelGame />
+                </Suspense>
+                <button
+                  type="button"
+                  onClick={() => setScreen({ name: 'home' })}
+                  className="chunk fixed bottom-4 left-4 z-50 rounded-2xl px-4 py-2 font-extrabold text-white"
+                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
+                >
+                  Home
+                </button>
+              </div>
             </Screen>
           )}
           {screen.name === 'skylands' && (
@@ -805,7 +828,7 @@ function Hero({ size = 104, mood = 'happy' }) {
 
 /* ── Home ── */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands }) {
+function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic }) {
   const runnerBest = loadRunnerBest()
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
   const maxStars = LEVELS.length * 3
@@ -887,6 +910,23 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             <span className="block text-lg font-extrabold">Fidel Skylands</span>
             <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
               A 3D island quest — grow the tree, pluck letters, beat Jibby
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onClassic}
+          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+        >
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--star)', color: '#7c5200' }}>
+            <Pencil className="h-7 w-7" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-extrabold">Classic Game</span>
+            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              Chant the orders, trace letters, learn first words
             </span>
           </span>
         </button>
