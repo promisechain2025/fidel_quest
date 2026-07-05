@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "build:artifact": "vite build --config vite.artifact.config.js && node scripts/make-artifact.mjs",
+    "gen:audio-manifest": "node scripts/gen-audio-manifest.mjs"
   },
   "dependencies": {
     "@react-spring/three": "^10.1.2",
@@ -39,6 +41,7 @@
     "tailwindcss": "^4.1.10",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.0.0",
+    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.0.16"
   }
 }

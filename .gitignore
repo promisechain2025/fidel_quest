@@ -9,3 +9,4 @@ coverage
 # commit them once real native builds start.
 android
 ios
+dist-artifact

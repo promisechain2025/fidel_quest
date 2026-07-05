@@ -28,6 +28,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Sparkles, Billboard } from '@react-three/drei'
 import { useSpring, animated, config as springConfig } from '@react-spring/three'
 import * as THREE from 'three'
+import { audio as audioEngine } from './platform/audioEngine'
 
 /* ============================================================================
    §1 DATA
@@ -265,60 +266,20 @@ function reducer(st, a) {
 }
 
 /* ============================================================================
-   §4 SOUND — placeholder mp3s with deterministic fallback chimes
+   §4 SOUND — thin wrappers over the platform AudioEngine (source cascade,
+   cross-fades, memoized misses); chime hints keep the synth floor
+   per-letter deterministic.
    ========================================================================== */
 
-let audioCtx = null
-function getCtx() {
-  const C = window.AudioContext || window.webkitAudioContext
-  if (!C) return null
-  try {
-    audioCtx = audioCtx || new C()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-    return audioCtx
-  } catch {
-    return null
-  }
-}
-function note(ctx, f, at, dur, peak = 0.16, type = 'sine') {
-  const o = ctx.createOscillator()
-  const g = ctx.createGain()
-  o.type = type
-  o.frequency.value = f
-  g.gain.setValueAtTime(0.0001, at)
-  g.gain.exponentialRampToValueAtTime(peak, at + 0.02)
-  g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
-  o.connect(g).connect(ctx.destination)
-  o.start(at)
-  o.stop(at + dur + 0.05)
-}
-function toneFor(form) {
-  const ctx = getCtx()
-  if (!ctx) return
-  const base = 262 * Math.pow(2, (form.familyIndex % 13) / 13)
-  note(ctx, base, ctx.currentTime, 0.22)
-  note(ctx, base * 1.28, ctx.currentTime + 0.16, 0.3)
-}
 function playKey(key, enabled) {
-  if (!enabled) return
   const form = FORM_BY_KEY.get(key)
-  try {
-    const embedded = typeof window !== 'undefined' && window.FIDEL_AUDIO && window.FIDEL_AUDIO[key]
-    const a = new Audio(embedded || `/audio/fidel/letters/${key}.mp3`)
-    a.addEventListener('error', () => toneFor(form), { once: true })
-    a.play().catch(() => toneFor(form))
-  } catch {
-    toneFor(form)
-  }
+  audioEngine.play(`letters/${key}`, {
+    enabled,
+    chime: { familyIndex: form ? form.familyIndex : 0, order: 1 },
+  })
 }
 function playFx(kind, enabled) {
-  if (!enabled) return
-  const ctx = getCtx()
-  if (!ctx) return
-  const t = ctx.currentTime
-  if (kind === 'good') [523, 784].forEach((f, i) => note(ctx, f, t + i * 0.1, 0.22, 0.13, 'triangle'))
-  if (kind === 'bad') [220, 180].forEach((f, i) => note(ctx, f, t + i * 0.12, 0.26, 0.1, 'sawtooth'))
-  if (kind === 'win') [523, 659, 784, 1047].forEach((f, i) => note(ctx, f, t + i * 0.12, 0.3, 0.15, 'triangle'))
+  audioEngine.playEffect(kind, enabled)
 }
 
 /* ============================================================================

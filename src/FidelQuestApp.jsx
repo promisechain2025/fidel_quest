@@ -23,6 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
+import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -504,82 +505,13 @@ for (const c of INVARIANTS) {
 }
 
 /* ============================================================================
-   §6 SOUND ENGINE
-   Contract: try the real recording at /audio/fidel/letters/<audioKey>.mp3;
-   when it is missing (as in this artifact) fall back to a deterministic
-   two-note Web Audio chime derived from the letter's family and order, so
-   every character still has a distinct, stable "voice".
+   §6 SOUND — provided by the platform AudioEngine (src/platform/audioEngine):
+   manifest-driven source cascade (memory pack -> static mp3 -> deterministic
+   chime), buffer-cached playback with cross-fades, memoized misses.
+   Re-exported here to keep this module's historical surface stable.
    ========================================================================== */
 
-let audioCtx = null
-function getAudioCtx() {
-  if (typeof window === 'undefined') return null
-  const Ctor = window.AudioContext || window.webkitAudioContext
-  if (!Ctor) return null
-  try {
-    audioCtx = audioCtx || new Ctor()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-    return audioCtx
-  } catch {
-    return null
-  }
-}
-
-function playNote(ctx, freq, at, dur, gainPeak = 0.18, type = 'sine') {
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = type
-  osc.frequency.value = freq
-  gain.gain.setValueAtTime(0.0001, at)
-  gain.gain.exponentialRampToValueAtTime(gainPeak, at + 0.02)
-  gain.gain.exponentialRampToValueAtTime(0.0001, at + dur)
-  osc.connect(gain).connect(ctx.destination)
-  osc.start(at)
-  osc.stop(at + dur + 0.05)
-}
-
-/** Deterministic fallback chime for a letter: pitch = family, interval = order. */
-function playFormTone(form) {
-  const ctx = getAudioCtx()
-  if (!ctx) return
-  const base = 262 * Math.pow(2, (form.familyIndex % 13) / 13)
-  const second = base * (1 + form.order * 0.045)
-  const now = ctx.currentTime
-  playNote(ctx, base, now, 0.22)
-  playNote(ctx, second, now + 0.16, 0.3)
-}
-
-export function playForm(form, enabled = true) {
-  if (!enabled || !form) return
-  try {
-    // Artifact builds carry clips inline on window.FIDEL_AUDIO (data URIs);
-    // the deployed app serves the same files from public/audio.
-    const embedded = typeof window !== 'undefined' && window.FIDEL_AUDIO && window.FIDEL_AUDIO[form.audioKey]
-    const audio = new Audio(embedded || `/audio/fidel/letters/${form.audioKey}.mp3`)
-    audio.volume = 0.9
-    const fallback = () => playFormTone(form)
-    audio.addEventListener('error', fallback, { once: true })
-    audio.play().catch(fallback)
-  } catch {
-    playFormTone(form)
-  }
-}
-
-export function playEffect(kind, enabled = true) {
-  if (!enabled) return
-  const ctx = getAudioCtx()
-  if (!ctx) return
-  const now = ctx.currentTime
-  if (kind === 'good') {
-    playNote(ctx, 523, now, 0.15, 0.14, 'triangle')
-    playNote(ctx, 784, now + 0.1, 0.25, 0.14, 'triangle')
-  } else if (kind === 'bad') {
-    playNote(ctx, 220, now, 0.25, 0.12, 'sawtooth')
-    playNote(ctx, 180, now + 0.12, 0.3, 0.1, 'sawtooth')
-  } else if (kind === 'win') {
-    ;[523, 659, 784, 1047].forEach((f, i) => playNote(ctx, f, now + i * 0.12, 0.3, 0.16, 'triangle'))
-  }
-}
+export { playForm, playEffect }
 
 /* ============================================================================
    §7 PERSISTENCE
@@ -1138,6 +1070,8 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay }) {
   useEffect(() => {
     if (ctx.status !== GameState.PRESENTATION) return undefined
     playForm(targetForm, soundOn)
+    const next = ctx.queue[ctx.cursor + 1]
+    if (next) preloadForms([formOf(next.target)])
     const t = setTimeout(() => dispatch({ type: GameEvent.PRESENTATION_DONE }), 1300)
     return () => clearTimeout(t)
   }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
