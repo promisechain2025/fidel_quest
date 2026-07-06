@@ -28,7 +28,7 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers } from './journey'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END } from './platform/quality'
@@ -686,6 +686,9 @@ export default function FidelQuestApp() {
   }, [])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
+  const journeyRef = useRef(journey)
+  journeyRef.current = journey
+  const [justEarned, setJustEarned] = useState(null)
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
@@ -738,10 +741,21 @@ export default function FidelQuestApp() {
   }, [])
 
   // Mark a Journey node complete (grants its reward) and return to the path.
+  // Surface a newly-earned wearable as a celebratory chip on the path.
   const markNodeDone = useCallback((nodeId, stars = 3) => {
-    setJourney((j) => applyNodeDone(j, nodeId, stars))
+    const j = journeyRef.current
+    const node = NODE_BY_ID.get(nodeId)
+    const isNew = node?.reward && !(j.collection?.owned ?? []).includes(node.reward.id)
+    setJourney(applyNodeDone(j, nodeId, stars))
+    if (isNew) setJustEarned(node.reward)
     setScreen({ name: 'home' })
   }, [])
+
+  useEffect(() => {
+    if (!justEarned) return undefined
+    const timer = setTimeout(() => setJustEarned(null), 2600)
+    return () => clearTimeout(timer)
+  }, [justEarned])
 
   // Open a node: the single obvious action from the path (Pillar 1).
   const openNode = useCallback((node) => {
@@ -763,6 +777,7 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onOpen={openNode}
                 onBackpack={() => setBackpackOpen(true)}
+                justEarned={justEarned}
               />
             </Screen>
           )}
@@ -935,11 +950,85 @@ export function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
   return <canvas ref={ref} className={className} style={{ width: size, height: size }} aria-hidden="true" />
 }
 
-/** Anbessa the lion cub with Kokeb the star bobbing at his shoulder. */
-export function Hero({ size = 104, mood = 'happy' }) {
+/* Anbessa's wardrobe (Pillar 3). Wearables are drawn in code as extra
+   layers composited over the base sprite - no image assets, consistent with
+   the rest of the character art. Order: cape (behind), scarf, hat (on top). */
+const CAPE_COLORS = { 'cape-green': '#2fae66', 'cape-star': '#6b46c1', 'cape-royal': '#b23a48' }
+const SCARF_COLORS = { 'scarf-red': '#e5484d', 'scarf-gold': '#f5b301', 'scarf-blue': '#4aa3e0' }
+export function drawWearables(g, s, worn) {
+  const cx = s / 2
+  const cape = worn.find((w) => w.slot === 'cape')
+  if (cape) {
+    g.fillStyle = CAPE_COLORS[cape.id] || '#6b46c1'
+    g.beginPath()
+    g.moveTo(cx - s * 0.17, s * 0.56)
+    g.quadraticCurveTo(cx - s * 0.3, s * 0.82, cx - s * 0.12, s * 0.9)
+    g.lineTo(cx + s * 0.12, s * 0.9)
+    g.quadraticCurveTo(cx + s * 0.3, s * 0.82, cx + s * 0.17, s * 0.56)
+    g.closePath()
+    g.fill()
+    if (cape.id === 'cape-star') {
+      starPath(g, cx, s * 0.74, s * 0.05, s * 0.022)
+      g.fillStyle = '#ffd94d'
+      g.fill()
+    }
+  }
+  const scarf = worn.find((w) => w.slot === 'scarf')
+  if (scarf) {
+    g.fillStyle = SCARF_COLORS[scarf.id] || '#e5484d'
+    g.beginPath()
+    g.roundRect(cx - s * 0.16, s * 0.55, s * 0.32, s * 0.06, s * 0.03)
+    g.fill()
+    g.beginPath()
+    g.roundRect(cx - s * 0.04, s * 0.58, s * 0.08, s * 0.1, s * 0.02)
+    g.fill()
+  }
+  const hat = worn.find((w) => w.slot === 'hat')
+  if (hat) {
+    if (hat.id === 'hat-crown') {
+      g.fillStyle = '#ffc800'
+      g.beginPath()
+      g.moveTo(cx - s * 0.16, s * 0.17)
+      g.lineTo(cx - s * 0.16, s * 0.08)
+      g.lineTo(cx - s * 0.08, s * 0.14)
+      g.lineTo(cx, s * 0.07)
+      g.lineTo(cx + s * 0.08, s * 0.14)
+      g.lineTo(cx + s * 0.16, s * 0.08)
+      g.lineTo(cx + s * 0.16, s * 0.17)
+      g.closePath()
+      g.fill()
+      g.fillStyle = '#e5484d'
+      g.beginPath()
+      g.arc(cx, s * 0.145, s * 0.018, 0, 7)
+      g.fill()
+    } else if (hat.id === 'hat-cap') {
+      g.fillStyle = '#3b82f6'
+      g.beginPath()
+      g.arc(cx, s * 0.16, s * 0.15, Math.PI, 0)
+      g.fill()
+      g.beginPath()
+      g.ellipse(cx + s * 0.16, s * 0.16, s * 0.11, s * 0.028, 0, 0, Math.PI)
+      g.fill()
+    } else {
+      g.fillStyle = '#d9b24e'
+      g.beginPath()
+      g.ellipse(cx, s * 0.17, s * 0.22, s * 0.05, 0, 0, 7)
+      g.fill()
+      g.fillStyle = '#e6c86a'
+      g.beginPath()
+      g.ellipse(cx, s * 0.12, s * 0.11, s * 0.06, 0, 0, 7)
+      g.fill()
+    }
+  }
+}
+
+/** Anbessa the lion cub, in his current wardrobe, with Kokeb bobbing along. */
+export function Hero({ size = 104, mood = 'happy', worn = [] }) {
+  const wornKey = worn.map((w) => w.id).join(',')
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
       <Sprite2D draw={drawAnbessa} mood={mood} size={size} />
+      {worn.length > 0 && <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />}
       <motion.div
         className="absolute"
         style={{ right: -size * 0.08, top: -size * 0.04 }}
@@ -1029,10 +1118,11 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
   )
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, justEarned }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
+  const worn = wornLayers(journey.collection)
   useEffect(() => {
     currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }, [current?.id])
@@ -1041,7 +1131,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack }) {
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
       <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)' }}>
         <div className="flex items-center gap-2">
-          <Hero size={48} />
+          <Hero size={48} worn={worn} />
           <div>
             <h1 className="text-base font-black leading-none">Fidel Quest</h1>
             <p className="mono text-xs font-bold" style={{ color: 'var(--muted)' }}>
@@ -1071,6 +1161,22 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack }) {
           </button>
         </div>
       </header>
+
+      <AnimatePresence>
+        {justEarned && (
+          <motion.div
+            key={justEarned.id}
+            initial={{ opacity: 0, y: -14, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="mx-auto mt-2 flex items-center gap-2 rounded-2xl px-4 py-2 font-black text-white"
+            style={{ background: 'var(--go)' }}
+          >
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
+            {t('newReward', 'New!')} {justEarned.name}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mt-4 flex flex-col items-center gap-2">
         {JOURNEY.map((node, i) => {
