@@ -31,6 +31,7 @@ import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete } from './journey'
 import Closet from './components/Closet'
 import { shareAnbessa } from './components/ShareCard'
+import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
@@ -1245,6 +1246,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </div>
         )}
       </div>
+      <InstallBanner />
     </div>
   )
 }
@@ -1317,6 +1319,52 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
         </button>
       </motion.div>
     </motion.div>
+  )
+}
+
+/* Add-to-home-screen nudge (growth). Shows a dismissible banner when the app
+   is installable (native prompt) or on iOS (manual steps). Never nags twice. */
+function InstallBanner() {
+  const [state, setState] = useState(installState)
+  const [iosOpen, setIosOpen] = useState(false)
+  useEffect(() => onInstallChange(() => setState(installState())), [])
+  if (state === 'none') return null
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="install"
+        className="fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-lg items-center gap-3 rounded-2xl p-3 shadow-lg"
+        style={{ background: 'var(--card)', border: '2px solid var(--accent)' }}
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+      >
+        <Hero size={44} />
+        <p className="min-w-0 flex-1 text-sm font-extrabold leading-tight">{t('installTitle', 'Add Anbessa to your home screen')}</p>
+        <button
+          type="button"
+          onClick={state === 'prompt' ? promptInstall : () => setIosOpen(true)}
+          className={`chunk shrink-0 rounded-xl px-4 py-2 text-sm font-black text-white ${FOCUS}`}
+          style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+        >
+          {state === 'prompt' ? t('installCta', 'Add') : t('installHow', 'How?')}
+        </button>
+        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`shrink-0 rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <X className="h-5 w-5" />
+        </button>
+      </motion.div>
+      {iosOpen && (
+        <motion.div key="ios" className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
+          <motion.div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
+            <Hero size={72} />
+            <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
+            <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+              {t('gotIt', 'Got it')}
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
