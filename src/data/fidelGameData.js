@@ -272,7 +272,7 @@ export const UI_STRINGS = {
       4: { title: 'Popping Sounds', subtitle: 'The special explosive letters' },
       5: { title: 'Letter Families', subtitle: 'One letter, seven sounds' },
       6: { title: 'First Words', subtitle: 'Which letter starts the word?' },
-      7: { title: 'Sound Detective', subtitle: 'See a letter, name its sound' },
+      7: { title: 'Grand Review', subtitle: 'Hear any letter, find it' },
     },
   },
   am: {
@@ -351,7 +351,7 @@ export const UI_STRINGS = {
       4: { title: 'ጠንካራ ድምፆች', subtitle: 'ልዩዎቹ ፈንጂ ፊደላት' },
       5: { title: 'የፊደል ቤተሰቦች', subtitle: 'አንድ ፊደል፣ ሰባት ድምፆች' },
       6: { title: 'የመጀመሪያ ቃላት', subtitle: 'ቃሉ በየትኛው ፊደል ይጀምራል?' },
-      7: { title: 'የድምፅ መርማሪ', subtitle: 'ፊደሉን አይተህ ድምፁን ንገር' },
+      7: { title: 'ታላቅ ክለሳ', subtitle: 'ማንኛውንም ፊደል ሰምተህ አግኝ' },
     },
   },
 }

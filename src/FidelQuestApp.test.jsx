@@ -250,17 +250,27 @@ describe('twin-letter differentiation (P5)', () => {
     FIDEL_FAMILIES.find((f) => f.twinOf === fam.name) ||
     null
 
-  it('makes the ha/hha (ሀ vs ሐ) twin pair actually co-occur in a glyph round', () => {
-    // The original pedagogical ask: ሀ next to ሐ, disambiguated by picture.
-    const haChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'ha'))
-    const hhaChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'hha'))
+  it('makes the a/ae (አ vs ዐ) twin pair actually co-occur in a glyph round', () => {
+    // The pedagogical ask: same-sound twins side by side, disambiguated by
+    // picture. The ha/hha pair sat here until its words (hager/hamer) were
+    // pulled for lacking recordings — a/ae (asa/ayin) carries the invariant
+    // now; restore ha/hha coverage when those two words are voiced.
+    const aChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'a'))
+    const aeChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'ae'))
     let found = false
     for (let seed = 1; seed <= 60 && !found; seed++) {
       for (const q of buildWordQueue(seed)) {
-        if (q.type === 'glyph' && q.options.includes(haChar) && q.options.includes(hhaChar)) found = true
+        if (q.type === 'glyph' && q.options.includes(aChar) && q.options.includes(aeChar)) found = true
       }
     }
     expect(found).toBe(true)
+  })
+
+  it('excludes unvoiced (noAudio) words so every prompt can actually speak', () => {
+    expect(WORDS.some((w) => w.noAudio)).toBe(false)
+    expect(WORDS.map((w) => w.latin)).not.toContain('hager')
+    expect(WORDS.map((w) => w.latin)).not.toContain('hamer')
+    expect(WORDS.length).toBeGreaterThanOrEqual(25)
   })
 
   it('seats the phonetic twin as a distractor in every glyph round', () => {

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { loadFromStorage } from '../utils/loadFromStorage'
 import FidelTracePad from '../components/FidelTracePad'
+import { audio as platformAudio } from '../platform/audioEngine'
 import {
   FIDEL_FAMILIES,
   ALL_FORMS,
@@ -60,22 +61,11 @@ export { FIDEL_FAMILIES, ALL_FORMS, CHAR_TO_FORM, WORDS }
      Word pronunciations (First Words level, one clip per word):
        public/audio/fidel/words/<latin>.mp3   e.g. ልጅ -> words/lij.mp3
 
-     UI sound effects:
-       public/audio/fidel/sfx/correct.mp3        (right answer chime)
-       public/audio/fidel/sfx/wrong.mp3          (gentle "try again" tone)
-       public/audio/fidel/sfx/level-complete.mp3 (fanfare)
-       public/audio/fidel/sfx/streak.mp3         (streak milestone jingle)
-       public/audio/fidel/sfx/tap.mp3            (soft click)
-
-   Recorded files are the first of three audio tiers — when one is missing,
-   letters fall back to speech synthesis and SFX to synthesized WebAudio
-   tones (see the AUDIO section), so the game is fully audible before any
-   recording exists. Files simply take over as you add them.
+   Letter and word playback goes through the shared platform AudioEngine
+   (src/platform/audioEngine.js) — the same human recordings, memory-pack
+   support (artifact builds), and deterministic chime floor as every other
+   mode. UI sound effects are synthesized WebAudio tones (see AUDIO below).
    ========================================================================== */
-
-const LETTER_AUDIO_BASE = '/audio/fidel/letters'
-const WORD_AUDIO_BASE = '/audio/fidel/words'
-const SFX_AUDIO_BASE = '/audio/fidel/sfx'
 
 /* ── LEVELS ──────────────────────────────────────────────────────────────────
    Seven levels over the full 33-family fidel table (data module holds the
@@ -86,7 +76,7 @@ const SFX_AUDIO_BASE = '/audio/fidel/sfx'
    4:   the ejective ("popping") letters plus f/p.
    5:   vocalized orders inside familiar families — vowel discrimination.
    6:   first words — which letter starts the word?
-   7:   reverse direction — see any letter, name its sound.                   */
+   7:   grand review — hear any of the 231 forms, find the letter.            */
 
 const familyIndicesByName = (names) =>
   names.map((name) => FIDEL_FAMILIES.findIndex((f) => f.name === name))
@@ -144,8 +134,11 @@ export const LEVELS = [
     accent: 'from-lime-400 to-green-500',
   },
   {
+    // Grand Review: hear any letter (all families, all seven orders), find
+    // it. Replaces the old char-to-sound "Sound Detective" - kids should
+    // never be asked to read Latin romanizations.
     id: 7,
-    mode: 'char-to-sound',
+    mode: 'sound-to-char',
     familyIndices: ALL_FAMILY_INDICES,
     formOrders: [0, 1, 2, 3, 4, 5, 6],
     questionCount: 12,
@@ -314,12 +307,9 @@ function saveProgress(progress) {
 }
 
 /* ── AUDIO ───────────────────────────────────────────────────────────────────
-   Three tiers, best available wins:
-   1. Recorded files under public/audio/fidel/ (drop-in, preferred).
-   2. Letters: speech synthesis — a real Amharic voice ("am"/"am-ET") speaks
-      the character itself when the device has one; otherwise the phonetic
-      is spoken as a rough placeholder.
-   3. SFX: synthesized WebAudio tones, so the game is audible on day one.   */
+   Letters/words: the shared platform AudioEngine (human recordings with a
+   deterministic chime floor — never a robotic synthesized voice).
+   SFX: synthesized WebAudio tones, local to this mode.                       */
 
 let sharedAudioCtx = null
 
@@ -394,90 +384,6 @@ const SYNTH_SFX = {
       { freq: 1046.5, at: 0.42, dur: 0.42, vol: 0.14 },
       { freq: 1318.5, at: 0.58, dur: 0.42, vol: 0.1 },
     ]),
-}
-
-// The system voice list is static for a session (barring the async
-// voiceschanged event) — resolve the Amharic voice once instead of scanning
-// 50+ voices on every letter play.
-let amharicVoiceCache = { resolved: false, voice: null }
-
-function getAmharicVoice() {
-  if (typeof speechSynthesis === 'undefined') return null
-  if (!amharicVoiceCache.resolved) {
-    const resolve = () => {
-      const voices = speechSynthesis.getVoices()
-      amharicVoiceCache = {
-        resolved: voices.length > 0,
-        voice: voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('am')) || null,
-      }
-    }
-    resolve()
-    if (typeof speechSynthesis.addEventListener === 'function') {
-      speechSynthesis.addEventListener('voiceschanged', resolve, { once: true })
-    }
-  }
-  return amharicVoiceCache.voice
-}
-
-/* interrupt=true (default) replaces any still-playing utterance — right for
-   rapid taps. The chant passes interrupt=false so its 900ms cadence queues
-   naturally instead of cutting each syllable short.                          */
-function speakPhonetic(form, { interrupt = true } = {}) {
-  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return
-  try {
-    const amharicVoice = getAmharicVoice()
-    const utterance = new SpeechSynthesisUtterance(
-      amharicVoice ? form.char : form.sound || form.char,
-    )
-    if (amharicVoice) {
-      utterance.voice = amharicVoice
-      utterance.lang = amharicVoice.lang
-    }
-    utterance.rate = 0.75
-    utterance.pitch = 1.1
-    if (interrupt) speechSynthesis.cancel()
-    speechSynthesis.speak(utterance)
-  } catch {
-    // Speech synthesis unavailable — recorded files remain the upgrade path.
-  }
-}
-
-// Clip cache: reuse successful Audio elements instead of re-fetching, and
-// remember 404s so the default no-recordings install skips straight to the
-// synth/TTS tier with zero repeat network round-trips.
-const audioClipCache = new Map()
-const missingAudioSrcs = new Set()
-
-function playFileWithFallback(src, fallback) {
-  if (typeof Audio === 'undefined' || missingAudioSrcs.has(src)) {
-    if (fallback) fallback()
-    return
-  }
-  let fellBack = false
-  const fallBackOnce = () => {
-    if (fellBack) return
-    fellBack = true
-    if (fallback) fallback()
-  }
-  try {
-    let clip = audioClipCache.get(src)
-    if (!clip) {
-      clip = new Audio(src)
-      clip.volume = 0.9
-      // 'error' fires for missing files; play() rejects for unsupported
-      // sources and autoplay policy. Either way the synth/TTS tier steps in.
-      clip.addEventListener('error', () => {
-        missingAudioSrcs.add(src)
-        audioClipCache.delete(src)
-        fallBackOnce()
-      })
-      audioClipCache.set(src, clip)
-    }
-    clip.currentTime = 0
-    clip.play().catch(fallBackOnce)
-  } catch {
-    fallBackOnce()
-  }
 }
 
 function vibrate(pattern) {
@@ -762,23 +668,25 @@ export default function AmharicFidelGame() {
     [],
   )
 
-  const playLetter = useCallback((form, ttsOptions) => {
+  // interrupt:false lets the chant's 900ms cadence queue each syllable
+  // instead of cross-fading it away (the platform engine's default).
+  const playLetter = useCallback((form, { interrupt = true } = {}) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${LETTER_AUDIO_BASE}/${form.audioKey}.mp3`, () => speakPhonetic(form, ttsOptions))
+    platformAudio.play(`letters/${form.audioKey}`, {
+      interrupt,
+      chime: { familyIndex: form.familyIndex ?? 0, order: (form.order ?? 0) + 1 },
+    })
   }, [])
 
-  // Word audio: recorded words/<latin>.mp3, else TTS — an Amharic voice
-  // speaks the Ge'ez word itself, other voices approximate the latin form.
   const playWord = useCallback((word) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${WORD_AUDIO_BASE}/${word.latin}.mp3`, () =>
-      speakPhonetic({ char: word.geez, sound: word.latin }),
-    )
+    const familyIndex = CHAR_TO_FORM.get(word.startChar)?.familyIndex ?? 0
+    platformAudio.play(`words/${word.latin}`, { chime: { familyIndex, order: 1 } })
   }, [])
 
   const playSfx = useCallback((name) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${SFX_AUDIO_BASE}/${name}.mp3`, SYNTH_SFX[name])
+    SYNTH_SFX[name]?.()
   }, [])
 
   const currentQuestion = questions[questionIndex] || null
@@ -1396,7 +1304,6 @@ export default function AmharicFidelGame() {
     const { target, options, word } = currentQuestion
     const isSoundToChar = level.mode === 'sound-to-char'
     const isWordMode = level.mode === 'word-to-char'
-    const optionsShowChars = isSoundToChar || isWordMode
     return (
       <div className="fq-anim-pop mx-auto flex w-full max-w-2xl flex-col gap-5">
         {/* HUD */}
@@ -1442,7 +1349,7 @@ export default function AmharicFidelGame() {
             <Mascot mood={mascotMood} />
           </div>
           <p className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-            {isSoundToChar ? t('findLetter') : isWordMode ? t('whichStarts') : t('whatSound')}
+            {isWordMode ? t('whichStarts') : t('findLetter')}
           </p>
           {isSoundToChar && (
             <button
@@ -1472,18 +1379,6 @@ export default function AmharicFidelGame() {
                 </span>
               </span>
               <Volume2 className="h-6 w-6 shrink-0 text-green-600" />
-            </button>
-          )}
-          {!isSoundToChar && !isWordMode && (
-            <button
-              type="button"
-              onClick={() => playLetter(target)}
-              aria-label={t('playLetterSound')}
-              className={`rounded-3xl bg-gradient-to-br from-sky-100 to-blue-100 px-10 py-3 shadow-inner transition-transform active:scale-95 dark:from-sky-900/40 dark:to-blue-900/40 ${FOCUS_RING}`}
-            >
-              <span className="text-7xl font-bold text-blue-700 sm:text-8xl dark:text-blue-300" style={ETHIOPIC_FONT}>
-                {target.char}
-              </span>
             </button>
           )}
           <div className="flex min-h-10 items-center justify-center gap-3">
@@ -1521,7 +1416,7 @@ export default function AmharicFidelGame() {
                 type="button"
                 onClick={() => handleAnswer(option, i)}
                 disabled={phase !== 'question'}
-                aria-label={optionsShowChars ? `Letter ${option.char}` : `Sound ${option.sound}`}
+                aria-label={`Letter ${option.char}`}
                 className={`relative flex min-h-24 items-center justify-center rounded-2xl border-b-4 p-4 shadow-md transition-all duration-150 ${FOCUS_RING} sm:min-h-28 ${
                   showCorrect
                     ? 'fq-anim-bounce border-emerald-600 bg-emerald-400 text-white'
@@ -1536,13 +1431,9 @@ export default function AmharicFidelGame() {
                 >
                   {i + 1}
                 </span>
-                {optionsShowChars ? (
-                  <span className="text-6xl font-bold sm:text-7xl" style={ETHIOPIC_FONT}>
-                    {option.char}
-                  </span>
-                ) : (
-                  <span className="text-3xl font-extrabold sm:text-4xl">{option.sound}</span>
-                )}
+                <span className="text-6xl font-bold sm:text-7xl" style={ETHIOPIC_FONT}>
+                  {option.char}
+                </span>
                 {showCorrect && (
                   <CheckCircle2 className="fq-anim-pop absolute right-2 top-2 h-7 w-7 fill-white text-emerald-500" />
                 )}

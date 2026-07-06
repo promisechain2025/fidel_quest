@@ -336,9 +336,11 @@ export function buildPracticeQueue(events, seed, count = 8) {
   return queue
 }
 
-/** First Words: the 25 kid words as machine-compatible questions. Options
-   are word latins; pictures are guaranteed distinct within a question. */
-export const WORDS = FIDEL_FAMILIES.filter((f) => f.word).map((f, _, arr) => ({
+/** First Words: the voiced kid words as machine-compatible questions. Options
+   are word latins; pictures are guaranteed distinct within a question.
+   Words flagged noAudio (no human recording yet) are excluded — this game is
+   audio-first for pre-readers, so a silent prompt reads as broken. */
+export const WORDS = FIDEL_FAMILIES.filter((f) => f.word && !f.word.noAudio).map((f, _, arr) => ({
   ...f.word,
   familyId: f.id,
   familyIndex: FIDEL_FAMILIES.findIndex((x) => x.id === f.id),
