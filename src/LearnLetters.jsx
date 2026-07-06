@@ -311,11 +311,26 @@ function useSlideTouch(onTouch) {
   }
 }
 
+/* Bubble palette: vivid, glossy balls carrying a WHITE letter. Legibility here
+   is luminance-based, not hue-based, so it stays clear for color-blind kids and
+   in both themes - every base is dark enough for white large text to clear a
+   3:1 contrast ratio. One color per letter index for variety, not meaning. */
+const BUBBLE_COLORS = [
+  { hi: '#5aa8ee', base: '#1f74d0', lo: '#14538f' }, // blue
+  { hi: '#9d7ce6', base: '#6d45c9', lo: '#4c2f92' }, // purple
+  { hi: '#43b8b2', base: '#0f8f8a', lo: '#0a6360' }, // teal
+  { hi: '#ef7a68', base: '#d5402c', lo: '#9c2c1e' }, // coral
+  { hi: '#4fc07f', base: '#1f9a58', lo: '#156b3d' }, // green
+  { hi: '#dd6aa8', base: '#c23a86', lo: '#8c2860' }, // magenta
+  { hi: '#f0b25f', base: '#b8690a', lo: '#824a07' }, // amber
+]
+
 /** MEET: pop the drifting bubble to hear the letter. */
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const met = ctx.forms.slice(0, ctx.idx)
   if (!form) return null
+  const c = BUBBLE_COLORS[ctx.idx % BUBBLE_COLORS.length]
   return (
     <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex w-full flex-col items-center gap-5">
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
@@ -334,17 +349,18 @@ function BubbleMeet({ ctx, onTouch }) {
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
           className={`geez absolute left-1/2 top-4 flex h-44 w-44 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
           style={{
-            background: 'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(190,229,247,0.55) 38%, rgba(120,190,230,0.35) 100%)',
-            border: '3px solid rgba(255,255,255,0.9)',
-            boxShadow: 'inset -8px -10px 24px rgba(70,150,200,0.35), 0 10px 22px rgba(70,150,200,0.25)',
-            color: 'var(--ink)',
+            background: `radial-gradient(circle at 34% 28%, ${c.hi} 0%, ${c.base} 54%, ${c.lo} 100%)`,
+            border: '4px solid rgba(255,255,255,0.92)',
+            boxShadow: `inset -8px -12px 26px rgba(0,0,0,0.22), 0 10px 24px rgba(0,0,0,0.28)`,
+            color: '#ffffff',
+            textShadow: '0 2px 5px rgba(0,0,0,0.4)',
             touchAction: 'none',
             outlineColor: 'var(--sky)',
           }}
           aria-label={`Pop the bubble to hear ${form.sound}`}
         >
           {form.char}
-          <span className="absolute left-7 top-6 h-6 w-10 rotate-[-25deg] rounded-full bg-white/80" aria-hidden="true" />
+          <span className="absolute left-8 top-7 h-7 w-11 rotate-[-25deg] rounded-full bg-white/85" aria-hidden="true" />
         </motion.button>
       </div>
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
