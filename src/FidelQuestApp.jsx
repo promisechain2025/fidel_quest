@@ -30,6 +30,7 @@ import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
+import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
@@ -810,6 +811,7 @@ export default function FidelQuestApp() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
+        <ErrorBoundary onReset={() => setScreen({ name: 'home' })} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
             <Screen key="home">
@@ -932,6 +934,7 @@ export default function FidelQuestApp() {
             </Screen>
           )}
         </AnimatePresence>
+        </ErrorBoundary>
         <AnimatePresence>
           {celebration && (
             <Celebration
