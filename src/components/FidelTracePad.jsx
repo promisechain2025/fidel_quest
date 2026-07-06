@@ -2,7 +2,8 @@
    computeTraceResult is the pad's pure scoring core, exported for direct
    unit testing; it has no other natural home. */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Eraser, Check } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Eraser, Check, ArrowDown, ArrowRight } from 'lucide-react'
 
 /* Letter-tracing pad for Fidel Quest. The child draws over a faint guide
    glyph; scoring compares the drawn points against a pixel mask of the
@@ -166,7 +167,7 @@ function buildMask(char) {
   return mask
 }
 
-export default function FidelTracePad({ char, labels, onScored }) {
+export default function FidelTracePad({ char, labels, onScored, chapter = null, familyId = null }) {
   const canvasRef = useRef(null)
   const maskRef = useRef([])
   const drawnRef = useRef([])
@@ -174,6 +175,8 @@ export default function FidelTracePad({ char, labels, onScored }) {
   const strokeCountRef = useRef(0)
   const [supported, setSupported] = useState(true)
   const [hasInk, setHasInk] = useState(false)
+  const [hint, setHint] = useState(null) // { x, y, dir } in 0..1 of the pad
+  const [cue, setCue] = useState(null) // 'origin' | 'direction' after a check
 
   const reset = useCallback(() => {
     const ctx = get2d(canvasRef.current)
@@ -181,6 +184,7 @@ export default function FidelTracePad({ char, labels, onScored }) {
     drawnRef.current = []
     strokeCountRef.current = 0
     setHasInk(false)
+    setCue(null)
     drawGuide(ctx, char)
   }, [char])
 
@@ -192,8 +196,15 @@ export default function FidelTracePad({ char, labels, onScored }) {
     }
     setSupported(true)
     maskRef.current = buildMask(char)
+    // Directional mode only: derive where to start and which way to go.
+    if (chapter) {
+      const spec = strokeSpec(familyId, maskRef.current)
+      setHint({ x: spec.origin[0] / CANVAS_SIZE, y: spec.origin[1] / CANVAS_SIZE, dir: spec.dir })
+    } else {
+      setHint(null)
+    }
     reset()
-  }, [char, reset])
+  }, [char, chapter, familyId, reset])
 
   const toCanvasPoint = (event) => {
     const rect = canvasRef.current.getBoundingClientRect()
@@ -236,7 +247,13 @@ export default function FidelTracePad({ char, labels, onScored }) {
   }
 
   const handleCheck = () => {
-    onScored(computeTraceResult(maskRef.current, drawnRef.current))
+    if (chapter) {
+      const r = computeTraceResultV2(maskRef.current, drawnRef.current, chapter, familyId)
+      setCue(r.cue ?? null)
+      onScored(r)
+    } else {
+      onScored(computeTraceResult(maskRef.current, drawnRef.current))
+    }
   }
 
   if (!supported) {
@@ -249,19 +266,53 @@ export default function FidelTracePad({ char, labels, onScored }) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_SIZE}
-        height={CANVAS_SIZE}
-        role="img"
-        aria-label={labels.instruction}
-        className="w-full max-w-xs touch-none rounded-3xl border-4 border-dashed border-amber-300 bg-white shadow-inner dark:border-amber-700 dark:bg-gray-100"
-        style={{ touchAction: 'none' }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-      />
+      <div className="relative w-full max-w-xs">
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_SIZE}
+          height={CANVAS_SIZE}
+          role="img"
+          aria-label={labels.instruction}
+          className="w-full touch-none rounded-3xl border-4 border-dashed border-amber-300 bg-white shadow-inner dark:border-amber-700 dark:bg-gray-100"
+          style={{ touchAction: 'none' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+        />
+        {/* Start-here dot: always shown in directional mode, pulsing harder
+            when the last check said the child began in the wrong place. */}
+        {hint && (
+          <motion.span
+            className="pointer-events-none absolute block rounded-full"
+            style={{
+              left: `${hint.x * 100}%`,
+              top: `${hint.y * 100}%`,
+              width: cue === 'origin' ? 22 : 14,
+              height: cue === 'origin' ? 22 : 14,
+              marginLeft: cue === 'origin' ? -11 : -7,
+              marginTop: cue === 'origin' ? -11 : -7,
+              background: cue === 'origin' ? 'rgba(16,185,129,0.9)' : 'rgba(16,185,129,0.55)',
+              boxShadow: '0 0 0 3px rgba(16,185,129,0.25)',
+            }}
+            animate={{ scale: cue === 'origin' ? [1, 1.5, 1] : [1, 1.25, 1], opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: cue === 'origin' ? 0.7 : 1.4, repeat: Infinity }}
+            aria-hidden="true"
+          />
+        )}
+        {/* Ghost arrow: shows which way to go when direction is armed + wrong. */}
+        {hint && cue === 'direction' && (
+          <motion.span
+            className="pointer-events-none absolute text-emerald-500"
+            style={{ left: `${hint.x * 100}%`, top: `${hint.y * 100}%` }}
+            animate={hint.dir === 'TB' ? { y: [0, 26, 0] } : { x: [0, 26, 0] }}
+            transition={{ duration: 1, repeat: Infinity }}
+            aria-hidden="true"
+          >
+            {hint.dir === 'TB' ? <ArrowDown className="h-7 w-7" /> : <ArrowRight className="h-7 w-7" />}
+          </motion.span>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="button"

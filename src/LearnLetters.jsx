@@ -589,6 +589,8 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
               <p className="text-lg font-extrabold">{t('traceHint', 'Now carve it! Trace the letter with your finger')}</p>
               <FidelTracePad
                 char={formOf(`${ctx.familyId}-1`)?.char}
+                chapter={stone.group}
+                familyId={ctx.familyId}
                 labels={{
                   clear: t('traceClear', 'Clear'),
                   check: t('traceCheck', 'Check'),
@@ -596,9 +598,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                   unsupported: '-',
                 }}
                 onScored={(r) => {
-                  // Celebration-grade acceptance: covering the letter wins,
-                  // even with a four-year-old's overshoot (stray is fine).
-                  if (r.stars >= 1 || r.coverage >= 0.55) touch('__traced__')
+                  // Celebration-grade acceptance: covering the letter always
+                  // wins (never blocks). A miss soft-cues origin/direction via
+                  // the pad's overlays and lets the child try again.
+                  if (r.pass || r.coverage >= 0.55) touch('__traced__')
                   else playEffect('bad', soundOn)
                 }}
               />
