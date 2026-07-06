@@ -31,7 +31,8 @@ import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers } from './journey'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
-import { LOW_END } from './platform/quality'
+import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
+import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
@@ -650,7 +651,7 @@ export function loadRunnerBest() {
     return { fed: 0, level: 0 }
   }
 }
-function saveRunnerBest(best) {
+export function saveRunnerBest(best) {
   try {
     localStorage.setItem(RUNNER_KEY, JSON.stringify(best))
   } catch {
@@ -824,19 +825,16 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'arcade' && (
             <Screen key={`arcade-${screen.node.id}-${runSeed}`}>
-              {screen.node.gateway.mode === 'runner' ? (
-                <Runner
-                  seed={runSeed}
-                  soundOn={soundOn}
-                  onExit={() => markNodeDone(screen.node.id)}
-                  onRetry={() => {
-                    setRunSeed((Date.now() % 1000000) | 1)
-                    setScreen({ name: 'arcade', node: screen.node })
-                  }}
-                />
-              ) : (
-                <FidelSkylands onExit={() => markNodeDone(screen.node.id)} />
-              )}
+              <ArcadeGateway
+                node={screen.node}
+                seed={runSeed}
+                soundOn={soundOn}
+                onDone={() => markNodeDone(screen.node.id)}
+                onRetry={() => {
+                  setRunSeed((Date.now() % 1000000) | 1)
+                  setScreen({ name: 'arcade', node: screen.node })
+                }}
+              />
             </Screen>
           )}
           {screen.name === 'words' && (
@@ -2451,6 +2449,32 @@ class RunnerWorld {
     this.disposed = true
     this.renderer.dispose()
   }
+}
+
+/* ── ARCADE gateway router (Pillar 4) ──────────────────────────────────
+   A degraded device NEVER mounts WebGL: it gets the functionally-identical
+   2D fallback over the same pure machine. A capable device plays the 3D
+   scene, which measures its own frame rate (usePerfDegrade) and persists the
+   verdict so the NEXT arcade node degrades if this one stuttered. */
+function Arcade3D({ children }) {
+  usePerfDegrade() // measure + persist; the swap applies on the next arcade entry
+  return children
+}
+
+function ArcadeGateway({ node, seed, soundOn, onDone, onRetry }) {
+  const isRunner = node.gateway.mode === 'runner'
+  if (isDegraded()) {
+    return isRunner ? (
+      <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} />
+    ) : (
+      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} />
+    )
+  }
+  return (
+    <Arcade3D>
+      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} /> : <FidelSkylands onExit={onDone} />}
+    </Arcade3D>
+  )
 }
 
 /* ── the 3D runner screen ── */
