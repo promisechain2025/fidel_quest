@@ -27,8 +27,13 @@ The content behind the nodes:
    (three.js / R3F) games. On a low-FPS device `ArcadeGateway` routes to the
    WebGL-free `Runner2D`/`Skylands2D` (`src/components/ArcadeFallback.jsx`)
    over the same pure machines; the verdict persists in `fq.perf.v1`.
-4. **First Words / Star Practice / Classic / Letter Explorer / Grown-Ups**
-   — reached from the Backpack.
+4. **Anbessa's Closet / First Words / Star Practice / Classic / Letter
+   Explorer / Grown-Ups** — reached from the Backpack (Closet also opens by
+   tapping the header hero). The **Closet** is the viral loop: dress Anbessa
+   in earned wearables, then **Share Anbessa** renders a card (Anbessa +
+   `X / 231 letters learned`, `components/ShareCard.jsx`) to the Web Share
+   sheet (WhatsApp/social) with the app URL, falling back to a PNG download.
+   Fully client-side; nothing leaves the device unless the parent shares.
 
 Trace scoring is directional (`computeTraceResultV2`): a mask-derived origin
 + axis with chapter-scaled tolerance and soft origin/direction cues that

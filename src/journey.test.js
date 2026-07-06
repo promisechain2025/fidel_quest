@@ -12,6 +12,9 @@ import {
   loadJourney,
   saveJourney,
   wornLayers,
+  ownedInSlot,
+  equipItem,
+  progressStats,
   REWARD_TABLE,
   NODE_BY_ID,
 } from './journey'
@@ -112,6 +115,32 @@ describe('rewards (P3)', () => {
     p = completeNode(p, JOURNEY[0].id)
     const layers = wornLayers(p.collection)
     expect(layers.some((r) => r.id === JOURNEY[0].reward.id)).toBe(true)
+  })
+})
+
+describe('closet + share loop', () => {
+  it('lists owned items per slot and equips / removes on tap', () => {
+    // Grant a couple of hats by owning them directly.
+    const hats = REWARD_TABLE.filter((r) => r.slot === 'hat').slice(0, 2)
+    let p = { version: 1, done: {}, collection: { owned: hats.map((h) => h.id), worn: {} } }
+    expect(ownedInSlot(p.collection, 'hat').map((r) => r.id)).toEqual(hats.map((h) => h.id))
+    p = equipItem(p, 'hat', hats[0].id)
+    expect(p.collection.worn.hat).toBe(hats[0].id)
+    p = equipItem(p, 'hat', hats[1].id) // swap
+    expect(p.collection.worn.hat).toBe(hats[1].id)
+    p = equipItem(p, 'hat', hats[1].id) // tap the worn one -> take off
+    expect(p.collection.worn.hat).toBe(null)
+  })
+
+  it('reports letters-learned from completed LEARN nodes', () => {
+    let p = fresh()
+    expect(progressStats(p).forms).toBe(0)
+    const learns = JOURNEY.filter((n) => n.kind === NodeKind.LEARN).slice(0, 3)
+    for (const n of learns) p.done[n.id] = { stars: 3 }
+    const s = progressStats(p)
+    expect(s.families).toBe(3)
+    expect(s.forms).toBe(21) // 3 families x 7 forms
+    expect(s.totalForms).toBe(231)
   })
 })
 

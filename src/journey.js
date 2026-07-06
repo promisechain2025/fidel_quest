@@ -174,3 +174,24 @@ export function wornLayers(collection) {
   const worn = collection?.worn || {}
   return WEARABLE_SLOTS.map((slot) => REWARD_BY_ID.get(worn[slot])).filter(Boolean)
 }
+
+/** Owned wearables in a slot (for the Closet). */
+export function ownedInSlot(collection, slot) {
+  const owned = collection?.owned || []
+  return REWARD_TABLE.filter((r) => r.slot === slot && owned.includes(r.id))
+}
+
+/** Equip an item, or tap the worn one to take it off. Persists. Pure-ish. */
+export function equipItem(p, slot, id) {
+  const worn = { ...(p.collection?.worn || {}) }
+  worn[slot] = worn[slot] === id ? null : id
+  const next = { ...p, collection: { ...(p.collection || emptyCollection()), worn } }
+  saveJourney(next)
+  return next
+}
+
+/** Child-facing progress for the share card and Closet. */
+export function progressStats(p) {
+  const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length
+  return { families, totalFamilies: 33, forms: families * 7, totalForms: 231, nodes: Object.keys(p.done || {}).length }
+}

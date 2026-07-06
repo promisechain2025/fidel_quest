@@ -82,6 +82,17 @@ const STRINGS = {
     start: 'ጀምር',
     backpack: 'ቦርሳ',
     grownupsSub: 'ሂደትና አስቸጋሪ ፊደላትን ይመልከቱ',
+    closetTitle: 'የአንበሳ ቁም ሳጥን',
+    closetSub: 'አንበሳን ያልብሱ፣ ያጋሩ!',
+    openCloset: 'የአንበሳ ቁም ሳጥን ይክፈቱ',
+    shareAnbessa: 'አንበሳን ያጋሩ',
+    lettersLearned: '{n} / 231 ፊደላት ተማሩ',
+    closetEmpty: 'ኮፍያ፣ ሻርፕና ካባ ለአንበሳ ለማግኘት ትምህርቶችን ይጨርሱ!',
+    shareSaved: 'ተቀምጧል! የትም ያጋሩት።',
+    shareThanks: 'ስላጋሩ እናመሰግናለን!',
+    'slot.hat': 'ኮፍያዎች',
+    'slot.scarf': 'ሻርፖች',
+    'slot.cape': 'ካባዎች',
   },
 }
 

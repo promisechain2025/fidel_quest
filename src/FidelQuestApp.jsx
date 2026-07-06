@@ -28,7 +28,8 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats } from './journey'
+import Closet from './components/Closet'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
@@ -54,6 +55,7 @@ import {
   RotateCcw,
   TreePine,
   Pencil,
+  Shirt,
   Backpack as BackpackIcon,
 } from 'lucide-react'
 
@@ -758,6 +760,11 @@ export default function FidelQuestApp() {
     return () => clearTimeout(timer)
   }, [justEarned])
 
+  const openCloset = useCallback(() => {
+    setBackpackOpen(false)
+    setScreen({ name: 'closet' })
+  }, [])
+
   // Open a node: the single obvious action from the path (Pillar 1).
   const openNode = useCallback((node) => {
     setRunSeed((Date.now() % 1000000) | 1)
@@ -778,7 +785,18 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onOpen={openNode}
                 onBackpack={() => setBackpackOpen(true)}
+                onCloset={openCloset}
                 justEarned={justEarned}
+              />
+            </Screen>
+          )}
+          {screen.name === 'closet' && (
+            <Screen key="closet">
+              <Closet
+                collection={journey.collection}
+                stats={progressStats(journey)}
+                onEquip={(slot, id) => setJourney((j) => equipItem(j, slot, id))}
+                onBack={() => setScreen({ name: 'home' })}
               />
             </Screen>
           )}
@@ -884,6 +902,7 @@ export default function FidelQuestApp() {
               key="backpack"
               onClose={() => setBackpackOpen(false)}
               troubleCount={troubleCount}
+              onCloset={openCloset}
               onWords={() => { setBackpackOpen(false); startWords() }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
@@ -1120,7 +1139,7 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
   )
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, justEarned }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, justEarned }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1132,15 +1151,15 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, just
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
       <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)' }}>
-        <div className="flex items-center gap-2">
+        <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`flex items-center gap-2 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
           <Hero size={48} worn={worn} />
-          <div>
+          <div className="text-left">
             <h1 className="text-base font-black leading-none">Fidel Quest</h1>
             <p className="mono text-xs font-bold" style={{ color: 'var(--muted)' }}>
               {doneCount}/{JOURNEY.length}
             </p>
           </div>
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -1229,7 +1248,7 @@ function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, troubleCount }) {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -1254,6 +1273,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
           </button>
         </div>
         <div className="flex flex-col gap-3">
+          <BackpackItem icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetTitle', "Anbessa's Closet")} sub={t('closetSub', 'Dress up Anbessa and share!')} onClick={onCloset} />
           <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
           {troubleCount > 0 && (
             <BackpackItem icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" title={t('practiceTitle', 'Star Practice')} sub={t('practiceSub', `${troubleCount} tricky letters to make strong`, { n: troubleCount })} onClick={onPractice} />
