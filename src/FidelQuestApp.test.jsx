@@ -250,6 +250,19 @@ describe('twin-letter differentiation (P5)', () => {
     FIDEL_FAMILIES.find((f) => f.twinOf === fam.name) ||
     null
 
+  it('makes the ha/hha (ሀ vs ሐ) twin pair actually co-occur in a glyph round', () => {
+    // The original pedagogical ask: ሀ next to ሐ, disambiguated by picture.
+    const haChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'ha'))
+    const hhaChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'hha'))
+    let found = false
+    for (let seed = 1; seed <= 60 && !found; seed++) {
+      for (const q of buildWordQueue(seed)) {
+        if (q.type === 'glyph' && q.options.includes(haChar) && q.options.includes(hhaChar)) found = true
+      }
+    }
+    expect(found).toBe(true)
+  })
+
   it('seats the phonetic twin as a distractor in every glyph round', () => {
     let glyphRounds = 0
     for (let seed = 1; seed <= 40; seed++) {
