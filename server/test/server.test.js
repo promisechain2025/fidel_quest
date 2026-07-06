@@ -50,6 +50,15 @@ test('GET / serves an Open Graph landing that bounces to the app', async () => {
   assert.match(html, /https:\/\/example\.test/)
 })
 
+test('GET /dashboard serves the owner funnel page', async () => {
+  const res = await fetch(`${base}/dashboard`)
+  assert.equal(res.status, 200)
+  const html = await res.text()
+  assert.match(html, /funnel/i)
+  assert.match(html, /owner token/i)
+  assert.match(html, /x-owner-token/) // it fetches stats with the token
+})
+
 test('rejects an oversized body', async () => {
   const big = JSON.stringify(Array.from({ length: 5000 }, () => ({ type: 'app_open', day: '2026-07-06' })))
   const res = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: big })

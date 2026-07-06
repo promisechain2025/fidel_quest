@@ -43,6 +43,7 @@ npm test           # node --test
 | `GET /healthz`     | liveness                                                     |
 | `POST /api/events` | body: `[{type,day},…]` or `{events:[…]}`; returns `accepted` |
 | `GET /api/stats`   | owner-gated snapshot (`x-owner-token`)                       |
+| `GET /dashboard`   | owner funnel dashboard (charts `/api/stats`; token in-page)  |
 | `GET /` `/share`   | Open Graph landing HTML                                      |
 
 ## Connect the app

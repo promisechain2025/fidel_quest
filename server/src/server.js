@@ -12,6 +12,7 @@
 
 import { createServer } from 'node:http'
 import { landingHtml } from './landing.js'
+import { dashboardHtml } from './dashboard.js'
 
 const MAX_BODY = 16 * 1024 // 16 KB cap on request bodies
 
@@ -74,6 +75,11 @@ export function createApp(store, { appUrl, ownerToken, ogImage } = {}) {
         return send(res, 403, { ok: false, error: 'forbidden' })
       }
       return send(res, 200, store.snapshot())
+    }
+
+    if (req.method === 'GET' && path === '/dashboard') {
+      // The page itself is public; the numbers behind it require the token.
+      return send(res, 200, dashboardHtml())
     }
 
     if (req.method === 'GET' && (path === '/' || path === '/share')) {
