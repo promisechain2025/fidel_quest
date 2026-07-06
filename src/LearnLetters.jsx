@@ -439,9 +439,13 @@ function StarTrail({ ctx, onTouch }) {
 }
 
 /** One draggable letter card. Drag it onto Anbessa's mouth (or tap it) to
-    feed him. `mouthRef` is the drop target; a drop within it feeds `k`. */
+    feed him. `mouthRef` is the drop target; a drop within it feeds `k`.
+    `onFeed(k, rect)` reports the card's screen rect so the parent can fly the
+    letter from here into the mouth. */
 function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing }) {
   const form = formOf(k)
+  const elRef = useRef(null)
+  const feed = () => onFeed(k, elRef.current?.getBoundingClientRect())
   const overMouth = (event, info) => {
     const zone = mouthRef.current
     if (!zone) return false
@@ -454,6 +458,7 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
   }
   return (
     <motion.div
+      ref={elRef}
       layout
       data-form={k}
       role="button"
@@ -466,13 +471,13 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
       onDragStart={() => onDragActive(true)}
       onDragEnd={(event, info) => {
         onDragActive(false)
-        if (overMouth(event, info)) onFeed(k)
+        if (overMouth(event, info)) feed()
       }}
-      onTap={() => onFeed(k)}
+      onTap={feed}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onFeed(k)
+          feed()
         }
       }}
       initial={{ scale: 0, opacity: 0 }}
@@ -483,7 +488,9 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
             ? { scale: [1, 1.14, 1], opacity: 1, transition: { duration: 0.8, repeat: Infinity } }
             : { scale: 1, opacity: 1, y: [0, -4, 0], transition: { y: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay } } }
       }
-      exit={{ y: 150, scale: 0.15, opacity: 0, transition: { duration: 0.5, ease: 'easeIn' } }}
+      // Quick lift-off: the flying letter (in CookieField) carries the char
+      // into the mouth, so the card itself just clears out fast.
+      exit={{ scale: 0.2, opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
       className={`geez relative flex h-16 w-16 cursor-grab touch-none select-none items-center justify-center rounded-2xl border-4 text-3xl font-black active:cursor-grabbing ${FOCUS}`}
       style={{
         background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
@@ -504,13 +511,50 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
 function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
   const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
+  const trayRef = useRef(null)
   const mouthRef = useRef(null)
+  const pendingRef = useRef({}) // key -> tray-relative point where it was fed
+  const prevEaten = useRef(ctx.eaten || [])
+  const flyerId = useRef(0)
   const [dragging, setDragging] = useState(false)
+  const [flyers, setFlyers] = useState([]) // letters mid-flight into the mouth
   // Only letters still on the tray; always keep the current target so a wrong
   // drag on a removed letter can never strand the round.
   const eaten = ctx.eaten || []
   const visible = ctx.order.filter((k) => !eaten.includes(k) || k === ctx.target)
   const mood = dragging ? 'hungry' : lionMood
+
+  // Record where a card was when fed, so its flight can start from there.
+  const feed = (k, rect) => {
+    const tray = trayRef.current
+    if (tray && rect) {
+      const t = tray.getBoundingClientRect()
+      pendingRef.current[k] = { x: rect.left + rect.width / 2 - t.left, y: rect.top + rect.height / 2 - t.top }
+    }
+    onTouch(k)
+  }
+
+  // When a letter becomes eaten, launch it flying from its card into the mouth.
+  useEffect(() => {
+    const now = ctx.eaten || []
+    const newly = now.filter((k) => !prevEaten.current.includes(k))
+    prevEaten.current = now
+    if (!newly.length) return
+    const tray = trayRef.current
+    const mouthEl = mouthRef.current
+    if (!tray || !mouthEl) return
+    const t = tray.getBoundingClientRect()
+    const m = mouthEl.getBoundingClientRect()
+    const to = { x: m.left + m.width / 2 - t.left, y: m.top + m.height * 0.5 - t.top }
+    const added = newly.map((k) => ({
+      id: (flyerId.current += 1),
+      char: formOf(k)?.char,
+      from: pendingRef.current[k] || { x: to.x, y: t.height * 0.22 },
+      to,
+    }))
+    setFlyers((f) => [...f, ...added])
+  }, [ctx.eaten])
+
   return (
     <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
       <p className="text-lg font-extrabold">
@@ -519,7 +563,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
           {ctx.round + 1}/{roundLimit}
         </span>
       </p>
-      <div className="relative w-full overflow-hidden rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
         <div className="grid grid-cols-4 place-items-center gap-3 sm:gap-4">
           <AnimatePresence>
             {visible.map((k, i) => (
@@ -529,13 +573,36 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
                 hinted={ctx.wrongs >= 2 && k === ctx.target}
                 delay={(i % 4) * 0.12}
                 mouthRef={mouthRef}
-                onFeed={onTouch}
+                onFeed={feed}
                 onDragActive={setDragging}
                 refusing={k === refuseKey}
               />
             ))}
           </AnimatePresence>
         </div>
+        {/* Letters in flight: arc from the card into Anbessa's open mouth. */}
+        <AnimatePresence>
+          {flyers.map((fl) => (
+            <motion.span
+              key={fl.id}
+              className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-black"
+              style={{ background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)', color: '#5b3a12', boxShadow: '0 3px 0 #a06a30' }}
+              initial={{ x: fl.from.x - 24, y: fl.from.y - 24, scale: 0.9, opacity: 1 }}
+              animate={{
+                x: fl.to.x - 24,
+                y: [fl.from.y - 24, Math.min(fl.from.y, fl.to.y) - 54, fl.to.y - 24],
+                scale: 0.16,
+                opacity: [1, 1, 0.85, 0],
+                rotate: 18,
+                transition: { duration: 0.5, ease: 'easeIn' },
+              }}
+              onAnimationComplete={() => setFlyers((f) => f.filter((x) => x.id !== fl.id))}
+              aria-hidden="true"
+            >
+              {fl.char}
+            </motion.span>
+          ))}
+        </AnimatePresence>
         {/* Jibby creeps toward the tray during SHUFFLE rounds */}
         {isShuffle && (
           <motion.div
@@ -549,19 +616,21 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
             <Sprite2D draw={drawHyena} size={56} />
           </motion.div>
         )}
-        {/* Anbessa waits below, mouth open when hungry — the drop target. */}
+        {/* Anbessa waits below — alive: he breathes and sways, leans in when a
+            letter is dragged near, chews on a correct feed, and shakes+swats
+            on a wrong one. He is the drop target (mouthRef). */}
         <div className="mt-3 flex justify-center">
           <motion.div
             ref={mouthRef}
-            className="relative"
+            className="relative origin-bottom"
             animate={
               mood === 'refuse'
-                ? { rotate: [0, -10, 10, -6, 0], transition: { duration: 0.5 } }
+                ? { rotate: [0, -12, 12, -7, 0], y: [0, -2, 0], transition: { duration: 0.5 } }
                 : mood === 'eating'
-                  ? { scale: [1, 1.12, 1], transition: { duration: 0.5 } }
-                  : dragging
-                    ? { scale: 1.06 }
-                    : { scale: 1 }
+                  ? { scaleX: [1, 1.09, 0.93, 1.05, 1], scaleY: [1, 0.93, 1.09, 0.96, 1], transition: { duration: 0.6 } }
+                  : mood === 'hungry'
+                    ? { scale: 1.08, y: [0, -3, 0], transition: { scale: { duration: 0.2 }, y: { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } } }
+                    : { scale: 1, y: [0, -2.5, 0], rotate: [0, -1.5, 0, 1.5, 0], transition: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }
             }
           >
             <Sprite2D draw={drawAnbessa} mood={mood} size={88} />
