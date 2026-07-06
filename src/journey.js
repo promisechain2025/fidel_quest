@@ -161,6 +161,25 @@ export function grantReward(p, nodeId) {
   return p
 }
 
+/** Grant a wearable by id (e.g. from the Daily Gift), auto-equipping an empty
+    slot. Immutable + persisted. Idempotent on `owned`. */
+export function grantWearable(p, id) {
+  const item = REWARD_BY_ID.get(id)
+  if (!item) return p
+  const owned = p.collection?.owned || []
+  const worn = p.collection?.worn || {}
+  const next = {
+    ...p,
+    collection: {
+      ...(p.collection || emptyCollection()),
+      owned: owned.includes(id) ? owned : [...owned, id],
+      worn: worn[item.slot] == null ? { ...worn, [item.slot]: id } : worn,
+    },
+  }
+  saveJourney(next)
+  return next
+}
+
 /** Mark a node done, grant its reward, persist. Returns the new progress. */
 export function completeNode(p, nodeId, stars = 3) {
   const next = { ...p, done: { ...p.done, [nodeId]: { stars: Math.max(stars, p.done[nodeId]?.stars ?? 0) } }, collection: { ...(p.collection || emptyCollection()) } }
