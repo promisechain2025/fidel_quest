@@ -190,6 +190,15 @@ export function equipItem(p, slot, id) {
   return next
 }
 
+/** If finishing nodeId completed its whole chapter, return that chapter
+    number (a peak-pride moment worth celebrating + prompting a share). */
+export function chapterComplete(p, nodeId) {
+  const node = NODE_BY_ID.get(nodeId)
+  if (!node) return null
+  const chapterNodes = JOURNEY.filter((n) => n.chapter === node.chapter)
+  return chapterNodes.every((n) => p.done[n.id]) ? node.chapter : null
+}
+
 /** Child-facing progress for the share card and Closet. */
 export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length

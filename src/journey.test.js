@@ -15,6 +15,7 @@ import {
   ownedInSlot,
   equipItem,
   progressStats,
+  chapterComplete,
   REWARD_TABLE,
   NODE_BY_ID,
 } from './journey'
@@ -130,6 +131,17 @@ describe('closet + share loop', () => {
     expect(p.collection.worn.hat).toBe(hats[1].id)
     p = equipItem(p, 'hat', hats[1].id) // tap the worn one -> take off
     expect(p.collection.worn.hat).toBe(null)
+  })
+
+  it('fires chapter-complete only when the last node of a chapter is done', () => {
+    const p = fresh()
+    const ch1 = JOURNEY.filter((n) => n.chapter === 1)
+    const last = ch1[ch1.length - 1]
+    // Mark every chapter-1 node done except the last.
+    for (const n of ch1.slice(0, -1)) p.done[n.id] = { stars: 3 }
+    expect(chapterComplete(p, ch1[0].id)).toBe(null) // partial - no celebration
+    p.done[last.id] = { stars: 3 }
+    expect(chapterComplete(p, last.id)).toBe(1) // finishing the last -> chapter 1
   })
 
   it('reports letters-learned from completed LEARN nodes', () => {

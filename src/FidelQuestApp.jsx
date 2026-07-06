@@ -28,8 +28,9 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete } from './journey'
 import Closet from './components/Closet'
+import { shareAnbessa } from './components/ShareCard'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
@@ -56,6 +57,7 @@ import {
   TreePine,
   Pencil,
   Shirt,
+  Share2,
   Backpack as BackpackIcon,
 } from 'lucide-react'
 
@@ -692,6 +694,7 @@ export default function FidelQuestApp() {
   const journeyRef = useRef(journey)
   journeyRef.current = journey
   const [justEarned, setJustEarned] = useState(null)
+  const [celebration, setCelebration] = useState(null)
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
@@ -749,8 +752,15 @@ export default function FidelQuestApp() {
     const j = journeyRef.current
     const node = NODE_BY_ID.get(nodeId)
     const isNew = node?.reward && !(j.collection?.owned ?? []).includes(node.reward.id)
-    setJourney(applyNodeDone(j, nodeId, stars))
-    if (isNew) setJustEarned(node.reward)
+    const next = applyNodeDone(j, nodeId, stars)
+    setJourney(next)
+    const chapter = chapterComplete(next, nodeId)
+    if (chapter) {
+      // Peak pride: a full celebration that also asks for a share.
+      setCelebration({ chapter, rewardName: node?.reward?.name || null })
+    } else if (isNew) {
+      setJustEarned(node.reward)
+    }
     setScreen({ name: 'home' })
   }, [])
 
@@ -894,6 +904,18 @@ export default function FidelQuestApp() {
                 onReplay={() => startLesson(screen.levelId)}
               />
             </Screen>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {celebration && (
+            <Celebration
+              key="celebration"
+              chapter={celebration.chapter}
+              rewardName={celebration.rewardName}
+              worn={wornLayers(journey.collection)}
+              forms={progressStats(journey).forms}
+              onClose={() => setCelebration(null)}
+            />
           )}
         </AnimatePresence>
         <AnimatePresence>
@@ -1293,6 +1315,42 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
         >
           {getLang() === 'am' ? 'English' : 'አማርኛ'}
         </button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* Chapter-complete celebration (the peak-pride share prompt). Anbessa bursts
+   in wearing the freshly-earned item; the primary action is Share. */
+function Celebration({ chapter, rewardName, worn, forms, onClose }) {
+  const [busy, setBusy] = useState(false)
+  const share = async () => {
+    setBusy(true)
+    await shareAnbessa({ forms, worn })
+    setBusy(false)
+    onClose()
+  }
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <Confetti count={42} />
+      <motion.div className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
+        <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
+          <Hero size={150} worn={worn} />
+        </motion.div>
+        <h2 className="mt-3 text-2xl font-black">{t('chapterDone', `Chapter ${chapter} complete!`, { n: chapter })}</h2>
+        {rewardName && (
+          <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
+            {t('earnedItem', `Anbessa earned the ${rewardName}!`, { item: rewardName })}
+          </p>
+        )}
+        <div className="mt-5 flex flex-col gap-3">
+          <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <Share2 className="h-5 w-5" aria-hidden="true" /> {t('shareAnbessa', 'Share Anbessa')}
+          </button>
+          <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            {t('keepGoing', 'Keep going')}
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   )
