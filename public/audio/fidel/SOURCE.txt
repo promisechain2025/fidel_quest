@@ -14,3 +14,11 @@ Do NOT source clips by scraping Google Translate TTS - that violates
 Google's Terms of Service. Legitimate upgrade paths: record a native
 speaker, or use a licensed TTS API (e.g. Google Cloud TTS am-ET) with
 your own account.
+
+---
+HUMAN RECORDINGS (2026-07): a native speaker recorded 5 families as full
+family-row chants (m4a). Split on silence, trimmed with a 60ms onset pad,
+loudness-normalized (EBU R128, I=-16), and encoded to 96 kbps mono MP3.
+These override the espeak placeholders for:
+  ye, zhe, ze, ae, we   (all 7 orders each = 35 clips)
+The remaining families still use the espeak placeholder until recorded.
