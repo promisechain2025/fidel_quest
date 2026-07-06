@@ -4,6 +4,7 @@ import { ChevronLeft, Share2, Check } from 'lucide-react'
 import { Hero } from '../FidelQuestApp'
 import { WEARABLE_SLOTS, ownedInSlot, wornLayers } from '../journey'
 import { t } from '../platform/i18n'
+import { shareCtaLabel } from '../platform/experiments'
 import { shareAnbessa } from './ShareCard'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -51,7 +52,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
           className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`}
           style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
         >
-          <Share2 className="h-5 w-5" aria-hidden="true" /> {t('shareAnbessa', 'Share Anbessa')}
+          <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
         </button>
       </div>
 

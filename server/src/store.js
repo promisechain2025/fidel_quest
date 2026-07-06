@@ -20,10 +20,13 @@ export const FUNNEL = Object.freeze([
 ])
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
+const EXP_RE = /^[a-z0-9_]{1,32}$/i
+const VAR_RE = /^[A-Za-z0-9_-]{1,16}$/
 
 export function createStore() {
   const totals = Object.create(null) // type -> count
   const daily = Object.create(null) // 'YYYY-MM-DD' -> { type -> count }
+  const experiments = Object.create(null) // exp -> variant -> { type -> count }
   let events = 0
 
   function record(evt) {
@@ -32,6 +35,14 @@ export function createStore() {
     totals[evt.type] = (totals[evt.type] || 0) + 1
     if (!daily[day]) daily[day] = Object.create(null)
     daily[day][evt.type] = (daily[day][evt.type] || 0) + 1
+    // Optional A/B tags. Both must be well-formed; still no PII (a variant is
+    // just 'A'/'B', the device id that chose it is never sent).
+    if (typeof evt.exp === 'string' && EXP_RE.test(evt.exp) && typeof evt.variant === 'string' && VAR_RE.test(evt.variant)) {
+      if (!experiments[evt.exp]) experiments[evt.exp] = Object.create(null)
+      if (!experiments[evt.exp][evt.variant]) experiments[evt.exp][evt.variant] = Object.create(null)
+      const bucket = experiments[evt.exp][evt.variant]
+      bucket[evt.type] = (bucket[evt.type] || 0) + 1
+    }
     events += 1
     return true
   }
@@ -51,7 +62,7 @@ export function createStore() {
       const prev = i === 0 ? s.count : funnel[i - 1].count
       return { ...s, rateFromPrev: prev ? +(s.count / prev).toFixed(3) : null }
     })
-    return { events, totals: { ...totals }, daily: cloneDaily(daily), funnel: conv }
+    return { events, totals: { ...totals }, daily: cloneDaily(daily), funnel: conv, experiments: cloneExperiments(experiments) }
   }
 
   return { record, recordBatch, snapshot }
@@ -60,5 +71,14 @@ export function createStore() {
 function cloneDaily(daily) {
   const out = {}
   for (const day of Object.keys(daily)) out[day] = { ...daily[day] }
+  return out
+}
+
+function cloneExperiments(exp) {
+  const out = {}
+  for (const key of Object.keys(exp)) {
+    out[key] = {}
+    for (const variant of Object.keys(exp[key])) out[key][variant] = { ...exp[key][variant] }
+  }
   return out
 }

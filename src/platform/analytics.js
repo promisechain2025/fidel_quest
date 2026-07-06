@@ -9,6 +9,8 @@
    failures are swallowed - measurement must never break a child's game.
    ========================================================================== */
 
+import { activeVariant } from './experiments'
+
 const ENDPOINT = import.meta.env?.VITE_ANALYTICS_URL || null
 
 let queue = []
@@ -37,7 +39,13 @@ function flush() {
 export function track(type) {
   if (!ENDPOINT) return
   try {
-    queue.push({ type, day: new Date().toISOString().slice(0, 10) })
+    const evt = { type, day: new Date().toISOString().slice(0, 10) }
+    const a = activeVariant() // tag the device's variant so the funnel splits by it
+    if (a) {
+      evt.exp = a.key
+      evt.variant = a.variant
+    }
+    queue.push(evt)
     if (queue.length > 50) queue = queue.slice(-50)
     if (!scheduled) {
       scheduled = true

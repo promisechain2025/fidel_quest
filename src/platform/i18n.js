@@ -86,6 +86,7 @@ const STRINGS = {
     closetSub: 'አንበሳን ያልብሱ፣ ያጋሩ!',
     openCloset: 'የአንበሳ ቁም ሳጥን ይክፈቱ',
     shareAnbessa: 'አንበሳን ያጋሩ',
+    shareShowOff: 'ለሁሉም አሳዩ!',
     lettersLearned: '{n} / 231 ፊደላት ተማሩ',
     closetEmpty: 'ኮፍያ፣ ሻርፕና ካባ ለአንበሳ ለማግኘት ትምህርቶችን ይጨርሱ!',
     shareSaved: 'ተቀምጧል! የትም ያጋሩት።',

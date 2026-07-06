@@ -34,6 +34,7 @@ import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
 import { track } from './platform/analytics'
+import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
@@ -1439,7 +1440,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
         <div className="mt-5 flex flex-col gap-3">
           {reward && (
             <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-              <Share2 className="h-5 w-5" aria-hidden="true" /> {t('shareAnbessa', 'Share Anbessa')}
+              <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
             </button>
           )}
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: reward ? 'var(--card)' : 'var(--go)', border: reward ? '2px solid var(--line)' : 'none', color: reward ? 'var(--ink)' : '#fff', boxShadow: `0 4px 0 ${reward ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
@@ -1476,7 +1477,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
         )}
         <div className="mt-5 flex flex-col gap-3">
           <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-            <Share2 className="h-5 w-5" aria-hidden="true" /> {t('shareAnbessa', 'Share Anbessa')}
+            <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             {t('keepGoing', 'Keep going')}

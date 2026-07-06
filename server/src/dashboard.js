@@ -43,6 +43,10 @@ export function dashboardHtml() {
   .conv{font-size:.72rem;color:var(--accent-ink);font-weight:800;margin-left:6px;font-variant-numeric:tabular-nums}
   .err{color:#c0392b;font-weight:700}
   .muted{color:var(--muted);font-size:.8rem;margin-top:18px}
+  .exph{font-size:.95rem;font-weight:900;margin:26px 0 10px}
+  .exp{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .exp table{margin-top:0}
+  .exp tr.win td{color:var(--accent-ink);font-weight:800}
   table{width:100%;border-collapse:collapse;margin-top:16px;font-size:.8rem}
   th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
   th:first-child,td:first-child{text-align:left}
@@ -118,8 +122,32 @@ export function dashboardHtml() {
       + '<div class="tile"><b>'+installRate+'</b><i>install rate</i></div>'
       + '</div>'
       + '<div class="funnel">'+bars+'</div>'
+      + experimentsHtml(data.experiments||{})
       + table
       + '<p class="muted">Auto-refreshes every 30s. Counts reset on server restart (in-memory).</p>'
+  }
+
+  function experimentsHtml(exps){
+    const keys = Object.keys(exps)
+    if(!keys.length) return ''
+    let html = '<h2 class="exph">A/B experiments</h2>'
+    for(const key of keys){
+      const variants = Object.keys(exps[key]).sort()
+      // Rate = the funnel stage we care about, per opens (its own denominator).
+      const rate = (b,num) => b.app_open ? Math.round(((b[num]||0)/b.app_open)*100) : null
+      let best = { v:null, r:-1 }
+      const rows = variants.map(v => {
+        const b = exps[key][v]
+        const sr = rate(b,'share'), ir = rate(b,'install')
+        if(sr!=null && sr>best.r) best = { v, r:sr }
+        return { v, opens:b.app_open||0, shares:b.share||0, installs:b.install||0, sr, ir }
+      })
+      html += '<div class="exp"><div class="lab" style="margin-bottom:8px"><b>'+esc(key)+'</b></div>'
+        + '<table><thead><tr><th>Variant</th><th>Opens</th><th>Shares</th><th>Share%</th><th>Installs</th><th>Install%</th></tr></thead><tbody>'
+        + rows.map(r => '<tr'+(r.v===best.v?' class="win"':'')+'><td>'+esc(r.v)+(r.v===best.v?' &#9733;':'')+'</td><td>'+r.opens+'</td><td>'+r.shares+'</td><td>'+(r.sr==null?'-':r.sr+'%')+'</td><td>'+r.installs+'</td><td>'+(r.ir==null?'-':r.ir+'%')+'</td></tr>').join('')
+        + '</tbody></table></div>'
+    }
+    return html
   }
 
   $('go').onclick = load

@@ -36,6 +36,20 @@ test('recordBatch caps the batch size', () => {
   assert.equal(s.snapshot().events, 100)
 })
 
+test('aggregates A/B variants separately, ignoring malformed tags', () => {
+  const s = createStore()
+  s.record({ type: 'app_open', day: '2026-07-06', exp: 'share_cta', variant: 'A' })
+  s.record({ type: 'app_open', day: '2026-07-06', exp: 'share_cta', variant: 'B' })
+  s.record({ type: 'share', day: '2026-07-06', exp: 'share_cta', variant: 'B' })
+  s.record({ type: 'share', day: '2026-07-06', exp: 'bad key!', variant: 'B' }) // exp dropped, base still counts
+  const snap = s.snapshot()
+  assert.equal(snap.experiments.share_cta.A.app_open, 1)
+  assert.equal(snap.experiments.share_cta.B.app_open, 1)
+  assert.equal(snap.experiments.share_cta.B.share, 1)
+  assert.equal(snap.experiments.share_cta.A.share, undefined) // A never shared
+  assert.equal(snap.totals.share, 2) // both share events still counted in the base funnel
+})
+
 test('snapshot exposes the full funnel with stage conversions', () => {
   const s = createStore()
   for (let i = 0; i < 10; i++) s.record({ type: 'app_open', day: '2026-07-06' })
