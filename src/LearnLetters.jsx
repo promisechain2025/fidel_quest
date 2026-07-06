@@ -49,9 +49,12 @@ export const LearnPhase = Object.freeze({
   DONE: 'DONE',
 })
 
-export const ECHO_ROUNDS = 5
-export const SHUFFLE_ROUNDS = 5
-export const MIX_ROUNDS = 6
+// Pacing (P2): pre-readers encode phonemes fast but fatigue fast. Three
+// high-impact rounds each; reinforcement is handled downstream by adaptive
+// Star Practice and the cumulative Skylands boss, not by front-loaded grind.
+export const ECHO_ROUNDS = 3
+export const SHUFFLE_ROUNDS = 3
+export const MIX_ROUNDS = 4
 
 function pickTarget(pool, avoid, rngState) {
   let candidates = pool.filter((k) => k !== avoid)

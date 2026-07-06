@@ -6,6 +6,7 @@ import {
   mixInitial,
   ECHO_ROUNDS,
   SHUFFLE_ROUNDS,
+  MIX_ROUNDS,
   STONES,
   stoneUnlocked,
   groupMastered,
@@ -13,6 +14,14 @@ import {
 import { INDEXES, FIDEL_FAMILIES } from './FidelQuestApp'
 
 const soundOf = (k) => INDEXES.byAudioKey.get(k).sound
+
+describe('pacing caps (P2)', () => {
+  it('holds Echo=3, Shuffle=3, Mix=4 so early sessions do not grind', () => {
+    expect(ECHO_ROUNDS).toBe(3)
+    expect(SHUFFLE_ROUNDS).toBe(3)
+    expect(MIX_ROUNDS).toBe(4)
+  })
+})
 
 describe('the step machine', () => {
   it('walks MEET -> FORWARD -> BACKWARD -> ECHO -> SHUFFLE -> DONE', () => {

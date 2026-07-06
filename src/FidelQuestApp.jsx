@@ -332,11 +332,48 @@ export const WORDS = FIDEL_FAMILIES.filter((f) => f.word).map((f, _, arr) => ({
 }))
 export const WORD_BY_LATIN = new Map(WORDS.map((w) => [w.latin, w]))
 
+/** The look-alike sibling of a family, if any: its twin parent, or a family
+    that twins onto it. This is where a phonetic twin is allowed to appear. */
+function twinSiblingOf(fam) {
+  if (!fam) return null
+  const parent = fam.twinOf && FIDEL_FAMILIES.find((f) => f.name === fam.twinOf)
+  const child = FIDEL_FAMILIES.find((f) => f.twinOf === fam.name)
+  return parent || child || null
+}
+export const wordFamilyHasTwin = (latin) => {
+  const w = WORD_BY_LATIN.get(latin)
+  return !!(w && twinSiblingOf(FIDEL_FAMILIES[w.familyIndex]))
+}
+
+/* First Words (P5). Two interleaved question shapes over the same machine:
+   - type 'picture': hear the word, pick its picture (unchanged behaviour).
+   - type 'glyph'  : hear the word, pick the LETTER it starts with. For a
+     word whose family has a phonetic twin, the twin glyph is seated as a
+     distractor ON PURPOSE. This is the ONE place near-twins co-occur - and
+     it is safe because the picture + spoken word disambiguate by meaning,
+     not by sound (exactly how Ethiopian schools teach twins via nicknames).
+   Options in a glyph round are Ge'ez chars; in a picture round, word latins.
+   `wordLatin` always carries the prompt word so the renderer is type-blind. */
 export function buildWordQueue(seed, count = 6) {
   let rngState = seed
   let shuffled
   ;[shuffled, rngState] = rngShuffle(WORDS, rngState)
   return shuffled.slice(0, Math.min(count, WORDS.length)).map((target) => {
+    const fam = FIDEL_FAMILIES[target.familyIndex]
+    const sibling = twinSiblingOf(fam)
+    if (sibling) {
+      const correct = formOf(`${fam.id}-1`)?.char
+      const twinGlyph = formOf(`${sibling.id}-1`)?.char
+      let others
+      ;[others, rngState] = rngShuffle(
+        FIDEL_FAMILIES.filter((f) => f.id !== fam.id && f.id !== sibling.id).map((f) => formOf(`${f.id}-1`)?.char).filter(Boolean),
+        rngState,
+      )
+      const pool = [correct, twinGlyph, others.find((c) => c !== correct && c !== twinGlyph)].filter(Boolean)
+      let options
+      ;[options, rngState] = rngShuffle(pool, rngState)
+      return { type: 'glyph', target: correct, options, wordLatin: target.latin }
+    }
     let others
     ;[others, rngState] = rngShuffle(
       WORDS.filter((w) => w.latin !== target.latin && w.picture !== target.picture),
@@ -344,7 +381,7 @@ export function buildWordQueue(seed, count = 6) {
     )
     let options
     ;[options, rngState] = rngShuffle([target.latin, ...others.slice(0, 2).map((w) => w.latin)], rngState)
-    return { target: target.latin, options }
+    return { type: 'picture', target: target.latin, options, wordLatin: target.latin }
   })
 }
 
@@ -2631,7 +2668,8 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
     transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed) } }).next,
   )
   const question = selectQuestion(ctx)
-  const word = question ? WORD_BY_LATIN.get(question.target) : null
+  const word = question ? WORD_BY_LATIN.get(question.wordLatin ?? question.target) : null
+  const isGlyph = question?.type === 'glyph'
   const progress = selectProgress(ctx)
 
   useEffect(() => {
@@ -2691,7 +2729,13 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
 
       <main className="flex flex-1 flex-col justify-center gap-7 py-6 text-center" aria-live="polite">
         <div>
-          <p className="geez text-6xl font-black">{word?.geez}</p>
+          {/* Glyph rounds show the PICTURE (not the spelled word, which would
+              reveal the target letter); picture rounds show the geez word. */}
+          {isGlyph ? (
+            <p className="text-7xl" aria-hidden="true">{word?.picture}</p>
+          ) : (
+            <p className="geez text-6xl font-black">{word?.geez}</p>
+          )}
           <button
             type="button"
             onClick={() => audioPlayWord(word, soundOn)}
@@ -2702,24 +2746,29 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
             <Volume2 className="h-5 w-5" aria-hidden="true" />
             {word?.latin}
           </button>
+          {isGlyph && (
+            <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
+              {t('whichStart', 'Which letter does it start with?')}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          {question?.options.map((latin) => {
-            const option = WORD_BY_LATIN.get(latin)
-            const isTarget = latin === question.target
+          {question?.options.map((opt) => {
+            const option = isGlyph ? null : WORD_BY_LATIN.get(opt)
+            const isTarget = opt === question.target
             const showGood = ctx.status === GameState.SUCCESS_BURST && isTarget
-            const showBad = ctx.status === GameState.ERROR_RECOVERY && latin === ctx.wrongPicks[ctx.wrongPicks.length - 1]
-            const dead = ctx.wrongPicks.includes(latin)
+            const showBad = ctx.status === GameState.ERROR_RECOVERY && opt === ctx.wrongPicks[ctx.wrongPicks.length - 1]
+            const dead = ctx.wrongPicks.includes(opt)
             return (
               <motion.button
-                key={`${ctx.cursor}-${latin}`}
+                key={`${ctx.cursor}-${opt}`}
                 type="button"
                 disabled={busy || dead}
-                onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: latin } })}
+                onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: opt } })}
                 animate={showBad ? { x: [0, -8, 8, -5, 5, 0] } : showGood ? { scale: [1, 1.12, 1] } : {}}
                 transition={{ duration: 0.4 }}
-                className={`chunk flex h-28 items-center justify-center rounded-3xl border-2 text-6xl ${FOCUS}`}
+                className={`chunk flex h-28 items-center justify-center rounded-3xl border-2 ${isGlyph ? 'geez text-7xl font-black' : 'text-6xl'} ${FOCUS}`}
                 style={{
                   background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'var(--card)',
                   borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
@@ -2728,9 +2777,9 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
                   opacity: dead && !showBad ? 0.35 : 1,
                   outlineColor: 'var(--sky)',
                 }}
-                aria-label={`Picture of ${option?.meaning}`}
+                aria-label={isGlyph ? `Letter ${opt}` : `Picture of ${option?.meaning}`}
               >
-                <span aria-hidden="true">{option?.picture}</span>
+                <span aria-hidden="true">{isGlyph ? opt : option?.picture}</span>
               </motion.button>
             )
           })}

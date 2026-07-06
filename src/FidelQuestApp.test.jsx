@@ -204,15 +204,19 @@ describe('vowel levels and Star Practice', () => {
 })
 
 describe('First Words', () => {
-  it('builds word questions with distinct pictures and deterministic seeds', () => {
+  it('builds word questions (picture + glyph) that are valid and deterministic', () => {
     for (let seed = 1; seed <= 10; seed++) {
       const queue = buildWordQueue(seed)
       expect(queue).toHaveLength(6)
       for (const q of queue) {
+        expect(['picture', 'glyph']).toContain(q.type)
         expect(q.options).toContain(q.target)
         expect(new Set(q.options).size).toBe(q.options.length)
-        const pictures = q.options.map((l) => WORD_BY_LATIN.get(l).picture)
-        expect(new Set(pictures).size).toBe(pictures.length)
+        expect(WORD_BY_LATIN.get(q.wordLatin)).toBeTruthy() // prompt word always resolvable
+        if (q.type === 'picture') {
+          const pictures = q.options.map((l) => WORD_BY_LATIN.get(l).picture)
+          expect(new Set(pictures).size).toBe(pictures.length)
+        }
       }
     }
     expect(JSON.stringify(buildWordQueue(42))).toBe(JSON.stringify(buildWordQueue(42)))
@@ -224,6 +228,50 @@ describe('First Words', () => {
       expect(typeof w.picture).toBe('string')
       expect(typeof w.meaning).toBe('string')
       expect(Array.from(w.geez).length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('twin-letter differentiation (P5)', () => {
+  const baseChar = (fam) => INDEXES.byAudioKey.get(`${fam.id}-1`)?.char
+  const familyOfChar = (ch) => FIDEL_FAMILIES.find((f) => baseChar(f) === ch)
+  const siblingOf = (fam) =>
+    FIDEL_FAMILIES.find((f) => f.name === fam.twinOf) ||
+    FIDEL_FAMILIES.find((f) => f.twinOf === fam.name) ||
+    null
+
+  it('seats the phonetic twin as a distractor in every glyph round', () => {
+    let glyphRounds = 0
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const q of buildWordQueue(seed)) {
+        if (q.type !== 'glyph') continue
+        glyphRounds++
+        const fam = familyOfChar(q.target)
+        const sibling = siblingOf(fam)
+        expect(sibling).toBeTruthy()
+        expect(q.options).toContain(baseChar(sibling)) // the twin IS present here
+      }
+    }
+    expect(glyphRounds).toBeGreaterThan(0) // the mechanism actually fires
+  })
+
+  it('NEVER lets a distractor share the spoken target sound (no false failure)', () => {
+    // The child hears the target sound and must pick it. The unbreakable
+    // rule: no OTHER option may sound like the target, or two answers would
+    // be "correct by ear". (Mutual twins among distractors are harmless -
+    // neither matches the played sound.) This holds across all 8 levels.
+    const soundOf = (k) => INDEXES.byAudioKey.get(k).sound
+    for (const level of LEVELS) {
+      for (let seed = 1; seed <= 25; seed++) {
+        const [queue] = buildQuestionQueue(level, seed)
+        for (const q of queue) {
+          const targetSound = soundOf(q.target)
+          for (const opt of q.options) {
+            if (opt === q.target) continue
+            expect(soundOf(opt)).not.toBe(targetSound)
+          }
+        }
+      }
     }
   })
 })

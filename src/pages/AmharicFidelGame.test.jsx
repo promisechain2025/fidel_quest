@@ -11,7 +11,7 @@ import AmharicFidelGame, {
   starsForAccuracy,
   weightTargets,
 } from './AmharicFidelGame'
-import { computeTraceResult } from '../components/FidelTracePad'
+import { computeTraceResult, computeTraceResultV2, strokeSpec, TRACE_TOLERANCE } from '../components/FidelTracePad'
 
 // jsdom has no Audio; the component guards construction, but stubbing lets
 // us assert the game never crashes on sound calls.
@@ -171,6 +171,62 @@ describe('trace scoring', () => {
     const result = computeTraceResult(mask, half)
     expect(result.stars).toBeGreaterThanOrEqual(1)
     expect(result.stars).toBeLessThan(3)
+  })
+})
+
+describe('directional tracing (P6)', () => {
+  // A tall glyph mask: origin should be the topmost-then-leftmost point,
+  // and the dominant axis should be top-to-bottom.
+  const tall = []
+  for (let y = 40; y <= 200; y += 8) for (let x = 100; x <= 140; x += 8) tall.push([x, y])
+
+  it('derives origin (top-left) and a TB axis from the mask', () => {
+    const spec = strokeSpec('ha', tall)
+    expect(spec.origin).toEqual([100, 40])
+    expect(spec.dir).toBe('TB')
+  })
+
+  it('detects a wide glyph as an LR axis', () => {
+    const wide = []
+    for (let x = 40; x <= 200; x += 8) for (let y = 100; y <= 140; y += 8) wide.push([x, y])
+    expect(strokeSpec('x', wide).dir).toBe('LR')
+  })
+
+  it('tightens tolerance from chapter 1 to chapter 4', () => {
+    expect(TRACE_TOLERANCE[4].origin).toBeLessThan(TRACE_TOLERANCE[1].origin)
+    expect(TRACE_TOLERANCE[4].cover).toBeLessThan(TRACE_TOLERANCE[1].cover)
+    expect(TRACE_TOLERANCE[1].needDir).toBe(false)
+    expect(TRACE_TOLERANCE[4].needDir).toBe(true)
+  })
+
+  it('passes a top-to-bottom stroke that starts at the origin', () => {
+    const drawn = tall.slice() // top-to-bottom order, covers the glyph
+    const r = computeTraceResultV2(tall, drawn, 4, 'ha')
+    expect(r.originOk).toBe(true)
+    expect(r.dirOk).toBe(true)
+    expect(r.cue).toBe(null)
+    expect(r.pass).toBe(true)
+  })
+
+  it('cues origin when the stroke starts far from the top', () => {
+    const drawn = tall.slice().reverse() // starts at the BOTTOM
+    const r = computeTraceResultV2(tall, drawn, 4, 'ha')
+    expect(r.cue).toBe('origin')
+  })
+
+  it('cues direction (never hard-blocks) when armed and reversed from a valid origin', () => {
+    // Start near the top origin, then move upward: right origin, wrong way.
+    const drawn = [[100, 44], [110, 42], [120, 40]]
+    const r = computeTraceResultV2(tall, drawn, 4, 'ha')
+    expect(r.originOk).toBe(true)
+    expect(r.dirOk).toBe(false)
+    expect(r.cue).toBe('direction')
+  })
+
+  it('treats direction as advisory (no cue) in early chapters', () => {
+    const drawn = [[100, 44], [110, 42], [120, 40]] // reversed, but chapter 1
+    const r = computeTraceResultV2(tall, drawn, 1, 'ha')
+    expect(r.cue).toBe(null)
   })
 })
 

@@ -78,6 +78,7 @@ const STRINGS = {
     mixDone: 'ጎበዝ ቅልቅል!',
     wordsTitle: 'መጀመሪያ ቃላት',
     wordsSub: 'ቃሉን ያዳምጡ፣ ሥዕሉን ይንኩ',
+    whichStart: 'በየትኛው ፊደል ይጀምራል?',
   },
 }
 

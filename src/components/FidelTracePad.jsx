@@ -60,6 +60,71 @@ export function computeTraceResult(maskPoints, drawnPoints, { coverRadius = 18, 
   return { coverage, stray, stars }
 }
 
+/* ── Directional tracing (Pillar 6) ──────────────────────────────────────
+   Pure coverage rewards scrubbing; real handwriting needs a start point and
+   a direction. Ge'ez has no public canonical stroke-order dataset, so the
+   day-one engine DERIVES an expected origin and dominant axis from the
+   glyph's own pixel mask (topmost-then-leftmost inked point is the
+   conventional pen start for a top-to-bottom, left-to-right script). A
+   per-family STROKE_HINTS override map is scaffolded for a later authored
+   pass; when present it wins over the heuristic. Direction is ALWAYS a soft
+   cue - it guides the finger back, it never fails the child.                */
+
+// Authored overrides, keyed by family id -> { origin:[x,y] in 0..CANVAS_SIZE,
+// dir:'TB'|'LR' }. Intentionally empty for day one (heuristic-only).
+export const STROKE_HINTS = {}
+
+// Tolerance widens the target early and tightens it by chapter (1..4).
+// origin: max px from the expected start; needDir: whether the direction
+// cue is armed at all (advisory only until the later chapters).
+export const TRACE_TOLERANCE = {
+  1: { cover: 20, stray: 42, origin: 96, needDir: false },
+  2: { cover: 17, stray: 34, origin: 76, needDir: false },
+  3: { cover: 14, stray: 28, origin: 58, needDir: true },
+  4: { cover: 12, stray: 22, origin: 44, needDir: true },
+}
+
+/** Expected start point + primary axis, from override or glyph mask. Pure. */
+export function strokeSpec(familyId, maskPoints) {
+  const hint = STROKE_HINTS[familyId]
+  if (hint) return hint
+  if (!maskPoints || maskPoints.length === 0) return { origin: [CANVAS_SIZE / 2, CANVAS_SIZE / 2], dir: 'TB' }
+  let top = maskPoints[0]
+  let minX = maskPoints[0][0], maxX = maskPoints[0][0], minY = maskPoints[0][1], maxY = maskPoints[0][1]
+  for (const [x, y] of maskPoints) {
+    if (y < top[1] || (y === top[1] && x < top[0])) top = [x, y]
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+  }
+  return { origin: top, dir: maxY - minY >= maxX - minX ? 'TB' : 'LR' }
+}
+
+/* Directional, chapter-scaled scoring. Extends computeTraceResult with an
+   origin check and a net-direction check. `cue` tells the UI what to nudge
+   ('origin' -> pulse a dot at the start; 'direction' -> ghost arrow); `pass`
+   is a suggestion the caller may combine with plain coverage so a fully
+   covered letter is never rejected. Pure and deterministic.                 */
+export function computeTraceResultV2(maskPoints, drawnPoints, chapter = 1, familyId = null) {
+  const tol = TRACE_TOLERANCE[chapter] ?? TRACE_TOLERANCE[1]
+  const base = computeTraceResult(maskPoints, drawnPoints, { coverRadius: tol.cover, strayRadius: tol.stray })
+  if (drawnPoints.length < 2) {
+    return { ...base, originOk: false, dirOk: false, cue: 'origin', pass: false }
+  }
+  const spec = strokeSpec(familyId, maskPoints)
+  const start = drawnPoints[0]
+  const end = drawnPoints[drawnPoints.length - 1]
+  const originErr = Math.hypot(start[0] - spec.origin[0], start[1] - spec.origin[1])
+  const originOk = originErr <= tol.origin
+  const dirOk = spec.dir === 'TB' ? end[1] - start[1] >= 0 : end[0] - start[0] >= 0
+  let cue = null
+  if (!originOk) cue = 'origin'
+  else if (tol.needDir && !dirOk) cue = 'direction'
+  const pass = base.coverage >= 0.5 && originOk && (!tol.needDir || dirOk || base.stars >= 2)
+  return { ...base, originOk, dirOk, originPoint: spec.origin, dir: spec.dir, cue, pass }
+}
+
 // jsdom (and some embeds) either return null or throw from getContext —
 // treat both as "unsupported" so the pad degrades to its fallback note.
 function get2d(canvas) {
