@@ -27,7 +27,8 @@ import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
-import LearnLetters, { loadLearn, groupMastered } from './LearnLetters'
+import { StoneLessonForNode } from './LearnLetters'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone } from './journey'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END } from './platform/quality'
@@ -52,6 +53,7 @@ import {
   RotateCcw,
   TreePine,
   Pencil,
+  Backpack as BackpackIcon,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -683,8 +685,16 @@ export default function FidelQuestApp() {
     }
   }, [])
   const [progress, setProgress] = useState(loadProgress)
+  const [journey, setJourney] = useState(loadJourney)
+  const [backpackOpen, setBackpackOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
+  // Recompute the Backpack's Star Practice badge whenever progress advances
+  // (the answer ledger it reads grows as the child plays).
+  const troubleCount = useMemo(
+    () => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length,
+    [journey], // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   const toggleSound = useCallback(() => {
     setSoundOn((on) => {
@@ -722,8 +732,23 @@ export default function FidelQuestApp() {
     const seed = (Date.now() % 1000000) | 1
     const queue = buildPracticeQueue(loadLedger(), seed)
     if (!queue.length) return
+    setBackpackOpen(false)
     setRunSeed(seed)
     setScreen({ name: 'practice', queue })
+  }, [])
+
+  // Mark a Journey node complete (grants its reward) and return to the path.
+  const markNodeDone = useCallback((nodeId, stars = 3) => {
+    setJourney((j) => applyNodeDone(j, nodeId, stars))
+    setScreen({ name: 'home' })
+  }, [])
+
+  // Open a node: the single obvious action from the path (Pillar 1).
+  const openNode = useCallback((node) => {
+    setRunSeed((Date.now() % 1000000) | 1)
+    if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
+    if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
+    return setScreen({ name: 'arcade', node }) // ARCADE gateway
   }, [])
 
   return (
@@ -732,22 +757,12 @@ export default function FidelQuestApp() {
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
             <Screen key="home">
-              <Home
-                progress={progress}
+              <JourneyPath
+                journey={journey}
                 soundOn={soundOn}
                 onToggleSound={toggleSound}
-                onPlay={startLesson}
-                onExplore={() => setScreen({ name: 'explore' })}
-                onRunner={() => {
-                  setRunSeed((Date.now() % 1000000) | 1)
-                  setScreen({ name: 'runner' })
-                }}
-                onSkylands={() => setScreen({ name: 'skylands' })}
-                onClassic={() => setScreen({ name: 'classic' })}
-                onGrownUps={() => setScreen({ name: 'grownups' })}
-                onPracticeMode={startPractice}
-                onWords={startWords}
-                onLearn={() => setScreen({ name: 'learn' })}
+                onOpen={openNode}
+                onBackpack={() => setBackpackOpen(true)}
               />
             </Screen>
           )}
@@ -782,27 +797,31 @@ export default function FidelQuestApp() {
               </div>
             </Screen>
           )}
-          {screen.name === 'skylands' && (
-            <Screen key="skylands">
-              <FidelSkylands onExit={() => setScreen({ name: 'home' })} />
-            </Screen>
-          )}
-          {screen.name === 'runner' && (
-            <Screen key={`runner-${runSeed}`}>
-              <Runner
-                seed={runSeed}
+          {screen.name === 'stone' && (
+            <Screen key={`stone-${screen.node.id}`}>
+              <StoneLessonForNode
+                node={screen.node}
                 soundOn={soundOn}
-                onExit={() => setScreen({ name: 'home' })}
-                onRetry={() => {
-                  setRunSeed((Date.now() % 1000000) | 1)
-                  setScreen({ name: 'runner' })
-                }}
+                onDone={() => markNodeDone(screen.node.id)}
+                onBack={() => setScreen({ name: 'home' })}
               />
             </Screen>
           )}
-          {screen.name === 'learn' && (
-            <Screen key="learn">
-              <LearnLetters soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} />
+          {screen.name === 'arcade' && (
+            <Screen key={`arcade-${screen.node.id}-${runSeed}`}>
+              {screen.node.gateway.mode === 'runner' ? (
+                <Runner
+                  seed={runSeed}
+                  soundOn={soundOn}
+                  onExit={() => markNodeDone(screen.node.id)}
+                  onRetry={() => {
+                    setRunSeed((Date.now() % 1000000) | 1)
+                    setScreen({ name: 'arcade', node: screen.node })
+                  }}
+                />
+              ) : (
+                <FidelSkylands onExit={() => markNodeDone(screen.node.id)} />
+              )}
             </Screen>
           )}
           {screen.name === 'words' && (
@@ -828,10 +847,32 @@ export default function FidelQuestApp() {
                 level={LEVELS.find((l) => l.id === screen.levelId)}
                 seed={runSeed}
                 soundOn={soundOn}
-                onFinish={finishLevel}
+                onFinish={(levelId, result) => {
+                  // A QUIZ node's lesson also completes its Journey node.
+                  if (screen.nodeId) {
+                    if (result) setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
+                    markNodeDone(screen.nodeId, result?.stars ?? 3)
+                  } else {
+                    finishLevel(levelId, result)
+                  }
+                }}
                 onReplay={() => startLesson(screen.levelId)}
               />
             </Screen>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {backpackOpen && (
+            <Backpack
+              key="backpack"
+              onClose={() => setBackpackOpen(false)}
+              troubleCount={troubleCount}
+              onWords={() => { setBackpackOpen(false); startWords() }}
+              onPractice={startPractice}
+              onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
+              onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
+              onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
+            />
           )}
         </AnimatePresence>
       </div>
@@ -911,24 +952,207 @@ export function Hero({ size = 104, mood = 'happy' }) {
   )
 }
 
-/* ── Home ── */
+/* ── Home: the unified Journey path (Pillar 1) ──────────────────────────
+   Nine screens collapsed into one winding path of typed nodes. Exactly one
+   node is "current" (the first not-yet-done, from nextNode); it pulses and
+   scrolls into view. Boss (QUIZ) and gateway (ARCADE) nodes are shaped and
+   coloured differently so a pre-reader reads "something special" without
+   reading a word. Utilities live in the Backpack, off the main path. */
 
-function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, onSkylands, onClassic, onGrownUps, onPracticeMode, onWords, onLearn }) {
-  const learn = useMemo(() => loadLearn(), [])
-  const runnerBest = loadRunnerBest()
-  const troubleCount = useMemo(() => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length, [])
-  const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
-  const maxStars = LEVELS.length * 3
-  const champion = totalStars === maxStars
+const nodeGlyph = (node) => {
+  if (node.kind === NodeKind.LEARN) return formOf(`${node.familyId}-1`)?.char ?? '?'
+  if (node.kind === NodeKind.MIX) return '፨'
+  return null
+}
+
+function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) {
+  const isBoss = node.kind === NodeKind.QUIZ
+  const isArcade = node.kind === NodeKind.ARCADE
+  const big = isBoss || isArcade
+  const size = big ? 76 : 60
+  const label =
+    node.kind === NodeKind.LEARN
+      ? `Learn ${node.familyId}`
+      : node.kind === NodeKind.MIX
+        ? 'Mix challenge'
+        : isBoss
+          ? `Quiz level ${node.levelId?.split('-')[1]}`
+          : node.gateway.mode === 'runner'
+            ? 'Letter Runner'
+            : 'Fidel Skylands'
+  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--line)'
+  const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--muted)'
+  const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2 rounded-2xl px-3 py-1.5 font-extrabold" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
-          <Star className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />
-          <span className="mono">
-            {totalStars} / {maxStars}
-          </span>
+    <div ref={innerRef} className="flex w-full items-center" style={{ justifyContent: side < 0 ? 'flex-start' : 'flex-end' }}>
+      <div className="flex flex-col items-center" style={{ width: 132 }}>
+        <motion.button
+          type="button"
+          disabled={!unlocked}
+          onClick={onClick}
+          whileTap={unlocked ? { scale: 0.92 } : {}}
+          animate={highlight ? { scale: [1, 1.08, 1], transition: { duration: 1.3, repeat: Infinity } } : { scale: 1 }}
+          className={`geez relative flex items-center justify-center border-2 font-black ${FOCUS}`}
+          style={{
+            width: size,
+            height: size,
+            borderRadius: radius,
+            fontSize: big ? 22 : 26,
+            background: bg,
+            color: fg,
+            borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
+            boxShadow: unlocked ? `0 5px 0 ${done ? 'var(--accent)' : big ? 'rgba(0,0,0,0.18)' : 'var(--line)'}` : 'none',
+            outlineColor: 'var(--sky)',
+          }}
+          aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
+          aria-current={highlight ? 'step' : undefined}
+        >
+          {!unlocked ? (
+            <Lock className="h-5 w-5" aria-hidden="true" />
+          ) : isArcade ? (
+            node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <TreePine className="h-7 w-7" aria-hidden="true" />
+          ) : isBoss ? (
+            <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+          ) : (
+            nodeGlyph(node)
+          )}
+          {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+        </motion.button>
+        {highlight && (
+          <motion.span className="mt-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--go)' }} animate={{ y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity }}>
+            {t('start', 'Start')}
+          </motion.span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack }) {
+  const current = nextNode(journey)
+  const currentRef = useRef(null)
+  const doneCount = Object.keys(journey.done).length
+  useEffect(() => {
+    currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+  }, [current?.id])
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
+      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)' }}>
+        <div className="flex items-center gap-2">
+          <Hero size={48} />
+          <div>
+            <h1 className="text-base font-black leading-none">Fidel Quest</h1>
+            <p className="mono text-xs font-bold" style={{ color: 'var(--muted)' }}>
+              {doneCount}/{JOURNEY.length}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleSound}
+            aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
+            aria-pressed={soundOn}
+            className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
+            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+          >
+            {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onBackpack}
+            aria-label="Open backpack"
+            className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
+            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+          >
+            <BackpackIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+
+      <div className="mt-4 flex flex-col items-center gap-2">
+        {JOURNEY.map((node, i) => {
+          const done = !!journey.done[node.id]
+          const isNext = current ? node.id === current.id : false
+          const unlocked = isNext || done
+          return (
+            <PathNode
+              key={node.id}
+              node={node}
+              done={done}
+              unlocked={unlocked}
+              highlight={isNext}
+              side={i % 2 === 0 ? -1 : 1}
+              innerRef={isNext ? currentRef : null}
+              onClick={unlocked ? () => onOpen(node) : undefined}
+            />
+          )
+        })}
+        {!current && (
+          <div className="mt-4 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
+            <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion - every star earned!')}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`chunk flex w-full items-center gap-4 rounded-3xl p-4 text-left ${FOCUS}`}
+      style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+    >
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-extrabold">{title}</span>
+        <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+          {sub}
+        </span>
+      </span>
+    </button>
+  )
+}
+
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, troubleCount }) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-end justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-md rounded-3xl p-5"
+        style={{ background: 'var(--paper)' }}
+        initial={{ y: 40 }}
+        animate={{ y: 0 }}
+        exit={{ y: 40 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
+          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
+          <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
+          {troubleCount > 0 && (
+            <BackpackItem icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" title={t('practiceTitle', 'Star Practice')} sub={t('practiceSub', `${troubleCount} tricky letters to make strong`, { n: troubleCount })} onClick={onPractice} />
+          )}
+          <BackpackItem icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerTitle', 'Letter Explorer')} sub={t('explorerSub', 'Tap any of the 231 letters to hear it')} onClick={onExplore} />
+          <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
+          <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
         </div>
         <button
           type="button"
@@ -936,233 +1160,13 @@ function Home({ progress, soundOn, onToggleSound, onPlay, onExplore, onRunner, o
             setLang(getLang() === 'am' ? 'en' : 'am')
             window.location.reload()
           }}
-          aria-label={getLang() === 'am' ? 'Switch to English' : 'ወደ አማርኛ ቀይር'}
-          className={`chunk mr-2 flex h-11 items-center justify-center rounded-2xl px-3 text-sm font-black ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+          className={`mx-auto mt-4 block rounded-xl px-4 py-2 text-sm font-black ${FOCUS}`}
+          style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
         >
-          {getLang() === 'am' ? 'EN' : 'አማ'}
+          {getLang() === 'am' ? 'English' : 'አማርኛ'}
         </button>
-        <button
-          type="button"
-          onClick={onToggleSound}
-          aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
-          aria-pressed={soundOn}
-          className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
-        >
-          {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-        </button>
-      </header>
-
-      <div className="mt-6 flex flex-col items-center text-center">
-        <motion.div initial={{ scale: 0.7, rotate: -8 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 14 }}>
-          <Hero size={116} />
-        </motion.div>
-        <h1 className="mt-2 text-4xl font-black tracking-tight">Fidel Quest</h1>
-        <p className="mt-1 font-semibold" style={{ color: 'var(--muted)' }}>
-          {t('tagline', 'Learn the Amharic alphabet with Anbessa the lion cub')}
-        </p>
-        {champion && (
-          <div className="mt-3 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
-            <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion — every star earned!')}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8 flex flex-col gap-4">
-        <button
-          type="button"
-          onClick={onLearn}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--accent)', boxShadow: '0 4px 0 var(--accent)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl font-black text-white" style={{ background: 'var(--accent)' }} aria-hidden="true">
-            ሀ
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">{t('learnTitle', 'Letter Steps')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('learnSub', 'Learn every letter, one step at a time')} · {learn.mastered.length}/33
-            </span>
-          </span>
-        </button>
-
-        {LEVELS.map((level, i) => {
-          const chainOk = isLevelUnlocked(progress, i)
-          const learnOk = level.kind !== 'base' || groupMastered(learn, level.n) || !!progress[level.id]
-          return (
-            <LevelCard
-              key={level.id}
-              level={level}
-              earned={progress[level.id]?.stars ?? 0}
-              unlocked={chainOk && learnOk}
-              needsLearning={chainOk && !learnOk}
-              onPlay={() => onPlay(level.id)}
-            />
-          )
-        })}
-
-        {troubleCount > 0 && (
-          <button
-            type="button"
-            onClick={onPracticeMode}
-            className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-            style={{ background: 'var(--card)', border: '2px solid var(--accent)', boxShadow: '0 4px 0 var(--accent)', outlineColor: 'var(--sky)' }}
-          >
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--star)', color: '#7c5200' }}>
-              <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-lg font-extrabold">{t('practiceTitle', 'Star Practice')}</span>
-              <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-                {t('practiceSub', `${troubleCount} tricky ${troubleCount === 1 ? 'letter' : 'letters'} to make strong`, { n: troubleCount })}
-              </span>
-            </span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onRunner}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--accent)', color: '#fff' }}>
-            <Flame className="h-7 w-7" fill="currentColor" aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">{t('runnerTitle', 'Letter Runner')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('runnerSub', 'A 3D run through Ethiopia and Eritrea — feed Anbessa, outrun Jibby the hyena!')}
-            </span>
-          </span>
-          {runnerBest.fed > 0 && (
-            <span className="mono shrink-0 rounded-xl px-2.5 py-1 text-sm font-black" style={{ background: 'var(--accent)', color: '#fff' }} aria-label={`Best: ${runnerBest.fed} letters`}>
-              Best {runnerBest.fed}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={onSkylands}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--go)', color: '#fff' }}>
-            <TreePine className="h-7 w-7" aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">{t('skylandsTitle', 'Fidel Skylands')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('skylandsSub', 'A 3D island quest — grow the tree, pluck letters, beat Jibby')}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onWords}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-white" style={{ background: 'var(--go)' }} aria-hidden="true">
-            ቃል
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">{t('wordsTitle', 'First Words')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('wordsSub', 'Hear the word, tap its picture')}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onClassic}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--star)', color: '#7c5200' }}>
-            <Pencil className="h-7 w-7" aria-hidden="true" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-lg font-extrabold">{t('classicTitle', 'Classic Game')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('classicSub', 'Chant the orders, trace letters, learn first words')}
-            </span>
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onExplore}
-          className={`chunk flex items-center gap-4 rounded-3xl p-5 text-left ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--sky)', color: '#fff' }}>
-            <BookOpen className="h-7 w-7" aria-hidden="true" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-lg font-extrabold">{t('explorerTitle', 'Letter Explorer')}</span>
-            <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('explorerSub', 'Tap any of the 231 letters to hear it')}
-            </span>
-          </span>
-        </button>
-      </div>
-
-      <button
-        type="button"
-        onClick={onGrownUps}
-        className={`mx-auto mt-6 text-sm font-extrabold underline-offset-2 hover:underline ${FOCUS}`}
-        style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}
-      >
-        {t('grownups', 'For grown-ups: progress and tips')}
-      </button>
-    </div>
-  )
-}
-
-function LevelCard({ level, earned, unlocked, needsLearning = false, onPlay }) {
-  return (
-    <div className="relative overflow-hidden rounded-3xl border-2 p-5" style={{ background: 'var(--card)', borderColor: 'var(--line)', opacity: unlocked ? 1 : 0.72 }}>
-      <div className="flex items-center gap-4">
-        <div className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl font-black text-white" style={{ background: unlocked ? 'var(--accent)' : 'var(--muted)' }} aria-hidden="true">
-          {formOf(level.kind === 'orders' ? `${level.families[0]}-2` : level.pool[0]).char}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {t('level', 'Level')} {level.n}
-          </p>
-          <h2 className="text-lg font-extrabold leading-tight">{t(`${level.id}.title`, level.title)}</h2>
-          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {level.blurb}
-          </p>
-        </div>
-        {unlocked ? (
-          <Chunky tone={earned > 0 ? 'card' : 'go'} className="flex h-14 w-14 shrink-0 items-center justify-center" aria-label={`Play ${level.title}`} onClick={onPlay}>
-            {earned > 0 ? <RotateCcw className="h-6 w-6" aria-hidden="true" /> : <Play className="h-6 w-6" aria-hidden="true" />}
-          </Chunky>
-        ) : (
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--line)', color: 'var(--muted)' }} aria-hidden="true">
-            <Lock className="h-6 w-6" />
-          </div>
-        )}
-      </div>
-      <div className="mt-3 flex items-center gap-1" aria-label={`${earned} of 3 stars earned`}>
-        {[0, 1, 2].map((i) => (
-          <Star key={i} className="h-5 w-5" style={i < earned ? { color: 'var(--star)', fill: 'var(--star)' } : { color: 'var(--line)' }} aria-hidden="true" />
-        ))}
-        {!unlocked && (
-          <span className="ml-auto text-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {needsLearning
-              ? t('learnFirst', 'Learn these letters in Letter Steps first')
-              : t('lockHint', `Earn a star on Level ${level.n - 1} to unlock`, { n: level.n - 1 })}
-          </span>
-        )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

@@ -645,6 +645,18 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   )
 }
 
+/* Open a single stone for a Journey node (Pillar 1). The Journey now owns
+   ordering and persistence, so this just runs the one lesson and reports
+   done - it does not touch fq.learn.v1. A LEARN node carries `familyId`; a
+   MIX node carries `families`. */
+export function StoneLessonForNode({ node, soundOn, onDone, onBack }) {
+  const [seed] = useState(() => (Date.now() % 1000000) | 1)
+  const stone = node.families
+    ? { type: 'mix', id: `mix-${node.families[node.families.length - 1]}`, group: node.chapter, families: node.families }
+    : { type: 'family', id: node.familyId, group: node.chapter }
+  return <StoneLesson stone={stone} seed={seed} soundOn={soundOn} onDone={onDone} onBack={onBack} />
+}
+
 /** The path of stones, grouped, with locks and gold states. */
 export default function LearnLetters({ soundOn, onBack }) {
   const [learn, setLearn] = useState(loadLearn)

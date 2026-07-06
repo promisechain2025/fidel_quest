@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import FidelQuestApp, {
   INVARIANTS,
   FIDEL_FAMILIES,
@@ -132,14 +132,24 @@ describe('scoring', () => {
 })
 
 describe('app shell', () => {
-  it('renders the home screen with every mode', () => {
+  it('renders the unified Journey path with one current step (Pillar 1)', () => {
     render(<FidelQuestApp />)
     expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
-    expect(screen.getByText('Letter Runner')).toBeInTheDocument()
-    expect(screen.getByText('Fidel Skylands')).toBeInTheDocument()
-    expect(screen.getByText('Classic Game')).toBeInTheDocument()
-    expect(screen.getByText('Letter Explorer')).toBeInTheDocument()
+    // Exactly one node is the current step; utilities are off the main path.
+    expect(screen.getAllByText('Start')).toHaveLength(1)
+    expect(screen.getByLabelText('Open backpack')).toBeInTheDocument()
+    // The first node (learn ha) is unlocked; a later node is locked.
+    const firstNode = screen.getByLabelText(/^Learn ha/)
+    expect(firstNode).not.toBeDisabled()
     expect(FIDEL_FAMILIES).toHaveLength(33)
+  })
+
+  it('opens the Backpack to reach the reference utilities', () => {
+    render(<FidelQuestApp />)
+    fireEvent.click(screen.getByLabelText('Open backpack'))
+    expect(screen.getByText('Letter Explorer')).toBeInTheDocument()
+    expect(screen.getByText('Classic Game')).toBeInTheDocument()
+    expect(screen.getByText('First Words')).toBeInTheDocument()
   })
 })
 

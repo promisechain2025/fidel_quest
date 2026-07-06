@@ -79,6 +79,9 @@ const STRINGS = {
     wordsTitle: 'መጀመሪያ ቃላት',
     wordsSub: 'ቃሉን ያዳምጡ፣ ሥዕሉን ይንኩ',
     whichStart: 'በየትኛው ፊደል ይጀምራል?',
+    start: 'ጀምር',
+    backpack: 'ቦርሳ',
+    grownupsSub: 'ሂደትና አስቸጋሪ ፊደላትን ይመልከቱ',
   },
 }
 
