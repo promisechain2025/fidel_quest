@@ -587,17 +587,18 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
               key={fl.id}
               className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-9 w-9 items-center justify-center rounded-lg text-xl font-black"
               style={{ background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)', color: '#5b3a12', boxShadow: '0 2px 0 #a06a30' }}
-              // Shrink steadily along the arc (not just at the end) so the
-              // letter is already small by the time it reaches the mouth and
-              // never covers Anbessa. Ends tiny, as if swallowed.
-              initial={{ x: fl.from.x - 18, y: fl.from.y - 18, scale: 0.7, opacity: 1 }}
+              // A slow, watchable arc: shrink steadily so it never covers
+              // Anbessa, but stay fully visible until it reaches the mouth,
+              // then pop out (swallowed) as he chomps - so it is clear he ate
+              // it, not that it vanished mid-air.
+              initial={{ x: fl.from.x - 18, y: fl.from.y - 18, scale: 0.72, opacity: 1 }}
               animate={{
                 x: fl.to.x - 18,
                 y: [fl.from.y - 18, Math.min(fl.from.y, fl.to.y) - 46, fl.to.y - 18],
-                scale: [0.7, 0.38, 0.04],
-                opacity: [1, 1, 0.7, 0],
-                rotate: 20,
-                transition: { duration: 0.5, ease: 'easeInOut' },
+                scale: [0.72, 0.5, 0.22],
+                opacity: [1, 1, 1, 0],
+                rotate: 16,
+                transition: { duration: 0.9, ease: 'easeInOut' },
               }}
               onAnimationComplete={() => setFlyers((f) => f.filter((x) => x.id !== fl.id))}
               aria-hidden="true"
@@ -630,7 +631,13 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
               mood === 'refuse'
                 ? { rotate: [0, -12, 12, -7, 0], y: [0, -2, 0], transition: { duration: 0.5 } }
                 : mood === 'eating'
-                  ? { scaleX: [1, 1.09, 0.93, 1.05, 1], scaleY: [1, 0.93, 1.09, 0.96, 1], transition: { duration: 0.6 } }
+                  ? {
+                      // Hold the open mouth steady while the letter flies in
+                      // (~0.7s), then chomp - so the catch is legible.
+                      scaleX: [1, 1, 1.09, 0.92, 1.04, 1],
+                      scaleY: [1, 1, 0.92, 1.1, 0.97, 1],
+                      transition: { duration: 1.0, times: [0, 0.66, 0.78, 0.88, 0.95, 1], ease: 'easeInOut' },
+                    }
                   : mood === 'hungry'
                     ? { scale: 1.08, y: [0, -3, 0], transition: { scale: { duration: 0.2 }, y: { duration: 0.7, repeat: Infinity, ease: 'easeInOut' } } }
                     : { scale: 1, y: [0, -2.5, 0], rotate: [0, -1.5, 0, 1.5, 0], transition: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }
@@ -705,7 +712,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         if (correct) {
           setBurst((b) => b + 1)
           playEffect('good', soundOn)
-          flashMood('eating', 650) // open mouth; the eaten card exits into it
+          // Keep the mouth open through the letter's ~0.9s flight and the
+          // chomp that follows, so he is visibly eating it.
+          flashMood('eating', 1050)
           dispatch(key)
           return
         }
@@ -727,7 +736,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   // Speak spoken-round targets; celebrate phase changes and completion.
   useEffect(() => {
     if ((ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE) && ctx.target) {
-      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), 550)
+      // After a correct feed the letter takes ~0.9s to be eaten; hold the next
+      // spoken target until it lands so the prompt does not race the eating.
+      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), 850)
       return () => clearTimeout(timer)
     }
     return undefined
