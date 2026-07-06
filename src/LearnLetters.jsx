@@ -585,16 +585,19 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
           {flyers.map((fl) => (
             <motion.span
               key={fl.id}
-              className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-12 w-12 items-center justify-center rounded-xl text-2xl font-black"
-              style={{ background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)', color: '#5b3a12', boxShadow: '0 3px 0 #a06a30' }}
-              initial={{ x: fl.from.x - 24, y: fl.from.y - 24, scale: 0.9, opacity: 1 }}
+              className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-9 w-9 items-center justify-center rounded-lg text-xl font-black"
+              style={{ background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)', color: '#5b3a12', boxShadow: '0 2px 0 #a06a30' }}
+              // Shrink steadily along the arc (not just at the end) so the
+              // letter is already small by the time it reaches the mouth and
+              // never covers Anbessa. Ends tiny, as if swallowed.
+              initial={{ x: fl.from.x - 18, y: fl.from.y - 18, scale: 0.7, opacity: 1 }}
               animate={{
-                x: fl.to.x - 24,
-                y: [fl.from.y - 24, Math.min(fl.from.y, fl.to.y) - 54, fl.to.y - 24],
-                scale: 0.16,
-                opacity: [1, 1, 0.85, 0],
-                rotate: 18,
-                transition: { duration: 0.5, ease: 'easeIn' },
+                x: fl.to.x - 18,
+                y: [fl.from.y - 18, Math.min(fl.from.y, fl.to.y) - 46, fl.to.y - 18],
+                scale: [0.7, 0.38, 0.04],
+                opacity: [1, 1, 0.7, 0],
+                rotate: 20,
+                transition: { duration: 0.5, ease: 'easeInOut' },
               }}
               onAnimationComplete={() => setFlyers((f) => f.filter((x) => x.id !== fl.id))}
               aria-hidden="true"
