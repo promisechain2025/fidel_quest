@@ -4,6 +4,7 @@
    PNG download. No backend, no accounts, no data leaves the device unless the
    parent chooses to share the image. */
 import { drawAnbessa, drawWearables } from '../FidelQuestApp'
+import { track } from '../platform/analytics'
 
 const BG_TOP = '#fff3d6'
 const BG_BOTTOM = '#ffd98a'
@@ -106,11 +107,13 @@ export async function shareAnbessa({ forms = 0, worn = [] } = {}) {
       const file = new File([blob], 'fidel-quest.png', { type: 'image/png' })
       if (navigator.canShare({ files: [file] })) {
         await navigator.share({ title: 'Fidel Quest', text, url, files: [file] })
+        track('share')
         return 'shared'
       }
     }
     if (navigator.share) {
       await navigator.share({ title: 'Fidel Quest', text, url })
+      track('share')
       return 'shared'
     }
   } catch (e) {
@@ -124,6 +127,7 @@ export async function shareAnbessa({ forms = 0, worn = [] } = {}) {
     a.download = 'fidel-quest.png'
     a.click()
     URL.revokeObjectURL(a.href)
+    track('share')
     return 'downloaded'
   }
   return 'unsupported'

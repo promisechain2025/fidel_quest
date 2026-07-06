@@ -33,6 +33,7 @@ import Closet from './components/Closet'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
+import { track } from './platform/analytics'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
@@ -691,6 +692,7 @@ export default function FidelQuestApp() {
     } catch {
       /* non-browser */
     }
+    track('app_open')
   }, [])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
@@ -760,9 +762,11 @@ export default function FidelQuestApp() {
     const isNew = node?.reward && !(j.collection?.owned ?? []).includes(node.reward.id)
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
+    track('lesson_complete')
     const chapter = chapterComplete(next, nodeId)
     if (chapter) {
       // Peak pride: a full celebration that also asks for a share.
+      track('chapter_complete')
       setCelebration({ chapter, rewardName: node?.reward?.name || null })
     } else if (isNew) {
       setJustEarned(node.reward)
@@ -791,6 +795,7 @@ export default function FidelQuestApp() {
     setGift(claimed)
     if (reward) setJourney(grantWearable(j, reward.id))
     setGiftOpened({ reward })
+    track('gift_claim')
   }, [today])
 
   // Open a node: the single obvious action from the path (Pillar 1).

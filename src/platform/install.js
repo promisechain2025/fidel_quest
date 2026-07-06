@@ -8,6 +8,8 @@
    A dismissal / successful install is remembered so we never nag.
    ========================================================================== */
 
+import { track } from './analytics'
+
 const KEY = 'fq.install.v1' // 'dismissed' | 'installed'
 let deferred = null
 const listeners = new Set()
@@ -26,6 +28,7 @@ if (typeof window !== 'undefined') {
     } catch {
       /* session-only */
     }
+    track('install')
     notify()
   })
 }
