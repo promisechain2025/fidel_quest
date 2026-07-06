@@ -1,24 +1,41 @@
-# Fidel Quest — Game Design
+# Fidel Quest — Game Design Review Packet
 
-Every mode as it plays today, how a child interacts with it, how progress
-flows between modes, and the plan from here. Numbers in this document are
-taken from the shipped code (`src/`), not from intentions.
+> **For the reviewer.** This is a self-contained description of a shipped
+> children's educational game, written for external review. You have not
+> seen the code; everything you need is below. Please review it as a
+> product and learning design — see "What to review" at the end. Numbers
+> here are taken from the shipped code, not from intentions.
+
+## What the app is
+
+**Fidel Quest** is an Amharic alphabet (Fidel) learning game for children
+who cannot yet read. It is a standalone, mobile-first, fully client-side
+product — no backend, no accounts; all progress lives in the browser's
+local storage. The Amharic script (Fidel/Ge'ez) has 33 base consonant
+"families," each with 7 vowel "orders," for 231 vocalized forms total.
+
+Because the audience is pre-readers, every mode is **audio-first and
+touch-first**: nothing important is written-only, and nothing requires a
+precise click.
+
+**Tech (for context, not for review):** React 19 + Vite, TailwindCSS,
+framer-motion for 2D, three.js and React Three Fiber for the 3D modes, a
+PWA for offline install, and a Capacitor scaffold for native store builds.
+Game logic is written as pure, seeded state machines (no runtime
+randomness), which makes every round reproducible and testable.
 
 ## The world and its characters
 
-Fidel Quest teaches the Amharic alphabet to children who cannot yet read,
-so every mode is audio-first and touch-first. Nothing important is ever
-written-only, and nothing requires a precise click.
-
-- **Anbessa** the lion cub — the hero the child helps and feeds. All
-  character art is drawn in code (no image files), so the same lion appears
-  as a 2D sprite and as a 3D texture.
-- **Kokeb** the star — the companion who speaks the letters. She is the
+- **Anbessa** the lion cub — the hero the child helps and feeds.
+- **Kokeb** the star — the companion who *speaks* the letters; she is the
   voice of every question and the power meter in the Runner.
 - **Jibby** the hyena — the villain. He creeps toward the cookies in Letter
   Steps and steals letters in Skylands. He creates tension but never
   punishes: he always retreats, and the child never loses progress to him.
 - **Zebra friends** — cheer from the sidelines of the Runner tracks.
+
+All character art is drawn in code (no image files), so the same lion
+appears as a 2D sprite and as a 3D texture.
 
 ## How progress flows between modes
 
@@ -54,8 +71,8 @@ every phase is a mini-game, not a drill:
    with Jibby creeping toward the cookies each round. Grabbing the spoken
    cookie makes him retreat.
 6. **Trace — Carve it.** The child finger-traces the family's base letter
-   over a faint guide (the Classic mode's trace pad). Scoring is
-   coverage-based and kid-lenient; a miss just plays a retry tone.
+   over a faint guide. Scoring is coverage-based and kid-lenient; a miss
+   just plays a retry tone.
 
 Mix stones are 6 shuffle-style rounds over all families mastered so far in
 the group (no trace). Mastering all families in a group unlocks the
@@ -75,7 +92,8 @@ answers burst into celebration; a wrong answer flips into a short recovery
 - Gating: a level opens when its Letter Steps group is mastered and the
   previous level has stars.
 - Twin safety: letters that share a sound (ሀ/ሐ/ኀ, ሰ/ሠ, አ/ዐ, ጸ/ፀ) never
-  appear together as options.
+  appear together as options, so a child is never marked wrong for an
+  answer that sounds right.
 
 ### Levels 5–8 (Vowel Magic)
 
@@ -161,40 +179,57 @@ from the on-device answer ledger.
 ## Audio
 
 Every sound call tries three sources in order: an embedded audio pack (the
-single-file artifact build), the app's mp3 library (277 clips: all 231
-letter forms plus words and effects), then a musical chime derived from the
-letter — never silent, never broken by a missing file. Current voices are
-synthesized placeholders (espeak-ng Amharic, peak-normalized); the plan is
-to replace them with human recordings per `recording-script.md` (34 files:
-one per family chanting its forms with one-second gaps, plus one words
-file), split on silence, verified, trimmed, normalized, and slotted in.
+single-file build), the app's mp3 library (277 clips: all 231 letter forms
+plus words and effects), then a musical chime derived from the letter —
+never silent, never broken by a missing file. Current voices are
+synthesized placeholders (a text-to-speech engine, peak-normalized); the
+plan is to replace them with human recordings (34 files: one per family
+chanting its forms with one-second gaps, plus one words file), split on
+silence, verified, trimmed, normalized, and slotted in.
 
-## The plan
+## Current state and roadmap
 
 **Shipped and verified:** all nine surfaces in one app; Letter Steps
 complete including the trace-to-carve finale (verified end-to-end in a real
-browser); adaptive practice; telemetry dashboard; ghost-hand onboarding;
-bilingual UI; PWA offline build; single-file artifact build with embedded
-audio.
+browser); adaptive practice; a parents' telemetry dashboard; ghost-hand
+onboarding; bilingual UI; PWA offline build; single-file build with
+embedded audio. Full automated test suite green.
 
-**Waiting on a human:** voice recordings (34 files — the single
+**Waiting on a human:** professional voice recordings (the single
 highest-impact improvement left); native-speaker review of the Amharic UI
-strings and the draft Tigrinya pack; kid playtesting (trace difficulty,
-shuffle round length); store publishing via the Capacitor shells.
+strings and a draft Tigrinya letter pack; kid playtesting (trace
+difficulty, shuffle round length); app-store publishing via the Capacitor
+shells.
 
-**Proposed next, pending review:** mid-lesson resume (resume a family
-lesson at its current phase instead of restarting the stone); word audio
-from the recordings; activating the Tigrinya pack after native sign-off;
-growing the word list beyond 25 once real word audio exists.
+**Proposed next:** mid-lesson resume (resume a family lesson at its current
+phase instead of restarting the stone); word audio from the recordings;
+activating the Tigrinya pack after native sign-off; growing the word list
+beyond 25 once real word audio exists.
 
-## Open review questions
+## What to review
 
-1. **Trace leniency** — the carve finale accepts a trace that covers the
-   letter even with heavy overshoot. Strict enough?
-2. **Mix stones** — should big mixes (4+ families) also end with a trace?
-3. **Home ordering** — Letter Steps first, quizzes gated behind it, 3D
-   games as free play below. The right order for a new family?
-4. **Default language** — UI defaults to English with an Amharic toggle.
-   Should it default to Amharic?
-5. **Recording priority** — letters first, words second, chimes stay as
-   effects. Agreed?
+Please give a critical product- and learning-design review. Specific
+questions we want a second opinion on:
+
+1. **Pedagogy / sequencing.** Is "learn a family through six phases, then
+   quiz, then cumulative 3D review" a sound way to teach an abecedary to
+   3–6 year olds? Any gaps in the learn → practice → recall loop?
+2. **Cognitive load.** Nine surfaces on one home screen. Too many entry
+   points for a small child (and their parent)? What would you cut or hide?
+3. **Trace finale.** The carve step accepts a trace that covers the letter
+   even with heavy overshoot. Is coverage-based, near-impossible-to-fail
+   tracing good for motivation, or does it teach nothing? Better scoring?
+4. **Difficulty pacing.** 5 echo + 5 shuffle rounds per family, 5 meals per
+   Runner level, cumulative Skylands quizzes. Where is this likely too long
+   or too hard, and where too easy?
+5. **Motivation model.** Stars, streaks, star-gated unlocks, a
+   never-punishing villain. Is the reward loop strong enough to bring a
+   child back daily? What is missing (collection, story, daily goal)?
+6. **Retention of similar letters.** The 4 twin/near-twin groups that sound
+   identical are kept apart so a child is never wrong. Does that help
+   (no false failure) or hurt (never learns to distinguish them)?
+7. **Accessibility & inclusivity** for the actual audience (often shared
+   low-end phones, intermittent connectivity, multilingual households).
+8. **Anything that would make a child churn** in the first session.
+
+Concrete, prioritized recommendations preferred over general praise.
