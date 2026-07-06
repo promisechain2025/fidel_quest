@@ -1,0 +1,18 @@
+# Render blueprint for the Fidel Quest server (analytics + share landing).
+# In Render: New > Blueprint > point at this repo. It builds server/Dockerfile.
+# OWNER_TOKEN is generated for you; set APP_URL and OG_IMAGE in the dashboard.
+services:
+  - type: web
+    name: fidel-quest-server
+    runtime: docker
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: OWNER_TOKEN
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: OG_IMAGE
+        sync: false

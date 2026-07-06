@@ -19,6 +19,14 @@ export default defineConfig({
     },
   },
   plugins: [
+    // Fill the share-preview tags with VITE_APP_URL, or blank them cleanly
+    // when it is unset (so a no-env build never ships a broken __APP_URL__).
+    {
+      name: 'fidel-app-url',
+      transformIndexHtml(html) {
+        return html.replaceAll('__APP_URL__', process.env.VITE_APP_URL || '')
+      },
+    },
     react(),
     tailwindcss(),
     VitePWA({
