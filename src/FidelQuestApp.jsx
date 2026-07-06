@@ -686,6 +686,17 @@ export const isLevelUnlocked = (progress, index) =>
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
+/** Close a modal on the Escape key (a parent's quick out; also assistive tech). */
+function useEscapeKey(onClose) {
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+}
+
 export default function FidelQuestApp() {
   const [screen, setScreen] = useState({ name: 'home' })
   useEffect(() => {
@@ -1324,6 +1335,7 @@ function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
 }
 
 function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, troubleCount }) {
+  useEscapeKey(onClose)
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -1334,6 +1346,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
       onClick={onClose}
     >
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('backpack', 'Backpack')}
         className="w-full max-w-md rounded-3xl p-5"
         style={{ background: 'var(--paper)' }}
         initial={{ y: 40 }}
@@ -1379,6 +1394,7 @@ function InstallBanner() {
   const [state, setState] = useState(installState)
   const [iosOpen, setIosOpen] = useState(false)
   useEffect(() => onInstallChange(() => setState(installState())), [])
+  useEscapeKey(() => setIosOpen(false))
   if (state === 'none') return null
   return (
     <AnimatePresence>
@@ -1406,7 +1422,7 @@ function InstallBanner() {
       </motion.div>
       {iosOpen && (
         <motion.div key="ios" className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
-          <motion.div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
+          <motion.div role="dialog" aria-modal="true" aria-label={t('installTitle', 'Add Anbessa to your home screen')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
             <Hero size={72} />
             <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
             <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
@@ -1423,6 +1439,7 @@ function InstallBanner() {
    once everything is collected -> a warm come-back-anytime moment. */
 function GiftModal({ reward, worn, forms, onClose }) {
   const [busy, setBusy] = useState(false)
+  useEscapeKey(onClose)
   const share = async () => {
     setBusy(true)
     await shareAnbessa({ forms, worn })
@@ -1430,9 +1447,9 @@ function GiftModal({ reward, worn, forms, onClose }) {
     onClose()
   }
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <Confetti count={40} />
-      <motion.div className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
+      <motion.div role="dialog" aria-modal="true" aria-label={t('giftTitle', 'A gift from Anbessa!')} onClick={(e) => e.stopPropagation()} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
           <Hero size={150} worn={worn} />
         </motion.div>
@@ -1459,6 +1476,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
    in wearing the freshly-earned item; the primary action is Share. */
 function Celebration({ chapter, rewardName, worn, forms, onClose }) {
   const [busy, setBusy] = useState(false)
+  useEscapeKey(onClose)
   const share = async () => {
     setBusy(true)
     await shareAnbessa({ forms, worn })
@@ -1468,7 +1486,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
   return (
     <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <Confetti count={42} />
-      <motion.div className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
+      <motion.div role="dialog" aria-modal="true" aria-label={t('chapterDone', `Chapter ${chapter} complete!`, { n: chapter })} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
           <Hero size={150} worn={worn} />
         </motion.div>
