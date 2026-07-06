@@ -1,3 +1,6 @@
+/* eslint-disable react-refresh/only-export-components --
+   bossQuestions is the pure Skylands-boss builder, exported for direct unit
+   testing beside its components (repo pattern, cf. FidelTracePad). */
 /* The 2D arcade fallbacks (Pillar 4): functionally-identical, WebGL-free
    versions of the Runner and Skylands, driven by the same pure machines,
    for devices that cannot sustain the 3D scenes. */
@@ -17,6 +20,8 @@ import {
   drawHyena,
   loadRunnerBest,
   saveRunnerBest,
+  rngShuffle,
+  rngNext,
 } from '../FidelQuestApp'
 import { buildQuiz, pickStolen, SESSIONS } from '../FidelSkylands'
 import { playForm, playEffect } from '../platform/audioEngine'
@@ -30,8 +35,9 @@ const formOf = (key) => INDEXES.byAudioKey.get(key)
    RUNNER 2D  -  the same runner machine (feed / boss / muncher / destroyed)
    presented without WebGL: Kokeb calls a sound, tap the right letter gate.
    ========================================================================== */
-const runnerReducer = (c, e) =>
-  e.type === '__reset__' ? runnerInitial(((c.seed * 1103515245 + 12345) & 0x7fffffff) | 1) : runnerTransition(c, e).next
+// Reset reseeds through the project PRNG so all seeding stays in one place.
+const reseed = (s) => (Math.floor(rngNext(s)[0] * 0x7fffffff) | 1)
+const runnerReducer = (c, e) => (e.type === '__reset__' ? runnerInitial(reseed(c.seed)) : runnerTransition(c, e).next)
 
 export function Runner2D({ seed, soundOn, onExit }) {
   const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
@@ -163,17 +169,20 @@ export function Runner2D({ seed, soundOn, onExit }) {
    SKYLANDS 2D  -  the cumulative island quiz + Jibby's boss review, as a
    tap-the-fruit 2D quiz (same buildQuiz / pickStolen logic as the 3D scene).
    ========================================================================== */
-function bossQuestions(island, seed) {
+export function bossQuestions(island, seed) {
   const stolen = pickStolen(island, seed)
-  const pool = SESSIONS[Math.min(island, SESSIONS.length) - 1].pool
+  // Distractors come from the CUMULATIVE pool of every session up to this one
+  // (the same material the 3D boss uses), so a stolen old letter is not the
+  // lone odd-group-out. Sound-safe + seeded via the project PRNG.
+  const pool = SESSIONS.slice(0, Math.min(island, SESSIONS.length)).flatMap((s) => s.pool)
   let state = (seed ^ 0x5151) | 1
-  return stolen.map((target, i) => {
+  return stolen.map((target) => {
     const sound = formOf(target)?.sound
-    const distractors = pool.filter((k) => k !== target && formOf(k)?.sound !== sound)
-    // deterministic pick without importing the PRNG: stride by index
-    const opts = [target, distractors[(i * 2) % distractors.length], distractors[(i * 2 + 1) % distractors.length]].filter(Boolean)
-    state += 1
-    return { target, options: opts.sort((a, b) => ((a.charCodeAt(0) + state) % 3) - ((b.charCodeAt(0) + state) % 3)), boss: true }
+    let distractors
+    ;[distractors, state] = rngShuffle(pool.filter((k) => k !== target && formOf(k)?.sound !== sound), state)
+    let options
+    ;[options, state] = rngShuffle([target, ...distractors.slice(0, 2)], state)
+    return { target, options, boss: true }
   })
 }
 
@@ -201,7 +210,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
   if (done) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
-        <p className="text-6xl" aria-hidden="true">🏝️</p>
+        <Sprite2D draw={drawAnbessa} size={120} />
         <h2 className="text-2xl font-black">{t('levelComplete', 'Island cleared!')}</h2>
         <button type="button" onClick={onExit} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
           {t('continue', 'Continue')}

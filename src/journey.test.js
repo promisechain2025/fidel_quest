@@ -127,6 +127,8 @@ describe('legacy migration (P1)', () => {
     expect(p.done[`mix:${fam1}`]).toEqual({ stars: 3 })
     expect(p.done['quiz:1']).toEqual({ stars: 2 })
     expect(p.done['vowel:1']).toEqual({ stars: 3 }) // level-5 -> vowel:1
+    // Returning children keep the wearables they earned for done content.
+    expect(p.collection.owned.length).toBeGreaterThan(0)
   })
 
   it('loadJourney round-trips a saved record without re-migrating', () => {

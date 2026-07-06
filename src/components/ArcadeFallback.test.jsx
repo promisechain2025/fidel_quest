@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
-import { Runner2D, Skylands2D } from './ArcadeFallback'
+import { Runner2D, Skylands2D, bossQuestions } from './ArcadeFallback'
 import { runnerInitial, selectRunnerQuestion, INDEXES, RUNNER_QPL } from '../FidelQuestApp'
 import { SESSIONS, buildQuiz } from '../FidelSkylands'
+
+const soundOf = (k) => INDEXES.byAudioKey.get(k).sound
 
 const charOf = (key) => INDEXES.byAudioKey.get(key).char
 
@@ -42,6 +44,26 @@ describe('Skylands2D (P4 fallback)', () => {
     expect(screen.getByText(SESSIONS[0].place)).toBeInTheDocument()
     const first = buildQuiz(1, 3)[0]
     for (const opt of first.options) expect(screen.getByText(charOf(opt))).toBeInTheDocument()
+  })
+
+  it('boss questions are unique, sound-safe, and drawn from the cumulative pool', () => {
+    for (let island = 1; island <= SESSIONS.length; island++) {
+      const cumulative = new Set(SESSIONS.slice(0, island).flatMap((s) => s.pool))
+      for (let seed = 1; seed <= 20; seed++) {
+        const qs = bossQuestions(island, seed)
+        expect(qs.length).toBe(3)
+        for (const q of qs) {
+          expect(q.options).toContain(q.target)
+          expect(new Set(q.options).size).toBe(q.options.length) // no duplicate tiles
+          for (const opt of q.options) {
+            expect(cumulative.has(opt)).toBe(true) // never an odd-group-out
+            if (opt !== q.target) expect(soundOf(opt)).not.toBe(soundOf(q.target)) // findable by ear
+          }
+        }
+      }
+    }
+    // deterministic
+    expect(JSON.stringify(bossQuestions(4, 9))).toBe(JSON.stringify(bossQuestions(4, 9)))
   })
 
   it('picking the correct fruit advances the quiz', () => {

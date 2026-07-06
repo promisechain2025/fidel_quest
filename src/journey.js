@@ -129,6 +129,9 @@ export function migrateLegacyProgress() {
     if (NODE_BY_ID.has(nodeId)) done[nodeId] = { stars: rec.stars }
   }
   const p = { version: 1, done, collection: emptyCollection() }
+  // Backfill wearables for content the child already finished, so a returning
+  // player is not left with an empty closet they can never fill.
+  for (const nodeId of Object.keys(done)) grantReward(p, nodeId)
   saveJourney(p)
   return p
 }

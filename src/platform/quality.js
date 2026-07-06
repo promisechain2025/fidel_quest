@@ -98,7 +98,13 @@ export function usePerfDegrade({ windowMs = 5000, minFps = 30 } = {}) {
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+    // If the child leaves before the full window, still persist a verdict as
+    // long as we sampled enough frames - otherwise a slow device that quits
+    // fast is re-probed forever and never sticks to the 2D fallback.
+    return () => {
+      cancelAnimationFrame(raf)
+      if (!loadPerf() && samples.length >= 12) savePerf(perfVerdict(medianFps(samples), minFps))
+    }
   }, [windowMs, minFps])
 
   return degraded

@@ -861,10 +861,14 @@ export default function FidelQuestApp() {
                 seed={runSeed}
                 soundOn={soundOn}
                 onFinish={(levelId, result) => {
-                  // A QUIZ node's lesson also completes its Journey node.
-                  if (screen.nodeId) {
-                    if (result) setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
-                    markNodeDone(screen.nodeId, result?.stars ?? 3)
+                  // Quitting (result === null) never completes the node - a
+                  // boss quiz is a real gate, not a tap-through. Only a
+                  // finished level marks its Journey node done + grants reward.
+                  if (!result) {
+                    setScreen({ name: 'home' })
+                  } else if (screen.nodeId) {
+                    setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
+                    markNodeDone(screen.nodeId, result.stars ?? 3)
                   } else {
                     finishLevel(levelId, result)
                   }
