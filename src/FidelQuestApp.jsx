@@ -2161,11 +2161,24 @@ export function drawAnbessa(g, s, mood = 'happy') {
   g.beginPath()
   g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
   g.fill()
-  // mouth
+  // mouth. `hungry`/`eating` open it wide so a letter can drop in.
+  const open = mood === 'hungry' || mood === 'eating'
   g.strokeStyle = '#8a5a00'
   g.lineWidth = s * 0.014
   g.lineCap = 'round'
-  if (mood === 'happy') {
+  if (open) {
+    // big open maw with a tongue; `eating` opens a touch wider (mid-chomp)
+    const rx = s * (mood === 'eating' ? 0.085 : 0.07)
+    const ry = s * (mood === 'eating' ? 0.075 : 0.058)
+    g.fillStyle = '#7a3b2e'
+    g.beginPath()
+    g.ellipse(cx, s * 0.5, rx, ry, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#ef8fa0'
+    g.beginPath()
+    g.ellipse(cx, s * 0.53, rx * 0.62, ry * 0.5, 0, 0, 7)
+    g.fill()
+  } else if (mood === 'happy') {
     g.beginPath()
     g.arc(cx - s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
     g.stroke()
@@ -2180,7 +2193,7 @@ export function drawAnbessa(g, s, mood = 'happy') {
   }
   // eyes
   g.fillStyle = '#3c2a10'
-  const eyeH = mood === 'happy' ? s * 0.038 : s * 0.026
+  const eyeH = mood === 'happy' || open ? s * 0.038 : s * 0.026
   for (const side of [-1, 1]) {
     g.beginPath()
     g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, eyeH, 0, 0, 7)
@@ -2191,7 +2204,7 @@ export function drawAnbessa(g, s, mood = 'happy') {
     g.fill()
     g.fillStyle = '#3c2a10'
   }
-  if (mood !== 'happy') {
+  if (mood !== 'happy' && !open) {
     // worried brows
     g.strokeStyle = '#3c2a10'
     g.lineWidth = s * 0.012

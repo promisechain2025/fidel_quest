@@ -56,8 +56,12 @@ export const ECHO_ROUNDS = 3
 export const SHUFFLE_ROUNDS = 3
 export const MIX_ROUNDS = 4
 
+// `avoid` may be a single key or a list of keys (the letters already eaten
+// this round-set). Excluding all of them keeps the spoken target inside the
+// letters still on the tray, so a fed-and-removed letter is never asked for.
 function pickTarget(pool, avoid, rngState) {
-  let candidates = pool.filter((k) => k !== avoid)
+  const avoidSet = new Set(avoid == null ? [] : Array.isArray(avoid) ? avoid : [avoid])
+  let candidates = pool.filter((k) => !avoidSet.has(k))
   if (!candidates.length) candidates = pool
   const [value, next] = rngNext(rngState)
   return [candidates[Math.floor(value * candidates.length)], next]
@@ -79,6 +83,7 @@ export function learnInitial(familyId, seed) {
     rounds: SHUFFLE_ROUNDS,
     target: null,
     wrongs: 0,
+    eaten: [], // fed letters, removed from the tray during ECHO/SHUFFLE
     lastTouch: null,
     rngState: seed,
   }
@@ -127,6 +132,7 @@ export function mixInitial(familyIds, seed) {
     rounds: MIX_ROUNDS,
     target,
     wrongs: 0,
+    eaten: [],
     lastTouch: null,
     rngState,
   }
@@ -159,10 +165,10 @@ export function learnTransition(ctx, key) {
       if (ctx.idx > 0) {
         return { next: { ...touched, idx: ctx.idx - 1 }, advanced: true, correct: true }
       }
-      // Enter ECHO with a first spoken target.
+      // Enter ECHO with a first spoken target and a full tray.
       const [target, rngState] = pickTarget(ctx.forms, null, ctx.rngState)
       return {
-        next: { ...touched, phase: LearnPhase.ECHO, round: 0, wrongs: 0, target, rngState },
+        next: { ...touched, phase: LearnPhase.ECHO, round: 0, wrongs: 0, eaten: [], target, rngState },
         advanced: true,
         correct: true,
       }
@@ -175,24 +181,27 @@ export function learnTransition(ctx, key) {
       const round = ctx.round + 1
       const isEcho = ctx.phase === LearnPhase.ECHO
       const roundLimit = isEcho ? ECHO_ROUNDS : ctx.rounds
+      // Anbessa just ate this letter: it leaves the tray, and the next spoken
+      // target is drawn only from letters still on it.
+      const eaten = [...(ctx.eaten || []), key]
       if (round < roundLimit) {
-        const [target, rngState] = pickTarget(ctx.forms, key, ctx.rngState)
-        return { next: { ...touched, round, wrongs: 0, target, rngState }, advanced: true, correct: true }
+        const [target, rngState] = pickTarget(ctx.forms, eaten, ctx.rngState)
+        return { next: { ...touched, round, wrongs: 0, eaten, target, rngState }, advanced: true, correct: true }
       }
       if (isEcho) {
-        // ECHO done -> SHUFFLE: scramble the display order, new target.
+        // ECHO done -> SHUFFLE: scramble the display order, refill the tray.
         let [order, rngState] = rngShuffle(ctx.forms, ctx.rngState)
         let target
         ;[target, rngState] = pickTarget(order, null, rngState)
         return {
-          next: { ...touched, phase: LearnPhase.SHUFFLE, order, round: 0, wrongs: 0, target, rngState },
+          next: { ...touched, phase: LearnPhase.SHUFFLE, order, round: 0, wrongs: 0, eaten: [], target, rngState },
           advanced: true,
           correct: true,
         }
       }
       // Families finish by carving the base letter; mixes are done here.
       return {
-        next: { ...touched, phase: ctx.kind === 'family' ? LearnPhase.TRACE : LearnPhase.DONE, target: null },
+        next: { ...touched, phase: ctx.kind === 'family' ? LearnPhase.TRACE : LearnPhase.DONE, eaten, target: null },
         advanced: true,
         correct: true,
       }
@@ -429,71 +438,148 @@ function StarTrail({ ctx, onTouch }) {
   )
 }
 
-/** ECHO/SHUFFLE: cookies + Anbessa (feeding) + Jibby (the thief). */
-function CookieField({ ctx, flyKey, onTouch }) {
+/** One draggable letter card. Drag it onto Anbessa's mouth (or tap it) to
+    feed him. `mouthRef` is the drop target; a drop within it feeds `k`. */
+function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing }) {
+  const form = formOf(k)
+  const overMouth = (event, info) => {
+    const zone = mouthRef.current
+    if (!zone) return false
+    const r = zone.getBoundingClientRect()
+    const x = event?.clientX ?? info?.point?.x
+    const y = event?.clientY ?? info?.point?.y
+    if (x == null || y == null) return false
+    const pad = 36 // generous catch radius for little fingers
+    return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad
+  }
+  return (
+    <motion.div
+      layout
+      data-form={k}
+      role="button"
+      tabIndex={0}
+      aria-label={`Letter ${form?.sound} — drag to Anbessa or tap`}
+      drag
+      dragSnapToOrigin
+      dragElastic={0.5}
+      whileDrag={{ scale: 1.25, zIndex: 60 }}
+      onDragStart={() => onDragActive(true)}
+      onDragEnd={(event, info) => {
+        onDragActive(false)
+        if (overMouth(event, info)) onFeed(k)
+      }}
+      onTap={() => onFeed(k)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onFeed(k)
+        }
+      }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={
+        refusing
+          ? { scale: 1, opacity: 1, x: [0, -9, 9, -6, 6, 0], transition: { duration: 0.45 } }
+          : hinted
+            ? { scale: [1, 1.14, 1], opacity: 1, transition: { duration: 0.8, repeat: Infinity } }
+            : { scale: 1, opacity: 1, y: [0, -4, 0], transition: { y: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay } } }
+      }
+      exit={{ y: 150, scale: 0.15, opacity: 0, transition: { duration: 0.5, ease: 'easeIn' } }}
+      className={`geez relative flex h-16 w-16 cursor-grab touch-none select-none items-center justify-center rounded-2xl border-4 text-3xl font-black active:cursor-grabbing ${FOCUS}`}
+      style={{
+        background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
+        borderColor: hinted ? 'var(--accent)' : '#c68a44',
+        color: '#5b3a12',
+        boxShadow: '0 4px 0 #a06a30',
+        outlineColor: 'var(--sky)',
+      }}
+    >
+      {form?.char}
+    </motion.div>
+  )
+}
+
+/** ECHO/SHUFFLE: drag the spoken letter into Anbessa's mouth. Correct letters
+    are eaten (open mouth, then removed from the tray); wrong ones make him
+    refuse with a paw swat. Jibby creeps in during SHUFFLE for gentle tension. */
+function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
-  const handlers = useSlideTouch(onTouch)
   const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
+  const mouthRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+  // Only letters still on the tray; always keep the current target so a wrong
+  // drag on a removed letter can never strand the round.
+  const eaten = ctx.eaten || []
+  const visible = ctx.order.filter((k) => !eaten.includes(k) || k === ctx.target)
+  const mood = dragging ? 'hungry' : lionMood
   return (
     <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
       <p className="text-lg font-extrabold">
-        {isShuffle ? t('catchHint', 'Jibby wants the cookies! Grab the one you hear') : t('feedHint', 'Feed Anbessa the cookie Kokeb says')}{' '}
+        {isShuffle ? t('catchHint', 'Feed Anbessa before Jibby grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}{' '}
         <span className="mono" style={{ color: 'var(--muted)' }}>
           {ctx.round + 1}/{roundLimit}
         </span>
       </p>
-      <div {...handlers} className="relative w-full rounded-3xl border-2 p-4 pb-2" style={{ ...handlers.style, background: 'var(--card)', borderColor: 'var(--line)' }}>
-        <div className="flex flex-wrap justify-center gap-3">
-          {ctx.order.map((k, i) => {
-            const form = formOf(k)
-            const hinted = ctx.wrongs >= 2 && k === ctx.target
-            const flying = k === flyKey
-            return (
-              <motion.div
-                key={`${ctx.round}-${k}`}
-                data-form={k}
-                role="button"
-                tabIndex={0}
-                aria-label={`Cookie ${form?.sound}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') onTouch(k)
-                }}
-                animate={
-                  flying
-                    ? { y: 130, x: 0, scale: 0.2, opacity: 0, transition: { duration: 0.5 } }
-                    : hinted
-                      ? { scale: [1, 1.15, 1], transition: { duration: 0.8, repeat: Infinity } }
-                      : { y: [0, -5 - (i % 3) * 2, 0], transition: { duration: 1.6 + (i % 3) * 0.3, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 } }
-                }
-                className={`geez relative flex h-16 w-16 select-none items-center justify-center rounded-full border-4 text-3xl font-black ${FOCUS}`}
-                style={{
-                  background: 'radial-gradient(circle at 35% 30%, #f2c98a, #d99a4e)',
-                  borderColor: hinted ? 'var(--accent)' : '#b97f3c',
-                  color: '#5b3a12',
-                  boxShadow: '0 4px 0 #a06a30',
-                  outlineColor: 'var(--sky)',
-                }}
-              >
-                {form?.char}
-              </motion.div>
-            )
-          })}
+      <div className="relative w-full overflow-hidden rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+        <div className="grid grid-cols-4 place-items-center gap-3 sm:gap-4">
+          <AnimatePresence>
+            {visible.map((k, i) => (
+              <LetterCard
+                key={`${ctx.phase}-${k}`}
+                k={k}
+                hinted={ctx.wrongs >= 2 && k === ctx.target}
+                delay={(i % 4) * 0.12}
+                mouthRef={mouthRef}
+                onFeed={onTouch}
+                onDragActive={setDragging}
+                refusing={k === refuseKey}
+              />
+            ))}
+          </AnimatePresence>
         </div>
-        {/* Jibby creeps in during SHUFFLE rounds */}
+        {/* Jibby creeps toward the tray during SHUFFLE rounds */}
         {isShuffle && (
           <motion.div
             key={`jibby-${ctx.round}`}
-            className="pointer-events-none absolute -right-2 top-1/3"
+            className="pointer-events-none absolute -right-2 top-2"
             initial={{ x: 90, rotate: 8 }}
             animate={{ x: 14 }}
             transition={{ duration: 6.5, ease: 'linear' }}
             aria-hidden="true"
           >
-            <Sprite2D draw={drawHyena} size={64} />
+            <Sprite2D draw={drawHyena} size={56} />
           </motion.div>
         )}
-        <div className="mt-2 flex justify-center">
-          {!isShuffle && <Sprite2D draw={drawAnbessa} size={72} />}
+        {/* Anbessa waits below, mouth open when hungry — the drop target. */}
+        <div className="mt-3 flex justify-center">
+          <motion.div
+            ref={mouthRef}
+            className="relative"
+            animate={
+              mood === 'refuse'
+                ? { rotate: [0, -10, 10, -6, 0], transition: { duration: 0.5 } }
+                : mood === 'eating'
+                  ? { scale: [1, 1.12, 1], transition: { duration: 0.5 } }
+                  : dragging
+                    ? { scale: 1.06 }
+                    : { scale: 1 }
+            }
+          >
+            <Sprite2D draw={drawAnbessa} mood={mood} size={88} />
+            {/* the swatting paw on a refusal */}
+            <AnimatePresence>
+              {mood === 'refuse' && (
+                <motion.span
+                  key="paw"
+                  className="absolute left-1/2 top-2 h-7 w-7 rounded-full"
+                  style={{ background: '#e08300', boxShadow: '0 0 0 3px #c66f00 inset' }}
+                  initial={{ x: 30, y: -10, rotate: -20, opacity: 0 }}
+                  animate={{ x: [-24, 22], y: [-6, 2], opacity: [0, 1, 0], transition: { duration: 0.5 } }}
+                  exit={{ opacity: 0 }}
+                  aria-hidden="true"
+                />
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
       </div>
     </motion.div>
@@ -512,8 +598,25 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     () => (stone.type === 'family' ? learnInitial(stone.id, seed) : mixInitial(stone.families, seed)),
   )
   const [burst, setBurst] = useState(0)
-  const [flyKey, setFlyKey] = useState(null)
+  // Feed feedback: Anbessa's mood ('happy' idle, 'eating' on a correct feed,
+  // 'refuse' on a wrong one) and which letter he just swatted away.
+  const [lionMood, setLionMood] = useState('happy')
+  const [refuseKey, setRefuseKey] = useState(null)
   const prevPhase = useRef(ctx.phase)
+  const moodTimer = useRef(null)
+  const refuseTimer = useRef(null)
+  useEffect(
+    () => () => {
+      clearTimeout(moodTimer.current)
+      clearTimeout(refuseTimer.current)
+    },
+    [],
+  )
+  const flashMood = useCallback((mood, ms) => {
+    setLionMood(mood)
+    clearTimeout(moodTimer.current)
+    moodTimer.current = setTimeout(() => setLionMood('happy'), ms)
+  }, [])
 
   const touch = useCallback(
     (key) => {
@@ -523,20 +626,24 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         recordAnswer(ctx.target, key, 'learn')
         if (correct) {
           setBurst((b) => b + 1)
-          setFlyKey(key)
-          setTimeout(() => {
-            setFlyKey(null)
-            dispatch(key)
-          }, 480)
+          playEffect('good', soundOn)
+          flashMood('eating', 650) // open mouth; the eaten card exits into it
+          dispatch(key)
           return
         }
+        // Wrong: he refuses (paw swat + head shake) and the card bonks back.
         playEffect('bad', soundOn)
-      } else if (advanced) {
-        setBurst((b) => b + 1)
+        setRefuseKey(key)
+        clearTimeout(refuseTimer.current)
+        refuseTimer.current = setTimeout(() => setRefuseKey(null), 480)
+        flashMood('refuse', 550)
+        dispatch(key)
+        return
       }
+      if (advanced) setBurst((b) => b + 1)
       dispatch(key)
     },
-    [ctx, soundOn],
+    [ctx, soundOn, flashMood],
   )
 
   // Speak spoken-round targets; celebrate phase changes and completion.
@@ -583,7 +690,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={touch} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StarTrail key={ctx.phase} ctx={ctx} onTouch={touch} />}
-          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} flyKey={flyKey} onTouch={touch} />}
+          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.TRACE && (
             <motion.div key="trace" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
               <p className="text-lg font-extrabold">{t('traceHint', 'Now carve it! Trace the letter with your finger')}</p>

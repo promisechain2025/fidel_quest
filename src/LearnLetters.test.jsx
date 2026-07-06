@@ -56,6 +56,43 @@ describe('the step machine', () => {
     expect(r.next.idx).toBe(0)
   })
 
+  it('removes eaten letters and never re-asks one within a phase', () => {
+    let ctx = learnInitial('be', 5)
+    for (let i = 0; i < 21; i++) ctx = learnTransition(ctx, ctx.forms[ctx.idx]).next
+    expect(ctx.phase).toBe(LearnPhase.ECHO)
+    expect(ctx.eaten).toEqual([])
+    // ECHO: each fed letter is added to eaten and never targeted again.
+    const echoTargets = []
+    for (let i = 0; i < ECHO_ROUNDS; i++) {
+      const target = ctx.target
+      expect(ctx.eaten).not.toContain(target) // still on the tray when asked
+      echoTargets.push(target)
+      ctx = learnTransition(ctx, target).next
+    }
+    expect(new Set(echoTargets).size).toBe(echoTargets.length) // all distinct
+    // Entering SHUFFLE refills the tray (eaten reset).
+    expect(ctx.phase).toBe(LearnPhase.SHUFFLE)
+    expect(ctx.eaten).toEqual([])
+    const shuffleTargets = []
+    for (let i = 0; i < SHUFFLE_ROUNDS; i++) {
+      expect(ctx.eaten).not.toContain(ctx.target)
+      shuffleTargets.push(ctx.target)
+      ctx = learnTransition(ctx, ctx.target).next
+    }
+    expect(new Set(shuffleTargets).size).toBe(shuffleTargets.length)
+  })
+
+  it('a wrong feed does not eat any letter', () => {
+    let ctx = learnInitial('me', 9)
+    for (let i = 0; i < 21; i++) ctx = learnTransition(ctx, ctx.forms[ctx.idx]).next
+    expect(ctx.phase).toBe(LearnPhase.ECHO)
+    const wrong = ctx.forms.find((k) => k !== ctx.target)
+    const r = learnTransition(ctx, wrong)
+    expect(r.correct).toBe(false)
+    expect(r.next.eaten).toEqual([]) // nothing removed
+    expect(r.next.wrongs).toBe(1)
+  })
+
   it('is deterministic per seed', () => {
     const run = (seed) => {
       let ctx = learnInitial('me', seed)
