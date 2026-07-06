@@ -8,18 +8,32 @@ Project context for Claude Code agent sessions in `fidel_quest`.
 a standalone mobile-first product — fully client-side, no backend, no
 accounts. All progress and settings live in `localStorage`.
 
-One home screen offers five modes:
+The home screen is a **single linear Journey** (`src/journey.js`) — a
+winding path of typed nodes (`LEARN`, `MIX`, `QUIZ` boss, `ARCADE` gateway)
+with exactly one pulsing "next step". Progress lives in `fq.journey.v1`;
+`nextNode`/`nodeUnlocked` gate strictly in sequence; legacy blobs
+(`fq.learn.v1`, `fq2.progress`) migrate on first load. Completing a node
+grants an authored wearable from `REWARD_TABLE` (composited over Anbessa by
+`drawWearables`). Utilities live off the path in a **Backpack** popover.
 
-1. **Lesson Levels 1–4** — Duolingo-style listen-and-pick quizzes over the
-   33 base letters, with stars, streaks, and star-gated unlocks.
-2. **Letter Runner** — a 3D (three.js) lane runner through famous places in
-   Ethiopia and Eritrea; steering into a letter gate answers the question.
-3. **Fidel Skylands** — a React Three Fiber island quest with strict
-   learn-then-play session progression, cumulative quizzes, and a boss
-   review (Jibby steals letters from earlier sessions).
-4. **Classic Game** — the original game: chant mode, tracing pad, first
-   words. Kept intact as its own mode.
-5. **Letter Explorer** — tap-to-hear reference for all 231 vocalized forms.
+The content behind the nodes:
+
+1. **Letter Steps** (LEARN/MIX nodes) — learn-first six-phase mini-games
+   per family (Bubble Pop → constellation → Feed Anbessa → Jibby shuffle →
+   trace-to-carve). Echo/Shuffle capped at 3 rounds, Mix at 4.
+2. **Lesson Levels 1–8** (QUIZ boss nodes) — listen-and-pick quizzes; 1–4
+   base letters, 5–8 vowel orders.
+3. **Letter Runner** / **Fidel Skylands** (ARCADE gateway nodes) — the 3D
+   (three.js / R3F) games. On a low-FPS device `ArcadeGateway` routes to the
+   WebGL-free `Runner2D`/`Skylands2D` (`src/components/ArcadeFallback.jsx`)
+   over the same pure machines; the verdict persists in `fq.perf.v1`.
+4. **First Words / Star Practice / Classic / Letter Explorer / Grown-Ups**
+   — reached from the Backpack.
+
+Trace scoring is directional (`computeTraceResultV2`): a mask-derived origin
++ axis with chapter-scaled tolerance and soft origin/direction cues that
+never block progress. First Words interleaves twin-aware `glyph` rounds —
+the only place phonetic twins (ሀ/ሐ) co-occur, disambiguated by picture.
 
 Characters: Anbessa the lion cub (hero), Kokeb the star (companion/power
 indicator), Jibby the hyena (villain), plus zebra friends.
@@ -52,6 +66,11 @@ src/
   FidelSkylands.jsx            # Skylands mode: R3F scene, session
                                # progression machine, cumulative quiz + boss
   FidelSkylands.test.jsx
+  journey.js                   # unified Journey model: nodes, fq.journey.v1
+                               # progress, rewards, legacy migration (pure)
+  journey.test.js
+  LearnLetters.jsx             # Letter Steps path + six-phase mini-games
+  components/ArcadeFallback.jsx # Runner2D / Skylands2D (WebGL-free P4 games)
   pages/AmharicFidelGame.jsx   # Classic mode (chant, trace, words) —
                                # lazy-loaded; read its header before changes
   pages/AmharicFidelGame.test.jsx
