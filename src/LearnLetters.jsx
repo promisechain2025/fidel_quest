@@ -621,8 +621,14 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const touch = useCallback(
     (key) => {
       const { advanced, correct } = learnTransition(ctx, key)
-      playForm(formOf(key), soundOn)
-      if (ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE) {
+      const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
+      // In the feed game a correct pick is immediately followed by the next
+      // spoken target; re-voicing the fed letter here would collide with that
+      // announcement. So skip the letter sound on a correct feed (the child
+      // just heard it as the target) - but keep it on a wrong feed so they
+      // hear what they picked, and everywhere else (letters always speak).
+      if (!(spoken && correct)) playForm(formOf(key), soundOn)
+      if (spoken) {
         recordAnswer(ctx.target, key, 'learn')
         if (correct) {
           setBurst((b) => b + 1)
