@@ -131,11 +131,15 @@ open https://YOUR-SERVER/dashboard               # enter OWNER_TOKEN
 
 **Ship-blockers (do these before a public launch):**
 
-- [ ] **Record the letter audio.** The current voices are synthesized
-      placeholders. Drop real mp3s into `public/audio/fidel/` (see the audio
-      section of the repo) and rebuild — the single biggest quality lever.
-- [ ] **Native-speaker review** of the Amharic UI strings
-      (`src/platform/i18n.js`) and the Tigrinya pack (`src/packs/ti.js`).
+- [x] **Letter + word audio is real human voice** for Amharic (all 33
+      families, 25 words). Tigrinya reuses these and adds four distinct human
+      consonants (ሐ/ኀ/ኸ/ዐ) under `public/audio/fidel/letters/ti/`. The one
+      remaining chant on the synth fallback is ጨ (chhe); the Tigrinya word
+      list is not recorded yet.
+- [ ] **Native-speaker review** of: the Amharic UI strings
+      (`src/platform/i18n.js`); the Tigrinya pack sounds/words
+      (`src/packs/ti.js`); and confirmation that the twin-audio inferences
+      (ኸ→ከ, ሠ→ሰ) match the intended Amharic pronunciation.
 - [ ] **HTTPS** on both hosts (PWA + secure context).
 - [ ] **Icons present**: `public/icon-192.png`, `icon-512.png`,
       `apple-touch-icon.png`, `icon.svg` (already in the repo — confirm they

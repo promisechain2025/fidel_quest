@@ -81,6 +81,8 @@ const STRINGS = {
     whichStart: 'በየትኛው ፊደል ይጀምራል?',
     start: 'ጀምር',
     backpack: 'ቦርሳ',
+    langLearn: 'የሚማሩት ቋንቋ',
+    langText: 'የመተግበሪያ ጽሑፍ',
     grownupsSub: 'ሂደትና አስቸጋሪ ፊደላትን ይመልከቱ',
     closetTitle: 'የአንበሳ ቁም ሳጥን',
     closetSub: 'አንበሳን ያልብሱ፣ ያጋሩ!',

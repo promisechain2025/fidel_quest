@@ -23,13 +23,29 @@ import { audio } from './audioEngine'
 export const PACKS = Object.freeze({ am: AM_PACK, ti: TI_PACK })
 const PACK_KEY = 'fq.pack'
 
+/**
+ * First-visit default: honor the device language when it is Tigrinya, else
+ * Amharic. A soft default only — never persisted here, so an explicit choice
+ * (setActivePack) always wins and a locale change can still be reflected.
+ */
+export function detectPreferredPack() {
+  try {
+    const langs = navigator.languages?.length ? navigator.languages : [navigator.language || '']
+    for (const l of langs) if (/^ti(\b|[-_])/i.test(l)) return 'ti'
+  } catch {
+    /* no navigator (SSR/tests) */
+  }
+  return 'am'
+}
+
 export function getActivePackId() {
   try {
     const id = localStorage.getItem(PACK_KEY)
-    return PACKS[id] ? id : 'am'
+    if (PACKS[id]) return id
   } catch {
-    return 'am'
+    return detectPreferredPack()
   }
+  return detectPreferredPack()
 }
 
 /** Persist the pack choice and retarget audio; callers reload to apply. */
@@ -40,7 +56,11 @@ export function setActivePack(id) {
   } catch {
     /* session-only */
   }
-  audio.setSource({ audioBase: PACKS[id].audioBase, manifestUrl: PACKS[id].manifestUrl })
+  audio.setSource({
+    audioBase: PACKS[id].audioBase,
+    manifestUrl: PACKS[id].manifestUrl,
+    override: PACKS[id].audioOverride || null,
+  })
   return true
 }
 
@@ -159,6 +179,17 @@ export function validatePack(script, pack) {
 /* ── the app's active data, in the exact legacy shapes ── */
 
 export const ACTIVE_PACK = PACKS[getActivePackId()]
+
+// Point the audio singleton at the persisted pack at load time. The default
+// AudioEngine config matches the Amharic base, so this only changes anything
+// when a non-default pack (e.g. Tigrinya, with its letters/ti/ redirects) was
+// chosen on a prior visit — data and audio must agree from the first frame.
+audio.setSource({
+  audioBase: ACTIVE_PACK.audioBase,
+  manifestUrl: ACTIVE_PACK.manifestUrl,
+  override: ACTIVE_PACK.audioOverride || null,
+})
+
 export const ORDERS = ACTIVE_PACK.orders
 export const FIDEL_FAMILIES = Object.freeze(mergeFamilies(ETHIOPIC_SCRIPT, ACTIVE_PACK))
 export const ALL_FORMS = deriveForms(FIDEL_FAMILIES, ORDERS)

@@ -87,7 +87,10 @@ const RAW_FAMILIES = [
     name: 'Ke', consonant: 'k', chars: 'ከኩኪካኬክኮ', labial: 'ኳ',
     word: { geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' },
   },
-  { name: 'Khe', consonant: 'kh', chars: 'ኸኹኺኻኼኽኾ' },
+  // Modern Amharic merges ኸ into ከ (both said "k"); twinned so the two are
+  // never asked apart, and so ኸ reuses the Ke recording. Tigrinya keeps ኸ
+  // distinct ("kh") — see the ti pack.
+  { name: 'Khe', consonant: 'k', chars: 'ኸኹኺኻኼኽኾ', twinOf: 'Ke' },
   {
     name: 'We', consonant: 'w', chars: 'ወዉዊዋዌውዎ',
     word: { geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' },

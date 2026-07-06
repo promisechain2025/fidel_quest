@@ -9,14 +9,17 @@
    automatically allows them as distractors for each other in this pack.
 
    STATUS: sounds are best-effort romanizations and the word list is small;
-   REQUIRES NATIVE-SPEAKER REVIEW before this pack is user-facing. Audio
-   points at a directory that does not exist yet, so every clip falls back
-   to the deterministic chime — by design (Pillar 4's cascade).
+   REQUIRES NATIVE-SPEAKER REVIEW before this pack is user-facing. Letter
+   audio is live: the pack reuses the Amharic recordings for shared sounds and
+   redirects the four Tigrinya-distinct consonants (hha/kha/khe/ae) to human
+   recordings under letters/ti/ (see audioOverride below). Words fall back to
+   the deterministic chime until a Tigrinya word list is recorded.
    ========================================================================== */
 
 export const TI_PACK = Object.freeze({
   id: 'ti',
   label: 'Tigrinya',
+  nativeName: 'ትግርኛ',
   orders: [
     { index: 1, geezName: "Ge'ez", vowel: 'ä' },
     { index: 2, geezName: "Ka'ib", vowel: 'u' },
@@ -63,6 +66,12 @@ export const TI_PACK = Object.freeze({
     fe: { name: 'Fe', consonant: 'f' },
     pe: { name: 'Pe', consonant: 'p' },
   },
-  audioBase: '/audio/fidel-ti/',
-  manifestUrl: '/audio/fidel-ti/manifest.json',
+  // Tigrinya reuses the human Amharic recordings for every sound the two
+  // languages share, and overrides only the consonants Amharic merged but
+  // Tigrinya keeps distinct. Those distinct clips live under letters/ti/;
+  // audioOverride redirects just those family ids there (see effectiveKey in
+  // audioEngine). Sharing the base means no clip is duplicated on disk.
+  audioBase: '/audio/fidel/',
+  manifestUrl: '/audio/fidel/manifest.json',
+  audioOverride: { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae'] },
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { resolveSource, AudioEngine } from './audioEngine'
+import { resolveSource, effectiveKey, AudioEngine } from './audioEngine'
 
 const state = (over = {}) => ({
   memory: null,
@@ -42,6 +42,47 @@ describe('resolveSource cascade', () => {
       missing: new Set(['letters/ha-1']),
     })
     expect(resolveSource('letters/ha-1', s).type).toBe('memory')
+  })
+})
+
+describe('effectiveKey (pack audio override)', () => {
+  const ti = { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae'] }
+
+  it('is the identity when there is no override', () => {
+    expect(effectiveKey('letters/hha-1', null)).toBe('letters/hha-1')
+    expect(effectiveKey('letters/hha-1', { sub: 'ti/', ids: [] })).toBe('letters/hha-1')
+  })
+
+  it('redirects only the overridden family ids into the sub-path', () => {
+    expect(effectiveKey('letters/hha-1', ti)).toBe('letters/ti/hha-1')
+    expect(effectiveKey('letters/ae-7', ti)).toBe('letters/ti/ae-7')
+  })
+
+  it('leaves shared families and non-letter keys untouched', () => {
+    expect(effectiveKey('letters/ha-1', ti)).toBe('letters/ha-1') // ha != hha
+    expect(effectiveKey('letters/a-1', ti)).toBe('letters/a-1') // a != ae
+    expect(effectiveKey('words/feres', ti)).toBe('words/feres')
+  })
+})
+
+describe('resolveSource with a Tigrinya override', () => {
+  const ti = { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae'] }
+
+  it('gates and fetches the overridden clip by its effective key', () => {
+    const s = state({ manifest: new Set(['letters/ti/hha-1', 'letters/ha-1']), override: ti })
+    expect(resolveSource('letters/hha-1', s)).toEqual({ type: 'file', src: '/audio/fidel/letters/ti/hha-1.mp3' })
+    // shared family still resolves against the base path
+    expect(resolveSource('letters/ha-1', s)).toEqual({ type: 'file', src: '/audio/fidel/letters/ha-1.mp3' })
+  })
+
+  it('chimes an overridden key the manifest does not cover under ti/', () => {
+    const s = state({ manifest: new Set(['letters/hha-1']), override: ti }) // base has it, ti/ does not
+    expect(resolveSource('letters/hha-1', s)).toEqual({ type: 'chime' })
+  })
+
+  it('prefers the memory pack keyed by the effective key', () => {
+    const s = state({ memory: { 'letters/ti/ae-2': 'data:x' }, override: ti })
+    expect(resolveSource('letters/ae-2', s)).toEqual({ type: 'memory', src: 'data:x' })
   })
 })
 

@@ -21,12 +21,34 @@
    directly — only the shell effects do, so game determinism is untouched.
    ========================================================================== */
 
-/** Pure cascade resolution. state: {memory, manifest, missing, audioBase}. */
+/**
+ * Redirect a logical key to the pack's physical clip. Used when a pack shares
+ * most of its audio with another but keeps a few sounds distinct (Tigrinya
+ * reuses the Amharic recordings except for the consonants it never merged —
+ * hha/kha/khe/ae — which live under letters/ti/). `override` is
+ * { sub, ids }: for a `letters/<id>-<order>` key whose family id is in `ids`,
+ * the physical clip is `letters/<sub><id>-<order>`. Everything else is
+ * unchanged, so a pack only lists what it overrides.
+ */
+export function effectiveKey(key, override) {
+  if (!override || !override.ids || !override.ids.length) return key
+  const m = /^letters\/([a-z]+)-(\d+)$/.exec(key)
+  if (m && override.ids.includes(m[1])) return `letters/${override.sub}${m[1]}-${m[2]}`
+  return key
+}
+
+/**
+ * Pure cascade resolution. Memoized misses key off the logical key (so a
+ * language switch does not inherit the other pack's failures); memory, manifest
+ * gating, and the file path all key off the effective (possibly redirected)
+ * key. state: {memory, manifest, missing, audioBase, override}.
+ */
 export function resolveSource(key, state) {
-  if (state.memory && state.memory[key]) return { type: 'memory', src: state.memory[key] }
+  const ekey = effectiveKey(key, state.override)
+  if (state.memory && state.memory[ekey]) return { type: 'memory', src: state.memory[ekey] }
   if (state.missing && state.missing.has(key)) return { type: 'chime' }
-  if (state.manifest && !state.manifest.has(key)) return { type: 'chime' }
-  return { type: 'file', src: `${state.audioBase}${key}.mp3` }
+  if (state.manifest && !state.manifest.has(ekey)) return { type: 'chime' }
+  return { type: 'file', src: `${state.audioBase}${ekey}.mp3` }
 }
 
 const FADE_IN_S = 0.015
@@ -36,11 +58,13 @@ export class AudioEngine {
   constructor({
     audioBase = '/audio/fidel/',
     manifestUrl = '/audio/fidel/manifest.json',
+    override = null,
     getMemory = () => (typeof window !== 'undefined' ? window.FIDEL_AUDIO : null),
     fetchImpl = (...a) => fetch(...a),
   } = {}) {
     this.audioBase = audioBase
     this.manifestUrl = manifestUrl
+    this.override = override
     this.getMemory = getMemory
     this.fetchImpl = fetchImpl
     this.ctx = null
@@ -51,10 +75,15 @@ export class AudioEngine {
     this.listeners = { missing: new Set(), play: new Set() }
   }
 
-  /** Retarget to a different audio pack (language switch). */
-  setSource({ audioBase, manifestUrl }) {
+  /**
+   * Retarget to a different audio pack (language switch). `override` is passed
+   * explicitly (even as null) so switching to a pack without overrides clears
+   * the previous pack's redirects rather than inheriting them.
+   */
+  setSource({ audioBase, manifestUrl, override = null }) {
     if (audioBase) this.audioBase = audioBase
     if (manifestUrl) this.manifestUrl = manifestUrl
+    this.override = override
     this.manifest = undefined
     this.missing.clear()
     this.buffers.clear()
@@ -102,6 +131,7 @@ export class AudioEngine {
       manifest: this.manifest ?? null,
       missing: this.missing,
       audioBase: this.audioBase,
+      override: this.override,
     })
   }
 

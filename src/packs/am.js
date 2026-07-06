@@ -8,6 +8,7 @@
 export const AM_PACK = Object.freeze({
   id: 'am',
   label: 'Amharic',
+  nativeName: 'አማርኛ',
   // The seven vocalized orders as taught in Ethiopian schools.
   orders: [
     { index: 1, geezName: "Ge'ez", vowel: 'a' },
@@ -20,7 +21,7 @@ export const AM_PACK = Object.freeze({
   ],
   // Families that share a modern Amharic pronunciation; the first id in
   // each group is the canonical one the others are "twins of".
-  twins: [['ha', 'hha', 'kha'], ['se', 'sse'], ['a', 'ae'], ['tse', 'ttse']],
+  twins: [['ha', 'hha', 'kha'], ['se', 'sse'], ['a', 'ae'], ['tse', 'ttse'], ['ke', 'khe']],
   families: {
     ha: {"name":"Ha","consonant":"h","nickname":"Haleta Ha","word":{"geez":"ሀገር","latin":"hager","meaning":"country","picture":"🗺️"}},
     le: {"name":"Le","consonant":"l","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
@@ -39,7 +40,7 @@ export const AM_PACK = Object.freeze({
     nye: {"name":"Nye","consonant":"ny"},
     a: {"name":"A","consonant":"","nickname":"Alfau A","word":{"geez":"አሳ","latin":"asa","meaning":"fish","picture":"🐟"}},
     ke: {"name":"Ke","consonant":"k","word":{"geez":"ኮከብ","latin":"kokeb","meaning":"star","picture":"⭐"}},
-    khe: {"name":"Khe","consonant":"kh"},
+    khe: {"name":"Khe","consonant":"k"},
     we: {"name":"We","consonant":"w","word":{"geez":"ውሻ","latin":"wisha","meaning":"dog","picture":"🐕"}},
     ae: {"name":"Ae","consonant":"","nickname":"Aynu Ae","word":{"geez":"ዓይን","latin":"ayin","meaning":"eye","picture":"👁️"}},
     ze: {"name":"Ze","consonant":"z","word":{"geez":"ዛፍ","latin":"zaf","meaning":"tree","picture":"🌳"}},
@@ -58,4 +59,5 @@ export const AM_PACK = Object.freeze({
   },
   audioBase: '/audio/fidel/',
   manifestUrl: '/audio/fidel/manifest.json',
+  audioOverride: null, // Amharic is the base pack: no clip redirects.
 })

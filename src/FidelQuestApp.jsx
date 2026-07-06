@@ -24,7 +24,7 @@ import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, us
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
-import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
@@ -1334,6 +1334,84 @@ function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
   )
 }
 
+/* A segmented control: current choice highlighted, tap another to switch.
+   `options` is [{ id, label, sub }]; onPick(id) fires only for a real change. */
+function Segmented({ label, value, options, onPick }) {
+  return (
+    <div>
+      <div className="mb-1.5 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+        {label}
+      </div>
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }} role="group" aria-label={label}>
+        {options.map((o) => {
+          const active = o.id === value
+          return (
+            <button
+              key={o.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => !active && onPick(o.id)}
+              className={`chunk rounded-2xl px-3 py-2 text-center font-black ${FOCUS}`}
+              style={{
+                background: active ? 'var(--sky)' : 'var(--card)',
+                color: active ? '#fff' : 'var(--ink)',
+                border: '2px solid var(--line)',
+                boxShadow: active ? '0 3px 0 var(--sky-deep)' : '0 3px 0 var(--line)',
+                '--chunk-depth': '3px',
+                outlineColor: 'var(--sky)',
+              }}
+            >
+              <span className="block leading-tight">{o.label}</span>
+              {o.sub && (
+                <span className="block text-[11px] font-semibold" style={{ color: active ? 'rgba(255,255,255,0.85)' : 'var(--muted)' }}>
+                  {o.sub}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* Language settings. Two axes the app already models separately: the learning
+   pack (Amharic vs Tigrinya sounds/letters/audio) and the UI text (English vs
+   Amharic). Both are launch-time by design, so a change persists and reloads. */
+function LanguagePicker() {
+  const pack = getActivePackId()
+  const ui = getLang()
+  const packOptions = [
+    { id: 'am', label: PACKS.am.nativeName || 'አማርኛ', sub: PACKS.am.label },
+    { id: 'ti', label: PACKS.ti.nativeName || 'ትግርኛ', sub: PACKS.ti.label },
+  ]
+  return (
+    <div className="mt-4 flex flex-col gap-3 rounded-3xl p-4" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+      <Segmented
+        label={t('langLearn', 'Learning')}
+        value={pack}
+        options={packOptions}
+        onPick={(id) => {
+          setActivePack(id)
+          window.location.reload()
+        }}
+      />
+      <Segmented
+        label={t('langText', 'App text')}
+        value={ui}
+        options={[
+          { id: 'en', label: 'English' },
+          { id: 'am', label: 'አማርኛ' },
+        ]}
+        onPick={(id) => {
+          setLang(id)
+          window.location.reload()
+        }}
+      />
+    </div>
+  )
+}
+
 function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, troubleCount }) {
   useEscapeKey(onClose)
   return (
@@ -1372,17 +1450,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
           <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
           <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setLang(getLang() === 'am' ? 'en' : 'am')
-            window.location.reload()
-          }}
-          className={`mx-auto mt-4 block rounded-xl px-4 py-2 text-sm font-black ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
-        >
-          {getLang() === 'am' ? 'English' : 'አማርኛ'}
-        </button>
+        <LanguagePicker />
       </motion.div>
     </motion.div>
   )
