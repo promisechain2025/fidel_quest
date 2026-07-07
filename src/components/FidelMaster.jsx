@@ -1,0 +1,274 @@
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, Check, RotateCcw, ArrowRight, Gauge } from 'lucide-react'
+import { FIDEL_FAMILIES, ALL_FORMS } from '../platform/ethiopic'
+import { playForm } from '../platform/audioEngine'
+import { t } from '../platform/i18n'
+import { buildMasterSequence, gradePronunciation, AUTOPLAY_SPEEDS, SPEED_ORDER, sessionAccuracy } from '../fidelMaster'
+
+const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
+
+/* On-device mic sample -> { peakRms, voicedMs }. Fully offline: the audio is
+   analysed in-memory and discarded; nothing is recorded or transmitted. */
+async function sampleMic(ms = 1500) {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) throw new Error('no-mic')
+  const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)
+  if (!AC) throw new Error('no-audio')
+  // Never let an unanswered permission prompt freeze the button.
+  const stream = await Promise.race([
+    navigator.mediaDevices.getUserMedia({ audio: true }),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('mic-timeout')), 6000)),
+  ])
+  const ac = new AC()
+  try {
+    const src = ac.createMediaStreamSource(stream)
+    const analyser = ac.createAnalyser()
+    analyser.fftSize = 1024
+    src.connect(analyser)
+    const buf = new Float32Array(analyser.fftSize)
+    let peak = 0
+    let voicedFrames = 0
+    let frames = 0
+    const start = performance.now()
+    await new Promise((resolve) => {
+      const tick = () => {
+        analyser.getFloatTimeDomainData(buf)
+        let sum = 0
+        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
+        const rms = Math.sqrt(sum / buf.length)
+        peak = Math.max(peak, rms)
+        if (rms > 0.02) voicedFrames++
+        frames++
+        if (performance.now() - start < ms) requestAnimationFrame(tick)
+        else resolve()
+      }
+      tick()
+    })
+    return { peakRms: peak, voicedMs: frames ? (voicedFrames / frames) * ms : 0 }
+  } finally {
+    stream.getTracks().forEach((tr) => tr.stop())
+    ac.close?.()
+  }
+}
+
+const TABS = [
+  { id: 'chart', icon: null, key: 'masterChart', label: 'Chart' },
+  { id: 'auto', icon: Play, key: 'masterAuto', label: 'Auto-voice' },
+  { id: 'say', icon: Mic, key: 'masterSay', label: 'Say it' },
+]
+
+/* Fidel Master: master every letter of the abugida. Pack-aware (uses the
+   active language's forms), fully offline. Three tools share one sequence. */
+export default function FidelMaster({ onBack, soundOn = true }) {
+  const [tab, setTab] = useState('chart')
+  const [mix, setMix] = useState(true)
+  const [seed, setSeed] = useState(1)
+  const [idx, setIdx] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState('normal')
+  const [micState, setMicState] = useState('idle') // idle | busy | result | nomic
+  const [feedback, setFeedback] = useState(null) // { grade, accept }
+  const [stats, setStats] = useState({ correct: 0, total: 0, missed: [] })
+
+  const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix }), [seed, mix])
+  const form = seq[idx] ?? seq[0]
+  const play = useCallback((f) => { if (soundOn) playForm(f, true) }, [soundOn])
+
+  // Keep idx in range if the sequence rebuilds.
+  useEffect(() => { setIdx((i) => (i >= seq.length ? 0 : i)) }, [seq.length])
+
+  // Auto-voice: speak the current letter, then step on after the chosen pace.
+  useEffect(() => {
+    if (tab !== 'auto' || !playing) return undefined
+    play(seq[idx])
+    const timer = setTimeout(() => setIdx((i) => (i + 1) % seq.length), AUTOPLAY_SPEEDS[speed])
+    return () => clearTimeout(timer)
+  }, [tab, playing, idx, speed, seq, play])
+
+  // Stop autoplay when leaving the auto tab.
+  useEffect(() => { if (tab !== 'auto') setPlaying(false) }, [tab])
+
+  // Say-it: play the model sound as each new letter appears.
+  useEffect(() => {
+    if (tab !== 'say') return
+    setFeedback(null)
+    setMicState((s) => (s === 'nomic' ? s : 'idle'))
+    const timer = setTimeout(() => play(form), 250)
+    return () => clearTimeout(timer)
+  }, [tab, idx]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reshuffle = () => { setSeed((s) => (s % 9973) + 7); setIdx(0); setFeedback(null) }
+  const step = (d) => { setPlaying(false); setIdx((i) => (i + d + seq.length) % seq.length) }
+
+  const doSayIt = async () => {
+    setMicState('busy')
+    setFeedback(null)
+    try {
+      const sample = await sampleMic(1500)
+      const g = gradePronunciation(sample)
+      setFeedback(g)
+      setMicState('result')
+      setStats((s) => ({
+        correct: s.correct + (g.accept ? 1 : 0),
+        total: s.total + 1,
+        missed: g.accept ? s.missed : [...s.missed, form.audioKey],
+      }))
+      if (g.accept) {
+        setTimeout(() => setIdx((i) => (i + 1) % seq.length), 950)
+      } else {
+        setTimeout(() => play(form), 500) // coach: replay the model sound
+      }
+    } catch {
+      setMicState('nomic')
+    }
+  }
+
+  const accuracy = sessionAccuracy(stats)
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-12 pt-5">
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
+        <h1 className="text-xl font-black leading-tight">{t('masterTitle', 'Fidel Master')}</h1>
+        <span className="ml-auto text-sm font-black" style={{ color: 'var(--muted)' }}>{ALL_FORMS.length} {t('masterLetters', 'letters')}</span>
+      </header>
+
+      {/* Tabs */}
+      <div className="mt-4 flex gap-2 rounded-2xl p-1" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+        {TABS.map((tb) => {
+          const on = tab === tb.id
+          return (
+            <button key={tb.id} type="button" onClick={() => setTab(tb.id)} aria-pressed={on}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-black ${FOCUS}`}
+              style={{ background: on ? 'var(--sky)' : 'transparent', color: on ? '#fff' : 'var(--muted)', outlineColor: 'var(--accent)' }}>
+              {tb.icon && <tb.icon className="h-4 w-4" aria-hidden="true" />}
+              {t(tb.key, tb.label)}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* CHART: the whole abugida, tap any letter to hear it */}
+      {tab === 'chart' && (
+        <div className="mt-4 flex flex-col gap-3">
+          <button type="button" onClick={() => { setMix(true); reshuffle(); setTab('auto'); setPlaying(true) }}
+            className={`chunk flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`}
+            style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep, #a15b00)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <Shuffle className="h-5 w-5" aria-hidden="true" /> {t('masterMixDrill', 'Mix all & auto-play')}
+          </button>
+          <div className="overflow-x-auto">
+            <div className="flex flex-col gap-1.5">
+              {FIDEL_FAMILIES.map((fam) => (
+                <div key={fam.id} className="flex items-center gap-1.5">
+                  <span className="w-9 shrink-0 text-[10px] font-black uppercase" style={{ color: 'var(--muted)' }}>{fam.name}</span>
+                  {Array.from(fam.chars).map((ch, i) => {
+                    const key = `${fam.id}-${i + 1}`
+                    return (
+                      <button key={key} type="button" onClick={() => play({ audioKey: key, familyIndex: fam.familyIndex ?? 0, order: i + 1 })}
+                        className={`geez flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg font-black ${FOCUS}`}
+                        style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                        aria-label={`Hear ${ch}`}>
+                        {ch}
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AUTO-VOICE + SAY-IT share the big current-letter card */}
+      {(tab === 'auto' || tab === 'say') && (
+        <div className="mt-4 flex flex-col items-center gap-4">
+          <div className="flex w-full items-center justify-between text-sm font-black" style={{ color: 'var(--muted)' }}>
+            <button type="button" onClick={() => setMix((m) => !m)} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }} aria-pressed={mix}>
+              <Shuffle className="h-4 w-4" aria-hidden="true" /> {mix ? t('masterMixed', 'Mixed') : t('masterInOrder', 'In order')}
+            </button>
+            <span>{idx + 1} / {seq.length}</span>
+            <button type="button" onClick={reshuffle} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }} aria-label={t('masterReshuffle', 'Reshuffle')}>
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <motion.button
+            key={form?.audioKey}
+            type="button"
+            onClick={() => play(form)}
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`geez flex h-56 w-56 items-center justify-center rounded-3xl text-9xl font-black text-white ${FOCUS}`}
+            style={{ background: 'radial-gradient(circle at 34% 28%, var(--sky), var(--sky-deep))', boxShadow: '0 10px 24px rgba(0,0,0,0.25)', outlineColor: 'var(--accent)' }}
+            aria-label={`Hear ${form?.char}`}
+          >
+            {form?.char}
+          </motion.button>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{form?.sound}</p>
+
+          {tab === 'auto' && (
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => step(-1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }} aria-label="Previous">
+                  <ArrowRight className="h-6 w-6 rotate-180" aria-hidden="true" />
+                </button>
+                <button type="button" onClick={() => setPlaying((p) => !p)} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }} aria-label={playing ? t('masterPause', 'Pause') : t('masterPlay', 'Play')}>
+                  {playing ? <Pause className="h-8 w-8" aria-hidden="true" /> : <Play className="h-8 w-8" aria-hidden="true" />}
+                </button>
+                <button type="button" onClick={() => step(1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }} aria-label="Next">
+                  <ArrowRight className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Gauge className="h-4 w-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
+                {SPEED_ORDER.map((s) => (
+                  <button key={s} type="button" onClick={() => setSpeed(s)} aria-pressed={speed === s}
+                    className={`rounded-full px-3 py-1 text-sm font-black ${FOCUS}`}
+                    style={{ background: speed === s ? 'var(--sky)' : 'var(--card)', color: speed === s ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
+                    {t(`speed_${s}`, s)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tab === 'say' && (
+            <div className="flex w-full flex-col items-center gap-3">
+              <AnimatePresence mode="wait">
+                {feedback && (
+                  <motion.p key={feedback.grade + idx} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
+                    className="text-2xl font-black" style={{ color: feedback.accept ? 'var(--go-ink)' : 'var(--accent)' }}>
+                    {feedback.grade === 'great' ? t('sayGreat', 'Perfect! ⭐') : feedback.grade === 'good' ? t('sayGood', 'Nice try!') : t('sayAgain', 'Say it again with me')}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              {micState === 'nomic' ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('sayNoMic', 'No microphone — say it out loud, then tap Next!')}</p>
+                  <button type="button" onClick={() => setIdx((i) => (i + 1) % seq.length)} className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                    <Check className="h-5 w-5" aria-hidden="true" /> {t('sayISaidIt', 'I said it!')}
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={doSayIt} disabled={micState === 'busy'}
+                  className={`chunk flex items-center gap-2 rounded-2xl px-7 py-3 font-black text-white disabled:opacity-70 ${FOCUS}`}
+                  style={{ background: micState === 'busy' ? 'var(--bad)' : 'var(--accent)', boxShadow: `0 4px 0 ${micState === 'busy' ? 'var(--bad-ink)' : 'var(--accent-deep, #a15b00)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                  <Mic className="h-6 w-6" aria-hidden="true" /> {micState === 'busy' ? t('sayListening', 'Listening...') : t('saySayIt', 'Say it')}
+                </button>
+              )}
+
+              {accuracy != null && (
+                <p className="text-sm font-black" style={{ color: 'var(--muted)' }}>
+                  {t('sayScore', 'Score')}: {accuracy}% · {stats.correct}/{stats.total}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

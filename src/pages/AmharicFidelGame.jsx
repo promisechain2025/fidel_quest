@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { loadFromStorage } from '../utils/loadFromStorage'
 import FidelTracePad from '../components/FidelTracePad'
+import FidelMaster from '../components/FidelMaster'
 import { audio as platformAudio } from '../platform/audioEngine'
 import {
   FIDEL_FAMILIES,
@@ -1122,6 +1123,18 @@ export default function AmharicFidelGame() {
           {t('traceCta')}
           <ChevronRight className="h-5 w-5" />
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setScreen('master')
+            playSfx('tap')
+          }}
+          className={`flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-400 to-purple-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+        >
+          <Music className="h-6 w-6" />
+          {t('masterCta')}
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
     </div>
   )
@@ -1743,6 +1756,7 @@ export default function AmharicFidelGame() {
       {screen === 'game' && renderGame()}
       {screen === 'complete' && renderComplete()}
       {screen === 'trace' && renderTrace()}
+      {screen === 'master' && <FidelMaster onBack={() => setScreen('menu')} soundOn={soundOn} />}
 
       {screen === 'menu' && (
         <p className="mx-auto mt-10 flex max-w-md items-center justify-center gap-2 text-center text-sm font-semibold text-amber-700/60 dark:text-amber-300/50">
