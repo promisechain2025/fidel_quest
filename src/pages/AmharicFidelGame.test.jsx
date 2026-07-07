@@ -293,10 +293,11 @@ describe('<AmharicFidelGame />', () => {
         return form.sound !== sound
       })
     fireEvent.click(wrong)
-    expect(screen.getByRole('status').textContent).toMatch(/try|Almost|close|worries/i)
-    // A wrong answer surfaces a Continue button and persists the miss count
-    // for adaptive weighting in future runs.
-    expect(screen.getByRole('button', { name: /Continue/ })).toBeInTheDocument()
+    expect(screen.getByRole('status').textContent).toMatch(/try|Almost|close|worries|Ayzoh|can do/i)
+    // Second chance: the wrong option is now disabled but the question stays
+    // open (no Continue button); the miss is persisted for adaptive weighting.
+    expect(wrong).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /Continue/ })).toBeNull()
     const stored = JSON.parse(localStorage.getItem('fidel-quest-progress-v1'))
     expect(Object.values(stored.missCounts)).toContain(1)
   })
@@ -316,9 +317,9 @@ describe('<AmharicFidelGame />', () => {
       fireEvent.click(screen.getByText(/Explore Mode/))
       fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
       fireEvent.click(screen.getByRole('button', { name: /Chant the row/ }))
-      // First form glows immediately, second after the chant interval.
+      // First form glows immediately, second after the chant interval (1300ms).
       expect(screen.getByRole('button', { name: /1st.*form ለ/ }).className).toContain('fq-anim-glow')
-      act(() => vi.advanceTimersByTime(950))
+      act(() => vi.advanceTimersByTime(1350))
       expect(screen.getByRole('button', { name: /2nd.*form ሉ/ }).className).toContain('fq-anim-glow')
       // Runs to the end and stops cleanly.
       act(() => vi.advanceTimersByTime(7000))

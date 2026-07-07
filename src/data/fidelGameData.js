@@ -264,8 +264,8 @@ export const UI_STRINGS = {
     traceTry: 'Give it one more try — cover more of the gray letter.',
     traceDone: 'Family traced — gobez!',
     traceUnsupported: 'Tracing needs a browser with canvas support.',
-    praise: ['Gobez! (Great job!)', 'Wonderful!', 'You are a star!', 'Betam gobez!', 'Brilliant!', 'Keep shining!'],
-    encourage: ['Almost! Listen again.', 'Good try! Next one is yours.', 'So close! Keep going.', 'No worries, try the next!'],
+    praise: ['Gobez! (Great job!)', 'Wonderful!', 'You are a star!', 'Betam gobez! (Very well done!)', 'Brilliant!', 'Keep shining!', 'Amazing!', 'Fantastic!', 'You did it!', 'Way to go!', 'Superb!', 'Tebarek! (Bless you!)', 'Girum! (Wonderful!)', 'Arif! (Great!)', 'Kokeb neh! (You are a star!)', 'Woohoo!'],
+    encourage: ['Almost! Listen again.', 'Good try! Give it another go.', 'So close! Keep going.', 'No worries — try again!', 'Ayzoh! (Take heart!) Listen once more.', 'You can do it! Try again.', 'Nearly there — one more try!', 'Listen carefully and try again.'],
     levels: {
       1: { title: 'First Letters', subtitle: 'Meet the first eight Fidel' },
       2: { title: 'More Letters', subtitle: 'Eight new friends to meet' },
@@ -344,8 +344,8 @@ export const UI_STRINGS = {
     traceTry: 'አንድ ጊዜ ደግመህ ሞክር — ግራጫውን ፊደል የበለጠ ሸፍን።',
     traceDone: 'ቤተሰቡ ተስሏል — ጎበዝ!',
     traceUnsupported: 'መሳል ካንቫስ የሚደግፍ አሳሽ ይፈልጋል።',
-    praise: ['ጎበዝ!', 'በጣም ጥሩ!', 'ኮከብ ነህ!', 'ድንቅ!', 'እሰይ!', 'በርታ!'],
-    encourage: ['ተቃርበሃል! እንደገና ስማ።', 'ጥሩ ሙከራ! ቀጣዩ ያንተ ነው።', 'በጣም ተቃርበሃል! በርታ።', 'ችግር የለም፣ ቀጣዩን ሞክር!'],
+    praise: ['ጎበዝ!', 'በጣም ጎበዝ!', 'ኮከብ ነህ!', 'ድንቅ!', 'እሰይ!', 'በርታ!', 'ተባረክ!', 'ግሩም!', 'አሪፍ!', 'ዋው!', 'ተባ በል!', 'እጅግ ጎበዝ!'],
+    encourage: ['ተቃርበሃል! እንደገና ስማ።', 'ጥሩ ሙከራ! እንደገና ሞክር።', 'በጣም ተቃርበሃል! በርታ።', 'ችግር የለም፣ እንደገና ሞክር!', 'አይዞህ! ደግመህ ስማ።', 'ትችላለህ! እንደገና ሞክር።'],
     levels: {
       1: { title: 'የመጀመሪያ ፊደላት', subtitle: 'የመጀመሪያዎቹ ስምንት ፊደላት' },
       2: { title: 'ተጨማሪ ፊደላት', subtitle: 'ስምንት አዲስ ጓደኞች' },

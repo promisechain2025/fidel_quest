@@ -393,6 +393,28 @@ function vibrate(pattern) {
   }
 }
 
+// Recitation cadence: ~0.8s clip + a beat of silence, so syllables never
+// overlap (with interrupt:true they also cross-fade cleanly).
+const CHANT_CADENCE_MS = 1300
+
+/* Spoken motivation. These keys map to optional human recordings the operator
+   can drop in (e.g. public/audio/fidel/praise/gobez.mp3). Until a clip exists
+   the resolver reports 'chime', and we simply skip it — the correct/wrong SFX
+   already gives an audio cue, so we never double up or fake a robotic voice.
+   The word lists (UI_STRINGS praise/encourage) are what to record. */
+const PRAISE_CLIPS = ['praise/gobez', 'praise/betam-gobez', 'praise/arif', 'praise/girum', 'praise/tebarek', 'praise/kokeb-neh']
+const ENCOURAGE_CLIPS = ['encourage/ayzoh', 'encourage/endegena-moker', 'encourage/teqarebk', 'encourage/tichlaleh']
+
+function speakMotivation(clips) {
+  try {
+    const key = clips[Math.floor(Math.random() * clips.length)]
+    // Only play when a real recording exists; a 'chime' resolution is skipped.
+    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key, { interrupt: false })
+  } catch {
+    /* audio unavailable — the SFX cue already fired */
+  }
+}
+
 /* ── SHARED STYLES (keyframes Tailwind doesn't ship) ───────────────────────── */
 
 const GAME_KEYFRAMES = `
@@ -630,6 +652,7 @@ export default function AmharicFidelGame() {
   // phase: question | correct | wrong
   const [phase, setPhase] = useState('question')
   const [selectedIndex, setSelectedIndex] = useState(null)
+  const [wrongPicks, setWrongPicks] = useState([]) // options tried wrong this question (second-chance)
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)
   const [bestStreakInRun, setBestStreakInRun] = useState(0)
@@ -705,6 +728,7 @@ export default function AmharicFidelGame() {
       setQuestionIndex(0)
       setPhase('question')
       setSelectedIndex(null)
+      setWrongPicks([])
       setScore(0)
       setStreak(0)
       setBestStreakInRun(0)
@@ -734,6 +758,7 @@ export default function AmharicFidelGame() {
 
   const finishLevel = useCallback(
     (finalCorrectCount, finalScore) => {
+      if (!level) return // never write stars/score for a level that was left
       const accuracy = level ? finalCorrectCount / level.questionCount : 0
       const stars = starsForAccuracy(accuracy)
       if (!level?.practice) {
@@ -755,24 +780,27 @@ export default function AmharicFidelGame() {
   const handleAnswer = useCallback(
     (option, optionIndex) => {
       if (phase !== 'question' || !currentQuestion) return
-      // Ref guard alongside the closure check: a native keydown and a click
-      // can both land before React commits the phase change, and the render
-      // closure alone would let both through, double-counting one question.
-      if (answeredForIndexRef.current === questionIndex) return
-      answeredForIndexRef.current = questionIndex
-      setSelectedIndex(optionIndex)
+      if (wrongPicks.includes(optionIndex)) return // already tried this wrong one
       const isCorrect = option.char === currentQuestion.target.char
-
       const targetChar = currentQuestion.target.char
+
       if (isCorrect) {
-        const gained = 10 + Math.min(streak, 5) * 2
-        const nextStreak = streak + 1
+        // Ref guard: a native keydown and a click can both land before React
+        // commits the phase change; only the first finalises the question.
+        if (answeredForIndexRef.current === questionIndex) return
+        answeredForIndexRef.current = questionIndex
+        setSelectedIndex(optionIndex)
+        // A first-try answer keeps the streak; a rescued one (after a wrong
+        // pick) still counts as learned but does not build a streak.
+        const cleanFirstTry = wrongPicks.length === 0
+        const gained = cleanFirstTry ? 10 + Math.min(streak, 5) * 2 : 5
+        const nextStreak = cleanFirstTry ? streak + 1 : 0
         setScore((s) => s + gained)
         setStreak(nextStreak)
         setBestStreakInRun((b) => Math.max(b, nextStreak))
         setCorrectCount((c) => c + 1)
         setLastGain({ amount: gained, key: `${questionIndex}-${optionIndex}` })
-        const isStreakMilestone = nextStreak % 5 === 0
+        const isStreakMilestone = cleanFirstTry && nextStreak % 5 === 0
         const praise = UI_STRINGS[lang].praise
         setPhase('correct')
         setMascotMood(isStreakMilestone ? 'party' : 'happy')
@@ -787,42 +815,42 @@ export default function AmharicFidelGame() {
         } else {
           playSfx('correct')
         }
+        speakMotivation(PRAISE_CLIPS) // spoken "gobez!" etc. once recorded
         vibrate(30)
-        // Decay this letter's miss count — mastery pushes it back toward
-        // normal frequency in future runs. The no-op branch returns prev
-        // unchanged so untracked letters don't trigger a render.
         setProgress((prev) => {
           const current = prev.missCounts[targetChar] || 0
           if (current === 0) return prev
           return { ...prev, missCounts: { ...prev.missCounts, [targetChar]: current - 1 } }
         })
       } else {
-        const encourage = UI_STRINGS[lang].encourage
+        // Second chance: mark this pick wrong, encourage, re-say the letter,
+        // and stay on the question so the child can try again (never reveal
+        // the answer and move on). Count the miss once, on the first slip.
+        const firstSlip = wrongPicks.length === 0
+        setWrongPicks((w) => (w.includes(optionIndex) ? w : [...w, optionIndex]))
         setStreak(0)
-        setPhase('wrong')
         setMascotMood('sad')
+        const encourage = UI_STRINGS[lang].encourage
         setFeedbackMessage(encourage[Math.floor(Math.random() * encourage.length)])
-        setMissedForms((prev) =>
-          prev.some((f) => f.char === targetChar) ? prev : [...prev, currentQuestion.target],
-        )
-        setProgress((prev) => ({
-          ...prev,
-          missCounts: {
-            ...prev.missCounts,
-            [targetChar]: Math.min(9, (prev.missCounts[targetChar] || 0) + 1),
-          },
-        }))
+        if (firstSlip) {
+          setMissedForms((prev) => (prev.some((f) => f.char === targetChar) ? prev : [...prev, currentQuestion.target]))
+          setProgress((prev) => ({
+            ...prev,
+            missCounts: { ...prev.missCounts, [targetChar]: Math.min(9, (prev.missCounts[targetChar] || 0) + 1) },
+          }))
+        }
         playSfx('wrong')
+        speakMotivation(ENCOURAGE_CLIPS) // spoken "try again" once recorded
         vibrate([60, 40, 60])
-        // Replay the target sound so the child re-associates it with the
-        // highlighted correct letter.
-        playLetter(currentQuestion.target)
+        // Say the letter again so the child can listen and pick once more.
+        setTimeout(() => playLetter(currentQuestion.target), 350)
       }
     },
-    [phase, currentQuestion, streak, questionIndex, playSfx, playLetter, lang, t],
+    [phase, currentQuestion, wrongPicks, streak, questionIndex, playSfx, playLetter, lang, t],
   )
 
   const advance = useCallback(() => {
+    if (!level) return // a stale timer must never advance a left level
     // Idempotency guard: the Continue button, the Enter key, and the
     // auto-advance timer can all race on the same feedback beat — only the
     // first one through may move the question index.
@@ -835,6 +863,7 @@ export default function AmharicFidelGame() {
       setQuestionIndex((i) => i + 1)
       setPhase('question')
       setSelectedIndex(null)
+      setWrongPicks([])
       setMascotMood('idle')
       setFeedbackMessage('')
       // confettiKey is deliberately NOT reset here: a streak burst outlives
@@ -843,14 +872,16 @@ export default function AmharicFidelGame() {
     }
   }, [questionIndex, level, correctCount, score, finishLevel])
 
-  // Auto-advance after the feedback beat. Wrong answers get a longer beat
-  // (and a Continue button) so the highlighted correct answer can sink in.
+  // Auto-advance only after a CORRECT answer. Wrong answers now stay on the
+  // question for a second chance, so there is no 'wrong' auto-advance. The
+  // screen/level guard is essential: without it, tapping Back during the
+  // feedback beat leaves this timer armed and it later fires advance() with a
+  // null level, which crashed the app to the error screen.
   useEffect(() => {
-    if (phase !== 'correct' && phase !== 'wrong') return undefined
-    const delay = phase === 'correct' ? 1300 : 2600
-    advanceTimerRef.current = setTimeout(advance, delay)
+    if (screen !== 'game' || !level || phase !== 'correct') return undefined
+    advanceTimerRef.current = setTimeout(advance, 1300)
     return () => clearTimeout(advanceTimerRef.current)
-  }, [phase, advance])
+  }, [screen, level, phase, advance])
 
   // Number keys 1-4 answer; kids on shared family laptops love this, and it
   // makes the whole quiz operable without a pointer.
@@ -867,10 +898,6 @@ export default function AmharicFidelGame() {
         typeof target.closest === 'function' &&
         target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')
       ) {
-        return
-      }
-      if (phase === 'wrong' && event.key === 'Enter') {
-        advance()
         return
       }
       if (phase !== 'question' || !currentQuestion) return
@@ -931,10 +958,11 @@ export default function AmharicFidelGame() {
         }
         const form = family.forms[index]
         setGlowingChar(form.char)
-        // interrupt:false — in the TTS tier the 900ms cadence must queue,
-        // not cancel the previous syllable mid-word.
-        playLetter(form, { interrupt: false })
-        chantTimerRef.current = setTimeout(() => step(index + 1), 900)
+        // interrupt:true cross-fades out any still-playing syllable so the
+        // recitation never overlaps itself; the cadence leaves each ~0.8s clip
+        // room to finish with a beat of silence before the next.
+        playLetter(form, { interrupt: true })
+        chantTimerRef.current = setTimeout(() => step(index + 1), CHANT_CADENCE_MS)
       }
       step(0)
     },
@@ -1004,6 +1032,9 @@ export default function AmharicFidelGame() {
     answeredForIndexRef.current = -1
     setScreen('menu')
     setLevel(null)
+    setPhase('question') // clear feedback state so no stale timer re-arms
+    setSelectedIndex(null)
+    setWrongPicks([])
     setConfettiKey(0)
     setMascotMood('idle')
     setExploreFamilyIndex(null)
@@ -1399,44 +1430,35 @@ export default function AmharicFidelGame() {
               role="status"
               aria-live="polite"
               className={`text-center text-base font-extrabold ${
-                phase === 'correct' ? 'text-emerald-600' : phase === 'wrong' ? 'text-rose-500' : 'text-transparent'
+                phase === 'correct' ? 'text-emerald-600' : wrongPicks.length ? 'text-rose-500' : 'text-transparent'
               }`}
             >
               {feedbackMessage || '·'}
             </p>
-            {phase === 'wrong' && (
-              <button
-                type="button"
-                onClick={advance}
-                className="fq-anim-pop flex items-center gap-1 rounded-full bg-amber-400 px-4 py-1.5 text-sm font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-300 hover:shadow-lg active:scale-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/60"
-              >
-                {t('continueBtn')} <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Answer grid */}
-        <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${phase === 'wrong' ? 'fq-anim-shake' : ''}`}>
+        {/* Answer grid — wrong picks stay disabled but the question stays open
+            for a second chance; only the correct letter ends the round. */}
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${wrongPicks.length ? 'fq-anim-shake' : ''}`}>
           {options.map((option, i) => {
             const isTarget = option.char === target.char
-            const isPicked = selectedIndex === i
-            const showCorrect = phase !== 'question' && isTarget
-            const showWrong = phase === 'wrong' && isPicked
+            const showCorrect = phase === 'correct' && isTarget
+            const showWrong = wrongPicks.includes(i)
             return (
               <button
                 key={option.char}
                 type="button"
                 onClick={() => handleAnswer(option, i)}
-                disabled={phase !== 'question'}
+                disabled={phase !== 'question' || showWrong}
                 aria-label={`Letter ${option.char}`}
                 className={`relative flex min-h-24 items-center justify-center rounded-2xl border-b-4 p-4 shadow-md transition-all duration-150 ${FOCUS_RING} sm:min-h-28 ${
                   showCorrect
                     ? 'fq-anim-bounce border-emerald-600 bg-emerald-400 text-white'
                     : showWrong
-                      ? 'border-rose-600 bg-rose-400 text-white'
+                      ? 'border-rose-300 bg-rose-100 text-rose-400 dark:border-rose-800 dark:bg-rose-950/40'
                       : 'border-amber-200 bg-white text-gray-800 hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl active:scale-90 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-amber-500'
-                } ${phase !== 'question' && !showCorrect && !showWrong ? 'opacity-50' : ''}`}
+                } ${showWrong ? 'opacity-60' : ''}`}
               >
                 <span
                   aria-hidden="true"

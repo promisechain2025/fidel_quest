@@ -341,13 +341,16 @@ export function buildPracticeQueue(events, seed, count = 8) {
 
 /** First Words: the voiced kid words as machine-compatible questions. Options
    are word latins; pictures are guaranteed distinct within a question.
-   Words flagged noAudio (no human recording yet) are excluded — this game is
-   audio-first for pre-readers, so a silent prompt reads as broken. */
-export const WORDS = FIDEL_FAMILIES.filter((f) => f.word && !f.word.noAudio).map((f, _, arr) => ({
-  ...f.word,
-  familyId: f.id,
-  familyIndex: FIDEL_FAMILIES.findIndex((x) => x.id === f.id),
-}))
+   A family may carry one `word` or several in a `words` array (more words per
+   letter = more First Words variety). Words flagged noAudio (no human recording
+   yet) are excluded — this game is audio-first for pre-readers, so a silent
+   prompt reads as broken; a word activates the moment its clip is recorded. */
+const familyWordList = (f) => (Array.isArray(f.words) && f.words.length ? f.words : f.word ? [f.word] : [])
+export const WORDS = FIDEL_FAMILIES.flatMap((f, familyIndex) =>
+  familyWordList(f)
+    .filter((w) => w && !w.noAudio)
+    .map((w) => ({ ...w, familyId: f.id, familyIndex })),
+)
 export const WORD_BY_LATIN = new Map(WORDS.map((w) => [w.latin, w]))
 
 /** The look-alike sibling of a family, if any: its twin parent, or a family
