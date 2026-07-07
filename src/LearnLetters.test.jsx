@@ -42,8 +42,15 @@ describe('the step machine', () => {
     expect(ctx.order).not.toEqual(ctx.forms) // scrambled (33! chance aside)
     for (let i = 0; i < SHUFFLE_ROUNDS; i++) ctx = learnTransition(ctx, ctx.target).next
     expect(ctx.phase).toBe(LearnPhase.TRACE)
-    expect(learnTransition(ctx, 'ha-3').advanced).toBe(false) // only tracing finishes
-    ctx = learnTransition(ctx, '__traced__').next
+    // A family now writes a spread of its forms, hearing each first.
+    expect(ctx.traceForms.length).toBeGreaterThanOrEqual(2)
+    expect(ctx.traceIdx).toBe(0)
+    expect(learnTransition(ctx, 'ha-3').advanced).toBe(false) // only tracing advances
+    for (let i = 0; i < ctx.traceForms.length - 1; i++) {
+      ctx = learnTransition(ctx, '__traced__').next
+      expect(ctx.phase).toBe(LearnPhase.TRACE) // still writing
+    }
+    ctx = learnTransition(ctx, '__traced__').next // last one finishes
     expect(ctx.phase).toBe(LearnPhase.DONE)
   })
 

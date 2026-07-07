@@ -56,6 +56,11 @@ export const ECHO_ROUNDS = 3
 export const SHUFFLE_ROUNDS = 3
 export const MIX_ROUNDS = 4
 
+// Writing finale: trace a spread of the family's forms (not just the base) so
+// the child practises writing several real letters, hearing each first. Form
+// indices into the 7-order row (base, mid, last) - a variety of diacritics.
+export const TRACE_ORDERS = [0, 3, 6]
+
 // `avoid` may be a single key or a list of keys (the letters already eaten
 // this round-set). Excluding all of them keeps the spoken target inside the
 // letters still on the tray, so a fed-and-removed letter is never asked for.
@@ -199,15 +204,23 @@ export function learnTransition(ctx, key) {
           correct: true,
         }
       }
-      // Families finish by carving the base letter; mixes are done here.
-      return {
-        next: { ...touched, phase: ctx.kind === 'family' ? LearnPhase.TRACE : LearnPhase.DONE, eaten, target: null },
-        advanced: true,
-        correct: true,
+      // Families finish by writing a few of their letters; mixes end here.
+      if (ctx.kind === 'family') {
+        const traceForms = TRACE_ORDERS.map((i) => ctx.forms[i]).filter(Boolean)
+        return {
+          next: { ...touched, phase: LearnPhase.TRACE, traceForms, traceIdx: 0, eaten, target: null },
+          advanced: true,
+          correct: true,
+        }
       }
+      return { next: { ...touched, phase: LearnPhase.DONE, eaten, target: null }, advanced: true, correct: true }
     }
     case LearnPhase.TRACE: {
       if (key !== '__traced__') return { next: touched, advanced: false, correct: false }
+      const traceIdx = (ctx.traceIdx ?? 0) + 1
+      if (traceIdx < (ctx.traceForms?.length ?? 1)) {
+        return { next: { ...touched, traceIdx }, advanced: true, correct: true }
+      }
       return { next: { ...touched, phase: LearnPhase.DONE }, advanced: true, correct: true }
     }
     default:
@@ -782,6 +795,13 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     }
     return undefined
   }, [ctx.phase, ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Writing phase: say each letter as it appears so the child traces by ear.
+  useEffect(() => {
+    if (ctx.phase !== LearnPhase.TRACE) return undefined
+    const key = (ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`])[ctx.traceIdx ?? 0]
+    const timer = setTimeout(() => playForm(formOf(key), soundOn), 450)
+    return () => clearTimeout(timer)
+  }, [ctx.phase, ctx.traceIdx]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (prevPhase.current !== ctx.phase) {
       prevPhase.current = ctx.phase
@@ -819,29 +839,47 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={touch} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StarTrail key={ctx.phase} ctx={ctx} onTouch={touch} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
-          {ctx.phase === LearnPhase.TRACE && (
-            <motion.div key="trace" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
-              <p className="text-lg font-extrabold">{t('traceHint', 'Now carve it! Trace the letter with your finger')}</p>
-              <FidelTracePad
-                char={formOf(`${ctx.familyId}-1`)?.char}
-                chapter={stone.group}
-                familyId={ctx.familyId}
-                labels={{
-                  clear: t('traceClear', 'Clear'),
-                  check: t('traceCheck', 'Check'),
-                  instruction: '',
-                  unsupported: '-',
-                }}
-                onScored={(r) => {
-                  // Celebration-grade acceptance: covering the letter always
-                  // wins (never blocks). A miss soft-cues origin/direction via
-                  // the pad's overlays and lets the child try again.
-                  if (r.pass || r.coverage >= 0.55) touch('__traced__')
-                  else playEffect('bad', soundOn)
-                }}
-              />
-            </motion.div>
-          )}
+          {ctx.phase === LearnPhase.TRACE && (() => {
+            const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
+            const traceForm = formOf(traceForms[ctx.traceIdx ?? 0])
+            return (
+              <motion.div key={`trace-${ctx.traceIdx ?? 0}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
+                <p className="text-lg font-extrabold">
+                  {t('traceHint', 'Hear it, then trace it with your finger')}{' '}
+                  <span className="mono" style={{ color: 'var(--muted)' }}>{(ctx.traceIdx ?? 0) + 1}/{traceForms.length}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => playForm(traceForm, soundOn)}
+                  className={`chunk flex items-center gap-2 rounded-2xl px-5 py-2 font-black text-white ${FOCUS}`}
+                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+                  aria-label={t('hearIt', 'Hear it again')}
+                >
+                  <Volume2 className="h-6 w-6" aria-hidden="true" />
+                  <span className="geez text-2xl">{traceForm?.char}</span>
+                </button>
+                <FidelTracePad
+                  key={`pad-${traceForms[ctx.traceIdx ?? 0]}`}
+                  char={traceForm?.char}
+                  chapter={stone.group}
+                  familyId={ctx.familyId}
+                  labels={{
+                    clear: t('traceClear', 'Clear'),
+                    check: t('traceCheck', 'Check'),
+                    instruction: '',
+                    unsupported: '-',
+                  }}
+                  onScored={(r) => {
+                    // Celebration-grade acceptance: covering the letter always
+                    // wins (never blocks). A miss soft-cues origin/direction via
+                    // the pad's overlays and lets the child try again.
+                    if (r.pass || r.coverage >= 0.5) touch('__traced__')
+                    else playEffect('bad', soundOn)
+                  }}
+                />
+              </motion.div>
+            )
+          })()}
           {ctx.phase === LearnPhase.DONE && (
             <motion.div key="done" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
               <Hero size={120} />
@@ -863,11 +901,11 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           <button
             type="button"
             onClick={() => playForm(formOf(ctx.target), soundOn)}
-            className={`chunk flex h-14 w-14 items-center justify-center rounded-full text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', outlineColor: 'var(--accent)' }}
-            aria-label="Play the sound again"
+            className={`chunk flex items-center gap-2 rounded-full px-5 py-3 font-black text-white ${FOCUS}`}
+            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
+            aria-label={t('hearIt', 'Hear it again')}
           >
-            <Volume2 className="h-7 w-7" aria-hidden="true" />
+            <Volume2 className="h-7 w-7" aria-hidden="true" /> {t('hearIt', 'Hear it again')}
           </button>
         )}
 

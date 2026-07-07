@@ -40,15 +40,27 @@ export function effectiveKey(key, override) {
 /**
  * Pure cascade resolution. Memoized misses key off the logical key (so a
  * language switch does not inherit the other pack's failures); memory, manifest
- * gating, and the file path all key off the effective (possibly redirected)
- * key. state: {memory, manifest, missing, audioBase, override}.
+ * gating, and the file path key off the effective (possibly redirected) key.
+ *
+ * Override fallback: an override is an *enhancement* (a pack's distinct clip),
+ * so when the redirected clip does not actually exist (not in the manifest and
+ * not embedded in the memory pack) we fall back to the shared base clip rather
+ * than to silence. This keeps a pack that lists an override for a sound it has
+ * no recording for (e.g. Tigrinya hha, whose distinct clip was removed) voiced
+ * with the base recording instead of playing a chime.
+ * state: {memory, manifest, missing, audioBase, override}.
  */
 export function resolveSource(key, state) {
   const ekey = effectiveKey(key, state.override)
-  if (state.memory && state.memory[ekey]) return { type: 'memory', src: state.memory[ekey] }
+  // Only demote a redirect to the base key when we have coverage info that says
+  // the redirected clip is absent; with no info at all we stay optimistic.
+  const known = state.memory || state.manifest
+  const exists = (k) => (state.memory && !!state.memory[k]) || (state.manifest && state.manifest.has(k))
+  const useKey = ekey !== key && known && !exists(ekey) ? key : ekey
+  if (state.memory && state.memory[useKey]) return { type: 'memory', src: state.memory[useKey] }
   if (state.missing && state.missing.has(key)) return { type: 'chime' }
-  if (state.manifest && !state.manifest.has(ekey)) return { type: 'chime' }
-  return { type: 'file', src: `${state.audioBase}${ekey}.mp3` }
+  if (state.manifest && !state.manifest.has(useKey)) return { type: 'chime' }
+  return { type: 'file', src: `${state.audioBase}${useKey}.mp3` }
 }
 
 const FADE_IN_S = 0.015

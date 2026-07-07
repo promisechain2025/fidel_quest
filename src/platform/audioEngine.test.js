@@ -75,9 +75,20 @@ describe('resolveSource with a Tigrinya override', () => {
     expect(resolveSource('letters/ha-1', s)).toEqual({ type: 'file', src: '/audio/fidel/letters/ha-1.mp3' })
   })
 
-  it('chimes an overridden key the manifest does not cover under ti/', () => {
-    const s = state({ manifest: new Set(['letters/hha-1']), override: ti }) // base has it, ti/ does not
+  it('falls back to the base clip when the override clip is not in the manifest', () => {
+    // ti/hha does not exist, but the base hha does: voice it, do not go silent.
+    const s = state({ manifest: new Set(['letters/hha-1']), override: ti })
+    expect(resolveSource('letters/hha-1', s)).toEqual({ type: 'file', src: '/audio/fidel/letters/hha-1.mp3' })
+  })
+
+  it('chimes only when neither the override nor the base clip exists', () => {
+    const s = state({ manifest: new Set(['letters/le-1']), override: ti })
     expect(resolveSource('letters/hha-1', s)).toEqual({ type: 'chime' })
+  })
+
+  it('falls back to the base memory clip in an artifact (no manifest)', () => {
+    const s = state({ memory: { 'letters/hha-1': 'data:base' }, manifest: null, override: ti })
+    expect(resolveSource('letters/hha-1', s)).toEqual({ type: 'memory', src: 'data:base' })
   })
 
   it('prefers the memory pack keyed by the effective key', () => {
