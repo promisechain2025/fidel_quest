@@ -442,20 +442,53 @@ export const RunnerEvent = Object.freeze({
 
 export const RUNNER_QPL = 5 // questions ("meals") per level
 
-function runnerLevelSpec(level) {
-  // Cycle the four letter groups; option count stays kid-friendly at 3.
+// Runner pace. Signs spawn at SIGN_SPAWN_Z and glide in at RUNNER_BASE_SPEED *
+// scale. Slower base + a closer spawn than before, so the letters are readable
+// sooner; the child can pick a scale (slow/normal/fast).
+export const RUNNER_BASE_SPEED = 15
+export const SIGN_SPAWN_Z = -86
+export const RUNNER_SPEEDS = { slow: 0.7, normal: 1, fast: 1.5 }
+export const RUNNER_SPEED_ORDER = ['slow', 'normal', 'fast']
+const RUNNER_SPEED_KEY = 'fq.runnerSpeed'
+export function loadRunnerSpeed() {
+  try {
+    const s = localStorage.getItem(RUNNER_SPEED_KEY)
+    return RUNNER_SPEED_ORDER.includes(s) ? s : 'normal'
+  } catch {
+    return 'normal'
+  }
+}
+export function saveRunnerSpeed(s) {
+  try {
+    if (RUNNER_SPEED_ORDER.includes(s)) localStorage.setItem(RUNNER_SPEED_KEY, s)
+  } catch {
+    /* session-only */
+  }
+}
+
+// Every base letter — the fallback pool when no learned set is supplied (tests,
+// or a replay before any family is done).
+export const RUNNER_DEFAULT_POOL = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
+
+// The runner quizzes ONLY what the child has learned (their `pool`); the place
+// (Aksum/Gondar/Adulis) and pace still change per level, but never the scope of
+// letters. Falls back to the whole table if the pool is too small to make a
+// 3-option question.
+function runnerLevelSpec(pool) {
   return {
-    pool: LEVELS[(level - 1) % LEVELS.length].pool,
+    pool: pool && pool.length >= 3 ? pool : RUNNER_DEFAULT_POOL,
     questionCount: RUNNER_QPL,
     optionCount: 3,
   }
 }
 
-export function runnerInitial(seed = 1) {
-  const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(1), seed)
+export function runnerInitial(seed = 1, pool = RUNNER_DEFAULT_POOL) {
+  const usePool = pool && pool.length >= 3 ? pool : RUNNER_DEFAULT_POOL
+  const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(usePool), seed)
   return {
     status: RunnerState.RUNNING,
     seed,
+    pool: usePool,
     rngState,
     level: 1,
     queue,
@@ -493,7 +526,7 @@ const RUNNER_TRANSITIONS = {
   [RunnerState.BOSS]: {
     [RunnerEvent.BOSS_DONE]: (ctx) => {
       if (!ctx.survivedBoss) return { ...ctx, status: RunnerState.DESTROYED }
-      const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.level + 1), ctx.rngState)
+      const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.pool), ctx.rngState)
       return {
         ...ctx,
         status: RunnerState.RUNNING,
@@ -919,6 +952,10 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 seed={runSeed}
                 soundOn={soundOn}
+                // Only quiz letters the child has actually learned (LEARN nodes
+                // done). If they have finished the whole journey this is every
+                // letter; early on it is just their first families.
+                pool={JOURNEY.filter((n) => n.kind === NodeKind.LEARN && journey.done?.[n.id]).map((n) => `${n.familyId}-1`)}
                 onDone={() => markNodeDone(screen.node.id)}
                 onRetry={() => {
                   setRunSeed((Date.now() % 1000000) | 1)
@@ -1845,6 +1882,22 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-advance: a correct answer moves to the next question on its own (no
+  // Continue tap); a wrong answer shows the miss briefly, then returns for a
+  // second try. The tutorial demo drives its own pacing, so skip it there.
+  useEffect(() => {
+    if (demoRef.current) return undefined
+    if (ctx.status === GameState.SUCCESS_BURST) {
+      const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1050)
+      return () => clearTimeout(t)
+    }
+    if (ctx.status === GameState.ERROR_RECOVERY) {
+      const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1600)
+      return () => clearTimeout(t)
+    }
+    return undefined
+  }, [ctx.status, ctx.cursor])
+
   if (ctx.status === GameState.LEVEL_COMPLETE) {
     const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
     return (
@@ -2694,7 +2747,8 @@ class RunnerWorld {
     this.chunks = []
     this.gate = null
     this.laneIndex = 1
-    this.speed = 13
+    this.speedScale = 1
+    this.speed = RUNNER_BASE_SPEED
     this.threat = 0 // 0..RUNNER_QPL wrong feeds
     this.bossMode = null // null | 'win' | 'lose'
     this.ringT = -1
@@ -2730,17 +2784,17 @@ class RunnerWorld {
     for (let lane = 0; lane < 3; lane++) {
       const form = INDEXES.byAudioKey.get(options[lane])
       const sign = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.9, 1.9),
+        new THREE.PlaneGeometry(2.4, 2.4),
         new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true }),
       )
-      sign.position.set(LANE_X[lane], 1.75, 0)
+      sign.position.set(LANE_X[lane], 1.95, 0)
       g.add(sign)
       cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
     }
     box(g, 8.4, 0.22, 0.22, 0xe0b25a, 0, 3, 0)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
-    g.position.z = -105
+    g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false
     this.scene.add(g)
@@ -2755,6 +2809,12 @@ class RunnerWorld {
 
   burst() {
     this.ringT = 0
+  }
+
+  /** Kid-selectable pace: scales how fast the track (and letters) approach. */
+  setSpeed(scale) {
+    this.speedScale = scale
+    this.speed = RUNNER_BASE_SPEED * scale
   }
 
   tick(dt, running) {
@@ -2845,32 +2905,33 @@ function Arcade3D({ children }) {
   return children
 }
 
-function ArcadeGateway({ node, seed, soundOn, onDone, onRetry }) {
+function ArcadeGateway({ node, seed, soundOn, onDone, onRetry, pool }) {
   const isRunner = node.gateway.mode === 'runner'
   if (isDegraded()) {
     return isRunner ? (
-      <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} />
+      <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} pool={pool} />
     ) : (
       <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} />
     )
   }
   return (
     <Arcade3D>
-      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} /> : <FidelSkylands onExit={onDone} />}
+      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={onDone} />}
     </Arcade3D>
   )
 }
 
 /* ── the 3D runner screen ── */
 
-function Runner({ seed, soundOn, onExit, onRetry }) {
-  const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+function Runner({ seed, soundOn, onExit, onRetry, pool }) {
+  const [ctx, dispatch] = useReducer(runnerReducer, { seed, pool }, (a) => runnerInitial(a.seed, a.pool))
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const worldRef = useRef(null)
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
   const [lane, setLane] = useState(1)
+  const [speedName, setSpeedName] = useState(loadRunnerSpeed)
   const [webglOk, setWebglOk] = useState(true)
   const [banner, setBanner] = useState(true)
   const [demo, setDemo] = useState(() => !hasOnboarded('runner') && !prefersReducedMotion())
@@ -2925,6 +2986,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
       return undefined
     }
     worldRef.current = world
+    world.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
     let raf
     let last = performance.now()
     const loop = (now) => {
@@ -2953,6 +3015,12 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
       worldRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply the chosen pace to the live world and remember it.
+  useEffect(() => {
+    worldRef.current?.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
+    saveRunnerSpeed(speedName)
+  }, [speedName])
 
   // Level changes re-dress the world and show the destination banner.
   useEffect(() => {
@@ -3062,9 +3130,24 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
             3D graphics are not available on this device. Try the lesson levels instead!
           </div>
         )}
+        {/* Speed selector — kids pick how fast the letters come. */}
+        <div className="absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full p-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          {RUNNER_SPEED_ORDER.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSpeedName(s)}
+              aria-pressed={speedName === s}
+              className={`rounded-full px-2.5 py-1 text-xs font-black ${FOCUS}`}
+              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
+            >
+              {t(`speed_${s}`, s)}
+            </button>
+          ))}
+        </div>
         <AnimatePresence>
           {banner && (
-            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-4 text-center">
+            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-14 text-center">
               <span className="rounded-2xl px-4 py-2 text-sm font-black uppercase tracking-widest text-white" style={{ background: 'rgba(0,0,0,0.45)' }}>
                 Level {ctx.level} — {place.name}, {place.country}
               </span>

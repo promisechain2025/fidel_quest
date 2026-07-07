@@ -37,10 +37,10 @@ const formOf = (key) => INDEXES.byAudioKey.get(key)
    ========================================================================== */
 // Reset reseeds through the project PRNG so all seeding stays in one place.
 const reseed = (s) => (Math.floor(rngNext(s)[0] * 0x7fffffff) | 1)
-const runnerReducer = (c, e) => (e.type === '__reset__' ? runnerInitial(reseed(c.seed)) : runnerTransition(c, e).next)
+const runnerReducer = (c, e) => (e.type === '__reset__' ? runnerInitial(reseed(c.seed), c.pool) : runnerTransition(c, e).next)
 
-export function Runner2D({ seed, soundOn, onExit }) {
-  const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+export function Runner2D({ seed, soundOn, onExit, pool }) {
+  const [ctx, dispatch] = useReducer(runnerReducer, { seed, pool }, (a) => runnerInitial(a.seed, a.pool))
   const q = selectRunnerQuestion(ctx)
   const targetForm = q ? formOf(q.target) : null
   const running = ctx.status === RunnerState.RUNNING

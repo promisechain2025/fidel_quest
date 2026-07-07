@@ -95,6 +95,22 @@ describe('lesson machine', () => {
 })
 
 describe('runner machine', () => {
+  it('quizzes only the learned pool — this level and the next', () => {
+    const learned = ['ha-1', 'le-1', 'me-1', 'be-1', 'te-1'] // "learned so far"
+    let run = runnerInitial(3, learned)
+    expect(run.pool).toEqual(learned)
+    const inPool = (q) => learned.includes(q.target) && q.options.every((o) => learned.includes(o))
+    expect(run.queue.every(inPool)).toBe(true)
+    // Survive the level; the next level must stay inside the same learned pool.
+    for (let i = 0; i < 5; i++) {
+      run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: selectRunnerQuestion(run).target } }).next
+      run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+    }
+    run = runnerTransition(run, { type: RunnerEvent.BOSS_DONE }).next
+    expect(run.level).toBe(2)
+    expect(run.queue.every(inPool)).toBe(true)
+  })
+
   it('survives a perfect level and gets destroyed on a failed one', () => {
     let run = runnerInitial(9)
     for (let i = 0; i < 5; i++) {
