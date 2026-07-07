@@ -821,10 +821,9 @@ export default function AmharicFidelGame() {
         if (isStreakMilestone) {
           setConfettiKey((k) => k + 1)
           playSfx('streak')
-          platformAudio.applause(soundOnRef.current, { claps: 10, spread: 0.7 }) // big cheer on a streak
+          platformAudio.applause(soundOnRef.current, { claps: 8, spread: 0.7 }) // a cheer only on a streak
         } else {
-          playSfx('correct')
-          platformAudio.applause(soundOnRef.current, { claps: 4, spread: 0.32 }) // hand clap on a right answer
+          playSfx('correct') // clean chime per answer — no noise burst
         }
         speakMotivation(PRAISE_CLIPS) // spoken "gobez!" etc. once recorded
         vibrate(30)

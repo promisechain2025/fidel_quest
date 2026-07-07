@@ -265,35 +265,39 @@ export class AudioEngine {
     this.note(second, ctx.currentTime + 0.16, 0.3)
   }
 
-  /** One hand-clap: a short filtered noise burst. `at` schedules it, `gain`
-      scales its loudness so a burst of claps sounds like real applause. */
-  clap(at, gain = 0.5) {
+  /** One soft hand-clap: a brief noise burst, band-limited and low-passed so
+      it reads as a warm clap rather than a hiss. Kept for rare celebrations
+      only (level wins / streaks), never on every tap. */
+  clap(at, gain = 0.3) {
     const ctx = this.getCtx()
     if (!ctx) return
-    const len = Math.floor(ctx.sampleRate * 0.06)
+    const len = Math.floor(ctx.sampleRate * 0.045)
     const buf = ctx.createBuffer(1, len, ctx.sampleRate)
     const data = buf.getChannelData(0)
-    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3)
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4)
     const src = ctx.createBufferSource()
     src.buffer = buf
     const bp = ctx.createBiquadFilter()
     bp.type = 'bandpass'
-    bp.frequency.value = 1400
-    bp.Q.value = 0.7
+    bp.frequency.value = 1050
+    bp.Q.value = 1.1
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 3000
     const g = ctx.createGain()
     g.gain.value = gain
-    src.connect(bp).connect(g).connect(ctx.destination)
+    src.connect(bp).connect(lp).connect(g).connect(ctx.destination)
     src.start(at)
   }
 
-  /** A little round of applause — several claps with human-like jitter. */
+  /** A little round of applause — several soft claps with human-like jitter. */
   applause(enabled = true, { claps = 7, spread = 0.5 } = {}) {
     if (!enabled) return
     const ctx = this.getCtx()
     if (!ctx) return
     const t = ctx.currentTime
     for (let i = 0; i < claps; i++) {
-      this.clap(t + Math.random() * spread, 0.35 + Math.random() * 0.35)
+      this.clap(t + Math.random() * spread, 0.18 + Math.random() * 0.22)
     }
   }
 
@@ -302,16 +306,18 @@ export class AudioEngine {
     const ctx = this.getCtx()
     if (!ctx) return
     const t = ctx.currentTime
+    // 'good' is the frequent per-answer / per-tap cue: keep it the clean,
+    // pleasant chime with NO noise burst layered on.
     if (kind === 'good') {
       this.note(523, t, 0.15, 0.14, 'triangle')
       this.note(784, t + 0.1, 0.25, 0.14, 'triangle')
-      this.applause(true, { claps: 4, spread: 0.32 }) // a quick clap on success
     } else if (kind === 'bad') {
       this.note(220, t, 0.25, 0.12, 'sawtooth')
       this.note(180, t + 0.12, 0.3, 0.1, 'sawtooth')
     } else if (kind === 'win') {
+      // A win is a rare moment — a warm fanfare with a soft round of applause.
       ;[523, 659, 784, 1047].forEach((f, i) => this.note(f, t + i * 0.12, 0.3, 0.16, 'triangle'))
-      this.applause(true, { claps: 10, spread: 0.7 }) // a big cheer on a win
+      this.applause(true, { claps: 8, spread: 0.7 })
     }
   }
 }
