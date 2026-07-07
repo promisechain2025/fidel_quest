@@ -13,7 +13,7 @@
 # Letter/word audio is stable content; a week of edge cache is plenty and the
 # service worker runtime-caches it anyway.
 /audio/*
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=3600, must-revalidate
 
 # Shell files must refresh every visit so a new deploy actually rolls out and
 # no one gets stuck on a stale service worker.

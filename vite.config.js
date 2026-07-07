@@ -38,11 +38,30 @@ export default defineConfig({
         // precaching files that may not exist yet.
         runtimeCaching: [
           {
+            // Letter/word audio: serve instantly from cache but refresh in the
+            // background, so a re-recorded clip (same filename) rolls out on the
+            // next play instead of being pinned forever (CacheFirst's trap). The
+            // versioned cache name also orphans any older cache on deploy.
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'fidel-audio-v2',
+              expiration: { maxEntries: 320 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-css' },
+          },
+          {
+            // Ethiopic font files: immutable + versioned URLs, cache hard so
+            // Ge'ez renders correctly and works offline after first load.
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'fidel-audio',
-              expiration: { maxEntries: 300 },
+              cacheName: 'google-fonts-files',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
         ],

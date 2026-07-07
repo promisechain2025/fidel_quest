@@ -9,6 +9,15 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f59e0b" />
+    <!-- Bundle the Ethiopic (Ge'ez) font so glyphs render correctly on every
+         device, not only ones that already ship one. The service worker caches
+         it after first load, so the PWA still works offline. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
     <meta
       name="description"
       content="Fidel Quest: an Amharic alphabet learning game for kids."
