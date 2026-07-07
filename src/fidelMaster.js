@@ -33,15 +33,31 @@ export function shuffleSeeded(arr, seed) {
   return a
 }
 
-/** The mastery sequence: every form, either in the natural abugida order
-    (family by family, order by order) or mixed across the whole table. */
-export function buildMasterSequence(forms, { seed = 1, mix = true } = {}) {
-  return mix ? shuffleSeeded(forms, seed) : [...forms]
+/** The mastery sequence. `order` (1-7) narrows it to a single vowel order
+    across all families (e.g. every 4th-order "-aa" letter) so a child can
+    master one vowel at a time; null/0 keeps the whole abugida. `mix` shuffles,
+    else the natural family-by-family, order-by-order reading order. */
+export function buildMasterSequence(forms, { seed = 1, mix = true, order = null } = {}) {
+  const pool = order ? forms.filter((f) => f.order === order) : forms
+  return mix ? shuffleSeeded(pool, seed) : [...pool]
 }
 
-/* ── Auto-voice pacing (ms between letters) ── */
-export const AUTOPLAY_SPEEDS = Object.freeze({ slow: 1900, normal: 1200, fast: 750 })
+/* ── Auto-voice pacing (ms between letters) ───────────────────────────────────
+   Slower than a fluent reader wants on purpose: a learning child needs time to
+   look, hear, and echo. "Say with me" adds a repeat window on top so the pace
+   is play -> your-turn pause -> next. */
+export const AUTOPLAY_SPEEDS = Object.freeze({ slow: 2800, normal: 1900, fast: 1100 })
 export const SPEED_ORDER = Object.freeze(['slow', 'normal', 'fast'])
+// After the letter plays, hold this long for the child to repeat it aloud.
+export const SAY_WITH_ME_GAP = 1700
+// Roughly how long a letter clip runs, so the "your turn" cue lands after it.
+export const CLIP_LEAD_MS = 750
+
+/** Next vowel order in the round-robin (1..7 wrapping), for auto-advancing
+    through the orders once the current one is finished. */
+export function nextOrder(order, count = 7) {
+  return order >= count ? 1 : order + 1
+}
 
 /* ── On-device pronunciation grading (offline, private) ──────────────────────
    This is encouragement-grade, NOT phonetic recognition: with no cloud ASR we

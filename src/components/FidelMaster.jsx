@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, Check, RotateCcw, ArrowRight, Gauge } from 'lucide-react'
-import { FIDEL_FAMILIES, ALL_FORMS } from '../platform/ethiopic'
+import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, Check, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
+import { FIDEL_FAMILIES, ALL_FORMS, ORDERS } from '../platform/ethiopic'
 import { playForm } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
-import { buildMasterSequence, gradePronunciation, AUTOPLAY_SPEEDS, SPEED_ORDER, sessionAccuracy } from '../fidelMaster'
+import { buildMasterSequence, gradePronunciation, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder, sessionAccuracy } from '../fidelMaster'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -57,6 +57,27 @@ const TABS = [
   { id: 'say', icon: Mic, key: 'masterSay', label: 'Say it' },
 ]
 
+function OrderChip({ active, label, sub, onClick }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active}
+      className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-xs font-black leading-tight ${FOCUS}`}
+      style={{ background: active ? 'var(--go)' : 'var(--card)', color: active ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+      <span>{label}</span>
+      {sub ? <span className="mono text-[10px] font-bold opacity-80">{sub}</span> : null}
+    </button>
+  )
+}
+
+function ToggleChip({ on, icon: Icon, label, onClick }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={on}
+      className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-black ${FOCUS}`}
+      style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+      {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null} {label}
+    </button>
+  )
+}
+
 /* Fidel Master: master every letter of the abugida. Pack-aware (uses the
    active language's forms), fully offline. Three tools share one sequence. */
 export default function FidelMaster({ onBack, soundOn = true }) {
@@ -65,25 +86,47 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   const [seed, setSeed] = useState(1)
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(false)
-  const [speed, setSpeed] = useState('normal')
+  const [speed, setSpeed] = useState('slow')
+  const [order, setOrder] = useState(null) // null = whole abugida, or 1..7
+  const [sayWithMe, setSayWithMe] = useState(true) // echo pause by default
+  const [autoAdvance, setAutoAdvance] = useState(false) // roll to the next order
+  const [yourTurn, setYourTurn] = useState(false)
   const [micState, setMicState] = useState('idle') // idle | busy | result | nomic
   const [feedback, setFeedback] = useState(null) // { grade, accept }
   const [stats, setStats] = useState({ correct: 0, total: 0, missed: [] })
 
-  const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix }), [seed, mix])
+  const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix, order }), [seed, mix, order])
   const form = seq[idx] ?? seq[0]
   const play = useCallback((f) => { if (soundOn) playForm(f, true) }, [soundOn])
 
   // Keep idx in range if the sequence rebuilds.
   useEffect(() => { setIdx((i) => (i >= seq.length ? 0 : i)) }, [seq.length])
 
-  // Auto-voice: speak the current letter, then step on after the chosen pace.
+  // Auto-voice: speak the current letter, then step on. "Say with me" holds a
+  // repeat window (with a "your turn" cue) so the child can echo it. At the end
+  // of a single-order pass, optionally roll on to the next vowel order.
   useEffect(() => {
     if (tab !== 'auto' || !playing) return undefined
+    setYourTurn(false)
     play(seq[idx])
-    const timer = setTimeout(() => setIdx((i) => (i + 1) % seq.length), AUTOPLAY_SPEEDS[speed])
-    return () => clearTimeout(timer)
-  }, [tab, playing, idx, speed, seq, play])
+    const advance = () => {
+      setYourTurn(false)
+      if (idx >= seq.length - 1) {
+        if (autoAdvance && order != null) setOrder((o) => nextOrder(o, ORDERS.length))
+        setIdx(0)
+      } else {
+        setIdx(idx + 1)
+      }
+    }
+    if (sayWithMe) {
+      // Speed sets the repeat window too, so "slow" gives more time to echo.
+      const cue = setTimeout(() => setYourTurn(true), CLIP_LEAD_MS)
+      const step = setTimeout(advance, CLIP_LEAD_MS + AUTOPLAY_SPEEDS[speed])
+      return () => { clearTimeout(cue); clearTimeout(step) }
+    }
+    const step = setTimeout(advance, AUTOPLAY_SPEEDS[speed])
+    return () => clearTimeout(step)
+  }, [tab, playing, idx, speed, seq, play, sayWithMe, autoAdvance, order])
 
   // Stop autoplay when leaving the auto tab.
   useEffect(() => { if (tab !== 'auto') setPlaying(false) }, [tab])
@@ -184,6 +227,16 @@ export default function FidelMaster({ onBack, soundOn = true }) {
       {/* AUTO-VOICE + SAY-IT share the big current-letter card */}
       {(tab === 'auto' || tab === 'say') && (
         <div className="mt-4 flex flex-col items-center gap-4">
+          {/* Vowel-order selector: master one vowel at a time, or the abugida */}
+          <div className="w-full overflow-x-auto pb-1">
+            <div className="flex gap-1.5">
+              <OrderChip active={order == null} label={t('masterAll', 'All')} onClick={() => { setOrder(null); setIdx(0); setFeedback(null) }} />
+              {ORDERS.map((o) => (
+                <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={o.vowel} onClick={() => { setOrder(o.index); setIdx(0); setFeedback(null) }} />
+              ))}
+            </div>
+          </div>
+
           <div className="flex w-full items-center justify-between text-sm font-black" style={{ color: 'var(--muted)' }}>
             <button type="button" onClick={() => setMix((m) => !m)} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }} aria-pressed={mix}>
               <Shuffle className="h-4 w-4" aria-hidden="true" /> {mix ? t('masterMixed', 'Mixed') : t('masterInOrder', 'In order')}
@@ -208,6 +261,20 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           </motion.button>
           <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{form?.sound}</p>
 
+          {/* "Your turn" echo cue during the say-with-me repeat window */}
+          {tab === 'auto' && sayWithMe && (
+            <div className="flex items-center" style={{ minHeight: 30 }}>
+              <AnimatePresence>
+                {yourTurn && (
+                  <motion.p key="turn" initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex items-center gap-1.5 text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+                    <Mic className="h-5 w-5" aria-hidden="true" /> {t('yourTurn', 'Now you say it!')}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {tab === 'auto' && (
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-3">
@@ -230,6 +297,12 @@ export default function FidelMaster({ onBack, soundOn = true }) {
                     {t(`speed_${s}`, s)}
                   </button>
                 ))}
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <ToggleChip on={sayWithMe} icon={Users} label={t('sayWithMe', 'Say with me')} onClick={() => setSayWithMe((v) => !v)} />
+                {order != null && (
+                  <ToggleChip on={autoAdvance} icon={ArrowRight} label={t('nextVowel', 'Then next vowel')} onClick={() => setAutoAdvance((v) => !v)} />
+                )}
               </div>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mulberry32, shuffleSeeded, buildMasterSequence, gradePronunciation, sessionAccuracy, AUTOPLAY_SPEEDS, SPEED_ORDER } from './fidelMaster'
+import { mulberry32, shuffleSeeded, buildMasterSequence, gradePronunciation, sessionAccuracy, AUTOPLAY_SPEEDS, SPEED_ORDER, nextOrder } from './fidelMaster'
 
 describe('mix sequence', () => {
   const forms = Array.from({ length: 231 }, (_, i) => ({ audioKey: `f-${i}`, i }))
@@ -17,6 +17,20 @@ describe('mix sequence', () => {
     const b = buildMasterSequence(forms, { seed: 2, mix: true })
     expect(a.map((f) => f.i)).not.toEqual(b.map((f) => f.i))
     expect(buildMasterSequence(forms, { mix: false }).map((f) => f.i)).toEqual(forms.map((f) => f.i))
+  })
+
+  it('narrows to a single vowel order when asked', () => {
+    const rows = Array.from({ length: 21 }, (_, i) => ({ audioKey: `f-${i}`, order: (i % 7) + 1 }))
+    const only4 = buildMasterSequence(rows, { mix: false, order: 4 })
+    expect(only4).toHaveLength(3)
+    expect(only4.every((f) => f.order === 4)).toBe(true)
+    expect(buildMasterSequence(rows, { mix: false, order: null })).toHaveLength(21)
+  })
+
+  it('nextOrder round-robins 1..7', () => {
+    expect(nextOrder(1)).toBe(2)
+    expect(nextOrder(6)).toBe(7)
+    expect(nextOrder(7)).toBe(1)
   })
 
   it('mulberry32 is stable and shuffle tolerates a zero seed', () => {

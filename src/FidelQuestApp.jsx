@@ -1608,6 +1608,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
 
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
+  const [order, setOrder] = useState(1) // which vowel order the grid shows
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
   return (
@@ -1619,30 +1620,49 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
         <div>
           <h1 className="text-xl font-black leading-tight">{family ? `The ${family.name} family` : 'Letter Explorer'}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {family ? 'Seven forms, one letter — tap to hear each' : '33 letter families · tap to open'}
+            {family ? 'Seven forms, one letter — tap to hear each' : 'Pick a vowel, then tap any family to hear it'}
           </p>
         </div>
       </header>
 
+      {/* Vowel-order selector: see and practise one vowel across all families */}
+      {!family && (
+        <div className="mt-4 overflow-x-auto pb-1">
+          <div className="flex gap-1.5">
+            {ORDERS.map((o) => {
+              const on = order === o.index
+              return (
+                <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on}
+                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-xs font-black leading-tight ${FOCUS}`}
+                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                  <span>{o.geezName}</span>
+                  <span className="mono text-[10px] font-bold opacity-80">-{o.vowel}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {!family ? (
-          <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4">
+          <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {FIDEL_FAMILIES.map((f) => {
-              const base = formOf(`${f.id}-1`)
+              const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
               return (
                 <button
                   key={f.id}
                   type="button"
                   onClick={() => {
-                    playForm(base, soundOn)
+                    playForm(cell, soundOn)
                     setOpenFamily(f.id)
                   }}
                   className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 ${FOCUS}`}
                   style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
                 >
-                  <span className="geez text-4xl font-black">{base.char}</span>
+                  <span className="geez text-4xl font-black">{cell.char}</span>
                   <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>
-                    {f.name}
+                    {cell.sound}
                     {f.word?.picture && <span className="ml-1" aria-hidden="true">{f.word.picture}</span>}
                   </span>
                 </button>
