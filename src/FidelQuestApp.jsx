@@ -31,6 +31,8 @@ import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
+import FamilyFriends from './components/FamilyFriends'
+import { isSocialEnabled } from './platform/social'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
@@ -72,6 +74,7 @@ import {
   Gift,
   Backpack as BackpackIcon,
   ClipboardCheck,
+  Users,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -1029,6 +1032,15 @@ export default function FidelQuestApp() {
               />
             </Screen>
           )}
+          {screen.name === 'family' && (
+            <Screen key="family">
+              <FamilyFriends
+                onBack={() => setScreen({ name: 'home' })}
+                lettersLearned={progressStats(journey).forms}
+                nickname={loadFromStorage('fq.nickname', '')}
+              />
+            </Screen>
+          )}
         </AnimatePresence>
         </ErrorBoundary>
         <AnimatePresence>
@@ -1066,6 +1078,7 @@ export default function FidelQuestApp() {
               onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
               onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
+              onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
             />
           )}
         </AnimatePresence>
@@ -1521,7 +1534,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, onTees, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords, onPractice, onCloset, onTees, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   return (
     <motion.div
@@ -1558,6 +1571,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
           )}
           <BackpackItem icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerTitle', 'Letter Explorer')} sub={t('explorerSub', 'Tap any of the 231 letters to hear it')} onClick={onExplore} />
           <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
+          {isSocialEnabled() && (
+            <BackpackItem icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyTitle', 'Family & Friends')} sub={t('familySub', 'A private weekly leaderboard with people you know')} onClick={onFamily} />
+          )}
           <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
           {/* Reviewer entry point: opens the standalone /review guide + feedback
              page (outside the SPA) in a new tab so testers keep their place. */}

@@ -90,6 +90,17 @@ existing seeded machines. **This is the recommended first thing to build.**
 
 ## Phase 2 — Family & Friends (backend-lite: async leaderboards, streaks)
 
+> **Status: MVP built.** The private weekly leaderboard ships behind
+> `VITE_SOCIAL_URL` (dormant until set). Server: `server/src/social.js` +
+> `/api/social/*` routes (20 tests). Client: `src/platform/social.js`
+> (8 tests). UI: `src/components/FamilyFriends.jsx` (Backpack → Family &
+> Friends). Endpoints + safety model are in `DEPLOY.md` section 7. Two pieces
+> are deliberately deferred as hardening: **Ed25519 score signing** (the MVP
+> authorizes writes with a server-issued per-member secret token, which is safe
+> within a small known group) and **email-verified parental consent** (the MVP
+> gates on an in-app grown-up consent tick). Weekly challenges + streak nudges
+> below build on this same store.
+
 **Goal:** persistent friendly competition over weeks — a private leaderboard
 among people you already know, weekly challenges, streaks, and gentle nudges.
 

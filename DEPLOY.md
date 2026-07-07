@@ -36,6 +36,11 @@ npm run build
   saving the print-ready PNG, which a parent can take to any local printer.
   This is the app's opt-in income lever: kids unlock a new shirt design each
   chapter, parents buy.
+- `VITE_SOCIAL_URL` — **optional**. Turns on **Family & Friends** (Phase 2:
+  private weekly leaderboards). Point it at your server (the same one below).
+  Leave it unset and the whole surface stays dormant — the Backpack entry is
+  hidden and nothing hits the network, so the game stays 100% offline. See
+  section 7 for the endpoints and the safety model.
 
 ### Host
 
@@ -207,6 +212,59 @@ network call, and only when someone submits a review.
 
 No child's game progress, name, or voice is ever included in a review — only
 what the tester types into the form.
+
+---
+
+## 7. Family & Friends (Phase 2 private leaderboards)
+
+Private, closed-group weekly leaderboards among people a family already knows.
+It lives on the **same server** as the analytics/landing (section 2) — the
+routes are already wired; you just point the app at it.
+
+**Turn it on:**
+
+1. Deploy the server (section 2). Family & Friends is active whenever the
+   server runs — no extra env on the server side.
+2. Build the app with `VITE_SOCIAL_URL=https://YOUR-SERVER` (its root, not a
+   sub-path). Without it, the feature is dormant and hidden.
+
+**Endpoints** (JSON, CORS-open; membership is authorized by a server-issued
+secret token, not the origin):
+
+| Method + path                  | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `POST /api/social/groups`      | Create a group `{nickname, consent:true}` -> `{groupId, code, memberId, memberToken}` |
+| `POST /api/social/groups/join` | Join by code `{code, nickname, consent:true}`       |
+| `POST /api/social/score`       | Submit this week's score `{groupId, memberId, memberToken, metric, value}` |
+| `GET  /api/social/board`       | Read a week's board `?groupId=&memberId=&memberToken=&metric=&week=` |
+
+**Safety model** (see `docs/social-play.md`):
+
+- **Closed network.** You only appear on a board you joined with a **code**
+  shared out-of-band by an adult. No discovery, no public boards, no chat.
+- **Parent consent** is required (`consent:true`) to create or join — the app
+  collects it with a grown-up tick behind the Backpack. (A production build
+  should back this with real email double-opt-in; that is the one piece left
+  as a deploy step.)
+- **Data minimization.** The server stores only a moderated **nickname** and
+  numeric weekly **scores** — no email, no IP, no per-question data, no other
+  PII. Each membership's secret token is stored **hashed**, so a dump cannot
+  impersonate anyone; writes must present the token.
+- **Caps:** 30 members/group, metric allow-list, values clamped, scores are
+  monotone per week (only climb).
+
+**What is intentionally NOT built yet** (future hardening): full public-key
+(Ed25519) score signing instead of a per-member token, and email-verified
+parental consent. The current token model is safe within a small known group;
+the doc's Phase 3 (live co-play/calls) is unchanged and still future work.
+
+**Read/verify:**
+
+```bash
+curl -X POST https://YOUR-SERVER/api/social/groups \
+  -H 'content-type: application/json' -d '{"nickname":"Mom","consent":true}'
+# -> {"ok":true,"groupId":"...","code":"ABC234","memberId":"...","memberToken":"..."}
+```
 
 ---
 

@@ -115,6 +115,41 @@ function masteryColor(stat) {
   return 'var(--bad)'
 }
 
+/** Optional display name shown on "challenge a friend" links (utils/challenge.js).
+   Parent-gated because it is the one place the app stores anything a child
+   might share. Empty = challenges read "A friend". Never leaves the device
+   except inside a challenge link the parent chooses to send. */
+function NicknameField() {
+  const [name, setName] = useState(() => {
+    try { return localStorage.getItem('fq.nickname') || '' } catch { return '' }
+  })
+  const save = (v) => {
+    const clean = v.replace(/[<>]/g, '').slice(0, 16)
+    setName(clean)
+    try { localStorage.setItem('fq.nickname', clean) } catch { /* storage blocked */ }
+  }
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        Player name
+      </h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        Shown on challenges you send to friends. Optional — leave it blank to stay &ldquo;A friend&rdquo;. It never leaves this device except inside a challenge link you choose to share.
+      </p>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => save(e.target.value)}
+        maxLength={16}
+        placeholder="e.g. Selam"
+        aria-label="Player name for challenges"
+        className={`mt-3 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+      />
+    </section>
+  )
+}
+
 export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -164,6 +199,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               </div>
             ))}
           </div>
+
+          <NicknameField />
 
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
