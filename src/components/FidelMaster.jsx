@@ -1,12 +1,27 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, Check, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
-import { FIDEL_FAMILIES, ALL_FORMS, ORDERS } from '../platform/ethiopic'
+import { FIDEL_FAMILIES, ALL_FORMS, ORDERS, INDEXES } from '../platform/ethiopic'
 import { playForm } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
 import { buildMasterSequence, gradePronunciation, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder, sessionAccuracy } from '../fidelMaster'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
+
+// Cheerful per-family gradients (the "color mixing" from Explore mode) so the
+// abugida home reads as a bright, tappable chart rather than a grey table.
+const TILE_GRADIENTS = [
+  'from-amber-400 to-orange-500',
+  'from-emerald-400 to-teal-500',
+  'from-sky-400 to-blue-500',
+  'from-rose-400 to-pink-500',
+  'from-violet-400 to-purple-500',
+  'from-lime-400 to-green-500',
+  'from-fuchsia-400 to-purple-600',
+  'from-cyan-400 to-sky-500',
+]
+const gradOf = (i) => TILE_GRADIENTS[i % TILE_GRADIENTS.length]
+const formOf = (key) => INDEXES.byAudioKey.get(key)
 
 /* On-device mic sample -> { peakRms, voicedMs }. Fully offline: the audio is
    analysed in-memory and discarded; nothing is recorded or transmitted. */
@@ -94,6 +109,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   const [micState, setMicState] = useState('idle') // idle | busy | result | nomic
   const [feedback, setFeedback] = useState(null) // { grade, accept }
   const [stats, setStats] = useState({ correct: 0, total: 0, missed: [] })
+  const [openFam, setOpenFam] = useState(null) // family id expanded in the chart
 
   const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix, order }), [seed, mix, order])
   const form = seq[idx] ?? seq[0]
@@ -193,34 +209,57 @@ export default function FidelMaster({ onBack, soundOn = true }) {
         })}
       </div>
 
-      {/* CHART: the whole abugida, tap any letter to hear it */}
+      {/* CHART (home): a bright, tappable abugida. Tap a family to hear its
+          base letter and reveal its seven orders; or play the whole abugida. */}
       {tab === 'chart' && (
-        <div className="mt-4 flex flex-col gap-3">
-          <button type="button" onClick={() => { setMix(true); reshuffle(); setTab('auto'); setPlaying(true) }}
-            className={`chunk flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`}
-            style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep, #a15b00)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-            <Shuffle className="h-5 w-5" aria-hidden="true" /> {t('masterMixDrill', 'Mix all & auto-play')}
+        <div className="mt-4 flex flex-col gap-4">
+          <button type="button" onClick={() => { setOrder(null); setMix(true); reshuffle(); setTab('auto'); setPlaying(true) }}
+            className={`chunk flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-400 to-amber-400 px-5 py-4 text-lg font-black text-white ${FOCUS}`}
+            style={{ boxShadow: '0 5px 0 rgba(0,0,0,0.18)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
+            <Shuffle className="h-6 w-6" aria-hidden="true" /> {t('masterPlayAbugida', 'Play the whole Abugida')}
           </button>
-          <div className="overflow-x-auto">
-            <div className="flex flex-col gap-1.5">
-              {FIDEL_FAMILIES.map((fam) => (
-                <div key={fam.id} className="flex items-center gap-1.5">
-                  <span className="w-9 shrink-0 text-[10px] font-black uppercase" style={{ color: 'var(--muted)' }}>{fam.name}</span>
-                  {Array.from(fam.chars).map((ch, i) => {
-                    const key = `${fam.id}-${i + 1}`
+
+          <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+            {FIDEL_FAMILIES.map((fam) => {
+              const fi = fam.familyIndex ?? FIDEL_FAMILIES.indexOf(fam)
+              const base = formOf(`${fam.id}-1`)
+              const open = openFam === fam.id
+              return (
+                <button key={fam.id} type="button"
+                  onClick={() => { play(base); setOpenFam(open ? null : fam.id) }}
+                  aria-label={`Hear ${base?.char}`}
+                  className={`chunk flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-br ${gradOf(fi)} px-2 py-3 text-white ${FOCUS} ${open ? 'ring-4 ring-white/80' : ''}`}
+                  style={{ boxShadow: '0 4px 0 rgba(0,0,0,0.18)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                  <span className="geez text-3xl font-black drop-shadow-md sm:text-4xl">{base?.char}</span>
+                  <span className="rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-black">{base?.sound}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Expanded family: its seven orders, coloured to match the tile */}
+          {openFam && (() => {
+            const fam = FIDEL_FAMILIES.find((f) => f.id === openFam)
+            const fi = fam?.familyIndex ?? 0
+            return (
+              <motion.div key={openFam} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                className={`rounded-2xl bg-gradient-to-br ${gradOf(fi)} p-3`}>
+                <p className="mb-2 px-1 text-sm font-black text-white/90">{fam?.name} · {ORDERS.length} orders</p>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                  {ORDERS.map((o) => {
+                    const f = formOf(`${fam.id}-${o.index}`)
                     return (
-                      <button key={key} type="button" onClick={() => play({ audioKey: key, familyIndex: fam.familyIndex ?? 0, order: i + 1 })}
-                        className={`geez flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg font-black ${FOCUS}`}
-                        style={{ background: 'var(--card)', border: '1px solid var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
-                        aria-label={`Hear ${ch}`}>
-                        {ch}
+                      <button key={o.index} type="button" onClick={() => play(f)} aria-label={`Hear ${f?.char}`}
+                        className={`flex flex-col items-center rounded-xl bg-white/90 px-1 py-2 dark:bg-gray-900/80 ${FOCUS}`} style={{ outlineColor: '#fff' }}>
+                        <span className="geez text-2xl font-black" style={{ color: 'var(--ink)' }}>{f?.char}</span>
+                        <span className="mono text-[10px] font-black" style={{ color: 'var(--muted)' }}>{f?.sound}</span>
                       </button>
                     )
                   })}
                 </div>
-              ))}
-            </div>
-          </div>
+              </motion.div>
+            )
+          })()}
         </div>
       )}
 
@@ -230,7 +269,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           {/* Vowel-order selector: master one vowel at a time, or the abugida */}
           <div className="w-full overflow-x-auto pb-1">
             <div className="flex gap-1.5">
-              <OrderChip active={order == null} label={t('masterAll', 'All')} onClick={() => { setOrder(null); setIdx(0); setFeedback(null) }} />
+              <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0); setFeedback(null) }} />
               {ORDERS.map((o) => (
                 <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={o.vowel} onClick={() => { setOrder(o.index); setIdx(0); setFeedback(null) }} />
               ))}

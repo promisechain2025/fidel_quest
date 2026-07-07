@@ -394,8 +394,11 @@ function vibrate(pattern) {
 }
 
 // Recitation cadence: ~0.8s clip + a beat of silence, so syllables never
-// overlap (with interrupt:true they also cross-fade cleanly).
-const CHANT_CADENCE_MS = 1300
+// overlap (with interrupt:true they also cross-fade cleanly). The chant offers
+// three paces; slow gives the most room to say each letter along.
+const CHANT_PACES = { slow: 1900, normal: 1300, fast: 850 }
+const CHANT_PACE_ORDER = ['slow', 'normal', 'fast']
+const CHANT_CADENCE_MS = CHANT_PACES.normal
 
 /* Spoken motivation. These keys map to optional human recordings the operator
    can drop in (e.g. public/audio/fidel/praise/gobez.mp3). Until a clip exists
@@ -653,6 +656,7 @@ export default function AmharicFidelGame() {
   const [phase, setPhase] = useState('question')
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [wrongPicks, setWrongPicks] = useState([]) // options tried wrong this question (second-chance)
+  const [chantPace, setChantPace] = useState('normal') // Explore chant speed
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)
   const [bestStreakInRun, setBestStreakInRun] = useState(0)
@@ -681,6 +685,8 @@ export default function AmharicFidelGame() {
   const traceTimerRef = useRef(null)
   const soundOnRef = useRef(soundOn)
   soundOnRef.current = soundOn
+  const chantPaceRef = useRef(chantPace)
+  chantPaceRef.current = chantPace
 
   useEffect(
     () => () => {
@@ -962,7 +968,7 @@ export default function AmharicFidelGame() {
         // recitation never overlaps itself; the cadence leaves each ~0.8s clip
         // room to finish with a beat of silence before the next.
         playLetter(form, { interrupt: true })
-        chantTimerRef.current = setTimeout(() => step(index + 1), CHANT_CADENCE_MS)
+        chantTimerRef.current = setTimeout(() => step(index + 1), CHANT_PACES[chantPaceRef.current] || CHANT_CADENCE_MS)
       }
       step(0)
     },
@@ -1250,7 +1256,7 @@ export default function AmharicFidelGame() {
                 {family.nickname}
               </p>
             )}
-            <div className="mb-5 flex justify-center">
+            <div className="mb-5 flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={() => chantFamily(family)}
@@ -1258,6 +1264,23 @@ export default function AmharicFidelGame() {
               >
                 <Play className="h-4 w-4 fill-current" /> {t('chant')}
               </button>
+              <div className="flex items-center gap-1.5">
+                {CHANT_PACE_ORDER.map((pace) => (
+                  <button
+                    key={pace}
+                    type="button"
+                    onClick={() => setChantPace(pace)}
+                    aria-pressed={chantPace === pace}
+                    className={`rounded-full px-3 py-1 text-xs font-extrabold transition-colors ${FOCUS_RING} ${
+                      chantPace === pace
+                        ? 'bg-teal-500 text-white shadow'
+                        : 'bg-white/80 text-teal-700 dark:bg-gray-800/80 dark:text-teal-300'
+                    }`}
+                  >
+                    {t(`chantPace_${pace}`, pace)}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-7">
               {family.forms.map((form) => {

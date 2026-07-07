@@ -15,13 +15,15 @@ export const AM_PACK = Object.freeze({
     { index: 2, geezName: "Ka'ib", vowel: 'u' },
     { index: 3, geezName: 'Sals', vowel: 'ee' },
     { index: 4, geezName: "Rab'", vowel: 'aa' },
-    { index: 5, geezName: 'Hams', vowel: 'ay' },
+    { index: 5, geezName: 'Hams', vowel: 'e' },
     { index: 6, geezName: 'Sadis', vowel: 'ih' },
     { index: 7, geezName: "Sab'", vowel: 'o' },
   ],
   // Families that share a modern Amharic pronunciation; the first id in
-  // each group is the canonical one the others are "twins of".
-  twins: [['ha', 'hha', 'kha'], ['se', 'sse'], ['a', 'ae'], ['tse', 'ttse'], ['ke', 'khe']],
+  // each group is the canonical one the others are "twins of". ke (ከ, "k") and
+  // khe (ኸ, the velar "kh") are NOT twins - they are distinct sounds, matching
+  // how the fidel is recited and how the Tigrinya pack already models them.
+  twins: [['ha', 'hha', 'kha'], ['se', 'sse'], ['a', 'ae'], ['tse', 'ttse']],
   families: {
     ha: {"name":"Ha","consonant":"h","nickname":"Haleta Ha","word":{"geez":"ሀገር","latin":"hager","meaning":"country","picture":"🗺️","noAudio":true}},
     le: {"name":"Le","consonant":"l","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
@@ -40,7 +42,7 @@ export const AM_PACK = Object.freeze({
     nye: {"name":"Nye","consonant":"ny"},
     a: {"name":"A","consonant":"","nickname":"Alfau A","word":{"geez":"አሳ","latin":"asa","meaning":"fish","picture":"🐟"}},
     ke: {"name":"Ke","consonant":"k","word":{"geez":"ኮከብ","latin":"kokeb","meaning":"star","picture":"⭐"}},
-    khe: {"name":"Khe","consonant":"k"},
+    khe: {"name":"Khe","consonant":"kh"},
     we: {"name":"We","consonant":"w","word":{"geez":"ውሻ","latin":"wisha","meaning":"dog","picture":"🐕"}},
     ae: {"name":"Ae","consonant":"","nickname":"Aynu Ae","word":{"geez":"ዓይን","latin":"ayin","meaning":"eye","picture":"👁️"}},
     ze: {"name":"Ze","consonant":"z","word":{"geez":"ዛፍ","latin":"zaf","meaning":"tree","picture":"🌳"}},

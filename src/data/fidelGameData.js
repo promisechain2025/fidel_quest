@@ -22,12 +22,13 @@
 // Index 5 (the 6th order) is never read: that order is the bare consonant
 // and is special-cased in the form mapping below. Kept as '' to preserve
 // positional alignment with the seven orders.
-const ORDER_VOWELS = ['a', 'u', 'ee', 'aa', 'ay', '', 'o']
+// 5th order (Hams) is the pure /e/ vowel, not the "ay" diphthong.
+const ORDER_VOWELS = ['a', 'u', 'ee', 'aa', 'e', '', 'o']
 export const ORDER_NAMES = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th']
 // Traditional names of the seven orders, as taught in Ethiopian schools.
 export const GEEZ_ORDER_NAMES = ["Ge'ez", "Ka'ib", 'Sals', "Rab'", 'Hams', 'Sadis', "Sab'"]
 
-const VOWEL_SOUNDS = ['a', 'u', 'ee', 'aa', 'ay', 'ih', 'o']
+const VOWEL_SOUNDS = ['a', 'u', 'ee', 'aa', 'e', 'ih', 'o']
 
 const RAW_FAMILIES = [
   { name: 'Ha', consonant: 'h', chars: 'ሀሁሂሃሄህሆ', nickname: 'Haleta Ha' },
@@ -90,7 +91,7 @@ const RAW_FAMILIES = [
   // Modern Amharic merges ኸ into ከ (both said "k"); twinned so the two are
   // never asked apart, and so ኸ reuses the Ke recording. Tigrinya keeps ኸ
   // distinct ("kh") — see the ti pack.
-  { name: 'Khe', consonant: 'k', chars: 'ኸኹኺኻኼኽኾ', twinOf: 'Ke' },
+  { name: 'Khe', consonant: 'kh', chars: 'ኸኹኺኻኼኽኾ' },
   {
     name: 'We', consonant: 'w', chars: 'ወዉዊዋዌውዎ',
     word: { geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' },
@@ -207,6 +208,9 @@ export const UI_STRINGS = {
     exploreCta: 'Explore Mode — tap letters, hear sounds',
     traceCta: 'Tracing — draw the letters with your finger',
     masterCta: 'Fidel Master — hear, chant & say every letter',
+    chantPace_slow: 'slow',
+    chantPace_normal: 'normal',
+    chantPace_fast: 'fast',
     footer: "Made for young learners of the Ge'ez script",
     soundOff: 'Turn sound off',
     soundOn: 'Turn sound on',
@@ -287,6 +291,9 @@ export const UI_STRINGS = {
     exploreCta: 'ማሰሻ — ፊደላትን ነክተው ድምፃቸውን ይስሙ',
     traceCta: 'መሳያ — ፊደላትን በጣትዎ ይሳሉ',
     masterCta: 'የፊደል ሊቅ — ሁሉንም ፊደል ስሙ፣ ዘምሩ፣ ተናገሩ',
+    chantPace_slow: 'ቀስ',
+    chantPace_normal: 'መካከለኛ',
+    chantPace_fast: 'ፈጣን',
     footer: 'ለፊደል ተማሪ ልጆች የተሠራ',
     soundOff: 'ድምፅ አጥፋ',
     soundOn: 'ድምፅ አብራ',

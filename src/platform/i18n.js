@@ -120,6 +120,8 @@ const STRINGS = {
     saySayIt: 'ተናገሩት',
     sayScore: 'ውጤት',
     masterAll: 'ሁሉም',
+    masterAbugida: 'አቡጊዳ',
+    masterPlayAbugida: 'ሙሉ አቡጊዳ አጫውት',
     sayWithMe: 'አብረን እንበል',
     nextVowel: 'ቀጥሎ ቀጣዩ አናባቢ',
     yourTurn: 'አሁን አንተ በለው!',
