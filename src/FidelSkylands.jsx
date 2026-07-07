@@ -299,19 +299,51 @@ function glyphTex(char) {
   return TEXTURES[char]
 }
 
+/* Front-facing character art (kept local so this mode stays self-contained /
+   standalone-bundleable). These are the detailed chibi versions — tail, paws,
+   full mane, cheeks, mouth for Anbessa; crest, heavy brow, spots and a toothy
+   grin for Jibby — so the Skylands boss/waiting sprites match the rest of the
+   app instead of looking flat. Front-facing is deliberate here: Jibby looms
+   toward the player as a boss, Anbessa waits and greets. */
 function drawAnbessa(g, s) {
   const cx = s / 2
+  // tail with a tuft
+  g.strokeStyle = '#e08300'
+  g.lineWidth = s * 0.04
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx + s * 0.14, s * 0.8)
+  g.quadraticCurveTo(cx + s * 0.34, s * 0.82, cx + s * 0.33, s * 0.66)
+  g.stroke()
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.arc(cx + s * 0.33, s * 0.64, s * 0.045, 0, 7)
+  g.fill()
+  // body
   g.fillStyle = '#f7a83c'
   g.beginPath()
   g.roundRect(cx - s * 0.15, s * 0.58, s * 0.3, s * 0.32, s * 0.13)
   g.fill()
+  // belly
   g.fillStyle = '#ffdfae'
   g.beginPath()
   g.ellipse(cx, s * 0.76, s * 0.1, s * 0.11, 0, 0, 7)
   g.fill()
+  // paws
+  g.fillStyle = '#e08300'
+  for (const px of [-0.08, 0.08]) {
+    g.beginPath()
+    g.ellipse(cx + px * s, s * 0.895, s * 0.05, s * 0.028, 0, 0, 7)
+    g.fill()
+  }
+  // star on his chest
   starPath(g, cx, s * 0.72, s * 0.062, s * 0.028)
   g.fillStyle = '#ffc800'
   g.fill()
+  g.lineWidth = s * 0.012
+  g.strokeStyle = '#e0a400'
+  g.stroke()
+  // mane
   g.fillStyle = '#d97706'
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2
@@ -319,24 +351,40 @@ function drawAnbessa(g, s) {
     g.arc(cx + Math.cos(a) * s * 0.28, s * 0.4 + Math.sin(a) * s * 0.28, s * 0.1, 0, 7)
     g.fill()
   }
+  // ears
   for (const side of [-1, 1]) {
     g.fillStyle = '#f7a83c'
     g.beginPath()
     g.arc(cx + side * s * 0.19, s * 0.17, s * 0.07, 0, 7)
     g.fill()
+    g.fillStyle = '#ffdfae'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.175, s * 0.038, 0, 7)
+    g.fill()
   }
+  // head
   g.fillStyle = '#f7a83c'
   g.beginPath()
   g.arc(cx, s * 0.4, s * 0.265, 0, 7)
   g.fill()
+  // cheeks
+  g.fillStyle = 'rgba(255,120,80,0.35)'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.16, s * 0.46, s * 0.035, 0, 7)
+    g.fill()
+  }
+  // muzzle
   g.fillStyle = '#ffe9c8'
   g.beginPath()
   g.ellipse(cx, s * 0.475, s * 0.115, s * 0.085, 0, 0, 7)
   g.fill()
+  // nose
   g.fillStyle = '#8a5a00'
   g.beginPath()
   g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
   g.fill()
+  // happy mouth
   g.strokeStyle = '#8a5a00'
   g.lineWidth = s * 0.014
   g.lineCap = 'round'
@@ -345,32 +393,64 @@ function drawAnbessa(g, s) {
     g.arc(cx + side * s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
     g.stroke()
   }
+  // eyes
   g.fillStyle = '#3c2a10'
   for (const side of [-1, 1]) {
     g.beginPath()
     g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, s * 0.038, 0, 0, 7)
     g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.1 - s * 0.008, s * 0.365, s * 0.009, 0, 7)
+    g.fill()
+    g.fillStyle = '#3c2a10'
   }
 }
 
 function drawJibby(g, s) {
   const cx = s / 2
+  // big rounded ears
   for (const side of [-1, 1]) {
     g.fillStyle = '#8a7d6a'
     g.beginPath()
     g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
     g.fill()
+    g.fillStyle = '#57493a'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.18, s * 0.185, s * 0.045, s * 0.07, side * 0.25, 0, 7)
+    g.fill()
   }
+  // scruffy crest
+  g.fillStyle = '#57493a'
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath()
+    g.moveTo(cx + i * s * 0.055 - s * 0.03, s * 0.185)
+    g.lineTo(cx + i * s * 0.055, s * 0.1)
+    g.lineTo(cx + i * s * 0.055 + s * 0.03, s * 0.185)
+    g.closePath()
+    g.fill()
+  }
+  // head
   g.fillStyle = '#9a8b76'
   g.beginPath()
   g.arc(cx, s * 0.43, s * 0.28, 0, 7)
   g.fill()
+  // spots
   g.fillStyle = '#6e614f'
-  for (const [px, py] of [[0.3, 0.3], [0.68, 0.27], [0.74, 0.42]]) {
+  for (const [px, py, pr] of [[0.3, 0.3, 0.028], [0.68, 0.27, 0.024], [0.74, 0.42, 0.02], [0.26, 0.46, 0.022]]) {
     g.beginPath()
-    g.arc(px * s, py * s, 0.024 * s, 0, 7)
+    g.arc(px * s, py * s, pr * s, 0, 7)
     g.fill()
   }
+  // heavy brow
+  g.strokeStyle = '#57493a'
+  g.lineWidth = s * 0.03
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.16, s * 0.3)
+  g.quadraticCurveTo(cx, s * 0.27, cx + s * 0.16, s * 0.3)
+  g.stroke()
+  // mischievous eyes
   for (const side of [-1, 1]) {
     g.fillStyle = '#fff'
     g.beginPath()
@@ -381,10 +461,17 @@ function drawJibby(g, s) {
     g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
     g.fill()
   }
+  // muzzle
   g.fillStyle = '#c9b99d'
   g.beginPath()
   g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
   g.fill()
+  // nose
+  g.fillStyle = '#3a2d1c'
+  g.beginPath()
+  g.ellipse(cx, s * 0.485, s * 0.045, s * 0.03, 0, 0, 7)
+  g.fill()
+  // toothy grin
   g.strokeStyle = '#3a2d1c'
   g.lineWidth = s * 0.016
   g.beginPath()

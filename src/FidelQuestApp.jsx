@@ -44,6 +44,8 @@ import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
+import { challengeUrl, readChallengeFromHash, challengeOutcome } from './utils/challenge'
+import { loadFromStorage } from './utils/loadFromStorage'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -741,10 +743,23 @@ function useEscapeKey(onClose) {
 }
 
 export default function FidelQuestApp() {
-  const [screen, setScreen] = useState({ name: 'home' })
+  // A "challenge a friend" link (#challenge=...) opens straight into the
+  // seeded rematch. See utils/challenge.js + docs/social-play.md.
+  const [screen, setScreen] = useState(() => {
+    try {
+      const ch = readChallengeFromHash(window.location.hash)
+      if (ch) return { name: 'challenge', challenge: ch }
+    } catch { /* non-browser */ }
+    return { name: 'home' }
+  })
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
+      // Strip the challenge token from the address bar once we've captured it,
+      // so a refresh or a shared-back link starts from a clean URL.
+      if (window.location.hash.includes('challenge=')) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
     } catch {
       /* non-browser */
     }
@@ -1002,6 +1017,15 @@ export default function FidelQuestApp() {
                   }
                 }}
                 onReplay={() => startLesson(screen.levelId)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'challenge' && (
+            <Screen key="challenge">
+              <ChallengeRun
+                challenge={screen.challenge}
+                soundOn={soundOn}
+                onHome={() => setScreen({ name: 'home' })}
               />
             </Screen>
           )}
@@ -1817,13 +1841,16 @@ function machineReducer(ctx, event) {
   return transition(ctx, event).next
 }
 
-function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null }) {
+function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null, noDemo = false, incoming = null }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
   const isPractice = level.id === 'practice'
+  const isChallenge = !!incoming
 
   // Shadow tutorial: on first open the Ghost Hand plays one question of the
   // REAL machine, then the level restarts fresh and the child takes over.
-  const [demo, setDemo] = useState(() => !hasOnboarded('lesson') && !prefersReducedMotion())
+  // A challenge round skips the demo so the seed the friend played is the exact
+  // seed replayed here (the demo would reseed the queue).
+  const [demo, setDemo] = useState(() => !noDemo && !hasOnboarded('lesson') && !prefersReducedMotion())
   const demoRef = useRef(demo)
   demoRef.current = demo
   const [hand, setHand] = useState({ x: null, y: null })
@@ -1904,14 +1931,21 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
 
   if (ctx.status === GameState.LEVEL_COMPLETE) {
     const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
+    // Any finished (non-practice) quiz can be turned into a challenge link,
+    // built from the EXACT effective seed the queue was drawn from (ctx.seed,
+    // which survives the one-time tutorial reseed).
+    const challengePayload = isPractice ? null : { levelId: level.id, seed: ctx.seed, accuracy, streak: ctx.bestStreak }
     return (
       <LevelComplete
         level={level}
         accuracy={accuracy}
         stars={isPractice ? null : starsForAccuracy(accuracy)}
         bestStreak={ctx.bestStreak}
-        onContinue={() => onFinish(level.id, result)}
+        incoming={incoming}
+        challengePayload={challengePayload}
+        onContinue={() => onFinish(level.id, isChallenge ? null : result)}
         onReplay={() => {
+          if (isChallenge) { onReplay(); return }
           onFinish(level.id, result)
           onReplay()
         }}
@@ -2069,7 +2103,43 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
 
 /* ── Level complete ── */
 
-function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay }) {
+/** Turn a finished round into a shareable challenge link (Web Share sheet, or
+   copy-to-clipboard fallback). Nothing is sent to a server — the whole
+   challenge is in the link. See utils/challenge.js. */
+function ChallengeShareButton({ payload, label }) {
+  const [copied, setCopied] = useState(false)
+  const share = async () => {
+    const by = loadFromStorage('fq.nickname', '')
+    const url = challengeUrl({ ...payload, by }, window.location.origin)
+    const text = `${t('challengeShareText', 'Beat my Fidel Quest score! Can you?')} ${url}`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Fidel Quest', text, url })
+        return
+      }
+    } catch {
+      return // user dismissed the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* clipboard blocked; nothing else we can do here */
+    }
+  }
+  return (
+    <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={share}>
+      <span className="flex items-center justify-center gap-2">
+        <Share2 className="h-5 w-5" aria-hidden="true" />
+        {copied ? t('linkCopied', 'Link copied!') : label}
+      </span>
+    </Chunky>
+  )
+}
+
+function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
+  const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
     <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
       <Confetti />
@@ -2123,14 +2193,116 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
         </div>
       </motion.div>
 
+      {incoming && (
+        <motion.div
+          className="mt-6 w-full max-w-sm rounded-2xl border-2 p-4 text-center"
+          style={{ background: outcome === 'win' ? 'var(--go-soft)' : 'var(--card)', borderColor: 'var(--line)' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0 }}
+        >
+          <p className="text-lg font-black" style={{ color: 'var(--ink)' }}>
+            {outcome === 'win' ? t('challengeWin', 'You win!') : outcome === 'lose' ? t('challengeLose', 'So close!') : t('challengeTie', "It's a tie!")}
+          </p>
+          <p className="mono mt-1 font-black" style={{ color: 'var(--muted)' }}>
+            {t('you', 'You')}: {accuracy}% · {incoming.by || t('aFriend', 'A friend')}: {incoming.accuracy}%
+          </p>
+        </motion.div>
+      )}
+
       <motion.div className="mt-8 flex w-full max-w-sm flex-col gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
-        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
-          {t('continue', 'Continue')}
-        </Chunky>
-        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
-          {t('playAgain', 'Play again')}
-        </Chunky>
+        {incoming ? (
+          <>
+            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeBack', 'Challenge back')} />}
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
+              {t('playAgain', 'Play again')}
+            </Chunky>
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
+              {t('goHome', 'Home')}
+            </Chunky>
+          </>
+        ) : (
+          <>
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
+              {t('continue', 'Continue')}
+            </Chunky>
+            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeFriend', 'Challenge a friend')} />}
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
+              {t('playAgain', 'Play again')}
+            </Chunky>
+          </>
+        )}
       </motion.div>
+    </div>
+  )
+}
+
+/* ── Challenge a friend (Phase 1, see docs/social-play.md) ── */
+
+/** Plays an incoming challenge: the same level + exact seed the friend played,
+   with the demo disabled so the round is reproducible, then LevelComplete shows
+   the head-to-head and a "Challenge back" link. Never touches Journey progress
+   — a challenge is a friendly one-off, not a gate. */
+function ChallengeRun({ challenge, soundOn, onHome }) {
+  const level = LEVELS.find((l) => l.id === challenge.levelId)
+  const [started, setStarted] = useState(false)
+  useEscapeKey(onHome)
+  if (!level) return <ChallengeMissing onHome={onHome} />
+  if (!started) return <ChallengeIntro challenge={challenge} level={level} onStart={() => setStarted(true)} onHome={onHome} />
+  return (
+    <Lesson
+      level={level}
+      seed={challenge.seed}
+      soundOn={soundOn}
+      noDemo
+      incoming={challenge}
+      onFinish={onHome}
+      onReplay={() => setStarted(false)}
+    />
+  )
+}
+
+function ChallengeIntro({ challenge, level, onStart, onHome }) {
+  const who = challenge.by || t('aFriend', 'A friend')
+  const levelTitle = t(`${level.id}.title`, level.title)
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+        {t('challengeTitle', 'A challenge!')}
+      </p>
+      <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('challengeFrom', `${who} challenges you!`, { who })}
+      </h1>
+      <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+        {t('challengeScored', `${who} scored ${challenge.accuracy}% on ${levelTitle}. Can you beat it?`, { who, score: challenge.accuracy, level: levelTitle })}
+      </p>
+      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>
+          {t('challengeStart', 'Take the challenge')}
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+function ChallengeMissing({ onHome }) {
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <Hero size={112} mood="worried" />
+      <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('challengeGone', 'This challenge is not available.')}
+      </h1>
+      <div className="mt-8 w-full max-w-sm">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
     </div>
   )
 }
