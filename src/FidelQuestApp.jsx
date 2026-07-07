@@ -30,6 +30,8 @@ import GrownUps from './GrownUps'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
+import TeeShop from './components/TeeShop'
+import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
@@ -62,6 +64,7 @@ import {
   TreePine,
   Pencil,
   Shirt,
+  ShoppingBag,
   Share2,
   Gift,
   Backpack as BackpackIcon,
@@ -800,6 +803,11 @@ export default function FidelQuestApp() {
     setScreen({ name: 'closet' })
   }, [])
 
+  const openTeeShop = useCallback(() => {
+    setBackpackOpen(false)
+    setScreen({ name: 'tees' })
+  }, [])
+
   // Daily Gift: claim once per calendar day. Grants an un-owned wearable (which
   // feeds the Closet + share loop), or a warm message once all are collected.
   const openGift = useCallback(() => {
@@ -847,6 +855,15 @@ export default function FidelQuestApp() {
                 collection={journey.collection}
                 stats={progressStats(journey)}
                 onEquip={(slot, id) => setJourney((j) => equipItem(j, slot, id))}
+                onBack={() => setScreen({ name: 'home' })}
+              />
+            </Screen>
+          )}
+          {screen.name === 'tees' && (
+            <Screen key="tees">
+              <TeeShop
+                stats={progressStats(journey)}
+                collection={journey.collection}
                 onBack={() => setScreen({ name: 'home' })}
               />
             </Screen>
@@ -975,6 +992,8 @@ export default function FidelQuestApp() {
               key="backpack"
               onClose={() => setBackpackOpen(false)}
               troubleCount={troubleCount}
+              teeBadge={newTeeCount(progressStats(journey).families)}
+              onTees={openTeeShop}
               onCloset={openCloset}
               onWords={() => { setBackpackOpen(false); startWords() }}
               onPractice={startPractice}
@@ -1315,7 +1334,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   )
 }
 
-function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
+function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
       type="button"
@@ -1323,8 +1342,13 @@ function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
       className={`chunk flex w-full items-center gap-4 rounded-3xl p-4 text-left ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
         {icon}
+        {badge > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
+            {badge}
+          </span>
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-extrabold">{title}</span>
@@ -1414,7 +1438,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, onTees, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   return (
     <motion.div
@@ -1444,6 +1468,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
         </div>
         <div className="flex flex-col gap-3">
           <BackpackItem icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetTitle', "Anbessa's Closet")} sub={t('closetSub', 'Dress up Anbessa and share!')} onClick={onCloset} />
+          <BackpackItem icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeTitle', 'Anbessa Tee Shop')} sub={t('teeSub', 'Earn and wear your alphabet shirts')} onClick={onTees} />
           <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
           {troubleCount > 0 && (
             <BackpackItem icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" title={t('practiceTitle', 'Star Practice')} sub={t('practiceSub', `${troubleCount} tricky letters to make strong`, { n: troubleCount })} onClick={onPractice} />

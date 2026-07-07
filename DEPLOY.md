@@ -29,6 +29,13 @@ npm run build
 - `VITE_ANALYTICS_URL` — **optional**. Omit it and the app sends nothing and
   stays 100% offline. Set it (to your server's `/api/events`) to measure the
   funnel.
+- `VITE_SHOP_URL` — **optional**. The storefront the Tee Shop's "Order a real
+  shirt" button opens (the earned design id is appended as `?design=<id>`, so
+  a print-on-demand store — Printful/Printify/Gelato — or even a Google Form
+  can preselect it). Leave it unset and "Order" gracefully falls back to
+  saving the print-ready PNG, which a parent can take to any local printer.
+  This is the app's opt-in income lever: kids unlock a new shirt design each
+  chapter, parents buy.
 
 ### Host
 

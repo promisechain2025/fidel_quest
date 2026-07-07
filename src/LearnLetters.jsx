@@ -337,17 +337,32 @@ function BubbleMeet({ ctx, onTouch }) {
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
       <div className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #bfe6f7, #e8f6fd)' }}>
+        {/* floating sparkles for a lively stage */}
+        {[14, 40, 66, 88, 28, 74].map((left, i) => (
+          <motion.span
+            key={i}
+            className="absolute h-1.5 w-1.5 rounded-full bg-white"
+            style={{ left: `${left}%`, top: `${(i * 37) % 78 + 8}%` }}
+            animate={{ opacity: [0.15, 0.8, 0.15], scale: [0.6, 1.2, 0.6] }}
+            transition={{ duration: 2 + (i % 3) * 0.7, repeat: Infinity, delay: i * 0.3 }}
+            aria-hidden="true"
+          />
+        ))}
         <motion.button
           type="button"
           onPointerDown={() => onTouch(form.audioKey)}
           initial={{ x: '-30%', y: 30, scale: 0.5 }}
           animate={{
-            x: ['-25%', '25%', '-15%', '20%', '-25%'],
-            y: [26, 60, 14, 52, 26],
-            scale: [1, 1.05, 0.97, 1.04, 1],
+            // A wandering loop (roughly a figure-8) instead of a straight
+            // back-and-forth, with a rocking tilt and a bouncy squash-stretch
+            // so the letter looks like it is dancing around the stage.
+            x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
+            y: [24, 8, 26, 52, 66, 54, 30, 24],
+            rotate: [0, 9, -5, 8, -9, 6, -3, 0],
+            scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
           }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className={`geez absolute left-1/2 top-4 flex h-44 w-44 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
+          transition={{ duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
+          className={`geez absolute left-1/2 top-4 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
           style={{
             background: `radial-gradient(circle at 34% 28%, ${c.hi} 0%, ${c.base} 54%, ${c.lo} 100%)`,
             border: '4px solid rgba(255,255,255,0.92)',
@@ -359,7 +374,15 @@ function BubbleMeet({ ctx, onTouch }) {
           }}
           aria-label={`Pop the bubble to hear ${form.sound}`}
         >
-          {form.char}
+          {/* counter-rotate the glyph a touch so it stays readable while the
+              bubble rocks, then give it its own gentle wiggle (the dance) */}
+          <motion.span
+            animate={{ rotate: [0, -6, 4, -5, 0], y: [0, -2, 1, -2, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="block"
+          >
+            {form.char}
+          </motion.span>
           <span className="absolute left-8 top-7 h-7 w-11 rotate-[-25deg] rounded-full bg-white/85" aria-hidden="true" />
         </motion.button>
       </div>

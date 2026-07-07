@@ -29,7 +29,8 @@ Distinct Tigrinya-only recordings are preserved under letters/ti/
 Re-recorded to fix content errors: she (ሸ) (the first take sounded wrong),
 chhe (ጨ) (was the only family still on espeak).
 
-Still on the espeak placeholder: the order-8 labialized bonus forms
-(<id>-8), which only the Classic mode uses. Missing audio (falls back to
-the chime): the words hager (ሀገር) and hamer (ሐመር) were added after the
-25-word recording, so ha/hha have no first-word clip yet.
+No espeak clips remain: every letter/word plays a human recording or the
+deterministic chime, never a robotic voice. Unrecorded sounds that fall back
+to the chime: the order-8 labialized bonus forms (<id>-8, Classic mode only,
+espeak files removed) and the two words hager (ሀገር) / hamer (ሐመር), which were
+added to ha/hha after the 25-word recording.
