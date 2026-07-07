@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react'
 import AmharicFidelGame, {
   FIDEL_FAMILIES,
   LEVELS,
@@ -293,7 +293,7 @@ describe('<AmharicFidelGame />', () => {
         return form.sound !== sound
       })
     fireEvent.click(wrong)
-    expect(screen.getByRole('status').textContent).toMatch(/try|Almost|close|worries|Ayzoh|can do/i)
+    expect(screen.getByRole('status').textContent).toMatch(/try|almost|close|can do|keep going|nearly|another go|listen/i)
     // Second chance: the wrong option is now disabled but the question stays
     // open (no Continue button); the miss is persisted for adaptive weighting.
     expect(wrong).toBeDisabled()
@@ -335,15 +335,15 @@ describe('<AmharicFidelGame />', () => {
     expect(localStorage.getItem('fidel-quest-sound')).toBe('off')
   })
 
-  it('switches the whole UI to Amharic and persists the choice', () => {
+  it('renders the Classic UI in the global app language', () => {
+    // Language now follows the single global app-text setting (fq.lang), set
+    // from the main app's picker, rather than a Classic-only toggle.
     render(<AmharicFidelGame />)
-    fireEvent.click(screen.getByRole('button', { name: 'አማርኛ' }))
+    expect(screen.getByText('Fidel Quest')).toBeInTheDocument() // English default
+    cleanup()
+    localStorage.setItem('fq.lang', 'am')
+    render(<AmharicFidelGame />)
     expect(screen.getByText('የፊደል ጉዞ')).toBeInTheDocument()
-    expect(screen.getByText('ደረጃ 1')).toBeInTheDocument()
-    expect(localStorage.getItem('fidel-quest-lang')).toBe('am')
-    // Toggle back restores English.
-    fireEvent.click(screen.getByRole('button', { name: 'English' }))
-    expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
   })
 
   it('opens trace mode and falls back gracefully without canvas support', () => {

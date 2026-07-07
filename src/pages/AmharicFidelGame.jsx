@@ -29,6 +29,7 @@ import { loadFromStorage } from '../utils/loadFromStorage'
 import FidelTracePad from '../components/FidelTracePad'
 import FidelMaster from '../components/FidelMaster'
 import { audio as platformAudio } from '../platform/audioEngine'
+import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import {
   FIDEL_FAMILIES,
   ALL_FORMS,
@@ -605,25 +606,27 @@ export default function AmharicFidelGame() {
   // screen: menu | explore | game | complete | trace
   const [screen, setScreen] = useState('menu')
   const [soundOn, setSoundOn] = useState(() => loadFromStorage('fidel-quest-sound', 'on') !== 'off')
-  // UI language: English is canonical; Amharic for local families.
-  const [lang, setLang] = useState(() => (loadFromStorage('fidel-quest-lang', 'en') === 'am' ? 'am' : 'en'))
+  // UI language follows the single global app-text setting (set in the main
+  // app's Backpack). Classic's own strings live in UI_STRINGS (en/am); any
+  // other diaspora language falls back to English here, while the spoken/shown
+  // reinforcement words come from the shared multilingual lists.
+  const lang = getLang()
   const [progress, setProgress] = useState(loadProgress)
 
   useEffect(() => {
     try {
       localStorage.setItem('fidel-quest-sound', soundOn ? 'on' : 'off')
-      localStorage.setItem('fidel-quest-lang', lang)
     } catch {
-      // Storage unavailable — the toggles just won't persist.
+      // Storage unavailable — the toggle just won't persist.
     }
-  }, [soundOn, lang])
+  }, [soundOn])
 
   // Tiny i18n: current-language lookup with English fallback and
   // {placeholder} interpolation. Strings live in the data module.
   const t = useCallback(
     (key, vars) => {
-      let s = UI_STRINGS[lang][key] ?? UI_STRINGS.en[key] ?? key
-      if (vars) {
+      let s = UI_STRINGS[lang]?.[key] ?? UI_STRINGS.en[key] ?? key
+      if (vars && typeof s === 'string') {
         Object.entries(vars).forEach(([k, v]) => {
           s = s.replace(`{${k}}`, v)
         })
@@ -633,11 +636,11 @@ export default function AmharicFidelGame() {
     [lang],
   )
   const tLevelTitle = useCallback(
-    (lvl) => (UI_STRINGS[lang].levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).title,
+    (lvl) => (UI_STRINGS[lang]?.levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).title,
     [lang],
   )
   const tLevelSubtitle = useCallback(
-    (lvl) => (UI_STRINGS[lang].levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).subtitle,
+    (lvl) => (UI_STRINGS[lang]?.levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).subtitle,
     [lang],
   )
 
@@ -807,7 +810,7 @@ export default function AmharicFidelGame() {
         setCorrectCount((c) => c + 1)
         setLastGain({ amount: gained, key: `${questionIndex}-${optionIndex}` })
         const isStreakMilestone = cleanFirstTry && nextStreak % 5 === 0
-        const praise = UI_STRINGS[lang].praise
+        const praise = praiseWords()
         setPhase('correct')
         setMascotMood(isStreakMilestone ? 'party' : 'happy')
         setFeedbackMessage(
@@ -818,8 +821,10 @@ export default function AmharicFidelGame() {
         if (isStreakMilestone) {
           setConfettiKey((k) => k + 1)
           playSfx('streak')
+          platformAudio.applause(soundOnRef.current, { claps: 10, spread: 0.7 }) // big cheer on a streak
         } else {
           playSfx('correct')
+          platformAudio.applause(soundOnRef.current, { claps: 4, spread: 0.32 }) // hand clap on a right answer
         }
         speakMotivation(PRAISE_CLIPS) // spoken "gobez!" etc. once recorded
         vibrate(30)
@@ -836,7 +841,7 @@ export default function AmharicFidelGame() {
         setWrongPicks((w) => (w.includes(optionIndex) ? w : [...w, optionIndex]))
         setStreak(0)
         setMascotMood('sad')
-        const encourage = UI_STRINGS[lang].encourage
+        const encourage = encourageWords()
         setFeedbackMessage(encourage[Math.floor(Math.random() * encourage.length)])
         if (firstSlip) {
           setMissedForms((prev) => (prev.some((f) => f.char === targetChar) ? prev : [...prev, currentQuestion.target]))
@@ -852,7 +857,7 @@ export default function AmharicFidelGame() {
         setTimeout(() => playLetter(currentQuestion.target), 350)
       }
     },
-    [phase, currentQuestion, wrongPicks, streak, questionIndex, playSfx, playLetter, lang, t],
+    [phase, currentQuestion, wrongPicks, streak, questionIndex, playSfx, playLetter, t],
   )
 
   const advance = useCallback(() => {
@@ -1783,17 +1788,6 @@ export default function AmharicFidelGame() {
         className={`fixed bottom-20 left-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-amber-700 shadow-lg transition-all hover:shadow-xl active:scale-90 md:bottom-6 md:left-6 dark:bg-gray-800/90 dark:text-amber-300 ${FOCUS_RING}`}
       >
         {soundOn ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
-      </button>
-      <button
-        type="button"
-        onClick={() => setLang((l) => (l === 'en' ? 'am' : 'en'))}
-        aria-label={t('langToggle')}
-        className={`fixed bottom-[8.5rem] left-4 z-40 flex h-12 w-12 flex-col items-center justify-center rounded-full bg-white/90 text-amber-700 shadow-lg transition-all hover:shadow-xl active:scale-90 md:bottom-24 md:left-6 dark:bg-gray-800/90 dark:text-amber-300 ${FOCUS_RING}`}
-      >
-        <Languages className="h-4 w-4" aria-hidden="true" />
-        <span className="text-[10px] font-extrabold leading-tight" style={lang === 'en' ? ETHIOPIC_FONT : undefined}>
-          {lang === 'en' ? 'አማ' : 'EN'}
-        </span>
       </button>
 
       {screen === 'menu' && renderMenu()}

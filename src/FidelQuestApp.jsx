@@ -40,6 +40,7 @@ import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
+import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
@@ -1425,18 +1426,35 @@ function LanguagePicker() {
           window.location.reload()
         }}
       />
-      <Segmented
-        label={t('langText', 'App text')}
-        value={ui}
-        options={[
-          { id: 'en', label: 'English' },
-          { id: 'am', label: 'አማርኛ' },
-        ]}
-        onPick={(id) => {
-          setLang(id)
-          window.location.reload()
-        }}
-      />
+      <div>
+        <div className="mb-1.5 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+          {t('langText', 'App text')}
+        </div>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={t('langText', 'App text')}>
+          {LANG_META.map((o) => {
+            const active = o.id === ui
+            return (
+              <button
+                key={o.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => { if (!active) { setLang(o.id); window.location.reload() } }}
+                className={`chunk rounded-2xl px-2 py-2 text-center text-sm font-black ${FOCUS}`}
+                style={{
+                  background: active ? 'var(--sky)' : 'var(--card)',
+                  color: active ? '#fff' : 'var(--ink)',
+                  border: '2px solid var(--line)',
+                  boxShadow: active ? '0 3px 0 var(--sky-deep)' : '0 3px 0 var(--line)',
+                  '--chunk-depth': '3px',
+                  outlineColor: 'var(--sky)',
+                }}
+              >
+                {o.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
