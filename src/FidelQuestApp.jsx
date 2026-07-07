@@ -69,6 +69,7 @@ import {
   Share2,
   Gift,
   Backpack as BackpackIcon,
+  ClipboardCheck,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -1534,6 +1535,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
           <BackpackItem icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerTitle', 'Letter Explorer')} sub={t('explorerSub', 'Tap any of the 231 letters to hear it')} onClick={onExplore} />
           <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
           <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
+          {/* Reviewer entry point: opens the standalone /review guide + feedback
+             page (outside the SPA) in a new tab so testers keep their place. */}
+          <BackpackItem icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewTitle', 'Review this app')} sub={t('reviewSub', 'A guided tour, then tell us what you think')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
         </div>
         <LanguagePicker />
       </motion.div>
