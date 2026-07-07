@@ -168,6 +168,48 @@ open https://YOUR-SERVER/dashboard               # enter OWNER_TOKEN
 
 ---
 
+## 6. Reviewer guide & feedback page (`/review`)
+
+A self-contained page ships at **`https://YOUR-APP-DOMAIN/review`**
+(`public/review/index.html`). It is a feature-by-feature walkthrough with an
+honest verdict on each part, followed by a **feedback form** so testers — kids
+or grown-ups — can score the app and leave notes. Share this URL with anyone
+reviewing the app.
+
+It is deliberately outside the game: no router entry, `noindex`, and precached
+so it also works offline. It is the only place in the project that makes a
+network call, and only when someone submits a review.
+
+**Where the reviews go — Netlify Forms (zero backend):**
+
+- The form (`name="fidel-review"`) uses Netlify's built-in form handling. On a
+  **Netlify** deploy, submissions are captured automatically — no server, no
+  env vars.
+- Read them in **Netlify dashboard → your site → Forms → `fidel-review`**.
+  Turn on **email notifications** there (Forms → Settings & usage →
+  notifications) to get each review in your inbox, and use **Export as CSV** to
+  consolidate them in a spreadsheet.
+- Netlify's free tier includes 100 submissions/month; that is plenty for a test
+  round. Make sure **Form detection** is enabled (Site settings → Forms) — it
+  is on by default. Fields are detected from the static HTML at deploy time, so
+  a fresh deploy after any form change is what registers new fields.
+
+**It never loses a review, even off Netlify:**
+
+- Every submission is also saved to the tester's device (`localStorage`,
+  `fq.reviews.v1`) as a backup, and the form offers **"Download a copy"**.
+- If the site is hosted somewhere **other than Netlify** (Cloudflare Pages,
+  S3, etc.), the POST simply fails gracefully: the review is still saved on the
+  device and the tester is prompted to download it and email it to you.
+- Running a test session on **one shared tablet**? Every review sent from that
+  device accumulates locally; the **"Download all reviews saved on this
+  device"** link exports them as one JSON file to consolidate.
+
+No child's game progress, name, or voice is ever included in a review — only
+what the tester types into the form.
+
+---
+
 ## Privacy note
 
 The server stores only aggregate counts (`{type, day}`, plus an A/B variant

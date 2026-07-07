@@ -15,6 +15,11 @@
 /audio/*
   Cache-Control: public, max-age=3600, must-revalidate
 
+# The reviewer guide + feedback page must refresh so guide edits and new form
+# fields (Netlify detects fields from the deployed HTML) roll out immediately.
+/review/*
+  Cache-Control: no-cache, must-revalidate
+
 # Shell files must refresh every visit so a new deploy actually rolls out and
 # no one gets stuck on a stale service worker.
 /index.html
