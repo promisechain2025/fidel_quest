@@ -2513,6 +2513,93 @@ export function drawZebra(g, s) {
   g.stroke()
 }
 
+/** Anbessa in a side-profile bounding pose, facing right (the travel
+   direction). Used only by the runner sprites so the character reads as a real
+   lion mid-stride instead of a flat front-facing face; the chibi front view
+   (drawAnbessa) still fronts the home screen, closet and rewards. */
+export function drawAnbessaRun(g, s, mood = 'happy') {
+  const worried = mood === 'worried' || mood === 'hungry'
+  // tail with tuft (rear, left)
+  g.strokeStyle = '#e08300'; g.lineWidth = s * 0.05; g.lineCap = 'round'
+  g.beginPath(); g.moveTo(s * 0.30, s * 0.58); g.quadraticCurveTo(s * 0.13, s * 0.52, s * 0.17, s * 0.35); g.stroke()
+  g.fillStyle = '#8a5a00'; g.beginPath(); g.arc(s * 0.17, s * 0.33, s * 0.05, 0, 7); g.fill()
+  // legs: back pair pushing off, front pair reaching forward (bound)
+  g.strokeStyle = '#e08300'; g.lineWidth = s * 0.06; g.lineCap = 'round'
+  for (const [x1, y1, x2, y2] of [
+    [0.38, 0.70, 0.28, 0.84], [0.44, 0.72, 0.47, 0.86],   // back
+    [0.63, 0.70, 0.71, 0.86], [0.58, 0.70, 0.53, 0.85],   // front
+  ]) { g.beginPath(); g.moveTo(x1 * s, y1 * s); g.lineTo(x2 * s, y2 * s); g.stroke() }
+  g.fillStyle = '#e08300'
+  for (const [px, py] of [[0.28, 0.85], [0.47, 0.87], [0.71, 0.87], [0.53, 0.85]]) { g.beginPath(); g.ellipse(px * s, py * s, s * 0.045, s * 0.03, 0, 0, 7); g.fill() }
+  // body + belly
+  g.fillStyle = '#f7a83c'; g.beginPath(); g.ellipse(s * 0.50, s * 0.60, s * 0.23, s * 0.15, 0, 0, 7); g.fill()
+  g.fillStyle = '#ffdfae'; g.beginPath(); g.ellipse(s * 0.50, s * 0.66, s * 0.16, s * 0.08, 0, 0, 7); g.fill()
+  // star on the flank (his signature)
+  starPath(g, s * 0.44, s * 0.60, s * 0.06, s * 0.027); g.fillStyle = '#ffc800'; g.fill()
+  g.lineWidth = s * 0.01; g.strokeStyle = '#e0a400'; g.stroke()
+  // mane framing the back/top of the head
+  g.fillStyle = '#d97706'
+  for (let i = 0; i < 9; i++) { const a = Math.PI * 0.5 + (i / 8) * Math.PI; g.beginPath(); g.arc(s * 0.70 + Math.cos(a) * s * 0.17, s * 0.42 + Math.sin(a) * s * 0.17, s * 0.075, 0, 7); g.fill() }
+  // ear
+  g.fillStyle = '#f7a83c'; g.beginPath(); g.arc(s * 0.72, s * 0.26, s * 0.06, 0, 7); g.fill()
+  g.fillStyle = '#ffdfae'; g.beginPath(); g.arc(s * 0.73, s * 0.27, s * 0.032, 0, 7); g.fill()
+  // head
+  g.fillStyle = '#f7a83c'; g.beginPath(); g.arc(s * 0.74, s * 0.40, s * 0.155, 0, 7); g.fill()
+  // muzzle + nose + mouth (front-right)
+  g.fillStyle = '#ffe9c8'; g.beginPath(); g.ellipse(s * 0.86, s * 0.44, s * 0.075, s * 0.06, 0, 0, 7); g.fill()
+  g.fillStyle = '#8a5a00'; g.beginPath(); g.ellipse(s * 0.925, s * 0.42, s * 0.022, s * 0.018, 0, 0, 7); g.fill()
+  g.strokeStyle = '#8a5a00'; g.lineWidth = s * 0.012; g.beginPath(); g.moveTo(s * 0.905, s * 0.45); g.quadraticCurveTo(s * 0.87, s * 0.49, s * 0.83, s * 0.47); g.stroke()
+  // eye (+ worried brow)
+  g.fillStyle = '#3c2a10'; g.beginPath(); g.ellipse(s * 0.78, s * 0.375, s * 0.023, worried ? s * 0.02 : s * 0.03, 0, 0, 7); g.fill()
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(s * 0.773, s * 0.367, s * 0.008, 0, 7); g.fill()
+  if (worried) { g.strokeStyle = '#3c2a10'; g.lineWidth = s * 0.012; g.beginPath(); g.moveTo(s * 0.74, s * 0.31); g.lineTo(s * 0.80, s * 0.34); g.stroke() }
+}
+
+/** Jibby in a side-profile chasing pose, facing right, with the sloped hyena
+   back, dorsal crest and an open toothy grin. Runner-only, same as above. */
+export function drawJibbyRun(g, s, mood = 'grin') {
+  const coat = '#9a8b76', dark = '#6e614f', crest = '#57493a', belly = '#c9b99d'
+  // back legs (bent) then front legs (reaching)
+  g.lineCap = 'round'
+  g.strokeStyle = dark; g.lineWidth = s * 0.055
+  g.beginPath(); g.moveTo(s * 0.36, s * 0.62); g.lineTo(s * 0.30, s * 0.84); g.stroke()
+  g.beginPath(); g.moveTo(s * 0.42, s * 0.64); g.lineTo(s * 0.45, s * 0.85); g.stroke()
+  g.strokeStyle = coat; g.lineWidth = s * 0.06
+  g.beginPath(); g.moveTo(s * 0.64, s * 0.60); g.lineTo(s * 0.72, s * 0.85); g.stroke()
+  g.beginPath(); g.moveTo(s * 0.60, s * 0.62); g.lineTo(s * 0.55, s * 0.84); g.stroke()
+  g.fillStyle = dark
+  for (const [px, py] of [[0.30, 0.85], [0.45, 0.86], [0.72, 0.86], [0.55, 0.85]]) { g.beginPath(); g.ellipse(px * s, py * s, s * 0.04, s * 0.028, 0, 0, 7); g.fill() }
+  // sloped body (high shoulders at front-right, low rear-left)
+  g.fillStyle = coat; g.beginPath()
+  g.moveTo(s * 0.30, s * 0.56); g.quadraticCurveTo(s * 0.46, s * 0.40, s * 0.66, s * 0.44)
+  g.quadraticCurveTo(s * 0.74, s * 0.50, s * 0.70, s * 0.64); g.quadraticCurveTo(s * 0.50, s * 0.72, s * 0.32, s * 0.66)
+  g.closePath(); g.fill()
+  g.fillStyle = belly; g.beginPath(); g.ellipse(s * 0.50, s * 0.63, s * 0.15, s * 0.06, 0, 0, 7); g.fill()
+  // dorsal crest of triangles along the rising back
+  g.fillStyle = crest
+  for (let i = 0; i < 6; i++) { const tx = 0.34 + i * 0.06, ty = 0.55 - i * 0.024; g.beginPath(); g.moveTo((tx - 0.03) * s, ty * s); g.lineTo(tx * s, (ty - 0.09) * s); g.lineTo((tx + 0.03) * s, ty * s); g.closePath(); g.fill() }
+  // short bushy tail
+  g.strokeStyle = crest; g.lineWidth = s * 0.05; g.beginPath(); g.moveTo(s * 0.30, s * 0.56); g.quadraticCurveTo(s * 0.20, s * 0.58, s * 0.19, s * 0.68); g.stroke()
+  // spots
+  g.fillStyle = dark
+  for (const [px, py, pr] of [[0.42, 0.55, 0.022], [0.52, 0.60, 0.02], [0.60, 0.54, 0.018], [0.36, 0.60, 0.017]]) { g.beginPath(); g.arc(px * s, py * s, pr * s, 0, 7); g.fill() }
+  // head + rounded ear
+  g.fillStyle = coat; g.beginPath(); g.arc(s * 0.72, s * 0.40, s * 0.15, 0, 7); g.fill()
+  g.beginPath(); g.ellipse(s * 0.66, s * 0.27, s * 0.05, s * 0.06, -0.2, 0, 7); g.fill()
+  g.fillStyle = crest; g.beginPath(); g.ellipse(s * 0.66, s * 0.28, s * 0.026, s * 0.034, -0.2, 0, 7); g.fill()
+  // sloping snout + nose
+  g.fillStyle = belly; g.beginPath(); g.ellipse(s * 0.85, s * 0.46, s * 0.09, s * 0.06, 0.25, 0, 7); g.fill()
+  g.fillStyle = '#3a2d1c'; g.beginPath(); g.ellipse(s * 0.925, s * 0.44, s * 0.022, s * 0.018, 0.25, 0, 7); g.fill()
+  // open toothy mouth
+  g.fillStyle = '#3a2216'; g.beginPath(); g.moveTo(s * 0.80, s * 0.48); g.lineTo(s * 0.92, s * 0.46); g.lineTo(s * 0.86, s * 0.58); g.closePath(); g.fill()
+  g.fillStyle = '#fff'
+  for (let i = 0; i < 3; i++) { const x = 0.81 + i * 0.035; g.beginPath(); g.moveTo(x * s, 0.485 * s); g.lineTo((x + 0.018) * s, 0.53 * s); g.lineTo((x + 0.036) * s, 0.485 * s); g.closePath(); g.fill() }
+  // eye + heavy brow
+  g.fillStyle = '#fff'; g.beginPath(); g.ellipse(s * 0.74, s * 0.37, s * 0.03, s * 0.026, 0, 0, 7); g.fill()
+  g.fillStyle = '#241c12'; g.beginPath(); g.arc(s * 0.755, s * 0.375, s * 0.014, 0, 7); g.fill()
+  g.strokeStyle = crest; g.lineWidth = s * 0.02; g.beginPath(); g.moveTo(s * 0.68, s * 0.32); g.lineTo(s * 0.78, s * 0.33); g.stroke()
+}
+
 /** Draw-function -> WebGL sprite texture. */
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -2718,8 +2805,8 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    this.playerTexHappy = charTexture(drawAnbessa, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessa, 'worried')
+    this.playerTexHappy = charTexture(drawAnbessaRun, 'happy')
+    this.playerTexWorried = charTexture(drawAnbessaRun, 'worried')
     this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
     this.player.scale.set(2.3, 2.3, 1)
     this.player.position.set(0, 1.25, 0)
@@ -2743,7 +2830,7 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: charTexture(drawHyena), transparent: true }))
+    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: charTexture(drawJibbyRun), transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
     this.scene.add(this.muncher)

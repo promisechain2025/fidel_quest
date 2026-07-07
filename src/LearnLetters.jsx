@@ -329,13 +329,13 @@ function useSlideTouch(onTouch) {
    in both themes - every base is dark enough for white large text to clear a
    3:1 contrast ratio. One color per letter index for variety, not meaning. */
 const BUBBLE_COLORS = [
-  { hi: '#5aa8ee', base: '#1f74d0', lo: '#14538f' }, // blue
-  { hi: '#9d7ce6', base: '#6d45c9', lo: '#4c2f92' }, // purple
-  { hi: '#43b8b2', base: '#0f8f8a', lo: '#0a6360' }, // teal
-  { hi: '#ef7a68', base: '#d5402c', lo: '#9c2c1e' }, // coral
-  { hi: '#4fc07f', base: '#1f9a58', lo: '#156b3d' }, // green
-  { hi: '#dd6aa8', base: '#c23a86', lo: '#8c2860' }, // magenta
-  { hi: '#f0b25f', base: '#b8690a', lo: '#824a07' }, // amber
+  { hi: '#ff8ea0', base: '#e6304f', lo: '#a5183a' }, // strawberry
+  { hi: '#ffb152', base: '#f0700f', lo: '#b04c06' }, // tangerine
+  { hi: '#b48bf2', base: '#7d43d8', lo: '#532c99' }, // grape
+  { hi: '#56b7f7', base: '#1f83db', lo: '#135a97' }, // blue raspberry
+  { hi: '#ff92c8', base: '#e6459a', lo: '#a52a6d' }, // bubblegum
+  { hi: '#66cf83', base: '#1aa15a', lo: '#0f6d3c' }, // apple green
+  { hi: '#48d3ca', base: '#0c988f', lo: '#086862' }, // turquoise
 ]
 
 /** MEET: pop the drifting bubble to hear the letter. */
@@ -349,7 +349,7 @@ function BubbleMeet({ ctx, onTouch }) {
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
-      <div className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #bfe6f7, #e8f6fd)' }}>
+      <div className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
         {/* floating sparkles for a lively stage */}
         {[14, 40, 66, 88, 28, 74].map((left, i) => (
           <motion.span
@@ -377,9 +377,12 @@ function BubbleMeet({ ctx, onTouch }) {
           transition={{ duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
           className={`geez absolute left-1/2 top-4 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
           style={{
-            background: `radial-gradient(circle at 34% 28%, ${c.hi} 0%, ${c.base} 54%, ${c.lo} 100%)`,
-            border: '4px solid rgba(255,255,255,0.92)',
-            boxShadow: `inset -8px -12px 26px rgba(0,0,0,0.22), 0 10px 24px rgba(0,0,0,0.28)`,
+            // Glossy candy ball: a bright off-centre core melts into the rich
+            // base and a deep rim, an inner top-light gives the sheen, and a
+            // soft glow in the bubble's own colour makes it pop off the stage.
+            background: `radial-gradient(circle at 36% 26%, ${c.hi} 0%, ${c.base} 56%, ${c.lo} 100%)`,
+            border: '4px solid rgba(255,255,255,0.95)',
+            boxShadow: `inset -7px -11px 24px rgba(0,0,0,0.20), inset 7px 9px 20px rgba(255,255,255,0.28), 0 12px 30px ${c.base}59`,
             color: '#ffffff',
             textShadow: '0 2px 5px rgba(0,0,0,0.4)',
             touchAction: 'none',
