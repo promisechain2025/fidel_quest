@@ -1,0 +1,27 @@
+# Hosting headers for Fidel Quest (Netlify + Cloudflare Pages both read this
+# file from the published dist/). Unlike the wallet UI, the game MUST allow the
+# microphone (the Say-it pronunciation check) and needs no strict CSP.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: microphone=(self), camera=(), geolocation=()
+
+# Fingerprinted bundles never change — cache hard.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Letter/word audio is stable content; a week of edge cache is plenty and the
+# service worker runtime-caches it anyway.
+/audio/*
+  Cache-Control: public, max-age=604800
+
+# Shell files must refresh every visit so a new deploy actually rolls out and
+# no one gets stuck on a stale service worker.
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/registerSW.js
+  Cache-Control: no-cache, no-store, must-revalidate
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400, must-revalidate
