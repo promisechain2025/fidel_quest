@@ -63,6 +63,7 @@ import {
   ChevronLeft,
   Sparkles,
   Play,
+  Pause,
   BookOpen,
   Check,
   RotateCcw,
@@ -1549,20 +1550,21 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
         role="dialog"
         aria-modal="true"
         aria-label={t('backpack', 'Backpack')}
-        className="w-full max-w-md rounded-3xl p-5"
+        className="flex max-h-[88dvh] w-full max-w-md flex-col rounded-3xl p-5"
         style={{ background: 'var(--paper)' }}
         initial={{ y: 40 }}
         animate={{ y: 0 }}
         exit={{ y: 40 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
           <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
-        <div className="flex flex-col gap-3">
+        {/* Scrolls within the panel so a long tool list never runs off-screen. */}
+        <div className="-mr-2 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 pb-1">
           <BackpackItem icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetTitle', "Anbessa's Closet")} sub={t('closetSub', 'Dress up Anbessa and share!')} onClick={onCloset} />
           <BackpackItem icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeTitle', 'Anbessa Tee Shop')} sub={t('teeSub', 'Earn and wear your alphabet shirts')} onClick={onTees} />
           <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
@@ -1708,15 +1710,38 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
 
 /* ── Explore Mode ── */
 
+// Cheerful, colour-blind-safe tile colours for the Explorer grid (vivid bases
+// dark enough for white glyphs to clear contrast), cycled across the families.
+const EXPLORE_TILES = ['#e6304f', '#f0700f', '#7d43d8', '#1f83db', '#e6459a', '#1aa15a', '#0c988f', '#c2570b', '#4a63e0']
+const EXPLORE_PACE = { slow: 1700, normal: 1150, fast: 750 }
+
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
   const [order, setOrder] = useState(1) // which vowel order the grid shows
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
+  // Autoplay: chant the selected vowel order across every family, the way the
+  // other pages do — so the first page voices the letters, not just on tap.
+  const [playing, setPlaying] = useState(false)
+  const [playIdx, setPlayIdx] = useState(0)
+  const [pace, setPace] = useState('normal')
+  const stopPlay = useCallback(() => setPlaying(false), [])
+  const startPlay = () => { setPlayIdx(0); setPlaying(true) }
+
+  useEffect(() => {
+    if (!playing || family) return undefined
+    if (playIdx >= FIDEL_FAMILIES.length) { setPlaying(false); return undefined }
+    const f = FIDEL_FAMILIES[playIdx]
+    const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+    playForm(cell, soundOn)
+    const id = setTimeout(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
+    return () => clearTimeout(id)
+  }, [playing, playIdx, order, pace, family, soundOn])
+
   return (
     <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => (family ? setOpenFamily(null) : onBack())} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); family ? setOpenFamily(null) : onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
@@ -1746,28 +1771,58 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
         </div>
       )}
 
+      {/* Autoplay: chant the chosen vowel across every family (say-all) */}
+      {!family && (
+        <div className="mt-3 flex items-center gap-2">
+          <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
+            {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
+            {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
+          </Chunky>
+          <div className="flex gap-1">
+            {['slow', 'normal', 'fast'].map((p) => (
+              <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
+                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
+                {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {!family ? (
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {FIDEL_FAMILIES.map((f) => {
+            {FIDEL_FAMILIES.map((f, i) => {
               const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+              const color = EXPLORE_TILES[i % EXPLORE_TILES.length]
+              const isActive = playing && playIdx === i
               return (
-                <button
+                <motion.button
                   key={f.id}
                   type="button"
                   onClick={() => {
+                    stopPlay()
                     playForm(cell, soundOn)
                     setOpenFamily(f.id)
                   }}
-                  className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 ${FOCUS}`}
-                  style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+                  animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className={`chunk flex flex-col items-center gap-1 rounded-2xl px-2 py-3 ${FOCUS}`}
+                  style={{
+                    background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%), ${color}`,
+                    border: `3px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.85)'}`,
+                    boxShadow: isActive ? `0 0 0 3px ${color}, 0 8px 18px ${color}80` : '0 4px 0 rgba(0,0,0,0.16)',
+                    color: '#fff',
+                    outlineColor: 'var(--sky)',
+                  }}
                 >
-                  <span className="geez text-4xl font-black">{cell.char}</span>
-                  <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>
+                  <span className="geez text-4xl font-black" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>{cell.char}</span>
+                  <span className="text-xs font-extrabold" style={{ color: 'rgba(255,255,255,0.92)' }}>
                     {cell.sound}
                     {f.word?.picture && <span className="ml-1" aria-hidden="true">{f.word.picture}</span>}
                   </span>
-                </button>
+                </motion.button>
               )
             })}
           </motion.div>
