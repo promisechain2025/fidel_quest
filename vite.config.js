@@ -52,7 +52,7 @@ export default defineConfig({
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'fidel-audio-v2',
+              cacheName: 'fidel-audio-v3',
               expiration: { maxEntries: 320 },
             },
           },
