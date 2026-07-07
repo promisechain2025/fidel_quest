@@ -33,6 +33,13 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
+        // The generated SW registers an SPA navigation fallback (every
+        // navigation resolves to index.html). The /review page is a SEPARATE
+        // static document, not part of the SPA, so it must be exempt — without
+        // this the SW serves the game shell for /review after the first visit
+        // (it "loads once, then stops"). Let those navigations hit the real
+        // precached page / network instead.
+        navigateFallbackDenylist: [/^\/review\/?/],
         // Audio clips are optional drop-in assets (see the header comment in
         // src/pages/AmharicFidelGame.jsx); cache them at runtime rather than
         // precaching files that may not exist yet.
