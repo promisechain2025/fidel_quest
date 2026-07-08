@@ -77,6 +77,7 @@ import {
   ClipboardCheck,
   Users,
   Globe,
+  ArrowDown,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -1263,7 +1264,9 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
           : node.gateway.mode === 'runner'
             ? 'Letter Runner'
             : 'Fidel Skylands'
-  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--line)'
+  // Locked nodes still show WHAT they are (the letter, or the game icon) on a
+  // muted card so kids can see what is coming — just with a small lock badge.
+  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--card)'
   const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--muted)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
@@ -1285,15 +1288,15 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
             background: bg,
             color: fg,
             borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
+            borderStyle: unlocked || done ? 'solid' : 'dashed',
             boxShadow: unlocked ? `0 5px 0 ${done ? 'var(--accent)' : big ? 'rgba(0,0,0,0.18)' : 'var(--line)'}` : 'none',
+            opacity: unlocked || done ? 1 : 0.82,
             outlineColor: 'var(--sky)',
           }}
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
           aria-current={highlight ? 'step' : undefined}
         >
-          {!unlocked ? (
-            <Lock className="h-5 w-5" aria-hidden="true" />
-          ) : isArcade ? (
+          {isArcade ? (
             node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <TreePine className="h-7 w-7" aria-hidden="true" />
           ) : isBoss ? (
             <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
@@ -1301,6 +1304,11 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
             nodeGlyph(node)
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+          {!unlocked && (
+            <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--muted)', border: '2px solid var(--paper)' }} aria-hidden="true">
+              <Lock className="h-3 w-3" style={{ color: '#fff' }} />
+            </span>
+          )}
         </motion.button>
         {highlight && (
           <motion.span className="mt-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--go)' }} animate={{ y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity }}>
@@ -1317,8 +1325,18 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
   const worn = wornLayers(journey.collection)
+  const [stepInView, setStepInView] = useState(true)
+  const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   useEffect(() => {
-    currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+    jumpToStep()
+  }, [current?.id])
+  // Show a "jump to my step" button only while the current node is off-screen.
+  useEffect(() => {
+    const el = currentRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([e]) => setStepInView(e.isIntersecting), { threshold: 0.4 })
+    io.observe(el)
+    return () => io.disconnect()
   }, [current?.id])
 
   return (
@@ -1410,6 +1428,23 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </div>
         )}
       </div>
+      <AnimatePresence>
+        {current && !stepInView && (
+          <motion.button
+            type="button"
+            onClick={jumpToStep}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className={`chunk fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white ${FOCUS}`}
+            style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+            aria-label={t('jumpToStep', 'Go to my next step')}
+          >
+            <ArrowDown className="h-4 w-4" aria-hidden="true" />
+            {t('myStep', 'My step')}
+          </motion.button>
+        )}
+      </AnimatePresence>
       <InstallBanner />
     </div>
   )
