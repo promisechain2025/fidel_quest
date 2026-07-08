@@ -48,6 +48,7 @@ import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome } from './utils/challenge'
 import { loadFromStorage } from './utils/loadFromStorage'
+import { isNativePlatform } from './platform/native'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -783,6 +784,20 @@ export default function FidelQuestApp() {
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
+
+  // Android hardware back button (native shell dispatches 'fq:back'): close the
+  // top modal or step back to the home path; if nothing is open we don't
+  // preventDefault, so the native layer exits the app.
+  useEffect(() => {
+    const onBack = (e) => {
+      if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
+      if (celebration) { setCelebration(null); e.preventDefault(); return }
+      if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
+      if (screen.name !== 'home') { setScreen({ name: 'home' }); e.preventDefault() }
+    }
+    window.addEventListener('fq:back', onBack)
+    return () => window.removeEventListener('fq:back', onBack)
+  }, [screen.name, backpackOpen, celebration, giftOpened])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1340,7 +1355,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
-      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)' }}>
+      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`flex items-center gap-2 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
           <Hero size={48} worn={worn} />
           <div className="text-left">
@@ -1560,8 +1575,11 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
-            {/* Reviewer entry: opens the standalone /review page in a new tab. */}
-            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+            {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
+               category store build has no un-gated external link. */}
+            {!isNativePlatform() && (
+              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+            )}
           </div>
         </div>
         <LanguagePicker />
@@ -2166,6 +2184,11 @@ function ChallengeShareButton({ payload, label }) {
     const by = loadFromStorage('fq.nickname', '')
     const url = challengeUrl({ ...payload, by }, window.location.origin)
     const text = `${t('challengeShareText', 'Beat my Fidel Quest score! Can you?')} ${url}`
+    // Native shell: use the OS share sheet via Capacitor.
+    if (isNativePlatform()) {
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      return
+    }
     try {
       if (navigator.share) {
         await navigator.share({ title: 'Fidel Quest', text, url })

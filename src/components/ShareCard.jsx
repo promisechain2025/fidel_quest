@@ -5,9 +5,18 @@
    parent chooses to share the image. */
 import { drawAnbessa, drawWearables } from '../FidelQuestApp'
 import { track } from '../platform/analytics'
+import { isNativePlatform } from '../platform/native'
 
 const BG_TOP = '#fff3d6'
 const BG_BOTTOM = '#ffd98a'
+
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result)
+    r.onerror = reject
+    r.readAsDataURL(blob)
+  })
 
 function roundRect(g, x, y, w, h, r) {
   g.beginPath()
@@ -101,6 +110,27 @@ export async function shareAnbessa({ forms = 0, worn = [] } = {}) {
   const blob = await toBlob(canvas)
   const url = typeof window !== 'undefined' ? window.location.origin : ''
   const text = "I'm learning the Amharic alphabet with Anbessa the lion cub!"
+
+  // Native shell: write the card to the cache and share the file URI via the OS
+  // sheet (WebView navigator.share can't share an in-memory File reliably).
+  if (blob && isNativePlatform()) {
+    try {
+      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+        import('@capacitor/filesystem'),
+        import('@capacitor/share'),
+      ])
+      const dataUrl = await blobToDataUrl(blob)
+      const name = `fidel-quest-${Date.now()}.png`
+      await Filesystem.writeFile({ path: name, data: dataUrl.split(',')[1], directory: Directory.Cache })
+      const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Cache })
+      await Share.share({ title: 'Fidel Quest', text, url, files: [uri] })
+      track('share')
+      return 'shared'
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancelled'
+      // fall through to text/url share, then download
+    }
+  }
 
   try {
     if (blob && navigator.canShare) {

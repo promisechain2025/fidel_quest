@@ -14,6 +14,13 @@
     "gen:audio-manifest": "node scripts/gen-audio-manifest.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.7",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/filesystem": "^7.1.8",
+    "@capacitor/ios": "^7.6.7",
+    "@capacitor/share": "^7.0.4",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "@react-spring/three": "^10.1.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
