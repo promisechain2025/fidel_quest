@@ -238,6 +238,14 @@ const STRINGS = {
     skyClearedSub: '{n} ፊደላት + 3 ከጅቢ ታድገዋል ·',
     skyBridge: 'ወደ {place} የሚወስደው ድልድይ አድጓል!',
     skyAllFree: 'ሁሉም ደሴት ነፃ ወጥቷል!',
+    // Letter Runner HUD.
+    runQuit: 'ሩጫ አቁም',
+    runMoveLeft: 'ወደ ግራ',
+    runMoveRight: 'ወደ ቀኝ',
+    runBossWin: 'የአንበሳ የፊደል ኃይል አሸነፈ!',
+    runBossAttack: 'ጅቢ ያጠቃል!',
+    runNewBest: 'አዲስ ምርጥ!',
+    runBest: 'ምርጥ',
     'slot.hat': 'ኮፍያዎች',
     'slot.scarf': 'ሻርፖች',
     'slot.cape': 'ካባዎች',
@@ -465,6 +473,13 @@ const STRINGS = {
     skyClearedSub: '{n} ፊደላት + 3 ካብ ጅቢ ተናጊፎም ·',
     skyBridge: 'ናብ {place} ዝወስድ ድልድል ዓብዩ!',
     skyAllFree: 'ኩለን ደሴታት ናጻ ወጺአን!',
+    runQuit: 'ጉያ ደው ኣብል',
+    runMoveLeft: 'ንጸጋም',
+    runMoveRight: 'ንየማን',
+    runBossWin: 'ናይ ኣንበሳ ሓይሊ ፊደል ተዓዊቱ!',
+    runBossAttack: 'ጅቢ የጥቅዕ ኣሎ!',
+    runNewBest: 'ሓድሽ ዝበለጸ!',
+    runBest: 'ዝበለጸ',
   },
 }
 

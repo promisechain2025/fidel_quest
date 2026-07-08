@@ -3525,7 +3525,7 @@ function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   return (
     <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onExit} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -3584,7 +3584,7 @@ function Runner({ seed, soundOn, onExit, onRetry, pool }) {
           {boss && (
             <motion.div key="bosscap" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
               <span className="rounded-2xl px-4 py-2 text-base font-black uppercase tracking-wider text-white" style={{ background: ctx.survivedBoss ? 'var(--go)' : 'var(--bad)' }}>
-                {ctx.survivedBoss ? 'Anbessa’s letter power wins!' : 'Jibby the hyena attacks!'}
+                {ctx.survivedBoss ? t('runBossWin', 'Anbessa’s letter power wins!') : t('runBossAttack', 'Jibby the hyena attacks!')}
               </span>
             </motion.div>
           )}
@@ -3617,7 +3617,7 @@ function Runner({ seed, soundOn, onExit, onRetry, pool }) {
               </motion.p>
             )}
           </AnimatePresence>
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move left" onClick={() => steer(-1)} data-tut="steer-left">
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label={t('runMoveLeft', 'Move left')} onClick={() => steer(-1)} data-tut="steer-left">
             <ChevronLeft className="h-8 w-8" aria-hidden="true" />
           </Chunky>
           <div className="flex gap-1.5" aria-hidden="true">
@@ -3625,7 +3625,7 @@ function Runner({ seed, soundOn, onExit, onRetry, pool }) {
               <span key={i} className="block h-2.5 w-6 rounded-full" style={{ background: i === lane ? 'var(--accent)' : 'var(--line)' }} />
             ))}
           </div>
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move right" onClick={() => steer(1)} data-tut="steer-right">
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label={t('runMoveRight', 'Move right')} onClick={() => steer(1)} data-tut="steer-right">
             <ChevronLeft className="h-8 w-8 rotate-180" aria-hidden="true" />
           </Chunky>
         </div>
@@ -3670,7 +3670,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         </div>
         <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {isBest ? 'New best!' : 'Best'}
+            {isBest ? t('runNewBest', 'New best!') : t('runBest', 'Best')}
           </p>
           <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>
             {Math.max(best.fed, ctx.fed)}
