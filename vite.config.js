@@ -45,15 +45,16 @@ export default defineConfig({
         // precaching files that may not exist yet.
         runtimeCaching: [
           {
-            // Letter/word audio: serve instantly from cache but refresh in the
-            // background, so a re-recorded clip (same filename) rolls out on the
-            // next play instead of being pinned forever (CacheFirst's trap). The
-            // versioned cache name also orphans any older cache on deploy.
+            // Letter/word audio: once a clip is cached, serve it from cache with
+            // NO further network — a replay makes zero requests, which keeps the
+            // app light at scale. Rollout of a re-recorded clip is handled by
+            // bumping the versioned cacheName below (which orphans the old cache
+            // so every clip is re-fetched fresh once), not by per-play refetch.
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
-            handler: 'StaleWhileRevalidate',
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'fidel-audio-v3',
-              expiration: { maxEntries: 320 },
+              cacheName: 'fidel-audio-v4',
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
           {
