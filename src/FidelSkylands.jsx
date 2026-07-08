@@ -31,6 +31,7 @@ import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
+import { t } from './platform/i18n'
 import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
 import { LOW_END } from './platform/quality'
@@ -1064,18 +1065,18 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
         <header className="flex items-center gap-2 p-3">
           {st.mode === 'map' && onExit && (
             <button type="button" onClick={onExit} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-              Home
+              {t('home', 'Home')}
             </button>
           )}
           {st.mode !== 'map' && (
             <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-              Map
+              {t('skyMap', 'Map')}
             </button>
           )}
           <span className="rounded-2xl px-3 py-1.5 text-sm font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
-            {st.mode === 'map' && 'Fidel Skylands'}
-            {st.mode === 'learning' && `Session ${st.session} · ${session.place}`}
-            {st.mode === 'game' && `Level ${st.session} · ${session.place}`}
+            {st.mode === 'map' && t('skylandsTitle', 'Fidel Skylands')}
+            {st.mode === 'learning' && `${t('skySession', 'Session')} ${st.session} · ${session.place}`}
+            {st.mode === 'game' && `${t('level', 'Level')} ${st.session} · ${session.place}`}
           </span>
           <span className="ml-auto flex items-center gap-1 rounded-2xl px-3 py-1.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-label={`${st.sessionsCompleted} of ${SESSIONS.length} islands cleared`}>
             <span aria-hidden="true" style={{ color: 'var(--star)' }}>★</span>
@@ -1091,28 +1092,28 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {champion ? (
                 <p className="text-center text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  All four skylands cleared — Anbessa is a Fidel Champion!
+                  {t('skyAllCleared', 'All four skylands cleared — Anbessa is a Fidel Champion!')}
                 </p>
               ) : (
                 <>
                   <p className="text-center font-bold">
                     <span className="font-black">{SESSIONS[nextLearn - 1].place}, {SESSIONS[nextLearn - 1].country}</span>
                     {' — '}
-                    {st.learnedSessions >= nextLearn ? `ready for Level ${nextLearn}: it tests Sessions 1–${nextLearn}!` : `learn Session ${nextLearn}'s letters to wake the tree.`}
+                    {st.learnedSessions >= nextLearn ? t('skyReady', `ready for Level ${nextLearn}: it tests Sessions 1–${nextLearn}!`, { n: nextLearn }) : t('skyLearnPrompt', `learn Session ${nextLearn}'s letters to wake the tree.`, { n: nextLearn })}
                   </p>
                   <div className="mt-3 flex justify-center gap-2">
                     <button type="button" onClick={() => dispatch({ type: 'OPEN_LEARNING', n: nextLearn })} className={`${BTN} pointer-events-auto px-5 py-3`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)' }}>
-                      Learn Session {nextLearn}
+                      {t('skyLearnBtn', `Learn Session ${nextLearn}`, { n: nextLearn })}
                     </button>
                     <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                      Play Level {nextLearn}
+                      {t('skyPlayBtn', `Play Level ${nextLearn}`, { n: nextLearn })}
                     </button>
                   </div>
                   {st.sessionsCompleted > 0 && (
                     <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                      Replay: {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
+                      {t('skyReplay', 'Replay:')} {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
                         <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className="pointer-events-auto mx-1 underline">
-                          Level {s.n}
+                          {t('level', 'Level')} {s.n}
                         </button>
                       ))}
                     </p>
@@ -1125,13 +1126,13 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
           {st.mode === 'learning' && (
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               <p className="font-bold">
-                Tap every fruit to hear its letter —{' '}
+                {t('skyLearnTap', 'Tap every fruit to hear its letter —')}{' '}
                 <span className="mono font-black" style={{ color: 'var(--sky)' }}>
                   {st.heard.length}/{session.pool.length}
                 </span>
               </p>
               <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                {allHeard ? `Start Level ${st.session} quest` : 'Listen to them all first'}
+                {allHeard ? t('skyStartQuest', `Start Level ${st.session} quest`, { n: st.session }) : t('skyListenFirst', 'Listen to them all first')}
               </button>
             </div>
           )}
@@ -1145,7 +1146,7 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
               </div>
               {st.phase === 'question' && (
                 <p className="font-bold">
-                  Pluck the fruit that says{' '}
+                  {t('skyPluck', 'Pluck the fruit that says')}{' '}
                   <button type="button" onClick={() => playKey(question.target, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
                     🔊 “{targetForm.sound}”
                   </button>
@@ -1153,18 +1154,18 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
               )}
               {st.phase === 'good' && (
                 <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  Yes! {targetForm.char} says “{targetForm.sound}”
+                  {t('skyRight', 'Yes!')} {targetForm.char} “{targetForm.sound}”
                 </p>
               )}
               {st.phase === 'bad' && (
                 <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
-                  Jibby giggles — listen again for “{targetForm.sound}”
+                  {t('skyWrong', 'Jibby giggles — listen again for')} “{targetForm.sound}”
                 </p>
               )}
               {st.phase === 'boss' && bossForm && (
                 <p className="font-bold">
-                  <span className="font-black" style={{ color: 'var(--bad-ink)' }}>Jibby stole {st.stolen.length} letters!</span>{' '}
-                  Win back the one that says{' '}
+                  <span className="font-black" style={{ color: 'var(--bad-ink)' }}>{t('skyStole', `Jibby stole ${st.stolen.length} letters!`, { n: st.stolen.length })}</span>{' '}
+                  {t('skyWinBack', 'Win back the one that says')}{' '}
                   <button type="button" onClick={() => playKey(bossForm.audioKey, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
                     🔊 “{bossForm.sound}”
                   </button>
@@ -1172,12 +1173,12 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
               )}
               {st.phase === 'boss-good' && bossForm && (
                 <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  Rescued! {bossForm.char} says “{bossForm.sound}”
+                  {t('skyRescued', 'Rescued!')} {bossForm.char} “{bossForm.sound}”
                 </p>
               )}
               {st.phase === 'boss-bad' && bossForm && (
                 <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
-                  Jibby holds on tight — listen again for “{bossForm.sound}”
+                  {t('skyHold', 'Jibby holds on tight — listen again for')} “{bossForm.sound}”
                 </p>
               )}
             </div>
@@ -1186,13 +1187,13 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
           {st.phase === 'complete' && (
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-5 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               <p className="text-2xl font-black uppercase" style={{ color: 'var(--go-ink)' }}>
-                Island cleared!
+                {t('skyCleared', 'Island cleared!')}
               </p>
               <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
-                {st.quiz.length} letters + 3 rescued from Jibby · {st.session < SESSIONS.length ? `the bridge to ${SESSIONS[st.session].place} has grown!` : 'every skyland is free!'}
+                {t('skyClearedSub', `${st.quiz.length} letters + 3 rescued from Jibby ·`, { n: st.quiz.length })} {st.session < SESSIONS.length ? t('skyBridge', `the bridge to ${SESSIONS[st.session].place} has grown!`, { place: SESSIONS[st.session].place }) : t('skyAllFree', 'every skyland is free!')}
               </p>
               <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} mt-3 px-8 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                Continue
+                {t('continue', 'Continue')}
               </button>
             </div>
           )}
