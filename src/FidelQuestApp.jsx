@@ -3056,10 +3056,25 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: charTexture(drawJibbyRun), transparent: true }))
+    this.munchTex = charTexture(drawJibbyRun) // shared by the whole pack
+    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
     this.scene.add(this.muncher)
+    this._munchScale = 1.9
+
+    // Extra hyenas that join the chase as wrong answers pile up, so the pressure
+    // is visible: one more Jibby per mistake, closing in, and swarming Anbessa
+    // when the boss round is lost.
+    this.extras = []
+    for (let i = 0; i < 3; i++) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
+      sp.scale.set(0, 0, 1)
+      sp.position.set(0, 1.1, 7.5)
+      this.scene.add(sp)
+      this.extras.push({ sp, sc: 0 })
+    }
+    this._face = 1 // Anbessa's facing (1 = right, -1 = left), toward the target lane
 
     this.chunks = []
     this.gate = null
@@ -3153,8 +3168,13 @@ class RunnerWorld {
     }
 
     const px = LANE_X[this.laneIndex]
+    // Face the lane (letter) being steered toward; hold that facing once settled.
+    if (px < this.player.position.x - 0.06) this._face = -1
+    else if (px > this.player.position.x + 0.06) this._face = 1
     this.player.position.x += (px - this.player.position.x) * Math.min(1, dt * 10)
     this.player.position.y = 1.25 + (this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.22)
+    this.player.scale.x = 2.3 * this._face
+    this.player.scale.y = 2.3
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
     let mz = 6.2 - this.threat * 0.85
@@ -3171,8 +3191,29 @@ class RunnerWorld {
     this.muncher.position.x += (this.player.position.x * 0.75 - this.muncher.position.x) * Math.min(1, dt * 2)
     this.muncher.position.y = my
     const mscale = this.bossMode === 'lose' ? 3.1 : 1.9
-    this.muncher.scale.x += (mscale - this.muncher.scale.x) * Math.min(1, dt * 4)
-    this.muncher.scale.y = this.muncher.scale.x
+    this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
+    // Jibby faces the lion he is chasing (same convention as Anbessa).
+    const mFace = this.player.position.x >= this.muncher.position.x ? 1 : -1
+    this.muncher.scale.x = this._munchScale * mFace
+    this.muncher.scale.y = this._munchScale
+
+    // The growing pack: one extra Jibby per mistake beyond the first, flanking
+    // and closing in; on a lost boss they all pile onto Anbessa.
+    for (let i = 0; i < this.extras.length; i++) {
+      const e = this.extras[i]
+      const active = this.bossMode === 'lose' || this.threat > i + 1
+      const target = active ? (this.bossMode === 'lose' ? 2.4 : 1.6) : 0
+      e.sc += (target - e.sc) * Math.min(1, dt * 4)
+      const side = i % 2 === 0 ? -1 : 1
+      const tx = this.player.position.x * 0.6 + side * (1.7 + i * 0.35)
+      const tz = this.bossMode === 'lose' ? 0.9 + i * 0.7 : 6.6 - this.threat * 0.8 + i * 1.1
+      e.sp.position.x += (tx - e.sp.position.x) * Math.min(1, dt * 2)
+      e.sp.position.z += (tz - e.sp.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2))
+      e.sp.position.y = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7 + i * 1.7) * 0.12)
+      const eFace = this.player.position.x >= e.sp.position.x ? 1 : -1
+      e.sp.scale.x = e.sc * eFace
+      e.sp.scale.y = e.sc
+    }
 
     if (this.ringT >= 0) {
       this.ringT += dt
