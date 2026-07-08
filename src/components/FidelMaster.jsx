@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, Check, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
+import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
 import { FIDEL_FAMILIES, ALL_FORMS, ORDERS, INDEXES } from '../platform/ethiopic'
 import { playForm } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
-import { buildMasterSequence, gradePronunciation, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder, sessionAccuracy } from '../fidelMaster'
+import { buildMasterSequence, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder } from '../fidelMaster'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -23,59 +23,11 @@ const TILE_GRADIENTS = [
 const gradOf = (i) => TILE_GRADIENTS[i % TILE_GRADIENTS.length]
 const formOf = (key) => INDEXES.byAudioKey.get(key)
 
-/* On-device mic sample -> { peakRms, voicedMs }. Fully offline: the audio is
-   analysed in-memory and discarded; nothing is recorded or transmitted. */
-async function sampleMic(ms = 1500) {
-  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) throw new Error('no-mic')
-  const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)
-  if (!AC) throw new Error('no-audio')
-  // Never let an unanswered permission prompt freeze the button.
-  const stream = await Promise.race([
-    navigator.mediaDevices.getUserMedia({ audio: true }),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('mic-timeout')), 6000)),
-  ])
-  const ac = new AC()
-  try {
-    const src = ac.createMediaStreamSource(stream)
-    const analyser = ac.createAnalyser()
-    analyser.fftSize = 1024
-    src.connect(analyser)
-    const buf = new Float32Array(analyser.fftSize)
-    let peak = 0
-    let voicedFrames = 0
-    let frames = 0
-    const start = performance.now()
-    await new Promise((resolve) => {
-      const tick = () => {
-        analyser.getFloatTimeDomainData(buf)
-        let sum = 0
-        for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i]
-        const rms = Math.sqrt(sum / buf.length)
-        peak = Math.max(peak, rms)
-        if (rms > 0.02) voicedFrames++
-        frames++
-        if (performance.now() - start < ms) requestAnimationFrame(tick)
-        else resolve()
-      }
-      tick()
-    })
-    return { peakRms: peak, voicedMs: frames ? (voicedFrames / frames) * ms : 0 }
-  } finally {
-    stream.getTracks().forEach((tr) => tr.stop())
-    ac.close?.()
-  }
-}
-
-/* The "Say it" tool is the app's only microphone use (on-device only; nothing
-   is recorded or uploaded). It can be turned OFF at build time so a first
-   kids-category store submission ships with no mic permission and no extra
-   review scrutiny — set VITE_ENABLE_MIC=false. Default on (web/PWA behavior). */
-const MIC_ENABLED = import.meta.env?.VITE_ENABLE_MIC !== 'false'
-
+// Two tools share one sequence: a tappable Chart and an Auto-voice chant (with
+// an optional passive "say with me" echo pause - no microphone anywhere).
 const TABS = [
   { id: 'chart', icon: null, key: 'masterChart', label: 'Chart' },
   { id: 'auto', icon: Play, key: 'masterAuto', label: 'Auto-voice' },
-  ...(MIC_ENABLED ? [{ id: 'say', icon: Mic, key: 'masterSay', label: 'Say it' }] : []),
 ]
 
 function OrderChip({ active, label, sub, onClick }) {
@@ -112,9 +64,6 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   const [sayWithMe, setSayWithMe] = useState(true) // echo pause by default
   const [autoAdvance, setAutoAdvance] = useState(false) // roll to the next order
   const [yourTurn, setYourTurn] = useState(false)
-  const [micState, setMicState] = useState('idle') // idle | busy | result | nomic
-  const [feedback, setFeedback] = useState(null) // { grade, accept }
-  const [stats, setStats] = useState({ correct: 0, total: 0, missed: [] })
   const [openFam, setOpenFam] = useState(null) // family id expanded in the chart
 
   const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix, order }), [seed, mix, order])
@@ -153,42 +102,8 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   // Stop autoplay when leaving the auto tab.
   useEffect(() => { if (tab !== 'auto') setPlaying(false) }, [tab])
 
-  // Say-it: play the model sound as each new letter appears.
-  useEffect(() => {
-    if (tab !== 'say') return
-    setFeedback(null)
-    setMicState((s) => (s === 'nomic' ? s : 'idle'))
-    const timer = setTimeout(() => play(form), 250)
-    return () => clearTimeout(timer)
-  }, [tab, idx]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const reshuffle = () => { setSeed((s) => (s % 9973) + 7); setIdx(0); setFeedback(null) }
+  const reshuffle = () => { setSeed((s) => (s % 9973) + 7); setIdx(0) }
   const step = (d) => { setPlaying(false); setIdx((i) => (i + d + seq.length) % seq.length) }
-
-  const doSayIt = async () => {
-    setMicState('busy')
-    setFeedback(null)
-    try {
-      const sample = await sampleMic(1500)
-      const g = gradePronunciation(sample)
-      setFeedback(g)
-      setMicState('result')
-      setStats((s) => ({
-        correct: s.correct + (g.accept ? 1 : 0),
-        total: s.total + 1,
-        missed: g.accept ? s.missed : [...s.missed, form.audioKey],
-      }))
-      if (g.accept) {
-        setTimeout(() => setIdx((i) => (i + 1) % seq.length), 950)
-      } else {
-        setTimeout(() => play(form), 500) // coach: replay the model sound
-      }
-    } catch {
-      setMicState('nomic')
-    }
-  }
-
-  const accuracy = sessionAccuracy(stats)
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-12 pt-5">
@@ -352,39 +267,6 @@ export default function FidelMaster({ onBack, soundOn = true }) {
             </div>
           )}
 
-          {tab === 'say' && (
-            <div className="flex w-full flex-col items-center gap-3">
-              <AnimatePresence mode="wait">
-                {feedback && (
-                  <motion.p key={feedback.grade + idx} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}
-                    className="text-2xl font-black" style={{ color: feedback.accept ? 'var(--go-ink)' : 'var(--accent)' }}>
-                    {feedback.grade === 'great' ? t('sayGreat', 'Perfect! ⭐') : feedback.grade === 'good' ? t('sayGood', 'Nice try!') : t('sayAgain', 'Say it again with me')}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-
-              {micState === 'nomic' ? (
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('sayNoMic', 'No microphone — say it out loud, then tap Next!')}</p>
-                  <button type="button" onClick={() => setIdx((i) => (i + 1) % seq.length)} className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-                    <Check className="h-5 w-5" aria-hidden="true" /> {t('sayISaidIt', 'I said it!')}
-                  </button>
-                </div>
-              ) : (
-                <button type="button" onClick={doSayIt} disabled={micState === 'busy'}
-                  className={`chunk flex items-center gap-2 rounded-2xl px-7 py-3 font-black text-white disabled:opacity-70 ${FOCUS}`}
-                  style={{ background: micState === 'busy' ? 'var(--bad)' : 'var(--accent)', boxShadow: `0 4px 0 ${micState === 'busy' ? 'var(--bad-ink)' : 'var(--accent-deep, #a15b00)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-                  <Mic className="h-6 w-6" aria-hidden="true" /> {micState === 'busy' ? t('sayListening', 'Listening...') : t('saySayIt', 'Say it')}
-                </button>
-              )}
-
-              {accuracy != null && (
-                <p className="text-sm font-black" style={{ color: 'var(--muted)' }}>
-                  {t('sayScore', 'Score')}: {accuracy}% · {stats.correct}/{stats.total}
-                </p>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

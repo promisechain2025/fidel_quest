@@ -19,9 +19,8 @@ accounts). This guide is the end-to-end runbook.
       Without it the gift guide still shows but the button stays disabled.
 - [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
 - [ ] Host the **privacy policy** and paste its URL into both stores — §8.
-- [ ] Decide on the microphone "Say-it" feature: drop it for a simpler
-      kids-category review with **`VITE_ENABLE_MIC=false npm run build`**, or
-      keep it and declare the permission — §4.
+- [ ] Microphone: **nothing to do** — the app no longer uses the mic at all,
+      so no permission is declared and none is prompted — see §4.
 
 ---
 
@@ -100,35 +99,18 @@ re-run the command.
 
 ## 4. Native permissions & settings
 
-### Microphone (the "Say-it" pronunciation practice)
-Say-it (in **Fidel Master**) uses the mic **on-device only** (nothing recorded
-or uploaded). It is the app's *only* microphone use.
+### Microphone — not used
+Fidel Quest does **not** use the microphone. The old "Say-it" pronunciation
+practice was removed, so there is no `getUserMedia` anywhere in the app.
 
-**To ship WITHOUT the mic** (recommended for a first kids-category review — no
-permission prompt, less scrutiny), build with the flag set:
-```bash
-VITE_ENABLE_MIC=false npm run build && npx cap sync
-```
-This removes the "Say it" tab entirely and the app never touches the mic, so you
-**skip the Info.plist / AndroidManifest permission entries below**.
+- **Do NOT** add `NSMicrophoneUsageDescription` (iOS) or `RECORD_AUDIO`
+  (Android) — declaring a permission the app never uses can itself trigger a
+  store rejection.
+- In the store data-safety / privacy forms, answer that the app does **not**
+  access the microphone.
 
-**To keep the feature**, build normally (mic on by default) and declare it:
-
-- **iOS** — `ios/App/App/Info.plist`, add:
-  ```xml
-  <key>NSMicrophoneUsageDescription</key>
-  <string>Fidel Quest uses the microphone only so a child can practise saying a letter out loud. Audio is analysed on the device and never recorded or sent anywhere.</string>
-  ```
-- **Android** — `android/app/src/main/AndroidManifest.xml`, add inside
-  `<manifest>`:
-  ```xml
-  <uses-permission android:name="android.permission.RECORD_AUDIO" />
-  <uses-feature android:name="android.hardware.microphone" android:required="false" />
-  ```
-
-> Kids-category note: a microphone request draws extra review scrutiny. If you
-> don't want that for launch, remove the Say-it tab and skip these permissions
-> — the rest of the app doesn't use the mic.
+This keeps the kids-category review as simple as possible: no permission
+prompts, nothing to justify.
 
 ### App name / version
 - **iOS**: Xcode → target **App** → General → Display Name, Version (e.g.
