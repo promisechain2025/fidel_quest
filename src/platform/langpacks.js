@@ -14,6 +14,8 @@
 // Order shown in the picker. `label` is the language's own endonym.
 export const LANG_META = [
   { id: 'en', label: 'English' },
+  { id: 'am', label: 'አማርኛ' },
+  { id: 'ti', label: 'ትግርኛ' },
   { id: 'de', label: 'Deutsch' },
   { id: 'it', label: 'Italiano' },
   { id: 'sv', label: 'Svenska' },
@@ -34,6 +36,11 @@ export const REINFORCE = {
   am: {
     praise: ['ጎበዝ!', 'በጣም ጎበዝ!', 'ኮከብ ነህ!', 'ድንቅ!', 'እሰይ!', 'ግሩም!', 'አሪፍ!', 'ተባረክ!', 'ዋው!'],
     encourage: ['እንደገና ሞክር!', 'ተቃርበሃል!', 'ትችላለህ!', 'አይዞህ!', 'በርታ!', 'ደግመህ ስማ!'],
+  },
+  // Tigrinya (best-effort; flagged for native-speaker review).
+  ti: {
+    praise: ['ጽቡቕ!', 'ኣዝዩ ጽቡቕ!', 'ኮኸብ ኢኻ!', 'ግሩም!', 'ብሉጽ!', 'መስተንክር!', 'ሰሪሕካዮ!', 'ኣንቱም!', 'ዋው!'],
+    encourage: ['ደጊምካ ፈትን!', 'ተቐሪብካ!', 'ትኽእሎ ኢኻ!', 'ኣይዞኻ!', 'ቀጽል!', 'ደጊምካ ስማዕ!'],
   },
   de: {
     praise: ['Super!', 'Toll gemacht!', 'Du bist ein Star!', 'Klasse!', 'Fantastisch!', 'Wunderbar!', 'Du hast es geschafft!', 'Ausgezeichnet!', 'Bravo!'],
