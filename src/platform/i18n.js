@@ -182,6 +182,9 @@ const STRINGS = {
     challengeTie: 'አቻ ነው!',
     challengeGone: 'ይህ ፉክክር አይገኝም።',
     challengeShareText: 'የፊደል ኵዌስት ውጤቴን ብለጥ! ትችላለህ?',
+    scopeLearned: 'የኔ ፊደላት',
+    scopeAll: 'ሁሉም ፊደላት',
+    scopeLabel: 'የትኞቹ ፊደላት',
     'slot.hat': 'ኮፍያዎች',
     'slot.scarf': 'ሻርፖች',
     'slot.cape': 'ካባዎች',
@@ -354,6 +357,9 @@ const STRINGS = {
     challengeTie: 'ማዕረ ኮይኑ!',
     challengeGone: 'እዚ ብድሆ ኣይርከብን።',
     challengeShareText: 'ናይ ፊደል ኵዌስት ነጥበይ ብለጾ! ትኽእል ዶ?',
+    scopeLearned: 'ናተይ ፊደላት',
+    scopeAll: 'ኩሎም ፊደላት',
+    scopeLabel: 'ኣየኖት ፊደላት',
   },
 }
 

@@ -223,3 +223,10 @@ export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length
   return { families, totalFamilies: 33, forms: families * 7, totalForms: 231, nodes: Object.keys(p.done || {}).length }
 }
+
+/** The family ids the child has actually learned (completed LEARN nodes), in
+   journey order. This is the set the games scope to by default so a child only
+   practises letters they have met; games offer an "all letters" override. */
+export function learnedFamilyIds(p) {
+  return JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p?.done?.[n.id]).map((n) => n.familyId)
+}

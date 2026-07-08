@@ -28,6 +28,8 @@ import {
 import { loadFromStorage } from '../utils/loadFromStorage'
 import FidelTracePad from '../components/FidelTracePad'
 import FidelMaster from '../components/FidelMaster'
+import ScopeToggle from '../components/ScopeToggle'
+import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScope'
 import { audio as platformAudio } from '../platform/audioEngine'
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import {
@@ -176,15 +178,22 @@ export function shuffle(array) {
   return copy
 }
 
-function buildPool(level) {
-  const pool = []
-  level.familyIndices.forEach((fi) => {
-    const family = FIDEL_FAMILIES[fi]
-    level.formOrders.forEach((order) => {
-      if (family.forms[order]) pool.push(family.forms[order])
+function buildPool(level, familyIndexSet = null) {
+  const build = (indices) => {
+    const pool = []
+    indices.forEach((fi) => {
+      const family = FIDEL_FAMILIES[fi]
+      level.formOrders.forEach((order) => {
+        if (family.forms[order]) pool.push(family.forms[order])
+      })
     })
-  })
-  return pool
+    return pool
+  }
+  if (!familyIndexSet) return build(level.familyIndices)
+  const scoped = build(level.familyIndices.filter((fi) => familyIndexSet.has(fi)))
+  // Keep the quiz playable: if the child has learned too few of this level's
+  // letters to make real choices, fall back to the full level pool.
+  return scoped.length >= 4 ? scoped : build(level.familyIndices)
 }
 
 /* Pick 3 distractors for a target. Guarantees no distractor shares the
@@ -247,9 +256,9 @@ export function buildWordQuestions(level) {
   return questions
 }
 
-export function buildQuestions(level, { missCounts = {}, targetForms = null } = {}) {
+export function buildQuestions(level, { missCounts = {}, targetForms = null, familyIndices = null } = {}) {
   if (level.mode === 'word-to-char') return buildWordQuestions(level)
-  const pool = buildPool(level)
+  const pool = buildPool(level, familyIndices)
   // Practice rounds narrow the targets to just-missed letters while keeping
   // the full level pool available for distractors.
   const baseTargets = targetForms && targetForms.length ? targetForms : pool
@@ -653,6 +662,8 @@ export default function AmharicFidelGame() {
 
   // Active game session
   const [level, setLevel] = useState(null)
+  const [scope, setScopeState] = useState(getScope) // 'learned' (default) | 'all'
+  const changeScope = (s) => { setScopeState(s); setScope(s) }
   const [questions, setQuestions] = useState([])
   const [questionIndex, setQuestionIndex] = useState(0)
   // phase: question | correct | wrong
@@ -733,7 +744,7 @@ export default function AmharicFidelGame() {
       answeredForIndexRef.current = -1
       runIdRef.current += 1
       setLevel(lvl)
-      setQuestions(buildQuestions(lvl, { missCounts: progress.missCounts, targetForms }))
+      setQuestions(buildQuestions(lvl, { missCounts: progress.missCounts, targetForms, familyIndices: scopedFamilyIndexSet(scope) }))
       setQuestionIndex(0)
       setPhase('question')
       setSelectedIndex(null)
@@ -750,7 +761,7 @@ export default function AmharicFidelGame() {
       setScreen('game')
       playSfx('tap')
     },
-    [playSfx, progress.missCounts],
+    [playSfx, progress.missCounts, scope],
   )
 
   // A short remedial round over just the letters missed in the last run.
@@ -1083,6 +1094,8 @@ export default function AmharicFidelGame() {
           </span>
         </div>
       </div>
+
+      <ScopeToggle scope={scope} onChange={changeScope} />
 
       {LEVELS.every((l) => (progress.stars[l.id] || 0) >= 3) && (
         <div className="fq-anim-pop flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 px-6 py-4 text-white shadow-xl">

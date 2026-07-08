@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
-import { FIDEL_FAMILIES, ALL_FORMS, ORDERS, INDEXES } from '../platform/ethiopic'
+import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'
 import { playForm } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
 import { buildMasterSequence, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder } from '../fidelMaster'
+import { getScope, setScope, scopedForms, scopedFamilySet } from '../platform/letterScope'
+import ScopeToggle from './ScopeToggle'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -65,8 +67,15 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   const [autoAdvance, setAutoAdvance] = useState(false) // roll to the next order
   const [yourTurn, setYourTurn] = useState(false)
   const [openFam, setOpenFam] = useState(null) // family id expanded in the chart
+  const [scope, setScopeState] = useState(getScope) // 'learned' (default) | 'all'
 
-  const seq = useMemo(() => buildMasterSequence(ALL_FORMS, { seed, mix, order }), [seed, mix, order])
+  // Scope the whole tool to the child's learned letters (or the full abugida).
+  const forms = useMemo(() => scopedForms(scope), [scope])
+  const famSet = useMemo(() => scopedFamilySet(scope), [scope])
+  const families = useMemo(() => (famSet ? FIDEL_FAMILIES.filter((f) => famSet.has(f.id)) : FIDEL_FAMILIES), [famSet])
+  const changeScope = (s) => { setScopeState(s); setScope(s); setIdx(0); setPlaying(false); setOpenFam(null) }
+
+  const seq = useMemo(() => buildMasterSequence(forms, { seed, mix, order }), [forms, seed, mix, order])
   const form = seq[idx] ?? seq[0]
   const play = useCallback((f) => { if (soundOn) playForm(f, true) }, [soundOn])
 
@@ -112,8 +121,13 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="text-xl font-black leading-tight">{t('masterTitle', 'Fidel Master')}</h1>
-        <span className="ml-auto text-sm font-black" style={{ color: 'var(--muted)' }}>{ALL_FORMS.length} {t('masterLetters', 'letters')}</span>
+        <span className="ml-auto text-sm font-black" style={{ color: 'var(--muted)' }}>{forms.length} {t('masterLetters', 'letters')}</span>
       </header>
+
+      {/* Practise the letters learned so far, or the whole abugida */}
+      <div className="mt-3 flex justify-center">
+        <ScopeToggle scope={scope} onChange={changeScope} />
+      </div>
 
       {/* Tabs */}
       <div className="mt-4 flex gap-2 rounded-2xl p-1" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
@@ -141,7 +155,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           </button>
 
           <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
-            {FIDEL_FAMILIES.map((fam) => {
+            {families.map((fam) => {
               const fi = fam.familyIndex ?? FIDEL_FAMILIES.indexOf(fam)
               const base = formOf(`${fam.id}-1`)
               const open = openFam === fam.id
@@ -190,9 +204,9 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           {/* Vowel-order selector: master one vowel at a time, or the abugida */}
           <div className="w-full overflow-x-auto pb-1">
             <div className="flex gap-1.5">
-              <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0); setFeedback(null) }} />
+              <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0) }} />
               {ORDERS.map((o) => (
-                <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={o.vowel} onClick={() => { setOrder(o.index); setIdx(0); setFeedback(null) }} />
+                <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={o.vowel} onClick={() => { setOrder(o.index); setIdx(0) }} />
               ))}
             </div>
           </div>
