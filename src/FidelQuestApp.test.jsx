@@ -163,8 +163,9 @@ describe('app shell', () => {
   it('opens the Backpack to reach the reference utilities', () => {
     render(<FidelQuestApp />)
     fireEvent.click(screen.getByLabelText('Open backpack'))
-    expect(screen.getByText('Letter Explorer')).toBeInTheDocument()
-    expect(screen.getByText('Classic Game')).toBeInTheDocument()
+    // Compact tile grid uses short labels
+    expect(screen.getByText('Explorer')).toBeInTheDocument()
+    expect(screen.getByText('Classic')).toBeInTheDocument()
     expect(screen.getByText('First Words')).toBeInTheDocument()
   })
 })

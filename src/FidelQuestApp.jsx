@@ -76,6 +76,7 @@ import {
   Backpack as BackpackIcon,
   ClipboardCheck,
   Users,
+  Globe,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -1414,70 +1415,26 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   )
 }
 
-function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)', badge = 0 }) {
+// Compact square tile for the Backpack grid: icon + short label. Keeps the
+// whole toolkit on one screen so nothing (Classic, Review...) gets buried.
+function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`chunk flex w-full items-center gap-4 rounded-3xl p-4 text-left ${FOCUS}`}
+      className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
-      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
         {icon}
-        {badge > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
-            {badge}
-          </span>
-        )}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-extrabold">{title}</span>
-        <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-          {sub}
+      <span className="text-xs font-extrabold leading-tight">{title}</span>
+      {badge > 0 && (
+        <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
+          {badge}
         </span>
-      </span>
+      )}
     </button>
-  )
-}
-
-/* A segmented control: current choice highlighted, tap another to switch.
-   `options` is [{ id, label, sub }]; onPick(id) fires only for a real change. */
-function Segmented({ label, value, options, onPick }) {
-  return (
-    <div>
-      <div className="mb-1.5 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-        {label}
-      </div>
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }} role="group" aria-label={label}>
-        {options.map((o) => {
-          const active = o.id === value
-          return (
-            <button
-              key={o.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => !active && onPick(o.id)}
-              className={`chunk rounded-2xl px-3 py-2 text-center font-black ${FOCUS}`}
-              style={{
-                background: active ? 'var(--sky)' : 'var(--card)',
-                color: active ? '#fff' : 'var(--ink)',
-                border: '2px solid var(--line)',
-                boxShadow: active ? '0 3px 0 var(--sky-deep)' : '0 3px 0 var(--line)',
-                '--chunk-depth': '3px',
-                outlineColor: 'var(--sky)',
-              }}
-            >
-              <span className="block leading-tight">{o.label}</span>
-              {o.sub && (
-                <span className="block text-[11px] font-semibold" style={{ color: active ? 'rgba(255,255,255,0.85)' : 'var(--muted)' }}>
-                  {o.sub}
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
   )
 }
 
@@ -1487,50 +1444,40 @@ function Segmented({ label, value, options, onPick }) {
 function LanguagePicker() {
   const pack = getActivePackId()
   const ui = getLang()
-  const packOptions = [
-    { id: 'am', label: PACKS.am.nativeName || 'አማርኛ', sub: PACKS.am.label },
-    { id: 'ti', label: PACKS.ti.nativeName || 'ትግርኛ', sub: PACKS.ti.label },
-  ]
   return (
-    <div className="mt-4 flex flex-col gap-3 rounded-3xl p-4" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
-      <Segmented
-        label={t('langLearn', 'Learning')}
-        value={pack}
-        options={packOptions}
-        onPick={(id) => {
-          setActivePack(id)
-          window.location.reload()
-        }}
-      />
-      <div>
-        <div className="mb-1.5 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-          {t('langText', 'App text')}
-        </div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={t('langText', 'App text')}>
-          {LANG_META.map((o) => {
-            const active = o.id === ui
-            return (
-              <button
-                key={o.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => { if (!active) { setLang(o.id); window.location.reload() } }}
-                className={`chunk rounded-2xl px-2 py-2 text-center text-sm font-black ${FOCUS}`}
-                style={{
-                  background: active ? 'var(--sky)' : 'var(--card)',
-                  color: active ? '#fff' : 'var(--ink)',
-                  border: '2px solid var(--line)',
-                  boxShadow: active ? '0 3px 0 var(--sky-deep)' : '0 3px 0 var(--line)',
-                  '--chunk-depth': '3px',
-                  outlineColor: 'var(--sky)',
-                }}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
+    <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-2.5" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+      <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+        <BookOpen className="h-4 w-4" aria-hidden="true" />{t('langLearn', 'Learning')}
+      </span>
+      <div className="flex gap-1.5">
+        {[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']].map(([id, label]) => {
+          const active = pack === id
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => { if (!active) { setActivePack(id); window.location.reload() } }}
+              className={`geez rounded-lg px-2.5 py-1 text-sm font-black ${FOCUS}`}
+              style={{ background: active ? 'var(--go)' : 'var(--paper)', color: active ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}
+            >
+              {label}
+            </button>
+          )
+        })}
       </div>
+      <label className="ml-auto flex items-center gap-1.5">
+        <Globe className="h-4 w-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
+        <span className="sr-only">{t('langText', 'App text')}</span>
+        <select
+          value={ui}
+          onChange={(e) => { setLang(e.target.value); window.location.reload() }}
+          className={`rounded-lg px-2 py-1.5 text-sm font-bold ${FOCUS}`}
+          style={{ background: 'var(--paper)', color: 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}
+        >
+          {LANG_META.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+        </select>
+      </label>
     </div>
   )
 }
@@ -1563,23 +1510,25 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
             <X className="h-6 w-6" />
           </button>
         </div>
-        {/* Scrolls within the panel so a long tool list never runs off-screen. */}
-        <div className="-mr-2 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-2 pb-1">
-          <BackpackItem icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetTitle', "Anbessa's Closet")} sub={t('closetSub', 'Dress up Anbessa and share!')} onClick={onCloset} />
-          <BackpackItem icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeTitle', 'Anbessa Tee Shop')} sub={t('teeSub', 'Earn and wear your alphabet shirts')} onClick={onTees} />
-          <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
-          {troubleCount > 0 && (
-            <BackpackItem icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" title={t('practiceTitle', 'Star Practice')} sub={t('practiceSub', `${troubleCount} tricky letters to make strong`, { n: troubleCount })} onClick={onPractice} />
-          )}
-          <BackpackItem icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerTitle', 'Letter Explorer')} sub={t('explorerSub', 'Tap any of the 231 letters to hear it')} onClick={onExplore} />
-          <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
-          {isSocialEnabled() && (
-            <BackpackItem icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyTitle', 'Family & Friends')} sub={t('familySub', 'A private weekly leaderboard with people you know')} onClick={onFamily} />
-          )}
-          <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
-          {/* Reviewer entry point: opens the standalone /review guide + feedback
-             page (outside the SPA) in a new tab so testers keep their place. */}
-          <BackpackItem icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewTitle', 'Review this app')} sub={t('reviewSub', 'A guided tour, then tell us what you think')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+        {/* Compact tile grid keeps every tool on one screen (no burying). The
+           panel can still scroll on a very short device as a safety net. */}
+        <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
+          <div className="grid grid-cols-3 gap-2.5">
+            <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
+            <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} />
+            <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
+            <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            {troubleCount > 0 && (
+              <BackpackTile icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
+            )}
+            {isSocialEnabled() && (
+              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
+            )}
+            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
+            {/* Reviewer entry: opens the standalone /review page in a new tab. */}
+            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+          </div>
         </div>
         <LanguagePicker />
       </motion.div>
