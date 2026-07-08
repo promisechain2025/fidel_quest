@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Lock, Download, ShoppingBag, X, Check } from 'lucide-react'
-import { TEE_DESIGNS, teeUnlocked, unlockedTees, nextTeeAt, markTeesSeen } from '../tees'
+import { TEE_DESIGNS, teeUnlocked, unlockedTees, nextTeeAt, markTeesSeen, teeName } from '../tees'
 import { wornLayers } from '../journey'
-import { t } from '../platform/i18n'
+import { t, getLang } from '../platform/i18n'
 import { track } from '../platform/analytics'
 import { drawTee, saveTee, orderTee, shopConfigured } from './TeeCard'
 
@@ -33,6 +33,7 @@ function TeeCanvas({ design, forms, worn, size = 150, dim = false }) {
 /* Tee Shop: the reward-to-merch loop. Each chapter mastered unlocks a shirt
    design; parents can save it or order a real one. Opt-in and offline-safe. */
 export default function TeeShop({ stats, collection, onBack }) {
+  const lang = getLang()
   const forms = stats.forms
   const families = stats.families
   const worn = wornLayers(collection)
@@ -88,12 +89,12 @@ export default function TeeShop({ stats, collection, onBack }) {
               type="button"
               disabled={!unlocked}
               onClick={() => unlocked && setPreview(design)}
-              aria-label={unlocked ? `${design.name} — open` : `${design.name} — locked, learn ${design.unlock} letters`}
+              aria-label={unlocked ? `${teeName(design, lang)} — open` : `${teeName(design, lang)} — locked, learn ${design.unlock} letters`}
               className={`chunk relative flex flex-col items-center gap-2 rounded-3xl p-3 ${FOCUS}`}
               style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--sky)', cursor: unlocked ? 'pointer' : 'default' }}
             >
               <TeeCanvas design={design} forms={forms} worn={worn} size={140} dim={!unlocked} />
-              <span className="text-center text-sm font-black leading-tight">{design.name}</span>
+              <span className="text-center text-sm font-black leading-tight">{teeName(design, lang)}</span>
               {unlocked ? (
                 <span className="text-[11px] font-bold" style={{ color: 'var(--go-ink)' }}>{t('teeUnlocked', 'Unlocked!')}</span>
               ) : (
@@ -117,9 +118,9 @@ export default function TeeShop({ stats, collection, onBack }) {
       <AnimatePresence>
         {preview && (
           <motion.div className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPreview(null)}>
-            <motion.div role="dialog" aria-modal="true" aria-label={preview.name} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
+            <motion.div role="dialog" aria-modal="true" aria-label={teeName(preview, lang)} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-lg font-black">{preview.name} <span className="geez font-black" style={{ color: 'var(--muted)' }}>· {preview.am}</span></h2>
+                <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {preview.am}</span>}</h2>
                 <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
                   <X className="h-6 w-6" />
                 </button>

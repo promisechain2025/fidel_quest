@@ -16,14 +16,22 @@
     The thresholds line up with the four journey chapters (8/16/24/33) plus a
     day-one starter, so a new shirt lands at every real milestone. */
 export const TEE_DESIGNS = [
-  { id: 'starter', name: 'Anbessa Starter', am: 'የአንበሳ ጀማሪ', unlock: 1, shirt: '#e0a856', ink: '#5b3a12', motif: 'ፊ' },
-  { id: 'explorer', name: 'Fidel Explorer', am: 'የፊደል አሳሽ', unlock: 8, shirt: '#0f8f8a', ink: '#053b39', motif: 'ሀለመ' },
-  { id: 'hero', name: 'Alphabet Hero', am: 'የፊደል ጀግና', unlock: 16, shirt: '#1f74d0', ink: '#0b2f52', motif: 'ሠቀበ' },
-  { id: 'master', name: 'Fidel Master', am: 'የፊደል ሊቅ', unlock: 24, shirt: '#6d45c9', ink: '#2a1a55', motif: 'ተነከ' },
-  { id: 'champion', name: '231 Champion', am: 'የ231 ሻምፒዮን', unlock: 33, shirt: '#c23a86', ink: '#4d1130', motif: 'ፊደል' },
+  { id: 'starter', name: 'Anbessa Starter', am: 'የአንበሳ ጀማሪ', ti: 'ጀማሪ ኣንበሳ', unlock: 1, shirt: '#e0a856', ink: '#5b3a12', motif: 'ፊ' },
+  { id: 'explorer', name: 'Fidel Explorer', am: 'የፊደል አሳሽ', ti: 'መርማሪ ፊደል', unlock: 8, shirt: '#0f8f8a', ink: '#053b39', motif: 'ሀለመ' },
+  { id: 'hero', name: 'Alphabet Hero', am: 'የፊደል ጀግና', ti: 'ጅግና ፊደል', unlock: 16, shirt: '#1f74d0', ink: '#0b2f52', motif: 'ሠቀበ' },
+  { id: 'master', name: 'Fidel Master', am: 'የፊደል ሊቅ', ti: 'ክኢላ ፊደል', unlock: 24, shirt: '#6d45c9', ink: '#2a1a55', motif: 'ተነከ' },
+  { id: 'champion', name: '231 Champion', am: 'የ231 ሻምፒዮን', ti: 'ሻምፒዮን 231', unlock: 33, shirt: '#c23a86', ink: '#4d1130', motif: 'ፊደል' },
 ]
 
 export const TEE_BY_ID = new Map(TEE_DESIGNS.map((d) => [d.id, d]))
+
+/** The design's name in the given app language, falling back to English. */
+export function teeName(design, lang) {
+  if (!design) return ''
+  if (lang === 'am') return design.am || design.name
+  if (lang === 'ti') return design.ti || design.am || design.name
+  return design.name
+}
 
 /** A design is unlocked once the child has learned `unlock` families. */
 export const teeUnlocked = (design, families) => families >= design.unlock
