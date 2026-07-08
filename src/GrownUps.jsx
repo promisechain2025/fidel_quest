@@ -16,6 +16,7 @@ import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
+import { t } from './platform/i18n'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -57,7 +58,7 @@ function Gate({ onOpen }) {
   return (
     <div className="flex flex-col items-center gap-5 py-10 text-center">
       <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        This area is for grown-ups: progress details and practice tips.
+        {t('gpIntro', 'This area is for grown-ups: progress details and practice tips.')}
       </p>
       {!held ? (
         <>
@@ -79,15 +80,15 @@ function Gate({ onOpen }) {
               <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
               <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" strokeWidth="6" strokeDasharray={`${progress * 289} 289`} />
             </svg>
-            Hold me
+            {t('gpHold', 'Hold me')}
           </button>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            Press and hold for two seconds
+            {t('gpHoldHint', 'Press and hold for two seconds')}
           </p>
         </>
       ) : (
         <>
-          <p className="text-lg font-extrabold">Tap the number {challenge.word}</p>
+          <p className="text-lg font-extrabold">{t('gpTapNumber', `Tap the number ${challenge.word}`, { word: t(`gpNum${challenge.value}`, challenge.word) })}</p>
           <div className="flex gap-3">
             {options.map((n) => (
               <button
@@ -131,18 +132,18 @@ function NicknameField() {
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-        Player name
+        {t('gpPlayerName', 'Player name')}
       </h2>
       <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-        Shown on challenges you send to friends. Optional — leave it blank to stay &ldquo;A friend&rdquo;. It never leaves this device except inside a challenge link you choose to share.
+        {t('gpPlayerNameHint', 'Shown on challenges you send to friends. Optional — leave it blank to stay "A friend". It never leaves this device except inside a challenge link you choose to share.')}
       </p>
       <input
         type="text"
         value={name}
         onChange={(e) => save(e.target.value)}
         maxLength={16}
-        placeholder="e.g. Selam"
-        aria-label="Player name for challenges"
+        placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
+        aria-label={t('gpPlayerName', 'Player name')}
         className={`mt-3 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
         style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
       />
@@ -170,9 +171,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
-          <h1 className="text-xl font-black leading-tight">Grown-ups</h1>
+          <h1 className="text-xl font-black leading-tight">{t('grownupsShort', 'Grown-ups')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            Progress, trouble letters, and practice tips
+            {t('grownupsSub', 'Progress, trouble letters, and practice tips')}
           </p>
         </div>
       </header>
@@ -184,9 +185,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           {/* totals */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, 'Lesson stars'],
-              [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, 'Runner best'],
-              [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, 'Accuracy'],
+              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, t('gpLessonStars', 'Lesson stars')],
+              [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, t('gpRunnerBest', 'Runner best')],
+              [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, t('gpAccuracy', 'Accuracy')],
             ].map(([icon, value, label]) => (
               <div key={label} className="rounded-2xl border-2 p-3 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
                 <p className="mono flex items-center justify-center gap-1 text-xl font-black">
@@ -205,7 +206,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-              Letter mastery · {events.length} answers recorded
+              {t('gpMastery', `Letter mastery · ${events.length} answers recorded`, { n: events.length })}
             </h2>
             <div className="mt-3 grid grid-cols-11 gap-1.5" aria-label="Mastery of the 33 base letters">
               {FIDEL_FAMILIES.map((f) => {
@@ -219,43 +220,43 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               })}
             </div>
             <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              Green: solid · Yellow: getting there · Red: needs help · Grey: not practiced yet. Quizzes currently practice the first-order letters.
+              {t('gpMasteryLegend', 'Green: solid · Yellow: getting there · Red: needs help · Grey: not practiced yet. Quizzes currently practice the first-order letters.')}
             </p>
           </section>
 
           {/* trouble letters */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-              Trouble letters
+              {t('gpTrouble', 'Trouble letters')}
             </h2>
             {trouble.length === 0 ? (
               <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
-                {events.length < 10 ? 'Not enough play yet — check back after a few games.' : 'No trouble letters right now. Nice work!'}
+                {events.length < 10 ? t('gpTroubleFew', 'Not enough play yet — check back after a few games.') : t('gpTroubleNone', 'No trouble letters right now. Nice work!')}
               </p>
             ) : (
               <div className="mt-3 flex flex-col gap-3">
-                {trouble.map((t) => {
-                  const form = formOf(t.key)
-                  const tip = tipFor(t.key, pairs, formOf, levelOf)
+                {trouble.map((tl) => {
+                  const form = formOf(tl.key)
+                  const tip = tipFor(tl.key, pairs, formOf, levelOf)
                   if (!form || !tip) return null
                   return (
-                    <motion.div key={t.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--bad)', background: 'var(--bad-soft)' }}>
+                    <motion.div key={tl.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--bad)', background: 'var(--bad-soft)' }}>
                       <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-3xl font-black text-white" style={{ background: 'var(--bad)' }} aria-hidden="true">
                         {form.char}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-black" style={{ color: 'var(--bad-ink)' }}>
-                          {form.char} says “{form.sound}” · {t.correct}/{t.seen} correct
+                          {form.char} “{form.sound}” · {tl.correct}/{tl.seen} {t('gpCorrect', 'correct')}
                         </p>
                         <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                           {tip.text}
                         </p>
                         <div className="mt-2 flex gap-2">
                           <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-                            Open in Explorer
+                            {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
                           <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                            Replay Level {tip.level}
+                            {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
                       </div>
@@ -270,12 +271,12 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmReset ? (
               <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
-                <Trash2 className="h-4 w-4" aria-hidden="true" /> Reset all progress…
+                <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('gpReset', 'Reset all progress…')}
               </button>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
-                  Erase stars, bests, islands, and learning history?
+                  {t('gpResetConfirm', 'Erase stars, bests, islands, and learning history?')}
                 </p>
                 <button
                   type="button"
@@ -292,10 +293,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
-                  Yes, erase
+                  {t('gpResetYes', 'Yes, erase')}
                 </button>
                 <button type="button" onClick={() => setConfirmReset(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-                  Keep it
+                  {t('gpResetNo', 'Keep it')}
                 </button>
               </div>
             )}
