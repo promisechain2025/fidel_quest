@@ -1264,11 +1264,11 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
           : node.gateway.mode === 'runner'
             ? 'Letter Runner'
             : 'Fidel Skylands'
-  // Locked nodes still show WHAT they are (the letter, or the game icon) but in
-  // a warm "sealed" amber tile (not greyed out) so kids can preview what is
-  // coming, with a small lock chip.
-  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'linear-gradient(160deg, var(--lock-hi), var(--lock-bg))'
-  const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--lock-ink)'
+  // Locked nodes keep the original muted tile colour, but now show WHAT they
+  // are (the letter, or the game icon) with a small lock badge instead of only
+  // a lock, so kids can preview what is coming.
+  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--line)'
+  const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--muted)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
@@ -1288,8 +1288,8 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
             fontSize: big ? 22 : 26,
             background: bg,
             color: fg,
-            borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--lock-line)',
-            boxShadow: unlocked ? `0 5px 0 ${done ? 'var(--accent)' : big ? 'rgba(0,0,0,0.18)' : 'var(--line)'}` : '0 3px 0 var(--lock-line)',
+            borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
+            boxShadow: unlocked ? `0 5px 0 ${done ? 'var(--accent)' : big ? 'rgba(0,0,0,0.18)' : 'var(--line)'}` : 'none',
             outlineColor: 'var(--sky)',
           }}
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
@@ -1304,8 +1304,8 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
           {!unlocked && (
-            <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--lock-chip)', border: '2px solid var(--lock-line)' }} aria-hidden="true">
-              <Lock className="h-3 w-3" style={{ color: 'var(--lock-ink)' }} />
+            <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-hidden="true">
+              <Lock className="h-3 w-3" style={{ color: 'var(--muted)' }} />
             </span>
           )}
         </motion.button>
