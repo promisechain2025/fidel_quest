@@ -19,8 +19,9 @@ accounts). This guide is the end-to-end runbook.
       Without it the gift guide still shows but the button stays disabled.
 - [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
 - [ ] Host the **privacy policy** and paste its URL into both stores — §8.
-- [ ] Decide on the microphone "Say-it" feature (keep + declare, or drop for a
-      simpler kids-category review) — §4.
+- [ ] Decide on the microphone "Say-it" feature: drop it for a simpler
+      kids-category review with **`VITE_ENABLE_MIC=false npm run build`**, or
+      keep it and declare the permission — §4.
 
 ---
 
@@ -100,8 +101,18 @@ re-run the command.
 ## 4. Native permissions & settings
 
 ### Microphone (the "Say-it" pronunciation practice)
-Say-it uses the mic **on-device only** (nothing recorded or uploaded). If you
-keep the feature, declare it:
+Say-it (in **Fidel Master**) uses the mic **on-device only** (nothing recorded
+or uploaded). It is the app's *only* microphone use.
+
+**To ship WITHOUT the mic** (recommended for a first kids-category review — no
+permission prompt, less scrutiny), build with the flag set:
+```bash
+VITE_ENABLE_MIC=false npm run build && npx cap sync
+```
+This removes the "Say it" tab entirely and the app never touches the mic, so you
+**skip the Info.plist / AndroidManifest permission entries below**.
+
+**To keep the feature**, build normally (mic on by default) and declare it:
 
 - **iOS** — `ios/App/App/Info.plist`, add:
   ```xml

@@ -66,10 +66,16 @@ async function sampleMic(ms = 1500) {
   }
 }
 
+/* The "Say it" tool is the app's only microphone use (on-device only; nothing
+   is recorded or uploaded). It can be turned OFF at build time so a first
+   kids-category store submission ships with no mic permission and no extra
+   review scrutiny — set VITE_ENABLE_MIC=false. Default on (web/PWA behavior). */
+const MIC_ENABLED = import.meta.env?.VITE_ENABLE_MIC !== 'false'
+
 const TABS = [
   { id: 'chart', icon: null, key: 'masterChart', label: 'Chart' },
   { id: 'auto', icon: Play, key: 'masterAuto', label: 'Auto-voice' },
-  { id: 'say', icon: Mic, key: 'masterSay', label: 'Say it' },
+  ...(MIC_ENABLED ? [{ id: 'say', icon: Mic, key: 'masterSay', label: 'Say it' }] : []),
 ]
 
 function OrderChip({ active, label, sub, onClick }) {
