@@ -33,6 +33,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
+        // Precache the shell + the self-hosted Ethiopic fonts (woff2) so Ge'ez
+        // renders offline from first launch. Audio stays runtime-cached (below).
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
         // The generated SW registers an SPA navigation fallback (every
         // navigation resolves to index.html). The /review page is a SEPARATE
         // static document, not part of the SPA, so it must be exempt — without
@@ -53,23 +56,8 @@ export default defineConfig({
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'fidel-audio-v4',
+              cacheName: 'fidel-audio-v5',
               expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'google-fonts-css' },
-          },
-          {
-            // Ethiopic font files: immutable + versioned URLs, cache hard so
-            // Ge'ez renders correctly and works offline after first load.
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-files',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
         ],

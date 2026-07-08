@@ -10,6 +10,10 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# Self-hosted Ethiopic fonts: stable filenames, cache hard.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # Letter/word audio is stable content; a week of edge cache is plenty and the
 # service worker runtime-caches it anyway.
 /audio/*

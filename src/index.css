@@ -95,6 +95,35 @@
   --overlay: rgba(60, 53, 41, 0.4);
 }
 
+/* Self-hosted Ethiopic (Ge'ez) font — bundled so glyphs render offline on first
+   launch (important as a packaged app) with no Google Fonts dependency. Only
+   the Ethiopic subset, weights actually used (400/700/900). Source:
+   @fontsource/noto-sans-ethiopic. */
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/noto-sans-ethiopic-400.woff2') format('woff2');
+  unicode-range: U+1200-137F, U+1380-139F, U+2D80-2DDF, U+AB00-AB2F;
+}
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/noto-sans-ethiopic-700.woff2') format('woff2');
+  unicode-range: U+1200-137F, U+1380-139F, U+2D80-2DDF, U+AB00-AB2F;
+}
+@font-face {
+  font-family: 'Noto Sans Ethiopic';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/noto-sans-ethiopic-900.woff2') format('woff2');
+  unicode-range: U+1200-137F, U+1380-139F, U+2D80-2DDF, U+AB00-AB2F;
+}
+
 html, body { background: var(--paper); color: var(--ink); }
 body {
   font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Quicksand',
