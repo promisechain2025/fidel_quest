@@ -1497,43 +1497,62 @@ function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) 
 /* Language settings. Two axes the app already models separately: the learning
    pack (Amharic vs Tigrinya sounds/letters/audio) and the UI text (English vs
    Amharic). Both are launch-time by design, so a change persists and reloads. */
-function LanguagePicker() {
-  const pack = getActivePackId()
-  const ui = getLang()
+/** One row of the picker: a small label + a wrapping row of chips. Chips share
+   the same chunky style as the rest of the app so the picker reads as buttons,
+   not a cramped native <select> (which mis-rendered on mobile). */
+function LangRow({ icon, label, options, current, onPick, geez = false }) {
   return (
-    <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3 py-2.5" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+    <div className="flex flex-col gap-1.5">
       <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-        <BookOpen className="h-4 w-4" aria-hidden="true" />{t('langLearn', 'Learning')}
+        {icon}{label}
       </span>
-      <div className="flex gap-1.5">
-        {[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']].map(([id, label]) => {
-          const active = pack === id
+      <div className="flex flex-wrap gap-1.5">
+        {options.map(([id, text]) => {
+          const active = current === id
           return (
             <button
               key={id}
               type="button"
               aria-pressed={active}
-              onClick={() => { if (!active) { setActivePack(id); window.location.reload() } }}
-              className={`geez rounded-lg px-2.5 py-1 text-sm font-black ${FOCUS}`}
-              style={{ background: active ? 'var(--go)' : 'var(--paper)', color: active ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}
+              onClick={() => { if (!active) onPick(id) }}
+              className={`${geez ? 'geez ' : ''}rounded-xl px-3 py-1.5 text-sm font-black ${FOCUS}`}
+              style={{
+                background: active ? 'var(--go)' : 'var(--paper)',
+                color: active ? '#fff' : 'var(--ink)',
+                border: '2px solid', borderColor: active ? 'var(--go)' : 'var(--line)',
+                boxShadow: active ? '0 2px 0 var(--go-deep)' : 'none',
+                outlineColor: 'var(--sky)',
+              }}
             >
-              {label}
+              {text}
             </button>
           )
         })}
       </div>
-      <label className="ml-auto flex items-center gap-1.5">
-        <Globe className="h-4 w-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
-        <span className="sr-only">{t('langText', 'App text')}</span>
-        <select
-          value={ui}
-          onChange={(e) => { setLang(e.target.value); window.location.reload() }}
-          className={`rounded-lg px-2 py-1.5 text-sm font-bold ${FOCUS}`}
-          style={{ background: 'var(--paper)', color: 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}
-        >
-          {LANG_META.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-        </select>
-      </label>
+    </div>
+  )
+}
+
+function LanguagePicker() {
+  const pack = getActivePackId()
+  const ui = getLang()
+  return (
+    <div className="mt-3 flex shrink-0 flex-col gap-3 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+      <LangRow
+        icon={<BookOpen className="h-4 w-4" aria-hidden="true" />}
+        label={t('langLearn', 'Learning')}
+        geez
+        current={pack}
+        options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
+        onPick={(id) => { setActivePack(id); window.location.reload() }}
+      />
+      <LangRow
+        icon={<Globe className="h-4 w-4" aria-hidden="true" />}
+        label={t('langText', 'App text')}
+        current={ui}
+        options={LANG_META.map((o) => [o.id, o.label])}
+        onPick={(id) => { setLang(id); window.location.reload() }}
+      />
     </div>
   )
 }
