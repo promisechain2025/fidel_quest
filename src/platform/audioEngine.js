@@ -22,19 +22,31 @@
    ========================================================================== */
 
 /**
- * Redirect a logical key to the pack's physical clip. Used when a pack shares
- * most of its audio with another but keeps a few sounds distinct (Tigrinya
- * reuses the Amharic recordings except for the consonants it never merged —
- * hha/kha/khe/ae — which live under letters/ti/). `override` is
- * { sub, ids }: for a `letters/<id>-<order>` key whose family id is in `ids`,
- * the physical clip is `letters/<sub><id>-<order>`. Everything else is
- * unchanged, so a pack only lists what it overrides.
+ * Redirect a logical key to the pack's physical clip. Two independent kinds of
+ * redirect, both optional on the `override`:
+ *
+ *  - Sub-path (`{ sub, ids }`): a pack keeps a few sounds distinct in a
+ *    sub-folder. Tigrinya reuses the Amharic recordings except the consonants
+ *    it never merged (hha/kha/khe/ae), which live under letters/ti/.
+ *
+ *  - Order remap (`{ orderRemap: { ids, from, to } }`): a pack pronounces one
+ *    order like another for some families. Amharic voices the 1st (ge'ez)
+ *    order of the gutturals ha/hha/kha/a/ae like the 4th (the "-a" vowel):
+ *    ሀ sounds like ሃ. Tigrinya keeps the default 1st order, so it has no remap.
+ *
+ * Order remap runs first (it rewrites the order digit), then the sub-path
+ * redirect. Everything else is unchanged, so a pack lists only what it changes.
  */
 export function effectiveKey(key, override) {
-  if (!override || !override.ids || !override.ids.length) return key
+  if (!override) return key
   const m = /^letters\/([a-z]+)-(\d+)$/.exec(key)
-  if (m && override.ids.includes(m[1])) return `letters/${override.sub}${m[1]}-${m[2]}`
-  return key
+  if (!m) return key
+  const id = m[1]
+  let order = m[2]
+  const rm = override.orderRemap
+  if (rm && rm.ids.includes(id) && Number(order) === rm.from) order = String(rm.to)
+  if (override.ids && override.ids.includes(id)) return `letters/${override.sub}${id}-${order}`
+  return `letters/${id}-${order}`
 }
 
 /**

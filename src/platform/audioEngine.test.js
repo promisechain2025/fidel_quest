@@ -63,6 +63,32 @@ describe('effectiveKey (pack audio override)', () => {
     expect(effectiveKey('letters/a-1', ti)).toBe('letters/a-1') // a != ae
     expect(effectiveKey('words/feres', ti)).toBe('words/feres')
   })
+
+  it('Tigrinya keeps the plain 1st order (no order remap)', () => {
+    // ha/a use the base 1st-order clip; hha still redirects to its ti/ clip.
+    expect(effectiveKey('letters/ha-1', ti)).toBe('letters/ha-1')
+    expect(effectiveKey('letters/a-1', ti)).toBe('letters/a-1')
+    expect(effectiveKey('letters/hha-1', ti)).toBe('letters/ti/hha-1')
+  })
+})
+
+describe('effectiveKey (Amharic guttural 1st -> 4th order remap)', () => {
+  const am = { orderRemap: { ids: ['ha', 'hha', 'kha', 'a', 'ae'], from: 1, to: 4 } }
+
+  it('voices the 1st order of the gutturals like the 4th (the -a vowel)', () => {
+    expect(effectiveKey('letters/ha-1', am)).toBe('letters/ha-4')
+    expect(effectiveKey('letters/hha-1', am)).toBe('letters/hha-4')
+    expect(effectiveKey('letters/kha-1', am)).toBe('letters/kha-4')
+    expect(effectiveKey('letters/a-1', am)).toBe('letters/a-4')
+    expect(effectiveKey('letters/ae-1', am)).toBe('letters/ae-4')
+  })
+
+  it('only remaps the 1st order, and only the gutturals', () => {
+    expect(effectiveKey('letters/ha-2', am)).toBe('letters/ha-2') // other orders untouched
+    expect(effectiveKey('letters/ha-4', am)).toBe('letters/ha-4')
+    expect(effectiveKey('letters/le-1', am)).toBe('letters/le-1') // non-guttural untouched
+    expect(effectiveKey('letters/be-1', am)).toBe('letters/be-1')
+  })
 })
 
 describe('resolveSource with a Tigrinya override', () => {

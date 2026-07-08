@@ -61,5 +61,8 @@ export const AM_PACK = Object.freeze({
   },
   audioBase: '/audio/fidel/',
   manifestUrl: '/audio/fidel/manifest.json',
-  audioOverride: null, // Amharic is the base pack: no clip redirects.
+  // Amharic voices the 1st (ge'ez) order of the gutturals ha/hha/kha/a/ae like
+  // the 4th order (the "-a" vowel): ሀ is said "ha" (like ሃ), አ is said "a".
+  // Tigrinya keeps the plain 1st order, so its pack has no such remap.
+  audioOverride: { orderRemap: { ids: ['ha', 'hha', 'kha', 'a', 'ae'], from: 1, to: 4 } },
 })
