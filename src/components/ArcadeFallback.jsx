@@ -169,12 +169,14 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
    SKYLANDS 2D  -  the cumulative island quiz + Jibby's boss review, as a
    tap-the-fruit 2D quiz (same buildQuiz / pickStolen logic as the 3D scene).
    ========================================================================== */
-export function bossQuestions(island, seed) {
-  const stolen = pickStolen(island, seed)
+export function bossQuestions(island, seed, allForms = false) {
+  const stolen = pickStolen(island, seed, allForms)
   // Distractors come from the CUMULATIVE pool of every session up to this one
   // (the same material the 3D boss uses), so a stolen old letter is not the
-  // lone odd-group-out. Sound-safe + seeded via the project PRNG.
-  const pool = SESSIONS.slice(0, Math.min(island, SESSIONS.length)).flatMap((s) => s.pool)
+  // lone odd-group-out. "All letters" widens it to every session's pool.
+  const pool = allForms
+    ? SESSIONS.flatMap((s) => s.pool)
+    : SESSIONS.slice(0, Math.min(island, SESSIONS.length)).flatMap((s) => s.pool)
   let state = (seed ^ 0x5151) | 1
   return stolen.map((target) => {
     const sound = formOf(target)?.sound
@@ -186,8 +188,8 @@ export function bossQuestions(island, seed) {
   })
 }
 
-export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
-  const [questions] = useState(() => [...buildQuiz(island, seed).map((q) => ({ ...q, boss: false })), ...bossQuestions(island, seed)])
+export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = false }) {
+  const [questions] = useState(() => [...buildQuiz(island, seed, allLetters).map((q) => ({ ...q, boss: false })), ...bossQuestions(island, seed, allLetters)])
   const [cursor, setCursor] = useState(0)
   const [picked, setPicked] = useState(null) // { key, good }
   const q = questions[cursor]

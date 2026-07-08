@@ -33,6 +33,8 @@ import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
+import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
@@ -992,10 +994,12 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 seed={runSeed}
                 soundOn={soundOn}
-                // Only quiz letters the child has actually learned (LEARN nodes
-                // done). If they have finished the whole journey this is every
-                // letter; early on it is just their first families.
-                pool={JOURNEY.filter((n) => n.kind === NodeKind.LEARN && journey.done?.[n.id]).map((n) => `${n.familyId}-1`)}
+                // Which letters to quiz follows the shared scope preference:
+                // 'learned' (default) restricts to families whose LEARN node is
+                // done; 'all' opens the whole abugida. scopedBaseForms falls
+                // back to the first family so a new player still has a game.
+                pool={scopedBaseForms(getScope(), journey)}
+                allLetters={getScope() === SCOPES.ALL}
                 onDone={() => markNodeDone(screen.node.id)}
                 onRetry={() => {
                   setRunSeed((Date.now() % 1000000) | 1)
@@ -1559,6 +1563,10 @@ function LanguagePicker() {
 
 function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
+  // Global letter-scope preference: the games practise learned letters by
+  // default; this switches them (and the arcade games) to the whole abugida.
+  const [scope, setScopeState] = useState(getScope)
+  const changeScope = (s) => { setScopeState(s); setScope(s) }
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -1612,6 +1620,12 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
               <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
             )}
           </div>
+        </div>
+        <div className="mt-3 flex shrink-0 flex-col gap-1.5 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+          <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+            <Star className="h-4 w-4" aria-hidden="true" />{t('scopeLabel', 'Which letters')}
+          </span>
+          <ScopeToggle scope={scope} onChange={changeScope} />
         </div>
         <LanguagePicker />
       </motion.div>
@@ -3317,18 +3331,18 @@ function Arcade3D({ children }) {
   return children
 }
 
-function ArcadeGateway({ node, seed, soundOn, onDone, onRetry, pool }) {
+function ArcadeGateway({ node, seed, soundOn, onDone, onRetry, pool, allLetters = false }) {
   const isRunner = node.gateway.mode === 'runner'
   if (isDegraded()) {
     return isRunner ? (
       <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} pool={pool} />
     ) : (
-      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} />
+      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} allLetters={allLetters} />
     )
   }
   return (
     <Arcade3D>
-      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={onDone} />}
+      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={onDone} allLetters={allLetters} />}
     </Arcade3D>
   )
 }

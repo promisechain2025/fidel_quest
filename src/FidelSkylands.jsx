@@ -78,6 +78,9 @@ export const SESSIONS = [
 /** Cumulative pool for game level n: sessions 1..n. */
 const cumulativePool = (n) => SESSIONS.slice(0, n).flatMap((s) => s.pool)
 const sessionOfKey = (key) => SESSIONS.find((s) => s.pool.includes(key))
+/** Every base letter - used when the player opts into "all letters" instead of
+   the default island-cumulative pool. */
+const ALL_BASE = BASE_FORMS.map((f) => f.audioKey)
 
 /* ============================================================================
    §2 QUESTIONS (seeded, cumulative, twin-safe)
@@ -105,8 +108,8 @@ function rngShuffle(items, state) {
  * share a sound are never shown together. Recent-session letters are
  * guaranteed at least half the questions so new material gets practiced.
  */
-export function buildQuiz(n, seed) {
-  const pool = cumulativePool(n)
+export function buildQuiz(n, seed, allForms = false) {
+  const pool = allForms ? ALL_BASE : cumulativePool(n)
   const fresh = SESSIONS[n - 1].pool
   const older = pool.filter((k) => !fresh.includes(k))
   const count = 5 + n
@@ -140,8 +143,8 @@ export function buildQuiz(n, seed) {
  * EARLIER sessions (the review material); level 1 steals from its own pool.
  * Stolen letters have pairwise-distinct sounds so each is findable by ear.
  */
-export function pickStolen(n, seed) {
-  const pool = cumulativePool(Math.max(1, n - 1))
+export function pickStolen(n, seed, allForms = false) {
+  const pool = allForms ? ALL_BASE : cumulativePool(Math.max(1, n - 1))
   const [shuffled] = rngShuffle(pool, (seed ^ 0x9e37) | 1)
   const chosen = []
   for (const k of shuffled) {
@@ -196,11 +199,11 @@ function reducer(st, a) {
       if (st.mode !== 'learning' || st.heard.length < SESSIONS[st.session - 1].pool.length) return st
       const learnedSessions = Math.max(st.learnedSessions, st.session)
       persist({ sessionsCompleted: st.sessionsCompleted, learnedSessions })
-      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed), stolen: pickStolen(st.session, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed, a.allForms), stolen: pickStolen(st.session, a.seed, a.allForms), qIndex: 0, phase: 'question', correct: 0 }
     }
     case 'OPEN_GAME':
       if (!canPlay(st, a.n)) return st
-      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed), stolen: pickStolen(a.n, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed, a.allForms), stolen: pickStolen(a.n, a.seed, a.allForms), qIndex: 0, phase: 'question', correct: 0 }
     case 'PLUCK': {
       if (st.mode !== 'game') return st
       if (st.phase === 'question') {
@@ -985,7 +988,7 @@ function Scene({ st, dispatch, soundOn }) {
 
 const BTN = 'chunk rounded-2xl font-extrabold tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-export default function FidelSkylands({ onExit }) {
+export default function FidelSkylands({ onExit, allLetters = false }) {
   const [st, dispatch] = useReducer(reducer, undefined, initialState)
   const [soundOn, setSoundOn] = useState(() => {
     try {
@@ -1097,14 +1100,14 @@ export default function FidelSkylands({ onExit }) {
                     <button type="button" onClick={() => dispatch({ type: 'OPEN_LEARNING', n: nextLearn })} className={`${BTN} pointer-events-auto px-5 py-3`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)' }}>
                       Learn Session {nextLearn}
                     </button>
-                    <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1 })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                    <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
                       Play Level {nextLearn}
                     </button>
                   </div>
                   {st.sessionsCompleted > 0 && (
                     <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
                       Replay: {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
-                        <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1 })} className="pointer-events-auto mx-1 underline">
+                        <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className="pointer-events-auto mx-1 underline">
                           Level {s.n}
                         </button>
                       ))}
@@ -1123,7 +1126,7 @@ export default function FidelSkylands({ onExit }) {
                   {st.heard.length}/{session.pool.length}
                 </span>
               </p>
-              <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1 })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+              <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
                 {allHeard ? `Start Level ${st.session} quest` : 'Listen to them all first'}
               </button>
             </div>
