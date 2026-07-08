@@ -592,7 +592,11 @@ function Fruit({ form, position, color, state, heard, onPluck }) {
         </mesh>
         <mesh
           castShadow
-          onClick={(e) => {
+          // Fire on press, not click: the fruits float/bob, so a touch that
+          // lands and lifts on slightly different coords fails onClick and the
+          // tap is lost - which stalls learning (Start stays disabled) and the
+          // quiz. onPointerDown registers the tap reliably on mobile.
+          onPointerDown={(e) => {
             e.stopPropagation()
             onPluck(form.audioKey)
           }}

@@ -3099,8 +3099,10 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    this.playerTexHappy = charTexture(drawAnbessaRun, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessaRun, 'worried')
+    // Front-facing character (same art as the home screen) so Anbessa looks
+    // forward, watching the letters come, rather than sideways up the lane.
+    this.playerTexHappy = charTexture(drawAnbessa, 'happy')
+    this.playerTexWorried = charTexture(drawAnbessa, 'worried')
     this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
     this.player.scale.set(2.3, 2.3, 1)
     this.player.position.set(0, 1.25, 0)
@@ -3124,7 +3126,7 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchTex = charTexture(drawJibbyRun) // shared by the whole pack
+    this.munchTex = charTexture(drawHyena) // front-facing; shared by the whole pack
     this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
@@ -3142,7 +3144,6 @@ class RunnerWorld {
       this.scene.add(sp)
       this.extras.push({ sp, sc: 0 })
     }
-    this._face = 1 // Anbessa's facing (1 = right, -1 = left), toward the target lane
 
     this.chunks = []
     this.gate = null
@@ -3236,12 +3237,13 @@ class RunnerWorld {
     }
 
     const px = LANE_X[this.laneIndex]
-    // Face the lane (letter) being steered toward; hold that facing once settled.
-    if (px < this.player.position.x - 0.06) this._face = -1
-    else if (px > this.player.position.x + 0.06) this._face = 1
-    this.player.position.x += (px - this.player.position.x) * Math.min(1, dt * 10)
+    const steer = px - this.player.position.x
+    this.player.position.x += steer * Math.min(1, dt * 10)
     this.player.position.y = 1.25 + (this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.22)
-    this.player.scale.x = 2.3 * this._face
+    // Front-facing (watching the letters); lean toward the lane being steered
+    // to for a sense of motion, easing back upright once settled.
+    this.player.material.rotation = Math.max(-0.28, Math.min(0.28, -steer * 0.5))
+    this.player.scale.x = 2.3
     this.player.scale.y = 2.3
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
@@ -3260,9 +3262,9 @@ class RunnerWorld {
     this.muncher.position.y = my
     const mscale = this.bossMode === 'lose' ? 3.1 : 1.9
     this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
-    // Jibby faces the lion he is chasing (same convention as Anbessa).
-    const mFace = this.player.position.x >= this.muncher.position.x ? 1 : -1
-    this.muncher.scale.x = this._munchScale * mFace
+    // Jibby faces forward too, leaning toward the lion he is chasing.
+    this.muncher.material.rotation = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
+    this.muncher.scale.x = this._munchScale
     this.muncher.scale.y = this._munchScale
 
     // The growing pack: one extra Jibby per mistake beyond the first, flanking
@@ -3278,8 +3280,8 @@ class RunnerWorld {
       e.sp.position.x += (tx - e.sp.position.x) * Math.min(1, dt * 2)
       e.sp.position.z += (tz - e.sp.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2))
       e.sp.position.y = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7 + i * 1.7) * 0.12)
-      const eFace = this.player.position.x >= e.sp.position.x ? 1 : -1
-      e.sp.scale.x = e.sc * eFace
+      e.sp.material.rotation = Math.max(-0.24, Math.min(0.24, (this.player.position.x - e.sp.position.x) * 0.16))
+      e.sp.scale.x = e.sc
       e.sp.scale.y = e.sc
     }
 
