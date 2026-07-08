@@ -571,10 +571,11 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
       exit={{ scale: 0.2, opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
       className={`geez relative flex h-16 w-16 cursor-grab touch-none select-none items-center justify-center rounded-2xl border-4 text-3xl font-black active:cursor-grabbing ${FOCUS}`}
       style={{
-        background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
-        borderColor: hinted ? 'var(--accent)' : '#c68a44',
-        color: '#5b3a12',
-        boxShadow: '0 4px 0 #a06a30',
+        // Wrong pick: the card goes red so the child sees which letter missed.
+        background: refusing ? 'radial-gradient(circle at 32% 26%, #ff9a8a, #e23b2c)' : 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
+        borderColor: refusing ? '#b21e12' : hinted ? 'var(--accent)' : '#c68a44',
+        color: refusing ? '#fff' : '#5b3a12',
+        boxShadow: refusing ? '0 4px 0 #8f160c, 0 0 0 4px rgba(226,59,44,0.30)' : '0 4px 0 #a06a30',
         outlineColor: 'var(--sky)',
       }}
     >
@@ -763,11 +764,13 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const moodTimer = useRef(null)
   const refuseTimer = useRef(null)
   const meetTimer = useRef(null)
+  const retargetTimer = useRef(null)
   useEffect(
     () => () => {
       clearTimeout(moodTimer.current)
       clearTimeout(refuseTimer.current)
       clearTimeout(meetTimer.current)
+      clearTimeout(retargetTimer.current)
     },
     [],
   )
@@ -781,12 +784,11 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     (key) => {
       const { advanced, correct } = learnTransition(ctx, key)
       const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
-      // In the feed game a correct pick is immediately followed by the next
-      // spoken target; re-voicing the fed letter here would collide with that
-      // announcement. So skip the letter sound on a correct feed (the child
-      // just heard it as the target) - but keep it on a wrong feed so they
-      // hear what they picked, and everywhere else (letters always speak).
-      if (!(spoken && correct)) playForm(formOf(key), soundOn)
+      // Outside the feed game every tap voices the letter it touched (that IS
+      // the point - hear each star / bubble). In the feed game we never voice
+      // the tapped letter: a correct pick is announced as the next target, and
+      // a wrong pick is deliberately NOT voiced (see the wrong branch below).
+      if (!spoken) playForm(formOf(key), soundOn)
       if (spoken) {
         recordAnswer(ctx.target, key, 'learn')
         if (correct) {
@@ -798,11 +800,15 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
           dispatch(key)
           return
         }
-        // Wrong: he refuses (paw swat + head shake) and the card bonks back.
+        // Wrong: he refuses (paw swat + head shake), the wrong card flashes RED,
+        // and instead of voicing what they picked (which makes them forget the
+        // ask) we RE-VOICE THE ASKED LETTER so the target stays anchored.
         playEffect('bad', soundOn)
         setRefuseKey(key)
         clearTimeout(refuseTimer.current)
-        refuseTimer.current = setTimeout(() => setRefuseKey(null), 480)
+        refuseTimer.current = setTimeout(() => setRefuseKey(null), 950)
+        clearTimeout(retargetTimer.current)
+        retargetTimer.current = setTimeout(() => playForm(formOf(ctx.target), soundOn), 420)
         flashMood('refuse', 550)
         dispatch(key)
         return
