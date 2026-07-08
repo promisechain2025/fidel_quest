@@ -17,6 +17,24 @@ export function isNativePlatform() {
   }
 }
 
+/** True on an Apple device (iOS / iPadOS / Mac), where App Store gifting exists.
+   Used to show the "Send as a gift" entry only where Apple's Gift App flow is
+   actually available - Android/Play has no per-app gifting equivalent. */
+export function isApplePlatform() {
+  try {
+    if (isNativePlatform()) return Capacitor?.getPlatform?.() === 'ios'
+  } catch {
+    /* fall through to UA sniffing on the web */
+  }
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || ''
+  const iOS = /iPad|iPhone|iPod/.test(ua)
+  // iPadOS 13+ reports as desktop Safari; detect it by touch points.
+  const iPadOS = navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1
+  const mac = /Macintosh/.test(ua)
+  return iOS || iPadOS || mac
+}
+
 /** One-time native setup: status bar, splash hide, and the Android hardware
    back button. Safe to call always; returns immediately on the web. */
 export async function initNative() {

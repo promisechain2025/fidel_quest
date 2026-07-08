@@ -48,7 +48,8 @@ import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome } from './utils/challenge'
 import { loadFromStorage } from './utils/loadFromStorage'
-import { isNativePlatform } from './platform/native'
+import { isNativePlatform, isApplePlatform } from './platform/native'
+import GiftAppModal from './components/GiftModal'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -782,6 +783,7 @@ export default function FidelQuestApp() {
   const [giftOpened, setGiftOpened] = useState(null) // { reward } | { reward: null }
   const today = useMemo(() => todayKey(), [])
   const [backpackOpen, setBackpackOpen] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
 
@@ -790,6 +792,7 @@ export default function FidelQuestApp() {
   // preventDefault, so the native layer exits the app.
   useEffect(() => {
     const onBack = (e) => {
+      if (giftOpen) { setGiftOpen(false); e.preventDefault(); return }
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
       if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
@@ -797,7 +800,7 @@ export default function FidelQuestApp() {
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened])
+  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1097,8 +1100,12 @@ export default function FidelQuestApp() {
               onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
+              onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
             />
           )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
         </AnimatePresence>
       </div>
     </MotionConfig>
@@ -1531,7 +1538,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords, onPractice, onCloset, onTees, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   return (
     <motion.div
@@ -1575,6 +1582,11 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
+            {/* Gift entry: Apple only, since App Store "Gift App" is the one
+               store path for gifting a paid app. Hidden on Android/Play. */}
+            {isApplePlatform() && (
+              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--accent)" title={t('giftShort', 'Gift')} onClick={onGift} />
+            )}
             {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
                category store build has no un-gated external link. */}
             {!isNativePlatform() && (

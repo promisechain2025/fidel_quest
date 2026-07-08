@@ -180,6 +180,37 @@ kids/families programs — plan for it.
 
 ---
 
+## 7b. Gifting & recommending the app
+
+There is an in-app **"Send this app as a gift"** entry (Backpack → **Gift**,
+shown only on Apple devices). It doesn't take payment itself — it walks a
+grown-up through Apple's own **Gift App** flow and opens the App Store page.
+
+**Apple — the built-in Gift App flow (works once the app is paid):**
+- On the app's App Store page, the parent taps the share **(...)** button →
+  **Gift App**, pays, and sends it by email. The recipient **redeems it once**
+  and the gift code is then spent — exactly "send it, download once, expires".
+- Only works for **paid** apps, gifter/recipient in the **same country**, and
+  you can gift the **app** but not in-app purchases/subscriptions.
+- To make the in-app **Open App Store** button live, set the App Store numeric
+  id at build time once the listing exists:
+  ```bash
+  VITE_APPLE_APP_ID=1234567890 npm run build && npx cap sync
+  ```
+  Until it's set, the gift guide still shows but the button is disabled
+  ("Available once Fidel Quest is on the App Store") — no dead link.
+
+**Google Play — no per-app gifting.** Play has no equivalent button, so the
+Gift entry is hidden on Android. The two options there are Play **gift-card
+balance** (indirect) or developer **promo codes** (Play Console → *Promotions*;
+single-use codes you generate, up to 500/app/quarter, redeemed once then spent).
+
+**Recommending (free, either store):** anyone can share the App Store / Play
+listing link — no gifting mechanics needed.
+
+> A custom "paid link" outside the stores that unlocks the native download
+> yourself is **not** allowed — app payment must flow through Apple/Google.
+
 ## 8. Privacy policy (required)
 
 Host something like this at a public URL and link it in both stores:
