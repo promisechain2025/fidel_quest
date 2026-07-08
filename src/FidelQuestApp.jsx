@@ -1791,9 +1791,9 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
-          <h1 className="text-xl font-black leading-tight">{family ? `The ${family.name} family` : 'Letter Explorer'}</h1>
+          <h1 className="text-xl font-black leading-tight">{family ? t('exploreFamilyTitle', `The ${family.name} family`, { name: family.name }) : t('exploreHeader', 'Letter Explorer')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {family ? 'Seven forms, one letter — tap to hear each' : 'Pick a vowel, then tap any family to hear it'}
+            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
           </p>
         </div>
       </header>

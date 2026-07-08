@@ -185,6 +185,10 @@ const STRINGS = {
     scopeLearned: 'የኔ ፊደላት',
     scopeAll: 'ሁሉም ፊደላት',
     scopeLabel: 'የትኞቹ ፊደላት',
+    exploreHeader: 'የፊደል አሳሽ',
+    exploreHeaderSub: 'አናባቢ ይምረጡ፣ ከዚያ ማንኛውንም ቤተሰብ ንኩ ለማዳመጥ',
+    exploreFamilyTitle: 'የ{name} ቤተሰብ',
+    exploreFamilySub: 'ሰባት ቅርጾች፣ አንድ ፊደል — እያንዳንዱን ንኩ ለማዳመጥ',
     'slot.hat': 'ኮፍያዎች',
     'slot.scarf': 'ሻርፖች',
     'slot.cape': 'ካባዎች',
@@ -360,6 +364,10 @@ const STRINGS = {
     scopeLearned: 'ናተይ ፊደላት',
     scopeAll: 'ኩሎም ፊደላት',
     scopeLabel: 'ኣየኖት ፊደላት',
+    exploreHeader: 'መርማሪ ፊደል',
+    exploreHeaderSub: 'ድምጺ ምረጽ፣ ደሓር ዝኾነ ስድራ ተንክፍ ንምስማዕ',
+    exploreFamilyTitle: 'ስድራ {name}',
+    exploreFamilySub: 'ሸውዓተ ቅርጺ፣ ሓደ ፊደል — ንነፍሲ ወከፍ ተንክፍ ንምስማዕ',
   },
 }
 
