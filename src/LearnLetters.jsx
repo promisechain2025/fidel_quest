@@ -342,8 +342,17 @@ const BUBBLE_COLORS = [
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const met = ctx.forms.slice(0, ctx.idx)
+  const [popped, setPopped] = useState(false)
   if (!form) return null
   const c = BUBBLE_COLORS[ctx.idx % BUBBLE_COLORS.length]
+  // On pop: freeze the wandering, voice the letter, and let the bubble swell and
+  // fade. The parent holds the advance (~0.9s) so the next letter only drifts in
+  // once this one has been fully spoken and cleared.
+  const pop = () => {
+    if (popped) return
+    setPopped(true)
+    onTouch(form.audioKey)
+  }
   return (
     <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex w-full flex-col items-center gap-5">
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
@@ -363,18 +372,29 @@ function BubbleMeet({ ctx, onTouch }) {
         ))}
         <motion.button
           type="button"
-          onPointerDown={() => onTouch(form.audioKey)}
+          onPointerDown={pop}
+          disabled={popped}
           initial={{ x: '-30%', y: 30, scale: 0.5 }}
-          animate={{
-            // A wandering loop (roughly a figure-8) instead of a straight
-            // back-and-forth, with a rocking tilt and a bouncy squash-stretch
-            // so the letter looks like it is dancing around the stage.
-            x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-            y: [24, 8, 26, 52, 66, 54, 30, 24],
-            rotate: [0, 9, -5, 8, -9, 6, -3, 0],
-            scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
-          }}
-          transition={{ duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
+          animate={
+            popped
+              ? // Popped: stop wandering, swell and fade out slowly while the
+                // letter is voiced, so the stage clears before the next drifts in.
+                { scale: 1.4, opacity: 0 }
+              : {
+                  // A wandering loop (roughly a figure-8) instead of a straight
+                  // back-and-forth, with a rocking tilt and a bouncy squash-stretch
+                  // so the letter looks like it is dancing around the stage.
+                  x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
+                  y: [24, 8, 26, 52, 66, 54, 30, 24],
+                  rotate: [0, 9, -5, 8, -9, 6, -3, 0],
+                  scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
+                }
+          }
+          transition={
+            popped
+              ? { duration: 0.85, ease: 'easeInOut' }
+              : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
+          }
           className={`geez absolute left-1/2 top-4 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
           style={{
             // Glossy candy ball: a bright off-centre core melts into the rich
@@ -418,10 +438,13 @@ function BubbleMeet({ ctx, onTouch }) {
   )
 }
 
-/** Star positions along a gentle wave (percent coordinates). */
-const STAR_POINTS = [8, 22, 36, 50, 64, 78, 92].map((left, i) => ({
-  left,
-  top: 38 + Math.sin(i * 1.9) * 20,
+/** Star positions in a vertical zigzag (percent coordinates): the seven stars
+   alternate left/right and step down the tall stage, so adjacent stars sit far
+   apart. On a phone that leaves room for small fingers to swipe from one star
+   to the next without the two overlapping, and it fills the vertical space. */
+const STAR_POINTS = [0, 1, 2, 3, 4, 5, 6].map((i) => ({
+  left: i % 2 === 0 ? 27 : 73,
+  top: 12 + i * 12.6,
 }))
 
 /** FORWARD/BACKWARD: draw the family constellation with a finger. */
@@ -441,7 +464,7 @@ function StarTrail({ ctx, onTouch }) {
         {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
         {t('starHint', 'Slide star to star and draw the constellation')}
       </p>
-      <div {...handlers} className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #1b2b4a, #2c3f66)' }}>
+      <div {...handlers} className="relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #1b2b4a, #2c3f66)' }}>
         {/* twinkle dust */}
         {[12, 30, 55, 70, 88, 42, 62].map((left, i) => (
           <motion.span key={i} className="absolute h-1 w-1 rounded-full bg-white" style={{ left: `${left}%`, top: `${(i * 31) % 80 + 6}%` }} animate={{ opacity: [0.2, 0.9, 0.2] }} transition={{ duration: 2 + (i % 3), repeat: Infinity }} aria-hidden="true" />
@@ -739,10 +762,12 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const prevPhase = useRef(ctx.phase)
   const moodTimer = useRef(null)
   const refuseTimer = useRef(null)
+  const meetTimer = useRef(null)
   useEffect(
     () => () => {
       clearTimeout(moodTimer.current)
       clearTimeout(refuseTimer.current)
+      clearTimeout(meetTimer.current)
     },
     [],
   )
@@ -786,6 +811,19 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       dispatch(key)
     },
     [ctx, soundOn, flashMood],
+  )
+
+  // MEET (Bubble Pop): voice the letter right away, but hold the advance so the
+  // popped bubble can fade out while it is being spoken - only then does the
+  // next letter drift in (otherwise it appears mid-word and confuses the child).
+  const popMeet = useCallback(
+    (key) => {
+      playForm(formOf(key), soundOn)
+      setBurst((b) => b + 1)
+      clearTimeout(meetTimer.current)
+      meetTimer.current = setTimeout(() => dispatch(key), 900)
+    },
+    [soundOn],
   )
 
   // Speak spoken-round targets; celebrate phase changes and completion.
@@ -839,7 +877,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
         <AnimatePresence mode="wait">
-          {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={touch} />}
+          {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StarTrail key={ctx.phase} ctx={ctx} onTouch={touch} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
