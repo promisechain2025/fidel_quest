@@ -8,6 +8,22 @@ accounts). This guide is the end-to-end runbook.
 
 ---
 
+## Before you submit — quick checklist
+
+- [ ] Build the store release with **no optional server env vars** set
+      (`VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`) so the app
+      provably collects nothing — see §5.
+- [ ] Once the App Store listing exists, set **`VITE_APPLE_APP_ID`** (the
+      numeric id from App Store Connect) at build time so the in-app
+      **"Send this app as a gift"** button links to your store page — see §7b.
+      Without it the gift guide still shows but the button stays disabled.
+- [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
+- [ ] Host the **privacy policy** and paste its URL into both stores — §8.
+- [ ] Decide on the microphone "Say-it" feature (keep + declare, or drop for a
+      simpler kids-category review) — §4.
+
+---
+
 ## 0. What's already done in the repo
 
 - `capacitor.config.json` — app id `net.promisechain.fidelquest`, name

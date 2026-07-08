@@ -336,14 +336,15 @@ describe('<AmharicFidelGame />', () => {
   })
 
   it('renders the Classic UI in the global app language', () => {
-    // Language now follows the single global app-text setting (fq.lang), set
-    // from the main app's picker, rather than a Classic-only toggle.
+    // Language follows the single global app-text setting (fq.lang). Amharic is
+    // no longer an app-text language (the UI serves learners who can't yet read
+    // Fidel), so the UI stays English; a legacy fq.lang='am' falls back to it.
     render(<AmharicFidelGame />)
     expect(screen.getByText('Fidel Quest')).toBeInTheDocument() // English default
     cleanup()
     localStorage.setItem('fq.lang', 'am')
     render(<AmharicFidelGame />)
-    expect(screen.getByText('የፊደል ጉዞ')).toBeInTheDocument()
+    expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
   })
 
   it('opens trace mode and falls back gracefully without canvas support', () => {

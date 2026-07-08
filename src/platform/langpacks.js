@@ -14,7 +14,6 @@
 // Order shown in the picker. `label` is the language's own endonym.
 export const LANG_META = [
   { id: 'en', label: 'English' },
-  { id: 'am', label: 'አማርኛ' },
   { id: 'de', label: 'Deutsch' },
   { id: 'it', label: 'Italiano' },
   { id: 'sv', label: 'Svenska' },
