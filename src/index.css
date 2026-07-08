@@ -95,6 +95,21 @@
   --overlay: rgba(60, 53, 41, 0.4);
 }
 
+/* Locked Journey nodes: a warm "sealed but visible" look (not greyed out) so
+   kids can preview the letters/games ahead. Theme-aware like the rest. */
+:root {
+  --lock-hi: #fff6e6; --lock-bg: #ffeaca; --lock-line: #f0d8a6; --lock-ink: #c99b46; --lock-chip: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --lock-hi: #2c2417; --lock-bg: #241d12; --lock-line: #4a4230; --lock-ink: #cbae6b; --lock-chip: #2c2417; }
+}
+:root[data-theme="dark"] {
+  --lock-hi: #2c2417; --lock-bg: #241d12; --lock-line: #4a4230; --lock-ink: #cbae6b; --lock-chip: #2c2417;
+}
+:root[data-theme="light"] {
+  --lock-hi: #fff6e6; --lock-bg: #ffeaca; --lock-line: #f0d8a6; --lock-ink: #c99b46; --lock-chip: #ffffff;
+}
+
 html, body { background: var(--paper); color: var(--ink); }
 body {
   font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Quicksand',
