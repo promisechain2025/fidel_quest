@@ -19,8 +19,10 @@ accounts). This guide is the end-to-end runbook.
       Without it the gift guide still shows but the button stays disabled.
 - [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
 - [ ] Host the **privacy policy** and paste its URL into both stores — §8.
-- [ ] Microphone: **nothing to do** — the app no longer uses the mic at all,
-      so no permission is declared and none is prompted — see §4.
+- [ ] Microphone: the only mic use is the optional **Family Voice** recorder
+      (adult flow). For the simplest kids review build with
+      **`VITE_FAMILY_VOICE_RECORD=false`** (no mic); or keep it and declare the
+      permission — see §4.
 
 ---
 
@@ -99,18 +101,33 @@ re-run the command.
 
 ## 4. Native permissions & settings
 
-### Microphone — not used
-Fidel Quest does **not** use the microphone. The old "Say-it" pronunciation
-practice was removed, so there is no `getUserMedia` anywhere in the app.
+### Microphone — only the optional Family Voice recorder
+The old "Say-it" practice was removed. The **one** remaining mic use is the
+**Family Voice** recorder (`docs/family-voice.md`): a *grown-up* records the
+letters in their own voice on-device to share with a child. Importing and
+playing a received voice never uses the mic.
 
-- **Do NOT** add `NSMicrophoneUsageDescription` (iOS) or `RECORD_AUDIO`
-  (Android) — declaring a permission the app never uses can itself trigger a
-  store rejection.
-- In the store data-safety / privacy forms, answer that the app does **not**
-  access the microphone.
+You have two store options:
 
-This keeps the kids-category review as simple as possible: no permission
-prompts, nothing to justify.
+- **Simplest kids review (no mic):** build with
+  **`VITE_FAMILY_VOICE_RECORD=false`**. The recorder UI is removed entirely;
+  only import + playback ship, so the app declares **no microphone** and no
+  data collection. Families can still receive and use voices — just record on a
+  device where the recorder is enabled (e.g. the web app).
+- **Keep the recorder:** leave it on and declare the permission with an
+  adult-facing description:
+  - **iOS** — `ios/App/App/Info.plist`:
+    ```xml
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Fidel Quest lets a grown-up record the letters in their own voice on this device to share with a child. Audio stays on the device and is only sent in a file you choose to share.</string>
+    ```
+  - **Android** — `android/app/src/main/AndroidManifest.xml`:
+    ```xml
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    ```
+  Data-safety: audio is created on-device and **not collected/uploaded** — it
+  only leaves the device inside a file the user explicitly shares.
 
 ### App name / version
 - **iOS**: Xcode → target **App** → General → Display Name, Version (e.g.

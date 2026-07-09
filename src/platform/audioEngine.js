@@ -63,6 +63,11 @@ export function effectiveKey(key, override) {
  * state: {memory, manifest, missing, audioBase, override}.
  */
 export function resolveSource(key, state) {
+  // Family Voice sits ABOVE the language override: a loved one recorded their
+  // own pronunciation for the letter the child sees, keyed by the LOGICAL key
+  // (letters/ha-1), so no order-remap applies. Covered keys win; the rest fall
+  // through to the built-in cascade. See docs/family-voice.md.
+  if (state.familyPack && state.familyPack[key]) return { type: 'memory', src: state.familyPack[key] }
   const ekey = effectiveKey(key, state.override)
   // Only demote a redirect to the base key when we have coverage info that says
   // the redirected clip is absent; with no info at all we stay optimistic.
@@ -91,6 +96,7 @@ export class AudioEngine {
     this.override = override
     this.getMemory = getMemory
     this.fetchImpl = fetchImpl
+    this.familyPack = null // { 'letters/ha-1': objectURL|dataURI, … } | null
     this.ctx = null
     this.buffers = new Map() // src -> AudioBuffer | Promise<AudioBuffer>
     this.missing = new Set() // keys that failed; never retried
@@ -149,8 +155,17 @@ export class AudioEngine {
     }
   }
 
+  /** Point playback at a family voice pack (map of logical key -> object URL),
+     or null to fall back to the built-in voice. Clears decoded buffers so the
+     new clips are used immediately. */
+  setFamilyPack(map) {
+    this.familyPack = map && Object.keys(map).length ? map : null
+    this.buffers.clear()
+  }
+
   resolve(key) {
     return resolveSource(key, {
+      familyPack: this.familyPack,
       memory: this.getMemory(),
       manifest: this.manifest ?? null,
       missing: this.missing,

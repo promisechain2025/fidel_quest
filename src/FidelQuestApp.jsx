@@ -27,6 +27,7 @@ import { playForm, playEffect, preloadForms } from './platform/audioEngine'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
+import FamilyVoice from './components/FamilyVoice'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
@@ -77,6 +78,7 @@ import {
   ShoppingBag,
   Share2,
   Gift,
+  Mic,
   Backpack as BackpackIcon,
   ClipboardCheck,
   Users,
@@ -961,6 +963,11 @@ export default function FidelQuestApp() {
               />
             </Screen>
           )}
+          {screen.name === 'familyvoice' && (
+            <Screen key="familyvoice">
+              <FamilyVoice onBack={() => setScreen({ name: 'home' })} />
+            </Screen>
+          )}
           {screen.name === 'classic' && (
             <Screen key="classic">
               <div className="relative">
@@ -1104,6 +1111,7 @@ export default function FidelQuestApp() {
               onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
+              onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
               onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
             />
           )}
@@ -1561,7 +1569,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -1608,6 +1616,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onWords
             {isSocialEnabled() && (
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
+            <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}
