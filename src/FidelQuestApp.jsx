@@ -64,6 +64,7 @@ import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform, isApplePlatform } from './platform/native'
 import GiftAppModal from './components/GiftModal'
+import Dropdown from './components/Dropdown'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
@@ -1142,6 +1143,7 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 seed={runSeed}
                 soundOn={soundOn}
+                onCancel={goBack}
                 // Which letters to quiz follows the shared scope preference:
                 // 'learned' (default) restricts to families whose LEARN node is
                 // done; 'all' opens the whole abugida. scopedBaseForms falls
@@ -1585,26 +1587,27 @@ function serpentineRows(nodes, cols) {
 }
 const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
 
-/* One row of the Today's-plan card: number chip -> check when done. */
-function PlanRow({ step, done, label, onClick, pulse }) {
+/* One chip of the Today's-plan strip: number -> check when done. Chips sit
+   in a single horizontal row so the coach guides without burying the path
+   (the old stacked card pushed the Journey below the fold on small phones). */
+function PlanChip({ step, done, label, onClick, pulse }) {
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      animate={pulse && !done ? { scale: [1, 1.012, 1] } : {}}
+      animate={pulse && !done ? { scale: [1, 1.04, 1] } : {}}
       transition={{ duration: 1.6, repeat: Infinity }}
-      className={`chunk flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left ${FOCUS}`}
+      className={`chunk flex shrink-0 items-center gap-1.5 rounded-full py-2 pl-2 pr-3 text-xs font-black ${FOCUS}`}
       style={done
-        ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
+        ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
         : pulse
-          ? { background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--accent)' }
-          : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+          ? { background: 'var(--sky)', boxShadow: '0 2px 0 var(--sky-deep)', '--chunk-depth': '2px', color: '#fff', outlineColor: 'var(--accent)' }
+          : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
-        {done ? <Check className="h-5 w-5" aria-hidden="true" /> : step}
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
+        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step}
       </span>
-      <span className={`min-w-0 flex-1 truncate text-sm font-black ${done ? 'line-through' : ''}`}>{label}</span>
-      {!done && <span aria-hidden="true" className="text-lg font-black opacity-70">&rsaquo;</span>}
+      <span className={done ? 'line-through' : ''}>{label}</span>
     </motion.button>
   )
 }
@@ -1802,57 +1805,61 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         </p>
       ))}
 
-      {/* Today's plan: the coach's guide for the session - warm-up review
-         first (kids rush to the games), then today's new step, then the
-         Daily Hunt. Rows check off as the day progresses; the footer carries
-         the registered pace's finish date, or the invite to make a plan. */}
-      <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border-2 p-3" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-        <p className="px-1 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
-        <div className="mt-2 flex flex-col gap-2">
+      {/* Today's plan: the coach's guide as a slim strip - one horizontal
+         row of numbered chips (warm-up first, teacher's assignment, today's
+         new step, the Daily Hunt) that check off through the day, with the
+         pace's finish date (or the make-a-plan invite) as a small tail
+         line. Deliberately compact: the Journey path is the hero and must
+         stay above the fold even on a small phone. */}
+      <div className="mx-auto mt-3 w-full max-w-md">
+        <div className="flex items-baseline justify-between gap-2 px-1">
+          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
+          {coach?.hasPlan && coach?.eta ? (
+            <p className="truncate text-[11px] font-bold" style={{ color: 'var(--go-ink)' }}>
+              {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: coach.eta })}
+            </p>
+          ) : (
+            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+              {t('planMake', 'Make my learning plan')}
+            </button>
+          )}
+        </div>
+        <div className="mt-1.5 flex gap-2 overflow-x-auto px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
           {coach?.warmupState !== 'none' && (
-            <PlanRow
+            <PlanChip
               step={1}
               done={coach?.warmupState === 'done'}
-              label={t('planWarmupStep', 'Warm-up: review your letters')}
+              label={t('warmTitle', 'Warm-up')}
               onClick={onWarmup}
               pulse={coach?.warmupState === 'todo'}
             />
           )}
           {coach?.assignment && (
-            <PlanRow
+            <PlanChip
               step={(coach?.warmupState !== 'none' ? 1 : 0) + 1}
               done={false}
-              label={t('planAssignStep', "Teacher's assignment - {who}", { who: coach.assignment.teacher })}
+              label={t('asTitle', 'Assignment')}
               onClick={onAssignment}
               pulse={coach?.warmupState !== 'todo'}
             />
           )}
           {current && (
-            <PlanRow
+            <PlanChip
               step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + 1}
               done={false}
-              label={t('planNewStep', "Today's new step")}
+              label={t('planNewShort', 'New step')}
               onClick={() => onOpen(current)}
               pulse={coach?.warmupState !== 'todo' && !coach?.assignment}
             />
           )}
-          <PlanRow
+          <PlanChip
             step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + (current ? 1 : 0) + 1}
             done={huntDone}
-            label={t('planHuntStep', 'Daily Letter Hunt')}
+            label={t('huntShort', 'Daily Hunt')}
             onClick={onHunt}
             pulse={false}
           />
         </div>
-        {coach?.hasPlan && coach?.eta ? (
-          <p className="mt-2 px-1 text-xs font-bold" style={{ color: 'var(--go-ink)' }}>
-            {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: coach.eta })}
-          </p>
-        ) : (
-          <button type="button" onClick={onPlanSetup} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
-            {t('planMake', 'Make my learning plan')}
-          </button>
-        )}
       </div>
 
       <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
@@ -1931,62 +1938,41 @@ function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) 
 /* Language settings. Two axes the app already models separately: the learning
    pack (Amharic vs Tigrinya sounds/letters/audio) and the UI text (English vs
    Amharic). Both are launch-time by design, so a change persists and reloads. */
-/** One row of the picker: a small label + a wrapping row of chips. Chips share
-   the same chunky style as the rest of the app so the picker reads as buttons,
-   not a cramped native <select> (which mis-rendered on mobile). */
-function LangRow({ icon, label, options, current, onPick, geez = false }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
-        {icon}{label}
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map(([id, text]) => {
-          const active = current === id
-          return (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => { if (!active) onPick(id) }}
-              className={`${geez ? 'geez ' : ''}rounded-xl px-3 py-1.5 text-sm font-black ${FOCUS}`}
-              style={{
-                background: active ? 'var(--go)' : 'var(--paper)',
-                color: active ? '#fff' : 'var(--ink)',
-                border: '2px solid', borderColor: active ? 'var(--go)' : 'var(--line)',
-                boxShadow: active ? '0 2px 0 var(--go-deep)' : 'none',
-                outlineColor: 'var(--sky)',
-              }}
-            >
-              {text}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
+/* Both language axes as the app's OWN dropdowns (components/Dropdown.jsx):
+   a native <select> would summon the iOS wheel over the sheet, and the old
+   chip grid (9 languages = four rows) crowded the game tiles out of view on
+   a small phone. The lists open UPWARD - the picker sits at the sheet's
+   bottom edge. */
 function LanguagePicker() {
   const pack = getActivePackId()
   const ui = getLang()
   return (
-    <div className="mt-3 flex shrink-0 flex-col gap-3 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
-      <LangRow
-        icon={<BookOpen className="h-4 w-4" aria-hidden="true" />}
-        label={t('langLearn', 'Learning')}
-        geez
-        current={pack}
-        options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
-        onPick={(id) => { setActivePack(id); window.location.reload() }}
-      />
-      <LangRow
-        icon={<Globe className="h-4 w-4" aria-hidden="true" />}
-        label={t('langText', 'App text')}
-        current={ui}
-        options={LANG_META.map((o) => [o.id, o.label])}
-        onPick={(id) => { setLang(id); window.location.reload() }}
-      />
+    <div className="mt-3 grid shrink-0 grid-cols-2 gap-3 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+      <div className="min-w-0">
+        <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+          <BookOpen className="h-4 w-4" aria-hidden="true" />{t('langLearn', 'Learning')}
+        </span>
+        <Dropdown
+          up
+          geez
+          label={t('langLearn', 'Learning')}
+          value={pack}
+          options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
+          onChange={(id) => { setActivePack(id); window.location.reload() }}
+        />
+      </div>
+      <div className="min-w-0">
+        <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+          <Globe className="h-4 w-4" aria-hidden="true" />{t('langText', 'App text')}
+        </span>
+        <Dropdown
+          up
+          label={t('langText', 'App text')}
+          value={ui}
+          options={LANG_META.map((o) => [o.id, o.label])}
+          onChange={(id) => { setLang(id); window.location.reload() }}
+        />
+      </div>
     </div>
   )
 }
@@ -2473,18 +2459,25 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
     return () => clearTimeout(t)
   }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Feedback sounds fire on state entry.
+  // Feedback sounds fire on state entry. A correct pick ECHOES the letter
+  // right after the success chime - hearing "you got it: ha" once more is
+  // the reinforcement moment, not just a beep.
   useEffect(() => {
     const q = ctx.queue[ctx.cursor]
+    let echo
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
+      if (q && !demoRef.current) {
+        recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
+        echo = setTimeout(() => playForm(formOf(q.target), soundOn), 380)
+      }
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
       if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
+    return () => clearTimeout(echo)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-advance: a correct answer moves to the next question on its own (no
@@ -3895,8 +3888,12 @@ class RunnerWorld {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
-    this.camera.position.set(0, 3.6, 7.6)
-    this.camera.lookAt(0, 1.2, -12)
+    // Three-quarter chase view: the camera sits a little to the LEFT of the
+    // track so the road recedes diagonally and the side-profile run sprites
+    // below (which face right, along the direction of travel) read naturally
+    // - faces visible, not backs. Product decision from device testing.
+    this.camera.position.set(-2.4, 3.8, 8.1)
+    this.camera.lookAt(0.9, 1.1, -13)
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
@@ -3912,11 +3909,11 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    // Back-facing character: the player runs away from the camera, down the
-    // lane, so we see Anbessa's back and he faces the letters coming toward him
-    // (a proper third-person runner view, not a face staring at the player).
-    this.playerTexHappy = charTexture(drawAnbessaBack, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessaBack, 'worried')
+    // Side-profile run pose (face, mane, and the star on his flank visible)
+    // instead of the old back view, which read as a shapeless blob from the
+    // chase camera.
+    this.playerTexHappy = charTexture(drawAnbessaRun, 'happy')
+    this.playerTexWorried = charTexture(drawAnbessaRun, 'worried')
     this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
     this.player.scale.set(2.3, 2.3, 1)
     this.player.position.set(0, 1.25, 0)
@@ -3940,7 +3937,7 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchTex = charTexture(drawHyenaBack) // back-facing chase view; shared by the whole pack
+    this.munchTex = charTexture(drawJibbyRun) // side-profile chase pose; shared by the whole pack
     this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
@@ -4147,18 +4144,30 @@ function Arcade3D({ children }) {
   return children
 }
 
-function ArcadeGateway({ node, seed, soundOn, onDone, onRetry, pool, allLetters = false }) {
+function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool, allLetters = false }) {
   const isRunner = node.gateway.mode === 'runner'
+  // Quitting is NOT winning: the games report how far the run actually got
+  // when they exit, and only a real achievement completes the Journey node -
+  // the runner must beat at least one boss (reach level 2), Skylands must
+  // have this node's island cleared. Anything less just goes back to the
+  // path with the node still open.
+  const finish = (r = {}) => {
+    const won = isRunner
+      ? (r.level ?? 1) >= 2 || !!r.survivedBoss
+      : (r.sessionsCompleted ?? 0) >= (node.gateway.island ?? 1)
+    if (won) onDone()
+    else onCancel()
+  }
   if (isDegraded()) {
     return isRunner ? (
-      <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} pool={pool} />
+      <Runner2D seed={seed} soundOn={soundOn} onExit={finish} pool={pool} />
     ) : (
-      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} allLetters={allLetters} />
+      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={finish} allLetters={allLetters} />
     )
   }
   return (
     <Arcade3D>
-      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={onDone} allLetters={allLetters} />}
+      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={finish} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={finish} allLetters={allLetters} />}
     </Arcade3D>
   )
 }
@@ -4339,7 +4348,7 @@ function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   return (
     <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -4496,7 +4505,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
           {t('runAgain', 'Run again')}
         </Chunky>
-        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onExit}>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })}>
           {t('home', 'Home')}
         </Chunky>
       </div>

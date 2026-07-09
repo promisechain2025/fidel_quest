@@ -1084,7 +1084,7 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <header className="flex items-center gap-2 p-3">
           {st.mode === 'map' && onExit && (
-            <button type="button" onClick={onExit} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+            <button type="button" onClick={() => onExit({ sessionsCompleted: st.sessionsCompleted })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
               {t('home', 'Home')}
             </button>
           )}

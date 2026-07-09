@@ -128,6 +128,25 @@ back to a new player.
       assignment link (same tab): it must route to the join/assignment
       screen, not be ignored.
 
+## Device polish (from the first device pass)
+- [ ] **No text selection** — long-press and drag over letters, buttons, and
+      cards anywhere: nothing highlights and no iOS copy/lookup bubble
+      appears. The name fields (teacher/student/nickname) still select.
+- [ ] **Backpack fits** — on a small phone the game tiles stay visible and
+      the two language pickers are compact dropdowns that open upward with
+      the app's own list (never the iOS wheel).
+- [ ] **Today's plan strip** — one slim chip row above the path; the path's
+      current step stays visible without scrolling.
+- [ ] **Correct-answer echo** — in any find-the-letter quiz, a right answer
+      plays the chime and then says the letter again.
+- [ ] **Quitting is not winning** — open Letter Runner or Skylands from the
+      path and quit immediately: back on the path, the node is still the
+      pulsing next step. Beat one runner boss (or clear the island) and it
+      completes for real. If an old test device shows everything already
+      cleared, open the app once with `?reset` (leftover `?unlock` QA data).
+- [ ] **Runner look** — Anbessa and Jibby run in side profile (faces
+      visible) on a three-quarter angled road.
+
 ## Audio resilience
 - [ ] **Back-and-forth audio** — start a lesson (voice plays), switch to
       another app (or take a call / lock the screen), come back, and tap

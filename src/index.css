@@ -130,6 +130,19 @@ body {
     system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* A kids' game, not a document: tapping letters must never select text or
+   pop the copy/lookup callout (iOS long-press). Typing fields opt back in. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+input, textarea, [contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 .geez {
   font-family: 'Noto Sans Ethiopic', 'Abyssinica SIL', 'Kefa', 'Ebrima',
     system-ui, sans-serif;

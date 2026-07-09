@@ -90,7 +90,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
           <button type="button" onClick={() => dispatch({ type: '__reset__' })} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px' }}>
             {t('runAgain', 'Run again')}
           </button>
-          <button type="button" onClick={onExit} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
+          <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
             {t('home', 'Home')}
           </button>
         </div>
@@ -101,7 +101,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -206,7 +206,17 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
   }, [cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (done) playEffect('win', soundOn)
+    if (!done) return
+    playEffect('win', soundOn)
+    // Clearing the island on the 2D fallback counts exactly like the 3D
+    // map: persist into the shared Skylands save so both views agree.
+    try {
+      const s = JSON.parse(localStorage.getItem('fq3.skylands')) || {}
+      localStorage.setItem('fq3.skylands', JSON.stringify({
+        sessionsCompleted: Math.max(s.sessionsCompleted | 0, island),
+        learnedSessions: Math.max(s.learnedSessions | 0, island),
+      }))
+    } catch { /* session-only */ }
   }, [done]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (done) {
@@ -214,7 +224,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
         <Sprite2D draw={drawAnbessa} size={120} />
         <h2 className="text-2xl font-black">{t('levelComplete', 'Island cleared!')}</h2>
-        <button type="button" onClick={onExit} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+        <button type="button" onClick={() => onExit({ sessionsCompleted: island })} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
           {t('continue', 'Continue')}
         </button>
       </div>
@@ -235,7 +245,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Leave island" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ sessionsCompleted: 0 })} aria-label="Leave island" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--go)' }}>
