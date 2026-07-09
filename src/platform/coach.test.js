@@ -37,6 +37,20 @@ describe('buildWarmup', () => {
       expect(new Set(sounds).size).toBe(sounds.length)
     }
   })
+  it('never seats an option from outside the scoped families', () => {
+    const famOf = (k) => k.replace(/-\d+$/, '')
+    for (const seed of [1, 5, 42]) {
+      for (const q of buildWarmup(seed, ['ha', 'le'], [])) {
+        expect(q.options.length).toBeGreaterThanOrEqual(2)
+        for (const k of q.options) expect(['ha', 'le']).toContain(famOf(k))
+      }
+    }
+    // even a single-family pool fills options from its own vocal orders
+    for (const q of buildWarmup(3, ['ha'], [])) {
+      expect(q.options.length).toBe(4)
+      for (const k of q.options) expect(famOf(k)).toBe('ha')
+    }
+  })
   it('never asks the same SOUND twice across the warm-up (twins collapse)', () => {
     const withTwins = ['ha', 'hha', 'kha', 'se', 'sse', 'a', 'ae']
     for (const seed of [1, 9, 42, 77]) {

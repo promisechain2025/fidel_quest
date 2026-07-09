@@ -133,17 +133,21 @@ export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMU
   let targets = targetPick
   ;[targets, state] = rngShuffle(targets, state)
 
+  // Distractors stay IN SCOPE: never a letter from outside the pool's
+  // families. When a small pool (a one- or two-family week) cannot fill four
+  // options by itself, the extras are OTHER VOCAL ORDERS of those same
+  // families (hear "ha" -> pick among ha hu hi...), which is exactly the
+  // discrimination the abugida asks for - not a stranger letter the child
+  // has never met. Every family has seven distinct-vowel orders, so at
+  // least four in-scope sounds always exist.
+  const inFamily = poolIds
+    .flatMap((id) => [1, 2, 3, 4, 5, 6, 7].map((o) => `${id}-${o}`))
+    .filter((k) => INDEXES.byAudioKey.has(k) && !pool.includes(k))
+
   return targets.map((target) => {
     const sound = soundOf(target)
-    // Distractors: pool letters first, padded from the whole abugida at the
-    // same orders, pairwise-distinct sounds so twins never make a question
-    // ambiguous.
-    const all = keysOf(FIDEL_FAMILIES.map((f) => f.id))
     let candidates
-    ;[candidates, state] = rngShuffle(
-      [...pool, ...all.filter((k) => !pool.includes(k))].filter((k) => k !== target),
-      state,
-    )
+    ;[candidates, state] = rngShuffle([...pool, ...inFamily].filter((k) => k !== target), state)
     const used = new Set([sound])
     const picked = [target]
     for (const k of candidates) {

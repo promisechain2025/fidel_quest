@@ -82,6 +82,16 @@ describe('assignments', () => {
     expect(new Set(qs.map((q) => q.target)).size).toBe(2)
     expect(buildAssignmentQueue(a)).toEqual(qs) // still deterministic
   })
+  it('stays strictly in scope: no option from outside the assigned families', () => {
+    const famOf = (k) => k.replace(/-\d+$/, '')
+    for (const familyIds of [['ha', 'le'], ['se'], ['ha', 'le', 'me', 'se']]) {
+      const a = decodeAssignment(encodeAssignment({ ...ASSIGN, familyIds, count: 8 }))
+      for (const q of buildAssignmentQueue(a)) {
+        expect(familyIds).toContain(famOf(q.target))
+        for (const k of q.options) expect(familyIds).toContain(famOf(k))
+      }
+    }
+  })
   it('carries vocal orders, clamped to the real 1..7', () => {
     expect(decodeAssignment(encodeAssignment(ASSIGN)).orders).toEqual([1])
     const a = decodeAssignment(encodeAssignment({ ...ASSIGN, orders: [3, 1, 9, 'x', 3] }))

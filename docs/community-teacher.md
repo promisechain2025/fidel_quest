@@ -139,7 +139,11 @@ untrusted input.
   roster, invite QR + share link (offline QR via the `qrcode` package), and
   a free-form **extra assignment** builder (any families, base letters or
   all 7 vowel orders, question count, due date). Small pools don't starve
-  the count — `buildAssignmentQueue` cycles deterministic batches.
+  the count — `buildAssignmentQueue` cycles deterministic batches. Questions
+  are **strictly scoped**: neither targets nor distractor options ever leave
+  the assigned families; a small week pads its options with other vocal
+  orders of the SAME families (ሀ vs ሁ discrimination), never a stranger
+  letter (same rule for the daily warm-up and the TV quiz).
 - **TV classroom display** `src/components/TvClass.jsx`: two modes on the
   dark board, both scoped to the calling week's families (or the whole
   abugida). **Chant**: giant letter + the family's seven orders,

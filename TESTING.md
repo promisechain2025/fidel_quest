@@ -107,6 +107,10 @@ back to a new player.
       remembered for the next assignment; a two-family week still fills the
       full question count. An "All 7 forms" extra assignment asks non-base
       forms (ሁ, ሂ, …).
+- [ ] **Scope check** — in a Week-1 (e.g. ሀ ለ) assignment and in the TV
+      Quiz opened from that week, every answer button belongs to those
+      families only (base letters, or other forms of the SAME families like
+      ሁ ል when the week is small) — never an unrelated letter like ጠ.
 - [ ] Teacher: open the received result link — a green **"Result saved"**
       banner and the student appears in the **Results** roster (best %, one
       line per assignment). Opening the same link twice does not
