@@ -1019,16 +1019,24 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
   const [glyphV, setGlyphV] = useState(0)
   useEffect(() => {
     const fonts = typeof document !== 'undefined' ? document.fonts : null
-    if (!fonts || !fonts.ready) return undefined
+    if (!fonts || !fonts.load) return undefined
     let cancelled = false
-    try { fonts.load("900 64px 'Noto Sans Ethiopic'") } catch { /* best effort */ }
-    fonts.ready.then(() => {
+    const rebake = () => {
       if (cancelled) return
+      // Drop the cached single-char glyph textures (named textures like
+      // 'anbessa'/'star' are longer keys and are kept) so the fruit letters
+      // re-bake now that the font is available.
       for (const k of Object.keys(TEXTURES)) {
         if (Array.from(k).length === 1) { TEXTURES[k].dispose?.(); delete TEXTURES[k] }
       }
       setGlyphV((v) => v + 1)
-    })
+    }
+    // Await the Ethiopic font specifically (fonts.ready can resolve before a
+    // never-referenced font has even started loading). Rebake on success or
+    // failure so we never get stuck on blank fruit.
+    Promise.resolve()
+      .then(() => fonts.load("900 64px 'Noto Sans Ethiopic'"))
+      .then(rebake, rebake)
     return () => { cancelled = true }
   }, [])
 
