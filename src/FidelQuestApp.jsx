@@ -759,13 +759,24 @@ function useEscapeKey(onClose) {
 export default function FidelQuestApp() {
   // A "challenge a friend" link (#challenge=...) opens straight into the
   // seeded rematch. See utils/challenge.js + docs/social-play.md.
-  const [screen, setScreen] = useState(() => {
+  // Screen navigation is a stack, so Back/Cancel returns to the previous page
+  // (not always Home). setScreen pushes a new page; going to a page you're
+  // already on replaces it (so Replay/Retry don't pile up duplicates). goBack
+  // pops one page; goHome resets to the path.
+  const [stack, setStack] = useState(() => {
     try {
       const ch = readChallengeFromHash(window.location.hash)
-      if (ch) return { name: 'challenge', challenge: ch }
+      if (ch) return [{ name: 'challenge', challenge: ch }]
     } catch { /* non-browser */ }
-    return { name: 'home' }
+    return [{ name: 'home' }]
   })
+  const screen = stack[stack.length - 1]
+  const setScreen = useCallback((next) => setStack((s) => {
+    const top = s[s.length - 1]
+    return top && top.name === next.name ? [...s.slice(0, -1), next] : [...s, next]
+  }), [])
+  const goBack = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), [])
+  const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
@@ -805,11 +816,11 @@ export default function FidelQuestApp() {
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
       if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
-      if (screen.name !== 'home') { setScreen({ name: 'home' }); e.preventDefault() }
+      if (screen.name !== 'home') { goBack(); e.preventDefault() }
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen])
+  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBack])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -836,18 +847,18 @@ export default function FidelQuestApp() {
         return next
       })
     }
-    setScreen({ name: 'home' })
-  }, [])
+    goBack()
+  }, [goBack])
 
   const startLesson = useCallback((levelId) => {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'lesson', levelId })
-  }, [])
+  }, [setScreen])
 
   const startWords = useCallback(() => {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'words' })
-  }, [])
+  }, [setScreen])
 
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
@@ -856,7 +867,7 @@ export default function FidelQuestApp() {
     setBackpackOpen(false)
     setRunSeed(seed)
     setScreen({ name: 'practice', queue })
-  }, [])
+  }, [setScreen])
 
   // Mark a Journey node complete (grants its reward) and return to the path.
   // Surface a newly-earned wearable as a celebratory chip on the path.
@@ -875,8 +886,8 @@ export default function FidelQuestApp() {
     } else if (isNew) {
       setJustEarned(node.reward)
     }
-    setScreen({ name: 'home' })
-  }, [])
+    goBack()
+  }, [goBack])
 
   useEffect(() => {
     if (!justEarned) return undefined
@@ -887,12 +898,12 @@ export default function FidelQuestApp() {
   const openCloset = useCallback(() => {
     setBackpackOpen(false)
     setScreen({ name: 'closet' })
-  }, [])
+  }, [setScreen])
 
   const openTeeShop = useCallback(() => {
     setBackpackOpen(false)
     setScreen({ name: 'tees' })
-  }, [])
+  }, [setScreen])
 
   // Daily Gift: claim once per calendar day. Grants an un-owned wearable (which
   // feeds the Closet + share loop), or a warm message once all are collected.
@@ -913,12 +924,12 @@ export default function FidelQuestApp() {
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
-  }, [])
+  }, [setScreen])
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
-        <ErrorBoundary onReset={() => setScreen({ name: 'home' })} title="Oops! Let us go back to the path.">
+        <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
             <Screen key="home">
@@ -942,7 +953,7 @@ export default function FidelQuestApp() {
                 collection={journey.collection}
                 stats={progressStats(journey)}
                 onEquip={(slot, id) => setJourney((j) => equipItem(j, slot, id))}
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -951,19 +962,19 @@ export default function FidelQuestApp() {
               <TeeShop
                 stats={progressStats(journey)}
                 collection={journey.collection}
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
-              <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} initialFamily={screen.family ?? null} />
+              <Explore soundOn={soundOn} onBack={goBack} initialFamily={screen.family ?? null} />
             </Screen>
           )}
           {screen.name === 'grownups' && (
             <Screen key="grownups">
               <GrownUps
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
               />
@@ -971,12 +982,12 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'familyvoice' && (
             <Screen key="familyvoice">
-              <FamilyVoice onBack={() => setScreen({ name: 'home' })} />
+              <FamilyVoice onBack={goBack} />
             </Screen>
           )}
           {screen.name === 'name' && (
             <Screen key="name">
-              <NameInFidel onBack={() => setScreen({ name: 'home' })} soundOn={soundOn} worn={wornLayers(journey.collection)} />
+              <NameInFidel onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
             </Screen>
           )}
           {screen.name === 'classic' && (
@@ -987,7 +998,7 @@ export default function FidelQuestApp() {
                 </Suspense>
                 <button
                   type="button"
-                  onClick={() => setScreen({ name: 'home' })}
+                  onClick={goBack}
                   className="chunk fixed bottom-4 left-4 z-50 rounded-2xl px-4 py-2 font-extrabold text-white"
                   style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
                 >
@@ -1002,7 +1013,7 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 soundOn={soundOn}
                 onDone={() => markNodeDone(screen.node.id)}
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -1028,7 +1039,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'words' && (
             <Screen key={`words-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={() => setScreen({ name: 'home' })} onReplay={startWords} />
+              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={goBack} onReplay={startWords} />
             </Screen>
           )}
           {screen.name === 'practice' && (
@@ -1038,7 +1049,7 @@ export default function FidelQuestApp() {
                 seed={runSeed}
                 soundOn={soundOn}
                 practiceQueue={screen.queue}
-                onFinish={() => setScreen({ name: 'home' })}
+                onFinish={goBack}
                 onReplay={startPractice}
               />
             </Screen>
@@ -1054,7 +1065,7 @@ export default function FidelQuestApp() {
                   // boss quiz is a real gate, not a tap-through. Only a
                   // finished level marks its Journey node done + grants reward.
                   if (!result) {
-                    setScreen({ name: 'home' })
+                    goBack()
                   } else if (screen.nodeId) {
                     setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
                     markNodeDone(screen.nodeId, result.stars ?? 3)
@@ -1071,14 +1082,14 @@ export default function FidelQuestApp() {
               <ChallengeRun
                 challenge={screen.challenge}
                 soundOn={soundOn}
-                onHome={() => setScreen({ name: 'home' })}
+                onHome={goHome}
               />
             </Screen>
           )}
           {screen.name === 'family' && (
             <Screen key="family">
               <FamilyFriends
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
                 lettersLearned={progressStats(journey).forms}
                 nickname={loadFromStorage('fq.nickname', '')}
               />
@@ -1296,7 +1307,7 @@ const nodeGlyph = (node) => {
   return null
 }
 
-function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) {
+function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isBoss = node.kind === NodeKind.QUIZ
   const isArcade = node.kind === NodeKind.ARCADE
   const big = isBoss || isArcade
@@ -1319,8 +1330,7 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
-    <div ref={innerRef} className="flex w-full items-center" style={{ justifyContent: side < 0 ? 'flex-start' : 'flex-end' }}>
-      <div className="flex flex-col items-center" style={{ width: 132 }}>
+    <div ref={innerRef} className="flex flex-col items-center">
         <motion.button
           type="button"
           disabled={!unlocked}
@@ -1361,9 +1371,21 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
             {t('start', 'Start')}
           </motion.span>
         )}
-      </div>
     </div>
   )
+}
+
+// The path is laid out as a compact serpentine grid: rows of COLS nodes that
+// snake (every other row is reversed), so consecutive steps stay adjacent while
+// the whole journey fits in far less vertical scroll than a two-column zigzag.
+const PATH_COLS = 3
+function serpentineRows(nodes, cols) {
+  const rows = []
+  for (let i = 0; i < nodes.length; i += cols) {
+    const chunk = nodes.slice(i, i + cols)
+    rows.push((i / cols) % 2 === 1 ? chunk.slice().reverse() : chunk)
+  }
+  return rows
 }
 
 function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0 }) {
@@ -1456,24 +1478,28 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         )}
       </AnimatePresence>
 
-      <div className="mt-4 flex flex-col items-center gap-2">
-        {JOURNEY.map((node, i) => {
-          const done = !!journey.done[node.id]
-          const isNext = current ? node.id === current.id : false
-          const unlocked = isNext || done
-          return (
-            <PathNode
-              key={node.id}
-              node={node}
-              done={done}
-              unlocked={unlocked}
-              highlight={isNext}
-              side={i % 2 === 0 ? -1 : 1}
-              innerRef={isNext ? currentRef : null}
-              onClick={unlocked ? () => onOpen(node) : undefined}
-            />
-          )
-        })}
+      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
+        {serpentineRows(JOURNEY, PATH_COLS).map((row, r) => (
+          <div key={r} className="grid items-center gap-3" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))` }}>
+            {row.map((node) => {
+              const done = !!journey.done[node.id]
+              const isNext = current ? node.id === current.id : false
+              const unlocked = isNext || done
+              return (
+                <div key={node.id} className="flex justify-center">
+                  <PathNode
+                    node={node}
+                    done={done}
+                    unlocked={unlocked}
+                    highlight={isNext}
+                    innerRef={isNext ? currentRef : null}
+                    onClick={unlocked ? () => onOpen(node) : undefined}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        ))}
         {!current && (
           <div className="mt-4 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
             <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion - every star earned!')}
