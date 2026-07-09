@@ -255,6 +255,7 @@ const STRINGS = {
     fvImport: 'ድምፅ አስገባ',
     fvNowSpeaking: 'አንበሳ አሁን በዚህ ድምፅ ይናገራል',
     fvDefaultVoice: 'ወደ ነባሪው ድምፅ ተመልሷል',
+    fvGateIntro: 'መቅዳት ለወላጆች ነው — ማይክሮፎን ይጠቀማል።',
     'slot.hat': 'ኮፍያዎች',
     'slot.scarf': 'ሻርፖች',
     'slot.cape': 'ካባዎች',
@@ -497,6 +498,7 @@ const STRINGS = {
     fvImport: 'ድምጺ ኣእቱ',
     fvNowSpeaking: 'ኣንበሳ ሕጂ በዚ ድምጺ ይዛረብ',
     fvDefaultVoice: 'ናብ ንቡር ድምጺ ተመሊሱ',
+    fvGateIntro: 'ምቕዳሕ ንወለዲ እዩ — ማይክሮፎን ይጥቀም።',
   },
 }
 

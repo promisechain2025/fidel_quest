@@ -52,6 +52,56 @@ export function dataUrlToBlob(dataUrl) {
   return new Blob([bytes], { type: mime })
 }
 
+/** Encode an AudioBuffer (or a {sampleRate,length,getChannelData} stub) to a
+   16-bit mono PCM WAV Blob. WAV decodes on every browser's Web Audio, which is
+   why we normalize recordings to it — a webm/opus clip from Android would not
+   decode on iOS. Pure + testable. */
+export function encodeWav(buffer) {
+  const ch = buffer.getChannelData(0)
+  const sampleRate = buffer.sampleRate
+  const n = ch.length
+  const total = 44 + n * 2
+  const ab = new ArrayBuffer(total)
+  const v = new DataView(ab)
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)) }
+  str(0, 'RIFF'); v.setUint32(4, total - 8, true); str(8, 'WAVE')
+  str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true)
+  v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true)
+  str(36, 'data'); v.setUint32(40, n * 2, true)
+  let o = 44
+  for (let i = 0; i < n; i++) { const s = Math.max(-1, Math.min(1, ch[i])); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2 }
+  return new Blob([ab], { type: 'audio/wav' })
+}
+
+/** Decode a just-recorded clip (whatever codec the device produced) and
+   re-encode it as mono 16 kHz WAV so the pack plays on any device. Falls back
+   to the original blob if the platform can't decode/resample. */
+export async function normalizeClip(blob) {
+  try {
+    if (typeof window === 'undefined') return blob
+    const Ctx = window.AudioContext || window.webkitAudioContext
+    if (!Ctx) return blob
+    const dctx = new Ctx()
+    const decoded = await dctx.decodeAudioData(await blob.arrayBuffer())
+    dctx.close?.()
+    const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext
+    let mono = decoded
+    if (Off) {
+      const target = 16000
+      const len = Math.max(1, Math.ceil(decoded.duration * target))
+      const off = new Off(1, len, target)
+      const src = off.createBufferSource()
+      src.buffer = decoded
+      src.connect(off.destination)
+      src.start(0)
+      mono = await off.startRendering()
+    }
+    return encodeWav(mono)
+  } catch {
+    return blob
+  }
+}
+
 /** Serialize a pack ({ name, createdAt, clips:{key:Blob} }) to a .fidelvoice
    JSON string (base64 data URIs, dependency-free and self-contained). */
 export async function packToFileText(pack) {

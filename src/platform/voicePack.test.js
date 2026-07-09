@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { resolveSource } from './audioEngine'
-import { packToFileText, fileTextToPack, dataUrlToBlob, voiceSlots, LETTER_SLOT_COUNT, GREETING_KEY } from './voicePack'
+import { packToFileText, fileTextToPack, dataUrlToBlob, voiceSlots, LETTER_SLOT_COUNT, GREETING_KEY, encodeWav } from './voicePack'
 
 describe('voicePack slots', () => {
   it('exposes the 33 base letters plus a greeting', () => {
@@ -45,6 +45,14 @@ describe('.fidelvoice file round-trip', () => {
 
   it('rejects a file that is not a fidelvoice', () => {
     expect(() => fileTextToPack(JSON.stringify({ hello: 'world' }))).toThrow()
+  })
+
+  it('encodeWav writes a mono 16-bit PCM WAV of the right size', () => {
+    const samples = new Float32Array([0, 0.5, -0.5, 1, -1])
+    const buf = { sampleRate: 16000, getChannelData: () => samples }
+    const wav = encodeWav(buf)
+    expect(wav.type).toBe('audio/wav')
+    expect(wav.size).toBe(44 + samples.length * 2) // 44-byte header + 16-bit samples
   })
 
   it('dataUrlToBlob decodes a base64 audio data URI', () => {

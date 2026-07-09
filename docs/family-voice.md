@@ -135,6 +135,12 @@ A single JSON document the recorder shares and the receiver imports:
 - IndexedDB / MediaRecorder are environment-guarded and stubbed in jsdom, like
   Audio elsewhere.
 
+## Done in v1
+- Cross-device codec: recordings are transcoded to **mono 16 kHz WAV**
+  (`normalizeClip` / `encodeWav`) so a pack recorded on any device plays on any
+  other (a webm/opus clip would not decode on iOS).
+- Recording sits behind the shared **`ParentalGate`** (hold + number match).
+
 ## Not in v1 (later)
 - Cloud packs (upload/download by code) for zero-file-handling transfer.
 - Recording the full 231 forms or words.

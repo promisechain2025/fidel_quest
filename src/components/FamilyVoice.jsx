@@ -7,10 +7,11 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Mic, Square, Play, Check, Share2, Upload, Trash2, Users } from 'lucide-react'
 import { t } from '../platform/i18n'
+import ParentalGate from './ParentalGate'
 import {
   voiceSlots, LETTER_SLOT_COUNT, GREETING_KEY, recordSupported,
   listVoices, deleteVoice, activeVoiceId, setActiveVoice,
-  saveRecordedVoice, importVoiceFromText, exportAndShareVoice, startRecorder,
+  saveRecordedVoice, importVoiceFromText, exportAndShareVoice, startRecorder, normalizeClip,
 } from '../platform/voicePack'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -44,6 +45,17 @@ export default function FamilyVoice({ onBack }) {
     } catch {
       setToast(t('fvImportFail', "That file isn't a Fidel Quest voice."))
     }
+  }
+
+  if (mode === 'gate') {
+    return (
+      <div className="mx-auto min-h-screen max-w-xl px-5 pt-5">
+        <button type="button" onClick={() => setMode('home')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
+        <ParentalGate intro={t('fvGateIntro', 'Recording is for grown-ups — it uses the microphone.')} onOpen={() => setMode('record')} />
+      </div>
+    )
   }
 
   if (mode === 'record') {
@@ -96,7 +108,7 @@ export default function FamilyVoice({ onBack }) {
             {t('fvRecordBlurb', 'Record the letters in your own voice, then share the file with your child by WhatsApp. A grandparent far away can record for kids here — and the other way around.')}
           </p>
           {recordSupported() ? (
-            <button type="button" onClick={() => setMode('record')} className={`chunk mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => setMode('gate')} className={`chunk mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
               <Mic className="h-5 w-5" aria-hidden="true" /> {t('fvRecordBtn', 'Record a new voice')}
             </button>
           ) : (
@@ -148,10 +160,16 @@ function RecordVoice({ onDone, onCancel }) {
   const toggleRecord = async (key) => {
     if (recKey && recKey !== key) return
     if (recKey === key) {
-      const blob = await recRef.current.stop()
+      const raw = await recRef.current.stop()
       recRef.current = null
       setRecKey(null)
-      if (blob && blob.size) { setClips((c) => ({ ...c, [key]: blob })); playBlob(blob) }
+      if (raw && raw.size) {
+        // Normalize to universal WAV so the pack plays on any phone (a webm
+        // clip from Android would not decode on iOS).
+        const clip = await normalizeClip(raw)
+        setClips((c) => ({ ...c, [key]: clip }))
+        playBlob(clip)
+      }
       return
     }
     try {
