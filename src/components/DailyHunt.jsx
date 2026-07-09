@@ -81,7 +81,34 @@ function Sprite({ draw, size, mood }) {
   return <canvas ref={ref} style={{ width: size, height: size }} aria-hidden="true" />
 }
 
-export default function DailyHunt({ seed, forms, soundOn = true, treasureReady = false, onTreasure, onDone, onBack }) {
+/* Holiday dressing for the meadow (from the Ethiopian calendar): adey abeba
+   daisies for Enkutatash/Meskel, stars for Genna, water drops for Timkat,
+   little pennants for the national days. Pure decoration, never interactive. */
+const DRESS_SPOTS = [[8, 62], [24, 88], [46, 66], [64, 90], [84, 70], [92, 52], [36, 78], [72, 60]]
+function Dressing({ kind }) {
+  if (!kind) return null
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+      {DRESS_SPOTS.map(([x, y], i) => (
+        <span key={i} className="absolute" style={{ left: `${x}%`, top: `${y}%` }}>
+          {kind === 'flowers' && (
+            <span className="relative block h-4 w-4">
+              {[0, 60, 120, 180, 240, 300].map((a) => (
+                <span key={a} className="absolute left-1/2 top-1/2 h-2 w-1 rounded-full" style={{ background: '#ffd34d', transform: `translate(-50%,-100%) rotate(${a}deg)`, transformOrigin: '50% 100%' }} />
+              ))}
+              <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: '#b4560a' }} />
+            </span>
+          )}
+          {kind === 'stars' && <span className="block text-base" style={{ color: '#ffd34d', textShadow: '0 0 6px rgba(255,211,77,0.8)' }}>✦</span>}
+          {kind === 'drops' && <span className="block h-2.5 w-2 rounded-b-full rounded-t-[80%]" style={{ background: '#5db7ff', opacity: 0.85 }} />}
+          {kind === 'flags' && <span className="block h-3 w-4" style={{ background: `linear-gradient(#1aa15a 33%, #ffd34d 33% 66%, #e6304f 66%)`, borderRadius: 2 }} />}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+export default function DailyHunt({ seed, forms, soundOn = true, treasureReady = false, dress = null, onTreasure, onDone, onBack }) {
   const [ctx, setCtx] = useState(() => buildHunt(seed, forms))
   const [feedback, setFeedback] = useState(null) // 'good' | 'bad'
   const doneRef = useRef(false)
@@ -142,6 +169,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       <div className="relative mt-4 w-full overflow-hidden rounded-3xl border-2" style={{ aspectRatio: '4 / 5', borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 46%, #8fc86a 46%, #7ab857 100%)' }}>
         {/* sun */}
         <span className="absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: '#ffd34d', boxShadow: '0 0 24px 6px rgba(255,211,77,0.55)' }} aria-hidden="true" />
+        <Dressing kind={dress} />
         {/* Jibby peeks from the corner, cheekier while a letter is ducking */}
         <motion.div className="absolute -right-2 bottom-1" animate={feedback === 'bad' ? { y: [8, -4, 8] } : { y: 8 }} transition={{ duration: 0.7 }} aria-hidden="true">
           <Sprite draw={drawHyena} size={72} mood={feedback === 'bad' ? 'agitated' : 'grin'} />

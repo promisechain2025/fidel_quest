@@ -30,7 +30,9 @@ import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
 import DailyHunt from './components/DailyHunt'
+import VoicePostcard from './components/VoicePostcard'
 import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
+import { toEthiopic, formatEthiopic, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
@@ -38,7 +40,7 @@ import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
 import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
-import { bumpStreak } from './platform/streak'
+import { bumpStreak, dayStamp } from './platform/streak'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -88,6 +90,7 @@ import {
   Users,
   Globe,
   ArrowDown,
+  Send,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -808,6 +811,9 @@ export default function FidelQuestApp() {
   useEffect(() => { setStreak(bumpStreak().count) }, [])
   // Daily Letter Hunt: one seeded hunt per calendar day.
   const [huntDone, setHuntDone] = useState(() => huntDoneToday())
+  // The living Ethiopian calendar: today's Ethiopic date + any holiday.
+  const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayStamp())), [])
+  const holiday = useMemo(() => holidayFor(dayStamp()), [])
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
 
@@ -950,6 +956,8 @@ export default function FidelQuestApp() {
                 streak={streak}
                 huntDone={huntDone}
                 onHunt={() => setScreen({ name: 'hunt' })}
+                ethioDate={ethioToday}
+                holiday={holiday}
               />
             </Screen>
           )}
@@ -957,6 +965,7 @@ export default function FidelQuestApp() {
             <Screen key="hunt">
               <DailyHunt
                 seed={daySeed()}
+                dress={holiday?.dress}
                 forms={scopedBaseForms(getScope(), journey).map(formOf).filter(Boolean)}
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
@@ -1007,6 +1016,11 @@ export default function FidelQuestApp() {
           {screen.name === 'name' && (
             <Screen key="name">
               <NameInFidel onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
+            </Screen>
+          )}
+          {screen.name === 'postcard' && (
+            <Screen key="postcard">
+              <VoicePostcard onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
             </Screen>
           )}
           {screen.name === 'classic' && (
@@ -1155,6 +1169,7 @@ export default function FidelQuestApp() {
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
               onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
+              onPostcard={() => { setBackpackOpen(false); setScreen({ name: 'postcard' }) }}
               onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
             />
           )}
@@ -1407,7 +1422,18 @@ function serpentineRows(nodes, cols) {
   return rows
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt }) {
+// Localized names for the calendar holidays (ids from platform/ethioCalendar).
+const holidayName = (id) =>
+  ({
+    enkutatash: t('hol_enkutatash', 'Enkutatash — Happy New Year!'),
+    meskel: t('hol_meskel', 'Meskel — the Finding of the Cross'),
+    genna: t('hol_genna', 'Genna — Merry Christmas!'),
+    timkat: t('hol_timkat', 'Timkat — Epiphany!'),
+    adwa: t('hol_adwa', 'Adwa Victory Day'),
+    eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
+  })[id] || id
+
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1496,6 +1522,28 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* The living Ethiopian calendar: today's Ethiopic date, always visible
+         so the family's calendar is part of the child's day. On a holiday it
+         becomes the celebration banner with the traditional greeting. */}
+      {ethioDate && (holiday ? (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto mt-3 w-full max-w-md rounded-3xl px-4 py-3 text-center text-white"
+          style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)' }}
+          role="status"
+        >
+          <p className="geez text-2xl font-black">እንኳን አደረሳችሁ!</p>
+          <p className="text-sm font-bold text-white/95">{holidayName(holiday.id)}</p>
+          <p className="geez mt-0.5 text-xs font-bold text-white/85">{ethioDate.geez}</p>
+        </motion.div>
+      ) : (
+        <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }} aria-label={`${t('calToday', 'Today')}: ${ethioDate.latin}`}>
+          <span className="geez">{t('calToday', 'Today')} · {ethioDate.geez}</span>
+          <span className="mono ml-1.5 opacity-75">({ethioDate.latin})</span>
+        </p>
+      ))}
 
       {/* Daily Letter Hunt banner: today's comeback game, right under the
          header. Pulses until played; flips to a quiet "done" chip after. */}
@@ -1658,7 +1706,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -1707,6 +1755,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             )}
             <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
             <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
+            <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}

@@ -54,6 +54,24 @@ back to a new player.
       clear / hear-the-name work. **Share my name** renders a card with the name
       big in Ge'ez + Anbessa, to the share sheet (PNG download fallback on web).
 
+## Family connection
+- [ ] **Voice Postcard** (Backpack → Postcard) — record a short message (20s
+      cap), listen back, re-record. "Send to family" goes through the grown-up
+      gate, then shares a postcard image + the voice as a WAV to the share
+      sheet (on the web it downloads both). Check WhatsApp receives picture +
+      playable voice note; test a recording made on iOS plays on Android and
+      the reverse.
+- [ ] Kids build with `VITE_FAMILY_VOICE_RECORD=false`: the Postcard screen
+      shows the friendly no-recording note instead of the mic button.
+
+## Ethiopian calendar
+- [ ] The home screen shows today's **Ethiopic date** (Ge'ez + latin) under
+      the header — verify it matches a known calendar converter.
+- [ ] On a holiday (set the phone date to Sept 11 = Enkutatash to simulate)
+      the strip becomes the **እንኳን አደረሳችሁ! banner**, and the Daily Hunt
+      meadow is dressed (adey abeba daisies for Enkutatash/Meskel, stars for
+      Genna, drops for Timkat, pennants for Adwa / Eritrean Independence Day).
+
 ## Community / affiliate
 - [ ] Grown-ups → **Community code** — enter a code, it saves and shows
       "supporting <CODE>"; Change clears it. (With `VITE_ANALYTICS_URL` set, a

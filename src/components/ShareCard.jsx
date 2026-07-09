@@ -255,6 +255,159 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
   return 'unsupported'
 }
 
+/** Draw the voice-postcard image at side S: a big Ge'ez greeting, Anbessa in
+    wardrobe, and a voice-note bubble so the recipient knows to listen. The
+    caption strings arrive pre-localized (the drawer stays language-blind). */
+export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', worn = [] } = {}) {
+  const grad = g.createLinearGradient(0, 0, 0, S)
+  grad.addColorStop(0, BG_TOP)
+  grad.addColorStop(1, BG_BOTTOM)
+  g.fillStyle = grad
+  g.fillRect(0, 0, S, S)
+
+  g.save()
+  g.globalAlpha = 0.12
+  g.fillStyle = '#b4560a'
+  g.font = `700 ${S * 0.09}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  const glyphs = ['ሀ', 'ለ', 'መ', 'ሠ', 'ቀ', 'በ', 'ተ', 'ኀ']
+  const spots = [[0.12, 0.14], [0.88, 0.13], [0.1, 0.86], [0.9, 0.85]]
+  spots.forEach(([fx, fy], i) => g.fillText(glyphs[i % glyphs.length], S * fx, S * fy))
+  g.restore()
+
+  g.textAlign = 'center'
+  g.textBaseline = 'alphabetic'
+  g.fillStyle = '#7c3d00'
+  g.font = `900 ${S * 0.05}px system-ui, -apple-system, sans-serif`
+  g.fillText('Fidel Quest', S / 2, S * 0.12)
+
+  // The greeting, big and warm.
+  g.fillStyle = '#c85400'
+  g.font = `900 ${S * 0.16}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+  g.fillText(heading, S / 2, S * 0.28)
+
+  // Anbessa in the earned wardrobe.
+  const D = Math.round(S * 0.44)
+  const tmp = document.createElement('canvas')
+  tmp.width = tmp.height = D
+  const tg = tmp.getContext('2d')
+  if (tg) {
+    drawAnbessa(tg, D)
+    if (worn.length) drawWearables(tg, D, worn)
+    g.drawImage(tmp, (S - D) / 2, S * 0.32, D, D)
+  }
+
+  // Voice-note bubble: rounded pill with a play triangle + waveform bars, so
+  // even before pressing play the card reads as "there is a voice in here".
+  const bw = S * 0.6
+  const bh = S * 0.12
+  const bx = (S - bw) / 2
+  const by = S * 0.79
+  g.fillStyle = '#ffffff'
+  roundRect(g, bx, by, bw, bh, bh / 2)
+  g.fill()
+  g.fillStyle = '#179061'
+  g.beginPath()
+  const tx = bx + bh * 0.52
+  const ty = by + bh / 2
+  g.moveTo(tx - bh * 0.14, ty - bh * 0.2)
+  g.lineTo(tx + bh * 0.2, ty)
+  g.lineTo(tx - bh * 0.14, ty + bh * 0.2)
+  g.closePath()
+  g.fill()
+  const bars = [0.3, 0.62, 0.45, 0.75, 0.5, 0.68, 0.35, 0.58, 0.42]
+  bars.forEach((h, i) => {
+    const x = bx + bh * 0.95 + i * (bw - bh * 1.35) / bars.length
+    g.fillRect(x, ty - (bh * h) / 2, S * 0.012, bh * h)
+  })
+
+  // Caption line under the bubble.
+  if (line) {
+    g.fillStyle = '#7c3d00'
+    let size = S * 0.042
+    g.font = `800 ${size}px system-ui, sans-serif`
+    while (g.measureText(line).width > S * 0.9 && size > S * 0.028) {
+      size -= S * 0.002
+      g.font = `800 ${size}px system-ui, sans-serif`
+    }
+    g.fillText(line, S / 2, S * 0.965)
+  }
+}
+
+/** Share the voice postcard: the card PNG plus the recorded voice as a WAV,
+    handed together to the share sheet (a picture + a voice note is the native
+    WhatsApp idiom). Falls back to sharing just the voice, then to downloading
+    both. Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
+export async function shareVoicePostcard({ voice, heading, line, worn = [], text = '' } = {}) {
+  if (!voice) return 'unsupported'
+  const S = 1080
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = S
+  const g = canvas.getContext('2d')
+  if (g) drawVoicePostcard(g, S, { heading, line, worn })
+  const png = g ? await toBlob(canvas) : null
+
+  if (isNativePlatform()) {
+    try {
+      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+        import('@capacitor/filesystem'),
+        import('@capacitor/share'),
+      ])
+      const uris = []
+      const stamp = Date.now()
+      if (png) {
+        const dataUrl = await blobToDataUrl(png)
+        await Filesystem.writeFile({ path: `fidel-postcard-${stamp}.png`, data: dataUrl.split(',')[1], directory: Directory.Cache })
+        uris.push((await Filesystem.getUri({ path: `fidel-postcard-${stamp}.png`, directory: Directory.Cache })).uri)
+      }
+      const voiceUrl = await blobToDataUrl(voice)
+      await Filesystem.writeFile({ path: `fidel-voice-${stamp}.wav`, data: voiceUrl.split(',')[1], directory: Directory.Cache })
+      uris.push((await Filesystem.getUri({ path: `fidel-voice-${stamp}.wav`, directory: Directory.Cache })).uri)
+      await Share.share({ title: 'Fidel Quest', text, files: uris })
+      track('postcard')
+      return 'shared'
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancelled'
+    }
+  }
+
+  const wavFile = typeof File !== 'undefined' ? new File([voice], 'fidel-voice.wav', { type: 'audio/wav' }) : null
+  const pngFile = png && typeof File !== 'undefined' ? new File([png], 'fidel-postcard.png', { type: 'image/png' }) : null
+  try {
+    if (navigator.canShare && wavFile) {
+      const both = pngFile ? [pngFile, wavFile] : [wavFile]
+      if (navigator.canShare({ files: both })) {
+        await navigator.share({ title: 'Fidel Quest', text, files: both })
+        track('postcard')
+        return 'shared'
+      }
+      if (navigator.canShare({ files: [wavFile] })) {
+        await navigator.share({ title: 'Fidel Quest', text, files: [wavFile] })
+        track('postcard')
+        return 'shared'
+      }
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return 'cancelled'
+  }
+
+  try {
+    for (const [blob, fname] of [[png, 'fidel-postcard.png'], [voice, 'fidel-voice.wav']]) {
+      if (!blob) continue
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = fname
+      a.click()
+      URL.revokeObjectURL(a.href)
+    }
+    track('postcard')
+    return 'downloaded'
+  } catch {
+    return 'unsupported'
+  }
+}
+
 /** Render the "my name in Fidel" card and hand it to the share sheet (or
     download as a fallback). Returns the same status strings as shareAnbessa. */
 export async function shareName({ name = '', latin = '', worn = [] } = {}) {
