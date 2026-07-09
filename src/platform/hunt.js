@@ -14,30 +14,13 @@
    ========================================================================== */
 
 import { dayStamp } from './streak'
+import { rngShuffle } from './rng'
 
 const KEY = 'fq.hunt.v1'
 /** Number of hiding spots drawn in the scene (letters use the first N). */
 export const HUNT_SPOTS = 6
 /** Letters hidden per hunt (fewer if the scope has fewer distinct sounds). */
 export const HUNT_SIZE = 5
-
-/* ── seeded PRNG (mulberry32 step, same shape as the other machines) ── */
-function rngNext(state) {
-  let t = (state + 0x6d2b79f5) | 0
-  let r = Math.imul(t ^ (t >>> 15), 1 | t)
-  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
-}
-function rngShuffle(items, state) {
-  const out = items.slice()
-  for (let i = out.length - 1; i > 0; i--) {
-    let v
-    ;[v, state] = rngNext(state)
-    const j = Math.floor(v * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return [out, state]
-}
 
 /** Deterministic seed for a calendar day (default: today at the boundary). */
 export function daySeed(stamp = dayStamp()) {

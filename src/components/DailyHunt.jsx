@@ -10,7 +10,7 @@ import { t, randomPraise, randomEncourage } from '../platform/i18n'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { buildHunt, huntTransition, huntTarget } from '../platform/hunt'
-import { drawAnbessa, drawHyena } from '../FidelQuestApp'
+import { drawAnbessa, drawHyena, Sprite2D } from '../FidelQuestApp'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -67,19 +67,8 @@ function Cover({ kind }) {
   )
 }
 
-function Sprite({ draw, size, mood }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    const c = ref.current
-    if (!c) return
-    c.width = c.height = size * 2
-    const g = c.getContext('2d')
-    if (!g) return
-    g.clearRect(0, 0, c.width, c.height)
-    try { draw(g, c.width, mood) } catch { /* jsdom-safe */ }
-  }, [draw, size, mood])
-  return <canvas ref={ref} style={{ width: size, height: size }} aria-hidden="true" />
-}
+/* Character sprites use the shared Sprite2D (same renderer as every other
+   screen), so art fixes reach the hunt too. */
 
 /* Holiday dressing for the meadow (from the Ethiopian calendar): adey abeba
    daisies for Enkutatash/Meskel, stars for Genna, water drops for Timkat,
@@ -175,7 +164,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         <Dressing kind={dress} />
         {/* Jibby peeks from the corner, cheekier while a letter is ducking */}
         <motion.div className="absolute -right-2 bottom-1" animate={feedback === 'bad' ? { y: [8, -4, 8] } : { y: 8 }} transition={{ duration: 0.7 }} aria-hidden="true">
-          <Sprite draw={drawHyena} size={72} mood={feedback === 'bad' ? 'agitated' : 'grin'} />
+          <Sprite2D draw={drawHyena} size={72} mood={feedback === 'bad' ? 'agitated' : 'grin'} />
         </motion.div>
 
         {ctx.hidden.map((f, i) => {
@@ -231,7 +220,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-center gap-3 text-center">
-          <Sprite draw={drawAnbessa} size={96} mood="happy" />
+          <Sprite2D draw={drawAnbessa} size={96} mood="happy" />
           <h2 className="text-2xl font-black">{t('huntDoneTitle', 'You found them all!')}</h2>
           {treasureReady ? (
             <motion.button

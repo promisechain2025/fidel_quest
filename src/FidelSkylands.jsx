@@ -29,6 +29,7 @@ import { Float, Sparkles, Billboard } from '@react-three/drei'
 import { useSpring, animated, config as springConfig } from '@react-spring/three'
 import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
+import { rngShuffle } from './platform/rng'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
@@ -84,25 +85,8 @@ const sessionOfKey = (key) => SESSIONS.find((s) => s.pool.includes(key))
 const ALL_BASE = BASE_FORMS.map((f) => f.audioKey)
 
 /* ============================================================================
-   §2 QUESTIONS (seeded, cumulative, twin-safe)
+   §2 QUESTIONS (seeded, cumulative, twin-safe) — over the shared platform RNG
    ========================================================================== */
-
-function rngNext(state) {
-  let t = (state + 0x6d2b79f5) | 0
-  let r = Math.imul(t ^ (t >>> 15), 1 | t)
-  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
-}
-function rngShuffle(items, state) {
-  const out = items.slice()
-  for (let i = out.length - 1; i > 0; i--) {
-    let v
-    ;[v, state] = rngNext(state)
-    const j = Math.floor(v * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return [out, state]
-}
 
 /**
  * Level n quiz: 5+n questions over the cumulative pool. Twin letters that

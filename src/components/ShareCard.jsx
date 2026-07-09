@@ -7,6 +7,7 @@ import { drawAnbessa, drawWearables } from '../FidelQuestApp'
 import { track } from '../platform/analytics'
 import { isNativePlatform, isApplePlatform } from '../platform/native'
 import { appStoreUrl } from '../platform/gift'
+import { blobToDataUrl } from '../platform/voicePack'
 
 /** The link that travels with shares so the recipient can find the app:
     VITE_APP_URL when set (the canonical web/store landing), else the App
@@ -23,14 +24,6 @@ export function appShareUrl() {
 const BG_TOP = '#fff3d6'
 const BG_BOTTOM = '#ffd98a'
 
-const blobToDataUrl = (blob) =>
-  new Promise((resolve, reject) => {
-    const r = new FileReader()
-    r.onload = () => resolve(r.result)
-    r.onerror = reject
-    r.readAsDataURL(blob)
-  })
-
 function roundRect(g, x, y, w, h, r) {
   g.beginPath()
   g.moveTo(x + r, y)
@@ -41,18 +34,14 @@ function roundRect(g, x, y, w, h, r) {
   g.closePath()
 }
 
-/** Draw the whole share card at side S. Pure canvas draw (no image assets).
-    `headline` (e.g. "Selam learned 8 letters!") personalizes milestone shares;
-    without it the card shows the generic ፊደል wordmark. */
-export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}) {
-  // Warm gradient ground.
+/* ── shared card scaffold: every card starts from the same warm ground ── */
+const CONFETTI_SPOTS = [[0.12, 0.14], [0.88, 0.13], [0.1, 0.86], [0.9, 0.85], [0.5, 0.08]]
+function drawCardBase(g, S, { confetti = 5 } = {}) {
   const grad = g.createLinearGradient(0, 0, 0, S)
   grad.addColorStop(0, BG_TOP)
   grad.addColorStop(1, BG_BOTTOM)
   g.fillStyle = grad
   g.fillRect(0, 0, S, S)
-
-  // Faint fidel confetti in the corners for texture.
   g.save()
   g.globalAlpha = 0.12
   g.fillStyle = '#b4560a'
@@ -60,9 +49,27 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   g.textAlign = 'center'
   g.textBaseline = 'middle'
   const glyphs = ['ሀ', 'ለ', 'መ', 'ሠ', 'ቀ', 'በ', 'ተ', 'ኀ']
-  const spots = [[0.12, 0.14], [0.88, 0.13], [0.1, 0.86], [0.9, 0.85], [0.5, 0.08]]
-  spots.forEach(([fx, fy], i) => g.fillText(glyphs[i % glyphs.length], S * fx, S * fy))
+  CONFETTI_SPOTS.slice(0, confetti).forEach(([fx, fy], i) => g.fillText(glyphs[i % glyphs.length], S * fx, S * fy))
   g.restore()
+}
+
+/** Anbessa in the earned wardrobe, composited via a temp canvas. */
+function drawHero(g, S, { worn = [], y = 0.3, d = 0.5 } = {}) {
+  const D = Math.round(S * d)
+  const tmp = document.createElement('canvas')
+  tmp.width = tmp.height = D
+  const tg = tmp.getContext('2d')
+  if (!tg) return
+  drawAnbessa(tg, D)
+  if (worn.length) drawWearables(tg, D, worn)
+  g.drawImage(tmp, (S - D) / 2, S * y, D, D)
+}
+
+/** Draw the whole share card at side S. Pure canvas draw (no image assets).
+    `headline` (e.g. "Selam learned 8 letters!") personalizes milestone shares;
+    without it the card shows the generic ፊደል wordmark. */
+export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}) {
+  drawCardBase(g, S)
 
   // Title.
   g.fillStyle = '#7c3d00'
@@ -89,16 +96,7 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
     g.fillText('ፊደል', S / 2, S * 0.28)
   }
 
-  // Anbessa in wardrobe, drawn on a temp canvas then composited.
-  const D = Math.round(S * 0.5)
-  const tmp = document.createElement('canvas')
-  tmp.width = tmp.height = D
-  const tg = tmp.getContext('2d')
-  if (tg) {
-    drawAnbessa(tg, D)
-    if (worn.length) drawWearables(tg, D, worn)
-    g.drawImage(tmp, (S - D) / 2, S * 0.3, D, D)
-  }
+  drawHero(g, S, { worn, y: 0.3, d: 0.5 })
 
   // Progress pill.
   const pillW = S * 0.72
@@ -124,23 +122,7 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
     Ge'ez is the hero, Anbessa waves below, with the latin reading + app tagline.
     Pure canvas (no image assets), same warm identity as the progress card. */
 export function drawNameCard(g, S, { name = '', latin = '', worn = [] } = {}) {
-  const grad = g.createLinearGradient(0, 0, 0, S)
-  grad.addColorStop(0, BG_TOP)
-  grad.addColorStop(1, BG_BOTTOM)
-  g.fillStyle = grad
-  g.fillRect(0, 0, S, S)
-
-  // Faint fidel confetti for texture.
-  g.save()
-  g.globalAlpha = 0.12
-  g.fillStyle = '#b4560a'
-  g.font = `700 ${S * 0.09}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  const glyphs = ['ሀ', 'ለ', 'መ', 'ሠ', 'ቀ', 'በ', 'ተ', 'ኀ']
-  const spots = [[0.12, 0.14], [0.88, 0.13], [0.1, 0.86], [0.9, 0.85], [0.5, 0.08]]
-  spots.forEach(([fx, fy], i) => g.fillText(glyphs[i % glyphs.length], S * fx, S * fy))
-  g.restore()
+  drawCardBase(g, S)
 
   g.textAlign = 'center'
   g.textBaseline = 'alphabetic'
@@ -167,16 +149,7 @@ export function drawNameCard(g, S, { name = '', latin = '', worn = [] } = {}) {
     g.fillText(latin, S / 2, S * 0.37)
   }
 
-  // Anbessa waving in the earned wardrobe.
-  const D = Math.round(S * 0.42)
-  const tmp = document.createElement('canvas')
-  tmp.width = tmp.height = D
-  const tg = tmp.getContext('2d')
-  if (tg) {
-    drawAnbessa(tg, D)
-    if (worn.length) drawWearables(tg, D, worn)
-    g.drawImage(tmp, (S - D) / 2, S * 0.4, D, D)
-  }
+  drawHero(g, S, { worn, y: 0.4, d: 0.42 })
 
   // Caption pill.
   const pillW = S * 0.66
@@ -205,6 +178,80 @@ async function toBlob(canvas) {
   })
 }
 
+/* ── the one share cascade every card goes through ─────────────────────────
+   files: [{ blob, name, type }] (null entries skipped). Order matters: if a
+   multi-file share is refused, the LAST file is retried alone - it carries
+   the essential payload (the postcard's voice note). allowTextOnly controls
+   whether a text/url-only share is an acceptable degraded result (true for
+   picture cards, false when the file IS the message).
+   Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
+async function shareFiles({ files = [], text = '', url = '', event = 'share', allowTextOnly = true } = {}) {
+  const real = files.filter((f) => f && f.blob)
+  const payload = { title: 'Fidel Quest', text, ...(url ? { url } : {}) }
+
+  // Native shell: write to the cache and share file URIs via the OS sheet
+  // (WebView navigator.share can't share an in-memory File reliably).
+  if (real.length && isNativePlatform()) {
+    try {
+      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+        import('@capacitor/filesystem'),
+        import('@capacitor/share'),
+      ])
+      const stamp = Date.now()
+      const uris = []
+      for (const f of real) {
+        const path = `${stamp}-${f.name}`
+        const dataUrl = await blobToDataUrl(f.blob)
+        await Filesystem.writeFile({ path, data: dataUrl.split(',')[1], directory: Directory.Cache })
+        uris.push((await Filesystem.getUri({ path, directory: Directory.Cache })).uri)
+      }
+      await Share.share({ ...payload, files: uris })
+      track(event)
+      return 'shared'
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancelled'
+      // fall through to the web share, then download
+    }
+  }
+
+  try {
+    if (real.length && navigator.canShare && typeof File !== 'undefined') {
+      const sets = real.length > 1 ? [real, [real[real.length - 1]]] : [real]
+      for (const set of sets) {
+        const fs = set.map((f) => new File([f.blob], f.name, { type: f.type }))
+        if (navigator.canShare({ files: fs })) {
+          await navigator.share({ ...payload, files: fs })
+          track(event)
+          return 'shared'
+        }
+      }
+    }
+    if (allowTextOnly && navigator.share) {
+      await navigator.share(payload)
+      track(event)
+      return 'shared'
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return 'cancelled'
+    // fall through to download
+  }
+
+  if (real.length) {
+    try {
+      for (const f of real) {
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(f.blob)
+        a.download = f.name
+        a.click()
+        URL.revokeObjectURL(a.href)
+      }
+      track(event)
+      return 'downloaded'
+    } catch { /* fall through */ }
+  }
+  return 'unsupported'
+}
+
 /** Render the card and hand it to the share sheet, or download as a fallback.
     Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
 export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {}) {
@@ -214,83 +261,18 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
   const g = canvas.getContext('2d')
   if (!g) return 'unsupported'
   drawShareCard(g, S, { forms, worn, headline })
-
-  const blob = await toBlob(canvas)
-  const url = appShareUrl()
-  const text = "I'm learning the Amharic alphabet with Anbessa the lion cub!"
-
-  // Native shell: write the card to the cache and share the file URI via the OS
-  // sheet (WebView navigator.share can't share an in-memory File reliably).
-  if (blob && isNativePlatform()) {
-    try {
-      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-        import('@capacitor/filesystem'),
-        import('@capacitor/share'),
-      ])
-      const dataUrl = await blobToDataUrl(blob)
-      const name = `fidel-quest-${Date.now()}.png`
-      await Filesystem.writeFile({ path: name, data: dataUrl.split(',')[1], directory: Directory.Cache })
-      const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Cache })
-      await Share.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [uri] })
-      track('share')
-      return 'shared'
-    } catch (e) {
-      if (e && e.name === 'AbortError') return 'cancelled'
-      // fall through to text/url share, then download
-    }
-  }
-
-  try {
-    if (blob && navigator.canShare) {
-      const file = new File([blob], 'fidel-quest.png', { type: 'image/png' })
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [file] })
-        track('share')
-        return 'shared'
-      }
-    }
-    if (navigator.share) {
-      await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}) })
-      track('share')
-      return 'shared'
-    }
-  } catch (e) {
-    if (e && e.name === 'AbortError') return 'cancelled'
-    // fall through to download
-  }
-
-  if (blob) {
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'fidel-quest.png'
-    a.click()
-    URL.revokeObjectURL(a.href)
-    track('share')
-    return 'downloaded'
-  }
-  return 'unsupported'
+  return shareFiles({
+    files: [{ blob: await toBlob(canvas), name: 'fidel-quest.png', type: 'image/png' }],
+    text: "I'm learning the Amharic alphabet with Anbessa the lion cub!",
+    url: appShareUrl(),
+  })
 }
 
 /** Draw the voice-postcard image at side S: a big Ge'ez greeting, Anbessa in
     wardrobe, and a voice-note bubble so the recipient knows to listen. The
     caption strings arrive pre-localized (the drawer stays language-blind). */
 export function drawVoicePostcard(g, S, { heading = 'ሰላም!', lines = [], worn = [] } = {}) {
-  const grad = g.createLinearGradient(0, 0, 0, S)
-  grad.addColorStop(0, BG_TOP)
-  grad.addColorStop(1, BG_BOTTOM)
-  g.fillStyle = grad
-  g.fillRect(0, 0, S, S)
-
-  g.save()
-  g.globalAlpha = 0.12
-  g.fillStyle = '#b4560a'
-  g.font = `700 ${S * 0.09}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  const glyphs = ['ሀ', 'ለ', 'መ', 'ሠ', 'ቀ', 'በ', 'ተ', 'ኀ']
-  const spots = [[0.12, 0.14], [0.88, 0.13], [0.1, 0.86], [0.9, 0.85]]
-  spots.forEach(([fx, fy], i) => g.fillText(glyphs[i % glyphs.length], S * fx, S * fy))
-  g.restore()
+  drawCardBase(g, S, { confetti: 4 })
 
   g.textAlign = 'center'
   g.textBaseline = 'alphabetic'
@@ -303,16 +285,7 @@ export function drawVoicePostcard(g, S, { heading = 'ሰላም!', lines = [], wo
   g.font = `900 ${S * 0.16}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
   g.fillText(heading, S / 2, S * 0.28)
 
-  // Anbessa in the earned wardrobe.
-  const D = Math.round(S * 0.44)
-  const tmp = document.createElement('canvas')
-  tmp.width = tmp.height = D
-  const tg = tmp.getContext('2d')
-  if (tg) {
-    drawAnbessa(tg, D)
-    if (worn.length) drawWearables(tg, D, worn)
-    g.drawImage(tmp, (S - D) / 2, S * 0.32, D, D)
-  }
+  drawHero(g, S, { worn, y: 0.32, d: 0.44 })
 
   // Voice-note bubble: rounded pill with a play triangle + waveform bars, so
   // even before pressing play the card reads as "there is a voice in here".
@@ -367,65 +340,17 @@ export async function shareVoicePostcard({ voice, heading, lines, worn = [], tex
   const g = canvas.getContext('2d')
   if (g) drawVoicePostcard(g, S, { heading, lines, worn })
   const png = g ? await toBlob(canvas) : null
-
-  if (isNativePlatform()) {
-    try {
-      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-        import('@capacitor/filesystem'),
-        import('@capacitor/share'),
-      ])
-      const uris = []
-      const stamp = Date.now()
-      if (png) {
-        const dataUrl = await blobToDataUrl(png)
-        await Filesystem.writeFile({ path: `fidel-postcard-${stamp}.png`, data: dataUrl.split(',')[1], directory: Directory.Cache })
-        uris.push((await Filesystem.getUri({ path: `fidel-postcard-${stamp}.png`, directory: Directory.Cache })).uri)
-      }
-      const voiceUrl = await blobToDataUrl(voice)
-      await Filesystem.writeFile({ path: `fidel-voice-${stamp}.wav`, data: voiceUrl.split(',')[1], directory: Directory.Cache })
-      uris.push((await Filesystem.getUri({ path: `fidel-voice-${stamp}.wav`, directory: Directory.Cache })).uri)
-      await Share.share({ title: 'Fidel Quest', text, files: uris })
-      track('postcard')
-      return 'shared'
-    } catch (e) {
-      if (e && e.name === 'AbortError') return 'cancelled'
-    }
-  }
-
-  const wavFile = typeof File !== 'undefined' ? new File([voice], 'fidel-voice.wav', { type: 'audio/wav' }) : null
-  const pngFile = png && typeof File !== 'undefined' ? new File([png], 'fidel-postcard.png', { type: 'image/png' }) : null
-  try {
-    if (navigator.canShare && wavFile) {
-      const both = pngFile ? [pngFile, wavFile] : [wavFile]
-      if (navigator.canShare({ files: both })) {
-        await navigator.share({ title: 'Fidel Quest', text, files: both })
-        track('postcard')
-        return 'shared'
-      }
-      if (navigator.canShare({ files: [wavFile] })) {
-        await navigator.share({ title: 'Fidel Quest', text, files: [wavFile] })
-        track('postcard')
-        return 'shared'
-      }
-    }
-  } catch (e) {
-    if (e && e.name === 'AbortError') return 'cancelled'
-  }
-
-  try {
-    for (const [blob, fname] of [[png, 'fidel-postcard.png'], [voice, 'fidel-voice.wav']]) {
-      if (!blob) continue
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = fname
-      a.click()
-      URL.revokeObjectURL(a.href)
-    }
-    track('postcard')
-    return 'downloaded'
-  } catch {
-    return 'unsupported'
-  }
+  return shareFiles({
+    files: [
+      png ? { blob: png, name: 'fidel-postcard.png', type: 'image/png' } : null,
+      { blob: voice, name: 'fidel-voice.wav', type: 'audio/wav' },
+    ],
+    text,
+    event: 'postcard',
+    // A text-only share without the recording would be a message with no
+    // voice in it - fall to downloading the files instead.
+    allowTextOnly: false,
+  })
 }
 
 /** Render the "my name in Fidel" card and hand it to the share sheet (or
@@ -437,57 +362,11 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
   const g = canvas.getContext('2d')
   if (!g) return 'unsupported'
   drawNameCard(g, S, { name, latin, worn })
-
-  const blob = await toBlob(canvas)
-  const url = appShareUrl()
-  const text = latin
-    ? `${latin} - written in the Amharic alphabet with Fidel Quest!`
-    : 'My name in the Amharic alphabet, written with Fidel Quest!'
-
-  if (blob && isNativePlatform()) {
-    try {
-      const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-        import('@capacitor/filesystem'),
-        import('@capacitor/share'),
-      ])
-      const dataUrl = await blobToDataUrl(blob)
-      const fname = `fidel-name-${Date.now()}.png`
-      await Filesystem.writeFile({ path: fname, data: dataUrl.split(',')[1], directory: Directory.Cache })
-      const { uri } = await Filesystem.getUri({ path: fname, directory: Directory.Cache })
-      await Share.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [uri] })
-      track('share')
-      return 'shared'
-    } catch (e) {
-      if (e && e.name === 'AbortError') return 'cancelled'
-    }
-  }
-
-  try {
-    if (blob && navigator.canShare) {
-      const file = new File([blob], 'fidel-name.png', { type: 'image/png' })
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [file] })
-        track('share')
-        return 'shared'
-      }
-    }
-    if (navigator.share) {
-      await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}) })
-      track('share')
-      return 'shared'
-    }
-  } catch (e) {
-    if (e && e.name === 'AbortError') return 'cancelled'
-  }
-
-  if (blob) {
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(blob)
-    a.download = 'fidel-name.png'
-    a.click()
-    URL.revokeObjectURL(a.href)
-    track('share')
-    return 'downloaded'
-  }
-  return 'unsupported'
+  return shareFiles({
+    files: [{ blob: await toBlob(canvas), name: 'fidel-name.png', type: 'image/png' }],
+    text: latin
+      ? `${latin} - written in the Amharic alphabet with Fidel Quest!`
+      : 'My name in the Amharic alphabet, written with Fidel Quest!',
+    url: appShareUrl(),
+  })
 }

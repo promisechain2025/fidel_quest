@@ -24,6 +24,7 @@ import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, us
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
+import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
@@ -124,27 +125,13 @@ export const LEVELS = Object.freeze([
 })))
 
 /* ============================================================================
-   §2 DETERMINISTIC RNG — threaded mulberry32; a run is pure in (level, seed)
+   §2 DETERMINISTIC RNG — the shared threaded mulberry32 lives in
+   platform/rng.js (imported above); re-exported here to keep this file's
+   test/export surface stable (LearnLetters, ArcadeFallback, and the test
+   suites import from here).
    ========================================================================== */
 
-export function rngNext(state) {
-  let t = (state + 0x6d2b79f5) | 0
-  let r = Math.imul(t ^ (t >>> 15), 1 | t)
-  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
-}
-
-export function rngShuffle(items, rngState) {
-  const out = items.slice()
-  let state = rngState
-  for (let i = out.length - 1; i > 0; i--) {
-    let value
-    ;[value, state] = rngNext(state)
-    const j = Math.floor(value * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return [out, state]
-}
+export { rngNext, rngShuffle }
 
 /* ============================================================================
    §3 STATE MACHINE — rigid, table-driven; ill-timed events are rejected
