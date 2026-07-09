@@ -117,17 +117,36 @@ untrusted input.
     are comparable. Pending assignment sits in `fq.assign.v1` and surfaces as
     a "Teacher's assignment" row in the home Today's-plan card.
   - `#receipt=` result tokens the student shares BACK (share sheet /
-    WhatsApp): `{class, name, score, total, day, assignmentSeed}`. Opening
-    one on the teacher's device files it into the local roster
-    `fq.teacher.v1` (deduped per student+assignment; retakes replace).
-- **Teacher UI** `src/components/TeacherMode.jsx` (Grown-ups → Teacher tools,
-  behind the parental gate): create class, invite QR + share link (offline QR
-  via the `qrcode` package), assignment builder (family grid, count, due
-  date), results roster grouped by student.
-- **TV classroom display** `src/components/TvClass.jsx`: full-screen chant
-  board (giant letter + the family's seven orders, auto-advancing with audio,
-  remote/keyboard driven) with the class-join QR in the corner — for casting
-  or plugging a phone into the classroom TV.
+    WhatsApp): `{class, name, score, total, day, assignmentSeed, missed}` —
+    `missed` is the family ids the child got wrong, so the teacher sees what
+    to reteach, not just a grade. Opening one on the teacher's device files
+    it into the local roster `fq.teacher.v1` (deduped per student+assignment;
+    retakes replace). The student's name is remembered locally
+    (`fq.student.v1`) so it is typed once. Deep links are also caught by a
+    `hashchange` listener, so a link tapped into an already-open PWA routes
+    correctly instead of being swallowed.
+- **Teacher UI** `src/components/TeacherMode.jsx` (Grown-ups → Teacher tools
+  or the Backpack Teacher tile once a class exists — both behind the parental
+  gate): organized around the **Term Plan**, the class-side mirror of the
+  child's Journey. The teacher picks a pace once (1–3 families/week) and the
+  whole term lays itself out as weeks; each week row owns its **TV lesson**
+  (board scoped to that week's families), its **homework link** (created
+  once and REMEMBERED in `fq.teacher.v1`, so re-sharing sends the identical
+  seed and results stay comparable), and its **turn-in line** ("5 of 7
+  turned in · missing: …", judged against every student the class has seen).
+  Below the plan: **class trouble letters** (missed letters aggregated from
+  receipts, worst first, with names), the sent-assignments list, the student
+  roster, invite QR + share link (offline QR via the `qrcode` package), and
+  a free-form **extra assignment** builder (any families, base letters or
+  all 7 vowel orders, question count, due date). Small pools don't starve
+  the count — `buildAssignmentQueue` cycles deterministic batches.
+- **TV classroom display** `src/components/TvClass.jsx`: two modes on the
+  dark board, both scoped to the calling week's families (or the whole
+  abugida). **Chant**: giant letter + the family's seven orders,
+  auto-advancing with audio, remote/keyboard driven, with a jump-to-family
+  grid. **Quiz**: the board plays a sound and shows four big letters — the
+  class shouts, the teacher taps, the board reveals and moves on. Class-join
+  QR in the corner of both.
 - **Receipt = future sync payload.** The receipt shape is deliberately small
   and self-describing; if Phase 2's opt-in backend ever ships, receipts POST
   to it instead of traveling by WhatsApp — the client model doesn't change.

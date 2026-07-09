@@ -2,23 +2,29 @@
    TEACHER MODE — run a class with links, no accounts, no server
    ----------------------------------------------------------------------------
    For community and church teachers (docs/community-teacher.md). Everything
-   rides on the link + receipt rails in platform/classroom.js:
+   rides on the link + receipt rails in platform/classroom.js.
 
-   - CREATE a class on this device (fq.teacher.v1), then INVITE students with
-     a QR / share link (#class=...). A student who opens it once is "in".
-   - ASSIGN homework as a link (#assign=...): chosen families, question
-     count, due date, and a seed - every student gets the SAME questions.
-   - RESULTS come back as receipt links (#receipt=...) the student shares
-     over WhatsApp; opening one on this device files it into the roster.
-   - TV DISPLAY hands off to the full-screen chant board (TvClass.jsx).
+   The organizing spine is the TERM PLAN - the class-side mirror of the
+   child's Journey: pick a pace once and the whole term lays itself out as
+   weeks of letter families. Every resource hangs off its week:
 
-   Reached from Grown-ups (behind the parental gate - teachers are adults).
-   No child data ever leaves any device except inside a link a person
-   chooses to send; the receipt is the whole "sync protocol".
+     Week 3 · መ ሠ    due Jul 19     [TV lesson] [Send homework] 5/7 in
+
+   - TV LESSON opens the chant/quiz board scoped to that week's families.
+   - SEND HOMEWORK creates the week's assignment ONCE and remembers it
+     (fq.teacher.v1), so re-sharing sends the SAME link (same seed) and
+     every student stays comparable; the row shows who turned in and who
+     is missing.
+   - RESULTS come back as receipt links; each carries the letters the
+     child missed, which aggregate into the class trouble-letters card.
+
+   A free-form assignment builder stays for off-plan homework (choose any
+   families, base letters or all 7 forms). Reached from Grown-ups or the
+   Backpack Teacher tile - both behind the parental gate.
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check } from 'lucide-react'
+import { ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check, CalendarDays, Flame } from 'lucide-react'
 import QRCode from 'qrcode'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
@@ -28,12 +34,17 @@ import { dayStamp } from '../platform/streak'
 import { appShareUrl } from './ShareCard'
 import { isNativePlatform } from '../platform/native'
 import { track } from '../platform/analytics'
+import ParentalGate from './ParentalGate'
 import {
   sanitizeClassCode, classUrl, assignmentUrl,
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
+  saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
+  termWeeks, saveTermPlan, currentWeekIndex, weekDue,
 } from '../platform/classroom'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
+const glyphOf = (id) => Array.from(FIDEL_FAMILIES.find((f) => f.id === id)?.chars || '')[0] || ''
+const newSeed = () => (Date.now() % 1000000) | 1
 
 /** Render a URL as a QR code (offline, via the qrcode package). */
 export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }) {
@@ -51,29 +62,30 @@ export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }
 }
 
 /** Share a URL: OS sheet where available, clipboard fallback. */
-function ShareLinkButton({ url, text, label, tone = 'go' }) {
-  const [copied, setCopied] = useState(false)
-  const share = async () => {
-    const body = text ? `${text} ${url}` : url
-    if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text: body, url }) } catch { /* dismissed */ }
-      return
-    }
-    try {
-      if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text: body, url }); return }
-    } catch { return /* user dismissed */ }
-    try {
-      await navigator.clipboard.writeText(body)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch { /* clipboard blocked */ }
+async function shareUrl(url, text, onCopied) {
+  const body = text ? `${text} ${url}` : url
+  if (isNativePlatform()) {
+    try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text: body, url }) } catch { /* dismissed */ }
+    return
   }
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text: body, url }); return }
+  } catch { return /* user dismissed */ }
+  try {
+    await navigator.clipboard.writeText(body)
+    onCopied?.()
+  } catch { /* clipboard blocked */ }
+}
+
+function ShareLinkButton({ url, text, label, tone = 'go', small = false }) {
+  const [copied, setCopied] = useState(false)
+  const copied2s = () => { setCopied(true); setTimeout(() => setCopied(false), 2000) }
   const colors = tone === 'go'
     ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)' }
     : { background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)' }
   return (
-    <button type="button" onClick={share} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ ...colors, '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-      <Share2 className="h-5 w-5" aria-hidden="true" />
+    <button type="button" onClick={() => shareUrl(url, text, copied2s)} className={`chunk flex items-center justify-center gap-2 rounded-2xl font-black text-white ${small ? 'px-3 py-2 text-xs' : 'px-4 py-3'} ${FOCUS}`} style={{ ...colors, '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+      <Share2 className={small ? 'h-4 w-4' : 'h-5 w-5'} aria-hidden="true" />
       {copied ? t('linkCopied', 'Link copied!') : label}
     </button>
   )
@@ -128,10 +140,132 @@ function CreateClassCard({ onCreated }) {
   )
 }
 
-/** Build an assignment link: families, question count, due date. */
-function AssignmentBuilder({ code, teacher }) {
+/** Turn-in status line for one stored assignment. */
+function TurnIns({ code, seed }) {
+  const s = submissionStats(code, seed)
+  if (!s.known.length) {
+    return <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('tmNoneKnown', 'Waiting for the first result link')}</p>
+  }
+  return (
+    <p className="text-xs font-bold" style={{ color: s.missing.length ? 'var(--muted)' : 'var(--go-ink)' }}>
+      {t('tmTurnedIn', '{n} of {total} turned in', { n: s.submitted.length, total: s.known.length })}
+      {s.missing.length > 0 && ` · ${t('tmMissing', 'missing: {names}', { names: s.missing.join(', ') })}`}
+    </p>
+  )
+}
+
+/**
+ * THE TERM PLAN - the teacher's syllabus. Each week owns its TV lesson,
+ * its homework link (created once, re-shared identical), and its turn-ins.
+ */
+function TermPlanCard({ code, teacher, onTv, onChanged }) {
+  const cls = loadTeacher().classes[code]
+  const plan = cls?.plan || null
+  const [, bump] = useState(0)
+  const refresh = () => { bump((n) => n + 1); onChanged?.() }
+  const weeks = plan ? termWeeks(plan.perWeek) : []
+  const nowIdx = plan ? currentWeekIndex(plan) : 0
+  const assignments = assignmentsFor(code)
+  const weekAssignment = (i) => assignments.find((a) => a.week === i)
+
+  const sendHomework = (i, familyIds) => {
+    let a = weekAssignment(i)
+    if (!a) {
+      a = { code, teacher, familyIds, count: 8, due: weekDue(plan, i), seed: newSeed(), orders: [1], week: i, createdDay: dayStamp() }
+      saveAssignment(a)
+      track('teacher_assignment')
+      refresh()
+    }
+    shareUrl(assignmentUrl(a, appShareUrl()), t('asShareText', 'Fidel Quest homework from your teacher:'))
+  }
+
+  if (!plan) {
+    return (
+      <SectionCard icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={t('tmPlanTitle', 'Term plan')}>
+        <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+          {t('tmPlanIntro', 'Pick how many letter families per week and the whole term lays itself out - every week gets its TV lesson, its homework link, and its turn-in list.')}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[1, 2, 3].map((n) => (
+            <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              {t('tmPerWeek', '{n} families a week', { n })}
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+    )
+  }
+
+  return (
+    <SectionCard icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={`${t('tmPlanTitle', 'Term plan')} · ${t('tmPerWeek', '{n} families a week', { n: plan.perWeek })}`}>
+      <div className="mt-3 flex flex-col gap-2">
+        {weeks.map((familyIds, i) => {
+          const a = weekAssignment(i)
+          const isNow = i === nowIdx
+          return (
+            <div key={i} className="rounded-2xl border-2 p-3" style={isNow
+              ? { background: 'var(--go-soft)', borderColor: 'var(--go)' }
+              : { background: 'var(--paper)', borderColor: 'var(--line)', opacity: i < nowIdx ? 0.75 : 1 }}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-black">
+                  {t('tmWeek', 'Week {n}', { n: i + 1 })}
+                  {isNow && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>{t('tmThisWeek', 'this week')}</span>}
+                  <span className="geez ml-2 text-lg">{familyIds.map(glyphOf).join(' ')}</span>
+                </p>
+                <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{t('tmDueShort', 'due {date}', { date: weekDue(plan, i) })}</p>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => onTv(familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                  <Tv className="h-4 w-4" aria-hidden="true" /> {t('tmTeach', 'TV lesson')}
+                </button>
+                <button type="button" onClick={() => sendHomework(i, familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                  <Share2 className="h-4 w-4" aria-hidden="true" /> {a ? t('tmShareAgain', 'Share link again') : t('tmHomework', 'Send homework')}
+                </button>
+              </div>
+              {a && <div className="mt-2"><TurnIns code={code} seed={a.seed} /></div>}
+            </div>
+          )
+        })}
+      </div>
+      <button type="button" onClick={() => { saveTermPlan(code, (plan.perWeek % 3) + 1, plan.startDay); refresh() }} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+        {t('tmChangePace', 'Change pace')}
+      </button>
+    </SectionCard>
+  )
+}
+
+/** The class's trouble letters, aggregated from receipt links. */
+function TroubleCard({ code }) {
+  const trouble = classTroubleLetters(code)
+  return (
+    <SectionCard icon={<Flame className="h-4 w-4" aria-hidden="true" />} title={t('tmTroubleTitle', 'Class trouble letters')}>
+      {trouble.length === 0 ? (
+        <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+          {t('tmTroubleEmpty', 'Nothing yet - missed letters arrive inside result links and gather here.')}
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          {trouble.map((tr) => (
+            <div key={tr.familyId} className="flex items-center gap-3 rounded-2xl border-2 p-2.5" style={{ borderColor: 'var(--bad)', background: 'var(--bad-soft)' }}>
+              <span className="geez flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl font-black text-white" style={{ background: 'var(--bad)' }} aria-hidden="true">
+                {glyphOf(tr.familyId)}
+              </span>
+              <p className="min-w-0 flex-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>
+                {t('tmTroubleWho', '{n} misses · {names}', { n: tr.count, names: tr.students.join(', ') })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
+/** Free-form assignment builder for off-plan homework. */
+function AssignmentBuilder({ code, teacher, onSaved }) {
   const [picked, setPicked] = useState([])
   const [count, setCount] = useState(8)
+  const [allOrders, setAllOrders] = useState(false)
   const [due, setDue] = useState(() => addDays(dayStamp(), 7))
   const [made, setMade] = useState(null) // { url }
   const toggle = (id) => {
@@ -139,12 +273,17 @@ function AssignmentBuilder({ code, teacher }) {
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   }
   const make = () => {
-    const seed = (Date.now() % 1000000) | 1
-    const url = assignmentUrl({ code, teacher, familyIds: picked, count, due, seed }, appShareUrl())
-    if (url) { setMade({ url }); track('teacher_assignment') }
+    const a = { code, teacher, familyIds: picked, count, due, seed: newSeed(), orders: allOrders ? [1, 2, 3, 4, 5, 6, 7] : [1], week: null, createdDay: dayStamp() }
+    const url = assignmentUrl(a, appShareUrl())
+    if (url) {
+      saveAssignment(a)
+      setMade({ url })
+      track('teacher_assignment')
+      onSaved?.()
+    }
   }
   return (
-    <SectionCard icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmNewAssign', 'New assignment')}>
+    <SectionCard icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmNewAssign', 'Extra assignment')}>
       <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
         {t('tmAssignHint', 'Every student gets the same questions. When they finish, the app builds a result link they send back to you.')}
       </p>
@@ -173,6 +312,18 @@ function AssignmentBuilder({ code, teacher }) {
           </div>
         </div>
         <div>
+          <p className="text-xs font-black">{t('tmForms', 'Letter forms')}</p>
+          <div className="mt-1 flex gap-1.5">
+            {[[false, t('tmOrdersBase', 'Base letters')], [true, t('tmOrdersAll', 'All 7 forms')]].map(([v, label]) => (
+              <button key={String(v)} type="button" aria-pressed={allOrders === v} onClick={() => { setAllOrders(v); setMade(null) }} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={allOrders === v
+                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
+                : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
           <label className="text-xs font-black" htmlFor="tm-due">{t('tmDue', 'Due date')}</label>
           <input
             id="tm-due" type="date" value={due} onChange={(e) => { setDue(e.target.value); setMade(null) }}
@@ -194,10 +345,35 @@ function AssignmentBuilder({ code, teacher }) {
   )
 }
 
+/** Every assignment this device sent (term weeks + extras), with turn-ins. */
+function SentAssignments({ code }) {
+  const list = assignmentsFor(code)
+  if (!list.length) return null
+  return (
+    <SectionCard icon={<Check className="h-4 w-4" aria-hidden="true" />} title={t('tmSent', 'Sent assignments')}>
+      <div className="mt-3 flex flex-col gap-2">
+        {list.map((a) => (
+          <div key={`${a.seed}`} className="rounded-2xl border-2 p-3" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-black">
+                {a.week != null ? t('tmWeek', 'Week {n}', { n: a.week + 1 }) : t('tmExtra', 'Extra')}
+                <span className="geez ml-2 text-base">{a.familyIds.map(glyphOf).join(' ')}</span>
+                <span className="mono ml-2 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{a.count}q · {t('tmDueShort', 'due {date}', { date: a.due })}</span>
+              </p>
+              <ShareLinkButton small tone="sky" url={assignmentUrl(a, appShareUrl())} text={t('asShareText', 'Fidel Quest homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
+            </div>
+            <div className="mt-2"><TurnIns code={code} seed={a.seed} /></div>
+          </div>
+        ))}
+      </div>
+    </SectionCard>
+  )
+}
+
 function RosterCard({ code }) {
   const roster = rosterByStudent(code)
   return (
-    <SectionCard icon={<Check className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Results')}>
+    <SectionCard icon={<Users className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Students')}>
       {roster.length === 0 ? (
         <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
           {t('tmRosterEmpty', 'No results yet. When a student finishes, they send you a result link - open it on this device and it files itself here.')}
@@ -213,7 +389,7 @@ function RosterCard({ code }) {
                 </p>
               </div>
               <p className="mono mt-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                {row.receipts.map((r) => `${r.day}: ${r.score}/${r.total}`).join(' · ')}
+                {row.receipts.map((r) => `${r.day}: ${r.score}/${r.total}${r.missed?.length ? ` (${r.missed.map(glyphOf).join(' ')})` : ''}`).join(' · ')}
               </p>
             </div>
           ))}
@@ -223,8 +399,10 @@ function RosterCard({ code }) {
   )
 }
 
-export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
+export default function TeacherMode({ onBack, onTv, incomingReceipt = null, needsGate = false }) {
+  const [open, setOpen] = useState(!needsGate)
   const [, bump] = useState(0)
+  const refresh = () => bump((n) => n + 1)
   // An opened #receipt= link files itself into the roster. addReceipt dedupes
   // on (student, assignment, class), so a re-render or a twice-opened link
   // cannot double-count; it returns null for a class this device doesn't own.
@@ -232,7 +410,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
   useEffect(() => {
     if (incomingReceipt) {
       setReceipt({ filed: !!addReceipt(incomingReceipt), data: incomingReceipt })
-      bump((n) => n + 1)
+      refresh()
     }
   }, [incomingReceipt])
   const teacherState = loadTeacher()
@@ -258,6 +436,9 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
         </div>
       </header>
 
+      {!open ? (
+        <ParentalGate onOpen={() => setOpen(true)} />
+      ) : (
       <div className="mt-6 flex flex-col gap-5">
         {/* An opened receipt link lands here with the filing outcome. */}
         {receipt && (
@@ -271,9 +452,14 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
         )}
 
         {!code ? (
-          <CreateClassCard onCreated={() => bump((n) => n + 1)} />
+          <CreateClassCard onCreated={refresh} />
         ) : (
           <>
+            <TermPlanCard code={code} teacher={cls.teacher} onTv={onTv} onChanged={refresh} />
+            <TroubleCard code={code} />
+            <SentAssignments code={code} />
+            <RosterCard code={code} />
+
             <SectionCard icon={<Link2 className="h-4 w-4" aria-hidden="true" />} title={`${t('tmInvite', 'Invite students')} · ${code}`}>
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmInviteHint', 'A student opens this link (or scans the code) once - their app joins your class. Works over WhatsApp.')}
@@ -284,14 +470,13 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
               </div>
             </SectionCard>
 
-            <AssignmentBuilder code={code} teacher={cls.teacher} />
-            <RosterCard code={code} />
+            <AssignmentBuilder code={code} teacher={cls.teacher} onSaved={refresh} />
 
             <SectionCard icon={<Tv className="h-4 w-4" aria-hidden="true" />} title={t('tmTv', 'TV display')}>
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmTvHint', 'Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner.')}
               </p>
-              <button type="button" onClick={onTv} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              <button type="button" onClick={() => onTv(null)} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                 <Tv className="h-5 w-5" aria-hidden="true" /> {t('tmTvOpen', 'Open TV display')}
               </button>
             </SectionCard>
@@ -304,7 +489,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
               ) : (
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>{t('tmRemoveConfirm', 'Erase this class and all its results from this device?')}</p>
-                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); bump((n) => n + 1) }} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); refresh() }} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                     {t('gpResetYes', 'Yes, erase')}
                   </button>
                   <button type="button" onClick={() => setConfirmRemove(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
@@ -316,6 +501,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null }) {
           </>
         )}
       </div>
+      )}
     </div>
   )
 }

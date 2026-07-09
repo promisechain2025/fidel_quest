@@ -79,7 +79,19 @@ back to a new player.
 
 ## Teacher Mode (link + receipt, no server)
 - [ ] Grown-ups → **Teacher tools** — create a class (name + code). The
-      Invite card shows a **QR code** and a share-link button.
+      Invite card shows a **QR code** and a share-link button. Once a class
+      exists, a **Teacher tile appears in the Backpack** as a shortcut — it
+      still passes through the parental gate.
+- [ ] **Term plan** — pick "2 families a week": the whole term lays out as
+      weeks (Week 1 highlighted "this week", each with its letters and due
+      date). Week rows carry **TV lesson** and **Send homework** buttons.
+- [ ] **Send homework** on Week 1, then tap **Share link again** — both
+      shares carry the SAME link (open both on a student device: identical
+      questions). The row shows "Waiting for the first result link", then
+      "1 of N turned in · missing: …" as receipts arrive.
+- [ ] **Class trouble letters** — after a student misses letters in an
+      assignment, the receipt carries them and this card shows the letter,
+      the miss count, and which students.
 - [ ] On a second device (or private window), open the invite link — a
       **"Join {teacher}'s class?"** screen appears; joining stores the class
       and sets the community code, and needs no account.
@@ -91,7 +103,10 @@ back to a new player.
       **Today's plan** card; it opens the same assignment.
 - [ ] Finish the assignment — same questions for every student who opens the
       same link. The done screen asks for the child's name and **Send result
-      to teacher** shares a result link (no server involved).
+      to teacher** shares a result link (no server involved). The name is
+      remembered for the next assignment; a two-family week still fills the
+      full question count. An "All 7 forms" extra assignment asks non-base
+      forms (ሁ, ሂ, …).
 - [ ] Teacher: open the received result link — a green **"Result saved"**
       banner and the student appears in the **Results** roster (best %, one
       line per assignment). Opening the same link twice does not
@@ -100,6 +115,14 @@ back to a new player.
       giant letter, the family's 7 orders, auto-advance with audio,
       arrow-keys/remote and taps drive it, join-QR in the corner, Escape or X
       exits. Cast/plug into a TV and check it reads across the room.
+- [ ] TV **Quiz** tab — the board plays a sound and shows four big letters;
+      tap the right one (green + advance) and a wrong one (red, then reveal).
+      A week row's **TV lesson** opens the board scoped to that week's
+      families only (header shows e.g. 1/2); the header family button opens
+      the **jump grid**.
+- [ ] **Link into an open app** — with the app already open, open a class or
+      assignment link (same tab): it must route to the join/assignment
+      screen, not be ignored.
 
 ## Learning flow polish
 - [ ] **Feed Anbessa** (Echo/Shuffle) — tapping a wrong letter flashes it RED

@@ -802,6 +802,24 @@ export default function FidelQuestApp() {
       /* non-browser */
     }
     track('app_open')
+    // A resident PWA can receive a tapped link as a hash change on the LIVE
+    // instance (no reload). Route it exactly like a boot-time deep link, then
+    // strip the token.
+    const onHash = () => {
+      try {
+        const hash = window.location.hash
+        if (!/(challenge|class|assign|receipt)=/.test(hash)) return
+        const ch = readChallengeFromHash(hash)
+        if (ch) setStack([{ name: 'challenge', challenge: ch }])
+        const cr = readClassroomFromHash(hash)
+        if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      } catch { /* malformed link */ }
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
   }, [])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
@@ -1230,8 +1248,9 @@ export default function FidelQuestApp() {
               <Suspense fallback={null}>
                 <TeacherMode
                   onBack={goBackOrHome}
-                  onTv={() => setScreen({ name: 'tv' })}
+                  onTv={(families) => setScreen({ name: 'tv', families })}
                   incomingReceipt={screen.receipt || null}
+                  needsGate={!!screen.gate}
                 />
               </Suspense>
             </Screen>
@@ -1241,6 +1260,7 @@ export default function FidelQuestApp() {
               <Suspense fallback={null}>
                 <TvClass
                   onBack={goBack}
+                  families={screen.families || null}
                   joinUrl={(() => {
                     const codes = Object.keys(loadTeacher().classes)
                     return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appShareUrl()) : null
@@ -1301,6 +1321,7 @@ export default function FidelQuestApp() {
               onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
               onPostcard={() => { setBackpackOpen(false); setScreen({ name: 'postcard' }) }}
               onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
+              onTeacher={() => { setBackpackOpen(false); setScreen({ name: 'teacher', gate: true }) }}
             />
           )}
         </AnimatePresence>
@@ -1970,7 +1991,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2021,6 +2042,11 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
+            {/* Teacher shortcut: only once a class exists on this device, and
+               still behind the parental gate (the tile is kid-visible). */}
+            {Object.keys(loadTeacher().classes).length > 0 && (
+              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
+            )}
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}
             {isApplePlatform() && (
@@ -2478,7 +2504,16 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
   }, [ctx.status, ctx.cursor])
 
   if (ctx.status === GameState.LEVEL_COMPLETE) {
-    const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
+    // `missed` = targets that took more than one try; assignment receipts
+    // carry them back to the teacher as the class's trouble letters.
+    const result = isPractice
+      ? null
+      : {
+          stars: starsForAccuracy(accuracy),
+          bestStreak: ctx.bestStreak,
+          accuracy,
+          missed: [...new Set(ctx.history.filter((h) => h.attempts > 1).map((h) => h.target))],
+        }
     // Any finished REAL level can be turned into a challenge link, built from
     // the EXACT effective seed the queue was drawn from (ctx.seed, which
     // survives the one-time tutorial reseed). Preset-queue runs (warm-up,
@@ -2948,7 +2983,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
       />
     )
   }
-  return <AssignmentDone assignment={assignment} total={queue.length} accuracy={result?.accuracy ?? 0} onHome={onHome} />
+  return <AssignmentDone assignment={assignment} total={queue.length} accuracy={result?.accuracy ?? 0} missed={result?.missed || []} onHome={onHome} />
 }
 
 function AssignmentIntro({ assignment, count, onStart, onHome }) {
@@ -2979,16 +3014,27 @@ function AssignmentIntro({ assignment, count, onStart, onHome }) {
   )
 }
 
-/** The receipt sender. The score travels ONLY inside the link the family
+/** The receipt sender. The score (and which letters were missed, so the
+   teacher can actually teach) travels ONLY inside the link the family
    chooses to share back to the teacher (WhatsApp / share sheet). */
-function AssignmentDone({ assignment, total, accuracy, onHome }) {
-  const [name, setName] = useState(() => loadFromStorage('fq.nickname', ''))
+function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
+  // Remember the name across assignments - typed once, kept locally.
+  const [name, setName] = useState(() => loadFromStorage('fq.student.v1', '') || loadFromStorage('fq.nickname', ''))
   const [copied, setCopied] = useState(false)
   const score = Math.max(0, Math.min(total, Math.round((accuracy * total) / 100)))
   const clean = sanitizeName(name)
   const send = async () => {
+    try { localStorage.setItem('fq.student.v1', clean) } catch { /* session-only */ }
     const url = receiptUrl(
-      { code: assignment.code, student: clean, score, total, day: dayStamp(), assignmentSeed: assignment.seed },
+      {
+        code: assignment.code,
+        student: clean,
+        score,
+        total,
+        day: dayStamp(),
+        assignmentSeed: assignment.seed,
+        missed: [...new Set(missed.map((k) => String(k).replace(/-\d+$/, '')))],
+      },
       appShareUrl(),
     )
     if (!url) return

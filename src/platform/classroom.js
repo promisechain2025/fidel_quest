@@ -25,7 +25,7 @@
 import { b64urlEncode, b64urlDecode, sanitizeName } from '../utils/challenge'
 import { dayStamp } from './streak'
 import { FIDEL_FAMILIES } from './ethiopic'
-import { buildReviewQueue } from './coach'
+import { buildReviewQueue, addDays } from './coach'
 
 const CLASS_KEY = 'fq.class.v1'
 const ASSIGN_KEY = 'fq.assign.v1'
@@ -124,19 +124,27 @@ export function leaveClass() {
 
 /* ── assignment links (#assign=) ── */
 
+/** Orders: a subset of the seven vocal orders; [1] = base letters only. */
+const cleanOrders = (raw) => {
+  const o = [...new Set((Array.isArray(raw) ? raw : []).map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 7))].sort()
+  return o.length ? o : [1]
+}
+
 /**
- * {v:1, c: classCode, t: teacher, f: [familyIds], n: count, due, s: seed}
- * Every field re-validated on decode; family ids are clamped to the real
- * abugida so a doctored link cannot smuggle arbitrary keys into the quiz.
+ * {v:1, c: classCode, t: teacher, f: [familyIds], n: count, due, s: seed,
+ *  o: [orders]} - every field re-validated on decode; family ids and orders
+ * are clamped to the real abugida so a doctored link cannot smuggle
+ * arbitrary keys into the quiz.
  */
-export function encodeAssignment({ code, teacher, familyIds, count, due, seed }) {
+export function encodeAssignment({ code, teacher, familyIds, count, due, seed, orders }) {
   const c = sanitizeClassCode(code)
   const t = sanitizeName(teacher)
   const f = [...new Set((familyIds || []).filter((id) => FAMILY_IDS.has(id)))]
   const n = Math.max(ASSIGN_MIN, Math.min(ASSIGN_MAX, Math.round(Number(count) || 0)))
   const s = Math.abs(Math.round(Number(seed) || 0)) % 1000000 || 1
+  const o = cleanOrders(orders)
   if (!validClassCode(c) || !t || !f.length || !validDay(due)) return null
-  return b64urlEncode(JSON.stringify({ v: 1, c, t, f, n, due, s }))
+  return b64urlEncode(JSON.stringify({ v: 1, c, t, f, n, due, s, o }))
 }
 
 export function decodeAssignment(token) {
@@ -149,7 +157,7 @@ export function decodeAssignment(token) {
     const count = Math.max(ASSIGN_MIN, Math.min(ASSIGN_MAX, Math.round(Number(p.n) || 0)))
     const seed = Math.abs(Math.round(Number(p.s) || 0)) % 1000000 || 1
     if (!validClassCode(code) || !teacher || !familyIds.length || !validDay(p.due)) return null
-    return { code, teacher, familyIds, count, due: p.due, seed }
+    return { code, teacher, familyIds, count, due: p.due, seed, orders: cleanOrders(p.o) }
   } catch {
     return null
   }
@@ -162,11 +170,21 @@ export function assignmentUrl(assignment, origin) {
 
 /**
  * The quiz itself: deterministic in the assignment, so the whole class
- * answers the same questions. Count may exceed distinct sounds in the
- * chosen families; buildReviewQueue caps it safely.
+ * answers the same questions. One buildReviewQueue batch asks each sound at
+ * most once, so a small week (two families) would starve the count - cycle
+ * deterministic batches (fresh seed each, so distractors and order differ)
+ * until the assignment is full.
  */
 export function buildAssignmentQueue(assignment) {
-  return buildReviewQueue(assignment.seed, assignment.familyIds, [], assignment.count)
+  const want = assignment.count
+  const orders = assignment.orders || [1]
+  const queue = []
+  for (let k = 0; queue.length < want && k < 10; k++) {
+    const batch = buildReviewQueue(assignment.seed + k * 131, assignment.familyIds, [], want - queue.length, orders)
+    if (!batch.length) break
+    queue.push(...batch)
+  }
+  return queue
 }
 
 /* ── pending assignment on the student device (fq.assign.v1) ── */
@@ -189,15 +207,21 @@ export function markAssignmentDone() {
 
 /* ── receipts (#receipt=) ── */
 
-/** {v:1, c, b: student name, s: score, q: total, d: day, a: assignment seed} */
-export function encodeReceipt({ code, student, score, total, day, assignmentSeed }) {
+/** Missed letters ride in the receipt as family ids (what the teacher can
+   act on), capped so the link stays small. */
+const cleanMissed = (raw) =>
+  [...new Set((Array.isArray(raw) ? raw : []).filter((id) => FAMILY_IDS.has(id)))].slice(0, 12)
+
+/** {v:1, c, b: student name, s: score, q: total, d: day, a: assignment seed,
+    m: [missed familyIds]} */
+export function encodeReceipt({ code, student, score, total, day, assignmentSeed, missed }) {
   const c = sanitizeClassCode(code)
   const b = sanitizeName(student)
   const q = Math.max(1, Math.min(ASSIGN_MAX, Math.round(Number(total) || 0)))
   const s = Math.max(0, Math.min(q, Math.round(Number(score) || 0)))
   const a = Math.abs(Math.round(Number(assignmentSeed) || 0)) % 1000000
   if (!validClassCode(c) || !b || !validDay(day)) return null
-  return b64urlEncode(JSON.stringify({ v: 1, c, b, s, q, d: day, a }))
+  return b64urlEncode(JSON.stringify({ v: 1, c, b, s, q, d: day, a, m: cleanMissed(missed) }))
 }
 
 export function decodeReceipt(token) {
@@ -210,7 +234,7 @@ export function decodeReceipt(token) {
     const score = Math.max(0, Math.min(total, Math.round(Number(p.s) || 0)))
     const assignmentSeed = Math.abs(Math.round(Number(p.a) || 0)) % 1000000
     if (!validClassCode(code) || !student || !validDay(p.d)) return null
-    return { code, student, score, total, day: p.d, assignmentSeed }
+    return { code, student, score, total, day: p.d, assignmentSeed, missed: cleanMissed(p.m) }
   } catch {
     return null
   }
@@ -304,4 +328,104 @@ export function rosterByStudent(code) {
       best: Math.max(...receipts.map((r) => (r.total ? r.score / r.total : 0))),
     }))
     .sort((a, b) => (a.student < b.student ? -1 : 1))
+}
+
+/* ── the teacher's memory: created assignments (fq.teacher.v1) ── */
+
+/**
+ * Remember an assignment this device created, so the SAME link (same seed,
+ * so results stay comparable) can be re-shared to a latecomer and the
+ * roster can group results per assignment. Keyed by (code, seed).
+ */
+export function saveAssignment(assignment) {
+  if (!assignment) return null
+  const t = loadTeacher()
+  const list = (t.assignments || []).filter((a) => !(a.code === assignment.code && a.seed === assignment.seed))
+  return writeJson(TEACHER_KEY, { ...t, assignments: [...list, assignment] })
+}
+
+/** This class's created assignments, newest first. */
+export function assignmentsFor(code) {
+  const c = sanitizeClassCode(code)
+  return (loadTeacher().assignments || [])
+    .filter((a) => a.code === c)
+    .sort((a, b) => (a.due < b.due ? 1 : a.due > b.due ? -1 : b.seed - a.seed))
+}
+
+/**
+ * Turn-in status for one assignment: who submitted (best receipt each) and,
+ * judged against every student this class has EVER seen, who is missing.
+ */
+export function submissionStats(code, seed) {
+  const c = sanitizeClassCode(code)
+  const receipts = (loadTeacher().receipts || []).filter((r) => r.code === c)
+  const submitted = receipts.filter((r) => r.assignmentSeed === seed)
+  const known = [...new Set(receipts.map((r) => r.student))].sort()
+  const names = new Set(submitted.map((r) => r.student))
+  return {
+    submitted: [...submitted].sort((a, b) => (a.student < b.student ? -1 : 1)),
+    known,
+    missing: known.filter((n) => !names.has(n)),
+  }
+}
+
+/**
+ * The class's trouble letters: missed family ids aggregated across all
+ * receipts, worst first - "half the class confuses these". Pure over the
+ * stored receipts. [{familyId, count, students}]
+ */
+export function classTroubleLetters(code, limit = 6) {
+  const c = sanitizeClassCode(code)
+  const byFamily = new Map()
+  for (const r of loadTeacher().receipts || []) {
+    if (r.code !== c) continue
+    for (const id of r.missed || []) {
+      const e = byFamily.get(id) || { familyId: id, count: 0, students: new Set() }
+      e.count += 1
+      e.students.add(r.student)
+      byFamily.set(id, e)
+    }
+  }
+  return [...byFamily.values()]
+    .map((e) => ({ familyId: e.familyId, count: e.count, students: [...e.students].sort() }))
+    .sort((a, b) => b.count - a.count || (a.familyId < b.familyId ? -1 : 1))
+    .slice(0, limit)
+}
+
+/* ── the Term Plan: the class syllabus (fq.teacher.v1) ── */
+
+/**
+ * The organizing spine of Teacher Mode: the teacher picks a pace once and
+ * the whole term lays itself out as weeks of letter families - each week
+ * owns its TV lesson, its homework link, and its turn-ins. The week list is
+ * derived, never stored; only {perWeek, startDay} persists per class.
+ */
+export function termWeeks(perWeek) {
+  const per = Math.max(1, Math.min(4, Math.round(Number(perWeek) || 0)))
+  const ids = FIDEL_FAMILIES.map((f) => f.id)
+  const weeks = []
+  for (let i = 0; i < ids.length; i += per) weeks.push(ids.slice(i, i + per))
+  return weeks
+}
+
+export function saveTermPlan(code, perWeek, startDay = dayStamp()) {
+  const c = sanitizeClassCode(code)
+  const t = loadTeacher()
+  if (!t.classes[c]) return null
+  const per = Math.max(1, Math.min(4, Math.round(Number(perWeek) || 0)))
+  t.classes = { ...t.classes, [c]: { ...t.classes[c], plan: { perWeek: per, startDay } } }
+  return writeJson(TEACHER_KEY, t)
+}
+
+/** 0-based index of the week containing `today`; clamped to the term. */
+export function currentWeekIndex(plan, today = dayStamp(), weekCount = termWeeks(plan?.perWeek || 1).length) {
+  if (!plan?.startDay) return 0
+  const toUtc = (s) => { const [y, m, d] = String(s).split('-').map(Number); return Date.UTC(y, (m || 1) - 1, d || 1) }
+  const days = Math.floor((toUtc(today) - toUtc(plan.startDay)) / 86400000)
+  return Math.max(0, Math.min(weekCount - 1, Math.floor(days / 7)))
+}
+
+/** The due date of week i (0-based): the day before the next week starts. */
+export function weekDue(plan, i) {
+  return addDays(plan.startDay, (i + 1) * 7 - 1)
 }

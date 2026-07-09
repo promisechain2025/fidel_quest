@@ -109,11 +109,14 @@ const soundOf = (key) => INDEXES.byAudioKey.get(key)?.sound
  * family ids, with an optional priority ordering for target choice. Twin-safe
  * twice over - one target per SOUND across the queue (a listen-and-pick
  * prompt cannot distinguish twins by ear), and pairwise-distinct sounds
- * within each question's options. Pure in (seed, poolIds, priorityKeys).
+ * within each question's options. `orders` widens the pool beyond the base
+ * form to any vocal orders (1..7) - a sound carries its vowel, so twin
+ * safety holds unchanged. Pure in (seed, poolIds, priorityKeys, orders).
  * Used by the daily warm-up and by teacher assignments.
  */
-export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMUP_SIZE) {
-  const pool = poolIds.map((id) => `${id}-1`).filter((k) => INDEXES.byAudioKey.has(k))
+export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMUP_SIZE, orders = [1]) {
+  const keysOf = (ids) => ids.flatMap((id) => orders.map((o) => `${id}-${o}`)).filter((k) => INDEXES.byAudioKey.has(k))
+  const pool = keysOf(poolIds)
   if (!pool.length) return []
   let state = seed
 
@@ -132,9 +135,10 @@ export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMU
 
   return targets.map((target) => {
     const sound = soundOf(target)
-    // Distractors: pool letters first, padded from the whole abugida,
-    // pairwise-distinct sounds so twins never make a question ambiguous.
-    const all = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
+    // Distractors: pool letters first, padded from the whole abugida at the
+    // same orders, pairwise-distinct sounds so twins never make a question
+    // ambiguous.
+    const all = keysOf(FIDEL_FAMILIES.map((f) => f.id))
     let candidates
     ;[candidates, state] = rngShuffle(
       [...pool, ...all.filter((k) => !pool.includes(k))].filter((k) => k !== target),
