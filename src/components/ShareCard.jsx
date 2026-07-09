@@ -5,16 +5,18 @@
    parent chooses to share the image. */
 import { drawAnbessa, drawWearables } from '../FidelQuestApp'
 import { track } from '../platform/analytics'
-import { isNativePlatform } from '../platform/native'
+import { isNativePlatform, isApplePlatform } from '../platform/native'
 import { appStoreUrl } from '../platform/gift'
 
 /** The link that travels with shares so the recipient can find the app:
     VITE_APP_URL when set (the canonical web/store landing), else the App
-    Store page on native builds, else this deployment's own origin. */
+    Store page on APPLE native builds only (an apps.apple.com link is useless
+    to Android relatives), else this deployment's own origin on the web.
+    May return '' on native - callers must omit empty urls from the payload. */
 export function appShareUrl() {
   const env = import.meta.env?.VITE_APP_URL
   if (typeof env === 'string' && env.trim()) return env.trim()
-  if (isNativePlatform()) return appStoreUrl()
+  if (isNativePlatform()) return isApplePlatform() ? appStoreUrl() : ''
   return typeof window !== 'undefined' ? window.location.origin : ''
 }
 
@@ -69,13 +71,16 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   g.font = `900 ${S * 0.075}px system-ui, -apple-system, sans-serif`
   g.fillText('Fidel Quest', S / 2, S * 0.16)
   if (headline) {
-    // Personalized milestone: shrink to fit the card width.
+    // Personalized milestone: shrink to fit the card width. The headline is
+    // localized (Amharic/Tigrinya UIs pass Ge'ez, and the nickname itself can
+    // be Ge'ez), so the stack must name the bundled Ethiopic face.
+    const hFont = (px) => `900 ${px}px 'Noto Sans Ethiopic', 'Abyssinica SIL', system-ui, -apple-system, sans-serif`
     g.fillStyle = '#b4560a'
     let size = S * 0.075
-    g.font = `900 ${size}px system-ui, -apple-system, sans-serif`
+    g.font = hFont(size)
     while (g.measureText(headline).width > S * 0.9 && size > S * 0.04) {
       size -= S * 0.004
-      g.font = `900 ${size}px system-ui, -apple-system, sans-serif`
+      g.font = hFont(size)
     }
     g.fillText(headline, S / 2, S * 0.285)
   } else {
@@ -226,7 +231,7 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
       const name = `fidel-quest-${Date.now()}.png`
       await Filesystem.writeFile({ path: name, data: dataUrl.split(',')[1], directory: Directory.Cache })
       const { uri } = await Filesystem.getUri({ path: name, directory: Directory.Cache })
-      await Share.share({ title: 'Fidel Quest', text, url, files: [uri] })
+      await Share.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [uri] })
       track('share')
       return 'shared'
     } catch (e) {
@@ -239,13 +244,13 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
     if (blob && navigator.canShare) {
       const file = new File([blob], 'fidel-quest.png', { type: 'image/png' })
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'Fidel Quest', text, url, files: [file] })
+        await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [file] })
         track('share')
         return 'shared'
       }
     }
     if (navigator.share) {
-      await navigator.share({ title: 'Fidel Quest', text, url })
+      await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}) })
       track('share')
       return 'shared'
     }
@@ -269,7 +274,7 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
 /** Draw the voice-postcard image at side S: a big Ge'ez greeting, Anbessa in
     wardrobe, and a voice-note bubble so the recipient knows to listen. The
     caption strings arrive pre-localized (the drawer stays language-blind). */
-export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', lines = null, worn = [] } = {}) {
+export function drawVoicePostcard(g, S, { heading = 'ሰላም!', lines = [], worn = [] } = {}) {
   const grad = g.createLinearGradient(0, 0, 0, S)
   grad.addColorStop(0, BG_TOP)
   grad.addColorStop(1, BG_BOTTOM)
@@ -335,7 +340,7 @@ export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', lin
 
   // Caption under the bubble: up to two fit-to-width lines, set in the
   // Ethiopic face since the message to the family is written in Ge'ez.
-  const caption = (lines && lines.filter(Boolean)) || (line ? [line] : [])
+  const caption = (lines || []).filter(Boolean)
   const capFont = (px) => `800 ${px}px 'Noto Sans Ethiopic', 'Abyssinica SIL', system-ui, sans-serif`
   const capY = caption.length > 1 ? [S * 0.935, S * 0.975] : [S * 0.965]
   caption.slice(0, 2).forEach((cap, i) => {
@@ -354,13 +359,13 @@ export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', lin
     handed together to the share sheet (a picture + a voice note is the native
     WhatsApp idiom). Falls back to sharing just the voice, then to downloading
     both. Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
-export async function shareVoicePostcard({ voice, heading, line, lines, worn = [], text = '' } = {}) {
+export async function shareVoicePostcard({ voice, heading, lines, worn = [], text = '' } = {}) {
   if (!voice) return 'unsupported'
   const S = 1080
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = S
   const g = canvas.getContext('2d')
-  if (g) drawVoicePostcard(g, S, { heading, line, lines, worn })
+  if (g) drawVoicePostcard(g, S, { heading, lines, worn })
   const png = g ? await toBlob(canvas) : null
 
   if (isNativePlatform()) {
@@ -449,7 +454,7 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
       const fname = `fidel-name-${Date.now()}.png`
       await Filesystem.writeFile({ path: fname, data: dataUrl.split(',')[1], directory: Directory.Cache })
       const { uri } = await Filesystem.getUri({ path: fname, directory: Directory.Cache })
-      await Share.share({ title: 'Fidel Quest', text, url, files: [uri] })
+      await Share.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [uri] })
       track('share')
       return 'shared'
     } catch (e) {
@@ -461,13 +466,13 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
     if (blob && navigator.canShare) {
       const file = new File([blob], 'fidel-name.png', { type: 'image/png' })
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: 'Fidel Quest', text, url, files: [file] })
+        await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}), files: [file] })
         track('share')
         return 'shared'
       }
     }
     if (navigator.share) {
-      await navigator.share({ title: 'Fidel Quest', text, url })
+      await navigator.share({ title: 'Fidel Quest', text, ...(url ? { url } : {}) })
       track('share')
       return 'shared'
     }

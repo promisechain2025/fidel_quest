@@ -519,8 +519,8 @@ export const UI_STRINGS = {
     traceTry: 'Versuch es noch einmal – bedecke mehr vom grauen Buchstaben.',
     traceDone: 'Familie nachgezeichnet – gobez!',
     traceUnsupported: 'Nachzeichnen braucht einen Browser mit Canvas-Unterstützung.',
-    praise: 'Gobez! (Gut gemacht!),Wunderbar!,Du bist ein Star!,Betam gobez! (Sehr gut gemacht!),Brillant!,Strahl weiter!,Fantastisch!,Klasse!,Du hast es geschafft!,Weiter so!,Großartig!,Tebarek! (Sei gesegnet!),Girum! (Wunderbar!),Arif! (Toll!),Kokeb neh! (Du bist ein Star!),Juhu!',
-    encourage: 'Fast! Hör nochmal hin.,Guter Versuch! Probier es nochmal.,So knapp! Mach weiter.,Kein Problem – versuch es nochmal!,Ayzoh! (Nur Mut!) Hör noch einmal hin.,Du schaffst das! Versuch es nochmal.,Fast geschafft – noch ein Versuch!,Hör genau hin und versuch es nochmal.',
+    praise: ['Gobez! (Gut gemacht!)', 'Wunderbar!', 'Du bist ein Star!', 'Betam gobez! (Sehr gut gemacht!)', 'Brillant!', 'Strahl weiter!', 'Fantastisch!', 'Klasse!', 'Du hast es geschafft!', 'Weiter so!', 'Großartig!', 'Tebarek! (Sei gesegnet!)', 'Girum! (Wunderbar!)', 'Arif! (Toll!)', 'Kokeb neh! (Du bist ein Star!)', 'Juhu!'],
+    encourage: ['Fast! Hör nochmal hin.', 'Guter Versuch! Probier es nochmal.', 'So knapp! Mach weiter.', 'Kein Problem – versuch es nochmal!', 'Ayzoh! (Nur Mut!) Hör noch einmal hin.', 'Du schaffst das! Versuch es nochmal.', 'Fast geschafft – noch ein Versuch!', 'Hör genau hin und versuch es nochmal.'],
     levels: {
       '1': {
         title: 'Erste Buchstaben',
@@ -623,8 +623,8 @@ export const UI_STRINGS = {
     traceTry: 'Prova ancora una volta — copri meglio la lettera grigia.',
     traceDone: 'Famiglia tracciata — gobez!',
     traceUnsupported: 'La tracciatura richiede un browser con supporto canvas.',
-    praise: 'Gobez! (Ottimo lavoro!),Meraviglioso!,Sei una stella!,Betam gobez! (Molto bravo!),Brillante!,Continua a brillare!,Fantastico!,Straordinario!,Ce l\'hai fatta!,Così si fa!,Superbo!,Tebarek! (Benedetto!),Girum! (Meraviglioso!),Arif! (Grande!),Kokeb neh! (Sei una stella!),Evviva!',
-    encourage: 'Quasi! Ascolta di nuovo.,Bel tentativo! Riprova.,Per un pelo! Continua.,Nessun problema — riprova!,Ayzoh! (Coraggio!) Ascolta ancora.,Ce la puoi fare! Riprova.,Ci sei quasi — un altro tentativo!,Ascolta bene e riprova.',
+    praise: ['Gobez! (Ottimo lavoro!)', 'Meraviglioso!', 'Sei una stella!', 'Betam gobez! (Molto bravo!)', 'Brillante!', 'Continua a brillare!', 'Fantastico!', 'Straordinario!', 'Ce l\'hai fatta!', 'Così si fa!', 'Superbo!', 'Tebarek! (Benedetto!)', 'Girum! (Meraviglioso!)', 'Arif! (Grande!)', 'Kokeb neh! (Sei una stella!)', 'Evviva!'],
+    encourage: ['Quasi! Ascolta di nuovo.', 'Bel tentativo! Riprova.', 'Per un pelo! Continua.', 'Nessun problema — riprova!', 'Ayzoh! (Coraggio!) Ascolta ancora.', 'Ce la puoi fare! Riprova.', 'Ci sei quasi — un altro tentativo!', 'Ascolta bene e riprova.'],
     levels: {
       '1': {
         title: 'Prime Lettere',
@@ -727,8 +727,8 @@ export const UI_STRINGS = {
     traceTry: 'Försök en gång till — täck mer av den gråa bokstaven.',
     traceDone: 'Familjen spårad — gobez!',
     traceUnsupported: 'Spårning kräver en webbläsare med canvas-stöd.',
-    praise: 'Gobez! (Bra jobbat!),Underbart!,Du är en stjärna!,Betam gobez! (Mycket bra gjort!),Lysande!,Fortsätt lysa!,Fantastiskt!,Toppen!,Du klarade det!,Bra kämpat!,Suveränt!,Tebarek! (Var välsignad!),Girum! (Underbart!),Arif! (Toppen!),Kokeb neh! (Du är en stjärna!),Woohoo!',
-    encourage: 'Nästan! Lyssna igen.,Bra försök! Prova en gång till.,Så nära! Fortsätt.,Ingen fara — försök igen!,Ayzoh! (Ta det lugnt!) Lyssna en gång till.,Du klarar det! Försök igen.,Nästan där — ett försök till!,Lyssna noga och försök igen.',
+    praise: ['Gobez! (Bra jobbat!)', 'Underbart!', 'Du är en stjärna!', 'Betam gobez! (Mycket bra gjort!)', 'Lysande!', 'Fortsätt lysa!', 'Fantastiskt!', 'Toppen!', 'Du klarade det!', 'Bra kämpat!', 'Suveränt!', 'Tebarek! (Var välsignad!)', 'Girum! (Underbart!)', 'Arif! (Toppen!)', 'Kokeb neh! (Du är en stjärna!)', 'Woohoo!'],
+    encourage: ['Nästan! Lyssna igen.', 'Bra försök! Prova en gång till.', 'Så nära! Fortsätt.', 'Ingen fara — försök igen!', 'Ayzoh! (Ta det lugnt!) Lyssna en gång till.', 'Du klarar det! Försök igen.', 'Nästan där — ett försök till!', 'Lyssna noga och försök igen.'],
     levels: {
       '1': {
         title: 'Första bokstäverna',
@@ -831,8 +831,8 @@ export const UI_STRINGS = {
     traceTry: 'Probeer het nog eens — bedek meer van de grijze letter.',
     traceDone: 'Familie overgetrokken — gobez!',
     traceUnsupported: 'Overtrekken heeft een browser met canvas-ondersteuning nodig.',
-    praise: 'Gobez! (Goed gedaan!),Geweldig!,Je bent een ster!,Betam gobez! (Heel goed gedaan!),Briljant!,Blijf stralen!,Verbazingwekkend!,Fantastisch!,Het is je gelukt!,Zo doe je dat!,Prima!,Tebarek! (Wees gezegend!),Girum! (Prachtig!),Arif! (Top!),Kokeb neh! (Je bent een ster!),Joepie!',
-    encourage: 'Bijna! Luister nog eens.,Goede poging! Probeer het nog eens.,Net niet! Ga zo door.,Geen zorgen — probeer opnieuw!,Ayzoh! (Kop op!) Luister nog een keer.,Jij kunt het! Probeer opnieuw.,Bijna daar — nog één poging!,Luister goed en probeer opnieuw.',
+    praise: ['Gobez! (Goed gedaan!)', 'Geweldig!', 'Je bent een ster!', 'Betam gobez! (Heel goed gedaan!)', 'Briljant!', 'Blijf stralen!', 'Verbazingwekkend!', 'Fantastisch!', 'Het is je gelukt!', 'Zo doe je dat!', 'Prima!', 'Tebarek! (Wees gezegend!)', 'Girum! (Prachtig!)', 'Arif! (Top!)', 'Kokeb neh! (Je bent een ster!)', 'Joepie!'],
+    encourage: ['Bijna! Luister nog eens.', 'Goede poging! Probeer het nog eens.', 'Net niet! Ga zo door.', 'Geen zorgen — probeer opnieuw!', 'Ayzoh! (Kop op!) Luister nog een keer.', 'Jij kunt het! Probeer opnieuw.', 'Bijna daar — nog één poging!', 'Luister goed en probeer opnieuw.'],
     levels: {
       '1': {
         title: 'Eerste letters',
@@ -935,8 +935,8 @@ export const UI_STRINGS = {
     traceTry: 'Prøv en gang til — dekk mer av den grå bokstaven.',
     traceDone: 'Familie tegnet — gobez!',
     traceUnsupported: 'Tegning trenger en nettleser med canvas-støtte.',
-    praise: 'Gobez! (Bra jobbet!),Herlig!,Du er en stjerne!,Betam gobez! (Veldig bra gjort!),Strålende!,Fortsett å skinne!,Fantastisk!,Kjempebra!,Du klarte det!,Sånn ja!,Suverent!,Tebarek! (Velsigne deg!),Girum! (Herlig!),Arif! (Flott!),Kokeb neh! (Du er en stjerne!),Woohoo!',
-    encourage: 'Nesten! Hør en gang til.,Godt forsøk! Prøv igjen.,Så nære! Fortsett.,Ingen fare — prøv igjen!,Ayzoh! (Ta motet til deg!) Hør en gang til.,Du klarer det! Prøv igjen.,Nesten der — ett forsøk til!,Lytt nøye og prøv igjen.',
+    praise: ['Gobez! (Bra jobbet!)', 'Herlig!', 'Du er en stjerne!', 'Betam gobez! (Veldig bra gjort!)', 'Strålende!', 'Fortsett å skinne!', 'Fantastisk!', 'Kjempebra!', 'Du klarte det!', 'Sånn ja!', 'Suverent!', 'Tebarek! (Velsigne deg!)', 'Girum! (Herlig!)', 'Arif! (Flott!)', 'Kokeb neh! (Du er en stjerne!)', 'Woohoo!'],
+    encourage: ['Nesten! Hør en gang til.', 'Godt forsøk! Prøv igjen.', 'Så nære! Fortsett.', 'Ingen fare — prøv igjen!', 'Ayzoh! (Ta motet til deg!) Hør en gang til.', 'Du klarer det! Prøv igjen.', 'Nesten der — ett forsøk til!', 'Lytt nøye og prøv igjen.'],
     levels: {
       '1': {
         title: 'Første bokstaver',
@@ -1039,8 +1039,8 @@ export const UI_STRINGS = {
     traceTry: 'Encore un essai — couvre plus de la lettre grise.',
     traceDone: 'Famille tracée — gobez !',
     traceUnsupported: 'Le tracé a besoin d\'un navigateur avec le support canvas.',
-    praise: 'Gobez ! (Bravo !),Merveilleux !,Tu es une étoile !,Betam gobez ! (Très bien joué !),Brillant !,Continue de briller !,Génial !,Fantastique !,Tu as réussi !,Bravo à toi !,Superbe !,Tebarek ! (Sois béni !),Girum ! (Merveilleux !),Arif ! (Super !),Kokeb neh ! (Tu es une étoile !),Youpi !',
-    encourage: 'Presque ! Réécoute.,Bel essai ! Réessaie.,Si près ! Continue.,Pas de souci — réessaie !,Ayzoh ! (Courage !) Réécoute encore.,Tu peux le faire ! Réessaie.,Presque là — encore un essai !,Écoute bien et réessaie.',
+    praise: ['Gobez ! (Bravo !)', 'Merveilleux !', 'Tu es une étoile !', 'Betam gobez ! (Très bien joué !)', 'Brillant !', 'Continue de briller !', 'Génial !', 'Fantastique !', 'Tu as réussi !', 'Bravo à toi !', 'Superbe !', 'Tebarek ! (Sois béni !)', 'Girum ! (Merveilleux !)', 'Arif ! (Super !)', 'Kokeb neh ! (Tu es une étoile !)', 'Youpi !'],
+    encourage: ['Presque ! Réécoute.', 'Bel essai ! Réessaie.', 'Si près ! Continue.', 'Pas de souci — réessaie !', 'Ayzoh ! (Courage !) Réécoute encore.', 'Tu peux le faire ! Réessaie.', 'Presque là — encore un essai !', 'Écoute bien et réessaie.'],
     levels: {
       '1': {
         title: 'Premières lettres',

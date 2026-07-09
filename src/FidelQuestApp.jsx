@@ -782,6 +782,10 @@ export default function FidelQuestApp() {
   }), [])
   const goBack = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), [])
   const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
+  // Hardware back: pop, but from a non-home ROOT (e.g. a #challenge deep link,
+  // whose initial stack is just [challenge]) fall through to home - otherwise
+  // the back button would neither navigate nor exit the app.
+  const goBackOrHome = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : [{ name: 'home' }])), [])
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
@@ -803,17 +807,37 @@ export default function FidelQuestApp() {
   const [celebration, setCelebration] = useState(null)
   const [gift, setGift] = useState(loadGift)
   const [giftOpened, setGiftOpened] = useState(null) // { reward } | { reward: null }
-  const today = useMemo(() => todayKey(), [])
+  // The calendar day everything daily derives from (gift, hunt, Ethiopic
+  // date, holiday, streak). An installed PWA commonly stays resident past
+  // midnight, so refresh on focus/visibility and once a minute — otherwise
+  // yesterday's hunt banner and holiday would stick until a full reload.
+  const [dayKey, setDayKey] = useState(() => todayKey())
+  useEffect(() => {
+    const refresh = () => setDayKey((prev) => {
+      const now = todayKey()
+      return now === prev ? prev : now
+    })
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    const id = setInterval(refresh, 60000)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', refresh)
+      clearInterval(id)
+    }
+  }, [])
+  const today = dayKey
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [giftOpen, setGiftOpen] = useState(false)
-  // Daily streak: count today's visit once when the app opens.
+  // Daily streak: count each day's visit (re-bumps if the day rolls over).
   const [streak, setStreak] = useState(0)
-  useEffect(() => { setStreak(bumpStreak().count) }, [])
+  useEffect(() => { setStreak(bumpStreak().count) }, [dayKey])
   // Daily Letter Hunt: one seeded hunt per calendar day.
   const [huntDone, setHuntDone] = useState(() => huntDoneToday())
+  useEffect(() => { setHuntDone(huntDoneToday()) }, [dayKey])
   // The living Ethiopian calendar: today's Ethiopic date + any holiday.
-  const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayStamp())), [])
-  const holiday = useMemo(() => holidayFor(dayStamp()), [])
+  const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayKey)), [dayKey])
+  const holiday = useMemo(() => holidayFor(dayKey), [dayKey])
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
 
@@ -826,11 +850,11 @@ export default function FidelQuestApp() {
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
       if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
-      if (screen.name !== 'home') { goBack(); e.preventDefault() }
+      if (screen.name !== 'home') { goBackOrHome(); e.preventDefault() }
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBack])
+  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBackOrHome])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1138,7 +1162,6 @@ export default function FidelQuestApp() {
               rewardName={celebration.rewardName}
               worn={wornLayers(journey.collection)}
               forms={progressStats(journey).forms}
-              families={progressStats(journey).families}
               onClose={() => setCelebration(null)}
               onPostcard={() => { setCelebration(null); setScreen({ name: 'postcard' }) }}
             />
@@ -1411,17 +1434,18 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
 }
 
 // The path is laid out as a compact serpentine grid: rows of COLS nodes that
-// snake (every other row is reversed), so consecutive steps stay adjacent while
-// the whole journey fits in far less vertical scroll than a two-column zigzag.
+// snake (every other row runs right-to-left), so consecutive steps stay
+// adjacent while the journey fits in far less vertical scroll than a
+// two-column zigzag. The reversal is purely visual (grid column placement) -
+// DOM and focus order stay in journey order for keyboard and screen-reader
+// users. Computed once: JOURNEY and PATH_COLS are module constants.
 const PATH_COLS = 3
 function serpentineRows(nodes, cols) {
   const rows = []
-  for (let i = 0; i < nodes.length; i += cols) {
-    const chunk = nodes.slice(i, i + cols)
-    rows.push((i / cols) % 2 === 1 ? chunk.slice().reverse() : chunk)
-  }
+  for (let i = 0; i < nodes.length; i += cols) rows.push(nodes.slice(i, i + cols))
   return rows
 }
+const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
 
 // Localized names for the calendar holidays (ids from platform/ethioCalendar).
 const holidayName = (id) =>
@@ -1572,14 +1596,14 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
       )}
 
       <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
-        {serpentineRows(JOURNEY, PATH_COLS).map((row, r) => (
+        {PATH_ROWS.map((row, r) => (
           <div key={r} className="grid items-center gap-3" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))` }}>
-            {row.map((node) => {
+            {row.map((node, i) => {
               const done = !!journey.done[node.id]
               const isNext = current ? node.id === current.id : false
               const unlocked = isNext || done
               return (
-                <div key={node.id} className="flex justify-center">
+                <div key={node.id} className="flex justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
                   <PathNode
                     node={node}
                     done={done}
@@ -1868,15 +1892,17 @@ function GiftModal({ reward, worn, forms, onClose }) {
 
 /* Chapter-complete celebration (the peak-pride share prompt). Anbessa bursts
    in wearing the freshly-earned item; the primary action is Share. */
-function Celebration({ chapter, rewardName, worn, forms, families, onClose, onPostcard }) {
+function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) {
   const [busy, setBusy] = useState(false)
   useEscapeKey(onClose)
   // Personalize the share card with the child's name + this milestone, so what
-  // lands in the WhatsApp thread says "Selam learned 8 letters!" not a generic
-  // wordmark. Falls back to the plain card when no nickname is set.
-  const name = (() => { try { return (localStorage.getItem('fq.nickname') || '').trim() } catch { return '' } })()
-  const headline = name && families
-    ? t('shareMilestone', `${name} learned ${families} letters!`, { name, n: families })
+  // lands in the WhatsApp thread says "Selam learned 56 letters!" not a generic
+  // wordmark. Uses the same forms count as the card's own progress pill, so the
+  // one shared image never shows two contradictory numbers. Falls back to the
+  // plain card when no nickname is set.
+  const name = loadFromStorage('fq.nickname', '').trim()
+  const headline = name && forms
+    ? t('shareMilestone', `${name} learned ${forms} letters!`, { name, n: forms })
     : ''
   const share = async () => {
     setBusy(true)
@@ -2954,23 +2980,27 @@ export function drawAnbessaBack(g, s, mood = 'happy') {
   g.beginPath()
   g.ellipse(cx, s * 0.47, s * 0.2, s * 0.14, 0, 0, 7)
   g.fill()
-  // ear-backs (outer fur, no pink inner)
+  // ear-backs (outer fur, no pink inner). Worried is readable from behind
+  // too: the ears droop low and flatten sideways instead of perking up.
+  const earY = worried ? s * 0.225 : s * 0.17
   for (const side of [-1, 1]) {
     g.fillStyle = '#f7a83c'
     g.beginPath()
-    g.arc(cx + side * s * 0.19, s * 0.17, s * 0.072, 0, 7)
+    if (worried) g.ellipse(cx + side * s * 0.21, earY, s * 0.078, s * 0.052, side * 0.6, 0, 7)
+    else g.arc(cx + side * s * 0.19, earY, s * 0.072, 0, 7)
     g.fill()
     g.fillStyle = '#d97706'
     g.beginPath()
-    g.arc(cx + side * s * 0.19, s * 0.18, s * 0.036, 0, 7)
+    if (worried) g.ellipse(cx + side * s * 0.21, earY + s * 0.008, s * 0.04, s * 0.026, side * 0.6, 0, 7)
+    else g.arc(cx + side * s * 0.19, earY + s * 0.01, s * 0.036, 0, 7)
     g.fill()
   }
-  // a little cowlick tuft on the crown
+  // a little cowlick tuft on the crown (flattened when worried)
   g.strokeStyle = '#d97706'
   g.lineWidth = s * 0.02
   g.beginPath()
   g.moveTo(cx, s * 0.2)
-  g.lineTo(cx, s * 0.14)
+  g.lineTo(cx + (worried ? s * 0.05 : 0), s * (worried ? 0.165 : 0.14))
   g.stroke()
 }
 

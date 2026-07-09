@@ -111,6 +111,8 @@ function Dressing({ kind }) {
 export default function DailyHunt({ seed, forms, soundOn = true, treasureReady = false, dress = null, onTreasure, onDone, onBack }) {
   const [ctx, setCtx] = useState(() => buildHunt(seed, forms))
   const [feedback, setFeedback] = useState(null) // 'good' | 'bad'
+  const feedbackTimer = useRef(null)
+  useEffect(() => () => clearTimeout(feedbackTimer.current), [])
   const doneRef = useRef(false)
   const target = huntTarget(ctx)
   const targetForm = ctx.hidden.find((f) => f.audioKey === target) || null
@@ -145,7 +147,8 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       playEffect('bad', soundOn)
     }
     setFeedback(good ? 'good' : 'bad')
-    setTimeout(() => setFeedback(null), 900)
+    clearTimeout(feedbackTimer.current)
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 900)
     setCtx(next)
   }
 

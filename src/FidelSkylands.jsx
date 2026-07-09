@@ -1020,14 +1020,23 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
   useEffect(() => {
     const fonts = typeof document !== 'undefined' ? document.fonts : null
     if (!fonts || !fonts.load) return undefined
+    // Common case first: main.jsx preloads the face at startup, so by the
+    // time Skylands mounts it is usually ready and the first bake was fine -
+    // skip the rebake entirely (a remount would pointlessly tear down the
+    // whole R3F scene on exactly the low-end devices this mode protects).
+    try { if (fonts.check?.("900 64px 'Noto Sans Ethiopic'")) return undefined } catch { /* fall through */ }
     let cancelled = false
     const rebake = () => {
       if (cancelled) return
       // Drop the cached single-char glyph textures (named textures like
       // 'anbessa'/'star' are longer keys and are kept) so the fruit letters
-      // re-bake now that the font is available.
+      // re-bake now that the font is available. Deliberately NOT calling
+      // dispose(): the still-mounted scene's materials reference these
+      // textures until the keyed remount commits, and disposing live GPU
+      // textures blanks the fruit for a frame. The handful of orphaned
+      // 128px canvases are garbage-collected with the old scene.
       for (const k of Object.keys(TEXTURES)) {
-        if (Array.from(k).length === 1) { TEXTURES[k].dispose?.(); delete TEXTURES[k] }
+        if (Array.from(k).length === 1) delete TEXTURES[k]
       }
       setGlyphV((v) => v + 1)
     }

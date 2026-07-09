@@ -15,6 +15,7 @@ import { getActivePackId } from '../platform/ethiopic'
 import { startRecorder, normalizeClip, recordSupported } from '../platform/voicePack'
 import { shareVoicePostcard, appShareUrl } from './ShareCard'
 import ParentalGate from './ParentalGate'
+import { loadFromStorage } from '../utils/loadFromStorage'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const MAX_SECONDS = 20
@@ -50,26 +51,37 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   const [toast, setToast] = useState(null)
   const recRef = useRef(null)
   const timerRef = useRef(null)
+  const secondsRef = useRef(0)
   const audioRef = useRef(null)
+  const clipUrlRef = useRef(null)
 
-  useEffect(() => () => { recRef.current?.cancel?.(); clearInterval(timerRef.current) }, [])
+  useEffect(() => () => {
+    recRef.current?.cancel?.()
+    clearInterval(timerRef.current)
+    try { audioRef.current?.pause?.() } catch { /* ignore */ }
+    if (clipUrlRef.current) { URL.revokeObjectURL(clipUrlRef.current); clipUrlRef.current = null }
+  }, [])
   useEffect(() => {
     if (!toast) return undefined
     const id = setTimeout(() => setToast(null), 2400)
     return () => clearTimeout(id)
   }, [toast])
 
-  const name = (() => { try { return (localStorage.getItem('fq.nickname') || '').trim() } catch { return '' } })()
+  const name = loadFromStorage('fq.nickname', '').trim()
 
   const begin = async () => {
     try {
       recRef.current = await startRecorder()
+      secondsRef.current = 0
       setSeconds(0)
       setPhase('recording')
-      timerRef.current = setInterval(() => setSeconds((s) => {
-        if (s + 1 >= MAX_SECONDS) finish()
-        return s + 1
-      }), 1000)
+      // Tick outside the state updater (updaters must stay pure - StrictMode
+      // double-invokes them, which would double-stop the recorder at the cap).
+      timerRef.current = setInterval(() => {
+        secondsRef.current += 1
+        setSeconds(secondsRef.current)
+        if (secondsRef.current >= MAX_SECONDS) finish()
+      }, 1000)
     } catch {
       setToast(t('fvNoMic', 'Recording needs a microphone — use a phone or tablet.'))
     }
@@ -83,6 +95,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
     const raw = await rec.stop()
     // Normalize to WAV so it plays on any device the family owns.
     const wav = await normalizeClip(raw)
+    if (clipUrlRef.current) { URL.revokeObjectURL(clipUrlRef.current); clipUrlRef.current = null }
     setClip(wav)
     setPhase('ready')
     playEffect('good', soundOn)
@@ -92,7 +105,9 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
     if (!clip) return
     try {
       audioRef.current?.pause?.()
-      audioRef.current = new Audio(URL.createObjectURL(clip))
+      // One object URL per clip, reused across taps and revoked on replace.
+      if (!clipUrlRef.current) clipUrlRef.current = URL.createObjectURL(clip)
+      audioRef.current = new Audio(clipUrlRef.current)
       audioRef.current.play()
     } catch { /* no Audio (tests) */ }
   }
@@ -147,8 +162,10 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
             {t('pcHint', 'Say “Selam!”, say your newest letters, or sing — Ayat and Abbat would love to hear you.')}
           </p>
 
-          {/* The one big button */}
-          {phase !== 'ready' && phase !== 'sent' && (
+          {/* The one big button - only while there is no finished clip. While
+             the share sheet is open ('sending') the ready controls stay, so a
+             stray tap cannot start a second recorder mid-share. */}
+          {(phase === 'idle' || phase === 'recording') && (
             <motion.button
               type="button"
               onClick={phase === 'recording' ? finish : begin}
@@ -163,13 +180,13 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
             </motion.button>
           )}
 
-          {(phase === 'ready' || phase === 'sent') && (
+          {(phase === 'ready' || phase === 'sending' || phase === 'sent') && (
             <>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={replay} aria-label={t('pcListen', 'Listen')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 5px 0 var(--sky-deep)', '--chunk-depth': '5px', outlineColor: 'var(--accent)' }}>
+                <button type="button" onClick={replay} disabled={phase === 'sending'} aria-label={t('pcListen', 'Listen')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 5px 0 var(--sky-deep)', '--chunk-depth': '5px', outlineColor: 'var(--accent)' }}>
                   <Play className="h-7 w-7" fill="currentColor" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => { setClip(null); setPhase('idle') }} aria-label={t('pcRedo', 'Record again')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                <button type="button" disabled={phase === 'sending'} onClick={() => { setClip(null); setPhase('idle') }} aria-label={t('pcRedo', 'Record again')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
                   <RotateCcw className="h-7 w-7" aria-hidden="true" />
                 </button>
               </div>
@@ -177,7 +194,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
                 type="button"
                 onClick={() => setPhase('gate')}
                 disabled={phase === 'sending'}
-                animate={phase === 'sent' ? {} : { scale: [1, 1.04, 1] }}
+                animate={phase === 'sent' || phase === 'sending' ? {} : { scale: [1, 1.04, 1] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
                 className={`chunk flex items-center gap-2 rounded-2xl px-7 py-3.5 text-lg font-black text-white disabled:opacity-60 ${FOCUS}`}
                 style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}

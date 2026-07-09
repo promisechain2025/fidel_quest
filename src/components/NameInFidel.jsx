@@ -2,7 +2,7 @@
    then tap a letter to add that syllable — exactly how Amharic is written, one
    consonant+vowel glyph at a time. The finished name renders onto a share card
    (components/ShareCard.jsx). On-device only; nothing leaves unless shared. */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, Volume2, Delete, Eraser, Share2 } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'
@@ -17,15 +17,24 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
   const [letters, setLetters] = useState([]) // built-up array of form objects
   const [busy, setBusy] = useState(false)
 
+  // The hear-the-name playback chain, cancellable so it stops on Clear /
+  // Back / a re-tap instead of playing over whatever screen comes next.
+  const playTimers = useRef([])
+  const stopPlayback = () => { playTimers.current.forEach(clearTimeout); playTimers.current = [] }
+  useEffect(() => stopPlayback, [])
+
   const append = (fam) => {
     const form = formOf(`${fam.id}-${order}`)
     if (!form) return
     playForm(form, soundOn)
     setLetters((ls) => [...ls, form])
   }
-  const backspace = () => setLetters((ls) => ls.slice(0, -1))
-  const clearAll = () => setLetters([])
-  const playAll = () => letters.forEach((f, i) => setTimeout(() => playForm(f, soundOn), i * 620))
+  const backspace = () => { stopPlayback(); setLetters((ls) => ls.slice(0, -1)) }
+  const clearAll = () => { stopPlayback(); setLetters([]) }
+  const playAll = () => {
+    stopPlayback()
+    playTimers.current = letters.map((f, i) => setTimeout(() => playForm(f, soundOn), i * 620))
+  }
 
   const nameGeez = letters.map((f) => f.char).join('')
   const latin = letters.map((f) => f.sound).join('')
