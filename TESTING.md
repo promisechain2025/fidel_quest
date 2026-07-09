@@ -35,6 +35,15 @@ back to a new player.
       for notification permission, then a reminder fires ~5pm. Toggling off
       cancels it; it re-arms after an app restart if left on.
 
+## Share cards (viral loop)
+- [ ] **Milestone card** — finish a chapter: the celebration's **Share** card shows
+      "<child's name> learned N letters!" when a nickname is set (Grown-ups →
+      nickname), and the plain ፊደል wordmark when it isn't.
+- [ ] **Write your name** (Backpack → **My Name**) — pick a vowel sound, tap
+      letters to spell a name in Fidel (each tap voices the syllable). Backspace /
+      clear / hear-the-name work. **Share my name** renders a card with the name
+      big in Ge'ez + Anbessa, to the share sheet (PNG download fallback on web).
+
 ## Community / affiliate
 - [ ] Grown-ups → **Community code** — enter a code, it saves and shows
       "supporting <CODE>"; Change clears it. (With `VITE_ANALYTICS_URL` set, a

@@ -28,6 +28,7 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, set
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
+import NameInFidel from './components/NameInFidel'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
@@ -973,6 +974,11 @@ export default function FidelQuestApp() {
               <FamilyVoice onBack={() => setScreen({ name: 'home' })} />
             </Screen>
           )}
+          {screen.name === 'name' && (
+            <Screen key="name">
+              <NameInFidel onBack={() => setScreen({ name: 'home' })} soundOn={soundOn} worn={wornLayers(journey.collection)} />
+            </Screen>
+          )}
           {screen.name === 'classic' && (
             <Screen key="classic">
               <div className="relative">
@@ -1088,6 +1094,7 @@ export default function FidelQuestApp() {
               rewardName={celebration.rewardName}
               worn={wornLayers(journey.collection)}
               forms={progressStats(journey).forms}
+              families={progressStats(journey).families}
               onClose={() => setCelebration(null)}
             />
           )}
@@ -1117,6 +1124,7 @@ export default function FidelQuestApp() {
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
+              onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
               onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
             />
           )}
@@ -1580,7 +1588,7 @@ function LanguagePicker() {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onWords, onPractice, onCloset, onTees, onGift, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -1628,6 +1636,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
             <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
+            <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}
@@ -1739,12 +1748,19 @@ function GiftModal({ reward, worn, forms, onClose }) {
 
 /* Chapter-complete celebration (the peak-pride share prompt). Anbessa bursts
    in wearing the freshly-earned item; the primary action is Share. */
-function Celebration({ chapter, rewardName, worn, forms, onClose }) {
+function Celebration({ chapter, rewardName, worn, forms, families, onClose }) {
   const [busy, setBusy] = useState(false)
   useEscapeKey(onClose)
+  // Personalize the share card with the child's name + this milestone, so what
+  // lands in the WhatsApp thread says "Selam learned 8 letters!" not a generic
+  // wordmark. Falls back to the plain card when no nickname is set.
+  const name = (() => { try { return (localStorage.getItem('fq.nickname') || '').trim() } catch { return '' } })()
+  const headline = name && families
+    ? t('shareMilestone', `${name} learned ${families} letters!`, { name, n: families })
+    : ''
   const share = async () => {
     setBusy(true)
-    await shareAnbessa({ forms, worn })
+    await shareAnbessa({ forms, worn, headline })
     setBusy(false)
     onClose()
   }
