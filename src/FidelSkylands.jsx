@@ -1013,6 +1013,25 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
     })
   }
 
+  // The fruit glyphs are canvas-baked into GPU textures. If a texture is baked
+  // before the bundled Ethiopic font has loaded, the letter comes out blank and
+  // stays cached that way ("letters not loading"). Rebake once fonts are ready.
+  const [glyphV, setGlyphV] = useState(0)
+  useEffect(() => {
+    const fonts = typeof document !== 'undefined' ? document.fonts : null
+    if (!fonts || !fonts.ready) return undefined
+    let cancelled = false
+    try { fonts.load("900 64px 'Noto Sans Ethiopic'") } catch { /* best effort */ }
+    fonts.ready.then(() => {
+      if (cancelled) return
+      for (const k of Object.keys(TEXTURES)) {
+        if (Array.from(k).length === 1) { TEXTURES[k].dispose?.(); delete TEXTURES[k] }
+      }
+      setGlyphV((v) => v + 1)
+    })
+    return () => { cancelled = true }
+  }, [])
+
   const [hint, setHint] = useState(() => !hasOnboarded('skylands') && !prefersReducedMotion())
   useEffect(() => {
     if (!hasOnboarded('skylands') && prefersReducedMotion()) markOnboarded('skylands')
@@ -1053,7 +1072,7 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
   return (
     <div className="fixed inset-0" style={{ background: 'var(--paper)' }}>
       <Canvas shadows={!LOW_END} dpr={LOW_END ? [1, 1.25] : [1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
-        <Scene st={st} dispatch={dispatch} soundOn={soundOn} />
+        <Scene key={glyphV} st={st} dispatch={dispatch} soundOn={soundOn} />
       </Canvas>
 
       {hint && st.mode === 'learning' && typeof window !== 'undefined' && (

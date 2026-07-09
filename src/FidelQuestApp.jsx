@@ -2774,6 +2774,152 @@ export function drawHyena(g, s, mood = 'grin') {
   }
 }
 
+/** Anbessa seen from BEHIND — the Letter Runner view. Sprites always face the
+    camera, so to make the player look "down the lane at the letters" we draw
+    their back: no face, just the mane fringe, ear-backs, spine and tail. */
+export function drawAnbessaBack(g, s, mood = 'happy') {
+  const cx = s / 2
+  const worried = mood !== 'happy'
+  // tail flicking to one side with a tuft (droops a little when worried)
+  g.strokeStyle = '#e08300'
+  g.lineWidth = s * 0.04
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx + s * 0.12, s * 0.82)
+  g.quadraticCurveTo(cx + s * 0.32, s * (worried ? 0.86 : 0.8), cx + s * 0.3, s * (worried ? 0.74 : 0.62))
+  g.stroke()
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.arc(cx + s * 0.3, s * (worried ? 0.72 : 0.6), s * 0.045, 0, 7)
+  g.fill()
+  // body (back)
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.roundRect(cx - s * 0.17, s * 0.55, s * 0.34, s * 0.35, s * 0.14)
+  g.fill()
+  // spine shading down the middle
+  g.fillStyle = '#e59328'
+  g.beginPath()
+  g.roundRect(cx - s * 0.022, s * 0.57, s * 0.044, s * 0.3, s * 0.022)
+  g.fill()
+  // back paws
+  g.fillStyle = '#e08300'
+  for (const px of [-0.1, 0.1]) {
+    g.beginPath()
+    g.ellipse(cx + px * s, s * 0.895, s * 0.055, s * 0.03, 0, 0, 7)
+    g.fill()
+  }
+  // mane ring framing the head from behind
+  g.fillStyle = '#d97706'
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2
+    g.beginPath()
+    g.arc(cx + Math.cos(a) * s * 0.28, s * 0.4 + Math.sin(a) * s * 0.28, s * 0.1, 0, 7)
+    g.fill()
+  }
+  // back of head
+  g.fillStyle = '#f7a83c'
+  g.beginPath()
+  g.arc(cx, s * 0.4, s * 0.265, 0, 7)
+  g.fill()
+  // soft crown shading so it reads as the back of the head, not a blank face
+  g.fillStyle = 'rgba(197,111,0,0.25)'
+  g.beginPath()
+  g.ellipse(cx, s * 0.47, s * 0.2, s * 0.14, 0, 0, 7)
+  g.fill()
+  // ear-backs (outer fur, no pink inner)
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#f7a83c'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.17, s * 0.072, 0, 7)
+    g.fill()
+    g.fillStyle = '#d97706'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.18, s * 0.036, 0, 7)
+    g.fill()
+  }
+  // a little cowlick tuft on the crown
+  g.strokeStyle = '#d97706'
+  g.lineWidth = s * 0.02
+  g.beginPath()
+  g.moveTo(cx, s * 0.2)
+  g.lineTo(cx, s * 0.14)
+  g.stroke()
+}
+
+/** Jibby / the hyena pack seen from BEHIND — chasing down the lane. Sloped
+    hyena back, dorsal crest along the spine, ear-backs, spots, no face. */
+export function drawHyenaBack(g, s, mood = 'grin') {
+  const cx = s / 2
+  // tail hanging down
+  g.strokeStyle = '#57493a'
+  g.lineWidth = s * 0.045
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx + s * 0.15, s * 0.62)
+  g.quadraticCurveTo(cx + s * 0.25, s * 0.82, cx + s * 0.19, s * 0.92)
+  g.stroke()
+  // sloped back body (high at the shoulders, tapering down)
+  g.fillStyle = '#9a8b76'
+  g.beginPath()
+  g.moveTo(cx - s * 0.2, s * 0.92)
+  g.quadraticCurveTo(cx - s * 0.25, s * 0.5, cx, s * 0.5)
+  g.quadraticCurveTo(cx + s * 0.25, s * 0.52, cx + s * 0.16, s * 0.92)
+  g.closePath()
+  g.fill()
+  // dorsal crest running down the spine
+  g.fillStyle = '#57493a'
+  for (let i = 0; i < 5; i++) {
+    const y = s * (0.56 + i * 0.06)
+    g.beginPath()
+    g.moveTo(cx - s * 0.028, y)
+    g.lineTo(cx, y - s * 0.05)
+    g.lineTo(cx + s * 0.028, y)
+    g.closePath()
+    g.fill()
+  }
+  // spots on the back
+  g.fillStyle = '#6e614f'
+  for (const [px, py, pr] of [[0.37, 0.64, 0.026], [0.62, 0.62, 0.024], [0.41, 0.78, 0.022], [0.59, 0.77, 0.02]]) {
+    g.beginPath()
+    g.arc(px * s, py * s, pr * s, 0, 7)
+    g.fill()
+  }
+  // back of head
+  g.fillStyle = '#9a8b76'
+  g.beginPath()
+  g.arc(cx, s * 0.4, s * 0.26, 0, 7)
+  g.fill()
+  // head spots
+  g.fillStyle = '#6e614f'
+  for (const [px, py, pr] of [[0.4, 0.35, 0.022], [0.62, 0.34, 0.02], [0.5, 0.5, 0.02]]) {
+    g.beginPath()
+    g.arc(px * s, py * s, pr * s, 0, 7)
+    g.fill()
+  }
+  // ear-backs on top
+  for (const side of [-1, 1]) {
+    g.fillStyle = '#8a7d6a'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.17, s * 0.2, s * 0.08, s * 0.11, side * 0.2, 0, 7)
+    g.fill()
+    g.fillStyle = '#6e614f'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.17, s * 0.2, s * 0.04, s * 0.06, side * 0.2, 0, 7)
+    g.fill()
+  }
+  // scruffy crest between the ears
+  g.fillStyle = '#57493a'
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath()
+    g.moveTo(cx + i * s * 0.05 - s * 0.028, s * 0.2)
+    g.lineTo(cx + i * s * 0.05, s * 0.11)
+    g.lineTo(cx + i * s * 0.05 + s * 0.028, s * 0.2)
+    g.closePath()
+    g.fill()
+  }
+}
+
 /** A friendly Grevy's zebra — cheers Anbessa on and grazes by the track. */
 export function drawZebra(g, s) {
   const cx = s / 2
@@ -3135,10 +3281,11 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    // Front-facing character (same art as the home screen) so Anbessa looks
-    // forward, watching the letters come, rather than sideways up the lane.
-    this.playerTexHappy = charTexture(drawAnbessa, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessa, 'worried')
+    // Back-facing character: the player runs away from the camera, down the
+    // lane, so we see Anbessa's back and he faces the letters coming toward him
+    // (a proper third-person runner view, not a face staring at the player).
+    this.playerTexHappy = charTexture(drawAnbessaBack, 'happy')
+    this.playerTexWorried = charTexture(drawAnbessaBack, 'worried')
     this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
     this.player.scale.set(2.3, 2.3, 1)
     this.player.position.set(0, 1.25, 0)
@@ -3162,7 +3309,7 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchTex = charTexture(drawHyena) // front-facing; shared by the whole pack
+    this.munchTex = charTexture(drawHyenaBack) // back-facing chase view; shared by the whole pack
     this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
     this.muncher.scale.set(1.9, 1.9, 1)
     this.muncher.position.set(1.4, 1.1, 5.9)
