@@ -62,11 +62,17 @@ back to a new player.
 
 ## Language
 - [ ] Switch **App text** (Backpack) through English / Amharic / Tigrinya /
-      the European languages — the whole app follows, including Grown-ups,
-      Explorer, Skylands/Runner HUD, Tee names.
-- [ ] **Tigrinya review** — the `ti` strings in `src/platform/i18n.js` (and the
-      Classic `ti` block in `src/data/fidelGameData.js`) are best-effort; a
-      native pass to fix anything that reads oddly.
+      the European languages — the whole app now follows in **every** language,
+      including Grown-ups, Explorer (incl. the Slow/Normal/Fast speed pills),
+      Write-your-name, Family Voice, the **Classic** game, and Skylands/Runner
+      HUD. There should be no English left when a non-English language is set.
+- [ ] **Native review of the auto-translations** — the six European packs
+      (`de/it/sv/nl/no/fr`) in `src/platform/langpacks.js` and their new blocks
+      in `src/data/fidelGameData.js` (`UI_STRINGS`), plus the `ti` strings, are
+      best-effort and machine-assisted. A native pass on each language to fix
+      anything that reads oddly is still worth doing before store launch. The
+      `-a / -u / Ge'ez / Ka'ib` order labels are romanized transliterations
+      (data), intentionally left untranslated.
 
 ## Store readiness (once paid)
 - [ ] **Gift** (Apple) — Backpack → Gift walks through Apple's "Gift App";
