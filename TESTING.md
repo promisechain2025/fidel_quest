@@ -77,6 +77,30 @@ back to a new player.
       "supporting <CODE>"; Change clears it. (With `VITE_ANALYTICS_URL` set, a
       `community:<CODE>` event is reported.)
 
+## Teacher Mode (link + receipt, no server)
+- [ ] Grown-ups → **Teacher tools** — create a class (name + code). The
+      Invite card shows a **QR code** and a share-link button.
+- [ ] On a second device (or private window), open the invite link — a
+      **"Join {teacher}'s class?"** screen appears; joining stores the class
+      and sets the community code, and needs no account.
+- [ ] Teacher: build an **assignment** (pick families on the letter grid,
+      question count, due date) and share the link over WhatsApp to the
+      student device.
+- [ ] Student: the link opens an assignment intro (teacher, count, due date).
+      Choosing **Later** puts a "Teacher's assignment" row into the home
+      **Today's plan** card; it opens the same assignment.
+- [ ] Finish the assignment — same questions for every student who opens the
+      same link. The done screen asks for the child's name and **Send result
+      to teacher** shares a result link (no server involved).
+- [ ] Teacher: open the received result link — a green **"Result saved"**
+      banner and the student appears in the **Results** roster (best %, one
+      line per assignment). Opening the same link twice does not
+      double-count; a retake replaces the score.
+- [ ] Teacher tools → **Open TV display** — full-screen dark chant board:
+      giant letter, the family's 7 orders, auto-advance with audio,
+      arrow-keys/remote and taps drive it, join-QR in the corner, Escape or X
+      exits. Cast/plug into a TV and check it reads across the room.
+
 ## Learning flow polish
 - [ ] **Feed Anbessa** (Echo/Shuffle) — tapping a wrong letter flashes it RED
       and **re-voices the asked letter** (not the tapped one). Anbessa still

@@ -27,6 +27,7 @@
     "@react-three/fiber": "^9.6.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^0.513.0",
+    "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.185.1"

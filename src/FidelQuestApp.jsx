@@ -57,7 +57,10 @@ import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
-import { challengeUrl, readChallengeFromHash, challengeOutcome } from './utils/challenge'
+import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
+import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
+import { setCommunityCode } from './platform/community'
+import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform, isApplePlatform } from './platform/native'
 import GiftAppModal from './components/GiftModal'
@@ -65,6 +68,10 @@ import GiftAppModal from './components/GiftModal'
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
 const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
+// Teacher tools + the TV chant board are adult-facing and pull in the QR
+// encoder, so they stay out of the child-facing home chunk too.
+const TeacherMode = lazy(() => import('./components/TeacherMode'))
+const TvClass = lazy(() => import('./components/TvClass'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -760,6 +767,12 @@ export default function FidelQuestApp() {
     try {
       const ch = readChallengeFromHash(window.location.hash)
       if (ch) return [{ name: 'challenge', challenge: ch }]
+      // Classroom deep links (platform/classroom.js): a class invite, a
+      // teacher's assignment, or a returning result receipt.
+      const cr = readClassroomFromHash(window.location.hash)
+      if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
+      if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
+      if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
     } catch { /* non-browser */ }
     return [{ name: 'home' }]
   })
@@ -777,9 +790,12 @@ export default function FidelQuestApp() {
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
-      // Strip the challenge token from the address bar once we've captured it,
-      // so a refresh or a shared-back link starts from a clean URL.
-      if (window.location.hash.includes('challenge=')) {
+      // Strip deep-link tokens from the address bar once we've captured them,
+      // so a refresh or a shared-back link starts from a clean URL. An opened
+      // assignment also becomes the pending one (surfaces in Today's plan).
+      if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
+        const cr = readClassroomFromHash(window.location.hash)
+        if (cr?.kind === 'assign') storePendingAssignment(cr.data)
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       }
     } catch {
@@ -828,7 +844,11 @@ export default function FidelQuestApp() {
   const [warmupDone, setWarmupDone] = useState(() => warmupDoneToday())
   useEffect(() => { setWarmupDone(warmupDoneToday()) }, [dayKey])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
-  useEffect(() => { if (screen.name === 'home') setPlan(loadPlan()) }, [screen.name])
+  // A teacher's assignment opened from a link waits in fq.assign.v1 until done.
+  const [pendingAssign, setPendingAssign] = useState(loadPendingAssignment)
+  useEffect(() => {
+    if (screen.name === 'home') { setPlan(loadPlan()); setPendingAssign(loadPendingAssignment()) }
+  }, [screen.name])
   // The living Ethiopian calendar: today's Ethiopic date + any holiday.
   const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayKey)), [dayKey])
   const holiday = useMemo(() => holidayFor(dayKey), [dayKey])
@@ -998,9 +1018,11 @@ export default function FidelQuestApp() {
                   warmupState: learnedFamilyIds(journey).length === 0 ? 'none' : warmupDone ? 'done' : 'todo',
                   hasPlan: !!plan,
                   eta: plan ? formatEthiopic(toEthiopic(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null,
+                  assignment: pendingAssign,
                 }}
                 onWarmup={startWarmup}
                 onPlanSetup={() => setScreen({ name: 'plan' })}
+                onAssignment={() => setScreen({ name: 'assignment', assignment: pendingAssign })}
                 ethioDate={ethioToday}
                 holiday={holiday}
               />
@@ -1050,6 +1072,7 @@ export default function FidelQuestApp() {
                 onBack={goBack}
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
+                onTeacher={() => setScreen({ name: 'teacher' })}
               />
             </Screen>
           )}
@@ -1185,6 +1208,45 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 onHome={goHome}
               />
+            </Screen>
+          )}
+          {screen.name === 'joinclass' && (
+            <Screen key="joinclass">
+              <JoinClassIntro invite={screen.invite} onHome={goHome} />
+            </Screen>
+          )}
+          {screen.name === 'assignment' && (
+            <Screen key="assignment">
+              <AssignmentFlow
+                assignment={screen.assignment}
+                soundOn={soundOn}
+                onHome={goBackOrHome}
+                onDone={() => setPendingAssign(null)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'teacher' && (
+            <Screen key="teacher">
+              <Suspense fallback={null}>
+                <TeacherMode
+                  onBack={goBackOrHome}
+                  onTv={() => setScreen({ name: 'tv' })}
+                  incomingReceipt={screen.receipt || null}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'tv' && (
+            <Screen key="tv">
+              <Suspense fallback={null}>
+                <TvClass
+                  onBack={goBack}
+                  joinUrl={(() => {
+                    const codes = Object.keys(loadTeacher().classes)
+                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appShareUrl()) : null
+                  })()}
+                />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'family' && (
@@ -1607,7 +1669,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1735,17 +1797,26 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
               pulse={coach?.warmupState === 'todo'}
             />
           )}
-          {current && (
+          {coach?.assignment && (
             <PlanRow
-              step={coach?.warmupState !== 'none' ? 2 : 1}
+              step={(coach?.warmupState !== 'none' ? 1 : 0) + 1}
               done={false}
-              label={t('planNewStep', "Today's new step")}
-              onClick={() => onOpen(current)}
+              label={t('planAssignStep', "Teacher's assignment - {who}", { who: coach.assignment.teacher })}
+              onClick={onAssignment}
               pulse={coach?.warmupState !== 'todo'}
             />
           )}
+          {current && (
+            <PlanRow
+              step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + 1}
+              done={false}
+              label={t('planNewStep', "Today's new step")}
+              onClick={() => onOpen(current)}
+              pulse={coach?.warmupState !== 'todo' && !coach?.assignment}
+            />
+          )}
           <PlanRow
-            step={(coach?.warmupState !== 'none' ? 1 : 0) + (current ? 1 : 0) + 1}
+            step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + (current ? 1 : 0) + 1}
             done={huntDone}
             label={t('planHuntStep', 'Daily Letter Hunt')}
             onClick={onHunt}
@@ -2408,10 +2479,13 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
 
   if (ctx.status === GameState.LEVEL_COMPLETE) {
     const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
-    // Any finished (non-practice) quiz can be turned into a challenge link,
-    // built from the EXACT effective seed the queue was drawn from (ctx.seed,
-    // which survives the one-time tutorial reseed).
-    const challengePayload = isPractice ? null : { levelId: level.id, seed: ctx.seed, accuracy, streak: ctx.bestStreak }
+    // Any finished REAL level can be turned into a challenge link, built from
+    // the EXACT effective seed the queue was drawn from (ctx.seed, which
+    // survives the one-time tutorial reseed). Preset-queue runs (warm-up,
+    // assignment) are not in LEVELS, so a link to them could not be replayed.
+    const challengePayload = isPractice || !LEVELS.some((l) => l.id === level.id)
+      ? null
+      : { levelId: level.id, seed: ctx.seed, accuracy, streak: ctx.bestStreak }
     return (
       <LevelComplete
         level={level}
@@ -2782,6 +2856,189 @@ function ChallengeMissing({ onHome }) {
       </h1>
       <div className="mt-8 w-full max-w-sm">
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+/* ── Classroom: join links + teacher assignments (platform/classroom.js) ── */
+
+/** A #class= invite: joining is a local fact on this device — it stores the
+   class + credits the teacher's community code. Nothing is sent anywhere. */
+function JoinClassIntro({ invite, onHome }) {
+  const [joined, setJoined] = useState(false)
+  useEscapeKey(onHome)
+  const join = () => {
+    joinClass(invite)
+    setCommunityCode(invite.code)
+    track('class_join')
+    setJoined(true)
+  }
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      {joined ? (
+        <>
+          <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+            {t('jcJoined', "You're in {who}'s class!", { who: invite.teacher })}
+          </h1>
+          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+            {t('jcJoinedBody', 'Assignments from your teacher will show up in your daily plan.')}
+          </p>
+          <div className="mt-8 w-full max-w-sm">
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+              {t('goHome', 'Home')}
+            </Chunky>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+            {invite.code}
+          </p>
+          <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+            {t('jcTitle', 'Join {who}’s class?', { who: invite.teacher })}
+          </h1>
+          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+            {t('jcBody', 'Your app remembers the class on this device only. Nothing about you is sent anywhere.')}
+          </p>
+          <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={join}>
+              {t('jcJoin', 'Join class')}
+            </Chunky>
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+              {t('dismiss', 'Not now')}
+            </Chunky>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** A #assign= link: intro → the Lesson machine over the assignment's exact
+   seeded queue (same questions for every student) → send the result back to
+   the teacher as a receipt link. Never touches Journey progress. */
+function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
+  const [stage, setStage] = useState('intro') // intro | play | done
+  const [result, setResult] = useState(null)
+  const queue = useMemo(() => buildAssignmentQueue(assignment), [assignment])
+  if (!queue.length) return <ChallengeMissing onHome={onHome} />
+  if (stage === 'intro') return <AssignmentIntro assignment={assignment} count={queue.length} onStart={() => setStage('play')} onHome={onHome} />
+  if (stage === 'play') {
+    return (
+      <Lesson
+        level={{ id: 'assignment', n: '✎', title: t('asTitle', 'Assignment') }}
+        seed={assignment.seed}
+        soundOn={soundOn}
+        noDemo
+        practiceQueue={queue}
+        onFinish={(levelId, res) => {
+          if (!res) { onHome(); return }
+          markAssignmentDone()
+          onDone?.()
+          setResult(res)
+          setStage('done')
+        }}
+        onReplay={() => setStage('intro')}
+      />
+    )
+  }
+  return <AssignmentDone assignment={assignment} total={queue.length} accuracy={result?.accuracy ?? 0} onHome={onHome} />
+}
+
+function AssignmentIntro({ assignment, count, onStart, onHome }) {
+  useEscapeKey(onHome)
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+        {t('asTitle', 'Assignment')}
+      </p>
+      <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('asFrom', '{who} sent your class homework!', { who: assignment.teacher })}
+      </h1>
+      <p className="mono mt-3 font-black" style={{ color: 'var(--muted)' }}>
+        {t('asDetail', '{n} questions · due {date}', { n: count, date: assignment.due })}
+      </p>
+      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>
+          {t('asStart', 'Start assignment')}
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('asLater', 'Later')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+/** The receipt sender. The score travels ONLY inside the link the family
+   chooses to share back to the teacher (WhatsApp / share sheet). */
+function AssignmentDone({ assignment, total, accuracy, onHome }) {
+  const [name, setName] = useState(() => loadFromStorage('fq.nickname', ''))
+  const [copied, setCopied] = useState(false)
+  const score = Math.max(0, Math.min(total, Math.round((accuracy * total) / 100)))
+  const clean = sanitizeName(name)
+  const send = async () => {
+    const url = receiptUrl(
+      { code: assignment.code, student: clean, score, total, day: dayStamp(), assignmentSeed: assignment.seed },
+      appShareUrl(),
+    )
+    if (!url) return
+    const text = `${t('asShareBack', 'Fidel Quest result for {who}:', { who: assignment.teacher })} ${url}`
+    track('assignment_receipt')
+    if (isNativePlatform()) {
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      return
+    }
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text, url }); return }
+    } catch { return /* user dismissed */ }
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* clipboard blocked */ }
+  }
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+        {t('asDoneTitle', 'Assignment done!')}
+      </h1>
+      <p className="mono mt-2 text-xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('asScore', '{score} of {n} on the first try', { score, n: total })}
+      </p>
+      <label className="mt-6 block w-full max-w-sm text-left text-xs font-black" htmlFor="as-name">
+        {t('asName', 'Your name (the teacher sees it)')}
+      </label>
+      <input
+        id="as-name"
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={16}
+        placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
+        className={`mt-1 w-full max-w-sm rounded-2xl border-2 px-4 py-3 text-center font-bold ${FOCUS}`}
+        style={{ background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+      />
+      <div className="mt-4 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={send} disabled={!clean}>
+          <span className="flex items-center justify-center gap-2">
+            <Send className="h-5 w-5" aria-hidden="true" />
+            {copied ? t('linkCopied', 'Link copied!') : t('asSend', 'Send result to teacher')}
+          </span>
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
           {t('goHome', 'Home')}
         </Chunky>
       </div>

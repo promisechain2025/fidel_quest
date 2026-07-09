@@ -105,32 +105,22 @@ export function markWarmupDone(today = dayStamp()) {
 const soundOf = (key) => INDEXES.byAudioKey.get(key)?.sound
 
 /**
- * A short refresher over what the child has ALREADY learned:
- *   1. trouble letters first (actually missed, from the answer ledger),
- *   2. then the least-recently-practiced learned letters,
- * as Lesson-machine questions with twin-safe distractors. Pure in
- * (seed, learnedIds, events). Empty only when nothing is learned yet.
+ * The one review-question builder: Lesson-machine questions over a pool of
+ * family ids, with an optional priority ordering for target choice. Twin-safe
+ * twice over - one target per SOUND across the queue (a listen-and-pick
+ * prompt cannot distinguish twins by ear), and pairwise-distinct sounds
+ * within each question's options. Pure in (seed, poolIds, priorityKeys).
+ * Used by the daily warm-up and by teacher assignments.
  */
-export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) {
-  const pool = learnedIds.map((id) => `${id}-1`).filter((k) => INDEXES.byAudioKey.has(k))
+export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMUP_SIZE) {
+  const pool = poolIds.map((id) => `${id}-1`).filter((k) => INDEXES.byAudioKey.has(k))
   if (!pool.length) return []
   let state = seed
 
-  // Trouble first (limited so the warm-up is never all pain)...
-  const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 3 })
-    .map((t) => t.key)
-    .filter((k) => pool.includes(k))
-  // ...then the letters the child has not touched for the longest.
-  const stats = letterStats(events)
-  const staleFirst = pool
-    .filter((k) => !trouble.includes(k))
-    .sort((a, b) => (stats.get(a)?.lastDay || 0) - (stats.get(b)?.lastDay || 0) || (a < b ? -1 : 1))
-  // One target per SOUND: a listen-and-pick prompt cannot distinguish twins
-  // (ha/hha/kha, a/ae, ...), so hearing "a" twice with two different right
-  // answers would be ambiguous by ear. Same rule as every other builder.
+  const ordered = [...priorityKeys.filter((k) => pool.includes(k)), ...pool.filter((k) => !priorityKeys.includes(k))]
   const usedTargetSounds = new Set()
   const targetPick = []
-  for (const k of [...trouble, ...staleFirst]) {
+  for (const k of ordered) {
     if (targetPick.length >= Math.min(count, pool.length)) break
     const s = soundOf(k)
     if (!s || usedTargetSounds.has(s)) continue
@@ -142,7 +132,7 @@ export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) 
 
   return targets.map((target) => {
     const sound = soundOf(target)
-    // Distractors: learned letters first, padded from the whole abugida,
+    // Distractors: pool letters first, padded from the whole abugida,
     // pairwise-distinct sounds so twins never make a question ambiguous.
     const all = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
     let candidates
@@ -163,4 +153,23 @@ export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) 
     ;[options, state] = rngShuffle(picked, state)
     return { target, options }
   })
+}
+
+/**
+ * A short refresher over what the child has ALREADY learned: trouble letters
+ * first (actually missed, from the answer ledger), then the least-recently-
+ * practiced. Empty only when nothing is learned yet.
+ */
+export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) {
+  const pool = learnedIds.map((id) => `${id}-1`)
+  // Trouble first (limited so the warm-up is never all pain)...
+  const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 3 })
+    .map((t) => t.key)
+    .filter((k) => pool.includes(k))
+  // ...then the letters the child has not touched for the longest.
+  const stats = letterStats(events)
+  const staleFirst = pool
+    .filter((k) => !trouble.includes(k))
+    .sort((a, b) => (stats.get(a)?.lastDay || 0) - (stats.get(b)?.lastDay || 0) || (a < b ? -1 : 1))
+  return buildReviewQueue(seed, learnedIds, [...trouble, ...staleFirst], count)
 }

@@ -25,14 +25,15 @@ export function sanitizeName(raw) {
     .slice(0, MAX_NAME)
 }
 
-/* UTF-8-safe base64url (nicknames may be Amharic). */
-function b64urlEncode(str) {
+/* UTF-8-safe base64url (nicknames may be Amharic). Exported: the classroom
+   links (platform/classroom.js) ride on the same token format. */
+export function b64urlEncode(str) {
   const bytes = new TextEncoder().encode(str)
   let bin = ''
   bytes.forEach((b) => { bin += String.fromCharCode(b) })
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
-function b64urlDecode(s) {
+export function b64urlDecode(s) {
   let t = s.replace(/-/g, '+').replace(/_/g, '/')
   while (t.length % 4) t += '='
   const bin = atob(t)

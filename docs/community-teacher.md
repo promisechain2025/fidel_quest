@@ -98,13 +98,56 @@ Share-card renderer.
 
 ---
 
+## Phase 1.5 — SHIPPED: Teacher Mode on link + receipt rails (no backend)
+
+What actually shipped as the interim (and likely long-term small-class) answer
+is stronger than a report card: a full class loop where **every message is a
+URL a person chooses to send**, on the same fragment-token rails as challenge
+links (`src/utils/challenge.js`). Nothing about a child ever touches a server;
+tokens live in the URL fragment and are validated/clamped on decode as
+untrusted input.
+
+- **Platform layer** `src/platform/classroom.js` (tested in
+  `classroom.test.js`):
+  - `#class=` invite tokens → `fq.class.v1` on the student device; joining
+    also sets the community code (Part 1b credit) with the class code.
+  - `#assign=` assignment tokens: `{class, teacher, familyIds, count, due,
+    seed}` — the quiz is `buildReviewQueue` (platform/coach.js) over the
+    chosen families, so **every student gets the same questions** and results
+    are comparable. Pending assignment sits in `fq.assign.v1` and surfaces as
+    a "Teacher's assignment" row in the home Today's-plan card.
+  - `#receipt=` result tokens the student shares BACK (share sheet /
+    WhatsApp): `{class, name, score, total, day, assignmentSeed}`. Opening
+    one on the teacher's device files it into the local roster
+    `fq.teacher.v1` (deduped per student+assignment; retakes replace).
+- **Teacher UI** `src/components/TeacherMode.jsx` (Grown-ups → Teacher tools,
+  behind the parental gate): create class, invite QR + share link (offline QR
+  via the `qrcode` package), assignment builder (family grid, count, due
+  date), results roster grouped by student.
+- **TV classroom display** `src/components/TvClass.jsx`: full-screen chant
+  board (giant letter + the family's seven orders, auto-advancing with audio,
+  remote/keyboard driven) with the class-join QR in the corner — for casting
+  or plugging a phone into the classroom TV.
+- **Receipt = future sync payload.** The receipt shape is deliberately small
+  and self-describing; if Phase 2's opt-in backend ever ships, receipts POST
+  to it instead of traveling by WhatsApp — the client model doesn't change.
+
+What this phase deliberately does NOT do: live/automatic sync (a receipt
+travels only when a person sends it), cross-device identity (a student is a
+self-reported name inside a link), or any consent machinery — none is needed
+because no child data leaves any device except inside a link a family shares.
+
+---
+
 ## Phasing
 
 | Phase | What ships | Backend | Compliance |
 | --- | --- | --- | --- |
 | 1 | Bulk/promo licenses + affiliate code (earn seats) + partner kit | none | low (no child data) |
-| 1.5 | Parent-shared progress card for teachers | none | low |
-| 2 | Class code + consent + minimal sync + teacher dashboard | social.js tier | **high** (verifiable consent, minimization, separate policy) |
+| 1.5 | **SHIPPED:** Teacher Mode — class links, seeded assignment links, receipt-link roster, TV chant board | none | low (links only, sent by people) |
+| 2 | Class code + consent + minimal **automatic** sync + live dashboard | social.js tier | **high** (verifiable consent, minimization, separate policy) |
 
 Start Phase 1 alongside launch; gate Phase 2 on real community demand so the
-compliance and payout work is spent only once it will pay off.
+compliance and payout work is spent only once it will pay off. Phase 2's
+client work shrinks to "POST the existing receipts": the token schema is the
+sync protocol.
