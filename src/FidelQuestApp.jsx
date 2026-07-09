@@ -1140,6 +1140,7 @@ export default function FidelQuestApp() {
               forms={progressStats(journey).forms}
               families={progressStats(journey).families}
               onClose={() => setCelebration(null)}
+              onPostcard={() => { setCelebration(null); setScreen({ name: 'postcard' }) }}
             />
           )}
           {giftOpened && (
@@ -1867,7 +1868,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
 
 /* Chapter-complete celebration (the peak-pride share prompt). Anbessa bursts
    in wearing the freshly-earned item; the primary action is Share. */
-function Celebration({ chapter, rewardName, worn, forms, families, onClose }) {
+function Celebration({ chapter, rewardName, worn, forms, families, onClose, onPostcard }) {
   const [busy, setBusy] = useState(false)
   useEscapeKey(onClose)
   // Personalize the share card with the child's name + this milestone, so what
@@ -1900,6 +1901,13 @@ function Celebration({ chapter, rewardName, worn, forms, families, onClose }) {
           <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
+          {/* Pride peaks right here - offer to send the child's own voice to
+             the family (Gashe / Ayay) while the chapter win is still warm. */}
+          {onPostcard && (
+            <button type="button" onClick={onPostcard} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
+              <Send className="h-5 w-5" aria-hidden="true" /> {t('celebPostcard', 'Send this to family!')}
+            </button>
+          )}
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             {t('keepGoing', 'Keep going')}
           </button>

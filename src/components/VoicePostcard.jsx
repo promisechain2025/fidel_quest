@@ -11,6 +11,7 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, Mic, Square, Play, RotateCcw, Send } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { playEffect } from '../platform/audioEngine'
+import { getActivePackId } from '../platform/ethiopic'
 import { startRecorder, normalizeClip, recordSupported } from '../platform/voicePack'
 import { shareVoicePostcard } from './ShareCard'
 import ParentalGate from './ParentalGate'
@@ -18,6 +19,22 @@ import ParentalGate from './ParentalGate'
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const MAX_SECONDS = 20
 const RECORD_ENABLED = import.meta.env?.VITE_FAMILY_VOICE_RECORD !== 'false'
+
+/* What the RECIPIENT reads is written in the family's heritage language -
+   the learning pack (Amharic or Tigrinya) - regardless of the child's UI
+   language. Gashe in Addis or Ayay in Asmara reads their own language, even
+   when the child's app runs in English or German. Respectful plural forms
+   (ያዳምጡ / ስምዑ), since the recipient is an elder. */
+const RECIPIENT_STRINGS = {
+  am: {
+    line: (name) => (name ? `${name} ፊደል እየተማረ ነው — ያዳምጡ!` : 'ፊደል እየተማርኩ ነው — ያዳምጡ!'),
+    shareText: 'ከፊደል ኵዌስት የድምፅ ፖስትካርድ — ያዳምጡ!',
+  },
+  ti: {
+    line: (name) => (name ? `${name} ፊደል ይመሃር ኣሎ — ስምዑ!` : 'ፊደል እመሃር ኣለኹ — ስምዑ!'),
+    shareText: 'ካብ ፊደል ኵዌስት ናይ ድምጺ ፖስትካርድ — ስምዑ!',
+  },
+}
 
 export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   const [phase, setPhase] = useState('idle') // idle | recording | ready | gate | sending | sent
@@ -75,14 +92,13 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
 
   const send = async () => {
     setPhase('sending')
+    const r = RECIPIENT_STRINGS[getActivePackId()] || RECIPIENT_STRINGS.am
     const result = await shareVoicePostcard({
       voice: clip,
       heading: 'ሰላም!',
-      line: name
-        ? t('pcCardLine', `${name} is learning the Fidel — press play!`, { name })
-        : t('pcCardLineNoName', 'I am learning the Fidel — press play!'),
+      line: r.line(name),
       worn,
-      text: t('pcShareText', 'A voice postcard from Fidel Quest — listen!'),
+      text: r.shareText,
     })
     if (result === 'shared') { setPhase('sent'); setToast(t('pcShared', 'Postcard sent!')) }
     else if (result === 'downloaded') { setPhase('sent'); setToast(t('pcSaved', 'Saved! Share it anywhere.')) }

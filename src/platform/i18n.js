@@ -318,9 +318,7 @@ const STRINGS = {
     pcShared: 'ፖስትካርዱ ተልኳል!',
     pcSaved: 'ተቀምጧል! የትም ያጋሩት።',
     pcPrivacy: 'ቅጂው በዚህ መሣሪያ ላይ ይቀራል። ወላጅ ሲልከው ብቻ ይጓዛል።',
-    pcCardLine: '{name} ፊደል እየተማረ ነው — አጫውት!',
-    pcCardLineNoName: 'ፊደል እየተማርኩ ነው — አጫውት!',
-    pcShareText: 'ከፊደል ኵዌስት የድምፅ ፖስትካርድ — ያዳምጡ!',
+    celebPostcard: 'ይህን ለጋሼ ላክ!',
     // Ethiopian calendar.
     calToday: 'ዛሬ',
     hol_enkutatash: 'እንቁጣጣሽ — መልካም አዲስ ዓመት!',
@@ -645,9 +643,7 @@ const STRINGS = {
     pcShared: 'እቲ ፖስትካርድ ተላኢኹ!',
     pcSaved: 'ተዓቂቡ! ኣብ ዝኾነ ኣካፍሎ።',
     pcPrivacy: 'እቲ ቅዳሕ ኣብዚ መሳርሒ ይተርፍ። ወላዲ ምስ ዝሰዶ ጥራይ ይጓዓዝ።',
-    pcCardLine: '{name} ፊደል ይመሃር ኣሎ — ኣጻውቶ!',
-    pcCardLineNoName: 'ፊደል እመሃር ኣለኹ — ኣጻውቶ!',
-    pcShareText: 'ካብ ፊደል ኵዌስት ናይ ድምጺ ፖስትካርድ — ስምዑ!',
+    celebPostcard: 'ነዚ ንኣያይ ስደዶ!',
     // Ethiopian calendar.
     calToday: 'ሎሚ',
     hol_enkutatash: 'እንቋጣጣሽ — ርሑስ ሓድሽ ዓመት!',
