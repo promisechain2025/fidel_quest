@@ -13,7 +13,7 @@ import { t } from '../platform/i18n'
 import { playEffect } from '../platform/audioEngine'
 import { getActivePackId } from '../platform/ethiopic'
 import { startRecorder, normalizeClip, recordSupported } from '../platform/voicePack'
-import { shareVoicePostcard } from './ShareCard'
+import { shareVoicePostcard, appShareUrl } from './ShareCard'
 import ParentalGate from './ParentalGate'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -29,13 +29,17 @@ const RECIPIENT_STRINGS = {
   am: {
     card: ['ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው።', 'ብርታትህ ኣይለየኝ።'],
     shareText: 'ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው። ብርታትህ ኣይለየኝ።',
+    invite: 'መተግበሪያውን ለሌሎች ያጋሩ፦',
   },
   ti: {
     card: ['ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ።', 'መትብባዕኹም ኣይፈለየኒ'],
-    // The smiling-face emoji is part of the authored message.
-    shareText: 'ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ \u{1F60A}',
+    shareText: 'ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ',
+    invite: 'ነዚ መተግበሪያ ንኻልኦት ኣካፍልዎ፦',
   },
 }
+/* Future: once the paid store listing is live, the postcard can also invite
+   Gashe / Ayay to gift back - a real Tee Shop shirt or an App Store gift
+   (platform/gift.js) - closing the loop in both directions. */
 
 export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   const [phase, setPhase] = useState('idle') // idle | recording | ready | gate | sending | sent
@@ -94,13 +98,16 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   const send = async () => {
     setPhase('sending')
     const r = RECIPIENT_STRINGS[getActivePackId()] || RECIPIENT_STRINGS.am
+    // Sign with the child's nickname when set, then add the app link with an
+    // invite so Gashe / Ayay can pass Fidel Quest on to others.
+    const url = appShareUrl()
+    const message = name ? `${r.shareText} — ${name}` : r.shareText
     const result = await shareVoicePostcard({
       voice: clip,
       heading: 'ሰላም!',
       lines: r.card,
       worn,
-      // Sign the message with the child's nickname when one is set.
-      text: name ? `${r.shareText} — ${name}` : r.shareText,
+      text: url ? `${message}\n\n${r.invite} ${url}` : message,
     })
     if (result === 'shared') { setPhase('sent'); setToast(t('pcShared', 'Postcard sent!')) }
     else if (result === 'downloaded') { setPhase('sent'); setToast(t('pcSaved', 'Saved! Share it anywhere.')) }

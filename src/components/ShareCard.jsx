@@ -6,6 +6,17 @@
 import { drawAnbessa, drawWearables } from '../FidelQuestApp'
 import { track } from '../platform/analytics'
 import { isNativePlatform } from '../platform/native'
+import { appStoreUrl } from '../platform/gift'
+
+/** The link that travels with shares so the recipient can find the app:
+    VITE_APP_URL when set (the canonical web/store landing), else the App
+    Store page on native builds, else this deployment's own origin. */
+export function appShareUrl() {
+  const env = import.meta.env?.VITE_APP_URL
+  if (typeof env === 'string' && env.trim()) return env.trim()
+  if (isNativePlatform()) return appStoreUrl()
+  return typeof window !== 'undefined' ? window.location.origin : ''
+}
 
 const BG_TOP = '#fff3d6'
 const BG_BOTTOM = '#ffd98a'
@@ -200,7 +211,7 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
   drawShareCard(g, S, { forms, worn, headline })
 
   const blob = await toBlob(canvas)
-  const url = typeof window !== 'undefined' ? window.location.origin : ''
+  const url = appShareUrl()
   const text = "I'm learning the Amharic alphabet with Anbessa the lion cub!"
 
   // Native shell: write the card to the cache and share the file URI via the OS
@@ -423,7 +434,7 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
   drawNameCard(g, S, { name, latin, worn })
 
   const blob = await toBlob(canvas)
-  const url = typeof window !== 'undefined' ? window.location.origin : ''
+  const url = appShareUrl()
   const text = latin
     ? `${latin} - written in the Amharic alphabet with Fidel Quest!`
     : 'My name in the Amharic alphabet, written with Fidel Quest!'

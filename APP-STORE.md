@@ -17,6 +17,11 @@ accounts). This guide is the end-to-end runbook.
       numeric id from App Store Connect) at build time so the in-app
       **"Send this app as a gift"** button links to your store page — see §7b.
       Without it the gift guide still shows but the button stays disabled.
+- [ ] Set **`VITE_APP_URL`** (the canonical landing you want shares to point
+      at — the web app URL or a store smart link). Every share (Anbessa card,
+      name card, voice postcard) appends this link so recipients can find the
+      app. Unset, web builds fall back to their own origin and native builds
+      to the App Store page from `VITE_APPLE_APP_ID`.
 - [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
 - [ ] Host the **privacy policy** and paste its URL into both stores — §8.
 - [ ] Microphone: the only mic use is the optional **Family Voice** recorder
