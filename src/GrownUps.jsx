@@ -18,6 +18,10 @@ import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import { isNativePlatform } from './platform/native'
+import { reminderOn, setReminder } from './platform/notify'
+import { communityCode, setCommunityCode } from './platform/community'
+import { Bell, Heart } from 'lucide-react'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -63,6 +67,74 @@ function NicknameField() {
         className={`mt-3 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
         style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
       />
+    </section>
+  )
+}
+
+/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden). */
+function ReminderCard() {
+  const [on, setOn] = useState(reminderOn())
+  const [busy, setBusy] = useState(false)
+  if (!isNativePlatform()) return null
+  const toggle = async () => {
+    setBusy(true)
+    const next = await setReminder(!on, {
+      title: t('remindTitle', 'Anbessa misses you!'),
+      body: t('remindBody', 'Come learn a letter today.'),
+      hour: 17,
+    })
+    setOn(next)
+    setBusy(false)
+  }
+  return (
+    <section className="flex items-center justify-between gap-3 rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <div className="flex items-center gap-3">
+        <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+        <div>
+          <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
+          <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
+        </div>
+      </div>
+      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+        <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+      </button>
+    </section>
+  )
+}
+
+/** Community / affiliate code: credit a church, school, or community group. */
+function CommunityCard() {
+  const [code, setCode] = useState(communityCode())
+  const [input, setInput] = useState('')
+  const apply = () => { const c = setCommunityCode(input); setCode(c); setInput('') }
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        <Heart className="h-4 w-4" aria-hidden="true" /> {t('ccTitle', 'Community code')}
+      </h2>
+      {code ? (
+        <p className="mt-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+          {t('ccThanks', 'Thanks — you’re supporting')} <span className="mono font-black" style={{ color: 'var(--go-ink)' }}>{code}</span>.{' '}
+          <button type="button" onClick={() => { setCommunityCode(''); setCode('') }} className={`font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>{t('ccChange', 'Change')}</button>
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+            {t('ccBlurb', 'Got a code from a church, school, or community group? Enter it so they get credit.')}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <input
+              type="text" value={input} onChange={(e) => setInput(e.target.value)} maxLength={12}
+              placeholder={t('ccPh', 'e.g. DEBRE')} aria-label={t('ccTitle', 'Community code')}
+              className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
+              style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+            />
+            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+              {t('ccApply', 'Apply')}
+            </button>
+          </div>
+        </>
+      )}
     </section>
   )
 }
@@ -118,6 +190,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           </div>
 
           <NicknameField />
+
+          <ReminderCard />
+
+          <CommunityCard />
 
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>

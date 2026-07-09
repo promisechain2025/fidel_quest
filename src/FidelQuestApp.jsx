@@ -35,6 +35,7 @@ import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
 import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import { bumpStreak } from './platform/streak'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -788,6 +789,9 @@ export default function FidelQuestApp() {
   const today = useMemo(() => todayKey(), [])
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [giftOpen, setGiftOpen] = useState(false)
+  // Daily streak: count today's visit once when the app opens.
+  const [streak, setStreak] = useState(0)
+  useEffect(() => { setStreak(bumpStreak().count) }, [])
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
 
@@ -927,6 +931,7 @@ export default function FidelQuestApp() {
                 giftReady={giftAvailable(gift, today)}
                 onGift={openGift}
                 justEarned={justEarned}
+                streak={streak}
               />
             </Screen>
           )}
@@ -1353,7 +1358,7 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
   )
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0 }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1385,6 +1390,12 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </div>
         </button>
         <div className="flex items-center gap-2">
+          {streak > 0 && (
+            <span className="chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })} title={t('streakDays', `${streak}-day streak`, { n: streak })}>
+              <Flame className="h-5 w-5" fill="currentColor" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+              <span className="mono text-sm" style={{ color: 'var(--ink)' }}>{streak}</span>
+            </span>
+          )}
           {giftReady && (
             <motion.button
               type="button"
