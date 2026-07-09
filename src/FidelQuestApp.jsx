@@ -3000,7 +3000,7 @@ function AssignmentIntro({ assignment, count, onStart, onHome }) {
         {t('asFrom', '{who} sent your class homework!', { who: assignment.teacher })}
       </h1>
       <p className="mono mt-3 font-black" style={{ color: 'var(--muted)' }}>
-        {t('asDetail', '{n} questions · due {date}', { n: count, date: assignment.due })}
+        {t('asDetail', '{n} questions · due {date}', { n: count, date: formatEthiopic(toEthiopic(assignment.due)).latin })}
       </p>
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>

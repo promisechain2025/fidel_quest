@@ -24,7 +24,7 @@
 | Amharic (to ጋሼ) | ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው። ብርታትህ ኣይለየኝ። |
 | Tigrinya (to ኣያይ) | ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ |
 
-## Amharic UI strings (312)
+## Amharic UI strings (419)
 | # | Key | English (source) | Translation | OK? / Correction |
 |---|-----|------------------|-------------|------------------|
 | 1 | `tagline` | (dynamic) | ከአንበሳ ግልገል ጋር ፊደል ይማሩ |  |
@@ -291,7 +291,7 @@
 | 262 | `nameLetters` | Letters | ፊደላት |  |
 | 263 | `nameShare` | Share my name | ስሜን አጋራ |  |
 | 264 | `namePrivacy` | The card is made on this device. Nothing is shared unless you tap Share. | ካርዱ በዚህ መሣሪያ ላይ ይሠራል። አጋራ ካልነኩ ምንም አይጋራም። |  |
-| 265 | `huntShort` | Daily Hunt | የዕለቱ አደን |  |
+| 265 | `huntShort` | (dynamic) | የዕለቱ አደን |  |
 | 266 | `huntTitle` | Daily Letter Hunt | የዕለቱ የፊደል አደን |  |
 | 267 | `huntSub` | Jibby hid the letters! Find them by sound | ጅቢ ፊደላቱን ደብቋል! በድምፅ ፈልጓቸው |  |
 | 268 | `huntFind` | Find the letter that says | ይህን የሚለውን ፊደል ፈልግ |  |
@@ -299,8 +299,8 @@
 | 270 | `huntDoneTitle` | You found them all! | ሁሉንም አገኘህ! |  |
 | 271 | `huntTreasure` | Open the treasure | ስጦታውን ክፈት |  |
 | 272 | `huntTomorrow` | Come back tomorrow — Jibby will hide new letters! | ነገ ተመለስ — ጅቢ አዲስ ፊደላት ይደብቃል! |  |
-| 273 | `huntGo` | Jibby hid today’s letters — find them! | ጅቢ የዛሬን ፊደላት ደብቋል — ፈልጓቸው! |  |
-| 274 | `huntDoneChip` | Done today — new hunt tomorrow! | ለዛሬ ተጠናቋል — ነገ አዲስ አደን! |  |
+| 273 | `huntGo` | (dynamic) | ጅቢ የዛሬን ፊደላት ደብቋል — ፈልጓቸው! |  |
+| 274 | `huntDoneChip` | (dynamic) | ለዛሬ ተጠናቋል — ነገ አዲስ አደን! |  |
 | 275 | `huntFoundOne` | found | ተገኝቷል |  |
 | 276 | `huntHidden` | hiding letter | የተደበቀ ፊደል |  |
 | 277 | `pcShort` | Postcard | ፖስትካርድ |  |
@@ -318,30 +318,137 @@
 | 289 | `pcSaved` | Saved! Share it anywhere. | ተቀምጧል! የትም ያጋሩት። |  |
 | 290 | `pcPrivacy` | The recording stays on this device. It only travels when a grown-up sends it. | ቅጂው በዚህ መሣሪያ ላይ ይቀራል። ወላጅ ሲልከው ብቻ ይጓዛል። |  |
 | 291 | `celebPostcard` | Send this to family! | ይህን ለጋሼ ላክ! |  |
-| 292 | `calToday` | Today | ዛሬ |  |
-| 293 | `hol_enkutatash` | Enkutatash — Happy New Year! | እንቁጣጣሽ — መልካም አዲስ ዓመት! |  |
-| 294 | `hol_meskel` | Meskel — the Finding of the Cross | መስቀል |  |
-| 295 | `hol_genna` | Genna — Merry Christmas! | ገና — መልካም በዓል! |  |
-| 296 | `hol_timkat` | Timkat — Epiphany! | ጥምቀት! |  |
-| 297 | `hol_adwa` | Adwa Victory Day | የዓድዋ ድል በዓል |  |
-| 298 | `hol_eritrea` | Eritrean Independence Day | የኤርትራ የነጻነት ቀን |  |
-| 299 | `streakDays` | {...}-day streak | {n} ቀን ተከታታይ |  |
-| 300 | `remindTitle` | Anbessa misses you! | አንበሳ ናፍቆሃል! |  |
-| 301 | `remindBody` | Come learn a letter today. | ዛሬ አንድ ፊደል ና ተማር። |  |
-| 302 | `remindTitleLabel` | Daily reminder | ዕለታዊ ማስታወሻ |  |
-| 303 | `remindDesc` | A gentle nudge each afternoon to keep the streak going. | ተከታታይነትን ለመጠበቅ በየቀኑ ከሰዓት ትንሽ ማሳሰቢያ። |  |
-| 304 | `ccTitle` | Community code | የማህበረሰብ ኮድ |  |
-| 305 | `ccThanks` | Thanks — you’re supporting | እናመሰግናለን — እየደገፉ ነው |  |
-| 306 | `ccChange` | Change | ቀይር |  |
-| 307 | `ccBlurb` | Got a code from a church, school, or community group? Enter it so they get credit. | ከቤተ ክርስቲያን፣ ትምህርት ቤት ወይም ማህበረሰብ ቡድን ኮድ አለዎት? ክሬዲት እንዲያገኙ ያስገቡት። |  |
-| 308 | `ccPh` | e.g. DEBRE | ለምሳሌ DEBRE |  |
-| 309 | `ccApply` | Apply | ተግብር |  |
-| 310 | `slot.hat` | (dynamic) | ኮፍያዎች |  |
-| 311 | `slot.scarf` | (dynamic) | ሻርፖች |  |
-| 312 | `slot.cape` | (dynamic) | ካባዎች |  |
+| 292 | `planTitle` | Today's plan | የዛሬ ዕቅድ |  |
+| 293 | `planWarmupStep` | Warm-up: review your letters | ማሟሟቂያ፦ ፊደሎችህን ከልስ |  |
+| 294 | `planNewStep` | Today's new step | የዛሬ አዲስ ደረጃ |  |
+| 295 | `planHuntStep` | Daily Letter Hunt | የዕለቱ የፊደል አደን |  |
+| 296 | `planEta` | On this pace you finish the whole Fidel by {date}! | በዚህ ፍጥነት ሙሉውን ፊደል በ{date} ትጨርሳለህ! |  |
+| 297 | `planMake` | Make my learning plan | የመማሪያ ዕቅዴን አዘጋጅ |  |
+| 298 | `planSetupTitle` | My learning plan | የመማሪያ ዕቅዴ |  |
+| 299 | `planSetupSub` | Pick a pace - the coach guides each day | ፍጥነት ምረጥ — አሰልጣኙ በየቀኑ ይመራሃል |  |
+| 300 | `paceChill` | Chill - 1 letter family a week | ዘና — በሳምንት 1 የፊደል ቤተሰብ |  |
+| 301 | `paceSteady` | Steady - 2 families a week | መደበኛ — በሳምንት 2 ቤተሰብ |  |
+| 302 | `paceZoom` | Zoom - 4 families a week | ፈጣን — በሳምንት 4 ቤተሰብ |  |
+| 303 | `planSave` | Start my plan | ዕቅዴን ጀምር |  |
+| 304 | `warmTitle` | Warm-up | ማሟሟቂያ |  |
+| 305 | `warmNudgeTitle` | Warm up first! | መጀመሪያ ተሟሟቅ! |  |
+| 306 | `warmNudgeBody` | A quick review of your letters, then the game! | ፈጣን የፊደል ክለሳ፣ ከዚያ ጨዋታው! |  |
+| 307 | `warmStart` | Start warm-up | ማሟሟቂያ ጀምር |  |
+| 308 | `warmSkip` | Play anyway | ለማንኛውም ተጫወት |  |
+| 309 | `gpPlanTitle` | Learning plan | የመማሪያ ዕቅድ |  |
+| 310 | `gpRequireWarmup` | Require warm-up before games | ከጨዋታ በፊት ማሟሟቂያ ግድ ይሁን |  |
+| 311 | `gpRequireHint` | When on, the child must finish the day's review before the games open. | ሲበራ ልጁ ጨዋታ ከመጫወቱ በፊት የዕለቱን ክለሳ መጨረስ አለበት። |  |
+| 312 | `gpWarmups` | {...} warm-ups done | {n} ማሟሟቂያዎች ተጠናቀዋል |  |
+| 313 | `planAssignStep` | Teacher's assignment - {who} | የመምህር ሥራ — {who} |  |
+| 314 | `jcTitle` | Join {who}’s class? | የ{who}ን ክፍል መቀላቀል ትፈልጋለህ? |  |
+| 315 | `jcBody` | Your app remembers the class on this device only. Nothing about you is sent anywhere. | መተግበሪያው ክፍሉን በዚህ መሣሪያ ላይ ብቻ ያስታውሳል። ስለ አንተ ምንም ወደ የትም አይላክም። |  |
+| 316 | `jcJoin` | Join class | ክፍል ተቀላቀል |  |
+| 317 | `jcJoined` | You're in {who}'s class! | የ{who} ክፍል ውስጥ ገብተሃል! |  |
+| 318 | `jcJoinedBody` | Assignments from your teacher will show up in your daily plan. | የመምህርህ ሥራዎች በዕለታዊ ዕቅድህ ውስጥ ይታያሉ። |  |
+| 319 | `jcShareText` | Join my Fidel Quest class: | የFidel Quest ክፍሌን ተቀላቀሉ፦ |  |
+| 320 | `asTitle` | Assignment | የቤት ሥራ |  |
+| 321 | `asFrom` | {who} sent your class homework! | {who} ለክፍላችሁ የቤት ሥራ ልኳል! |  |
+| 322 | `asDetail` | {n} questions · due {date} | {n} ጥያቄዎች · እስከ {date} |  |
+| 323 | `asStart` | Start assignment | ሥራውን ጀምር |  |
+| 324 | `asLater` | Later | በኋላ |  |
+| 325 | `asDoneTitle` | Assignment done! | የቤት ሥራው ተጠናቋል! |  |
+| 326 | `asScore` | {score} of {n} on the first try | ከ{n} ውስጥ {score} በመጀመሪያ ሙከራ |  |
+| 327 | `asName` | Your name (the teacher sees it) | ስምህ (መምህሩ ያየዋል) |  |
+| 328 | `asSend` | Send result to teacher | ውጤቱን ለመምህር ላክ |  |
+| 329 | `asShareText` | Fidel Quest homework from your teacher: | ከመምህራችሁ የFidel Quest የቤት ሥራ፦ |  |
+| 330 | `asShareBack` | Fidel Quest result for {who}: | የFidel Quest ውጤት ለ{who}፦ |  |
+| 331 | `tmTitle` | Teacher tools | የመምህር መሣሪያዎች |  |
+| 332 | `tmSub` | Class links, assignments, results - no accounts | የክፍል ማገናኛዎች፣ ሥራዎች፣ ውጤቶች — ያለ መለያ |  |
+| 333 | `tmCardBlurb` | Run a class with links: invite students, send assignments, collect results, and put the letters on a TV. No accounts, no server. | ክፍልን በማገናኛዎች ብቻ ያካሂዱ፦ ተማሪዎችን ይጋብዙ፣ ሥራ ይላኩ፣ ውጤት ይሰብስቡ፣ ፊደላቱንም በቲቪ ላይ ያሳዩ። ያለ መለያ፣ ያለ አገልጋይ። |  |
+| 334 | `tmOpen` | Open teacher tools | የመምህር መሣሪያዎችን ክፈት |  |
+| 335 | `tmCreateTitle` | Start your class | ክፍልዎን ይጀምሩ |  |
+| 336 | `tmIntro` | Run a class with links only - no accounts, no server. Students join by opening one link; results come back to you as links. | ክፍልን በማገናኛዎች ብቻ ያካሂዱ — ያለ መለያ፣ ያለ አገልጋይ። ተማሪዎች አንድ ማገናኛ በመክፈት ይቀላቀላሉ፤ ውጤቶች እንደ ማገናኛ ይመለሳሉ። |  |
+| 337 | `tmYourName` | Your name (students see it) | ስምዎ (ተማሪዎች ያዩታል) |  |
+| 338 | `tmClassCode` | Class code (4-12 letters or digits) | የክፍል ኮድ (4–12 ፊደላት ወይም አኃዞች) |  |
+| 339 | `tmCodePh` | e.g. STMARY1 | ለምሳሌ STMARY1 |  |
+| 340 | `tmCreate` | Create class | ክፍል ፍጠር |  |
+| 341 | `tmInvite` | Invite students | ተማሪዎችን ይጋብዙ |  |
+| 342 | `tmInviteHint` | A student opens this link (or scans the code) once - their app joins your class. Works over WhatsApp. | ተማሪው ይህን ማገናኛ አንድ ጊዜ ይከፍታል (ወይም ኮዱን ይቃኛል) — መተግበሪያው ክፍልዎን ይቀላቀላል። በWhatsApp ይሠራል። |  |
+| 343 | `tmShareInvite` | Share invite link | የግብዣ ማገናኛ አጋራ |  |
+| 344 | `tmNewAssign` | Extra assignment | ተጨማሪ የቤት ሥራ |  |
+| 345 | `tmAssignHint` | Every student gets the same questions. When they finish, the app builds a result link they send back to you. | እያንዳንዱ ተማሪ ተመሳሳይ ጥያቄዎችን ያገኛል። ሲጨርሱ መተግበሪያው ወደ እርስዎ የሚልኩት የውጤት ማገናኛ ይሠራል። |  |
+| 346 | `tmPickFamilies` | Letter families | የፊደል ቤተሰቦች |  |
+| 347 | `tmQuestions` | Questions | ጥያቄዎች |  |
+| 348 | `tmDue` | Due date | የመጨረሻ ቀን |  |
+| 349 | `tmBuildLink` | Build the link | ማገናኛውን ሥራ |  |
+| 350 | `tmMakeLink` | Share assignment link | የሥራ ማገናኛ አጋራ |  |
+| 351 | `tmRoster` | Students | ተማሪዎች |  |
+| 352 | `tmRosterEmpty` | No results yet. When a student finishes, they send you a result link - open it on this device and it files itself here. | ገና ውጤት የለም። ተማሪ ሲጨርስ የውጤት ማገናኛ ይልክልዎታል — በዚህ መሣሪያ ላይ ይክፈቱት እና እዚህ ይመዘገባል። |  |
+| 353 | `tmBest` | best | ምርጥ |  |
+| 354 | `tmReceiptFiled` | Result saved: {who} - {score} | ውጤት ተመዝግቧል፦ {who} — {score} |  |
+| 355 | `tmReceiptWrongClass` | This result belongs to a class that is not on this device. | ይህ ውጤት በዚህ መሣሪያ ላይ የሌለ ክፍል ነው። |  |
+| 356 | `tmRemove` | Remove class and results… | ክፍሉን እና ውጤቶቹን አስወግድ… |  |
+| 357 | `tmRemoveConfirm` | Erase this class and all its results from this device? | ይህን ክፍል እና ሁሉንም ውጤቶቹን ከዚህ መሣሪያ መሰረዝ? |  |
+| 358 | `tmTv` | TV display | የቲቪ ማሳያ |  |
+| 359 | `tmTvHint` | Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner. | ይህን መሣሪያ ወደ ቲቪ ያገናኙ፦ ትልልቅ ፊደላት እና ድምፅ ለመላው ክፍል፣ የመቀላቀያ ኮድ በጥጉ ላይ። |  |
+| 360 | `tmTvOpen` | Open TV display | የቲቪ ማሳያ ክፈት |  |
+| 361 | `tvExit` | Exit TV display | ከቲቪ ማሳያ ውጣ |  |
+| 362 | `tvPrevFamily` | Previous family | የቀደመው ቤተሰብ |  |
+| 363 | `tvNextFamily` | Next family | የሚቀጥለው ቤተሰብ |  |
+| 364 | `tvPause` | Pause the chant | ዝማሬውን አቁም |  |
+| 365 | `tvPlay` | Play the chant | ዝማሬውን ጀምር |  |
+| 366 | `tvJoin` | Scan to join the class | ክፍሉን ለመቀላቀል ይቃኙ |  |
+| 367 | `tmShort` | Teacher | መምህር |  |
+| 368 | `tmPlanTitle` | Term plan | የትምህርት ዘመን ዕቅድ |  |
+| 369 | `tmPlanIntro` | Pick how many letter families per week and the whole term lays itself out - every week gets its TV lesson, its homework link, and its turn-in list. | በሳምንት ስንት የፊደል ቤተሰብ እንደሚማሩ ይምረጡ — ሙሉው ዘመን በራሱ ይዘረጋል፤ እያንዳንዱ ሳምንት የቲቪ ትምህርቱን፣ የቤት ሥራ ማገናኛውን እና የርክክብ ዝርዝሩን ያገኛል። |  |
+| 370 | `tmPerWeek` | {n} families a week | በሳምንት {n} ቤተሰብ |  |
+| 371 | `tmWeek` | Week {n} | ሳምንት {n} |  |
+| 372 | `tmThisWeek` | this week | የዚህ ሳምንት |  |
+| 373 | `tmDueShort` | due {date} | እስከ {date} |  |
+| 374 | `tmTeach` | TV lesson | የቲቪ ትምህርት |  |
+| 375 | `tmHomework` | Send homework | የቤት ሥራ ላክ |  |
+| 376 | `tmShareAgain` | Share link again | ማገናኛውን እንደገና አጋራ |  |
+| 377 | `tmTurnedIn` | {n} of {total} turned in | ከ{total} ውስጥ {n} አስረክበዋል |  |
+| 378 | `tmMissing` | missing: {names} | ያላስረከቡ፦ {names} |  |
+| 379 | `tmNoneKnown` | Waiting for the first result link | የመጀመሪያውን የውጤት ማገናኛ በመጠበቅ ላይ |  |
+| 380 | `tmChangePace` | Change pace | ፍጥነት ቀይር |  |
+| 381 | `tmTroubleTitle` | Class trouble letters | የክፍሉ አስቸጋሪ ፊደላት |  |
+| 382 | `tmTroubleEmpty` | Nothing yet - missed letters arrive inside result links and gather here. | ገና ምንም የለም — የተሳቱ ፊደላት በውጤት ማገናኛዎች ውስጥ መጥተው እዚህ ይሰበሰባሉ። |  |
+| 383 | `tmTroubleWho` | {n} misses · {names} | {n} ስህተት · {names} |  |
+| 384 | `tmForms` | Letter forms | የፊደል ቅርጾች |  |
+| 385 | `tmOrdersBase` | Base letters | መሠረታዊ ፊደላት |  |
+| 386 | `tmOrdersAll` | All 7 forms | ሁሉም 7 ቅርጾች |  |
+| 387 | `tmSent` | Sent assignments | የተላኩ ሥራዎች |  |
+| 388 | `tmExtra` | Extra | ተጨማሪ |  |
+| 389 | `tvChant` | Chant | ዝማሬ |  |
+| 390 | `tvQuiz` | Quiz | ጥያቄ |  |
+| 391 | `tvPickFamily` | Jump to a family | ወደ ቤተሰብ ዝለል |  |
+| 392 | `tvSay` | Who is this? | ይህ ማን ነው? |  |
+| 393 | `tmHowTitle` | How it works | እንዴት ይሠራል |  |
+| 394 | `tmHow1` | Create your class once - it lives on this phone, no account. | ክፍልዎን አንድ ጊዜ ይፍጠሩ — በዚህ ስልክ ላይ ይኖራል፣ ያለ መለያ። |  |
+| 395 | `tmHow2` | Invite students: they open one link or scan the QR code. | ተማሪዎችን ይጋብዙ፦ አንድ ማገናኛ ይከፍታሉ ወይም ኮዱን ይቃኛሉ። |  |
+| 396 | `tmHow3` | In class, put the letters on the TV - chant or quiz together. | በክፍል ውስጥ ፊደላቱን በቲቪ ላይ ያሳዩ — አብራችሁ ዘምሩ ወይም ተጠያየቁ። |  |
+| 397 | `tmHow4` | Send the week's homework link to the family WhatsApp group. | የሳምንቱን የቤት ሥራ ማገናኛ ለቤተሰብ የWhatsApp ቡድን ይላኩ። |  |
+| 398 | `tmHow5` | Results come back as links - open them here and the roster fills itself. | ውጤቶች እንደ ማገናኛ ይመለሳሉ — እዚህ ይክፈቷቸው እና መዝገቡ በራሱ ይሞላል። |  |
+| 399 | `calToday` | Today | ዛሬ |  |
+| 400 | `hol_enkutatash` | Enkutatash — Happy New Year! | እንቁጣጣሽ — መልካም አዲስ ዓመት! |  |
+| 401 | `hol_meskel` | Meskel — the Finding of the Cross | መስቀል |  |
+| 402 | `hol_genna` | Genna — Merry Christmas! | ገና — መልካም በዓል! |  |
+| 403 | `hol_timkat` | Timkat — Epiphany! | ጥምቀት! |  |
+| 404 | `hol_adwa` | Adwa Victory Day | የዓድዋ ድል በዓል |  |
+| 405 | `hol_eritrea` | Eritrean Independence Day | የኤርትራ የነጻነት ቀን |  |
+| 406 | `streakDays` | {...}-day streak | {n} ቀን ተከታታይ |  |
+| 407 | `remindTitle` | Anbessa misses you! | አንበሳ ናፍቆሃል! |  |
+| 408 | `remindBody` | Come learn a letter today. | ዛሬ አንድ ፊደል ና ተማር። |  |
+| 409 | `remindTitleLabel` | Daily reminder | ዕለታዊ ማስታወሻ |  |
+| 410 | `remindDesc` | A gentle nudge each afternoon to keep the streak going. | ተከታታይነትን ለመጠበቅ በየቀኑ ከሰዓት ትንሽ ማሳሰቢያ። |  |
+| 411 | `ccTitle` | Community code | የማህበረሰብ ኮድ |  |
+| 412 | `ccThanks` | Thanks — you’re supporting | እናመሰግናለን — እየደገፉ ነው |  |
+| 413 | `ccChange` | Change | ቀይር |  |
+| 414 | `ccBlurb` | Got a code from a church, school, or community group? Enter it so they get credit. | ከቤተ ክርስቲያን፣ ትምህርት ቤት ወይም ማህበረሰብ ቡድን ኮድ አለዎት? ክሬዲት እንዲያገኙ ያስገቡት። |  |
+| 415 | `ccPh` | e.g. DEBRE | ለምሳሌ DEBRE |  |
+| 416 | `ccApply` | Apply | ተግብር |  |
+| 417 | `slot.hat` | (dynamic) | ኮፍያዎች |  |
+| 418 | `slot.scarf` | (dynamic) | ሻርፖች |  |
+| 419 | `slot.cape` | (dynamic) | ካባዎች |  |
 
 
-## Tigrinya UI strings (313)
+## Tigrinya UI strings (420)
 | # | Key | English (source) | Translation | OK? / Correction |
 |---|-----|------------------|-------------|------------------|
 | 1 | `tagline` | (dynamic) | ምስ ኣንበሳ ጭሩ ፊደል ተመሃር |  |
@@ -612,7 +719,7 @@
 | 266 | `nameLetters` | Letters | ፊደላት |  |
 | 267 | `nameShare` | Share my name | ስመይ ኣካፍል |  |
 | 268 | `namePrivacy` | The card is made on this device. Nothing is shared unless you tap Share. | እቲ ካርድ ኣብዚ መሳርሒ እዩ ዝስራሕ። ኣካፍል እንተዘይነኪእካ ገለ ኣይክፈልን። |  |
-| 269 | `huntShort` | Daily Hunt | ናይ ዕለት ኣደና |  |
+| 269 | `huntShort` | (dynamic) | ናይ ዕለት ኣደና |  |
 | 270 | `huntTitle` | Daily Letter Hunt | ናይ ዕለት ኣደና ፊደል |  |
 | 271 | `huntSub` | Jibby hid the letters! Find them by sound | ጅቢ ነቶም ፊደላት ሓቢኡዎም! ብድምጺ ርኸብዎም |  |
 | 272 | `huntFind` | Find the letter that says | ነዚ ዝብል ፊደል ርኸብ |  |
@@ -620,8 +727,8 @@
 | 274 | `huntDoneTitle` | You found them all! | ንኹሎም ረኺብካዮም! |  |
 | 275 | `huntTreasure` | Open the treasure | ነቲ ህያብ ክፈት |  |
 | 276 | `huntTomorrow` | Come back tomorrow — Jibby will hide new letters! | ጽባሕ ተመለስ — ጅቢ ሓደስቲ ፊደላት ክሓብእ እዩ! |  |
-| 277 | `huntGo` | Jibby hid today’s letters — find them! | ጅቢ ናይ ሎሚ ፊደላት ሓቢኡ — ርኸብዎም! |  |
-| 278 | `huntDoneChip` | Done today — new hunt tomorrow! | ንሎሚ ተወዲኡ — ጽባሕ ሓድሽ ኣደና! |  |
+| 277 | `huntGo` | (dynamic) | ጅቢ ናይ ሎሚ ፊደላት ሓቢኡ — ርኸብዎም! |  |
+| 278 | `huntDoneChip` | (dynamic) | ንሎሚ ተወዲኡ — ጽባሕ ሓድሽ ኣደና! |  |
 | 279 | `huntFoundOne` | found | ተረኺቡ |  |
 | 280 | `huntHidden` | hiding letter | ሕቡእ ፊደል |  |
 | 281 | `pcShort` | Postcard | ፖስትካርድ |  |
@@ -639,24 +746,131 @@
 | 293 | `pcSaved` | Saved! Share it anywhere. | ተዓቂቡ! ኣብ ዝኾነ ኣካፍሎ። |  |
 | 294 | `pcPrivacy` | The recording stays on this device. It only travels when a grown-up sends it. | እቲ ቅዳሕ ኣብዚ መሳርሒ ይተርፍ። ወላዲ ምስ ዝሰዶ ጥራይ ይጓዓዝ። |  |
 | 295 | `celebPostcard` | Send this to family! | ነዚ ንኣያይ ስደዶ! |  |
-| 296 | `calToday` | Today | ሎሚ |  |
-| 297 | `hol_enkutatash` | Enkutatash — Happy New Year! | እንቋጣጣሽ — ርሑስ ሓድሽ ዓመት! |  |
-| 298 | `hol_meskel` | Meskel — the Finding of the Cross | መስቀል |  |
-| 299 | `hol_genna` | Genna — Merry Christmas! | ልደት — ርሑስ በዓል! |  |
-| 300 | `hol_timkat` | Timkat — Epiphany! | ጥምቀት! |  |
-| 301 | `hol_adwa` | Adwa Victory Day | በዓል ዓወት ዓድዋ |  |
-| 302 | `hol_eritrea` | Eritrean Independence Day | መዓልቲ ናጽነት ኤርትራ |  |
-| 303 | `streakDays` | {...}-day streak | {n} መዓልቲ ተኸታታሊ |  |
-| 304 | `remindTitle` | Anbessa misses you! | ኣንበሳ ናፊቑካ! |  |
-| 305 | `remindBody` | Come learn a letter today. | ሎሚ ሓደ ፊደል ንዓ ተመሃር። |  |
-| 306 | `remindTitleLabel` | Daily reminder | ዕለታዊ መዘኻኸሪ |  |
-| 307 | `remindDesc` | A gentle nudge each afternoon to keep the streak going. | ተኸታታልነትካ ንምሕላው መዓልታዊ ድሕሪ ቐትሪ ንእሽቶ መዘኻኸሪ። |  |
-| 308 | `ccTitle` | Community code | ኮድ ማሕበረሰብ |  |
-| 309 | `ccThanks` | Thanks — you’re supporting | የቐንየልና — ትድግፉ ኣለኹም |  |
-| 310 | `ccChange` | Change | ቀይር |  |
-| 311 | `ccBlurb` | Got a code from a church, school, or community group? Enter it so they get credit. | ካብ ቤተ ክርስትያን፣ ቤት ትምህርቲ ወይ ጉጅለ ማሕበረሰብ ኮድ ኣለኩም ዶ? ክሬዲት ምእንቲ ክረኽቡ ኣእትውዎ። |  |
-| 312 | `ccPh` | e.g. DEBRE | ንኣብነት DEBRE |  |
-| 313 | `ccApply` | Apply | ተግብር |  |
+| 296 | `planTitle` | Today's plan | ናይ ሎሚ መደብ |  |
+| 297 | `planWarmupStep` | Warm-up: review your letters | ምውዓይ፦ ፊደላትካ ከልስ |  |
+| 298 | `planNewStep` | Today's new step | ናይ ሎሚ ሓድሽ ደረጃ |  |
+| 299 | `planHuntStep` | Daily Letter Hunt | ናይ ዕለት ኣደና ፊደል |  |
+| 300 | `planEta` | On this pace you finish the whole Fidel by {date}! | በዚ ፍጥነት ንኹሉ ፊደል ብ{date} ክትውድኦ ኢኻ! |  |
+| 301 | `planMake` | Make my learning plan | መደብ ትምህርተይ ኣዳሉ |  |
+| 302 | `planSetupTitle` | My learning plan | መደብ ትምህርተይ |  |
+| 303 | `planSetupSub` | Pick a pace - the coach guides each day | ፍጥነት ምረጽ — እቲ ኣሰልጣኒ መዓልታዊ ይመርሓካ |  |
+| 304 | `paceChill` | Chill - 1 letter family a week | ህዱእ — ኣብ ሰሙን 1 ስድራ ፊደል |  |
+| 305 | `paceSteady` | Steady - 2 families a week | ንቡር — ኣብ ሰሙን 2 ስድራ |  |
+| 306 | `paceZoom` | Zoom - 4 families a week | ቅልጡፍ — ኣብ ሰሙን 4 ስድራ |  |
+| 307 | `planSave` | Start my plan | መደበይ ጀምር |  |
+| 308 | `warmTitle` | Warm-up | ምውዓይ |  |
+| 309 | `warmNudgeTitle` | Warm up first! | መጀመርታ ውዓይ! |  |
+| 310 | `warmNudgeBody` | A quick review of your letters, then the game! | ቅልጡፍ ክለሳ ፊደላት፣ ደሓር እቲ ጸወታ! |  |
+| 311 | `warmStart` | Start warm-up | ምውዓይ ጀምር |  |
+| 312 | `warmSkip` | Play anyway | ብዝኾነ ተጻወት |  |
+| 313 | `gpPlanTitle` | Learning plan | መደብ ትምህርቲ |  |
+| 314 | `gpRequireWarmup` | Require warm-up before games | ቅድሚ ጸወታ ምውዓይ ግዴታ ይኹን |  |
+| 315 | `gpRequireHint` | When on, the child must finish the day's review before the games open. | ምስ ዝበርህ እቲ ቆልዓ ቅድሚ ጸወታ ናይ ዕለት ክለሳ ክውድእ ኣለዎ። |  |
+| 316 | `gpWarmups` | {...} warm-ups done | {n} ምውዓያት ተወዲኦም |  |
+| 317 | `planAssignStep` | Teacher's assignment - {who} | ዕዮ መምህር — {who} |  |
+| 318 | `jcTitle` | Join {who}’s class? | ናብ ክፍሊ {who} ክትጽንበር ትደሊ ዶ? |  |
+| 319 | `jcBody` | Your app remembers the class on this device only. Nothing about you is sent anywhere. | እቲ መተግበሪ ነቲ ክፍሊ ኣብዚ መሳርሒ ጥራይ ይዝክሮ። ብዛዕባኻ ዋላ ሓንቲ ናብ ዝኾነ ኣይለኣኽን። |  |
+| 320 | `jcJoin` | Join class | ክፍሊ ተጸንበር |  |
+| 321 | `jcJoined` | You're in {who}'s class! | ኣብ ክፍሊ {who} ኣቲኻ! |  |
+| 322 | `jcJoinedBody` | Assignments from your teacher will show up in your daily plan. | ዕዮታት መምህርካ ኣብ ዕለታዊ መደብካ ክርኣዩ እዮም። |  |
+| 323 | `jcShareText` | Join my Fidel Quest class: | ናብ ክፍሊ Fidel Quest ናተይ ተጸንበሩ፦ |  |
+| 324 | `asTitle` | Assignment | ዕዮ ገዛ |  |
+| 325 | `asFrom` | {who} sent your class homework! | {who} ንክፍልኹም ዕዮ ገዛ ሰዲዱ! |  |
+| 326 | `asDetail` | {n} questions · due {date} | {n} ሕቶታት · ክሳብ {date} |  |
+| 327 | `asStart` | Start assignment | ዕዮ ጀምር |  |
+| 328 | `asLater` | Later | ደሓር |  |
+| 329 | `asDoneTitle` | Assignment done! | እቲ ዕዮ ተወዲኡ! |  |
+| 330 | `asScore` | {score} of {n} on the first try | ካብ {n} {score} ብቐዳማይ ፈተነ |  |
+| 331 | `asName` | Your name (the teacher sees it) | ስምካ (እቲ መምህር ይርእዮ) |  |
+| 332 | `asSend` | Send result to teacher | ውጽኢት ናብ መምህር ስደድ |  |
+| 333 | `asShareText` | Fidel Quest homework from your teacher: | ካብ መምህርኩም ዕዮ ገዛ Fidel Quest፦ |  |
+| 334 | `asShareBack` | Fidel Quest result for {who}: | ውጽኢት Fidel Quest ን{who}፦ |  |
+| 335 | `tmTitle` | Teacher tools | መሳርሒታት መምህር |  |
+| 336 | `tmSub` | Class links, assignments, results - no accounts | መራኸቢታት ክፍሊ፣ ዕዮታት፣ ውጽኢታት — ብዘይ ሕሳብ |  |
+| 337 | `tmCardBlurb` | Run a class with links: invite students, send assignments, collect results, and put the letters on a TV. No accounts, no server. | ክፍሊ ብመራኸቢታት ጥራይ ኣካይድ፦ ተመሃሮ ዓድም፣ ዕዮ ስደድ፣ ውጽኢት ኣክብ፣ ፊደላት ከኣ ኣብ ቲቪ ኣርኢ። ብዘይ ሕሳብ፣ ብዘይ ኣገልጋሊ። |  |
+| 338 | `tmOpen` | Open teacher tools | መሳርሒታት መምህር ክፈት |  |
+| 339 | `tmCreateTitle` | Start your class | ክፍልኻ ጀምር |  |
+| 340 | `tmIntro` | Run a class with links only - no accounts, no server. Students join by opening one link; results come back to you as links. | ክፍሊ ብመራኸቢታት ጥራይ ኣካይድ — ብዘይ ሕሳብ፣ ብዘይ ኣገልጋሊ። ተመሃሮ ሓደ መራኸቢ ብምኽፋት ይጽንበሩ፤ ውጽኢታት ከም መራኸቢ ይምለሱ። |  |
+| 341 | `tmYourName` | Your name (students see it) | ስምካ (ተመሃሮ ይርእይዎ) |  |
+| 342 | `tmClassCode` | Class code (4-12 letters or digits) | ኮድ ክፍሊ (4–12 ፊደላት ወይ ቁጽርታት) |  |
+| 343 | `tmCodePh` | e.g. STMARY1 | ንኣብነት STMARY1 |  |
+| 344 | `tmCreate` | Create class | ክፍሊ ፍጠር |  |
+| 345 | `tmInvite` | Invite students | ተመሃሮ ዓድም |  |
+| 346 | `tmInviteHint` | A student opens this link (or scans the code) once - their app joins your class. Works over WhatsApp. | ተመሃራይ ነዚ መራኸቢ ሓደ ግዜ ይኸፍቶ (ወይ ነቲ ኮድ ይስካን) — እቲ መተግበሪ ናብ ክፍልኻ ይጽንበር። ብWhatsApp ይሰርሕ። |  |
+| 347 | `tmShareInvite` | Share invite link | መራኸቢ ዕድመ ኣካፍል |  |
+| 348 | `tmNewAssign` | Extra assignment | ተወሳኺ ዕዮ ገዛ |  |
+| 349 | `tmAssignHint` | Every student gets the same questions. When they finish, the app builds a result link they send back to you. | ነፍሲ ወከፍ ተመሃራይ ሓደ ዓይነት ሕቶታት ይረክብ። ምስ ወድኡ እቲ መተግበሪ ናባኻ ዝልኣኽ መራኸቢ ውጽኢት ይሃንጽ። |  |
+| 350 | `tmPickFamilies` | Letter families | ስድራታት ፊደል |  |
+| 351 | `tmQuestions` | Questions | ሕቶታት |  |
+| 352 | `tmDue` | Due date | ናይ መወዳእታ ዕለት |  |
+| 353 | `tmBuildLink` | Build the link | ነቲ መራኸቢ ስራሕ |  |
+| 354 | `tmMakeLink` | Share assignment link | መራኸቢ ዕዮ ኣካፍል |  |
+| 355 | `tmRoster` | Students | ተመሃሮ |  |
+| 356 | `tmRosterEmpty` | No results yet. When a student finishes, they send you a result link - open it on this device and it files itself here. | ገና ውጽኢት የለን። ተመሃራይ ምስ ወድአ መራኸቢ ውጽኢት ይሰደልካ — ኣብዚ መሳርሒ ክፈቶ እሞ ኣብዚ ይምዝገብ። |  |
+| 357 | `tmBest` | best | ዝበለጸ |  |
+| 358 | `tmReceiptFiled` | Result saved: {who} - {score} | ውጽኢት ተመዝጊቡ፦ {who} — {score} |  |
+| 359 | `tmReceiptWrongClass` | This result belongs to a class that is not on this device. | እዚ ውጽኢት ናይ ኣብዚ መሳርሒ ዘየሎ ክፍሊ እዩ። |  |
+| 360 | `tmRemove` | Remove class and results… | ክፍልን ውጽኢታቱን ኣወግድ… |  |
+| 361 | `tmRemoveConfirm` | Erase this class and all its results from this device? | ነዚ ክፍልን ኩሎም ውጽኢታቱን ካብዚ መሳርሒ ክድምሰሱ ዶ? |  |
+| 362 | `tmTv` | TV display | መርኣዪ ቲቪ |  |
+| 363 | `tmTvHint` | Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner. | ነዚ መሳርሒ ናብ ቲቪ ኣራኽቦ፦ ዓበይቲ ፊደላትን ድምጽን ንኹሉ ክፍሊ፣ ኮድ ምጽንባር ኣብ ኩርናዕ። |  |
+| 364 | `tmTvOpen` | Open TV display | መርኣዪ ቲቪ ክፈት |  |
+| 365 | `tvExit` | Exit TV display | ካብ መርኣዪ ቲቪ ውጻእ |  |
+| 366 | `tvPrevFamily` | Previous family | ዝሓለፈ ስድራ |  |
+| 367 | `tvNextFamily` | Next family | ዝቕጽል ስድራ |  |
+| 368 | `tvPause` | Pause the chant | ነቲ ዝማሬ ደው ኣብል |  |
+| 369 | `tvPlay` | Play the chant | ነቲ ዝማሬ ጀምር |  |
+| 370 | `tvJoin` | Scan to join the class | ናብቲ ክፍሊ ንምጽንባር ስካን ግበር |  |
+| 371 | `tmShort` | Teacher | መምህር |  |
+| 372 | `tmPlanTitle` | Term plan | መደብ ዘመነ ትምህርቲ |  |
+| 373 | `tmPlanIntro` | Pick how many letter families per week and the whole term lays itself out - every week gets its TV lesson, its homework link, and its turn-in list. | ኣብ ሰሙን ክንደይ ስድራ ፊደል ከም ዝመሃሩ ምረጽ — ኩሉ ዘመን ባዕሉ ይዝርጋሕ፤ ነፍሲ ወከፍ ሰሙን ትምህርቲ ቲቪኡን መራኸቢ ዕዮ ገዛኡን ዝርዝር ምርካቡን ይረክብ። |  |
+| 374 | `tmPerWeek` | {n} families a week | ኣብ ሰሙን {n} ስድራ |  |
+| 375 | `tmWeek` | Week {n} | ሰሙን {n} |  |
+| 376 | `tmThisWeek` | this week | ናይዚ ሰሙን |  |
+| 377 | `tmDueShort` | due {date} | ክሳብ {date} |  |
+| 378 | `tmTeach` | TV lesson | ትምህርቲ ቲቪ |  |
+| 379 | `tmHomework` | Send homework | ዕዮ ገዛ ስደድ |  |
+| 380 | `tmShareAgain` | Share link again | ነቲ መራኸቢ ከም ብሓድሽ ኣካፍል |  |
+| 381 | `tmTurnedIn` | {n} of {total} turned in | ካብ {total} {n} ኣረኪቦም |  |
+| 382 | `tmMissing` | missing: {names} | ዘየረከቡ፦ {names} |  |
+| 383 | `tmNoneKnown` | Waiting for the first result link | ንመጀመርታ መራኸቢ ውጽኢት ኣብ ምጽባይ |  |
+| 384 | `tmChangePace` | Change pace | ፍጥነት ቀይር |  |
+| 385 | `tmTroubleTitle` | Class trouble letters | ኣጸገምቲ ፊደላት ናይቲ ክፍሊ |  |
+| 386 | `tmTroubleEmpty` | Nothing yet - missed letters arrive inside result links and gather here. | ገና ዋላ ሓንቲ የለን — ዝተጋገዩ ፊደላት ኣብ ውሽጢ መራኸቢታት ውጽኢት መጺኦም ኣብዚ ይእከቡ። |  |
+| 387 | `tmTroubleWho` | {n} misses · {names} | {n} ጌጋታት · {names} |  |
+| 388 | `tmForms` | Letter forms | ቅርጽታት ፊደል |  |
+| 389 | `tmOrdersBase` | Base letters | መሰረታውያን ፊደላት |  |
+| 390 | `tmOrdersAll` | All 7 forms | ኩሎም 7 ቅርጽታት |  |
+| 391 | `tmSent` | Sent assignments | ዝተላእኩ ዕዮታት |  |
+| 392 | `tmExtra` | Extra | ተወሳኺ |  |
+| 393 | `tvChant` | Chant | ዝማሬ |  |
+| 394 | `tvQuiz` | Quiz | ሕቶ |  |
+| 395 | `tvPickFamily` | Jump to a family | ናብ ስድራ ዝለል |  |
+| 396 | `tvSay` | Who is this? | እዚ መን እዩ? |  |
+| 397 | `tmHowTitle` | How it works | ከመይ ይሰርሕ |  |
+| 398 | `tmHow1` | Create your class once - it lives on this phone, no account. | ክፍልኻ ሓደ ግዜ ፍጠር — ኣብዚ ስልኪ ይነብር፣ ብዘይ ሕሳብ። |  |
+| 399 | `tmHow2` | Invite students: they open one link or scan the QR code. | ተመሃሮ ዓድም፦ ሓደ መራኸቢ ይኸፍቱ ወይ ነቲ ኮድ ይስካኑ። |  |
+| 400 | `tmHow3` | In class, put the letters on the TV - chant or quiz together. | ኣብ ክፍሊ ነቶም ፊደላት ኣብ ቲቪ ኣርኢ — ብሓባር ዘምሩ ወይ ተሓታተቱ። |  |
+| 401 | `tmHow4` | Send the week's homework link to the family WhatsApp group. | መራኸቢ ዕዮ ገዛ ናይቲ ሰሙን ናብ ጉጅለ WhatsApp ስድራቤታት ስደድ። |  |
+| 402 | `tmHow5` | Results come back as links - open them here and the roster fills itself. | ውጽኢታት ከም መራኸቢ ይምለሱ — ኣብዚ ክፈቶም እሞ እቲ መዝገብ ባዕሉ ይመልእ። |  |
+| 403 | `calToday` | Today | ሎሚ |  |
+| 404 | `hol_enkutatash` | Enkutatash — Happy New Year! | እንቋጣጣሽ — ርሑስ ሓድሽ ዓመት! |  |
+| 405 | `hol_meskel` | Meskel — the Finding of the Cross | መስቀል |  |
+| 406 | `hol_genna` | Genna — Merry Christmas! | ልደት — ርሑስ በዓል! |  |
+| 407 | `hol_timkat` | Timkat — Epiphany! | ጥምቀት! |  |
+| 408 | `hol_adwa` | Adwa Victory Day | በዓል ዓወት ዓድዋ |  |
+| 409 | `hol_eritrea` | Eritrean Independence Day | መዓልቲ ናጽነት ኤርትራ |  |
+| 410 | `streakDays` | {...}-day streak | {n} መዓልቲ ተኸታታሊ |  |
+| 411 | `remindTitle` | Anbessa misses you! | ኣንበሳ ናፊቑካ! |  |
+| 412 | `remindBody` | Come learn a letter today. | ሎሚ ሓደ ፊደል ንዓ ተመሃር። |  |
+| 413 | `remindTitleLabel` | Daily reminder | ዕለታዊ መዘኻኸሪ |  |
+| 414 | `remindDesc` | A gentle nudge each afternoon to keep the streak going. | ተኸታታልነትካ ንምሕላው መዓልታዊ ድሕሪ ቐትሪ ንእሽቶ መዘኻኸሪ። |  |
+| 415 | `ccTitle` | Community code | ኮድ ማሕበረሰብ |  |
+| 416 | `ccThanks` | Thanks — you’re supporting | የቐንየልና — ትድግፉ ኣለኹም |  |
+| 417 | `ccChange` | Change | ቀይር |  |
+| 418 | `ccBlurb` | Got a code from a church, school, or community group? Enter it so they get credit. | ካብ ቤተ ክርስትያን፣ ቤት ትምህርቲ ወይ ጉጅለ ማሕበረሰብ ኮድ ኣለኩም ዶ? ክሬዲት ምእንቲ ክረኽቡ ኣእትውዎ። |  |
+| 419 | `ccPh` | e.g. DEBRE | ንኣብነት DEBRE |  |
+| 420 | `ccApply` | Apply | ተግብር |  |
 
 
 ## Also worth a skim (older, separate table)

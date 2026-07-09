@@ -31,6 +31,7 @@ import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { sanitizeName } from '../utils/challenge'
 import { addDays } from '../platform/coach'
 import { dayStamp } from '../platform/streak'
+import { toEthiopic, formatEthiopic } from '../platform/ethioCalendar'
 import { appShareUrl } from './ShareCard'
 import { isNativePlatform } from '../platform/native'
 import { track } from '../platform/analytics'
@@ -45,6 +46,9 @@ import {
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const glyphOf = (id) => Array.from(FIDEL_FAMILIES.find((f) => f.id === id)?.chars || '')[0] || ''
 const newSeed = () => (Date.now() % 1000000) | 1
+// Dates are stored Gregorian (tokens, storage) but SHOWN on the Ethiopian
+// calendar, same as the child's plan card - this is a church-school tool.
+const ethioDay = (stamp) => formatEthiopic(toEthiopic(stamp)).latin
 
 /** Render a URL as a QR code (offline, via the qrcode package). */
 export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }) {
@@ -99,6 +103,32 @@ function SectionCard({ icon, title, children }) {
       </h2>
       {children}
     </section>
+  )
+}
+
+/** The five-line mental model. Shown in full before a class exists; kept as
+    a compact reminder afterwards so the flow is never a mystery. */
+function HowItWorksCard() {
+  const steps = [
+    t('tmHow1', 'Create your class once - it lives on this phone, no account.'),
+    t('tmHow2', 'Invite students: they open one link or scan the QR code.'),
+    t('tmHow3', 'In class, put the letters on the TV - chant or quiz together.'),
+    t('tmHow4', "Send the week's homework link to the family WhatsApp group."),
+    t('tmHow5', 'Results come back as links - open them here and the roster fills itself.'),
+  ]
+  return (
+    <SectionCard icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmHowTitle', 'How it works')}>
+      <ol className="mt-3 flex flex-col gap-2">
+        {steps.map((s, i) => (
+          <li key={i} className="flex items-start gap-2.5">
+            <span className="mono flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black text-white" style={{ background: 'var(--sky)' }} aria-hidden="true">
+              {i + 1}
+            </span>
+            <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>{s}</p>
+          </li>
+        ))}
+      </ol>
+    </SectionCard>
   )
 }
 
@@ -212,7 +242,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
                   {isNow && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>{t('tmThisWeek', 'this week')}</span>}
                   <span className="geez ml-2 text-lg">{familyIds.map(glyphOf).join(' ')}</span>
                 </p>
-                <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{t('tmDueShort', 'due {date}', { date: weekDue(plan, i) })}</p>
+                <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{t('tmDueShort', 'due {date}', { date: ethioDay(weekDue(plan, i)) })}</p>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={() => onTv(familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
@@ -358,7 +388,7 @@ function SentAssignments({ code }) {
               <p className="text-sm font-black">
                 {a.week != null ? t('tmWeek', 'Week {n}', { n: a.week + 1 }) : t('tmExtra', 'Extra')}
                 <span className="geez ml-2 text-base">{a.familyIds.map(glyphOf).join(' ')}</span>
-                <span className="mono ml-2 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{a.count}q · {t('tmDueShort', 'due {date}', { date: a.due })}</span>
+                <span className="mono ml-2 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{a.count}q · {t('tmDueShort', 'due {date}', { date: ethioDay(a.due) })}</span>
               </p>
               <ShareLinkButton small tone="sky" url={assignmentUrl(a, appShareUrl())} text={t('asShareText', 'Fidel Quest homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
             </div>
@@ -452,7 +482,10 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
         )}
 
         {!code ? (
-          <CreateClassCard onCreated={refresh} />
+          <>
+            <HowItWorksCard />
+            <CreateClassCard onCreated={refresh} />
+          </>
         ) : (
           <>
             <TermPlanCard code={code} teacher={cls.teacher} onTv={onTv} onChanged={refresh} />
@@ -480,6 +513,8 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
                 <Tv className="h-5 w-5" aria-hidden="true" /> {t('tmTvOpen', 'Open TV display')}
               </button>
             </SectionCard>
+
+            <HowItWorksCard />
 
             <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {!confirmRemove ? (

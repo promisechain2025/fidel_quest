@@ -51,12 +51,44 @@ in a hall or print on a flyer. Pick something memorable: `DEBRE`, `SELAM`,
   comes out of our net after the 15–30% store fee — which is why **free seats**
   is the friction-free starting point.
 
+## Run your class with Fidel Quest (Teacher Mode — free, no accounts)
+
+This is live today, entirely on your phone. Nothing about any child ever
+touches a server — everything travels inside WhatsApp links that people
+choose to send. Five steps:
+
+1. **Create your class once.** Backpack → Grown-ups (hold-and-tap gate) →
+   **Teacher tools** → your name + a class code (e.g. `STMARY1`). After that,
+   a **Teacher** shortcut appears right in the Backpack.
+2. **Invite students.** Share the invite link into the families' WhatsApp
+   group, or let them scan the QR code off your screen. One tap and their
+   app has joined your class — and joining also enters your **community
+   code** automatically, so your group gets the affiliate credit above.
+3. **Pick a Term Plan pace** (1–3 letter families per week). The whole term
+   lays itself out as weeks, each with its letters and due date on the
+   Ethiopian calendar.
+4. **Teach and assign from the week row.** *TV lesson* puts that week's
+   letters on a TV (cast or HDMI) — chant the orders together or run the
+   shout-out **Quiz**, with your join-QR in the corner for latecomers.
+   *Send homework* shares the week's assignment link — every child gets the
+   same questions, strictly limited to that week's letters.
+5. **Collect results.** When a child finishes, the family sends you back a
+   result link. Open it on your phone: the roster fills itself — who turned
+   in, who's missing, scores, and a **class trouble letters** card showing
+   exactly which letters to reteach.
+
+Practical notes: the class lives on YOUR phone (back it up by keeping the
+phone; removing the class erases its results), a result link opened twice
+never double-counts, and re-sharing an assignment sends the identical
+questions so latecomers stay comparable.
+
 ## Getting set up (partner checklist)
 
 - [ ] Pick your **code** and tell us — we note it so credits are attributed.
 - [ ] Choose a paid path (bulk licenses, promo codes, or affiliate credit).
 - [ ] Get your **flyer line**: *"Learn the Fidel with Anbessa — enter code `DEBRE`
       in Grown-ups → Community code."*
-- [ ] (Later) When there's demand, we open the **teacher dashboard** tier
-      (`community-teacher.md`, Phase 2) so you can follow each child's progress —
-      that step adds parental consent + a class code.
+- [ ] Set up **Teacher Mode** (section above) for each weekend-school teacher.
+- [ ] (Later) If live dashboards are ever needed, the **opt-in sync tier**
+      (`community-teacher.md`, Phase 2) adds parental consent + automatic
+      result delivery — Teacher Mode's result links become automatic.
