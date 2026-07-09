@@ -33,9 +33,10 @@ import NameInFidel from './components/NameInFidel'
 import DailyHunt from './components/DailyHunt'
 import VoicePostcard from './components/VoicePostcard'
 import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
+import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
 import { toEthiopic, formatEthiopic, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds } from './journey'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
@@ -822,6 +823,12 @@ export default function FidelQuestApp() {
   // Daily Letter Hunt: one seeded hunt per calendar day.
   const [huntDone, setHuntDone] = useState(() => huntDoneToday())
   useEffect(() => { setHuntDone(huntDoneToday()) }, [dayKey])
+  // Session coach: the daily warm-up review + the registered learning plan.
+  const [plan, setPlan] = useState(loadPlan)
+  const [warmupDone, setWarmupDone] = useState(() => warmupDoneToday())
+  useEffect(() => { setWarmupDone(warmupDoneToday()) }, [dayKey])
+  const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
+  useEffect(() => { if (screen.name === 'home') setPlan(loadPlan()) }, [screen.name])
   // The living Ethiopian calendar: today's Ethiopic date + any holiday.
   const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayKey)), [dayKey])
   const holiday = useMemo(() => holidayFor(dayKey), [dayKey])
@@ -940,7 +947,27 @@ export default function FidelQuestApp() {
   }, [today])
 
   // Open a node: the single obvious action from the path (Pillar 1).
-  const openNode = useCallback((node) => {
+  // The daily warm-up: a short refresher quiz over the child's own learned
+  // letters (trouble letters first), reusing the Lesson machine wholesale.
+  const startWarmup = useCallback(() => {
+    const queue = buildWarmup(daySeed(), learnedFamilyIds(journeyRef.current), loadLedger())
+    if (!queue.length) return
+    setRunSeed((Date.now() % 1000000) | 1)
+    setScreen({ name: 'warmup', queue })
+  }, [setScreen])
+
+  const openNode = useCallback((node, opts = {}) => {
+    // Games come AFTER the day's warm-up: kids rush to the arcade, so the
+    // gateway nudges (or, if the plan enforces it, requires) a quick review
+    // of yesterday's letters first. Reads storage fresh - the plan may have
+    // just changed in Grown-ups.
+    if (
+      node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
+      learnedFamilyIds(journeyRef.current).length > 0
+    ) {
+      setWarmupNudge({ node, enforced: !!loadPlan()?.requireWarmup })
+      return
+    }
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
@@ -967,6 +994,13 @@ export default function FidelQuestApp() {
                 streak={streak}
                 huntDone={huntDone}
                 onHunt={() => setScreen({ name: 'hunt' })}
+                coach={{
+                  warmupState: learnedFamilyIds(journey).length === 0 ? 'none' : warmupDone ? 'done' : 'todo',
+                  hasPlan: !!plan,
+                  eta: plan ? formatEthiopic(toEthiopic(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null,
+                }}
+                onWarmup={startWarmup}
+                onPlanSetup={() => setScreen({ name: 'plan' })}
                 ethioDate={ethioToday}
                 holiday={holiday}
               />
@@ -1098,6 +1132,29 @@ export default function FidelQuestApp() {
               />
             </Screen>
           )}
+          {screen.name === 'warmup' && (
+            <Screen key={`warmup-${runSeed}`}>
+              <Lesson
+                level={{ id: 'warmup', n: '✦', title: t('warmTitle', 'Warm-up') }}
+                seed={runSeed}
+                soundOn={soundOn}
+                noDemo
+                practiceQueue={screen.queue}
+                onFinish={() => { markWarmupDone(); setWarmupDone(true); track('warmup'); goBack() }}
+                onReplay={startWarmup}
+              />
+            </Screen>
+          )}
+          {screen.name === 'plan' && (
+            <Screen key="plan">
+              <PlanSetup
+                learned={learnedFamilyIds(journey).length}
+                today={dayKey}
+                onSave={(pace) => { setPlan(makePlan(pace, { today: dayKey })); goBack() }}
+                onBack={goBack}
+              />
+            </Screen>
+          )}
           {screen.name === 'lesson' && (
             <Screen key={`lesson-${screen.levelId}-${runSeed}`}>
               <Lesson
@@ -1187,6 +1244,17 @@ export default function FidelQuestApp() {
         </AnimatePresence>
         <AnimatePresence>
           {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
+        </AnimatePresence>
+        <AnimatePresence>
+          {warmupNudge && (
+            <WarmupNudge
+              key="warmup-nudge"
+              enforced={warmupNudge.enforced}
+              onStart={() => { setWarmupNudge(null); startWarmup() }}
+              onSkip={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
+              onClose={() => setWarmupNudge(null)}
+            />
+          )}
         </AnimatePresence>
       </div>
     </MotionConfig>
@@ -1434,6 +1502,100 @@ function serpentineRows(nodes, cols) {
 }
 const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
 
+/* One row of the Today's-plan card: number chip -> check when done. */
+function PlanRow({ step, done, label, onClick, pulse }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      animate={pulse && !done ? { scale: [1, 1.012, 1] } : {}}
+      transition={{ duration: 1.6, repeat: Infinity }}
+      className={`chunk flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left ${FOCUS}`}
+      style={done
+        ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
+        : pulse
+          ? { background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--accent)' }
+          : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
+        {done ? <Check className="h-5 w-5" aria-hidden="true" /> : step}
+      </span>
+      <span className={`min-w-0 flex-1 truncate text-sm font-black ${done ? 'line-through' : ''}`}>{label}</span>
+      {!done && <span aria-hidden="true" className="text-lg font-black opacity-70">&rsaquo;</span>}
+    </motion.button>
+  )
+}
+
+/* The arcade gateway's gentle gate: warm up before the game. When the plan
+   enforces it there is no "Play anyway" - but that is a Grown-ups choice;
+   the default is a nudge, matching the app's never-block philosophy. */
+function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
+  useEscapeKey(onClose)
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
+        <Sprite2D draw={drawAnbessa} size={104} mood="happy" />
+        <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
+        <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>{t('warmNudgeBody', 'A quick review of your letters, then the game!')}</p>
+        <div className="mt-5 flex flex-col gap-3">
+          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            {t('warmStart', 'Start warm-up')}
+          </button>
+          {!enforced && (
+            <button type="button" onClick={onSkip} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+              {t('warmSkip', 'Play anyway')}
+            </button>
+          )}
+          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            {t('dismiss', 'Not now')}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* Registering the learning plan: pick a pace, see the finish date live.
+   A parent or the child can do this - enforcement stays in Grown-ups. */
+function PlanSetup({ learned, today, onSave, onBack }) {
+  const [pace, setPace] = useState('steady')
+  const labels = {
+    chill: t('paceChill', 'Chill - 1 letter family a week'),
+    steady: t('paceSteady', 'Steady - 2 families a week'),
+    zoom: t('paceZoom', 'Zoom - 4 families a week'),
+  }
+  const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
+  const eta = formatEthiopic(toEthiopic(etaStamp(today, learned, per)))
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-6">
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
+        <div>
+          <h1 className="text-xl font-black leading-tight">{t('planSetupTitle', 'My learning plan')}</h1>
+          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>{t('planSetupSub', 'Pick a pace - the coach guides each day')}</p>
+        </div>
+      </header>
+      <div className="mt-6 flex flex-col gap-3">
+        {PACES.map((p) => (
+          <button key={p.id} type="button" aria-pressed={pace === p.id} onClick={() => setPace(p.id)} className={`chunk rounded-2xl px-5 py-4 text-left font-black ${FOCUS}`} style={pace === p.id
+            ? { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--accent)' }
+            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            {labels[p.id]}
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-center font-bold" style={{ color: 'var(--go-ink)' }}>
+        {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta.latin })}
+      </p>
+      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
+        {t('planSave', 'Start my plan')}
+      </button>
+    </div>
+  )
+}
+
 // Localized names for the calendar holidays (ids from platform/ethioCalendar).
 const holidayName = (id) =>
   ({
@@ -1445,7 +1607,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1557,30 +1719,49 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         </p>
       ))}
 
-      {/* Daily Letter Hunt banner: today's comeback game, right under the
-         header. Pulses until played; flips to a quiet "done" chip after. */}
-      {onHunt && (
-        <motion.button
-          type="button"
-          onClick={onHunt}
-          animate={huntDone ? {} : { scale: [1, 1.015, 1] }}
-          transition={{ duration: 1.6, repeat: Infinity }}
-          className={`chunk mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-3xl px-4 py-3 text-left ${FOCUS}`}
-          style={huntDone
-            ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }
-            : { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--accent)' }}
-        >
-          <span className="geez flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl font-black" style={{ background: 'rgba(255,255,255,0.25)', border: huntDone ? '2px solid var(--line)' : 'none', color: huntDone ? 'var(--muted)' : '#fff' }} aria-hidden="true">
-            {huntDone ? '✓' : '?'}
-          </span>
-          <span className="min-w-0">
-            <span className="block text-base font-black leading-tight" style={huntDone ? { color: 'var(--ink)' } : {}}>{t('huntShort', 'Daily Hunt')}</span>
-            <span className="block truncate text-sm font-bold" style={{ color: huntDone ? 'var(--muted)' : 'rgba(255,255,255,0.9)' }}>
-              {huntDone ? t('huntDoneChip', 'Done today — new hunt tomorrow!') : t('huntGo', 'Jibby hid today’s letters — find them!')}
-            </span>
-          </span>
-        </motion.button>
-      )}
+      {/* Today's plan: the coach's guide for the session - warm-up review
+         first (kids rush to the games), then today's new step, then the
+         Daily Hunt. Rows check off as the day progresses; the footer carries
+         the registered pace's finish date, or the invite to make a plan. */}
+      <div className="mx-auto mt-3 w-full max-w-md rounded-3xl border-2 p-3" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+        <p className="px-1 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
+        <div className="mt-2 flex flex-col gap-2">
+          {coach?.warmupState !== 'none' && (
+            <PlanRow
+              step={1}
+              done={coach?.warmupState === 'done'}
+              label={t('planWarmupStep', 'Warm-up: review your letters')}
+              onClick={onWarmup}
+              pulse={coach?.warmupState === 'todo'}
+            />
+          )}
+          {current && (
+            <PlanRow
+              step={coach?.warmupState !== 'none' ? 2 : 1}
+              done={false}
+              label={t('planNewStep', "Today's new step")}
+              onClick={() => onOpen(current)}
+              pulse={coach?.warmupState !== 'todo'}
+            />
+          )}
+          <PlanRow
+            step={(coach?.warmupState !== 'none' ? 1 : 0) + (current ? 1 : 0) + 1}
+            done={huntDone}
+            label={t('planHuntStep', 'Daily Letter Hunt')}
+            onClick={onHunt}
+            pulse={false}
+          />
+        </div>
+        {coach?.hasPlan && coach?.eta ? (
+          <p className="mt-2 px-1 text-xs font-bold" style={{ color: 'var(--go-ink)' }}>
+            {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: coach.eta })}
+          </p>
+        ) : (
+          <button type="button" onClick={onPlanSetup} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+            {t('planMake', 'Make my learning plan')}
+          </button>
+        )}
+      </div>
 
       <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
         {PATH_ROWS.map((row, r) => (
@@ -2155,8 +2336,11 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
     setYourTurn(true)
     setTimeout(() => setYourTurn(false), 1700)
     dispatch({ type: GameEvent.EXIT })
-    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1 } })
-  }, [level.id, seed])
+    // Preset-queue levels (warm-up, Star Practice) are NOT in the LEVELS
+    // table - restarting them without their queue would be rejected and leave
+    // an empty machine (a dead "says ''" screen). Thread the queue through.
+    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined } })
+  }, [level.id, seed, practiceQueue])
   useEffect(() => {
     if (!hasOnboarded('lesson') && prefersReducedMotion()) markOnboarded('lesson')
   }, [])

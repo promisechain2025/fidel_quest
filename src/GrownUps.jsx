@@ -21,6 +21,10 @@ import ParentalGate from './components/ParentalGate'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
+import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
+import { learnedFamilyIds, loadJourney } from './journey'
+import { dayStamp } from './platform/streak'
+import { toEthiopic, formatEthiopic } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -98,6 +102,54 @@ function ReminderCard() {
       <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
         <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
       </button>
+    </section>
+  )
+}
+
+/** The learning plan: pace, warm-up enforcement, and the finish date. The
+    pace can also be (re)registered here; enforcement lives ONLY here, behind
+    the grown-up gate - the child-facing default is a nudge, never a block. */
+function PlanCard() {
+  const [plan, setPlanState] = useState(loadPlan)
+  const learned = learnedFamilyIds(loadJourney()).length
+  const paceLabels = {
+    chill: t('paceChill', 'Chill - 1 letter family a week'),
+    steady: t('paceSteady', 'Steady - 2 families a week'),
+    zoom: t('paceZoom', 'Zoom - 4 families a week'),
+  }
+  const pick = (pace) => setPlanState(makePlan(pace, { requireWarmup: !!plan?.requireWarmup }))
+  const toggle = () => { setRequireWarmup(!plan?.requireWarmup); setPlanState(loadPlan()) }
+  const eta = plan ? formatEthiopic(toEthiopic(etaStamp(dayStamp(), learned, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('gpPlanTitle', 'Learning plan')}</h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {PACES.map((p) => (
+          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
+            ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
+            : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            {paceLabels[p.id]}
+          </button>
+        ))}
+      </div>
+      {plan && eta && (
+        <p className="mt-2 text-xs font-bold" style={{ color: 'var(--go-ink)' }}>
+          {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta })}
+          {' · '}
+          {t('gpWarmups', `${loadCoach().days || 0} warm-ups done`, { n: loadCoach().days || 0 })}
+        </p>
+      )}
+      {plan && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t-2 pt-3" style={{ borderColor: 'var(--line)' }}>
+          <div>
+            <p className="text-sm font-black">{t('gpRequireWarmup', 'Require warm-up before games')}</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpRequireHint', "When on, the child must finish the day's review before the games open.")}</p>
+          </div>
+          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+            <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: plan.requireWarmup ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+          </button>
+        </div>
+      )}
     </section>
   )
 }
@@ -192,6 +244,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <NicknameField />
 
           <ReminderCard />
+          <PlanCard />
 
           <CommunityCard />
 
