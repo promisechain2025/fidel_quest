@@ -36,10 +36,10 @@ const RECIPIENT_STRINGS = {
     shareText: 'ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ',
   },
 }
-/* The link line stays in English on purpose - it matches every other share
-   in the app (Anbessa card, name card), while the personal message above it
-   speaks to Gashe / Ayay in the family's language. */
-const SHARE_INVITE = 'Share Fidel Quest with others:'
+/* The link line stays in English on purpose (product owner's wording) - it
+   matches every other share in the app (Anbessa card, name card), while the
+   personal message above it speaks to Gashe / Ayay in the family's language. */
+const SHARE_INVITE = 'Share this app with others:'
 /* Future: once the paid store listing is live, the postcard can also invite
    Gashe / Ayay to gift back - a real Tee Shop shirt or an App Store gift
    (platform/gift.js) - closing the loop in both directions. */
