@@ -3888,12 +3888,14 @@ class RunnerWorld {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
-    // Three-quarter chase view: the camera sits a little to the LEFT of the
-    // track so the road recedes diagonally and the side-profile run sprites
-    // below (which face right, along the direction of travel) read naturally
-    // - faces visible, not backs. Product decision from device testing.
-    this.camera.position.set(-2.4, 3.8, 8.1)
-    this.camera.lookAt(0.9, 1.1, -13)
+    // Three-quarter chase view from the RIGHT of the track: the road then
+    // recedes diagonally to the UPPER-RIGHT of the screen - the same
+    // direction the side-profile run sprites below face - so Anbessa reads
+    // as looking at (and running toward) the letter gates coming down the
+    // road. Camera on the left had the road vanishing left while he faced
+    // right, which looked like running off the road (device-test finding).
+    this.camera.position.set(3.4, 4.1, 8.6)
+    this.camera.lookAt(-1.5, 1.0, -14)
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
