@@ -29,14 +29,16 @@ const RECIPIENT_STRINGS = {
   am: {
     card: ['ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው።', 'ብርታትህ ኣይለየኝ።'],
     shareText: 'ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው። ብርታትህ ኣይለየኝ።',
-    invite: 'መተግበሪያውን ለሌሎች ያጋሩ፦',
   },
   ti: {
     card: ['ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ።', 'መትብባዕኹም ኣይፈለየኒ'],
     shareText: 'ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ',
-    invite: 'ነዚ መተግበሪያ ንኻልኦት ኣካፍልዎ፦',
   },
 }
+/* The link line stays in English on purpose - it matches every other share
+   in the app (Anbessa card, name card), while the personal message above it
+   speaks to Gashe / Ayay in the family's language. */
+const SHARE_INVITE = 'Share Fidel Quest with others:'
 /* Future: once the paid store listing is live, the postcard can also invite
    Gashe / Ayay to gift back - a real Tee Shop shirt or an App Store gift
    (platform/gift.js) - closing the loop in both directions. */
@@ -107,7 +109,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
       heading: 'ሰላም!',
       lines: r.card,
       worn,
-      text: url ? `${message}\n\n${r.invite} ${url}` : message,
+      text: url ? `${message}\n\n${SHARE_INVITE} ${url}` : message,
     })
     if (result === 'shared') { setPhase('sent'); setToast(t('pcShared', 'Postcard sent!')) }
     else if (result === 'downloaded') { setPhase('sent'); setToast(t('pcSaved', 'Saved! Share it anywhere.')) }
