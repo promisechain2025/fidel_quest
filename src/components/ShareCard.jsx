@@ -258,7 +258,7 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
 /** Draw the voice-postcard image at side S: a big Ge'ez greeting, Anbessa in
     wardrobe, and a voice-note bubble so the recipient knows to listen. The
     caption strings arrive pre-localized (the drawer stays language-blind). */
-export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', worn = [] } = {}) {
+export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', lines = null, worn = [] } = {}) {
   const grad = g.createLinearGradient(0, 0, 0, S)
   grad.addColorStop(0, BG_TOP)
   grad.addColorStop(1, BG_BOTTOM)
@@ -322,30 +322,34 @@ export function drawVoicePostcard(g, S, { heading = 'ሰላም!', line = '', wor
     g.fillRect(x, ty - (bh * h) / 2, S * 0.012, bh * h)
   })
 
-  // Caption line under the bubble.
-  if (line) {
+  // Caption under the bubble: up to two fit-to-width lines, set in the
+  // Ethiopic face since the message to the family is written in Ge'ez.
+  const caption = (lines && lines.filter(Boolean)) || (line ? [line] : [])
+  const capFont = (px) => `800 ${px}px 'Noto Sans Ethiopic', 'Abyssinica SIL', system-ui, sans-serif`
+  const capY = caption.length > 1 ? [S * 0.935, S * 0.975] : [S * 0.965]
+  caption.slice(0, 2).forEach((cap, i) => {
     g.fillStyle = '#7c3d00'
-    let size = S * 0.042
-    g.font = `800 ${size}px system-ui, sans-serif`
-    while (g.measureText(line).width > S * 0.9 && size > S * 0.028) {
+    let size = S * 0.036
+    g.font = capFont(size)
+    while (g.measureText(cap).width > S * 0.92 && size > S * 0.024) {
       size -= S * 0.002
-      g.font = `800 ${size}px system-ui, sans-serif`
+      g.font = capFont(size)
     }
-    g.fillText(line, S / 2, S * 0.965)
-  }
+    g.fillText(cap, S / 2, capY[i])
+  })
 }
 
 /** Share the voice postcard: the card PNG plus the recorded voice as a WAV,
     handed together to the share sheet (a picture + a voice note is the native
     WhatsApp idiom). Falls back to sharing just the voice, then to downloading
     both. Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
-export async function shareVoicePostcard({ voice, heading, line, worn = [], text = '' } = {}) {
+export async function shareVoicePostcard({ voice, heading, line, lines, worn = [], text = '' } = {}) {
   if (!voice) return 'unsupported'
   const S = 1080
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = S
   const g = canvas.getContext('2d')
-  if (g) drawVoicePostcard(g, S, { heading, line, worn })
+  if (g) drawVoicePostcard(g, S, { heading, line, lines, worn })
   const png = g ? await toBlob(canvas) : null
 
   if (isNativePlatform()) {

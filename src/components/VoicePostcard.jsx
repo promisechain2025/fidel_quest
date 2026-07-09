@@ -22,17 +22,18 @@ const RECORD_ENABLED = import.meta.env?.VITE_FAMILY_VOICE_RECORD !== 'false'
 
 /* What the RECIPIENT reads is written in the family's heritage language -
    the learning pack (Amharic or Tigrinya) - regardless of the child's UI
-   language. Gashe in Addis or Ayay in Asmara reads their own language, even
-   when the child's app runs in English or German. Respectful plural forms
-   (ያዳምጡ / ስምዑ), since the recipient is an elder. */
+   language. The child speaks to Gashe / Ayay in the first person: "I am
+   learning the fidel to know my culture and my roots - may your
+   encouragement never leave me." Text provided by the product owner. */
 const RECIPIENT_STRINGS = {
   am: {
-    line: (name) => (name ? `${name} ፊደል እየተማረ ነው — ያዳምጡ!` : 'ፊደል እየተማርኩ ነው — ያዳምጡ!'),
-    shareText: 'ከፊደል ኵዌስት የድምፅ ፖስትካርድ — ያዳምጡ!',
+    card: ['ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው።', 'ብርታትህ ኣይለየኝ።'],
+    shareText: 'ጋሼ ባህሌናና ሕብረተሰቤን ለማወቅ ፊደላት እየተማርኩ ነው። ብርታትህ ኣይለየኝ።',
   },
   ti: {
-    line: (name) => (name ? `${name} ፊደል ይመሃር ኣሎ — ስምዑ!` : 'ፊደል እመሃር ኣለኹ — ስምዑ!'),
-    shareText: 'ካብ ፊደል ኵዌስት ናይ ድምጺ ፖስትካርድ — ስምዑ!',
+    card: ['ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ።', 'መትብባዕኹም ኣይፈለየኒ'],
+    // The smiling-face emoji is part of the authored message.
+    shareText: 'ኣያይ ባሕለይን መበቆለይን ንምፍላጥ ትግርኛ ፊደል እምሃር ኣለኹ። መትብባዕኹም ኣይፈለየኒ \u{1F60A}',
   },
 }
 
@@ -96,9 +97,10 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
     const result = await shareVoicePostcard({
       voice: clip,
       heading: 'ሰላም!',
-      line: r.line(name),
+      lines: r.card,
       worn,
-      text: r.shareText,
+      // Sign the message with the child's nickname when one is set.
+      text: name ? `${r.shareText} — ${name}` : r.shareText,
     })
     if (result === 'shared') { setPhase('sent'); setToast(t('pcShared', 'Postcard sent!')) }
     else if (result === 'downloaded') { setPhase('sent'); setToast(t('pcSaved', 'Saved! Share it anywhere.')) }
