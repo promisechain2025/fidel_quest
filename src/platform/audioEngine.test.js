@@ -145,21 +145,94 @@ describe('AudioEngine', () => {
     expect(engine.resolve('letters/zz-9').type).toBe('chime')
   })
 
-  it('memoizes a failed key and emits the missing event', async () => {
-    const fetchImpl = vi.fn().mockImplementation((url) =>
+  // A minimal AudioContext: enough for ensureBuffer to reach the fetch and
+  // for the chime fallback to run without throwing.
+  class FakeCtx {
+    constructor() { this.state = 'running'; this.resumes = 0; this.currentTime = 0; this.destination = {} }
+    resume() { this.resumes += 1; this.state = 'running'; return Promise.resolve() }
+    decodeAudioData() { return Promise.reject(new Error('undecodable')) }
+    createGain() { const n = { gain: { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, connect: () => n }; return n }
+    createOscillator() { const n = { type: '', frequency: { value: 0 }, connect: () => n, start() {}, stop() {} }; return n }
+  }
+  const manifested = (clipResponse) =>
+    vi.fn().mockImplementation((url) =>
       url.endsWith('manifest.json')
         ? Promise.resolve({ ok: true, json: async () => ({ coverage: ['letters/ha-1'] }) })
-        : Promise.resolve({ ok: false, status: 404 }),
+        : clipResponse(),
     )
-    const engine = new AudioEngine({ fetchImpl, getMemory: () => null })
-    // jsdom has no AudioContext: getCtx() is null, so buffer path throws,
-    // HTMLAudio path is stubbed out by tests' Audio absence -> chime path.
+
+  it('memoizes a PERMANENT miss (404) and emits the missing event', async () => {
+    vi.stubGlobal('AudioContext', FakeCtx)
     vi.stubGlobal('Audio', undefined)
+    const engine = new AudioEngine({ fetchImpl: manifested(() => Promise.resolve({ ok: false, status: 404 })), getMemory: () => null })
     const missing = []
     engine.on('missing', (m) => missing.push(m.key))
     await engine.play('letters/ha-1', { enabled: true })
     expect(missing).toEqual(['letters/ha-1'])
     expect(engine.resolve('letters/ha-1').type).toBe('chime')
+    vi.unstubAllGlobals()
+  })
+
+  it('does NOT memoize transient failures (network blip, 5xx, no context)', async () => {
+    // Network rejection with a working context.
+    vi.stubGlobal('AudioContext', FakeCtx)
+    vi.stubGlobal('Audio', undefined)
+    let engine = new AudioEngine({ fetchImpl: manifested(() => Promise.reject(new TypeError('offline'))), getMemory: () => null })
+    await engine.play('letters/ha-1', { enabled: true })
+    expect(engine.missing.size).toBe(0)
+    expect(engine.resolve('letters/ha-1').type).toBe('file') // retried next play
+
+    // Server hiccup (500).
+    engine = new AudioEngine({ fetchImpl: manifested(() => Promise.resolve({ ok: false, status: 500 })), getMemory: () => null })
+    await engine.play('letters/ha-1', { enabled: true })
+    expect(engine.missing.size).toBe(0)
+    vi.unstubAllGlobals()
+
+    // No AudioContext at all (the state a suspended/broken context leaves
+    // behind): the letter must not be poisoned for the session.
+    vi.stubGlobal('Audio', undefined)
+    engine = new AudioEngine({ fetchImpl: manifested(() => Promise.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) })), getMemory: () => null })
+    await engine.play('letters/ha-1', { enabled: true })
+    expect(engine.missing.size).toBe(0)
+    expect(engine.resolve('letters/ha-1').type).toBe('file')
+    vi.unstubAllGlobals()
+  })
+
+  it('a successful HTMLAudio fallback keeps the key voiced (not memoized)', async () => {
+    vi.stubGlobal('AudioContext', FakeCtx)
+    vi.stubGlobal('Audio', class { constructor() { this.play = () => Promise.resolve() } addEventListener() {} })
+    const engine = new AudioEngine({ fetchImpl: manifested(() => Promise.resolve({ ok: false, status: 404 })), getMemory: () => null })
+    const missing = []
+    engine.on('missing', (m) => missing.push(m.key))
+    await engine.play('letters/ha-1', { enabled: true })
+    expect(missing).toEqual([])
+    expect(engine.resolve('letters/ha-1').type).toBe('file')
+    vi.unstubAllGlobals()
+  })
+
+  it('getCtx wakes an interrupted context (iOS backgrounding)', () => {
+    vi.stubGlobal('AudioContext', FakeCtx)
+    const engine = new AudioEngine({ fetchImpl: vi.fn(), getMemory: () => null })
+    const ctx = engine.getCtx()
+    ctx.state = 'interrupted'
+    engine.getCtx()
+    expect(ctx.resumes).toBeGreaterThanOrEqual(1)
+    vi.unstubAllGlobals()
+  })
+
+  it('installUnlock resumes a suspended context on the next gesture and on foreground', () => {
+    const engine = new AudioEngine({ fetchImpl: vi.fn(), getMemory: () => null })
+    engine.ctx = { state: 'suspended', resumes: 0, resume() { this.resumes += 1; return Promise.resolve() } }
+    engine.installUnlock(window)
+    engine.installUnlock(window) // idempotent
+    window.dispatchEvent(new Event('pointerdown'))
+    expect(engine.ctx.resumes).toBe(1)
+    engine.ctx.state = 'interrupted'
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(engine.ctx.resumes).toBe(2)
+    engine.ctx.state = 'running'
+    window.dispatchEvent(new Event('pointerdown'))
+    expect(engine.ctx.resumes).toBe(2) // already running: no churn
   })
 
   it('does nothing when disabled', async () => {

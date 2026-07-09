@@ -133,11 +133,40 @@ export class AudioEngine {
     if (!Ctor) return null
     try {
       this.ctx = this.ctx || new Ctor()
-      if (this.ctx.state === 'suspended') this.ctx.resume()
+      // 'suspended' is the autoplay-policy state; iOS also parks a context in
+      // 'interrupted' after backgrounding or a phone call. Try to wake both.
+      if (this.ctx.state !== 'running' && this.ctx.state !== 'closed') {
+        try { this.ctx.resume()?.catch?.(() => {}) } catch { /* not resumable here */ }
+      }
       return this.ctx
     } catch {
       return null
     }
+  }
+
+  /**
+   * The context can be re-suspended by the OS ANY number of times (leave the
+   * app, take a call, lock the screen - "back and forth"), and on iOS
+   * resume() only succeeds INSIDE a user gesture. The app plays audio from
+   * effects and timers, never from the tap handler itself, so without this
+   * hook a suspended context stays silent for the rest of the session.
+   * Keep session-long listeners: any tap/keypress and every return to the
+   * foreground re-wakes the context. Idempotent.
+   */
+  installUnlock(target = typeof window !== 'undefined' ? window : null) {
+    if (!target || this.unlockInstalled) return
+    this.unlockInstalled = true
+    const kick = () => {
+      const ctx = this.ctx
+      if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') {
+        try { ctx.resume()?.catch?.(() => {}) } catch { /* keep listening */ }
+      }
+    }
+    target.addEventListener('pointerdown', kick, { capture: true, passive: true })
+    target.addEventListener('keydown', kick, { capture: true, passive: true })
+    target.document?.addEventListener?.('visibilitychange', () => {
+      if (target.document.visibilityState === 'visible') kick()
+    })
   }
 
   /** Load the coverage manifest once; absence is a supported state. */
@@ -174,18 +203,30 @@ export class AudioEngine {
     })
   }
 
+  /**
+   * Failures are classified: TRANSIENT (no/suspended context, a network
+   * blip, a 5xx) must be retried on the next play - memoizing them would
+   * leave a letter voiceless for the whole session after one bad moment.
+   * Only PERMANENT misses (a 404: the clip genuinely does not exist, or a
+   * corrupt file that cannot decode) go into `missing`.
+   */
   async ensureBuffer(src) {
     if (this.buffers.has(src)) return this.buffers.get(src)
     const ctx = this.getCtx()
-    if (!ctx) throw new Error('no AudioContext')
+    if (!ctx) throw Object.assign(new Error('no AudioContext'), { transient: true })
     const promise = (async () => {
       let bytes
       if (src.startsWith('data:')) {
         const b64 = src.slice(src.indexOf(',') + 1)
         bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer
       } else {
-        const res = await this.fetchImpl(src)
-        if (!res.ok) throw new Error(`${res.status}`)
+        let res
+        try {
+          res = await this.fetchImpl(src)
+        } catch {
+          throw Object.assign(new Error('network'), { transient: true })
+        }
+        if (!res.ok) throw Object.assign(new Error(`${res.status}`), { transient: res.status !== 404 })
         bytes = await res.arrayBuffer()
       }
       const buffer = await ctx.decodeAudioData(bytes)
@@ -235,11 +276,12 @@ export class AudioEngine {
       node.onended = () => {
         if (this.current?.source === node) this.current = null
       }
-    } catch {
-      // Decode/fetch failed: memoize and fall back gracefully — first to a
-      // plain HTMLAudio attempt (covers no-decode environments), then chime.
-      this.missing.add(key)
-      this.emit('missing', { key, src: source.src })
+    } catch (err) {
+      // Buffer path failed: fall back gracefully — first to a plain
+      // HTMLAudio attempt (covers no-decode environments and a broken
+      // AudioContext), then chime. A key is memoized as missing ONLY when
+      // the miss is permanent and nothing else voiced it; transient
+      // failures retry on the next play.
       if (source.type === 'file' && typeof Audio !== 'undefined') {
         try {
           const a = new Audio(source.src)
@@ -250,6 +292,10 @@ export class AudioEngine {
           /* fall through to chime */
         }
       }
+      if (!err?.transient) {
+        this.missing.add(key)
+        this.emit('missing', { key, src: source.src })
+      }
       this.playChime(chime)
     }
   }
@@ -259,7 +305,11 @@ export class AudioEngine {
     this.ensureManifest().then(() => {
       for (const key of keys) {
         const source = this.resolve(key)
-        if (source.type !== 'chime') this.ensureBuffer(source.src).catch(() => this.missing.add(key))
+        if (source.type !== 'chime') {
+          this.ensureBuffer(source.src).catch((e) => {
+            if (!e?.transient) this.missing.add(key)
+          })
+        }
       }
     })
   }
@@ -349,8 +399,11 @@ export class AudioEngine {
   }
 }
 
-/** App-wide singleton. Letter keys live under letters/, words under words/. */
+/** App-wide singleton. Letter keys live under letters/, words under words/.
+   The gesture/foreground unlock is armed for the whole session so a context
+   the OS suspends (backgrounding, calls) re-wakes on the next tap. */
 export const audio = new AudioEngine()
+audio.installUnlock()
 
 /* Compat wrappers matching the historical per-mode call signatures. */
 export function playForm(form, enabled = true) {

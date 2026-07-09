@@ -128,6 +128,16 @@ back to a new player.
       assignment link (same tab): it must route to the join/assignment
       screen, not be ignored.
 
+## Audio resilience
+- [ ] **Back-and-forth audio** — start a lesson (voice plays), switch to
+      another app (or take a call / lock the screen), come back, and tap
+      anything: the voice must return on that tap. Repeat several times,
+      including on iPhone (iOS is the platform that parks audio in an
+      "interrupted" state).
+- [ ] **Flaky network** — with a poor connection, if a letter fails to load
+      once it should be voiced again on a later attempt once the network
+      recovers (chime is only permanent for genuinely missing recordings).
+
 ## Learning flow polish
 - [ ] **Feed Anbessa** (Echo/Shuffle) — tapping a wrong letter flashes it RED
       and **re-voices the asked letter** (not the tapped one). Anbessa still
