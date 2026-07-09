@@ -29,6 +29,8 @@ import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
+import DailyHunt from './components/DailyHunt'
+import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
 import Closet from './components/Closet'
@@ -804,6 +806,8 @@ export default function FidelQuestApp() {
   // Daily streak: count today's visit once when the app opens.
   const [streak, setStreak] = useState(0)
   useEffect(() => { setStreak(bumpStreak().count) }, [])
+  // Daily Letter Hunt: one seeded hunt per calendar day.
+  const [huntDone, setHuntDone] = useState(() => huntDoneToday())
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
 
@@ -944,6 +948,21 @@ export default function FidelQuestApp() {
                 onGift={openGift}
                 justEarned={justEarned}
                 streak={streak}
+                huntDone={huntDone}
+                onHunt={() => setScreen({ name: 'hunt' })}
+              />
+            </Screen>
+          )}
+          {screen.name === 'hunt' && (
+            <Screen key="hunt">
+              <DailyHunt
+                seed={daySeed()}
+                forms={scopedBaseForms(getScope(), journey).map(formOf).filter(Boolean)}
+                soundOn={soundOn}
+                treasureReady={giftAvailable(gift, today)}
+                onTreasure={() => { goBack(); openGift() }}
+                onDone={() => { markHuntDone(); setHuntDone(true); track('hunt_complete') }}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -1388,7 +1407,7 @@ function serpentineRows(nodes, cols) {
   return rows
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0 }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -1477,6 +1496,31 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Daily Letter Hunt banner: today's comeback game, right under the
+         header. Pulses until played; flips to a quiet "done" chip after. */}
+      {onHunt && (
+        <motion.button
+          type="button"
+          onClick={onHunt}
+          animate={huntDone ? {} : { scale: [1, 1.015, 1] }}
+          transition={{ duration: 1.6, repeat: Infinity }}
+          className={`chunk mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-3xl px-4 py-3 text-left ${FOCUS}`}
+          style={huntDone
+            ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }
+            : { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--accent)' }}
+        >
+          <span className="geez flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl font-black" style={{ background: 'rgba(255,255,255,0.25)', border: huntDone ? '2px solid var(--line)' : 'none', color: huntDone ? 'var(--muted)' : '#fff' }} aria-hidden="true">
+            {huntDone ? '✓' : '?'}
+          </span>
+          <span className="min-w-0">
+            <span className="block text-base font-black leading-tight" style={huntDone ? { color: 'var(--ink)' } : {}}>{t('huntShort', 'Daily Hunt')}</span>
+            <span className="block truncate text-sm font-bold" style={{ color: huntDone ? 'var(--muted)' : 'rgba(255,255,255,0.9)' }}>
+              {huntDone ? t('huntDoneChip', 'Done today — new hunt tomorrow!') : t('huntGo', 'Jibby hid today’s letters — find them!')}
+            </span>
+          </span>
+        </motion.button>
+      )}
 
       <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
         {serpentineRows(JOURNEY, PATH_COLS).map((row, r) => (

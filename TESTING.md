@@ -28,6 +28,16 @@ back to a new player.
       import + playback still work, no mic permission is requested.
 
 ## Retention
+- [ ] **Daily Letter Hunt** — the blue banner under the home header pulses
+      until played. Jibby hides 5 of the child's letters behind bushes/rocks;
+      Kokeb calls a sound; tapping the right letter pops it out (tapping the
+      bush counts too — big hit target). A wrong tap ducks the letter and
+      Jibby smirks; the same call repeats. Finishing shows "Open the treasure"
+      (the daily gift) and the banner flips to "Done today". Next calendar day:
+      a brand-new hunt (new letters, new hiding spots).
+- [ ] **Hunt uses the child's letters** — with "My letters" scope it only hides
+      learned families (first family for a brand-new player); "All letters"
+      widens it. Wrong answers feed Star Practice's trouble list.
 - [ ] **Streak** — a flame + number shows in the home header. Open the app on
       two consecutive days: the count goes up. Skip a day: it resets to 1 (best
       is kept).
