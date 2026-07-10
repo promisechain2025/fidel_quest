@@ -156,26 +156,43 @@ export class AudioEngine {
   installUnlock(target = typeof window !== 'undefined' ? window : null) {
     if (!target || this.unlockInstalled) return
     this.unlockInstalled = true
-    const kick = () => {
-      const ctx = this.ctx
-      if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') {
-        try {
-          const resumed = ctx.resume()
-          // A clip requested while the context was still locked never sounded
-          // (autoplay policy). Replay it on THIS tap so the child hears the
-          // letter now instead of silence-then-confusion.
-          Promise.resolve(resumed).then(() => {
-            const b = this.lastBlocked
-            if (b && Date.now() - b.at < 30000) {
-              this.lastBlocked = null
-              this.play(b.key, b.opts)
-            }
-          }).catch(() => {})
-        } catch { /* keep listening */ }
+    const replayBlocked = () => {
+      const b = this.lastBlocked
+      if (b && Date.now() - b.at < 30000) {
+        this.lastBlocked = null
+        this.play(b.key, b.opts)
       }
     }
-    target.addEventListener('pointerdown', kick, { capture: true, passive: true })
-    target.addEventListener('keydown', kick, { capture: true, passive: true })
+    const kick = () => {
+      // Create the context INSIDE the gesture if it does not exist yet -
+      // iOS only trusts contexts born or resumed within real interaction.
+      const ctx = this.ctx || this.getCtx()
+      if (!ctx || ctx.state === 'closed') return
+      if (ctx.state !== 'running') {
+        // The canonical iOS unlock: start a silent one-sample buffer inside
+        // the gesture. resume() alone is not honored on every iOS version.
+        try {
+          const s = ctx.createBufferSource()
+          s.buffer = ctx.createBuffer(1, 1, 22050)
+          s.connect(ctx.destination)
+          s.start(0)
+        } catch { /* best-effort */ }
+        try {
+          // A clip requested while the context was still locked never
+          // sounded (autoplay policy). Replay it on THIS tap so the child
+          // hears the letter now instead of silence-then-confusion.
+          Promise.resolve(ctx.resume()).then(replayBlocked).catch(() => {})
+        } catch { /* keep listening */ }
+      } else {
+        replayBlocked()
+      }
+    }
+    // pointerdown alone is NOT enough: iOS Safari historically honors the
+    // unlock only at the END of a gesture (touchend/click). Listen to all
+    // of them - kick is idempotent and cheap.
+    for (const ev of ['pointerdown', 'touchend', 'click', 'keydown']) {
+      target.addEventListener(ev, kick, { capture: true, passive: true })
+    }
     target.document?.addEventListener?.('visibilitychange', () => {
       if (target.document.visibilityState === 'visible') kick()
     })
