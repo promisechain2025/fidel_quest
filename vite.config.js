@@ -48,7 +48,11 @@ export default defineConfig({
         // this the SW serves the game shell for /review after the first visit
         // (it "loads once, then stops"). Let those navigations hit the real
         // precached page / network instead.
-        navigateFallbackDenylist: [/^\/review\/?/],
+        // ...and any URL that looks like a FILE (has an extension) or lives
+        // under /audio/ - typing a clip URL into the address bar must return
+        // the clip (or an honest 404), never silently render the app shell.
+        // This masked "are the voice files deployed?" checks on real phones.
+        navigateFallbackDenylist: [/^\/review\/?/, /^\/audio\//, /\.[a-z0-9]{2,5}$/i],
         // Audio clips are optional drop-in assets (see the header comment in
         // src/pages/AmharicFidelGame.jsx); cache them at runtime rather than
         // precaching files that may not exist yet.
