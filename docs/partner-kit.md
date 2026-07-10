@@ -68,13 +68,8 @@ choose to send. Five steps:
    lays itself out as weeks, each with its letters and due date on the
    Ethiopian calendar.
 4. **Teach and assign from the week row.** *TV lesson* puts that week's
-   letters on a TV — chant the orders together (turn on **Say after me** so
-   the app pauses for the class to repeat) or run the **Quiz**, where every
-   letter has a number label so children answer "three!" and you tap it.
-   Your join-QR sits in the corner for latecomers. To get it on the TV:
-   iPhone/iPad Control Center → Screen Mirroring; Android swipe down →
-   Cast / Smart View; or (most reliable in a hall) an HDMI cable — or open
-   the app in the smart TV's own browser.
+   letters on a TV (cast or HDMI) — chant the orders together or run the
+   shout-out **Quiz**, with your join-QR in the corner for latecomers.
    *Send homework* shares the week's assignment link — every child gets the
    same questions, strictly limited to that week's letters.
 5. **Collect results.** When a child finishes, the family sends you back a
