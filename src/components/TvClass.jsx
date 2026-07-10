@@ -33,7 +33,7 @@ import { QrPanel } from './TeacherMode'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const STEP_MS = 2600
-const SAY_AFTER_MS = STEP_MS + 2000 // the normal beat plus two seconds for the class to chant back
+const SAY_AFTER_MS = STEP_MS + 1000 // clip (~1s) + the app's own beat for the class to chant back
 const INK = '#f6f2e8'
 const BOARD = '#141419'
 const GOLD = '#e8b33c'
@@ -53,13 +53,16 @@ function JoinCorner({ joinUrl }) {
 
 /* ── chant mode ── */
 
-function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
-  const [pick, setPick] = useState(false)
+function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) {
+  // Opened without a week scope (whole abugida): make the teacher pick
+  // today's letters before anything chants or quizzes.
+  const [pick, setPick] = useState(chooseFirst)
   const scoped = FIDEL_FAMILIES.filter((f) => sel.has(f.id))
   const [fam, setFam] = useState(0)
   const [order, setOrder] = useState(1)
   const [dir, setDir] = useState(1) // the chant direction: forward, then back
   const [echo, setEcho] = useState(false) // the turn letters get a second beat
+  const [beat, setBeat] = useState(0) // bumped when the SAME letter must sound again
   const [auto, setAuto] = useState(true)
   const [sayAfter, setSayAfter] = useState(false)
   const [yourTurn, setYourTurn] = useState(false)
@@ -67,23 +70,20 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
   const orders = family ? Array.from(family.chars) : []
   const form = family ? formOf(`${family.id}-${order}`) : null
 
-  // Say the letter on every change - and AGAIN on the echo beat (the letter
-  // itself does not change at a turn, so [form] alone would stay silent).
+  // ONE effect owns the audio: it fires when the letter changes AND when
+  // `beat` bumps - the echo turns and the single-family restart keep the same
+  // letter on screen, so [form] alone would stay silent there.
   useEffect(() => {
     if (form) playForm(form, true)
-  }, [form])
-  useEffect(() => {
-    if (echo && form) playForm(form, true)
-  }, [echo]) // eslint-disable-line react-hooks/exhaustive-deps
-  // In say-after-me, cue the class to repeat once the clip has had a moment
-  // to land. Separate from the play effect so toggling the mode mid-letter
-  // cues immediately instead of waiting for the next letter.
+  }, [form, beat])
+  // In say-after-me, cue the class right as the clip finishes. Separate from
+  // the play effect so toggling the mode mid-letter cues immediately.
   useEffect(() => {
     setYourTurn(false)
     if (!form || !sayAfter) return undefined
-    const cue = setTimeout(() => setYourTurn(true), 1500)
+    const cue = setTimeout(() => setYourTurn(true), 1000)
     return () => clearTimeout(cue)
-  }, [form, sayAfter, echo])
+  }, [form, sayAfter, beat])
 
   // Manual stepping (arrows/remote): plain linear movement.
   const step = useCallback((d) => {
@@ -105,12 +105,15 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
     if (!scoped.length) return
     if (dir === 1) {
       if (order < orders.length) { setOrder(order + 1); return }
-      if (!echo) { setEcho(true); return } // say the LAST letter again
+      if (!echo) { setEcho(true); setBeat((b) => b + 1); return } // say the LAST letter again
       setEcho(false); setDir(-1); setOrder(orders.length - 1); return
     }
     if (order > 1) { setOrder(order - 1); return }
-    if (!echo) { setEcho(true); return } // say the FIRST letter again
+    if (!echo) { setEcho(true); setBeat((b) => b + 1); return } // say the FIRST letter again
     setEcho(false); setDir(1); setFam((f) => (f + 1) % scoped.length); setOrder(1)
+    // with a single family selected, the restart lands on the same letter -
+    // bump the beat so it still sounds
+    if (scoped.length === 1) setBeat((b) => b + 1)
   }, [dir, echo, order, orders.length, scoped.length])
 
   const jumpFamily = useCallback((d) => {
@@ -128,7 +131,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
     if (!auto || pick || !form) return undefined
     const id = setTimeout(() => chantStep(), sayAfter ? SAY_AFTER_MS : STEP_MS)
     return () => clearTimeout(id)
-  }, [auto, pick, sayAfter, fam, order, dir, echo, chantStep, form])
+  }, [auto, pick, sayAfter, fam, order, dir, echo, beat, chantStep, form])
 
   // TV remotes and keyboards: arrows step, Enter/Space toggles the chant.
   useEffect(() => {
@@ -171,7 +174,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-        <p key={`${family?.id}-${order}`} className="geez font-black leading-none" style={{ fontSize: 'min(40vh, 40vw)', textShadow: '0 10px 0 rgba(0,0,0,0.35)' }}>
+        <p key={`${family?.id}-${order}-${beat}`} className="geez fq-tv-pop font-black leading-none" style={{ fontSize: 'min(40vh, 40vw)', textShadow: '0 10px 0 rgba(0,0,0,0.35)' }}>
           {form?.char}
         </p>
         <p className="mono mt-1 text-4xl font-black" style={{ color: GOLD }}>
@@ -332,6 +335,7 @@ function Quiz({ familyIds, joinUrl, onBack }) {
 
 export default function TvClass({ onBack, joinUrl = null, families = null }) {
   const scopeIds = families?.length ? families : FIDEL_FAMILIES.map((f) => f.id)
+  const chooseFirst = !families?.length
   const [mode, setMode] = useState('chant') // chant | quiz
   // ONE selection drives both modes: the teacher picks today's letters in
   // the chant chooser, and the Quiz asks exactly those. The teacher decides
@@ -362,7 +366,7 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
         </button>
       </div>
       {mode === 'chant'
-        ? <Chant scopeIds={scopeIds} sel={sel} setSel={setSel} joinUrl={joinUrl} onBack={onBack} />
+        ? <Chant scopeIds={scopeIds} sel={sel} setSel={setSel} joinUrl={joinUrl} onBack={onBack} chooseFirst={chooseFirst} />
         : <Quiz familyIds={selectedIds.length ? selectedIds : scopeIds} joinUrl={joinUrl} onBack={onBack} />}
     </div>
   )

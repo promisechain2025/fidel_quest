@@ -587,7 +587,13 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmTvHint', 'Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner.')}
               </p>
-              <button type="button" onClick={() => onTv(null)} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              <button type="button" onClick={() => {
+                // Scope the board to what the class has LEARNED so far: every
+                // term-plan week up to this one. Without a plan the board opens
+                // on its letter chooser so the teacher picks first.
+                const plan = cls?.plan || null
+                onTv(plan ? termWeeks(plan.perWeek).slice(0, currentWeekIndex(plan) + 1).flat() : null)
+              }} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                 <Tv className="h-5 w-5" aria-hidden="true" /> {t('tmTvOpen', 'Open TV display')}
               </button>
             </SectionCard>

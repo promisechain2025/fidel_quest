@@ -142,7 +142,11 @@ now does a full wipe too - journey, islands, classic stars, streak, hunt.
       (ሀ ሁ … ሆ, then ህ ሄ … ሀ) before moving to the next family. **Say after me** toggle: the app says the letter, shows
       "Your turn - say it!", holds ~5s for the class to chant, then moves on.
 - [ ] TV **Quiz** tab — asks ONLY the letters the teacher selected (the
-      teacher decides when the class is ready by switching tabs). Each
+      teacher decides when the class is ready by switching tabs). Opened
+      from a week row it is that week's families; from Teacher tools ->
+      "Open TV display" it is every week learned so far this term; with no
+      term plan the board opens on the letter chooser first, so nothing
+      un-taught can appear. Each
       option carries a big **number label 1-4**: the teacher asks "which
       one?", the class answers by number, the teacher taps it (keyboard 1-4
       works too). Right = green + advance, wrong = red, then reveal.
