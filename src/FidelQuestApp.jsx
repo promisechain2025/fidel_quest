@@ -1183,6 +1183,7 @@ export default function FidelQuestApp() {
                 noDemo
                 practiceQueue={screen.queue}
                 onFinish={() => { markWarmupDone(); setWarmupDone(true); track('warmup'); goBack() }}
+                onQuit={goBack}
                 onReplay={startWarmup}
               />
             </Screen>
@@ -1606,7 +1607,7 @@ function PlanChip({ step, done, label, onClick, pulse }) {
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
         {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step}
       </span>
-      <span className={done ? 'line-through' : ''}>{label}</span>
+      <span>{label}</span>
     </motion.button>
   )
 }
@@ -1782,10 +1783,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         )}
       </AnimatePresence>
 
-      {/* The living Ethiopian calendar: today's Ethiopic date, always visible
-         so the family's calendar is part of the child's day. On a holiday it
-         becomes the celebration banner with the traditional greeting. */}
-      {ethioDate && (holiday ? (
+      {/* The living Ethiopian calendar shows itself only when it matters: on
+         a holiday the celebration banner appears with the traditional
+         greeting and the Ethiopic date. Ordinary days keep the home clean. */}
+      {ethioDate && holiday && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1797,12 +1798,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           <p className="text-sm font-bold text-white/95">{holidayName(holiday.id)}</p>
           <p className="geez mt-0.5 text-xs font-bold text-white/85">{ethioDate.geez}</p>
         </motion.div>
-      ) : (
-        <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }} aria-label={`${t('calToday', 'Today')}: ${ethioDate.latin}`}>
-          <span className="geez">{t('calToday', 'Today')} · {ethioDate.geez}</span>
-          <span className="mono ml-1.5 opacity-75">({ethioDate.latin})</span>
-        </p>
-      ))}
+      )}
 
       {/* Today's plan: the coach's guide as a slim strip - one horizontal
          row of numbered chips (warm-up first, teacher's assignment, today's
@@ -2396,7 +2392,7 @@ function machineReducer(ctx, event) {
   return transition(ctx, event).next
 }
 
-function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null, noDemo = false, incoming = null }) {
+function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, practiceQueue = null, noDemo = false, incoming = null }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
   const isPractice = level.id === 'practice'
   const isChallenge = !!incoming
@@ -2536,7 +2532,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-44 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={() => onFinish(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">

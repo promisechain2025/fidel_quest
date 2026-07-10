@@ -24,7 +24,7 @@
    ========================================================================== */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Grid3X3, Mic, Pause, Play, Volume2, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Grid3X3, Mic, Pause, Play, Volume2, X } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, INDEXES } from '../platform/ethiopic'
 import { playForm, playEffect } from '../platform/audioEngine'
@@ -76,16 +76,16 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
   // `beat` bumps - the echo turns and the single-family restart keep the same
   // letter on screen, so [form] alone would stay silent there.
   useEffect(() => {
-    if (form) playForm(form, true)
-  }, [form, beat])
+    if (form && !pick) playForm(form, true)
+  }, [form, beat, pick])
   // In say-after-me, cue the class right as the clip finishes. Separate from
   // the play effect so toggling the mode mid-letter cues immediately.
   useEffect(() => {
     setYourTurn(false)
-    if (!form || !sayAfter) return undefined
+    if (!form || !sayAfter || pick) return undefined
     const cue = setTimeout(() => setYourTurn(true), 1000)
     return () => clearTimeout(cue)
-  }, [form, sayAfter, beat])
+  }, [form, sayAfter, beat, pick])
 
   // Manual stepping (arrows/remote): plain linear movement.
   const step = useCallback((d) => {
@@ -222,6 +222,9 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
               <button type="button" onClick={() => setSel(new Set(scopeIds))} className={`rounded-2xl px-4 py-2 text-lg font-black ${FOCUS}`} style={{ background: DIM, color: INK, outlineColor: GOLD }}>
                 {t('tvAll', 'All')}
               </button>
+              <button type="button" onClick={() => setSel(new Set())} className={`rounded-2xl px-4 py-2 text-lg font-black ${FOCUS}`} style={{ background: DIM, color: INK, outlineColor: GOLD }}>
+                {t('tvNone', 'None')}
+              </button>
               <button type="button" disabled={sel.size === 0} onClick={() => { setPick(false); setFam(0); setOrder(1) }} className={`rounded-2xl px-4 py-2 text-lg font-black ${FOCUS}`} style={{ background: sel.size ? GOLD : DIM, color: sel.size ? BOARD : '#777', outlineColor: INK }}>
                 {t('tvDone', 'Done')}
               </button>
@@ -231,9 +234,14 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
             {FIDEL_FAMILIES.filter((f) => scopeIds.includes(f.id)).map((f) => {
               const on = sel.has(f.id)
               return (
-                <button key={f.id} type="button" onClick={() => toggleFamily(f.id)} aria-pressed={on} className={`geez flex aspect-square items-center justify-center rounded-2xl text-4xl font-black ${FOCUS}`} style={on
+                <button key={f.id} type="button" onClick={() => toggleFamily(f.id)} aria-pressed={on} className={`geez relative flex aspect-square items-center justify-center rounded-2xl text-4xl font-black ${FOCUS}`} style={on
                   ? { background: GOLD, color: BOARD, outlineColor: INK }
                   : { background: DIM, color: INK, opacity: 0.55, outlineColor: GOLD }}>
+                  {on && (
+                    <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: BOARD, color: GOLD }} aria-hidden="true">
+                      <Check className="h-4 w-4" strokeWidth={4} />
+                    </span>
+                  )}
                   {Array.from(f.chars)[0]}
                 </button>
               )
@@ -342,7 +350,7 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
   // ONE selection drives both modes: the teacher picks today's letters in
   // the chant chooser, and the Quiz asks exactly those. The teacher decides
   // when the class is ready by switching tabs - no automatic gating.
-  const [sel, setSel] = useState(() => new Set(scopeIds))
+  const [sel, setSel] = useState(() => (chooseFirst ? new Set() : new Set(scopeIds)))
   const selectedIds = scopeIds.filter((id) => sel.has(id))
 
   // Best-effort fullscreen on entry (a projection wants no browser chrome).
@@ -355,13 +363,16 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: BOARD, color: INK }}>
       <div className="flex items-center justify-between px-6 pt-4" style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-2" role="tablist">
-          {[['chant', t('tvChant', 'Chant')], ['quiz', t('tvQuiz', 'Quiz')]].map(([id, label]) => (
-            <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => setMode(id)} className={`rounded-2xl px-4 py-2 text-lg font-black ${FOCUS}`} style={mode === id
-              ? { background: GOLD, color: BOARD, outlineColor: INK }
-              : { background: DIM, color: INK, outlineColor: GOLD }}>
-              {label}
-            </button>
-          ))}
+          {[['chant', t('tvChant', 'Chant')], ['quiz', t('tvQuiz', 'Quiz')]].map(([id, label]) => {
+            const disabled = id === 'quiz' && selectedIds.length === 0
+            return (
+              <button key={id} type="button" role="tab" aria-selected={mode === id} disabled={disabled} onClick={() => setMode(id)} className={`rounded-2xl px-4 py-2 text-lg font-black ${FOCUS}`} style={mode === id
+                ? { background: GOLD, color: BOARD, outlineColor: INK }
+                : { background: DIM, color: INK, opacity: disabled ? 0.4 : 1, outlineColor: GOLD }}>
+                {label}
+              </button>
+            )
+          })}
         </div>
         <button type="button" onClick={onBack} aria-label={t('tvExit', 'Exit TV display')} className={`flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: DIM, outlineColor: INK }}>
           <X className="h-6 w-6" aria-hidden="true" />
@@ -369,7 +380,7 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
       </div>
       {mode === 'chant'
         ? <Chant scopeIds={scopeIds} sel={sel} setSel={setSel} joinUrl={joinUrl} onBack={onBack} chooseFirst={chooseFirst} />
-        : <Quiz familyIds={selectedIds.length ? selectedIds : scopeIds} joinUrl={joinUrl} onBack={onBack} />}
+        : <Quiz familyIds={selectedIds} joinUrl={joinUrl} onBack={onBack} />}
     </div>
   )
 }

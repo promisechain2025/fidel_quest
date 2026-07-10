@@ -79,8 +79,8 @@ journey, islands, classic stars, streak, hunt.
       shows the friendly no-recording note instead of the mic button.
 
 ## Ethiopian calendar
-- [ ] The home screen shows today's **Ethiopic date** (Ge'ez + latin) under
-      the header — verify it matches a known calendar converter.
+- [ ] Ordinary days show NO date line on the home screen (kept clean on
+      purpose).
 - [ ] On a holiday (set the phone date to Sept 11 = Enkutatash to simulate)
       the strip becomes the **እንኳን አደረሳችሁ! banner**, and the Daily Hunt
       meadow is dressed (adey abeba daisies for Enkutatash/Meskel, stars for
@@ -140,9 +140,11 @@ journey, islands, classic stars, streak, hunt.
       exits. Cast/plug into a TV and check it reads across the room.
 - [ ] TV **Chant** — the board opens PAUSED on the first letter (a Play
       button shows); the teacher gets the class ready and presses Play to
-      start the chant. The header-left button opens **Choose letters**: the
-      teacher pre-selects today's families (All / Done); the chant cycles
-      only those. Each family is chanted **forward then backward**
+      start the chant. The header-left button opens **Choose letters**:
+      selected tiles carry a gold tick, **All / None** flip the whole grid,
+      and the board stays SILENT while choosing. Opened without a week
+      scope the chooser starts EMPTY, so the teacher taps what to teach
+      (never untaps 30 tiles); the chant cycles only the ticked families. Each family is chanted **forward then backward**
       (ሀ ሁ … ሆ, then ህ ሄ … ሀ) before moving to the next family. **Say after me** toggle: the app says the letter, shows
       "Your turn - say it!", holds ~5s for the class to chant, then moves on.
 - [ ] TV **Quiz** tab — asks ONLY the letters the teacher selected (the
@@ -166,7 +168,9 @@ journey, islands, classic stars, streak, hunt.
       the two language pickers are compact dropdowns that open upward with
       the app's own list (never the iOS wheel).
 - [ ] **Today's plan strip** — one slim chip row above the path; the path's
-      current step stays visible without scrolling.
+      current step stays visible without scrolling. A chip only gets its
+      green tick when the activity is truly FINISHED — opening the warm-up
+      and quitting leaves it pulsing (no tick, no strikethrough anywhere).
 - [ ] **Correct-answer echo** — in the find-the-letter quizzes, a right
       answer plays the chime and then says the letter again. The Daily Hunt
       is the exception: a right tap is chime-only (the next call follows
