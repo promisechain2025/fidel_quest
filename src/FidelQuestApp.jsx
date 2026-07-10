@@ -3894,8 +3894,8 @@ class RunnerWorld {
     // as looking at (and running toward) the letter gates coming down the
     // road. Camera on the left had the road vanishing left while he faced
     // right, which looked like running off the road (device-test finding).
-    this.camera.position.set(5.2, 4.4, 7.6)
-    this.camera.lookAt(-3.2, 0.9, -12)
+    this.camera.position.set(5.8, 4.3, 7.0)
+    this.camera.lookAt(-3.6, 0.85, -11.5)
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
