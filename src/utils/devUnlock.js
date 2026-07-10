@@ -41,9 +41,9 @@ export function resetEverything() {
 /** Apply ?unlock / ?reset from the URL, then strip the param so a refresh does
    not re-run it. Call once before the app mounts.
 
-   ?unlock asks for confirmation first: a stale bookmark or a shared link that
-   still carries the param must not silently re-poison a child's progress
-   every time the app is opened from it. */
+   BOTH params ask for confirmation first: a stale bookmark or a shared link
+   that still carries the param must not silently poison (or, worse for
+   ?reset, ERASE) a child's progress every time the app is opened from it. */
 export function applyUrlUnlock() {
   if (typeof window === 'undefined') return
   let q
@@ -51,8 +51,9 @@ export function applyUrlUnlock() {
   const doReset = q.has('reset')
   const doUnlock = q.has('unlock')
   if (!doReset && !doUnlock) return
-  if (doReset) resetEverything()
-  else if (typeof window.confirm !== 'function' || window.confirm('Fidel Quest QA: unlock ALL content on this device?')) unlockEverything()
+  const ok = (msg) => typeof window.confirm !== 'function' || window.confirm(msg)
+  if (doReset) { if (ok('Fidel Quest: erase ALL progress on this device?')) resetEverything() }
+  else if (ok('Fidel Quest QA: unlock ALL content on this device?')) unlockEverything()
   try {
     q.delete('unlock'); q.delete('reset')
     const url = window.location.pathname + (q.toString() ? `?${q}` : '') + window.location.hash
