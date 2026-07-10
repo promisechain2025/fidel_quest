@@ -67,28 +67,30 @@ with no network after install.
 
 ---
 
-## 2. Add the native platforms (one time)
+## 2. Native platforms - ALREADY IN THE REPO
 
-From the repo root on your Mac:
+`android/` and `ios/` are generated and committed, with app icons, splash
+screens and the adaptive-icon background already baked in (from
+`resources/`), and versions set to 1.0.0 / versionCode 1. On your Mac:
 
 ```bash
 npm install
-npm run build                 # produces dist/
-npx cap add android
-npx cap add ios
-npx cap sync                  # copies dist/ into both native projects
+cd ios/App && pod install && cd ../..   # one time, iOS only
+npm run sync:native                     # = vite build && cap sync
 ```
 
-This creates the `android/` and `ios/` folders (commit them if you want the
-native config tracked). Re-run `npm run build && npx cap sync` after **any**
-web change to push it into the native shells.
+Re-run `npm run sync:native` after **any** web change to push it into the
+native shells.
 
 ---
 
-## 3. Icons & splash screens
+## 3. Icons & splash screens - ALREADY BAKED
 
-The source art is in `resources/`. Generate every platform size (installs
-`sharp`, which works fine on macOS):
+All launcher icons (including Android adaptive + round), splash screens
+(all densities, portrait + landscape) and the iOS 1024 icon are committed
+in the native projects, rendered from `resources/icon.png` and
+`resources/splash.png`. To change the art later, replace those two masters
+and regenerate on your Mac:
 
 ```bash
 npm i -D @capacitor/assets
@@ -97,10 +99,6 @@ npx @capacitor/assets generate \
   --splashBackgroundColor '#fffbeb' --splashBackgroundColorDark '#fffbeb'
 npx cap sync
 ```
-
-To use a nicer master icon, drop a 1024×1024 PNG at `resources/icon.png`
-(no transparency for iOS) and a 2732×2732 at `resources/splash.png`, then
-re-run the command.
 
 ---
 
@@ -249,11 +247,12 @@ Host something like this at a public URL and link it in both stores:
 > **Fidel Quest — Privacy Policy.** Fidel Quest is an offline alphabet-learning
 > game for children. It does **not** collect, store, or share any personal
 > information. All progress and settings stay on the device. There are no
-> accounts, no ads, and no third-party trackers. The microphone (if the
-> "Say-it" practice is used) is processed only on the device in real time and
-> is never recorded or transmitted. Optional features that would send data
-> (anonymous usage counts, Family & Friends leaderboards) are turned off in the
-> published app. Contact: <your email>.
+> accounts, no ads, and no third-party trackers. If this build includes the
+> optional Family Voice recorder, recordings are made by an adult, stay on
+> the device, and leave it only inside a file that adult explicitly chooses
+> to share. Optional features that would send data (anonymous usage counts,
+> Family & Friends leaderboards) are turned off in the published app.
+> Contact: promisechain.net@gmail.com.
 
 Adjust if you later enable analytics or Family & Friends in a build.
 
@@ -272,6 +271,14 @@ changes could also ship instantly to the PWA at your web URL if you keep that
 running alongside the stores.
 
 ---
+
+## 10. Listing content
+
+Every piece of text and every answer both consoles ask for - names,
+descriptions (English + Amharic), keywords, age-rating questionnaire
+answers, data-safety declarations, reviewer notes (including how to pass
+the parental gate), the screenshot shot list, and the suggested price -
+is ready to paste from **`docs/store-listing.md`**.
 
 ## Quick reference
 

@@ -7,6 +7,5 @@ coverage
 
 # Capacitor native projects are generated with `npx cap add <platform>`;
 # commit them once real native builds start.
-android
-ios
+# native projects are tracked (Capacitor); their own .gitignores skip builds
 dist-artifact

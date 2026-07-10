@@ -11,7 +11,8 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "build:artifact": "vite build --config vite.artifact.config.js && node scripts/make-artifact.mjs",
-    "gen:audio-manifest": "node scripts/gen-audio-manifest.mjs"
+    "gen:audio-manifest": "node scripts/gen-audio-manifest.mjs",
+    "sync:native": "vite build && cap sync"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.7",
