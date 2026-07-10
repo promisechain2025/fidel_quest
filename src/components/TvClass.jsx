@@ -33,7 +33,7 @@ import { QrPanel } from './TeacherMode'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const STEP_MS = 2600
-const SAY_AFTER_MS = 5400 // say the letter, then leave the class room to chant
+const SAY_AFTER_MS = STEP_MS + 2000 // the normal beat plus two seconds for the class to chant back
 const INK = '#f6f2e8'
 const BOARD = '#141419'
 const GOLD = '#e8b33c'
