@@ -13,6 +13,11 @@
 - Audience: children 3-8 and their parents. Warm, simple, short.
 - Placeholders like {n}, {name}, {item}, {who} are filled in at runtime -
   keep them exactly as written, but move them wherever the grammar needs.
+- Class codes and community codes (e.g. STMARY1, DEBRE in `tmCodePh`,
+  `ccPh`) are Latin ON PURPOSE - codes are typed with A-Z. Leave them.
+- The brand is now spelled ፊደል ኩዌስት everywhere (a few strings used
+  ፊደል ኵዌስት with ኵ; unified to the majority spelling - overrule us if
+  ኵዌስት is the better rendering of "Quest").
 - Two spots already suspected as typos (please confirm):
   - Amharic postcard message: "ባህሌናና" (should it be "ባህሌንና"?) and
     "ኣይለየኝ" (Tigrinya-style ኣ in an Amharic sentence - "አይለየኝ"?)
@@ -192,7 +197,7 @@
 | 163 | `challengeLose` | So close! | ተቃርበሃል! |  |
 | 164 | `challengeTie` | It's a tie! | አቻ ነው! |  |
 | 165 | `challengeGone` | This challenge is not available. | ይህ ፉክክር አይገኝም። |  |
-| 166 | `challengeShareText` | Beat my Fidel Quest score! Can you? | የፊደል ኵዌስት ውጤቴን ብለጥ! ትችላለህ? |  |
+| 166 | `challengeShareText` | Beat my Fidel Quest score! Can you? | የፊደል ኩዌስት ውጤቴን ብለጥ! ትችላለህ? |  |
 | 167 | `scopeLearned` | My letters | የኔ ፊደላት |  |
 | 168 | `scopeAll` | All letters | ሁሉም ፊደላት |  |
 | 169 | `scopeLabel` | Which letters | የትኞቹ ፊደላት |  |
@@ -287,7 +292,7 @@
 | 258 | `fvDefaultVoice` | Back to the default voice | ወደ ነባሪው ድምፅ ተመልሷል |  |
 | 259 | `fvGateIntro` | Recording is for grown-ups — it uses the microphone. | መቅዳት ለወላጆች ነው — ማይክሮፎን ይጠቀማል። |  |
 | 260 | `fvImported` | Voice imported! | ድምፅ ገብቷል! |  |
-| 261 | `fvImportFail` | That file isn't a Fidel Quest voice. | ይህ ፋይል የፊደል ኵዌስት ድምፅ አይደለም። |  |
+| 261 | `fvImportFail` | That file isn't a Fidel Quest voice. | ይህ ፋይል የፊደል ኩዌስት ድምፅ አይደለም። |  |
 | 262 | `fvEmpty` | No family voices yet. Record one, or import a voice a relative sent you. | እስካሁን የቤተሰብ ድምፅ የለም። አንድ ይቅዱ፣ ወይም ዘመድ የላከዎትን ድምፅ ያስገቡ። |  |
 | 263 | `fvForGrownups` | For grown-ups | ለወላጆች |  |
 | 264 | `fvRecordTitle` | Record your voice | ድምፅዎን ይቅዱ |  |
@@ -660,7 +665,7 @@
 | 166 | `challengeLose` | So close! | ተቐሪብካ! |  |
 | 167 | `challengeTie` | It's a tie! | ማዕረ ኮይኑ! |  |
 | 168 | `challengeGone` | This challenge is not available. | እዚ ብድሆ ኣይርከብን። |  |
-| 169 | `challengeShareText` | Beat my Fidel Quest score! Can you? | ናይ ፊደል ኵዌስት ነጥበይ ብለጾ! ትኽእል ዶ? |  |
+| 169 | `challengeShareText` | Beat my Fidel Quest score! Can you? | ናይ ፊደል ኩዌስት ነጥበይ ብለጾ! ትኽእል ዶ? |  |
 | 170 | `scopeLearned` | My letters | ናተይ ፊደላት |  |
 | 171 | `scopeAll` | All letters | ኩሎም ፊደላት |  |
 | 172 | `scopeLabel` | Which letters | ኣየኖት ፊደላት |  |
@@ -756,7 +761,7 @@
 | 262 | `fvDefaultVoice` | Back to the default voice | ናብ ንቡር ድምጺ ተመሊሱ |  |
 | 263 | `fvGateIntro` | Recording is for grown-ups — it uses the microphone. | ምቕዳሕ ንወለዲ እዩ — ማይክሮፎን ይጥቀም። |  |
 | 264 | `fvImported` | Voice imported! | ድምጺ ኣትዩ! |  |
-| 265 | `fvImportFail` | That file isn't a Fidel Quest voice. | እዚ ፋይል ናይ ፊደል ኵዌስት ድምጺ ኣይኮነን። |  |
+| 265 | `fvImportFail` | That file isn't a Fidel Quest voice. | እዚ ፋይል ናይ ፊደል ኩዌስት ድምጺ ኣይኮነን። |  |
 | 266 | `fvEmpty` | No family voices yet. Record one, or import a voice a relative sent you. | ክሳብ ሕጂ ድምጺ ስድራ የለን። ሓደ ቕዳሕ፣ ወይ ዘመድ ዝሰደደልካ ድምጺ ኣእቱ። |  |
 | 267 | `fvForGrownups` | For grown-ups | ንወለዲ |  |
 | 268 | `fvRecordTitle` | Record your voice | ድምጽኻ ቅዳሕ |  |
