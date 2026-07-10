@@ -4,8 +4,10 @@ Most of this can't be exercised in CI/headless (3D, microphone, cross-device
 transfer, native notifications), so here's a running list to check by hand.
 Tip: append **`?unlock`** to the URL to open all content (it asks for
 confirmation, and opens Skylands islands without marking them cleared),
-**`?reset`** to wipe back to a new player. Grown-ups -> "Reset all progress"
-now does a full wipe too - journey, islands, classic stars, streak, hunt.
+**`?reset`** to wipe back to a new player. Both also live INSIDE the app now,
+no URL needed: Grown-ups -> "Open everything (for testing)" unlocks all
+content, and "Reset all progress" right below it does the full wipe -
+journey, islands, classic stars, streak, hunt.
 
 ## 3D games (need a real GPU/device)
 - [ ] **Runner** — classic chase view: the road runs straight down the middle

@@ -14,7 +14,7 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
-import { resetEverything } from './utils/devUnlock'
+import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t } from './platform/i18n'
@@ -195,6 +195,7 @@ function CommunityCard() {
 export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmUnlock, setConfirmUnlock] = useState(false)
   const [, forceRefresh] = useState(0)
 
   const events = useMemo(() => (open ? loadLedger() : []), [open])
@@ -309,6 +310,38 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                     </motion.div>
                   )
                 })}
+              </div>
+            )}
+          </section>
+
+          {/* QA unlock: open every level, island and letter without playing
+             through - same as the ?unlock URL param, but reachable on a phone.
+             Reversible with the reset right below. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            {!confirmUnlock ? (
+              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('gpUnlockAll', 'Open everything (for testing)…')}
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>
+                  {t('gpUnlockConfirm', 'Open every level, island and letter for testing?')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    unlockEverything()
+                    setConfirmUnlock(false)
+                    forceRefresh((n) => n + 1)
+                  }}
+                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                >
+                  {t('gpUnlockYes', 'Yes, open all')}
+                </button>
+                <button type="button" onClick={() => setConfirmUnlock(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  {t('gpResetNo', 'Keep it')}
+                </button>
               </div>
             )}
           </section>
