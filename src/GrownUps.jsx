@@ -15,6 +15,8 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
+import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
+import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t } from './platform/i18n'
@@ -313,6 +315,61 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               </div>
             )}
           </section>
+
+          {/* support / license: the paid-app picture and every way to help -
+             buy, ask a relative abroad to gift it, or honest feedback for
+             more free days. Mirrors the once-a-day SupportAsk dialog. */}
+          {(() => {
+            const lic = licenseState()
+            const buy = buyUrl()
+            return (
+              <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+                <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support Fidel Quest')}
+                </h2>
+                <p className="mt-2 text-sm font-bold" style={{ color: lic.phase === 'ended' ? 'var(--bad-ink)' : 'var(--go-ink)' }}>
+                  {lic.phase === 'licensed'
+                    ? t('payThanks', 'Thank you for supporting Fidel Quest!')
+                    : lic.phase === 'trial'
+                      ? t('payLeft', 'Free try-out: {n} days left', { n: lic.daysLeft })
+                      : t('payEnded', 'Your free try-out has ended.')}
+                </p>
+                {lic.phase !== 'licensed' && (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {buy && (
+                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          {t('payBuy', 'Buy the app')}
+                        </a>
+                      )}
+                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                        {t('payFamily', 'Ask family to gift it')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          grantFeedbackGrace()
+                          try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
+                          forceRefresh((n) => n + 1)
+                        }}
+                        className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
+                        style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                      >
+                        {t('payFeedback', 'Not buying? Tell us honestly why')}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}{' '}
+                      {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}
+                    </p>
+                    <button type="button" onClick={() => { markSupported('grownups'); forceRefresh((n) => n + 1) }} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                      {t('payOwned', 'My family already bought it')}
+                    </button>
+                  </>
+                )}
+              </section>
+            )
+          })()}
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.

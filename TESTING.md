@@ -219,6 +219,26 @@ journey, islands, classic stars, streak, hunt.
       `-a / -u / Ge'ez / Ka'ib` order labels are romanized transliterations
       (data), intentionally left untranslated.
 
+## Paid app / free trial (web + PWA builds)
+- [ ] **Full free trial** — a fresh install runs EVERYTHING free for 14 days
+      (`VITE_TRIAL_DAYS` to change). Grown-ups shows "Free try-out: N days
+      left" in the Support card.
+- [ ] **The ask** — after the trial ends, opening the app shows the friendly
+      dialog at most ONCE PER DAY: Buy the app (needs `VITE_BUY_URL` or
+      `VITE_APPLE_APP_ID`, hidden otherwise), Ask family to gift it (shares
+      a ready message + the store/app link - for families with no way to
+      pay locally, a relative anywhere pays through the store), and "Not
+      buying? Tell us honestly why" (opens a feedback email AND adds 14
+      more free days). "Not now" always closes it; the child is never
+      blocked mid-lesson.
+- [ ] **Relative's gift** — the shared link lands on the store page where
+      the relative buys/gifts it (Apple's Gift App flow; Play gift cards on
+      Android - see the Backpack Gift guide). Once the family has the store
+      app, it is licensed automatically (native builds never show the ask).
+      On web, Grown-ups -> "My family already bought it" marks it supported.
+- [ ] **Reset does not restart the trial** — "Reset all progress" wipes the
+      child's progress but the trial clock keeps its start date.
+
 ## Store readiness (once paid)
 - [ ] **Gift** (Apple) — Backpack → Gift walks through Apple's "Gift App";
       needs `VITE_APPLE_APP_ID` set and the app published. See `APP-STORE.md`.

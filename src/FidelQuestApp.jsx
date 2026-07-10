@@ -49,6 +49,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
+import { licenseState, markAsked } from './platform/license'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
@@ -73,6 +74,7 @@ const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
 // encoder, so they stay out of the child-facing home chunk too.
 const TeacherMode = lazy(() => import('./components/TeacherMode'))
 const TvClass = lazy(() => import('./components/TvClass'))
+const SupportAsk = lazy(() => import('./components/SupportAsk'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -862,6 +864,13 @@ export default function FidelQuestApp() {
   const [plan, setPlan] = useState(loadPlan)
   const [warmupDone, setWarmupDone] = useState(() => warmupDoneToday())
   useEffect(() => { setWarmupDone(warmupDoneToday()) }, [dayKey])
+  // The honest free-trial ask: at most once per calendar day, after the
+  // trial ends (platform/license.js). Never blocks - always dismissible.
+  const [askSupport, setAskSupport] = useState(false)
+  useEffect(() => {
+    const lic = licenseState(dayKey)
+    if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
+  }, [dayKey])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
   // A teacher's assignment opened from a link waits in fq.assign.v1 until done.
   const [pendingAssign, setPendingAssign] = useState(loadPendingAssignment)
@@ -1329,6 +1338,13 @@ export default function FidelQuestApp() {
         </AnimatePresence>
         <AnimatePresence>
           {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
+        </AnimatePresence>
+        <AnimatePresence>
+          {askSupport && (
+            <Suspense fallback={null}>
+              <SupportAsk key="support" onClose={() => setAskSupport(false)} />
+            </Suspense>
+          )}
         </AnimatePresence>
         <AnimatePresence>
           {warmupNudge && (
