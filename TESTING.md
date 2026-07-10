@@ -124,11 +124,15 @@ back to a new player.
       giant letter, the family's 7 orders, auto-advance with audio,
       arrow-keys/remote and taps drive it, join-QR in the corner, Escape or X
       exits. Cast/plug into a TV and check it reads across the room.
-- [ ] TV **Quiz** tab — the board plays a sound and shows four big letters;
-      tap the right one (green + advance) and a wrong one (red, then reveal).
-      A week row's **TV lesson** opens the board scoped to that week's
-      families only (header shows e.g. 1/2); the header family button opens
-      the **jump grid**.
+- [ ] TV **Chant** — the header-left button opens **Choose letters**: the
+      teacher pre-selects today's families (All / Done); the chant cycles
+      only those. **Say after me** toggle: the app says the letter, shows
+      "Your turn - say it!", holds ~5s for the class to chant, then moves on.
+- [ ] TV **Quiz** tab — asks ONLY the letters the teacher selected (the
+      teacher decides when the class is ready by switching tabs). Each
+      option carries a big **number label 1-4**: the teacher asks "which
+      one?", the class answers by number, the teacher taps it (keyboard 1-4
+      works too). Right = green + advance, wrong = red, then reveal.
 - [ ] **Link into an open app** — with the app already open, open a class or
       assignment link (same tab): it must route to the join/assignment
       screen, not be ignored.
