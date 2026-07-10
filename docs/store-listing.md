@@ -10,7 +10,7 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 | App name | **Fidel Quest** |
 | Bundle / package id | `net.promisechain.fidelquest` |
 | Category | Education (Apple: Kids > Education; Play: Education + Designed for Families) |
-| Price | Paid up front. Suggested tier: **$3.99** (Apple Tier ~4 / Play equivalent). The free web trial lives at the PWA URL; the stores sell the full app. |
+| Price | Paid up front: **$9.99** (Apple price point $9.99 / Play equivalent per country). The free web trial lives at the PWA URL; the stores sell the full app. |
 | Age band | Apple Kids Category: **6–8** (also fits 5 and under). Play target audience: **5 & under + 6–8** (mixed audience). |
 | Version | 1.0.0 (Android versionCode 1) |
 
