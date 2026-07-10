@@ -8,23 +8,26 @@
 export const AM_PACK = Object.freeze({
   id: 'am',
   label: 'Amharic',
+  nativeName: 'አማርኛ',
   // The seven vocalized orders as taught in Ethiopian schools.
   orders: [
     { index: 1, geezName: "Ge'ez", vowel: 'a' },
     { index: 2, geezName: "Ka'ib", vowel: 'u' },
     { index: 3, geezName: 'Sals', vowel: 'ee' },
     { index: 4, geezName: "Rab'", vowel: 'aa' },
-    { index: 5, geezName: 'Hams', vowel: 'ay' },
+    { index: 5, geezName: 'Hams', vowel: 'e' },
     { index: 6, geezName: 'Sadis', vowel: 'ih' },
     { index: 7, geezName: "Sab'", vowel: 'o' },
   ],
   // Families that share a modern Amharic pronunciation; the first id in
-  // each group is the canonical one the others are "twins of".
+  // each group is the canonical one the others are "twins of". ke (ከ, "k") and
+  // khe (ኸ, the velar "kh") are NOT twins - they are distinct sounds, matching
+  // how the fidel is recited and how the Tigrinya pack already models them.
   twins: [['ha', 'hha', 'kha'], ['se', 'sse'], ['a', 'ae'], ['tse', 'ttse']],
   families: {
-    ha: {"name":"Ha","consonant":"h","nickname":"Haleta Ha","word":{"geez":"ሀገር","latin":"hager","meaning":"country","picture":"🗺️"}},
+    ha: {"name":"Ha","consonant":"h","nickname":"Haleta Ha","word":{"geez":"ሀገር","latin":"hager","meaning":"country","picture":"🗺️","noAudio":true}},
     le: {"name":"Le","consonant":"l","word":{"geez":"ልጅ","latin":"lij","meaning":"child","picture":"👶"}},
-    hha: {"name":"Hha","consonant":"h","nickname":"Hameru Hha","word":{"geez":"ሐመር","latin":"hamer","meaning":"ship","picture":"🚢"}},
+    hha: {"name":"Hha","consonant":"h","nickname":"Hameru Hha","word":{"geez":"ሐመር","latin":"hamer","meaning":"ship","picture":"🚢","noAudio":true}},
     me: {"name":"Me","consonant":"m","word":{"geez":"ማር","latin":"mar","meaning":"honey","picture":"🍯"}},
     sse: {"name":"Sse","consonant":"s","nickname":"Nigusu Sse","word":{"geez":"ሠዓሊ","latin":"seali","meaning":"painter","picture":"🎨"}},
     re: {"name":"Re","consonant":"r","word":{"geez":"ሩዝ","latin":"ruz","meaning":"rice","picture":"🍚"}},
@@ -58,4 +61,8 @@ export const AM_PACK = Object.freeze({
   },
   audioBase: '/audio/fidel/',
   manifestUrl: '/audio/fidel/manifest.json',
+  // Amharic voices the 1st (ge'ez) order of the gutturals ha/hha/kha/a/ae like
+  // the 4th order (the "-a" vowel): ሀ is said "ha" (like ሃ), አ is said "a".
+  // Tigrinya keeps the plain 1st order, so its pack has no such remap.
+  audioOverride: { orderRemap: { ids: ['ha', 'hha', 'kha', 'a', 'ae'], from: 1, to: 4 } },
 })

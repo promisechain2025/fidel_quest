@@ -30,19 +30,44 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new build shows a tap-to-update toast (main.jsx) instead
+      // of silently activating on some later visit - testers kept seeing
+      // stale builds with autoUpdate.
+      registerType: 'prompt',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
+        // Precache the shell, the self-hosted Ethiopic fonts (woff2) AND the
+        // whole voice set (~3.6MB of mp3s + the coverage manifest). The voice
+        // IS the product for a pre-reader: a device that installs the app and
+        // then goes offline must still speak every letter. Runtime caching
+        // below stays as a safety net for anything outside the precache.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2,mp3,json}'],
+        // The generated SW registers an SPA navigation fallback (every
+        // navigation resolves to index.html). The /review page is a SEPARATE
+        // static document, not part of the SPA, so it must be exempt — without
+        // this the SW serves the game shell for /review after the first visit
+        // (it "loads once, then stops"). Let those navigations hit the real
+        // precached page / network instead.
+        // ...and any URL that looks like a FILE (has an extension) or lives
+        // under /audio/ - typing a clip URL into the address bar must return
+        // the clip (or an honest 404), never silently render the app shell.
+        // This masked "are the voice files deployed?" checks on real phones.
+        navigateFallbackDenylist: [/^\/review\/?/, /^\/audio\//, /\.[a-z0-9]{2,5}$/i],
         // Audio clips are optional drop-in assets (see the header comment in
         // src/pages/AmharicFidelGame.jsx); cache them at runtime rather than
         // precaching files that may not exist yet.
         runtimeCaching: [
           {
+            // Letter/word audio: once a clip is cached, serve it from cache with
+            // NO further network — a replay makes zero requests, which keeps the
+            // app light at scale. Rollout of a re-recorded clip is handled by
+            // bumping the versioned cacheName below (which orphans the old cache
+            // so every clip is re-fetched fresh once), not by per-play refetch.
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'fidel-audio',
-              expiration: { maxEntries: 300 },
+              cacheName: 'fidel-audio-v5',
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
         ],

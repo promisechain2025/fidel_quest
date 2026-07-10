@@ -25,6 +25,7 @@ import {
 } from '../FidelQuestApp'
 import { buildQuiz, pickStolen, SESSIONS } from '../FidelSkylands'
 import { playForm, playEffect } from '../platform/audioEngine'
+import { markIslandCleared } from '../platform/skylandsSave'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 
@@ -37,10 +38,10 @@ const formOf = (key) => INDEXES.byAudioKey.get(key)
    ========================================================================== */
 // Reset reseeds through the project PRNG so all seeding stays in one place.
 const reseed = (s) => (Math.floor(rngNext(s)[0] * 0x7fffffff) | 1)
-const runnerReducer = (c, e) => (e.type === '__reset__' ? runnerInitial(reseed(c.seed)) : runnerTransition(c, e).next)
+const runnerReducer = (c, e) => (e.type === '__reset__' ? runnerInitial(reseed(c.seed), c.pool) : runnerTransition(c, e).next)
 
-export function Runner2D({ seed, soundOn, onExit }) {
-  const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+export function Runner2D({ seed, soundOn, onExit, pool }) {
+  const [ctx, dispatch] = useReducer(runnerReducer, { seed, pool }, (a) => runnerInitial(a.seed, a.pool))
   const q = selectRunnerQuestion(ctx)
   const targetForm = q ? formOf(q.target) : null
   const running = ctx.status === RunnerState.RUNNING
@@ -90,7 +91,7 @@ export function Runner2D({ seed, soundOn, onExit }) {
           <button type="button" onClick={() => dispatch({ type: '__reset__' })} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px' }}>
             {t('runAgain', 'Run again')}
           </button>
-          <button type="button" onClick={onExit} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
+          <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
             {t('home', 'Home')}
           </button>
         </div>
@@ -101,7 +102,7 @@ export function Runner2D({ seed, soundOn, onExit }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -169,12 +170,14 @@ export function Runner2D({ seed, soundOn, onExit }) {
    SKYLANDS 2D  -  the cumulative island quiz + Jibby's boss review, as a
    tap-the-fruit 2D quiz (same buildQuiz / pickStolen logic as the 3D scene).
    ========================================================================== */
-export function bossQuestions(island, seed) {
-  const stolen = pickStolen(island, seed)
+export function bossQuestions(island, seed, allForms = false) {
+  const stolen = pickStolen(island, seed, allForms)
   // Distractors come from the CUMULATIVE pool of every session up to this one
   // (the same material the 3D boss uses), so a stolen old letter is not the
-  // lone odd-group-out. Sound-safe + seeded via the project PRNG.
-  const pool = SESSIONS.slice(0, Math.min(island, SESSIONS.length)).flatMap((s) => s.pool)
+  // lone odd-group-out. "All letters" widens it to every session's pool.
+  const pool = allForms
+    ? SESSIONS.flatMap((s) => s.pool)
+    : SESSIONS.slice(0, Math.min(island, SESSIONS.length)).flatMap((s) => s.pool)
   let state = (seed ^ 0x5151) | 1
   return stolen.map((target) => {
     const sound = formOf(target)?.sound
@@ -186,8 +189,8 @@ export function bossQuestions(island, seed) {
   })
 }
 
-export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
-  const [questions] = useState(() => [...buildQuiz(island, seed).map((q) => ({ ...q, boss: false })), ...bossQuestions(island, seed)])
+export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = false }) {
+  const [questions] = useState(() => [...buildQuiz(island, seed, allLetters).map((q) => ({ ...q, boss: false })), ...bossQuestions(island, seed, allLetters)])
   const [cursor, setCursor] = useState(0)
   const [picked, setPicked] = useState(null) // { key, good }
   const q = questions[cursor]
@@ -204,7 +207,11 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
   }, [cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (done) playEffect('win', soundOn)
+    if (!done) return
+    playEffect('win', soundOn)
+    // Clearing the island on the 2D fallback counts exactly like the 3D
+    // map: one shared save (platform/skylandsSave), both views agree.
+    markIslandCleared(island)
   }, [done]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (done) {
@@ -212,7 +219,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
         <Sprite2D draw={drawAnbessa} size={120} />
         <h2 className="text-2xl font-black">{t('levelComplete', 'Island cleared!')}</h2>
-        <button type="button" onClick={onExit} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+        <button type="button" onClick={() => onExit({ sessionsCompleted: island })} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
           {t('continue', 'Continue')}
         </button>
       </div>
@@ -233,7 +240,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Leave island" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ sessionsCompleted: 0 })} aria-label="Leave island" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--go)' }}>

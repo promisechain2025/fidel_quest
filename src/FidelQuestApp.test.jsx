@@ -95,6 +95,22 @@ describe('lesson machine', () => {
 })
 
 describe('runner machine', () => {
+  it('quizzes only the learned pool — this level and the next', () => {
+    const learned = ['ha-1', 'le-1', 'me-1', 'be-1', 'te-1'] // "learned so far"
+    let run = runnerInitial(3, learned)
+    expect(run.pool).toEqual(learned)
+    const inPool = (q) => learned.includes(q.target) && q.options.every((o) => learned.includes(o))
+    expect(run.queue.every(inPool)).toBe(true)
+    // Survive the level; the next level must stay inside the same learned pool.
+    for (let i = 0; i < 5; i++) {
+      run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: selectRunnerQuestion(run).target } }).next
+      run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+    }
+    run = runnerTransition(run, { type: RunnerEvent.BOSS_DONE }).next
+    expect(run.level).toBe(2)
+    expect(run.queue.every(inPool)).toBe(true)
+  })
+
   it('survives a perfect level and gets destroyed on a failed one', () => {
     let run = runnerInitial(9)
     for (let i = 0; i < 5; i++) {
@@ -147,8 +163,9 @@ describe('app shell', () => {
   it('opens the Backpack to reach the reference utilities', () => {
     render(<FidelQuestApp />)
     fireEvent.click(screen.getByLabelText('Open backpack'))
-    expect(screen.getByText('Letter Explorer')).toBeInTheDocument()
-    expect(screen.getByText('Classic Game')).toBeInTheDocument()
+    // Compact tile grid uses short labels
+    expect(screen.getByText('Explorer')).toBeInTheDocument()
+    expect(screen.getByText('Classic')).toBeInTheDocument()
     expect(screen.getByText('First Words')).toBeInTheDocument()
   })
 })
@@ -250,17 +267,27 @@ describe('twin-letter differentiation (P5)', () => {
     FIDEL_FAMILIES.find((f) => f.twinOf === fam.name) ||
     null
 
-  it('makes the ha/hha (ሀ vs ሐ) twin pair actually co-occur in a glyph round', () => {
-    // The original pedagogical ask: ሀ next to ሐ, disambiguated by picture.
-    const haChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'ha'))
-    const hhaChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'hha'))
+  it('makes the a/ae (አ vs ዐ) twin pair actually co-occur in a glyph round', () => {
+    // The pedagogical ask: same-sound twins side by side, disambiguated by
+    // picture. The ha/hha pair sat here until its words (hager/hamer) were
+    // pulled for lacking recordings — a/ae (asa/ayin) carries the invariant
+    // now; restore ha/hha coverage when those two words are voiced.
+    const aChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'a'))
+    const aeChar = baseChar(FIDEL_FAMILIES.find((f) => f.id === 'ae'))
     let found = false
     for (let seed = 1; seed <= 60 && !found; seed++) {
       for (const q of buildWordQueue(seed)) {
-        if (q.type === 'glyph' && q.options.includes(haChar) && q.options.includes(hhaChar)) found = true
+        if (q.type === 'glyph' && q.options.includes(aChar) && q.options.includes(aeChar)) found = true
       }
     }
     expect(found).toBe(true)
+  })
+
+  it('excludes unvoiced (noAudio) words so every prompt can actually speak', () => {
+    expect(WORDS.some((w) => w.noAudio)).toBe(false)
+    expect(WORDS.map((w) => w.latin)).not.toContain('hager')
+    expect(WORDS.map((w) => w.latin)).not.toContain('hamer')
+    expect(WORDS.length).toBeGreaterThanOrEqual(25)
   })
 
   it('seats the phonetic twin as a distractor in every glyph round', () => {

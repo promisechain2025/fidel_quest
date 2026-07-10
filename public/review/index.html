@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f59e0b" />
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<title>Fidel Quest — Reviewer's Guide &amp; Feedback</title>
+<style>
+  /* Self-hosted Ethiopic font (same bundled files as the app) — no CDN. */
+  @font-face { font-family: 'Noto Sans Ethiopic'; font-weight: 400; font-display: swap; src: url('/fonts/noto-sans-ethiopic-400.woff2') format('woff2'); }
+  @font-face { font-family: 'Noto Sans Ethiopic'; font-weight: 700; font-display: swap; src: url('/fonts/noto-sans-ethiopic-700.woff2') format('woff2'); }
+  :root {
+    --paper:#fdf7ec; --card:#fffdf8; --ink:#34281a; --muted:#8a7a63;
+    --line:#ecdfc8; --line-soft:#f4ecdc;
+    --accent:#ec8a0a; --accent-deep:#c96f00;
+    --good:#1f9a58; --good-bg:#e7f6ee;
+    --info:#1f74d0; --info-bg:#e6f0fb;
+    --warn:#c9770a; --warn-bg:#fbefdc;
+    --rough:#cf3b2c; --rough-bg:#fbe7e4;
+    --shadow:0 1px 0 rgba(120,90,40,.05), 0 10px 30px -18px rgba(120,80,30,.35);
+    --display:'SF Pro Rounded','Segoe UI Rounded',ui-rounded,'Nunito',system-ui,sans-serif;
+    --body:-apple-system,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono','Cascadia Code','Roboto Mono',monospace;
+    --geez:'Noto Sans Ethiopic','Abyssinica SIL','Kefa',serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#17100a; --card:#221812; --ink:#f4e9d8; --muted:#b19d84;
+      --line:#382a1d; --line-soft:#2a1f15;
+      --accent:#f6a836; --accent-deep:#f6a836;
+      --good:#4cc088; --good-bg:#12281d;
+      --info:#5aa0ea; --info-bg:#11233a;
+      --warn:#e6a23c; --warn-bg:#2c2110;
+      --rough:#ec6a5a; --rough-bg:#2f1512;
+      --shadow:0 10px 30px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#17100a; --card:#221812; --ink:#f4e9d8; --muted:#b19d84;
+    --line:#382a1d; --line-soft:#2a1f15; --accent:#f6a836; --accent-deep:#f6a836;
+    --good:#4cc088; --good-bg:#12281d; --info:#5aa0ea; --info-bg:#11233a;
+    --warn:#e6a23c; --warn-bg:#2c2110; --rough:#ec6a5a; --rough-bg:#2f1512;
+    --shadow:0 10px 30px -18px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"]{
+    --paper:#fdf7ec; --card:#fffdf8; --ink:#34281a; --muted:#8a7a63;
+    --line:#ecdfc8; --line-soft:#f4ecdc; --accent:#ec8a0a; --accent-deep:#c96f00;
+    --good:#1f9a58; --good-bg:#e7f6ee; --info:#1f74d0; --info-bg:#e6f0fb;
+    --warn:#c9770a; --warn-bg:#fbefdc; --rough:#cf3b2c; --rough-bg:#fbe7e4;
+    --shadow:0 1px 0 rgba(120,90,40,.05), 0 10px 30px -18px rgba(120,80,30,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); line-height:1.62;
+    -webkit-font-smoothing:antialiased; font-size:17px;
+  }
+  .wrap{max-width:50rem; margin:0 auto; padding:clamp(1.1rem,4vw,2.4rem)}
+  a{color:var(--accent-deep); text-underline-offset:3px}
+  h1,h2,h3{font-family:var(--display); text-wrap:balance; line-height:1.12; margin:0}
+  h1{font-size:clamp(2rem,6.5vw,3rem); font-weight:800; letter-spacing:-.02em}
+  h2{font-size:clamp(1.4rem,4vw,1.8rem); font-weight:800; letter-spacing:-.01em}
+  h3{font-size:1.13rem; font-weight:800}
+  p{margin:.55em 0}
+  .lead{font-size:1.12rem; color:var(--ink)}
+  .eyebrow{font-family:var(--mono); font-size:.72rem; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--accent-deep); font-weight:600}
+
+  header.hero{position:relative; overflow:hidden; border-radius:26px;
+    background:linear-gradient(155deg,#fff6e3,#ffe7bd 62%,#ffd8a0);
+    border:1px solid var(--line); box-shadow:var(--shadow);
+    padding:clamp(1.4rem,5vw,2.6rem); margin-bottom:1.6rem}
+  @media (prefers-color-scheme:dark){header.hero{background:linear-gradient(155deg,#2a1d12,#3a2814 70%,#4a3016)}}
+  :root[data-theme="dark"] header.hero{background:linear-gradient(155deg,#2a1d12,#3a2814 70%,#4a3016)}
+  :root[data-theme="light"] header.hero{background:linear-gradient(155deg,#fff6e3,#ffe7bd 62%,#ffd8a0)}
+  .hero .geez{position:absolute; right:-.2rem; top:-1.4rem; font-family:var(--geez);
+    font-size:11rem; line-height:1; color:#f59e0b; opacity:.14; pointer-events:none; font-weight:700}
+  .hero h1{color:#4a3208}
+  @media (prefers-color-scheme:dark){.hero h1{color:#ffe6bd}}
+  :root[data-theme="dark"] .hero h1{color:#ffe6bd}
+  :root[data-theme="light"] .hero h1{color:#4a3208}
+  .hero .lead{color:#6b4c14; max-width:34rem}
+  @media (prefers-color-scheme:dark){.hero .lead{color:#e7c893}}
+  :root[data-theme="dark"] .hero .lead{color:#e7c893}
+  :root[data-theme="light"] .hero .lead{color:#6b4c14}
+  .lion{font-size:2.4rem; filter:drop-shadow(0 3px 2px rgba(0,0,0,.15))}
+
+  .callout{background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:1.1rem 1.25rem; box-shadow:var(--shadow); margin:1.4rem 0}
+  .callout h3{margin-bottom:.4rem}
+  .steps{list-style:none; margin:.4rem 0 0; padding:0; display:grid; gap:.5rem}
+  .steps li{display:flex; gap:.6rem; align-items:baseline}
+  .steps li b{font-family:var(--mono); font-size:.7rem; color:var(--accent-deep);
+    background:var(--warn-bg); border-radius:6px; padding:.14rem .4rem; flex:none; letter-spacing:.02em}
+
+  .legend{display:flex; flex-wrap:wrap; gap:.5rem; margin:.8rem 0 0}
+  .chip{display:inline-flex; align-items:center; gap:.4rem; font-family:var(--mono);
+    font-size:.72rem; font-weight:600; letter-spacing:.02em; padding:.22rem .6rem;
+    border-radius:999px; border:1px solid transparent; white-space:nowrap}
+  .chip .dot{width:.5rem; height:.5rem; border-radius:50%}
+  .c-good{background:var(--good-bg); color:var(--good)} .c-good .dot{background:var(--good)}
+  .c-info{background:var(--info-bg); color:var(--info)} .c-info .dot{background:var(--info)}
+  .c-warn{background:var(--warn-bg); color:var(--warn)} .c-warn .dot{background:var(--warn)}
+  .c-rough{background:var(--rough-bg); color:var(--rough)} .c-rough .dot{background:var(--rough)}
+
+  section{margin:2.4rem 0}
+  .sec-head{display:flex; align-items:center; gap:.7rem; margin-bottom:.3rem}
+  .sec-head .tag{font-size:1.5rem}
+  .sec-sub{color:var(--muted); margin:0 0 1rem}
+
+  .feat{background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:1.15rem 1.25rem; box-shadow:var(--shadow); margin:.9rem 0}
+  .feat-top{display:flex; justify-content:space-between; align-items:flex-start; gap:.8rem; flex-wrap:wrap}
+  .feat h3{margin-bottom:.15rem}
+  .feat .where{font-size:.82rem; color:var(--muted); margin:0}
+  .feat p{margin:.5rem 0}
+  .try{font-size:.94rem; background:var(--line-soft); border-radius:11px; padding:.6rem .8rem; margin:.7rem 0}
+  .try b{font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-deep)}
+  .take{margin-top:.7rem}
+  .take .label{font-family:var(--mono); font-size:.68rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); display:block; margin-bottom:.2rem}
+  .pc{display:grid; gap:.3rem; margin:.35rem 0 0; padding:0; list-style:none; font-size:.95rem}
+  .pc li{display:flex; gap:.5rem}
+  .pc .m{flex:none; font-weight:700; width:1.1rem; text-align:center}
+  .pc .plus .m{color:var(--good)} .pc .minus .m{color:var(--rough)}
+
+  .verdict{background:linear-gradient(160deg,var(--card),var(--line-soft));
+    border:1px solid var(--line); border-radius:20px; padding:1.3rem 1.4rem; box-shadow:var(--shadow)}
+  .rule{height:1px; background:var(--line); border:0; margin:2.4rem 0}
+  footer{color:var(--muted); font-size:.86rem; margin:2.5rem 0 1rem; text-align:center}
+  strong{font-weight:700}
+  :focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:4px}
+
+  /* ---- feedback form ---- */
+  .form-card{background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:clamp(1.1rem,4vw,1.6rem); box-shadow:var(--shadow)}
+  .field{margin:1rem 0}
+  .field > label, .field > .q{display:block; font-weight:700; margin-bottom:.35rem; font-size:.98rem}
+  .field .hint{color:var(--muted); font-size:.85rem; font-weight:400; margin-left:.35rem}
+  input[type=text], textarea, select{
+    width:100%; font:inherit; color:var(--ink); background:var(--paper);
+    border:1px solid var(--line); border-radius:12px; padding:.6rem .75rem}
+  textarea{min-height:4.5rem; resize:vertical; line-height:1.5}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:.8rem}
+  @media (max-width:34rem){.two{grid-template-columns:1fr}}
+  .rate-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:14px}
+  table.rate{border-collapse:collapse; width:100%; min-width:30rem; background:var(--card); font-size:.92rem}
+  table.rate th, table.rate td{padding:.45rem .55rem; border-bottom:1px solid var(--line); text-align:center}
+  table.rate th:first-child, table.rate td:first-child{text-align:left; font-weight:600}
+  table.rate thead th{font-family:var(--display); font-weight:800; font-size:.72rem;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--muted); background:var(--line-soft)}
+  table.rate tr:last-child td{border-bottom:none}
+  table.rate td label{display:block; cursor:pointer; padding:.25rem 0}
+  table.rate input[type=radio]{width:1.15rem; height:1.15rem; accent-color:var(--accent); cursor:pointer}
+  .rate-legend{color:var(--muted); font-size:.82rem; margin:.5rem 0 0}
+  .rec-row{display:flex; flex-wrap:wrap; gap:.5rem}
+  .rec-row label{display:inline-flex; align-items:center; gap:.4rem; border:1px solid var(--line);
+    border-radius:999px; padding:.4rem .8rem; cursor:pointer; background:var(--paper); font-size:.92rem}
+  .rec-row input{accent-color:var(--accent)}
+  .btn{font:inherit; font-weight:800; font-family:var(--display); cursor:pointer;
+    border:0; border-radius:14px; padding:.8rem 1.4rem; background:var(--accent); color:#fff;
+    box-shadow:var(--shadow)}
+  .btn:hover{background:var(--accent-deep)}
+  .btn.ghost{background:transparent; color:var(--accent-deep); border:1px solid var(--line); box-shadow:none;
+    padding:.5rem .9rem; font-size:.9rem}
+  .actions{display:flex; flex-wrap:wrap; gap:.7rem; align-items:center; margin-top:1.2rem}
+  .honey{position:absolute; left:-9999px; opacity:0}
+  #status{margin-top:1rem; font-weight:700; display:none}
+  #status.ok{display:block; color:var(--good)}
+  #status.warn{display:block; color:var(--warn)}
+  .privacy{color:var(--muted); font-size:.82rem; margin-top:.8rem}
+  .organizer{margin-top:1.6rem; padding-top:1rem; border-top:1px dashed var(--line);
+    color:var(--muted); font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="geez" aria-hidden="true">ፊ</span>
+    <p class="eyebrow">Reviewer's Guide · v1</p>
+    <h1>Fidel Quest, feature&nbsp;by&nbsp;feature</h1>
+    <p class="lead"><span class="lion">🦁</span> A walkthrough of everything in the app — with an <strong>honest opinion</strong> on each part. Play through it, then <a href="#feedback">tell us what you think</a> at the bottom.</p>
+  </header>
+
+  <p class="lead"><a href="/">← Back to the game</a></p>
+
+  <p class="lead">Fidel Quest teaches the <strong>Fidel</strong> — the Amharic &amp; Tigrinya alphabet (231 letters across 33 families × 7 vowel orders) — to young children through play. It's a free, install-free web game with a lion cub named <strong>Anbessa</strong>, a star friend <strong>Kokeb</strong>, and a mischievous hyena <strong>Jibby</strong>. No accounts, no ads, nothing leaves the device.</p>
+
+  <div class="callout">
+    <h3>Before you start reviewing</h3>
+    <ul class="steps">
+      <li><b>1</b><span>Open the game in a <strong>private / incognito window</strong> the first time — that guarantees you see the newest version, not an old cached one.</span></li>
+      <li><b>2</b><span>Turn the <strong>sound on</strong> (speaker button, lower-left) and use headphones or a decent speaker — the letters are real human recordings.</span></li>
+      <li><b>3</b><span>When you try <strong>Say-it</strong>, the browser will ask for the <strong>microphone</strong> — allow it. Nothing is recorded or uploaded; it's analysed on the device and thrown away.</span></li>
+      <li><b>4</b><span>Set your language in <strong>Backpack → App text</strong> (8 options) and the letters to learn under <strong>Learning</strong> (Amharic or Tigrinya).</span></li>
+      <li><b>5</b><span>Best audience: roughly <strong>ages 3–8</strong>, plus heritage learners of any age.</span></li>
+    </ul>
+    <div class="legend" aria-label="Verdict key">
+      <span class="chip c-good"><span class="dot"></span>Polished — ready</span>
+      <span class="chip c-info"><span class="dot"></span>Solid — works well</span>
+      <span class="chip c-warn"><span class="dot"></span>Promising — good idea, rough edges</span>
+      <span class="chip c-rough"><span class="dot"></span>Needs a recording / not finished</span>
+    </div>
+  </div>
+
+  <p style="color:var(--muted)">Each feature below tells you <strong>what it is</strong>, gives a child-friendly <strong>&ldquo;try it&rdquo;</strong>, and ends with an <strong>honest take</strong> — the real strengths and the real weak spots.</p>
+
+  <!-- ===================== THE JOURNEY ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🗺️</span><h2>The Home Journey</h2></div>
+    <p class="sec-sub">The main screen — a winding path you climb one step at a time.</p>
+    <div class="feat">
+      <div class="feat-top"><div><h3>The winding path</h3><p class="where">Home screen</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>A single trail of stepping-stones. Exactly one stone pulses — your <em>next</em> step. Letters, mixed reviews, boss quizzes and arcade games unlock strictly in order, so a child is never lost or overwhelmed by choice.</p>
+      <p class="try"><b>Try it</b> — Tap the one glowing stone. Finish it. Watch the next stone light up and Anbessa collect a reward.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The "one obvious next thing" design is genuinely calming and motivating (the Duolingo lesson-path idea, done well).</li>
+          <li class="plus"><span class="m">+</span>Progress is saved on the device automatically — close and come back, it's all there.</li>
+          <li class="minus"><span class="m">–</span>The full path is <strong>~74 steps</strong>, so it's a very long scroll. There's no "jump to my current step" button yet, which can feel daunting on a small phone.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LETTER STEPS ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">✨</span><h2>Letter Steps — the five mini-games</h2></div>
+    <p class="sec-sub">Each new letter-family is taught through the same five playful phases, learn-first.</p>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>1 · Bubble Pop</h3><p class="where">First phase of every Letter Step</p></div><span class="chip c-good"><span class="dot"></span>Polished</span></div>
+      <p>A big, glossy, <strong>dancing</strong> bubble drifts around carrying the new letter. Tap it to hear the sound. The letters are bright white on vivid colour balls — deliberately high-contrast so they're easy to see (and colour-blind-friendly).</p>
+      <p class="try"><b>Try it</b> — Pop the bubble a few times. Say the sound back to Anbessa each pop.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Inviting, tactile first contact; the colour + motion + contrast work were done carefully.</li>
+          <li class="minus"><span class="m">–</span>It's purely receptive (listen only) — no challenge. That's intentional for a first meeting, but don't expect it to test anything.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>2 · Star Trail &amp; 3 · Feed Anbessa</h3><p class="where">Middle phases</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p><strong>Star Trail</strong> traces the family's letters like a constellation. <strong>Feed Anbessa</strong> is call-and-response: you hear a letter and tap the matching "cookie" to feed the lion. There's a <strong>&ldquo;Hear it again&rdquo;</strong> button, and a wrong tap gives a gentle second chance rather than punishing.</p>
+      <p class="try"><b>Try it</b> — Listen, then feed Anbessa the letter you heard. Miss on purpose once to see the "try again" kindness.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The character warmth (feeding the cub) makes drill feel like care, not testing.</li>
+          <li class="minus"><span class="m">–</span>Can get repetitive across many families; the star-trail phase is more decorative than instructive.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>4 · Jibby Shuffle</h3><p class="where">Feed-before-the-hyena phase</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>Same feeding, now with a little urgency — feed the right letter before <strong>Jibby the hyena</strong> snatches it. Introduces a villain and light time-pressure without being scary.</p>
+      <p class="try"><b>Try it</b> — Beat Jibby to the letter. Use "Hear it again" if you miss it the first time.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Jibby is a great low-stakes antagonist; the tension lifts engagement.</li>
+          <li class="minus"><span class="m">–</span>The timing may stress very young or anxious children — worth watching.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>5 · Trace &amp; carve (writing)</h3><p class="where">Final phase of a family</p></div><span class="chip c-warn"><span class="dot"></span>Promising</span></div>
+      <p>The child now <strong>writes</strong>. It says a letter, then they trace it with a finger — three real letters of the family in a row (with a <strong>1/3</strong> progress counter and a "hear it" button). The pen is chunky and the scoring is forgiving so a genuine attempt succeeds.</p>
+      <p class="try"><b>Try it</b> — Trace over the grey letter. Cover most of it and tap Check.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Sound-first, multi-letter, and it never blocks a child with harsh grading — the right call for confidence.</li>
+          <li class="minus"><span class="m">–</span>There's no true <em>stroke-order</em> teaching (Ge'ez has no public stroke dataset), so it scores how much you covered, not how you drew it — a determined scribble can pass.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BOSS QUIZ ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🎯</span><h2>Boss Quizzes</h2></div>
+    <p class="sec-sub">The "listen and pick" checkpoints between chapters.</p>
+    <div class="feat">
+      <div class="feat-top"><div><h3>&ldquo;Which letter says…?&rdquo;</h3><p class="where">Quiz boss stones</p></div><span class="chip c-good"><span class="dot"></span>Polished</span></div>
+      <p>Hear a sound, tap the matching letter from a few choices. It <strong>advances by itself</strong> after a correct answer (no "Continue" button), a wrong answer lets you try again, and letters you miss quietly come back more often later.</p>
+      <p class="try"><b>Try it</b> — Answer a few. Notice it moves on on its own, and never shows two letters that sound the same.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Clean, fast, forgiving; the adaptive "missed letters resurface" is real spaced-practice, not decoration.</li>
+          <li class="minus"><span class="m">–</span>A simple format by design — it leans entirely on the audio being clear.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ARCADE ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🏛️</span><h2>The Arcade — Anbessa &amp; Jibby in 3D</h2></div>
+    <p class="sec-sub">The reward games, set in real Ethiopian landmarks.</p>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Letter Runner</h3><p class="where">Arcade gateway stones</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>A 3D lane-runner through <strong>Lalibela, Aksum, Gondar</strong> and more. Hear a letter and steer Anbessa into the right lane; Jibby chases when you miss. You can pick a <strong>speed</strong> (slow / normal / fast), and — importantly — it only ever asks about letters the child <strong>has already learned</strong>.</p>
+      <p class="try"><b>Try it</b> — Set the speed to slow, then steer Anbessa into the letter you hear. Speed up when it feels easy.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Genuinely fun, and the landmarks quietly teach geography/heritage. "Only quiz what they've learned" is exactly right.</li>
+          <li class="plus"><span class="m">+</span>Falls back to a 2D version automatically on slower devices, so it doesn't just freeze.</li>
+          <li class="minus"><span class="m">–</span>The letters can still read a little far at a glance; and 3D is the heaviest thing in the app.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Fidel Skylands</h3><p class="where">Some arcade stones</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>A floating-island 3D mode with a cumulative quiz and a Jibby boss round that reviews everything so far.</p>
+      <p class="try"><b>Try it</b> — Play through an island; the boss at the end mixes earlier letters back in.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Good cumulative review wrapped in spectacle.</li>
+          <li class="minus"><span class="m">–</span>Mechanically similar to the runner quiz; mostly a change of scenery.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BACKPACK ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🎒</span><h2>The Backpack — the toolkit</h2></div>
+    <p class="sec-sub">Tap the backpack (top-right). Everything here is free-play, off the main path.</p>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Letter Explorer</h3><p class="where">Backpack → Letter Explorer</p></div><span class="chip c-good"><span class="dot"></span>Polished</span></div>
+      <p>Every one of the 33 families as a colourful tile — tap to hear it, open one to see all seven vowel forms, and use the <strong>vowel picker</strong> to see the same vowel across every family at once.</p>
+      <p class="try"><b>Try it</b> — Pick a vowel (e.g. "Rab' · -aa") and hear how every family changes with it.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The best free-reference in the app; the vowel picker makes the abugida's structure click.</li>
+          <li class="minus"><span class="m">–</span>It's a reference, not a game — no goal or reward.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>First Words</h3><p class="where">Backpack → First Words</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>Hear a whole word and tap its picture (ልጅ = child 👶, ማር = honey 🍯). Sometimes it shows the picture and asks which <em>letter</em> the word starts with — the one place look-alike "twin" letters appear together, told apart by meaning.</p>
+      <p class="try"><b>Try it</b> — Hear the word, tap the matching picture.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Connects letters to real, kid-familiar words — the leap from sounds to reading.</li>
+          <li class="minus"><span class="m">–</span>The word list is still small (only some families have a word yet, and a few await a recording). More words are planned.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Star Practice</h3><p class="where">Backpack (appears when you've missed letters)</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>A short remedial round built only from the exact letters the child has gotten wrong — pure targeted practice.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Smart, personal, and it never touches your stars/score — pressure-free.</li>
+          <li class="minus"><span class="m">–</span>Only shows up once there's something to practise, so new players won't see it.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Anbessa's Closet &amp; Share</h3><p class="where">Backpack → Anbessa's Closet (or tap the lion)</p></div><span class="chip c-good"><span class="dot"></span>Polished</span></div>
+      <p>Dress Anbessa in hats, scarves and capes earned by finishing steps, then tap <strong>Share Anbessa</strong> to make a card ("<em>X / 231 letters learned</em>") for WhatsApp/social — the app's word-of-mouth loop.</p>
+      <p class="try"><b>Try it</b> — Put a cape on Anbessa, then Share to see the card it makes.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The reward that kids actually want; the share card is a clean, private growth loop (nothing leaves the device unless the parent shares).</li>
+          <li class="minus"><span class="m">–</span>Cosmetic — no bearing on learning. The card image quality depends on the device.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Anbessa Tee Shop</h3><p class="where">Backpack → Anbessa Tee Shop</p></div><span class="chip c-warn"><span class="dot"></span>Promising</span></div>
+      <p>Each chapter mastered unlocks a wearable <strong>T-shirt design</strong> showing Anbessa in the child's earned outfit + their progress. A parent can save a print-ready image or tap "Order a real shirt."</p>
+      <p class="try"><b>Try it</b> — Open a design and tap "Save the design" to see the print-ready picture.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>A genuinely clever idea — turn the motivation the game already creates into keepsakes / a small income stream.</li>
+          <li class="minus"><span class="m">–</span>It's a scaffold, not a live store: "Order" only opens a shop once one is configured; otherwise it just saves the PNG.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Classic Game</h3><p class="where">Backpack → Classic Game</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>The original game, preserved: seven levels, an <strong>Explore Mode</strong> that chants a whole letter-row aloud (with slow/normal/fast pace), and a <strong>Tracing</strong> mode.</p>
+      <p class="try"><b>Try it</b> — Explore Mode → open a family → "Chant the row," and slow the pace down.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The chant is lovely and true to how the Fidel is taught in classrooms.</li>
+          <li class="minus"><span class="m">–</span>It overlaps with the main Journey and Fidel Master — three places to "hear letters" is a little redundant.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>For Grown-Ups</h3><p class="where">Backpack → For grown-ups</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>A small dashboard of progress and the letters a child finds tricky.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Exactly the at-a-glance a parent wants.</li>
+          <li class="minus"><span class="m">–</span>Still shows in English under some of the newer languages.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FIDEL MASTER ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🎓</span><h2>Fidel Master — the mastery trainer</h2></div>
+    <p class="sec-sub">Reached from Classic Game → Fidel Master. Three tools for drilling the whole alphabet.</p>
+    <div class="feat">
+      <div class="feat-top"><div><h3>Chart · Auto-voice · Say-it</h3><p class="where">Classic Game → Fidel Master</p></div><span class="chip c-warn"><span class="dot"></span>Promising</span></div>
+      <p><strong>Chart</strong> is a bright, tappable abugida with a "Play the whole Abugida" button. <strong>Auto-voice</strong> reads letters aloud continuously — pick a single vowel or the whole set, a "Say with me" pause so kids chant along, and a pace control. <strong>Say-it</strong> shows a letter, the child speaks into the mic, and it gives encouraging feedback.</p>
+      <p class="try"><b>Try it</b> — Auto-voice tab → pick one vowel → turn on "Say with me" → set it slow. Then try Say-it and speak a letter.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Chart and Auto-voice are lovely and genuinely useful for mastery + chant-along practice.</li>
+          <li class="minus"><span class="m">–</span><strong>Be clear about Say-it:</strong> it's private/offline by design, so it can tell that the child <em>spoke</em> and roughly how long — it does <em>not</em> truly judge whether the Amharic sound was correct. It's encouragement, not a pronunciation score (a real score needs cloud speech recognition, deliberately not used to protect a child's voice).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LANGUAGE & AUDIO ===================== -->
+  <section>
+    <div class="sec-head"><span class="tag" aria-hidden="true">🌍</span><h2>Languages, Audio &amp; Under the Hood</h2></div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Two alphabets, eight app languages</h3><p class="where">Backpack → Learning / App text</p></div><span class="chip c-info"><span class="dot"></span>Solid</span></div>
+      <p>Learn the <strong>Amharic</strong> or <strong>Tigrinya</strong> letters; read the app itself in <strong>English, Amharic, German, Italian, Swedish, Dutch, Norwegian or French</strong> — chosen for where Ethiopian &amp; Eritrean families live. Even the praise words ("Bravo!", "Bra jobbat!") follow your language.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>Rare thoughtfulness for a diaspora audience; graceful — anything untranslated simply shows in English.</li>
+          <li class="minus"><span class="m">–</span>The newer translations are best-effort and want a native-speaker pass.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Real human voice (with one gap)</h3><p class="where">Everywhere</p></div><span class="chip c-rough"><span class="dot"></span>One recording missing</span></div>
+      <p>Every letter is a <strong>real human recording</strong> — no robotic text-to-speech anywhere. A gentle musical chime stands in only when a clip is genuinely missing, and there's a soft hand-clap when you win.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>The human voice is the app's backbone and it sounds warm and clear.</li>
+          <li class="minus"><span class="m">–</span>The <strong>Tigrinya "ሐ" (ḥ)</strong> has no distinct recording yet, so on Tigrinya it borrows the Amharic "h" — audibly wrong to a Tigrinya ear. It needs one short recording to fix. (A couple of words and the spoken praise words are also awaiting recordings.)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="feat-top"><div><h3>Installable, offline, private</h3><p class="where">Add to Home Screen</p></div><span class="chip c-good"><span class="dot"></span>Polished</span></div>
+      <p>Add it to a phone's home screen and it launches full-screen like a real app, works with no internet after the first load, needs <strong>no account</strong>, and keeps all progress on the device — nothing is collected.</p>
+      <div class="take"><span class="label">Honest take</span>
+        <ul class="pc">
+          <li class="plus"><span class="m">+</span>A privacy stance most kids' apps don't come close to — genuinely offline and account-free.</li>
+          <li class="minus"><span class="m">–</span>The very first load needs a connection (to fetch the audio and font).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ===================== OVERALL ===================== -->
+  <section>
+    <div class="verdict">
+      <p class="eyebrow">The honest bottom line</p>
+      <h2>A warm, thoughtful, genuinely playable alphabet game — with a handful of honest gaps.</h2>
+      <p>The core loop (learn a letter → play with it → write it → get quizzed → earn a reward) is well-built and kind to children: it never punishes, it adapts to what they miss, and it's wrapped in real characters and real places. The privacy and offline stance is exemplary, and the diaspora-language support is unusually caring.</p>
+      <p>The weak spots are honest and fixable: <strong>Say-it can't truly grade pronunciation</strong> (on purpose), <strong>Tigrinya ḥ and more first-words need recordings</strong>, the newer translations want a native check, there's some <strong>overlap</strong> between Classic / Fidel Master / Explorer, and the home path is a long scroll. None of these break the experience — but a reviewer should know them.</p>
+    </div>
+  </section>
+
+  <!-- ===================== FEEDBACK FORM ===================== -->
+  <section id="feedback">
+    <div class="sec-head"><span class="tag" aria-hidden="true">📝</span><h2>Send your review</h2></div>
+    <p class="sec-sub">Score each part 1–5 as you go, then tell us what a child actually did. Every review is saved so we can gather them all and act on them.</p>
+
+    <div class="form-card">
+      <!-- Netlify Forms captures this automatically once the site is deployed to
+           Netlify. It also degrades gracefully: the JS below saves a backup on
+           the device and offers a downloadable copy so a review is never lost,
+           even offline or on a non-Netlify host. -->
+      <form name="fidel-review" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/review/?sent=1" id="reviewForm">
+        <input type="hidden" name="form-name" value="fidel-review" />
+        <p class="honey" aria-hidden="true"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
+
+        <div class="two">
+          <div class="field">
+            <label for="reviewer">Your name or nickname <span class="hint">(optional)</span></label>
+            <input type="text" id="reviewer" name="reviewer" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="childAge">Child's age <span class="hint">(optional)</span></label>
+            <input type="text" id="childAge" name="child_age" inputmode="numeric" placeholder="e.g. 5" />
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label for="device">Device &amp; browser</label>
+            <input type="text" id="device" name="device" placeholder="e.g. iPhone 12, Safari" />
+          </div>
+          <div class="field">
+            <label for="langs">Languages you used</label>
+            <input type="text" id="langs" name="languages" placeholder="e.g. Amharic letters, English text" />
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="q">Would you recommend it to another family?</span>
+          <div class="rec-row" role="radiogroup" aria-label="Would you recommend it?">
+            <label><input type="radio" name="recommend" value="Yes, definitely" /> Yes, definitely</label>
+            <label><input type="radio" name="recommend" value="Yes" /> Yes</label>
+            <label><input type="radio" name="recommend" value="Maybe" /> Maybe</label>
+            <label><input type="radio" name="recommend" value="Not yet" /> Not yet</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="q">Rate each part <span class="hint">(1 = poor, 5 = excellent — skip any you didn't try)</span></span>
+          <div class="rate-scroll">
+            <table class="rate">
+              <thead>
+                <tr><th scope="col">Feature</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th></tr>
+              </thead>
+              <tbody id="rateBody">
+                <tr><td>Bubble Pop</td><td><label><input type="radio" name="rate_bubble" value="1" aria-label="Bubble Pop: 1" /></label></td><td><label><input type="radio" name="rate_bubble" value="2" aria-label="Bubble Pop: 2" /></label></td><td><label><input type="radio" name="rate_bubble" value="3" aria-label="Bubble Pop: 3" /></label></td><td><label><input type="radio" name="rate_bubble" value="4" aria-label="Bubble Pop: 4" /></label></td><td><label><input type="radio" name="rate_bubble" value="5" aria-label="Bubble Pop: 5" /></label></td></tr>
+                <tr><td>Feed Anbessa / Jibby</td><td><label><input type="radio" name="rate_feed" value="1" aria-label="Feed Anbessa: 1" /></label></td><td><label><input type="radio" name="rate_feed" value="2" aria-label="Feed Anbessa: 2" /></label></td><td><label><input type="radio" name="rate_feed" value="3" aria-label="Feed Anbessa: 3" /></label></td><td><label><input type="radio" name="rate_feed" value="4" aria-label="Feed Anbessa: 4" /></label></td><td><label><input type="radio" name="rate_feed" value="5" aria-label="Feed Anbessa: 5" /></label></td></tr>
+                <tr><td>Trace &amp; write</td><td><label><input type="radio" name="rate_trace" value="1" aria-label="Trace: 1" /></label></td><td><label><input type="radio" name="rate_trace" value="2" aria-label="Trace: 2" /></label></td><td><label><input type="radio" name="rate_trace" value="3" aria-label="Trace: 3" /></label></td><td><label><input type="radio" name="rate_trace" value="4" aria-label="Trace: 4" /></label></td><td><label><input type="radio" name="rate_trace" value="5" aria-label="Trace: 5" /></label></td></tr>
+                <tr><td>Boss quiz</td><td><label><input type="radio" name="rate_quiz" value="1" aria-label="Boss quiz: 1" /></label></td><td><label><input type="radio" name="rate_quiz" value="2" aria-label="Boss quiz: 2" /></label></td><td><label><input type="radio" name="rate_quiz" value="3" aria-label="Boss quiz: 3" /></label></td><td><label><input type="radio" name="rate_quiz" value="4" aria-label="Boss quiz: 4" /></label></td><td><label><input type="radio" name="rate_quiz" value="5" aria-label="Boss quiz: 5" /></label></td></tr>
+                <tr><td>Letter Runner</td><td><label><input type="radio" name="rate_runner" value="1" aria-label="Letter Runner: 1" /></label></td><td><label><input type="radio" name="rate_runner" value="2" aria-label="Letter Runner: 2" /></label></td><td><label><input type="radio" name="rate_runner" value="3" aria-label="Letter Runner: 3" /></label></td><td><label><input type="radio" name="rate_runner" value="4" aria-label="Letter Runner: 4" /></label></td><td><label><input type="radio" name="rate_runner" value="5" aria-label="Letter Runner: 5" /></label></td></tr>
+                <tr><td>Letter Explorer</td><td><label><input type="radio" name="rate_explorer" value="1" aria-label="Letter Explorer: 1" /></label></td><td><label><input type="radio" name="rate_explorer" value="2" aria-label="Letter Explorer: 2" /></label></td><td><label><input type="radio" name="rate_explorer" value="3" aria-label="Letter Explorer: 3" /></label></td><td><label><input type="radio" name="rate_explorer" value="4" aria-label="Letter Explorer: 4" /></label></td><td><label><input type="radio" name="rate_explorer" value="5" aria-label="Letter Explorer: 5" /></label></td></tr>
+                <tr><td>First Words</td><td><label><input type="radio" name="rate_words" value="1" aria-label="First Words: 1" /></label></td><td><label><input type="radio" name="rate_words" value="2" aria-label="First Words: 2" /></label></td><td><label><input type="radio" name="rate_words" value="3" aria-label="First Words: 3" /></label></td><td><label><input type="radio" name="rate_words" value="4" aria-label="First Words: 4" /></label></td><td><label><input type="radio" name="rate_words" value="5" aria-label="First Words: 5" /></label></td></tr>
+                <tr><td>Closet &amp; Share</td><td><label><input type="radio" name="rate_closet" value="1" aria-label="Closet and Share: 1" /></label></td><td><label><input type="radio" name="rate_closet" value="2" aria-label="Closet and Share: 2" /></label></td><td><label><input type="radio" name="rate_closet" value="3" aria-label="Closet and Share: 3" /></label></td><td><label><input type="radio" name="rate_closet" value="4" aria-label="Closet and Share: 4" /></label></td><td><label><input type="radio" name="rate_closet" value="5" aria-label="Closet and Share: 5" /></label></td></tr>
+                <tr><td>Tee Shop</td><td><label><input type="radio" name="rate_tee" value="1" aria-label="Tee Shop: 1" /></label></td><td><label><input type="radio" name="rate_tee" value="2" aria-label="Tee Shop: 2" /></label></td><td><label><input type="radio" name="rate_tee" value="3" aria-label="Tee Shop: 3" /></label></td><td><label><input type="radio" name="rate_tee" value="4" aria-label="Tee Shop: 4" /></label></td><td><label><input type="radio" name="rate_tee" value="5" aria-label="Tee Shop: 5" /></label></td></tr>
+                <tr><td>Fidel Master (Say-it)</td><td><label><input type="radio" name="rate_master" value="1" aria-label="Fidel Master: 1" /></label></td><td><label><input type="radio" name="rate_master" value="2" aria-label="Fidel Master: 2" /></label></td><td><label><input type="radio" name="rate_master" value="3" aria-label="Fidel Master: 3" /></label></td><td><label><input type="radio" name="rate_master" value="4" aria-label="Fidel Master: 4" /></label></td><td><label><input type="radio" name="rate_master" value="5" aria-label="Fidel Master: 5" /></label></td></tr>
+                <tr><td>Audio clarity</td><td><label><input type="radio" name="rate_audio" value="1" aria-label="Audio clarity: 1" /></label></td><td><label><input type="radio" name="rate_audio" value="2" aria-label="Audio clarity: 2" /></label></td><td><label><input type="radio" name="rate_audio" value="3" aria-label="Audio clarity: 3" /></label></td><td><label><input type="radio" name="rate_audio" value="4" aria-label="Audio clarity: 4" /></label></td><td><label><input type="radio" name="rate_audio" value="5" aria-label="Audio clarity: 5" /></label></td></tr>
+                <tr><td>Overall</td><td><label><input type="radio" name="rate_overall" value="1" aria-label="Overall: 1" /></label></td><td><label><input type="radio" name="rate_overall" value="2" aria-label="Overall: 2" /></label></td><td><label><input type="radio" name="rate_overall" value="3" aria-label="Overall: 3" /></label></td><td><label><input type="radio" name="rate_overall" value="4" aria-label="Overall: 4" /></label></td><td><label><input type="radio" name="rate_overall" value="5" aria-label="Overall: 5" /></label></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="rate-legend">Tap a number in each row. Rows you leave blank are simply not scored.</p>
+        </div>
+
+        <div class="field">
+          <label for="loved">What did the child love most?</label>
+          <textarea id="loved" name="loved" placeholder="What held their attention, made them laugh, or made them proud"></textarea>
+        </div>
+        <div class="field">
+          <label for="confused">What was confusing or frustrating?</label>
+          <textarea id="confused" name="confused" placeholder="Anything that lost them, felt too hard, or looked broken"></textarea>
+        </div>
+        <div class="field">
+          <label for="sounded">Anything that sounded or read wrong?</label>
+          <textarea id="sounded" name="sounded_wrong" placeholder="A letter that sounded off, a translation that seemed wrong — name the family/letter if you can"></textarea>
+        </div>
+        <div class="field">
+          <label for="add">What should we add or fix next?</label>
+          <textarea id="add" name="suggestions" placeholder="Your wish list"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn" id="submitBtn">Send review</button>
+          <button type="button" class="btn ghost" id="copyBtn">Download a copy</button>
+        </div>
+        <p id="status" role="status" aria-live="polite"></p>
+        <p class="privacy">Your review goes to the Fidel Quest team so we can improve the app. A copy is also saved on this device as a backup — no child's game progress or voice is ever included.</p>
+      </form>
+
+      <div class="organizer">
+        <strong>Running a test session on one shared tablet?</strong> Every review sent from this device is also stored here as a backup.
+        <a href="#" id="exportAll">Download all reviews saved on this device</a> to gather them in one file.
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:1.4rem">
+      <h3>Tips for a useful review</h3>
+      <ul class="pc" style="font-size:1rem">
+        <li class="plus"><span class="m">•</span>Note the <strong>device &amp; browser</strong> — layout and audio can differ.</li>
+        <li class="plus"><span class="m">•</span>Say which <strong>languages</strong> you used (learning + app text).</li>
+        <li class="plus"><span class="m">•</span>Tell us the <strong>child's age</strong> and what held their attention vs. what lost it.</li>
+        <li class="plus"><span class="m">•</span>Flag <strong>anything that sounded wrong</strong> (a letter, a translation) with the family/letter name.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Fidel Quest — a free, offline Amharic &amp; Tigrinya alphabet game for kids. 🦁 ፊደል<br>
+    Reviewer's Guide · honest by design.
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var STORE = 'fq.reviews.v1';
+
+  var form = document.getElementById('reviewForm');
+  var statusEl = document.getElementById('status');
+  var submitBtn = document.getElementById('submitBtn');
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind || '';
+  }
+
+  function collect() {
+    var data = {};
+    var fd = new FormData(form);
+    fd.forEach(function (value, key) {
+      if (key === 'bot-field' || key === 'form-name') return;
+      data[key] = value;
+    });
+    // Stamp locally so the organizer export is ordered/traceable. This is a
+    // static page, not game logic, so a timestamp here is fine.
+    data.saved_at = new Date().toISOString();
+    return data;
+  }
+
+  function saveLocal(data) {
+    try {
+      var all = JSON.parse(localStorage.getItem(STORE) || '[]');
+      all.push(data);
+      localStorage.setItem(STORE, JSON.stringify(all));
+    } catch (e) { /* private mode / full storage: ignore, network copy remains */ }
+  }
+
+  function download(filename, text) {
+    var blob = new Blob([text], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function encode(data) {
+    return Object.keys(data).map(function (k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
+    }).join('&');
+  }
+
+  // Download a copy of the current answers without submitting.
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    var data = collect();
+    download('fidel-review.json', JSON.stringify(data, null, 2));
+    setStatus('Saved a copy to your device. You can email it to us too.', 'ok');
+  });
+
+  // Organizer export: everything backed up on this device.
+  document.getElementById('exportAll').addEventListener('click', function (e) {
+    e.preventDefault();
+    var all = '[]';
+    try { all = localStorage.getItem(STORE) || '[]'; } catch (err) { /* ignore */ }
+    var count = 0;
+    try { count = JSON.parse(all).length; } catch (err) { /* ignore */ }
+    if (!count) { setStatus('No reviews are saved on this device yet.', 'warn'); return; }
+    download('fidel-reviews-all.json', all);
+    setStatus('Downloaded ' + count + ' saved review(s) from this device.', 'ok');
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var data = collect();
+    saveLocal(data); // always keep a device backup first
+    submitBtn.disabled = true;
+    setStatus('Sending…', '');
+
+    var payload = Object.assign({ 'form-name': 'fidel-review' }, data);
+    delete payload.saved_at; // not a form field; keep the Netlify submission clean
+
+    fetch(form.getAttribute('action') || location.pathname, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: encode(payload)
+    }).then(function (res) {
+      if (!res.ok) throw new Error('bad status ' + res.status);
+      form.reset();
+      submitBtn.disabled = false;
+      setStatus('Thank you! Your review was sent. 🦁', 'ok');
+    }).catch(function () {
+      // Offline or a non-Netlify host: the review is safe on the device.
+      submitBtn.disabled = false;
+      setStatus('We could not reach the server, but your review is saved on this device. Tap "Download a copy" and email it to us so it is not lost.', 'warn');
+    });
+  });
+
+  // If a no-JS submit round-tripped through Netlify, show a thank-you.
+  if (/[?&]sent=1/.test(location.search)) {
+    setStatus('Thank you! Your review was sent. 🦁', 'ok');
+  }
+})();
+</script>
+</body>
+</html>

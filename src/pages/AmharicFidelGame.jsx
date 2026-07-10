@@ -27,6 +27,12 @@ import {
 } from 'lucide-react'
 import { loadFromStorage } from '../utils/loadFromStorage'
 import FidelTracePad from '../components/FidelTracePad'
+import FidelMaster from '../components/FidelMaster'
+import ScopeToggle from '../components/ScopeToggle'
+import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScope'
+import { audio as platformAudio } from '../platform/audioEngine'
+import { getLang, praiseWords, encourageWords } from '../platform/i18n'
+import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
 import {
   FIDEL_FAMILIES,
   ALL_FORMS,
@@ -60,22 +66,11 @@ export { FIDEL_FAMILIES, ALL_FORMS, CHAR_TO_FORM, WORDS }
      Word pronunciations (First Words level, one clip per word):
        public/audio/fidel/words/<latin>.mp3   e.g. ልጅ -> words/lij.mp3
 
-     UI sound effects:
-       public/audio/fidel/sfx/correct.mp3        (right answer chime)
-       public/audio/fidel/sfx/wrong.mp3          (gentle "try again" tone)
-       public/audio/fidel/sfx/level-complete.mp3 (fanfare)
-       public/audio/fidel/sfx/streak.mp3         (streak milestone jingle)
-       public/audio/fidel/sfx/tap.mp3            (soft click)
-
-   Recorded files are the first of three audio tiers — when one is missing,
-   letters fall back to speech synthesis and SFX to synthesized WebAudio
-   tones (see the AUDIO section), so the game is fully audible before any
-   recording exists. Files simply take over as you add them.
+   Letter and word playback goes through the shared platform AudioEngine
+   (src/platform/audioEngine.js) — the same human recordings, memory-pack
+   support (artifact builds), and deterministic chime floor as every other
+   mode. UI sound effects are synthesized WebAudio tones (see AUDIO below).
    ========================================================================== */
-
-const LETTER_AUDIO_BASE = '/audio/fidel/letters'
-const WORD_AUDIO_BASE = '/audio/fidel/words'
-const SFX_AUDIO_BASE = '/audio/fidel/sfx'
 
 /* ── LEVELS ──────────────────────────────────────────────────────────────────
    Seven levels over the full 33-family fidel table (data module holds the
@@ -86,7 +81,7 @@ const SFX_AUDIO_BASE = '/audio/fidel/sfx'
    4:   the ejective ("popping") letters plus f/p.
    5:   vocalized orders inside familiar families — vowel discrimination.
    6:   first words — which letter starts the word?
-   7:   reverse direction — see any letter, name its sound.                   */
+   7:   grand review — hear any of the 231 forms, find the letter.            */
 
 const familyIndicesByName = (names) =>
   names.map((name) => FIDEL_FAMILIES.findIndex((f) => f.name === name))
@@ -144,8 +139,11 @@ export const LEVELS = [
     accent: 'from-lime-400 to-green-500',
   },
   {
+    // Grand Review: hear any letter (all families, all seven orders), find
+    // it. Replaces the old char-to-sound "Sound Detective" - kids should
+    // never be asked to read Latin romanizations.
     id: 7,
-    mode: 'char-to-sound',
+    mode: 'sound-to-char',
     familyIndices: ALL_FAMILY_INDICES,
     formOrders: [0, 1, 2, 3, 4, 5, 6],
     questionCount: 12,
@@ -181,15 +179,22 @@ export function shuffle(array) {
   return copy
 }
 
-function buildPool(level) {
-  const pool = []
-  level.familyIndices.forEach((fi) => {
-    const family = FIDEL_FAMILIES[fi]
-    level.formOrders.forEach((order) => {
-      if (family.forms[order]) pool.push(family.forms[order])
+function buildPool(level, familyIndexSet = null) {
+  const build = (indices) => {
+    const pool = []
+    indices.forEach((fi) => {
+      const family = FIDEL_FAMILIES[fi]
+      level.formOrders.forEach((order) => {
+        if (family.forms[order]) pool.push(family.forms[order])
+      })
     })
-  })
-  return pool
+    return pool
+  }
+  if (!familyIndexSet) return build(level.familyIndices)
+  const scoped = build(level.familyIndices.filter((fi) => familyIndexSet.has(fi)))
+  // Keep the quiz playable: if the child has learned too few of this level's
+  // letters to make real choices, fall back to the full level pool.
+  return scoped.length >= 4 ? scoped : build(level.familyIndices)
 }
 
 /* Pick 3 distractors for a target. Guarantees no distractor shares the
@@ -252,9 +257,9 @@ export function buildWordQuestions(level) {
   return questions
 }
 
-export function buildQuestions(level, { missCounts = {}, targetForms = null } = {}) {
+export function buildQuestions(level, { missCounts = {}, targetForms = null, familyIndices = null } = {}) {
   if (level.mode === 'word-to-char') return buildWordQuestions(level)
-  const pool = buildPool(level)
+  const pool = buildPool(level, familyIndices)
   // Practice rounds narrow the targets to just-missed letters while keeping
   // the full level pool available for distractors.
   const baseTargets = targetForms && targetForms.length ? targetForms : pool
@@ -292,34 +297,14 @@ function baseLevelOf(level) {
   return LEVELS.find((l) => l.id === level.id) || level
 }
 
-function loadProgress() {
-  try {
-    const parsed = JSON.parse(loadFromStorage(STORAGE_KEY, 'null')) || {}
-    return {
-      stars: parsed.stars || {},
-      bestScore: parsed.bestScore || 0,
-      missCounts: parsed.missCounts || {},
-    }
-  } catch {
-    return { stars: {}, bestScore: 0, missCounts: {} }
-  }
-}
-
-function saveProgress(progress) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
-  } catch {
-    // Storage unavailable (private mode) — progress just won't persist.
-  }
-}
+// Storage moved to platform/classicSave (registered app-level progress).
+const loadProgress = loadClassicProgress
+const saveProgress = saveClassicProgress
 
 /* ── AUDIO ───────────────────────────────────────────────────────────────────
-   Three tiers, best available wins:
-   1. Recorded files under public/audio/fidel/ (drop-in, preferred).
-   2. Letters: speech synthesis — a real Amharic voice ("am"/"am-ET") speaks
-      the character itself when the device has one; otherwise the phonetic
-      is spoken as a rough placeholder.
-   3. SFX: synthesized WebAudio tones, so the game is audible on day one.   */
+   Letters/words: the shared platform AudioEngine (human recordings with a
+   deterministic chime floor — never a robotic synthesized voice).
+   SFX: synthesized WebAudio tones, local to this mode.                       */
 
 let sharedAudioCtx = null
 
@@ -396,93 +381,34 @@ const SYNTH_SFX = {
     ]),
 }
 
-// The system voice list is static for a session (barring the async
-// voiceschanged event) — resolve the Amharic voice once instead of scanning
-// 50+ voices on every letter play.
-let amharicVoiceCache = { resolved: false, voice: null }
-
-function getAmharicVoice() {
-  if (typeof speechSynthesis === 'undefined') return null
-  if (!amharicVoiceCache.resolved) {
-    const resolve = () => {
-      const voices = speechSynthesis.getVoices()
-      amharicVoiceCache = {
-        resolved: voices.length > 0,
-        voice: voices.find((v) => v.lang && v.lang.toLowerCase().startsWith('am')) || null,
-      }
-    }
-    resolve()
-    if (typeof speechSynthesis.addEventListener === 'function') {
-      speechSynthesis.addEventListener('voiceschanged', resolve, { once: true })
-    }
-  }
-  return amharicVoiceCache.voice
-}
-
-/* interrupt=true (default) replaces any still-playing utterance — right for
-   rapid taps. The chant passes interrupt=false so its 900ms cadence queues
-   naturally instead of cutting each syllable short.                          */
-function speakPhonetic(form, { interrupt = true } = {}) {
-  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return
-  try {
-    const amharicVoice = getAmharicVoice()
-    const utterance = new SpeechSynthesisUtterance(
-      amharicVoice ? form.char : form.sound || form.char,
-    )
-    if (amharicVoice) {
-      utterance.voice = amharicVoice
-      utterance.lang = amharicVoice.lang
-    }
-    utterance.rate = 0.75
-    utterance.pitch = 1.1
-    if (interrupt) speechSynthesis.cancel()
-    speechSynthesis.speak(utterance)
-  } catch {
-    // Speech synthesis unavailable — recorded files remain the upgrade path.
-  }
-}
-
-// Clip cache: reuse successful Audio elements instead of re-fetching, and
-// remember 404s so the default no-recordings install skips straight to the
-// synth/TTS tier with zero repeat network round-trips.
-const audioClipCache = new Map()
-const missingAudioSrcs = new Set()
-
-function playFileWithFallback(src, fallback) {
-  if (typeof Audio === 'undefined' || missingAudioSrcs.has(src)) {
-    if (fallback) fallback()
-    return
-  }
-  let fellBack = false
-  const fallBackOnce = () => {
-    if (fellBack) return
-    fellBack = true
-    if (fallback) fallback()
-  }
-  try {
-    let clip = audioClipCache.get(src)
-    if (!clip) {
-      clip = new Audio(src)
-      clip.volume = 0.9
-      // 'error' fires for missing files; play() rejects for unsupported
-      // sources and autoplay policy. Either way the synth/TTS tier steps in.
-      clip.addEventListener('error', () => {
-        missingAudioSrcs.add(src)
-        audioClipCache.delete(src)
-        fallBackOnce()
-      })
-      audioClipCache.set(src, clip)
-    }
-    clip.currentTime = 0
-    clip.play().catch(fallBackOnce)
-  } catch {
-    fallBackOnce()
-  }
-}
-
 function vibrate(pattern) {
   if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
     navigator.vibrate(pattern)
+  }
+}
+
+// Recitation cadence: ~0.8s clip + a beat of silence, so syllables never
+// overlap (with interrupt:true they also cross-fade cleanly). The chant offers
+// three paces; slow gives the most room to say each letter along.
+const CHANT_PACES = { slow: 1900, normal: 1300, fast: 850 }
+const CHANT_PACE_ORDER = ['slow', 'normal', 'fast']
+const CHANT_CADENCE_MS = CHANT_PACES.normal
+
+/* Spoken motivation. These keys map to optional human recordings the operator
+   can drop in (e.g. public/audio/fidel/praise/gobez.mp3). Until a clip exists
+   the resolver reports 'chime', and we simply skip it — the correct/wrong SFX
+   already gives an audio cue, so we never double up or fake a robotic voice.
+   The word lists (UI_STRINGS praise/encourage) are what to record. */
+const PRAISE_CLIPS = ['praise/gobez', 'praise/betam-gobez', 'praise/arif', 'praise/girum', 'praise/tebarek', 'praise/kokeb-neh']
+const ENCOURAGE_CLIPS = ['encourage/ayzoh', 'encourage/endegena-moker', 'encourage/teqarebk', 'encourage/tichlaleh']
+
+function speakMotivation(clips) {
+  try {
+    const key = clips[Math.floor(Math.random() * clips.length)]
+    // Only play when a real recording exists; a 'chime' resolution is skipped.
+    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key, { interrupt: false })
+  } catch {
+    /* audio unavailable — the SFX cue already fired */
   }
 }
 
@@ -673,25 +599,27 @@ export default function AmharicFidelGame() {
   // screen: menu | explore | game | complete | trace
   const [screen, setScreen] = useState('menu')
   const [soundOn, setSoundOn] = useState(() => loadFromStorage('fidel-quest-sound', 'on') !== 'off')
-  // UI language: English is canonical; Amharic for local families.
-  const [lang, setLang] = useState(() => (loadFromStorage('fidel-quest-lang', 'en') === 'am' ? 'am' : 'en'))
+  // UI language follows the single global app-text setting (set in the main
+  // app's Backpack). Classic's own strings live in UI_STRINGS (en/am); any
+  // other diaspora language falls back to English here, while the spoken/shown
+  // reinforcement words come from the shared multilingual lists.
+  const lang = getLang()
   const [progress, setProgress] = useState(loadProgress)
 
   useEffect(() => {
     try {
       localStorage.setItem('fidel-quest-sound', soundOn ? 'on' : 'off')
-      localStorage.setItem('fidel-quest-lang', lang)
     } catch {
-      // Storage unavailable — the toggles just won't persist.
+      // Storage unavailable — the toggle just won't persist.
     }
-  }, [soundOn, lang])
+  }, [soundOn])
 
   // Tiny i18n: current-language lookup with English fallback and
   // {placeholder} interpolation. Strings live in the data module.
   const t = useCallback(
     (key, vars) => {
-      let s = UI_STRINGS[lang][key] ?? UI_STRINGS.en[key] ?? key
-      if (vars) {
+      let s = UI_STRINGS[lang]?.[key] ?? UI_STRINGS.en[key] ?? key
+      if (vars && typeof s === 'string') {
         Object.entries(vars).forEach(([k, v]) => {
           s = s.replace(`{${k}}`, v)
         })
@@ -701,11 +629,11 @@ export default function AmharicFidelGame() {
     [lang],
   )
   const tLevelTitle = useCallback(
-    (lvl) => (UI_STRINGS[lang].levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).title,
+    (lvl) => (UI_STRINGS[lang]?.levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).title,
     [lang],
   )
   const tLevelSubtitle = useCallback(
-    (lvl) => (UI_STRINGS[lang].levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).subtitle,
+    (lvl) => (UI_STRINGS[lang]?.levels?.[lvl.id] || UI_STRINGS.en.levels[lvl.id]).subtitle,
     [lang],
   )
 
@@ -718,11 +646,15 @@ export default function AmharicFidelGame() {
 
   // Active game session
   const [level, setLevel] = useState(null)
+  const [scope, setScopeState] = useState(getScope) // 'learned' (default) | 'all'
+  const changeScope = (s) => { setScopeState(s); setScope(s) }
   const [questions, setQuestions] = useState([])
   const [questionIndex, setQuestionIndex] = useState(0)
   // phase: question | correct | wrong
   const [phase, setPhase] = useState('question')
   const [selectedIndex, setSelectedIndex] = useState(null)
+  const [wrongPicks, setWrongPicks] = useState([]) // options tried wrong this question (second-chance)
+  const [chantPace, setChantPace] = useState('normal') // Explore chant speed
   const [score, setScore] = useState(0)
   const [streak, setStreak] = useState(0)
   const [bestStreakInRun, setBestStreakInRun] = useState(0)
@@ -751,6 +683,8 @@ export default function AmharicFidelGame() {
   const traceTimerRef = useRef(null)
   const soundOnRef = useRef(soundOn)
   soundOnRef.current = soundOn
+  const chantPaceRef = useRef(chantPace)
+  chantPaceRef.current = chantPace
 
   useEffect(
     () => () => {
@@ -762,23 +696,25 @@ export default function AmharicFidelGame() {
     [],
   )
 
-  const playLetter = useCallback((form, ttsOptions) => {
+  // interrupt:false lets the chant's 900ms cadence queue each syllable
+  // instead of cross-fading it away (the platform engine's default).
+  const playLetter = useCallback((form, { interrupt = true } = {}) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${LETTER_AUDIO_BASE}/${form.audioKey}.mp3`, () => speakPhonetic(form, ttsOptions))
+    platformAudio.play(`letters/${form.audioKey}`, {
+      interrupt,
+      chime: { familyIndex: form.familyIndex ?? 0, order: (form.order ?? 0) + 1 },
+    })
   }, [])
 
-  // Word audio: recorded words/<latin>.mp3, else TTS — an Amharic voice
-  // speaks the Ge'ez word itself, other voices approximate the latin form.
   const playWord = useCallback((word) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${WORD_AUDIO_BASE}/${word.latin}.mp3`, () =>
-      speakPhonetic({ char: word.geez, sound: word.latin }),
-    )
+    const familyIndex = CHAR_TO_FORM.get(word.startChar)?.familyIndex ?? 0
+    platformAudio.play(`words/${word.latin}`, { chime: { familyIndex, order: 1 } })
   }, [])
 
   const playSfx = useCallback((name) => {
     if (!soundOnRef.current) return
-    playFileWithFallback(`${SFX_AUDIO_BASE}/${name}.mp3`, SYNTH_SFX[name])
+    SYNTH_SFX[name]?.()
   }, [])
 
   const currentQuestion = questions[questionIndex] || null
@@ -792,10 +728,11 @@ export default function AmharicFidelGame() {
       answeredForIndexRef.current = -1
       runIdRef.current += 1
       setLevel(lvl)
-      setQuestions(buildQuestions(lvl, { missCounts: progress.missCounts, targetForms }))
+      setQuestions(buildQuestions(lvl, { missCounts: progress.missCounts, targetForms, familyIndices: scopedFamilyIndexSet(scope) }))
       setQuestionIndex(0)
       setPhase('question')
       setSelectedIndex(null)
+      setWrongPicks([])
       setScore(0)
       setStreak(0)
       setBestStreakInRun(0)
@@ -808,7 +745,7 @@ export default function AmharicFidelGame() {
       setScreen('game')
       playSfx('tap')
     },
-    [playSfx, progress.missCounts],
+    [playSfx, progress.missCounts, scope],
   )
 
   // A short remedial round over just the letters missed in the last run.
@@ -825,6 +762,7 @@ export default function AmharicFidelGame() {
 
   const finishLevel = useCallback(
     (finalCorrectCount, finalScore) => {
+      if (!level) return // never write stars/score for a level that was left
       const accuracy = level ? finalCorrectCount / level.questionCount : 0
       const stars = starsForAccuracy(accuracy)
       if (!level?.practice) {
@@ -846,25 +784,28 @@ export default function AmharicFidelGame() {
   const handleAnswer = useCallback(
     (option, optionIndex) => {
       if (phase !== 'question' || !currentQuestion) return
-      // Ref guard alongside the closure check: a native keydown and a click
-      // can both land before React commits the phase change, and the render
-      // closure alone would let both through, double-counting one question.
-      if (answeredForIndexRef.current === questionIndex) return
-      answeredForIndexRef.current = questionIndex
-      setSelectedIndex(optionIndex)
+      if (wrongPicks.includes(optionIndex)) return // already tried this wrong one
       const isCorrect = option.char === currentQuestion.target.char
-
       const targetChar = currentQuestion.target.char
+
       if (isCorrect) {
-        const gained = 10 + Math.min(streak, 5) * 2
-        const nextStreak = streak + 1
+        // Ref guard: a native keydown and a click can both land before React
+        // commits the phase change; only the first finalises the question.
+        if (answeredForIndexRef.current === questionIndex) return
+        answeredForIndexRef.current = questionIndex
+        setSelectedIndex(optionIndex)
+        // A first-try answer keeps the streak; a rescued one (after a wrong
+        // pick) still counts as learned but does not build a streak.
+        const cleanFirstTry = wrongPicks.length === 0
+        const gained = cleanFirstTry ? 10 + Math.min(streak, 5) * 2 : 5
+        const nextStreak = cleanFirstTry ? streak + 1 : 0
         setScore((s) => s + gained)
         setStreak(nextStreak)
         setBestStreakInRun((b) => Math.max(b, nextStreak))
         setCorrectCount((c) => c + 1)
         setLastGain({ amount: gained, key: `${questionIndex}-${optionIndex}` })
-        const isStreakMilestone = nextStreak % 5 === 0
-        const praise = UI_STRINGS[lang].praise
+        const isStreakMilestone = cleanFirstTry && nextStreak % 5 === 0
+        const praise = praiseWords()
         setPhase('correct')
         setMascotMood(isStreakMilestone ? 'party' : 'happy')
         setFeedbackMessage(
@@ -875,45 +816,46 @@ export default function AmharicFidelGame() {
         if (isStreakMilestone) {
           setConfettiKey((k) => k + 1)
           playSfx('streak')
+          platformAudio.applause(soundOnRef.current, { claps: 8, spread: 0.7 }) // a cheer only on a streak
         } else {
-          playSfx('correct')
+          playSfx('correct') // clean chime per answer — no noise burst
         }
+        speakMotivation(PRAISE_CLIPS) // spoken "gobez!" etc. once recorded
         vibrate(30)
-        // Decay this letter's miss count — mastery pushes it back toward
-        // normal frequency in future runs. The no-op branch returns prev
-        // unchanged so untracked letters don't trigger a render.
         setProgress((prev) => {
           const current = prev.missCounts[targetChar] || 0
           if (current === 0) return prev
           return { ...prev, missCounts: { ...prev.missCounts, [targetChar]: current - 1 } }
         })
       } else {
-        const encourage = UI_STRINGS[lang].encourage
+        // Second chance: mark this pick wrong, encourage, re-say the letter,
+        // and stay on the question so the child can try again (never reveal
+        // the answer and move on). Count the miss once, on the first slip.
+        const firstSlip = wrongPicks.length === 0
+        setWrongPicks((w) => (w.includes(optionIndex) ? w : [...w, optionIndex]))
         setStreak(0)
-        setPhase('wrong')
         setMascotMood('sad')
+        const encourage = encourageWords()
         setFeedbackMessage(encourage[Math.floor(Math.random() * encourage.length)])
-        setMissedForms((prev) =>
-          prev.some((f) => f.char === targetChar) ? prev : [...prev, currentQuestion.target],
-        )
-        setProgress((prev) => ({
-          ...prev,
-          missCounts: {
-            ...prev.missCounts,
-            [targetChar]: Math.min(9, (prev.missCounts[targetChar] || 0) + 1),
-          },
-        }))
+        if (firstSlip) {
+          setMissedForms((prev) => (prev.some((f) => f.char === targetChar) ? prev : [...prev, currentQuestion.target]))
+          setProgress((prev) => ({
+            ...prev,
+            missCounts: { ...prev.missCounts, [targetChar]: Math.min(9, (prev.missCounts[targetChar] || 0) + 1) },
+          }))
+        }
         playSfx('wrong')
+        speakMotivation(ENCOURAGE_CLIPS) // spoken "try again" once recorded
         vibrate([60, 40, 60])
-        // Replay the target sound so the child re-associates it with the
-        // highlighted correct letter.
-        playLetter(currentQuestion.target)
+        // Say the letter again so the child can listen and pick once more.
+        setTimeout(() => playLetter(currentQuestion.target), 350)
       }
     },
-    [phase, currentQuestion, streak, questionIndex, playSfx, playLetter, lang, t],
+    [phase, currentQuestion, wrongPicks, streak, questionIndex, playSfx, playLetter, t],
   )
 
   const advance = useCallback(() => {
+    if (!level) return // a stale timer must never advance a left level
     // Idempotency guard: the Continue button, the Enter key, and the
     // auto-advance timer can all race on the same feedback beat — only the
     // first one through may move the question index.
@@ -926,6 +868,7 @@ export default function AmharicFidelGame() {
       setQuestionIndex((i) => i + 1)
       setPhase('question')
       setSelectedIndex(null)
+      setWrongPicks([])
       setMascotMood('idle')
       setFeedbackMessage('')
       // confettiKey is deliberately NOT reset here: a streak burst outlives
@@ -934,14 +877,16 @@ export default function AmharicFidelGame() {
     }
   }, [questionIndex, level, correctCount, score, finishLevel])
 
-  // Auto-advance after the feedback beat. Wrong answers get a longer beat
-  // (and a Continue button) so the highlighted correct answer can sink in.
+  // Auto-advance only after a CORRECT answer. Wrong answers now stay on the
+  // question for a second chance, so there is no 'wrong' auto-advance. The
+  // screen/level guard is essential: without it, tapping Back during the
+  // feedback beat leaves this timer armed and it later fires advance() with a
+  // null level, which crashed the app to the error screen.
   useEffect(() => {
-    if (phase !== 'correct' && phase !== 'wrong') return undefined
-    const delay = phase === 'correct' ? 1300 : 2600
-    advanceTimerRef.current = setTimeout(advance, delay)
+    if (screen !== 'game' || !level || phase !== 'correct') return undefined
+    advanceTimerRef.current = setTimeout(advance, 1300)
     return () => clearTimeout(advanceTimerRef.current)
-  }, [phase, advance])
+  }, [screen, level, phase, advance])
 
   // Number keys 1-4 answer; kids on shared family laptops love this, and it
   // makes the whole quiz operable without a pointer.
@@ -958,10 +903,6 @@ export default function AmharicFidelGame() {
         typeof target.closest === 'function' &&
         target.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')
       ) {
-        return
-      }
-      if (phase === 'wrong' && event.key === 'Enter') {
-        advance()
         return
       }
       if (phase !== 'question' || !currentQuestion) return
@@ -1022,10 +963,11 @@ export default function AmharicFidelGame() {
         }
         const form = family.forms[index]
         setGlowingChar(form.char)
-        // interrupt:false — in the TTS tier the 900ms cadence must queue,
-        // not cancel the previous syllable mid-word.
-        playLetter(form, { interrupt: false })
-        chantTimerRef.current = setTimeout(() => step(index + 1), 900)
+        // interrupt:true cross-fades out any still-playing syllable so the
+        // recitation never overlaps itself; the cadence leaves each ~0.8s clip
+        // room to finish with a beat of silence before the next.
+        playLetter(form, { interrupt: true })
+        chantTimerRef.current = setTimeout(() => step(index + 1), CHANT_PACES[chantPaceRef.current] || CHANT_CADENCE_MS)
       }
       step(0)
     },
@@ -1095,6 +1037,9 @@ export default function AmharicFidelGame() {
     answeredForIndexRef.current = -1
     setScreen('menu')
     setLevel(null)
+    setPhase('question') // clear feedback state so no stale timer re-arms
+    setSelectedIndex(null)
+    setWrongPicks([])
     setConfettiKey(0)
     setMascotMood('idle')
     setExploreFamilyIndex(null)
@@ -1133,6 +1078,8 @@ export default function AmharicFidelGame() {
           </span>
         </div>
       </div>
+
+      <ScopeToggle scope={scope} onChange={changeScope} />
 
       {LEVELS.every((l) => (progress.stars[l.id] || 0) >= 3) && (
         <div className="fq-anim-pop flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 px-6 py-4 text-white shadow-xl">
@@ -1212,6 +1159,18 @@ export default function AmharicFidelGame() {
         >
           <Pencil className="h-6 w-6" />
           {t('traceCta')}
+          <ChevronRight className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setScreen('master')
+            playSfx('tap')
+          }}
+          className={`flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-400 to-purple-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+        >
+          <Music className="h-6 w-6" />
+          {t('masterCta')}
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
@@ -1298,7 +1257,7 @@ export default function AmharicFidelGame() {
                 {family.nickname}
               </p>
             )}
-            <div className="mb-5 flex justify-center">
+            <div className="mb-5 flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={() => chantFamily(family)}
@@ -1306,6 +1265,23 @@ export default function AmharicFidelGame() {
               >
                 <Play className="h-4 w-4 fill-current" /> {t('chant')}
               </button>
+              <div className="flex items-center gap-1.5">
+                {CHANT_PACE_ORDER.map((pace) => (
+                  <button
+                    key={pace}
+                    type="button"
+                    onClick={() => setChantPace(pace)}
+                    aria-pressed={chantPace === pace}
+                    className={`rounded-full px-3 py-1 text-xs font-extrabold transition-colors ${FOCUS_RING} ${
+                      chantPace === pace
+                        ? 'bg-teal-500 text-white shadow'
+                        : 'bg-white/80 text-teal-700 dark:bg-gray-800/80 dark:text-teal-300'
+                    }`}
+                  >
+                    {t(`chantPace_${pace}`, pace)}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-7">
               {family.forms.map((form) => {
@@ -1396,7 +1372,6 @@ export default function AmharicFidelGame() {
     const { target, options, word } = currentQuestion
     const isSoundToChar = level.mode === 'sound-to-char'
     const isWordMode = level.mode === 'word-to-char'
-    const optionsShowChars = isSoundToChar || isWordMode
     return (
       <div className="fq-anim-pop mx-auto flex w-full max-w-2xl flex-col gap-5">
         {/* HUD */}
@@ -1442,7 +1417,7 @@ export default function AmharicFidelGame() {
             <Mascot mood={mascotMood} />
           </div>
           <p className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-            {isSoundToChar ? t('findLetter') : isWordMode ? t('whichStarts') : t('whatSound')}
+            {isWordMode ? t('whichStarts') : t('findLetter')}
           </p>
           {isSoundToChar && (
             <button
@@ -1474,61 +1449,40 @@ export default function AmharicFidelGame() {
               <Volume2 className="h-6 w-6 shrink-0 text-green-600" />
             </button>
           )}
-          {!isSoundToChar && !isWordMode && (
-            <button
-              type="button"
-              onClick={() => playLetter(target)}
-              aria-label={t('playLetterSound')}
-              className={`rounded-3xl bg-gradient-to-br from-sky-100 to-blue-100 px-10 py-3 shadow-inner transition-transform active:scale-95 dark:from-sky-900/40 dark:to-blue-900/40 ${FOCUS_RING}`}
-            >
-              <span className="text-7xl font-bold text-blue-700 sm:text-8xl dark:text-blue-300" style={ETHIOPIC_FONT}>
-                {target.char}
-              </span>
-            </button>
-          )}
           <div className="flex min-h-10 items-center justify-center gap-3">
             <p
               role="status"
               aria-live="polite"
               className={`text-center text-base font-extrabold ${
-                phase === 'correct' ? 'text-emerald-600' : phase === 'wrong' ? 'text-rose-500' : 'text-transparent'
+                phase === 'correct' ? 'text-emerald-600' : wrongPicks.length ? 'text-rose-500' : 'text-transparent'
               }`}
             >
               {feedbackMessage || '·'}
             </p>
-            {phase === 'wrong' && (
-              <button
-                type="button"
-                onClick={advance}
-                className="fq-anim-pop flex items-center gap-1 rounded-full bg-amber-400 px-4 py-1.5 text-sm font-extrabold text-amber-900 shadow-md transition-all hover:bg-amber-300 hover:shadow-lg active:scale-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-500/60"
-              >
-                {t('continueBtn')} <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Answer grid */}
-        <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${phase === 'wrong' ? 'fq-anim-shake' : ''}`}>
+        {/* Answer grid — wrong picks stay disabled but the question stays open
+            for a second chance; only the correct letter ends the round. */}
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${wrongPicks.length ? 'fq-anim-shake' : ''}`}>
           {options.map((option, i) => {
             const isTarget = option.char === target.char
-            const isPicked = selectedIndex === i
-            const showCorrect = phase !== 'question' && isTarget
-            const showWrong = phase === 'wrong' && isPicked
+            const showCorrect = phase === 'correct' && isTarget
+            const showWrong = wrongPicks.includes(i)
             return (
               <button
                 key={option.char}
                 type="button"
                 onClick={() => handleAnswer(option, i)}
-                disabled={phase !== 'question'}
-                aria-label={optionsShowChars ? `Letter ${option.char}` : `Sound ${option.sound}`}
+                disabled={phase !== 'question' || showWrong}
+                aria-label={`Letter ${option.char}`}
                 className={`relative flex min-h-24 items-center justify-center rounded-2xl border-b-4 p-4 shadow-md transition-all duration-150 ${FOCUS_RING} sm:min-h-28 ${
                   showCorrect
                     ? 'fq-anim-bounce border-emerald-600 bg-emerald-400 text-white'
                     : showWrong
-                      ? 'border-rose-600 bg-rose-400 text-white'
+                      ? 'border-rose-300 bg-rose-100 text-rose-400 dark:border-rose-800 dark:bg-rose-950/40'
                       : 'border-amber-200 bg-white text-gray-800 hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl active:scale-90 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-amber-500'
-                } ${phase !== 'question' && !showCorrect && !showWrong ? 'opacity-50' : ''}`}
+                } ${showWrong ? 'opacity-60' : ''}`}
               >
                 <span
                   aria-hidden="true"
@@ -1536,13 +1490,9 @@ export default function AmharicFidelGame() {
                 >
                   {i + 1}
                 </span>
-                {optionsShowChars ? (
-                  <span className="text-6xl font-bold sm:text-7xl" style={ETHIOPIC_FONT}>
-                    {option.char}
-                  </span>
-                ) : (
-                  <span className="text-3xl font-extrabold sm:text-4xl">{option.sound}</span>
-                )}
+                <span className="text-6xl font-bold sm:text-7xl" style={ETHIOPIC_FONT}>
+                  {option.char}
+                </span>
                 {showCorrect && (
                   <CheckCircle2 className="fq-anim-pop absolute right-2 top-2 h-7 w-7 fill-white text-emerald-500" />
                 )}
@@ -1835,23 +1785,13 @@ export default function AmharicFidelGame() {
       >
         {soundOn ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
       </button>
-      <button
-        type="button"
-        onClick={() => setLang((l) => (l === 'en' ? 'am' : 'en'))}
-        aria-label={t('langToggle')}
-        className={`fixed bottom-[8.5rem] left-4 z-40 flex h-12 w-12 flex-col items-center justify-center rounded-full bg-white/90 text-amber-700 shadow-lg transition-all hover:shadow-xl active:scale-90 md:bottom-24 md:left-6 dark:bg-gray-800/90 dark:text-amber-300 ${FOCUS_RING}`}
-      >
-        <Languages className="h-4 w-4" aria-hidden="true" />
-        <span className="text-[10px] font-extrabold leading-tight" style={lang === 'en' ? ETHIOPIC_FONT : undefined}>
-          {lang === 'en' ? 'አማ' : 'EN'}
-        </span>
-      </button>
 
       {screen === 'menu' && renderMenu()}
       {screen === 'explore' && renderExplore()}
       {screen === 'game' && renderGame()}
       {screen === 'complete' && renderComplete()}
       {screen === 'trace' && renderTrace()}
+      {screen === 'master' && <FidelMaster onBack={() => setScreen('menu')} soundOn={soundOn} />}
 
       {screen === 'menu' && (
         <p className="mx-auto mt-10 flex max-w-md items-center justify-center gap-2 text-center text-sm font-semibold text-amber-700/60 dark:text-amber-300/50">

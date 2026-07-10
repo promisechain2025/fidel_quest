@@ -10,102 +10,33 @@
    then match a written number word to its digits.
    ========================================================================== */
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
+import { resetEverything, unlockEverything } from './utils/devUnlock'
+import { useChildModel } from './platform/childModel'
+import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
+import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
+import { shareProgressSnapshot, importProgressFile } from './platform/progress'
+import { audio, playForm } from './platform/audioEngine'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
+import { t } from './platform/i18n'
+import ParentalGate from './components/ParentalGate'
+import { isNativePlatform } from './platform/native'
+import { reminderOn, setReminder } from './platform/notify'
+import { communityCode, setCommunityCode } from './platform/community'
+import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
+import { learnedFamilyIds, loadJourney } from './journey'
+import { dayStamp } from './platform/streak'
+import { toEthiopic, formatEthiopic } from './platform/ethioCalendar'
+import { Bell, Heart } from 'lucide-react'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
 const levelOf = (form) =>
   form.order > 1 ? Math.min(8, Math.floor(form.familyIndex / 8) + 5) : Math.min(4, Math.floor(form.familyIndex / 8) + 1)
-
-const GATE_NUMBERS = [
-  { word: 'thirty-five', value: 35, decoys: [53, 45] },
-  { word: 'twenty-eight', value: 28, decoys: [82, 38] },
-  { word: 'forty-one', value: 41, decoys: [14, 47] },
-]
-
-function Gate({ onOpen }) {
-  const [held, setHeld] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const timer = useRef(null)
-  const challenge = useMemo(() => GATE_NUMBERS[(new Date().getDate() || 1) % GATE_NUMBERS.length], [])
-  const options = useMemo(
-    () => [challenge.value, ...challenge.decoys].sort((a, b) => (a % 7) - (b % 7)),
-    [challenge],
-  )
-
-  const startHold = () => {
-    const startedAt = performance.now()
-    timer.current = setInterval(() => {
-      const k = Math.min(1, (performance.now() - startedAt) / 2000)
-      setProgress(k)
-      if (k >= 1) {
-        clearInterval(timer.current)
-        setHeld(true)
-      }
-    }, 50)
-  }
-  const cancelHold = () => {
-    clearInterval(timer.current)
-    if (!held) setProgress(0)
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-5 py-10 text-center">
-      <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        This area is for grown-ups: progress details and practice tips.
-      </p>
-      {!held ? (
-        <>
-          <button
-            type="button"
-            onPointerDown={startHold}
-            onPointerUp={cancelHold}
-            onPointerLeave={cancelHold}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold()
-            }}
-            onKeyUp={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') cancelHold()
-            }}
-            className={`relative h-28 w-28 rounded-full font-extrabold text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', outlineColor: 'var(--accent)' }}
-          >
-            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
-              <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
-              <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" strokeWidth="6" strokeDasharray={`${progress * 289} 289`} />
-            </svg>
-            Hold me
-          </button>
-          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            Press and hold for two seconds
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="text-lg font-extrabold">Tap the number {challenge.word}</p>
-          <div className="flex gap-3">
-            {options.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => (n === challenge.value ? onOpen() : setHeld(false) || setProgress(0))}
-                className={`chunk mono h-16 w-20 rounded-2xl border-2 text-2xl font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
 
 function masteryColor(stat) {
   if (!stat || stat.seen === 0) return 'var(--line)'
@@ -115,10 +46,209 @@ function masteryColor(stat) {
   return 'var(--bad)'
 }
 
+/** Optional display name shown on "challenge a friend" links (utils/challenge.js).
+   Parent-gated because it is the one place the app stores anything a child
+   might share. Empty = challenges read "A friend". Never leaves the device
+   except inside a challenge link the parent chooses to send. */
+function NicknameField() {
+  const [name, setName] = useState(() => {
+    try { return localStorage.getItem('fq.nickname') || '' } catch { return '' }
+  })
+  const save = (v) => {
+    const clean = v.replace(/[<>]/g, '').slice(0, 16)
+    setName(clean)
+    try { localStorage.setItem('fq.nickname', clean) } catch { /* storage blocked */ }
+  }
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpPlayerName', 'Player name')}
+      </h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpPlayerNameHint', 'Shown on challenges you send to friends. Optional — leave it blank to stay "A friend". It never leaves this device except inside a challenge link you choose to share.')}
+      </p>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => save(e.target.value)}
+        maxLength={16}
+        placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
+        aria-label={t('gpPlayerName', 'Player name')}
+        className={`mt-3 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+      />
+    </section>
+  )
+}
+
+/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden). */
+function ReminderCard() {
+  const [on, setOn] = useState(reminderOn())
+  const [busy, setBusy] = useState(false)
+  if (!isNativePlatform()) return null
+  const toggle = async () => {
+    setBusy(true)
+    const next = await setReminder(!on, {
+      title: t('remindTitle', 'Anbessa misses you!'),
+      body: t('remindBody', 'Come learn a letter today.'),
+      hour: 17,
+    })
+    setOn(next)
+    setBusy(false)
+  }
+  return (
+    <section className="flex items-center justify-between gap-3 rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <div className="flex items-center gap-3">
+        <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+        <div>
+          <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
+          <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
+        </div>
+      </div>
+      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+        <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+      </button>
+    </section>
+  )
+}
+
+/** The learning plan: pace, warm-up enforcement, and the finish date. The
+    pace can also be (re)registered here; enforcement lives ONLY here, behind
+    the grown-up gate - the child-facing default is a nudge, never a block. */
+function PlanCard() {
+  const [plan, setPlanState] = useState(loadPlan)
+  const learned = learnedFamilyIds(loadJourney()).length
+  const paceLabels = {
+    chill: t('paceChill', 'Chill - 1 letter family a week'),
+    steady: t('paceSteady', 'Steady - 2 families a week'),
+    zoom: t('paceZoom', 'Zoom - 4 families a week'),
+  }
+  const pick = (pace) => setPlanState(makePlan(pace, { requireWarmup: !!plan?.requireWarmup }))
+  const toggle = () => { setRequireWarmup(!plan?.requireWarmup); setPlanState(loadPlan()) }
+  const eta = plan ? formatEthiopic(toEthiopic(etaStamp(dayStamp(), learned, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('gpPlanTitle', 'Learning plan')}</h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {PACES.map((p) => (
+          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
+            ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
+            : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            {paceLabels[p.id]}
+          </button>
+        ))}
+      </div>
+      {plan && eta && (
+        <p className="mt-2 text-xs font-bold" style={{ color: 'var(--go-ink)' }}>
+          {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta })}
+          {' · '}
+          {t('gpWarmups', `${loadCoach().days || 0} warm-ups done`, { n: loadCoach().days || 0 })}
+        </p>
+      )}
+      {plan && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t-2 pt-3" style={{ borderColor: 'var(--line)' }}>
+          <div>
+            <p className="text-sm font-black">{t('gpRequireWarmup', 'Require warm-up before games')}</p>
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpRequireHint', "When on, the child must finish the day's review before the games open.")}</p>
+          </div>
+          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+            <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: plan.requireWarmup ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** Community / affiliate code: credit a church, school, or community group. */
+function CommunityCard() {
+  const [code, setCode] = useState(communityCode())
+  const [input, setInput] = useState('')
+  const apply = () => { const c = setCommunityCode(input); setCode(c); setInput('') }
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        <Heart className="h-4 w-4" aria-hidden="true" /> {t('ccTitle', 'Community code')}
+      </h2>
+      {code ? (
+        <p className="mt-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+          {t('ccThanks', 'Thanks — you’re supporting')} <span className="mono font-black" style={{ color: 'var(--go-ink)' }}>{code}</span>.{' '}
+          <button type="button" onClick={() => { setCommunityCode(''); setCode('') }} className={`font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>{t('ccChange', 'Change')}</button>
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+            {t('ccBlurb', 'Got a code from a church, school, or community group? Enter it so they get credit.')}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <input
+              type="text" value={input} onChange={(e) => setInput(e.target.value)} maxLength={12}
+              placeholder={t('ccPh', 'e.g. DEBRE')} aria-label={t('ccTitle', 'Community code')}
+              className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
+              style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+            />
+            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+              {t('ccApply', 'Apply')}
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
 export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
-  const [, forceRefresh] = useState(0)
+  const [confirmUnlock, setConfirmUnlock] = useState(false)
+  // Sound check: plays ha and reports the raw audio facts, so a silent
+  // device can be diagnosed on the spot (context state, whether the voice
+  // clips resolve to real files, how many clips the manifest covers).
+  const [soundInfo, setSoundInfo] = useState(null)
+  const soundCheck = async () => {
+    const parts = []
+    try {
+      await audio.ensureManifest()
+      const ctx = audio.getCtx()
+      parts.push(`ctx: ${ctx ? ctx.state : 'none'}`)
+      // 1. a plain tone through Web Audio; onended proves the graph RUNS.
+      // 'stuck' = the context claims running but its clock is frozen.
+      const tone = await new Promise((res) => {
+        if (!ctx) return res('skip')
+        try {
+          const osc = ctx.createOscillator()
+          const g = ctx.createGain()
+          g.gain.value = 0.25
+          osc.frequency.value = 880
+          osc.connect(g).connect(ctx.destination)
+          osc.onended = () => res('done')
+          osc.start()
+          osc.stop(ctx.currentTime + 0.4)
+          setTimeout(() => res('stuck'), 2500)
+        } catch { res('err') }
+      })
+      parts.push(`tone: ${tone}`)
+      // 2. the voice through the engine (what the whole app uses)
+      parts.push(`source: ${audio.resolve('letters/ha-1').type}`)
+      playForm(INDEXES.byAudioKey.get('ha-1'), true)
+      // 3. a bare <audio> element, bypassing Web Audio entirely
+      const el = await new Promise((res) => {
+        try {
+          const a = new Audio('/audio/fidel/letters/ha-1.mp3')
+          a.play().then(() => res('ok'), () => res('blocked'))
+          setTimeout(() => res('slow'), 3000)
+        } catch { res('err') }
+      })
+      parts.push(`<audio>: ${el}`)
+      parts.push(`manifest: ${audio.manifest ? audio.manifest.size : 'none'} · missing: ${audio.missing.size}`)
+    } catch (e) {
+      parts.push(`error: ${e?.message || e}`)
+    }
+    setSoundInfo(parts.join(' · '))
+  }
+  // Re-renders whenever any child state is written; every read below is
+  // a fresh pure-selector pass, so no manual refresh bumps are needed.
+  useChildModel()
 
   const events = useMemo(() => (open ? loadLedger() : []), [open])
   const stats = useMemo(() => letterStats(events), [events])
@@ -135,23 +265,23 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
-          <h1 className="text-xl font-black leading-tight">Grown-ups</h1>
+          <h1 className="text-xl font-black leading-tight">{t('grownupsShort', 'Grown-ups')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            Progress, trouble letters, and practice tips
+            {t('grownupsSub', 'Progress, trouble letters, and practice tips')}
           </p>
         </div>
       </header>
 
       {!open ? (
-        <Gate onOpen={() => setOpen(true)} />
+        <ParentalGate onOpen={() => setOpen(true)} />
       ) : (
         <div className="mt-6 flex flex-col gap-5">
           {/* totals */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, 'Lesson stars'],
-              [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, 'Runner best'],
-              [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, 'Accuracy'],
+              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, t('gpLessonStars', 'Lesson stars')],
+              [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, t('gpRunnerBest', 'Runner best')],
+              [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, t('gpAccuracy', 'Accuracy')],
             ].map(([icon, value, label]) => (
               <div key={label} className="rounded-2xl border-2 p-3 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
                 <p className="mono flex items-center justify-center gap-1 text-xl font-black">
@@ -165,10 +295,17 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
             ))}
           </div>
 
+          <NicknameField />
+
+          <ReminderCard />
+          <PlanCard />
+
+          <CommunityCard />
+
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-              Letter mastery · {events.length} answers recorded
+              {t('gpMastery', `Letter mastery · ${events.length} answers recorded`, { n: events.length })}
             </h2>
             <div className="mt-3 grid grid-cols-11 gap-1.5" aria-label="Mastery of the 33 base letters">
               {FIDEL_FAMILIES.map((f) => {
@@ -182,43 +319,43 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               })}
             </div>
             <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              Green: solid · Yellow: getting there · Red: needs help · Grey: not practiced yet. Quizzes currently practice the first-order letters.
+              {t('gpMasteryLegend', 'Green: solid · Yellow: getting there · Red: needs help · Grey: not practiced yet. Quizzes currently practice the first-order letters.')}
             </p>
           </section>
 
           {/* trouble letters */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-              Trouble letters
+              {t('gpTrouble', 'Trouble letters')}
             </h2>
             {trouble.length === 0 ? (
               <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
-                {events.length < 10 ? 'Not enough play yet — check back after a few games.' : 'No trouble letters right now. Nice work!'}
+                {events.length < 10 ? t('gpTroubleFew', 'Not enough play yet — check back after a few games.') : t('gpTroubleNone', 'No trouble letters right now. Nice work!')}
               </p>
             ) : (
               <div className="mt-3 flex flex-col gap-3">
-                {trouble.map((t) => {
-                  const form = formOf(t.key)
-                  const tip = tipFor(t.key, pairs, formOf, levelOf)
+                {trouble.map((tl) => {
+                  const form = formOf(tl.key)
+                  const tip = tipFor(tl.key, pairs, formOf, levelOf)
                   if (!form || !tip) return null
                   return (
-                    <motion.div key={t.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--bad)', background: 'var(--bad-soft)' }}>
+                    <motion.div key={tl.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--bad)', background: 'var(--bad-soft)' }}>
                       <span className="geez flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-3xl font-black text-white" style={{ background: 'var(--bad)' }} aria-hidden="true">
                         {form.char}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-black" style={{ color: 'var(--bad-ink)' }}>
-                          {form.char} says “{form.sound}” · {t.correct}/{t.seen} correct
+                          {form.char} “{form.sound}” · {tl.correct}/{tl.seen} {t('gpCorrect', 'correct')}
                         </p>
                         <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
                           {tip.text}
                         </p>
                         <div className="mt-2 flex gap-2">
                           <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-                            Open in Explorer
+                            {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
                           <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                            Replay Level {tip.level}
+                            {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
                       </div>
@@ -229,36 +366,168 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
             )}
           </section>
 
-          {/* reset */}
+          {/* support / license: the paid-app picture and every way to help -
+             buy, ask a relative abroad to gift it, or honest feedback for
+             more free days. Mirrors the once-a-day SupportAsk dialog. */}
+          {(() => {
+            const lic = licenseState()
+            const buy = buyUrl()
+            return (
+              <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+                <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support Fidel Quest')}
+                </h2>
+                <p className="mt-2 text-sm font-bold" style={{ color: lic.phase === 'ended' ? 'var(--bad-ink)' : 'var(--go-ink)' }}>
+                  {lic.phase === 'licensed'
+                    ? t('payThanks', 'Thank you for supporting Fidel Quest!')
+                    : lic.phase === 'trial'
+                      ? t('payLeft', 'Free try-out: {n} days left', { n: lic.daysLeft })
+                      : t('payEnded', 'Your free try-out has ended.')}
+                </p>
+                {lic.phase !== 'licensed' && (
+                  <>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {buy && (
+                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          {t('payBuy', 'Buy the app')}
+                        </a>
+                      )}
+                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                        {t('payFamily', 'Ask family to gift it')}
+                      </button>
+                      {lic.feedbackAvailable && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            grantFeedbackGrace()
+                            try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
+                          }}
+                          className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
+                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                        >
+                          {t('payFeedback', 'Not buying? Tell us honestly why')}
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
+                      {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
+                    </p>
+                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                      {t('payOwned', 'My family already bought it')}
+                    </button>
+                  </>
+                )}
+              </section>
+            )
+          })()}
+
+          {/* sound check: one tap plays ha and prints the raw audio facts -
+             the first thing to ask a "no sound" device for. */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-            {!confirmReset ? (
-              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
-                <Trash2 className="h-4 w-4" aria-hidden="true" /> Reset all progress…
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={soundCheck} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                {t('gpSoundCheck', 'Sound check')}
+              </button>
+              {soundInfo && <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{soundInfo}</p>}
+            </div>
+            <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('gpSoundHint', 'No sound? Check the phone is not on silent (iPhone side switch), media volume is up, battery saver is off - and that sound is not going to paired Bluetooth earphones or a speaker.')}
+            </p>
+          </section>
+
+          {/* move to another phone: the child's whole progress as one small
+             file (platform/progress.js) - share it out, load it on the new
+             device. No server; travels over WhatsApp/AirDrop like a photo. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('gpMoveTitle', 'Move to another phone')}
+            </h2>
+            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => shareProgressSnapshot()} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                {t('gpExport', 'Save progress file')}
+              </button>
+              <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
+                {t('gpImport', 'Load progress file')}
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!f) return
+                    const n = await importProgressFile(f)
+                    if (n > 0) window.location.reload()
+                  }}
+                />
+              </label>
+            </div>
+          </section>
+
+          {/* QA unlock: open every level, island and letter without playing
+             through - same as the ?unlock URL param, but reachable on a phone.
+             Reversible with the reset right below. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            {!confirmUnlock ? (
+              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('gpUnlockAll', 'Open everything (for testing)…')}
               </button>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
-                  Erase stars, bests, islands, and learning history?
+                <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>
+                  {t('gpUnlockConfirm', 'Open every level, island and letter for testing?')}
                 </p>
                 <button
                   type="button"
                   onClick={() => {
+                    unlockEverything()
+                    setConfirmUnlock(false)
+                  }}
+                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                >
+                  {t('gpUnlockYes', 'Yes, open all')}
+                </button>
+                <button type="button" onClick={() => setConfirmUnlock(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  {t('gpResetNo', 'Keep it')}
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* reset */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            {!confirmReset ? (
+              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
+                <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('gpReset', 'Reset all progress…')}
+              </button>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
+                  {t('gpResetConfirm', 'Erase stars, bests, islands, and learning history?')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // A TRUE fresh player: journey, islands, classic stars,
+                    // streak/coach, hunt, plan and the learning ledger. This
+                    // is the recovery path when a device carries leftover QA
+                    // (?unlock) data - it must not leave anything behind.
                     clearLedger()
-                    try {
-                      for (const k of ['fq2.progress', 'fq2.runner', 'fq3.skylands', 'fq.onboarded.v1']) localStorage.removeItem(k)
-                    } catch {
-                      /* ignore */
-                    }
+                    resetEverything()
                     setConfirmReset(false)
-                    forceRefresh((n) => n + 1)
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
-                  Yes, erase
+                  {t('gpResetYes', 'Yes, erase')}
                 </button>
                 <button type="button" onClick={() => setConfirmReset(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-                  Keep it
+                  {t('gpResetNo', 'Keep it')}
                 </button>
               </div>
             )}

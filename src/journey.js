@@ -14,6 +14,7 @@
    ========================================================================== */
 
 import { FIDEL_FAMILIES } from './platform/ethiopic'
+import { progressChanged } from './platform/childModel'
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson
@@ -50,6 +51,22 @@ export const REWARD_TABLE = [
 ]
 export const REWARD_BY_ID = new Map(REWARD_TABLE.map((r) => [r.id, r]))
 export const WEARABLE_SLOTS = Object.freeze(['hat', 'scarf', 'cape'])
+
+/* ── The free taste (paid app, expired trial) ─────────────────────────
+   After the free trial ends, the app narrows to a taste: the first two
+   letter families and the chapter-1 arcade gateway (a few game steps).
+   Everything else pops the buy-or-gift ask. Practice surfaces over
+   already-learned letters (warm-up, Star Practice, Daily Hunt) stay open -
+   we limit NEW content, we never confiscate what the child earned. */
+export const FREE_FAMILIES = Object.freeze(['ha', 'le'])
+
+export function isNodeFree(node) {
+  if (!node) return false
+  if (node.kind === NodeKind.LEARN) return FREE_FAMILIES.includes(node.familyId)
+  if (node.kind === NodeKind.MIX) return (node.families || []).every((f) => FREE_FAMILIES.includes(f))
+  if (node.kind === NodeKind.ARCADE) return node.chapter === 1
+  return false // quiz bosses and vowel laps are part of the paid app
+}
 
 /** Family ids for chapter c (0..3): the 8/8/8/9 groups. */
 export function chapterFamilies(c) {
@@ -107,6 +124,7 @@ export function saveJourney(p) {
   } catch {
     /* session-only; the app still works, progress just is not persisted */
   }
+  progressChanged()
 }
 
 /* One-time port of the pre-refactor blobs so returning children keep their
@@ -222,4 +240,11 @@ export function chapterComplete(p, nodeId) {
 export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length
   return { families, totalFamilies: 33, forms: families * 7, totalForms: 231, nodes: Object.keys(p.done || {}).length }
+}
+
+/** The family ids the child has actually learned (completed LEARN nodes), in
+   journey order. This is the set the games scope to by default so a child only
+   practises letters they have met; games offer an "all letters" override. */
+export function learnedFamilyIds(p) {
+  return JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p?.done?.[n.id]).map((n) => n.familyId)
 }

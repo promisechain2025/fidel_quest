@@ -19,6 +19,18 @@ your own account.
 HUMAN RECORDINGS (2026-07): a native speaker recorded 5 families as full
 family-row chants (m4a). Split on silence, trimmed with a 60ms onset pad,
 loudness-normalized (EBU R128, I=-16), and encoded to 96 kbps mono MP3.
-These override the espeak placeholders for:
-  ye, zhe, ze, ae, we   (all 7 orders each = 35 clips)
-The remaining families still use the espeak placeholder until recorded.
+
+All 33 letter families now use the human voice for orders 1-7 (231 clips),
+plus 25 first words. Amharic collapses same-sound twins to the base voice:
+  hha, kha <- ha    ae <- a    khe <- ke    se <- sse
+Distinct Tigrinya-only recordings are preserved under letters/ti/
+(ae, hha, kha, khe, qhe) for a future Tigrinya pack.
+
+Re-recorded to fix content errors: she (ሸ) (the first take sounded wrong),
+chhe (ጨ) (was the only family still on espeak).
+
+No espeak clips remain: every letter/word plays a human recording or the
+deterministic chime, never a robotic voice. Unrecorded sounds that fall back
+to the chime: the order-8 labialized bonus forms (<id>-8, Classic mode only,
+espeak files removed) and the two words hager (ሀገር) / hamer (ሐመር), which were
+added to ha/hha after the 25-word recording.

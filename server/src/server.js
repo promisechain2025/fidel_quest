@@ -13,6 +13,7 @@
 import { createServer } from 'node:http'
 import { landingHtml } from './landing.js'
 import { dashboardHtml } from './dashboard.js'
+import { isoWeek } from './social.js'
 
 const MAX_BODY = 16 * 1024 // 16 KB cap on request bodies
 
@@ -52,7 +53,12 @@ function readJson(req) {
   })
 }
 
-export function createApp(store, { appUrl, ownerToken, ogImage } = {}) {
+function socialError(res, err) {
+  const status = err === 'not_found' ? 404 : err === 'forbidden' || err === 'consent_required' ? 403 : 400
+  return send(res, status, { ok: false, error: err })
+}
+
+export function createApp(store, { appUrl, ownerToken, ogImage, social } = {}) {
   return createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost')
     const path = url.pathname
@@ -60,6 +66,47 @@ export function createApp(store, { appUrl, ownerToken, ogImage } = {}) {
     if (req.method === 'OPTIONS') return send(res, 204, '')
 
     if (req.method === 'GET' && path === '/healthz') return send(res, 200, { ok: true })
+
+    // ── Family & Friends (Phase 2). Dormant unless a social store is wired in. ──
+    if (social && path.startsWith('/api/social/')) {
+      if (req.method === 'POST' && path === '/api/social/groups') {
+        const { value, error } = await readJson(req)
+        if (error) return send(res, error === 'too_large' ? 413 : 400, { ok: false, error })
+        const out = social.createGroup({ nickname: value?.nickname, consent: value?.consent })
+        return out.error ? socialError(res, out.error) : send(res, 200, { ok: true, ...out })
+      }
+      if (req.method === 'POST' && path === '/api/social/groups/join') {
+        const { value, error } = await readJson(req)
+        if (error) return send(res, error === 'too_large' ? 413 : 400, { ok: false, error })
+        const out = social.joinGroup({ code: value?.code, nickname: value?.nickname, consent: value?.consent })
+        return out.error ? socialError(res, out.error) : send(res, 200, { ok: true, ...out })
+      }
+      if (req.method === 'POST' && path === '/api/social/score') {
+        const { value, error } = await readJson(req)
+        if (error) return send(res, error === 'too_large' ? 413 : 400, { ok: false, error })
+        const out = social.submitScore({
+          groupId: value?.groupId,
+          memberId: value?.memberId,
+          memberToken: value?.memberToken,
+          metric: value?.metric,
+          value: value?.value,
+          nickname: value?.nickname,
+          week: isoWeek(),
+        })
+        return out.error ? socialError(res, out.error) : send(res, 200, { ok: true, ...out })
+      }
+      if (req.method === 'GET' && path === '/api/social/board') {
+        const out = social.board({
+          groupId: url.searchParams.get('groupId'),
+          memberId: url.searchParams.get('memberId'),
+          memberToken: url.searchParams.get('memberToken'),
+          metric: url.searchParams.get('metric'),
+          week: url.searchParams.get('week') || isoWeek(),
+        })
+        return out.error ? socialError(res, out.error) : send(res, 200, { ok: true, ...out })
+      }
+      return send(res, 404, { ok: false, error: 'not_found' })
+    }
 
     if (req.method === 'POST' && path === '/api/events') {
       const { value, error } = await readJson(req)

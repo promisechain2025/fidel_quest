@@ -24,27 +24,59 @@ import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, us
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
 import { playForm, playEffect, preloadForms } from './platform/audioEngine'
-import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES } from './platform/ethiopic'
+import { rngNext, rngShuffle } from './platform/rng'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import GrownUps from './GrownUps'
+import FamilyVoice from './components/FamilyVoice'
+import NameInFidel from './components/NameInFidel'
+import DailyHunt from './components/DailyHunt'
+import VoicePostcard from './components/VoicePostcard'
+import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
+import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
+import { toEthiopic, formatEthiopic, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import Closet from './components/Closet'
+import TeeShop from './components/TeeShop'
+import FamilyFriends from './components/FamilyFriends'
+import { isSocialEnabled } from './platform/social'
+import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import { bumpStreak, dayStamp } from './platform/streak'
+import ScopeToggle from './components/ScopeToggle'
+import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
+import { licenseState, markAsked } from './platform/license'
+import { useChildModel, useAppDay } from './platform/childModel'
+import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
 import { t, getLang, setLang } from './platform/i18n'
+import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D, Skylands2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
+import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
+import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
+import { setCommunityCode } from './platform/community'
+import { appShareUrl } from './components/ShareCard'
+import { loadFromStorage } from './utils/loadFromStorage'
+import { isNativePlatform, isApplePlatform } from './platform/native'
+import GiftAppModal from './components/GiftModal'
+import Dropdown from './components/Dropdown'
 
 // The original Fidel Quest game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
 const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
+// Teacher tools + the TV chant board are adult-facing and pull in the QR
+// encoder, so they stay out of the child-facing home chunk too.
+const TeacherMode = lazy(() => import('./components/TeacherMode'))
+const TvClass = lazy(() => import('./components/TvClass'))
+const SupportAsk = lazy(() => import('./components/SupportAsk'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -56,15 +88,23 @@ import {
   ChevronLeft,
   Sparkles,
   Play,
+  Pause,
   BookOpen,
   Check,
   RotateCcw,
   TreePine,
   Pencil,
   Shirt,
+  ShoppingBag,
   Share2,
   Gift,
+  Mic,
   Backpack as BackpackIcon,
+  ClipboardCheck,
+  Users,
+  Globe,
+  ArrowDown,
+  Send,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -98,27 +138,13 @@ export const LEVELS = Object.freeze([
 })))
 
 /* ============================================================================
-   §2 DETERMINISTIC RNG — threaded mulberry32; a run is pure in (level, seed)
+   §2 DETERMINISTIC RNG — the shared threaded mulberry32 lives in
+   platform/rng.js (imported above); re-exported here to keep this file's
+   test/export surface stable (LearnLetters, ArcadeFallback, and the test
+   suites import from here).
    ========================================================================== */
 
-export function rngNext(state) {
-  let t = (state + 0x6d2b79f5) | 0
-  let r = Math.imul(t ^ (t >>> 15), 1 | t)
-  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
-}
-
-export function rngShuffle(items, rngState) {
-  const out = items.slice()
-  let state = rngState
-  for (let i = out.length - 1; i > 0; i--) {
-    let value
-    ;[value, state] = rngNext(state)
-    const j = Math.floor(value * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return [out, state]
-}
+export { rngNext, rngShuffle }
 
 /* ============================================================================
    §3 STATE MACHINE — rigid, table-driven; ill-timed events are rejected
@@ -336,13 +362,18 @@ export function buildPracticeQueue(events, seed, count = 8) {
   return queue
 }
 
-/** First Words: the 25 kid words as machine-compatible questions. Options
-   are word latins; pictures are guaranteed distinct within a question. */
-export const WORDS = FIDEL_FAMILIES.filter((f) => f.word).map((f, _, arr) => ({
-  ...f.word,
-  familyId: f.id,
-  familyIndex: FIDEL_FAMILIES.findIndex((x) => x.id === f.id),
-}))
+/** First Words: the voiced kid words as machine-compatible questions. Options
+   are word latins; pictures are guaranteed distinct within a question.
+   A family may carry one `word` or several in a `words` array (more words per
+   letter = more First Words variety). Words flagged noAudio (no human recording
+   yet) are excluded — this game is audio-first for pre-readers, so a silent
+   prompt reads as broken; a word activates the moment its clip is recorded. */
+const familyWordList = (f) => (Array.isArray(f.words) && f.words.length ? f.words : f.word ? [f.word] : [])
+export const WORDS = FIDEL_FAMILIES.flatMap((f, familyIndex) =>
+  familyWordList(f)
+    .filter((w) => w && !w.noAudio)
+    .map((w) => ({ ...w, familyId: f.id, familyIndex })),
+)
 export const WORD_BY_LATIN = new Map(WORDS.map((w) => [w.latin, w]))
 
 /** The look-alike sibling of a family, if any: its twin parent, or a family
@@ -433,20 +464,53 @@ export const RunnerEvent = Object.freeze({
 
 export const RUNNER_QPL = 5 // questions ("meals") per level
 
-function runnerLevelSpec(level) {
-  // Cycle the four letter groups; option count stays kid-friendly at 3.
+// Runner pace. Signs spawn at SIGN_SPAWN_Z and glide in at RUNNER_BASE_SPEED *
+// scale. Slower base + a closer spawn than before, so the letters are readable
+// sooner; the child can pick a scale (slow/normal/fast).
+export const RUNNER_BASE_SPEED = 15
+export const SIGN_SPAWN_Z = -86
+export const RUNNER_SPEEDS = { slow: 0.7, normal: 1, fast: 1.5 }
+export const RUNNER_SPEED_ORDER = ['slow', 'normal', 'fast']
+const RUNNER_SPEED_KEY = 'fq.runnerSpeed'
+export function loadRunnerSpeed() {
+  try {
+    const s = localStorage.getItem(RUNNER_SPEED_KEY)
+    return RUNNER_SPEED_ORDER.includes(s) ? s : 'normal'
+  } catch {
+    return 'normal'
+  }
+}
+export function saveRunnerSpeed(s) {
+  try {
+    if (RUNNER_SPEED_ORDER.includes(s)) localStorage.setItem(RUNNER_SPEED_KEY, s)
+  } catch {
+    /* session-only */
+  }
+}
+
+// Every base letter — the fallback pool when no learned set is supplied (tests,
+// or a replay before any family is done).
+export const RUNNER_DEFAULT_POOL = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
+
+// The runner quizzes ONLY what the child has learned (their `pool`); the place
+// (Aksum/Gondar/Adulis) and pace still change per level, but never the scope of
+// letters. Falls back to the whole table if the pool is too small to make a
+// 3-option question.
+function runnerLevelSpec(pool) {
   return {
-    pool: LEVELS[(level - 1) % LEVELS.length].pool,
+    pool: pool && pool.length >= 3 ? pool : RUNNER_DEFAULT_POOL,
     questionCount: RUNNER_QPL,
     optionCount: 3,
   }
 }
 
-export function runnerInitial(seed = 1) {
-  const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(1), seed)
+export function runnerInitial(seed = 1, pool = RUNNER_DEFAULT_POOL) {
+  const usePool = pool && pool.length >= 3 ? pool : RUNNER_DEFAULT_POOL
+  const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(usePool), seed)
   return {
     status: RunnerState.RUNNING,
     seed,
+    pool: usePool,
     rngState,
     level: 1,
     queue,
@@ -484,7 +548,7 @@ const RUNNER_TRANSITIONS = {
   [RunnerState.BOSS]: {
     [RunnerEvent.BOSS_DONE]: (ctx) => {
       if (!ctx.survivedBoss) return { ...ctx, status: RunnerState.DESTROYED }
-      const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.level + 1), ctx.rngState)
+      const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.pool), ctx.rngState)
       return {
         ...ctx,
         status: RunnerState.RUNNING,
@@ -641,6 +705,7 @@ function saveProgress(progress) {
   } catch {
     /* storage unavailable: play session-only */
   }
+  progressChanged()
 }
 export function mergeResult(progress, levelId, result) {
   const prev = progress[levelId] || { stars: 0, bestStreak: 0, plays: 0 }
@@ -667,6 +732,7 @@ export function saveRunnerBest(best) {
   } catch {
     /* session-only */
   }
+  progressChanged()
 }
 
 function loadSoundOn() {
@@ -698,14 +764,69 @@ function useEscapeKey(onClose) {
 }
 
 export default function FidelQuestApp() {
-  const [screen, setScreen] = useState({ name: 'home' })
+  // A "challenge a friend" link (#challenge=...) opens straight into the
+  // seeded rematch. See utils/challenge.js + docs/social-play.md.
+  // Screen navigation is a stack, so Back/Cancel returns to the previous page
+  // (not always Home). setScreen pushes a new page; going to a page you're
+  // already on replaces it (so Replay/Retry don't pile up duplicates). goBack
+  // pops one page; goHome resets to the path.
+  const [stack, setStack] = useState(() => {
+    try {
+      const ch = readChallengeFromHash(window.location.hash)
+      if (ch) return [{ name: 'challenge', challenge: ch }]
+      // Classroom deep links (platform/classroom.js): a class invite, a
+      // teacher's assignment, or a returning result receipt.
+      const cr = readClassroomFromHash(window.location.hash)
+      if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
+      if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
+      if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
+    } catch { /* non-browser */ }
+    return [{ name: 'home' }]
+  })
+  const screen = stack[stack.length - 1]
+  const setScreen = useCallback((next) => setStack((s) => {
+    const top = s[s.length - 1]
+    return top && top.name === next.name ? [...s.slice(0, -1), next] : [...s, next]
+  }), [])
+  const goBack = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), [])
+  const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
+  // Hardware back: pop, but from a non-home ROOT (e.g. a #challenge deep link,
+  // whose initial stack is just [challenge]) fall through to home - otherwise
+  // the back button would neither navigate nor exit the app.
+  const goBackOrHome = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : [{ name: 'home' }])), [])
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
+      // Strip deep-link tokens from the address bar once we've captured them,
+      // so a refresh or a shared-back link starts from a clean URL. An opened
+      // assignment also becomes the pending one (surfaces in Today's plan).
+      if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
+        const cr = readClassroomFromHash(window.location.hash)
+        if (cr?.kind === 'assign') storePendingAssignment(cr.data)
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
     } catch {
       /* non-browser */
     }
     track('app_open')
+    // A resident PWA can receive a tapped link as a hash change on the LIVE
+    // instance (no reload). Route it exactly like a boot-time deep link, then
+    // strip the token.
+    const onHash = () => {
+      try {
+        const hash = window.location.hash
+        if (!/(challenge|class|assign|receipt)=/.test(hash)) return
+        const ch = readChallengeFromHash(hash)
+        if (ch) setStack([{ name: 'challenge', challenge: ch }])
+        const cr = readClassroomFromHash(hash)
+        if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      } catch { /* malformed link */ }
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
   }, [])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
@@ -715,10 +836,58 @@ export default function FidelQuestApp() {
   const [celebration, setCelebration] = useState(null)
   const [gift, setGift] = useState(loadGift)
   const [giftOpened, setGiftOpened] = useState(null) // { reward } | { reward: null }
-  const today = useMemo(() => todayKey(), [])
+  // The calendar day everything daily derives from (gift, hunt, Ethiopic
+  // date, holiday, streak). Owned by the child model (platform/childModel):
+  // rollover past midnight is announced like any other child-state change.
+  const dayKey = useAppDay()
+  const today = dayKey
   const [backpackOpen, setBackpackOpen] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
+  // Daily streak: count each day's visit (re-bumps if the day rolls over).
+  const [streak, setStreak] = useState(0)
+  useEffect(() => { setStreak(bumpStreak().count) }, [dayKey])
+  // Daily Letter Hunt: one seeded hunt per calendar day.
+  // The child model: one version number that ticks whenever ANY child
+  // state is written (platform/childModel.js). Everything below derives
+  // fresh from the pure selectors instead of holding copies.
+  const childVer = useChildModel()
+  const huntDone = useMemo(() => huntDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Session coach: the daily warm-up review + the registered learning plan.
+  const [plan, setPlan] = useState(loadPlan)
+  const warmupDone = useMemo(() => warmupDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The honest free-trial ask: at most once per calendar day, after the
+  // trial ends (platform/license.js). Never blocks - always dismissible.
+  const [askSupport, setAskSupport] = useState(false)
+  useEffect(() => {
+    const lic = licenseState(dayKey)
+    if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
+  }, [dayKey, childVer])
+  const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
+  // A teacher's assignment opened from a link waits in fq.assign.v1 until done.
+  const [pendingAssign, setPendingAssign] = useState(loadPendingAssignment)
+  useEffect(() => {
+    if (screen.name === 'home') { setPlan(loadPlan()); setPendingAssign(loadPendingAssignment()) }
+  }, [screen.name])
+  // The living Ethiopian calendar: today's Ethiopic date + any holiday.
+  const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayKey)), [dayKey])
+  const holiday = useMemo(() => holidayFor(dayKey), [dayKey])
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
+
+  // Android hardware back button (native shell dispatches 'fq:back'): close the
+  // top modal or step back to the home path; if nothing is open we don't
+  // preventDefault, so the native layer exits the app.
+  useEffect(() => {
+    const onBack = (e) => {
+      if (giftOpen) { setGiftOpen(false); e.preventDefault(); return }
+      if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
+      if (celebration) { setCelebration(null); e.preventDefault(); return }
+      if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
+      if (screen.name !== 'home') { goBackOrHome(); e.preventDefault() }
+    }
+    window.addEventListener('fq:back', onBack)
+    return () => window.removeEventListener('fq:back', onBack)
+  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBackOrHome])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -745,18 +914,18 @@ export default function FidelQuestApp() {
         return next
       })
     }
-    setScreen({ name: 'home' })
-  }, [])
+    goBack()
+  }, [goBack])
 
   const startLesson = useCallback((levelId) => {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'lesson', levelId })
-  }, [])
+  }, [setScreen])
 
   const startWords = useCallback(() => {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'words' })
-  }, [])
+  }, [setScreen])
 
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
@@ -765,7 +934,7 @@ export default function FidelQuestApp() {
     setBackpackOpen(false)
     setRunSeed(seed)
     setScreen({ name: 'practice', queue })
-  }, [])
+  }, [setScreen])
 
   // Mark a Journey node complete (grants its reward) and return to the path.
   // Surface a newly-earned wearable as a celebratory chip on the path.
@@ -784,8 +953,8 @@ export default function FidelQuestApp() {
     } else if (isNew) {
       setJustEarned(node.reward)
     }
-    setScreen({ name: 'home' })
-  }, [])
+    goBack()
+  }, [goBack])
 
   useEffect(() => {
     if (!justEarned) return undefined
@@ -796,7 +965,12 @@ export default function FidelQuestApp() {
   const openCloset = useCallback(() => {
     setBackpackOpen(false)
     setScreen({ name: 'closet' })
-  }, [])
+  }, [setScreen])
+
+  const openTeeShop = useCallback(() => {
+    setBackpackOpen(false)
+    setScreen({ name: 'tees' })
+  }, [setScreen])
 
   // Daily Gift: claim once per calendar day. Grants an un-owned wearable (which
   // feeds the Closet + share loop), or a warm message once all are collected.
@@ -812,17 +986,43 @@ export default function FidelQuestApp() {
   }, [today])
 
   // Open a node: the single obvious action from the path (Pillar 1).
-  const openNode = useCallback((node) => {
+  // The daily warm-up: a short refresher quiz over the child's own learned
+  // letters (trouble letters first), reusing the Lesson machine wholesale.
+  const startWarmup = useCallback(() => {
+    const queue = buildWarmup(daySeed(), learnedFamilyIds(journeyRef.current), loadLedger())
+    if (!queue.length) return
+    setRunSeed((Date.now() % 1000000) | 1)
+    setScreen({ name: 'warmup', queue })
+  }, [setScreen])
+
+  const openNode = useCallback((node, opts = {}) => {
+    // Paid app: after the trial ends, only the free taste opens (first two
+    // families + the chapter-1 gateway). Anything else asks to buy or gift.
+    if (licenseState().phase === 'ended' && !isNodeFree(node)) {
+      setAskSupport(true)
+      return
+    }
+    // Games come AFTER the day's warm-up: kids rush to the arcade, so the
+    // gateway nudges (or, if the plan enforces it, requires) a quick review
+    // of yesterday's letters first. Reads storage fresh - the plan may have
+    // just changed in Grown-ups.
+    if (
+      node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
+      learnedFamilyIds(journeyRef.current).length > 0
+    ) {
+      setWarmupNudge({ node, enforced: !!loadPlan()?.requireWarmup })
+      return
+    }
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
-  }, [])
+  }, [setScreen])
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-screen" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
-        <ErrorBoundary onReset={() => setScreen({ name: 'home' })} title="Oops! Let us go back to the path.">
+        <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
             <Screen key="home">
@@ -836,6 +1036,34 @@ export default function FidelQuestApp() {
                 giftReady={giftAvailable(gift, today)}
                 onGift={openGift}
                 justEarned={justEarned}
+                streak={streak}
+                huntDone={huntDone}
+                onHunt={() => setScreen({ name: 'hunt' })}
+                coach={{
+                  warmupState: learnedFamilyIds(journey).length === 0 ? 'none' : warmupDone ? 'done' : 'todo',
+                  hasPlan: !!plan,
+                  eta: plan ? formatEthiopic(toEthiopic(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null,
+                  assignment: pendingAssign,
+                }}
+                onWarmup={startWarmup}
+                onPlanSetup={() => setScreen({ name: 'plan' })}
+                onAssignment={() => setScreen({ name: 'assignment', assignment: pendingAssign })}
+                ethioDate={ethioToday}
+                holiday={holiday}
+              />
+            </Screen>
+          )}
+          {screen.name === 'hunt' && (
+            <Screen key="hunt">
+              <DailyHunt
+                seed={daySeed()}
+                dress={holiday?.dress}
+                forms={scopedBaseForms(getScope(), journey).map(formOf).filter(Boolean)}
+                soundOn={soundOn}
+                treasureReady={giftAvailable(gift, today)}
+                onTreasure={() => { goBack(); openGift() }}
+                onDone={() => { markHuntDone(); track('hunt_complete') }}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -845,22 +1073,46 @@ export default function FidelQuestApp() {
                 collection={journey.collection}
                 stats={progressStats(journey)}
                 onEquip={(slot, id) => setJourney((j) => equipItem(j, slot, id))}
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
+              />
+            </Screen>
+          )}
+          {screen.name === 'tees' && (
+            <Screen key="tees">
+              <TeeShop
+                stats={progressStats(journey)}
+                collection={journey.collection}
+                onBack={goBack}
               />
             </Screen>
           )}
           {screen.name === 'explore' && (
             <Screen key="explore">
-              <Explore soundOn={soundOn} onBack={() => setScreen({ name: 'home' })} initialFamily={screen.family ?? null} />
+              <Explore soundOn={soundOn} onBack={goBack} initialFamily={screen.family ?? null} />
             </Screen>
           )}
           {screen.name === 'grownups' && (
             <Screen key="grownups">
               <GrownUps
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
               />
+            </Screen>
+          )}
+          {screen.name === 'familyvoice' && (
+            <Screen key="familyvoice">
+              <FamilyVoice onBack={goBack} />
+            </Screen>
+          )}
+          {screen.name === 'name' && (
+            <Screen key="name">
+              <NameInFidel onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
+            </Screen>
+          )}
+          {screen.name === 'postcard' && (
+            <Screen key="postcard">
+              <VoicePostcard onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
             </Screen>
           )}
           {screen.name === 'classic' && (
@@ -871,7 +1123,7 @@ export default function FidelQuestApp() {
                 </Suspense>
                 <button
                   type="button"
-                  onClick={() => setScreen({ name: 'home' })}
+                  onClick={goBack}
                   className="chunk fixed bottom-4 left-4 z-50 rounded-2xl px-4 py-2 font-extrabold text-white"
                   style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
                 >
@@ -886,7 +1138,7 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 soundOn={soundOn}
                 onDone={() => markNodeDone(screen.node.id)}
-                onBack={() => setScreen({ name: 'home' })}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -896,6 +1148,13 @@ export default function FidelQuestApp() {
                 node={screen.node}
                 seed={runSeed}
                 soundOn={soundOn}
+                onCancel={goBack}
+                // Which letters to quiz follows the shared scope preference:
+                // 'learned' (default) restricts to families whose LEARN node is
+                // done; 'all' opens the whole abugida. scopedBaseForms falls
+                // back to the first family so a new player still has a game.
+                pool={scopedBaseForms(getScope(), journey)}
+                allLetters={getScope() === SCOPES.ALL}
                 onDone={() => markNodeDone(screen.node.id)}
                 onRetry={() => {
                   setRunSeed((Date.now() % 1000000) | 1)
@@ -906,7 +1165,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'words' && (
             <Screen key={`words-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={() => setScreen({ name: 'home' })} onReplay={startWords} />
+              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={goBack} onReplay={startWords} />
             </Screen>
           )}
           {screen.name === 'practice' && (
@@ -916,8 +1175,32 @@ export default function FidelQuestApp() {
                 seed={runSeed}
                 soundOn={soundOn}
                 practiceQueue={screen.queue}
-                onFinish={() => setScreen({ name: 'home' })}
+                onFinish={goBack}
                 onReplay={startPractice}
+              />
+            </Screen>
+          )}
+          {screen.name === 'warmup' && (
+            <Screen key={`warmup-${runSeed}`}>
+              <Lesson
+                level={{ id: 'warmup', n: '✦', title: t('warmTitle', 'Warm-up') }}
+                seed={runSeed}
+                soundOn={soundOn}
+                noDemo
+                practiceQueue={screen.queue}
+                onFinish={() => { markWarmupDone(); track('warmup'); goBack() }}
+                onQuit={goBack}
+                onReplay={startWarmup}
+              />
+            </Screen>
+          )}
+          {screen.name === 'plan' && (
+            <Screen key="plan">
+              <PlanSetup
+                learned={learnedFamilyIds(journey).length}
+                today={dayKey}
+                onSave={(pace) => { setPlan(makePlan(pace, { today: dayKey })); goBack() }}
+                onBack={goBack}
               />
             </Screen>
           )}
@@ -932,7 +1215,7 @@ export default function FidelQuestApp() {
                   // boss quiz is a real gate, not a tap-through. Only a
                   // finished level marks its Journey node done + grants reward.
                   if (!result) {
-                    setScreen({ name: 'home' })
+                    goBack()
                   } else if (screen.nodeId) {
                     setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
                     markNodeDone(screen.nodeId, result.stars ?? 3)
@@ -941,6 +1224,65 @@ export default function FidelQuestApp() {
                   }
                 }}
                 onReplay={() => startLesson(screen.levelId)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'challenge' && (
+            <Screen key="challenge">
+              <ChallengeRun
+                challenge={screen.challenge}
+                soundOn={soundOn}
+                onHome={goHome}
+              />
+            </Screen>
+          )}
+          {screen.name === 'joinclass' && (
+            <Screen key="joinclass">
+              <JoinClassIntro invite={screen.invite} onHome={goHome} />
+            </Screen>
+          )}
+          {screen.name === 'assignment' && (
+            <Screen key="assignment">
+              <AssignmentFlow
+                assignment={screen.assignment}
+                soundOn={soundOn}
+                onHome={goBackOrHome}
+                onDone={() => setPendingAssign(null)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'teacher' && (
+            <Screen key="teacher">
+              <Suspense fallback={null}>
+                <TeacherMode
+                  onBack={goBackOrHome}
+                  onTv={(families) => setScreen({ name: 'tv', families })}
+                  incomingReceipt={screen.receipt || null}
+                  needsGate={!!screen.gate}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'tv' && (
+            <Screen key="tv">
+              <Suspense fallback={null}>
+                <TvClass
+                  onBack={goBack}
+                  families={screen.families || null}
+                  joinUrl={(() => {
+                    const codes = Object.keys(loadTeacher().classes)
+                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appShareUrl()) : null
+                  })()}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'family' && (
+            <Screen key="family">
+              <FamilyFriends
+                onBack={goBack}
+                lettersLearned={progressStats(journey).forms}
+                nickname={loadFromStorage('fq.nickname', '')}
               />
             </Screen>
           )}
@@ -955,6 +1297,7 @@ export default function FidelQuestApp() {
               worn={wornLayers(journey.collection)}
               forms={progressStats(journey).forms}
               onClose={() => setCelebration(null)}
+              onPostcard={() => { setCelebration(null); setScreen({ name: 'postcard' }) }}
             />
           )}
           {giftOpened && (
@@ -973,12 +1316,41 @@ export default function FidelQuestApp() {
               key="backpack"
               onClose={() => setBackpackOpen(false)}
               troubleCount={troubleCount}
+              teeBadge={newTeeCount(progressStats(journey).families)}
+              onTees={openTeeShop}
               onCloset={openCloset}
-              onWords={() => { setBackpackOpen(false); startWords() }}
+              onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
               onPractice={startPractice}
-              onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
-              onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
+              onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
+              onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
+              onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
+              onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
+              onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
+              onPostcard={() => { setBackpackOpen(false); setScreen({ name: 'postcard' }) }}
+              onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
+              onTeacher={() => { setBackpackOpen(false); setScreen({ name: 'teacher', gate: true }) }}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
+        </AnimatePresence>
+        <AnimatePresence>
+          {askSupport && (
+            <Suspense fallback={null}>
+              <SupportAsk key="support" onClose={() => setAskSupport(false)} />
+            </Suspense>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {warmupNudge && (
+            <WarmupNudge
+              key="warmup-nudge"
+              enforced={warmupNudge.enforced}
+              onStart={() => { setWarmupNudge(null); startWarmup() }}
+              onSkip={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
+              onClose={() => setWarmupNudge(null)}
             />
           )}
         </AnimatePresence>
@@ -1146,7 +1518,7 @@ const nodeGlyph = (node) => {
   return null
 }
 
-function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) {
+function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isBoss = node.kind === NodeKind.QUIZ
   const isArcade = node.kind === NodeKind.ARCADE
   const big = isBoss || isArcade
@@ -1161,13 +1533,15 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
           : node.gateway.mode === 'runner'
             ? 'Letter Runner'
             : 'Fidel Skylands'
+  // Locked nodes keep the original muted tile colour, but now show WHAT they
+  // are (the letter, or the game icon) with a small lock badge instead of only
+  // a lock, so kids can preview what is coming.
   const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--line)'
   const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--muted)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
-    <div ref={innerRef} className="flex w-full items-center" style={{ justifyContent: side < 0 ? 'flex-start' : 'flex-end' }}>
-      <div className="flex flex-col items-center" style={{ width: 132 }}>
+    <div ref={innerRef} className="flex flex-col items-center">
         <motion.button
           type="button"
           disabled={!unlocked}
@@ -1189,9 +1563,7 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
           aria-current={highlight ? 'step' : undefined}
         >
-          {!unlocked ? (
-            <Lock className="h-5 w-5" aria-hidden="true" />
-          ) : isArcade ? (
+          {isArcade ? (
             node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <TreePine className="h-7 w-7" aria-hidden="true" />
           ) : isBoss ? (
             <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
@@ -1199,29 +1571,163 @@ function PathNode({ node, done, unlocked, highlight, side, innerRef, onClick }) 
             nodeGlyph(node)
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+          {!unlocked && (
+            <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-hidden="true">
+              <Lock className="h-3 w-3" style={{ color: 'var(--muted)' }} />
+            </span>
+          )}
         </motion.button>
         {highlight && (
           <motion.span className="mt-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--go)' }} animate={{ y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity }}>
             {t('start', 'Start')}
           </motion.span>
         )}
-      </div>
     </div>
   )
 }
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned }) {
+// The path is laid out as a compact serpentine grid: rows of COLS nodes that
+// snake (every other row runs right-to-left), so consecutive steps stay
+// adjacent while the journey fits in far less vertical scroll than a
+// two-column zigzag. The reversal is purely visual (grid column placement) -
+// DOM and focus order stay in journey order for keyboard and screen-reader
+// users. Computed once: JOURNEY and PATH_COLS are module constants.
+const PATH_COLS = 3
+function serpentineRows(nodes, cols) {
+  const rows = []
+  for (let i = 0; i < nodes.length; i += cols) rows.push(nodes.slice(i, i + cols))
+  return rows
+}
+const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
+
+/* One chip of the Today's-plan strip: number -> check when done. Chips sit
+   in a single horizontal row so the coach guides without burying the path
+   (the old stacked card pushed the Journey below the fold on small phones). */
+function PlanChip({ step, done, label, onClick, pulse }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      animate={pulse && !done ? { scale: [1, 1.04, 1] } : {}}
+      transition={{ duration: 1.6, repeat: Infinity }}
+      className={`chunk flex shrink-0 items-center gap-1.5 rounded-full py-2 pl-2 pr-3 text-xs font-black ${FOCUS}`}
+      style={done
+        ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
+        : pulse
+          ? { background: 'var(--sky)', boxShadow: '0 2px 0 var(--sky-deep)', '--chunk-depth': '2px', color: '#fff', outlineColor: 'var(--accent)' }
+          : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+    >
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
+        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step}
+      </span>
+      <span>{label}</span>
+    </motion.button>
+  )
+}
+
+/* The arcade gateway's gentle gate: warm up before the game. When the plan
+   enforces it there is no "Play anyway" - but that is a Grown-ups choice;
+   the default is a nudge, matching the app's never-block philosophy. */
+function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
+  useEscapeKey(onClose)
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
+        <Sprite2D draw={drawAnbessa} size={104} mood="happy" />
+        <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
+        <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>{t('warmNudgeBody', 'A quick review of your letters, then the game!')}</p>
+        <div className="mt-5 flex flex-col gap-3">
+          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            {t('warmStart', 'Start warm-up')}
+          </button>
+          {!enforced && (
+            <button type="button" onClick={onSkip} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+              {t('warmSkip', 'Play anyway')}
+            </button>
+          )}
+          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            {t('dismiss', 'Not now')}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* Registering the learning plan: pick a pace, see the finish date live.
+   A parent or the child can do this - enforcement stays in Grown-ups. */
+function PlanSetup({ learned, today, onSave, onBack }) {
+  const [pace, setPace] = useState('steady')
+  const labels = {
+    chill: t('paceChill', 'Chill - 1 letter family a week'),
+    steady: t('paceSteady', 'Steady - 2 families a week'),
+    zoom: t('paceZoom', 'Zoom - 4 families a week'),
+  }
+  const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
+  const eta = formatEthiopic(toEthiopic(etaStamp(today, learned, per)))
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-6">
+      <header className="flex items-center gap-3">
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
+        <div>
+          <h1 className="text-xl font-black leading-tight">{t('planSetupTitle', 'My learning plan')}</h1>
+          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>{t('planSetupSub', 'Pick a pace - the coach guides each day')}</p>
+        </div>
+      </header>
+      <div className="mt-6 flex flex-col gap-3">
+        {PACES.map((p) => (
+          <button key={p.id} type="button" aria-pressed={pace === p.id} onClick={() => setPace(p.id)} className={`chunk rounded-2xl px-5 py-4 text-left font-black ${FOCUS}`} style={pace === p.id
+            ? { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--accent)' }
+            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            {labels[p.id]}
+          </button>
+        ))}
+      </div>
+      <p className="mt-4 text-center font-bold" style={{ color: 'var(--go-ink)' }}>
+        {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta.latin })}
+      </p>
+      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
+        {t('planSave', 'Start my plan')}
+      </button>
+    </div>
+  )
+}
+
+// Localized names for the calendar holidays (ids from platform/ethioCalendar).
+const holidayName = (id) =>
+  ({
+    enkutatash: t('hol_enkutatash', 'Enkutatash — Happy New Year!'),
+    meskel: t('hol_meskel', 'Meskel — the Finding of the Cross'),
+    genna: t('hol_genna', 'Genna — Merry Christmas!'),
+    timkat: t('hol_timkat', 'Timkat — Epiphany!'),
+    adwa: t('hol_adwa', 'Adwa Victory Day'),
+    eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
+  })[id] || id
+
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
   const worn = wornLayers(journey.collection)
+  const [stepInView, setStepInView] = useState(true)
+  const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   useEffect(() => {
-    currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+    jumpToStep()
+  }, [current?.id])
+  // Show a "jump to my step" button only while the current node is off-screen.
+  useEffect(() => {
+    const el = currentRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return undefined
+    const io = new IntersectionObserver(([e]) => setStepInView(e.isIntersecting), { threshold: 0.4 })
+    io.observe(el)
+    return () => io.disconnect()
   }, [current?.id])
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
-      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)' }}>
+      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`flex items-center gap-2 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
           <Hero size={48} worn={worn} />
           <div className="text-left">
@@ -1232,6 +1738,12 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </div>
         </button>
         <div className="flex items-center gap-2">
+          {streak > 0 && (
+            <span className="chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })} title={t('streakDays', `${streak}-day streak`, { n: streak })}>
+              <Flame className="h-5 w-5" fill="currentColor" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+              <span className="mono text-sm" style={{ color: 'var(--ink)' }}>{streak}</span>
+            </span>
+          )}
           {giftReady && (
             <motion.button
               type="button"
@@ -1284,58 +1796,201 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         )}
       </AnimatePresence>
 
-      <div className="mt-4 flex flex-col items-center gap-2">
-        {JOURNEY.map((node, i) => {
-          const done = !!journey.done[node.id]
-          const isNext = current ? node.id === current.id : false
-          const unlocked = isNext || done
-          return (
-            <PathNode
-              key={node.id}
-              node={node}
-              done={done}
-              unlocked={unlocked}
-              highlight={isNext}
-              side={i % 2 === 0 ? -1 : 1}
-              innerRef={isNext ? currentRef : null}
-              onClick={unlocked ? () => onOpen(node) : undefined}
+      {/* The living Ethiopian calendar shows itself only when it matters: on
+         a holiday the celebration banner appears with the traditional
+         greeting and the Ethiopic date. Ordinary days keep the home clean. */}
+      {ethioDate && holiday && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto mt-3 w-full max-w-md rounded-3xl px-4 py-3 text-center text-white"
+          style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)' }}
+          role="status"
+        >
+          <p className="geez text-2xl font-black">እንኳን አደረሳችሁ!</p>
+          <p className="text-sm font-bold text-white/95">{holidayName(holiday.id)}</p>
+          <p className="geez mt-0.5 text-xs font-bold text-white/85">{ethioDate.geez}</p>
+        </motion.div>
+      )}
+
+      {/* Today's plan: the coach's guide as a slim strip - one horizontal
+         row of numbered chips (warm-up first, teacher's assignment, today's
+         new step, the Daily Hunt) that check off through the day, with the
+         pace's finish date (or the make-a-plan invite) as a small tail
+         line. Deliberately compact: the Journey path is the hero and must
+         stay above the fold even on a small phone. */}
+      <div className="mx-auto mt-3 w-full max-w-md">
+        <div className="flex items-baseline justify-between gap-2 px-1">
+          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
+          {coach?.hasPlan && coach?.eta ? (
+            <p className="truncate text-[11px] font-bold" style={{ color: 'var(--go-ink)' }}>
+              {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: coach.eta })}
+            </p>
+          ) : (
+            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+              {t('planMake', 'Make my learning plan')}
+            </button>
+          )}
+        </div>
+        <div className="mt-1.5 flex gap-2 overflow-x-auto px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
+          {coach?.warmupState !== 'none' && (
+            <PlanChip
+              step={1}
+              done={coach?.warmupState === 'done'}
+              label={t('warmTitle', 'Warm-up')}
+              onClick={onWarmup}
+              pulse={coach?.warmupState === 'todo'}
             />
-          )
-        })}
+          )}
+          {coach?.assignment && (
+            <PlanChip
+              step={(coach?.warmupState !== 'none' ? 1 : 0) + 1}
+              done={false}
+              label={t('asTitle', 'Assignment')}
+              onClick={onAssignment}
+              pulse={coach?.warmupState !== 'todo'}
+            />
+          )}
+          {current && (
+            <PlanChip
+              step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + 1}
+              done={false}
+              label={t('planNewShort', 'New step')}
+              onClick={() => onOpen(current)}
+              pulse={coach?.warmupState !== 'todo' && !coach?.assignment}
+            />
+          )}
+          <PlanChip
+            step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + (current ? 1 : 0) + 1}
+            done={huntDone}
+            label={t('huntShort', 'Daily Hunt')}
+            onClick={onHunt}
+            pulse={false}
+          />
+        </div>
+      </div>
+
+      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
+        {PATH_ROWS.map((row, r) => (
+          <div key={r} className="grid items-center gap-3" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))` }}>
+            {row.map((node, i) => {
+              const done = !!journey.done[node.id]
+              const isNext = current ? node.id === current.id : false
+              const unlocked = isNext || done
+              return (
+                <div key={node.id} className="flex justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
+                  <PathNode
+                    node={node}
+                    done={done}
+                    unlocked={unlocked}
+                    highlight={isNext}
+                    innerRef={isNext ? currentRef : null}
+                    onClick={unlocked ? () => onOpen(node) : undefined}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        ))}
         {!current && (
           <div className="mt-4 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
             <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion - every star earned!')}
           </div>
         )}
       </div>
+      <AnimatePresence>
+        {current && !stepInView && (
+          <motion.button
+            type="button"
+            onClick={jumpToStep}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className={`chunk fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white ${FOCUS}`}
+            style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+            aria-label={t('jumpToStep', 'Go to my next step')}
+          >
+            <ArrowDown className="h-4 w-4" aria-hidden="true" />
+            {t('myStep', 'My step')}
+          </motion.button>
+        )}
+      </AnimatePresence>
       <InstallBanner />
     </div>
   )
 }
 
-function BackpackItem({ icon, title, sub, onClick, tone = 'var(--sky)' }) {
+// Compact square tile for the Backpack grid: icon + short label. Keeps the
+// whole toolkit on one screen so nothing (Classic, Review...) gets buried.
+function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`chunk flex w-full items-center gap-4 rounded-3xl p-4 text-left ${FOCUS}`}
+      className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
         {icon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-extrabold">{title}</span>
-        <span className="block text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-          {sub}
+      <span className="text-xs font-extrabold leading-tight">{title}</span>
+      {badge > 0 && (
+        <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
+          {badge}
         </span>
-      </span>
+      )}
     </button>
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPractice, onCloset, troubleCount }) {
+/* Language settings. Two axes the app already models separately: the learning
+   pack (Amharic vs Tigrinya sounds/letters/audio) and the UI text (English vs
+   Amharic). Both are launch-time by design, so a change persists and reloads. */
+/* Both language axes as the app's OWN dropdowns (components/Dropdown.jsx):
+   a native <select> would summon the iOS wheel over the sheet, and the old
+   chip grid (9 languages = four rows) crowded the game tiles out of view on
+   a small phone. The lists open UPWARD - the picker sits at the sheet's
+   bottom edge. */
+function LanguagePicker() {
+  const pack = getActivePackId()
+  const ui = getLang()
+  return (
+    <div className="mt-3 grid shrink-0 grid-cols-2 gap-3 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+      <div className="min-w-0">
+        <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+          <BookOpen className="h-4 w-4" aria-hidden="true" />{t('langLearn', 'Learning')}
+        </span>
+        <Dropdown
+          up
+          geez
+          label={t('langLearn', 'Learning')}
+          value={pack}
+          options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
+          onChange={(id) => { setActivePack(id); window.location.reload() }}
+        />
+      </div>
+      <div className="min-w-0">
+        <span className="mb-1.5 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+          <Globe className="h-4 w-4" aria-hidden="true" />{t('langText', 'App text')}
+        </span>
+        <Dropdown
+          up
+          label={t('langText', 'App text')}
+          value={ui}
+          options={LANG_META.map((o) => [o.id, o.label])}
+          onChange={(id) => { setLang(id); window.location.reload() }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
+  // Global letter-scope preference: the games practise learned letters by
+  // default; this switches them (and the arcade games) to the whole abugida.
+  const [scope, setScopeState] = useState(getScope)
+  const changeScope = (s) => { setScopeState(s); setScope(s) }
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -1349,40 +2004,61 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onWords, onPracti
         role="dialog"
         aria-modal="true"
         aria-label={t('backpack', 'Backpack')}
-        className="w-full max-w-md rounded-3xl p-5"
+        className="flex max-h-[88dvh] w-full max-w-md flex-col rounded-3xl p-5"
         style={{ background: 'var(--paper)' }}
         initial={{ y: 40 }}
         animate={{ y: 0 }}
         exit={{ y: 40 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
           <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
-        <div className="flex flex-col gap-3">
-          <BackpackItem icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetTitle', "Anbessa's Closet")} sub={t('closetSub', 'Dress up Anbessa and share!')} onClick={onCloset} />
-          <BackpackItem icon={<span className="geez text-xl font-black">ቀለ</span>} tone="var(--go)" title={t('wordsTitle', 'First Words')} sub={t('wordsSub', 'Hear the word, tap its picture')} onClick={onWords} />
-          {troubleCount > 0 && (
-            <BackpackItem icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" title={t('practiceTitle', 'Star Practice')} sub={t('practiceSub', `${troubleCount} tricky letters to make strong`, { n: troubleCount })} onClick={onPractice} />
-          )}
-          <BackpackItem icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerTitle', 'Letter Explorer')} sub={t('explorerSub', 'Tap any of the 231 letters to hear it')} onClick={onExplore} />
-          <BackpackItem icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicTitle', 'Classic Game')} sub={t('classicSub', 'Chant the orders, trace letters, learn first words')} onClick={onClassic} />
-          <BackpackItem icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownups', 'For grown-ups: progress and tips')} sub={t('grownupsSub', 'See progress and tricky letters')} onClick={onGrownUps} />
+        {/* Compact tile grid keeps every tool on one screen (no burying). The
+           panel can still scroll on a very short device as a safety net. */}
+        <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
+          <div className="grid grid-cols-3 gap-2.5">
+            <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
+            <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} />
+            <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
+            <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            {troubleCount > 0 && (
+              <BackpackTile icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
+            )}
+            {isSocialEnabled() && (
+              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
+            )}
+            <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
+            <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
+            <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
+            {/* Two separate grown-up doors: PARENTS (the child's progress,
+               behind the hold-and-tap gate) and TEACHER (class tools, locked
+               by the teacher's own class code once a class exists). */}
+            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
+            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
+            {/* Gift entry: Apple only, since App Store "Gift App" is the one
+               store path for gifting a paid app. Hidden on Android/Play. */}
+            {isApplePlatform() && (
+              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--accent)" title={t('giftShort', 'Gift')} onClick={onGift} />
+            )}
+            {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
+               category store build has no un-gated external link. */}
+            {!isNativePlatform() && (
+              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+            )}
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setLang(getLang() === 'am' ? 'en' : 'am')
-            window.location.reload()
-          }}
-          className={`mx-auto mt-4 block rounded-xl px-4 py-2 text-sm font-black ${FOCUS}`}
-          style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
-        >
-          {getLang() === 'am' ? 'English' : 'አማርኛ'}
-        </button>
+        <div className="mt-3 flex shrink-0 flex-col gap-1.5 rounded-2xl px-3 py-3" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+          <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+            <Star className="h-4 w-4" aria-hidden="true" />{t('scopeLabel', 'Which letters')}
+          </span>
+          <ScopeToggle scope={scope} onChange={changeScope} />
+        </div>
+        <LanguagePicker />
       </motion.div>
     </motion.div>
   )
@@ -1474,12 +2150,21 @@ function GiftModal({ reward, worn, forms, onClose }) {
 
 /* Chapter-complete celebration (the peak-pride share prompt). Anbessa bursts
    in wearing the freshly-earned item; the primary action is Share. */
-function Celebration({ chapter, rewardName, worn, forms, onClose }) {
+function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) {
   const [busy, setBusy] = useState(false)
   useEscapeKey(onClose)
+  // Personalize the share card with the child's name + this milestone, so what
+  // lands in the WhatsApp thread says "Selam learned 56 letters!" not a generic
+  // wordmark. Uses the same forms count as the card's own progress pill, so the
+  // one shared image never shows two contradictory numbers. Falls back to the
+  // plain card when no nickname is set.
+  const name = loadFromStorage('fq.nickname', '').trim()
+  const headline = name && forms
+    ? t('shareMilestone', `${name} learned ${forms} letters!`, { name, n: forms })
+    : ''
   const share = async () => {
     setBusy(true)
-    await shareAnbessa({ forms, worn })
+    await shareAnbessa({ forms, worn, headline })
     setBusy(false)
     onClose()
   }
@@ -1500,6 +2185,13 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
           <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
+          {/* Pride peaks right here - offer to send the child's own voice to
+             the family (Gashe / Ayay) while the chapter win is still warm. */}
+          {onPostcard && (
+            <button type="button" onClick={onPostcard} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
+              <Send className="h-5 w-5" aria-hidden="true" /> {t('celebPostcard', 'Send this to family!')}
+            </button>
+          )}
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             {t('keepGoing', 'Keep going')}
           </button>
@@ -1511,46 +2203,119 @@ function Celebration({ chapter, rewardName, worn, forms, onClose }) {
 
 /* ── Explore Mode ── */
 
+// Cheerful, colour-blind-safe tile colours for the Explorer grid (vivid bases
+// dark enough for white glyphs to clear contrast), cycled across the families.
+const EXPLORE_TILES = ['#e6304f', '#f0700f', '#7d43d8', '#1f83db', '#e6459a', '#1aa15a', '#0c988f', '#c2570b', '#4a63e0']
+const EXPLORE_PACE = { slow: 1700, normal: 1150, fast: 750 }
+
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
+  const [order, setOrder] = useState(1) // which vowel order the grid shows
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
+
+  // Autoplay: chant the selected vowel order across every family, the way the
+  // other pages do — so the first page voices the letters, not just on tap.
+  const [playing, setPlaying] = useState(false)
+  const [playIdx, setPlayIdx] = useState(0)
+  const [pace, setPace] = useState('normal')
+  const stopPlay = useCallback(() => setPlaying(false), [])
+  const startPlay = () => { setPlayIdx(0); setPlaying(true) }
+
+  useEffect(() => {
+    if (!playing || family) return undefined
+    if (playIdx >= FIDEL_FAMILIES.length) { setPlaying(false); return undefined }
+    const f = FIDEL_FAMILIES[playIdx]
+    const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+    playForm(cell, soundOn)
+    const id = setTimeout(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
+    return () => clearTimeout(id)
+  }, [playing, playIdx, order, pace, family, soundOn])
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => (family ? setOpenFamily(null) : onBack())} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); family ? setOpenFamily(null) : onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
-          <h1 className="text-xl font-black leading-tight">{family ? `The ${family.name} family` : 'Letter Explorer'}</h1>
+          <h1 className="text-xl font-black leading-tight">{family ? t('exploreFamilyTitle', `The ${family.name} family`, { name: family.name }) : t('exploreHeader', 'Letter Explorer')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {family ? 'Seven forms, one letter — tap to hear each' : '33 letter families · tap to open'}
+            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
           </p>
         </div>
       </header>
 
+      {/* Vowel-order selector: see and practise one vowel across all families */}
+      {!family && (
+        <div className="mt-4 overflow-x-auto pb-1">
+          <div className="flex gap-1.5">
+            {ORDERS.map((o) => {
+              const on = order === o.index
+              return (
+                <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on}
+                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-xs font-black leading-tight ${FOCUS}`}
+                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                  <span>{o.geezName}</span>
+                  <span className="mono text-[10px] font-bold opacity-80">-{o.vowel}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Autoplay: chant the chosen vowel across every family (say-all) */}
+      {!family && (
+        <div className="mt-3 flex items-center gap-2">
+          <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
+            {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
+            {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
+          </Chunky>
+          <div className="flex gap-1">
+            {['slow', 'normal', 'fast'].map((p) => (
+              <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
+                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
+                {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {!family ? (
-          <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {FIDEL_FAMILIES.map((f) => {
-              const base = formOf(`${f.id}-1`)
+          <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {FIDEL_FAMILIES.map((f, i) => {
+              const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+              const color = EXPLORE_TILES[i % EXPLORE_TILES.length]
+              const isActive = playing && playIdx === i
               return (
-                <button
+                <motion.button
                   key={f.id}
                   type="button"
                   onClick={() => {
-                    playForm(base, soundOn)
+                    stopPlay()
+                    playForm(cell, soundOn)
                     setOpenFamily(f.id)
                   }}
-                  className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 px-2 py-3 ${FOCUS}`}
-                  style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+                  animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className={`chunk flex flex-col items-center gap-1 rounded-2xl px-2 py-3 ${FOCUS}`}
+                  style={{
+                    background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%), ${color}`,
+                    border: `3px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.85)'}`,
+                    boxShadow: isActive ? `0 0 0 3px ${color}, 0 8px 18px ${color}80` : '0 4px 0 rgba(0,0,0,0.16)',
+                    color: '#fff',
+                    outlineColor: 'var(--sky)',
+                  }}
                 >
-                  <span className="geez text-4xl font-black">{base.char}</span>
-                  <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>
-                    {f.name}
+                  <span className="geez text-4xl font-black" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>{cell.char}</span>
+                  <span className="text-xs font-extrabold" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                    {cell.sound}
                     {f.word?.picture && <span className="ml-1" aria-hidden="true">{f.word.picture}</span>}
                   </span>
-                </button>
+                </motion.button>
               )
             })}
           </motion.div>
@@ -1640,13 +2405,16 @@ function machineReducer(ctx, event) {
   return transition(ctx, event).next
 }
 
-function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null }) {
+function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, practiceQueue = null, noDemo = false, incoming = null }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
   const isPractice = level.id === 'practice'
+  const isChallenge = !!incoming
 
   // Shadow tutorial: on first open the Ghost Hand plays one question of the
   // REAL machine, then the level restarts fresh and the child takes over.
-  const [demo, setDemo] = useState(() => !hasOnboarded('lesson') && !prefersReducedMotion())
+  // A challenge round skips the demo so the seed the friend played is the exact
+  // seed replayed here (the demo would reseed the queue).
+  const [demo, setDemo] = useState(() => !noDemo && !hasOnboarded('lesson') && !prefersReducedMotion())
   const demoRef = useRef(demo)
   demoRef.current = demo
   const [hand, setHand] = useState({ x: null, y: null })
@@ -1658,8 +2426,11 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
     setYourTurn(true)
     setTimeout(() => setYourTurn(false), 1700)
     dispatch({ type: GameEvent.EXIT })
-    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1 } })
-  }, [level.id, seed])
+    // Preset-queue levels (warm-up, Star Practice) are NOT in the LEVELS
+    // table - restarting them without their queue would be rejected and leave
+    // an empty machine (a dead "says ''" screen). Thread the queue through.
+    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined } })
+  }, [level.id, seed, practiceQueue])
   useEffect(() => {
     if (!hasOnboarded('lesson') && prefersReducedMotion()) markOnboarded('lesson')
   }, [])
@@ -1695,30 +2466,72 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
     return () => clearTimeout(t)
   }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Feedback sounds fire on state entry.
+  // Feedback sounds fire on state entry. A correct pick ECHOES the letter
+  // right after the success chime - hearing "you got it: ha" once more is
+  // the reinforcement moment, not just a beep.
   useEffect(() => {
     const q = ctx.queue[ctx.cursor]
+    let echo
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
+      if (q && !demoRef.current) {
+        recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
+        echo = setTimeout(() => playForm(formOf(q.target), soundOn), 380)
+      }
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
       if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
+    return () => clearTimeout(echo)
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-advance: a correct answer moves to the next question on its own (no
+  // Continue tap); a wrong answer shows the miss briefly, then returns for a
+  // second try. The tutorial demo drives its own pacing, so skip it there.
+  useEffect(() => {
+    if (demoRef.current) return undefined
+    if (ctx.status === GameState.SUCCESS_BURST) {
+      const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1050)
+      return () => clearTimeout(t)
+    }
+    if (ctx.status === GameState.ERROR_RECOVERY) {
+      const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1600)
+      return () => clearTimeout(t)
+    }
+    return undefined
+  }, [ctx.status, ctx.cursor])
+
   if (ctx.status === GameState.LEVEL_COMPLETE) {
-    const result = isPractice ? null : { stars: starsForAccuracy(accuracy), bestStreak: ctx.bestStreak, accuracy }
+    // `missed` = targets that took more than one try; assignment receipts
+    // carry them back to the teacher as the class's trouble letters.
+    const result = isPractice
+      ? null
+      : {
+          stars: starsForAccuracy(accuracy),
+          bestStreak: ctx.bestStreak,
+          accuracy,
+          missed: [...new Set(ctx.history.filter((h) => h.attempts > 1).map((h) => h.target))],
+        }
+    // Any finished REAL level can be turned into a challenge link, built from
+    // the EXACT effective seed the queue was drawn from (ctx.seed, which
+    // survives the one-time tutorial reseed). Preset-queue runs (warm-up,
+    // assignment) are not in LEVELS, so a link to them could not be replayed.
+    const challengePayload = isPractice || !LEVELS.some((l) => l.id === level.id)
+      ? null
+      : { levelId: level.id, seed: ctx.seed, accuracy, streak: ctx.bestStreak }
     return (
       <LevelComplete
         level={level}
         accuracy={accuracy}
         stars={isPractice ? null : starsForAccuracy(accuracy)}
         bestStreak={ctx.bestStreak}
-        onContinue={() => onFinish(level.id, result)}
+        incoming={incoming}
+        challengePayload={challengePayload}
+        onContinue={() => onFinish(level.id, isChallenge ? null : result)}
         onReplay={() => {
+          if (isChallenge) { onReplay(); return }
           onFinish(level.id, result)
           onReplay()
         }}
@@ -1732,7 +2545,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, practiceQueue = null
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-44 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={() => onFinish(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">
@@ -1876,7 +2689,48 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
 
 /* ── Level complete ── */
 
-function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay }) {
+/** Turn a finished round into a shareable challenge link (Web Share sheet, or
+   copy-to-clipboard fallback). Nothing is sent to a server — the whole
+   challenge is in the link. See utils/challenge.js. */
+function ChallengeShareButton({ payload, label }) {
+  const [copied, setCopied] = useState(false)
+  const share = async () => {
+    const by = loadFromStorage('fq.nickname', '')
+    const url = challengeUrl({ ...payload, by }, window.location.origin)
+    const text = `${t('challengeShareText', 'Beat my Fidel Quest score! Can you?')} ${url}`
+    // Native shell: use the OS share sheet via Capacitor.
+    if (isNativePlatform()) {
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      return
+    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Fidel Quest', text, url })
+        return
+      }
+    } catch {
+      return // user dismissed the share sheet
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* clipboard blocked; nothing else we can do here */
+    }
+  }
+  return (
+    <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={share}>
+      <span className="flex items-center justify-center gap-2">
+        <Share2 className="h-5 w-5" aria-hidden="true" />
+        {copied ? t('linkCopied', 'Link copied!') : label}
+      </span>
+    </Chunky>
+  )
+}
+
+function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
+  const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
     <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
       <Confetti />
@@ -1930,14 +2784,310 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
         </div>
       </motion.div>
 
+      {incoming && (
+        <motion.div
+          className="mt-6 w-full max-w-sm rounded-2xl border-2 p-4 text-center"
+          style={{ background: outcome === 'win' ? 'var(--go-soft)' : 'var(--card)', borderColor: 'var(--line)' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.0 }}
+        >
+          <p className="text-lg font-black" style={{ color: 'var(--ink)' }}>
+            {outcome === 'win' ? t('challengeWin', 'You win!') : outcome === 'lose' ? t('challengeLose', 'So close!') : t('challengeTie', "It's a tie!")}
+          </p>
+          <p className="mono mt-1 font-black" style={{ color: 'var(--muted)' }}>
+            {t('you', 'You')}: {accuracy}% · {incoming.by || t('aFriend', 'A friend')}: {incoming.accuracy}%
+          </p>
+        </motion.div>
+      )}
+
       <motion.div className="mt-8 flex w-full max-w-sm flex-col gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
-        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
-          {t('continue', 'Continue')}
-        </Chunky>
-        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
-          {t('playAgain', 'Play again')}
-        </Chunky>
+        {incoming ? (
+          <>
+            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeBack', 'Challenge back')} />}
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
+              {t('playAgain', 'Play again')}
+            </Chunky>
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
+              {t('goHome', 'Home')}
+            </Chunky>
+          </>
+        ) : (
+          <>
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
+              {t('continue', 'Continue')}
+            </Chunky>
+            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeFriend', 'Challenge a friend')} />}
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
+              {t('playAgain', 'Play again')}
+            </Chunky>
+          </>
+        )}
       </motion.div>
+    </div>
+  )
+}
+
+/* ── Challenge a friend (Phase 1, see docs/social-play.md) ── */
+
+/** Plays an incoming challenge: the same level + exact seed the friend played,
+   with the demo disabled so the round is reproducible, then LevelComplete shows
+   the head-to-head and a "Challenge back" link. Never touches Journey progress
+   — a challenge is a friendly one-off, not a gate. */
+function ChallengeRun({ challenge, soundOn, onHome }) {
+  const level = LEVELS.find((l) => l.id === challenge.levelId)
+  const [started, setStarted] = useState(false)
+  useEscapeKey(onHome)
+  if (!level) return <ChallengeMissing onHome={onHome} />
+  if (!started) return <ChallengeIntro challenge={challenge} level={level} onStart={() => setStarted(true)} onHome={onHome} />
+  return (
+    <Lesson
+      level={level}
+      seed={challenge.seed}
+      soundOn={soundOn}
+      noDemo
+      incoming={challenge}
+      onFinish={onHome}
+      onReplay={() => setStarted(false)}
+    />
+  )
+}
+
+function ChallengeIntro({ challenge, level, onStart, onHome }) {
+  const who = challenge.by || t('aFriend', 'A friend')
+  const levelTitle = t(`${level.id}.title`, level.title)
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+        {t('challengeTitle', 'A challenge!')}
+      </p>
+      <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('challengeFrom', `${who} challenges you!`, { who })}
+      </h1>
+      <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+        {t('challengeScored', `${who} scored ${challenge.accuracy}% on ${levelTitle}. Can you beat it?`, { who, score: challenge.accuracy, level: levelTitle })}
+      </p>
+      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>
+          {t('challengeStart', 'Take the challenge')}
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+function ChallengeMissing({ onHome }) {
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <Hero size={112} mood="worried" />
+      <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('challengeGone', 'This challenge is not available.')}
+      </h1>
+      <div className="mt-8 w-full max-w-sm">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+/* ── Classroom: join links + teacher assignments (platform/classroom.js) ── */
+
+/** A #class= invite: joining is a local fact on this device — it stores the
+   class + credits the teacher's community code. Nothing is sent anywhere. */
+function JoinClassIntro({ invite, onHome }) {
+  const [joined, setJoined] = useState(false)
+  useEscapeKey(onHome)
+  const join = () => {
+    joinClass(invite)
+    setCommunityCode(invite.code)
+    track('class_join')
+    setJoined(true)
+  }
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      {joined ? (
+        <>
+          <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+            {t('jcJoined', "You're in {who}'s class!", { who: invite.teacher })}
+          </h1>
+          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+            {t('jcJoinedBody', 'Assignments from your teacher will show up in your daily plan.')}
+          </p>
+          <div className="mt-8 w-full max-w-sm">
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+              {t('goHome', 'Home')}
+            </Chunky>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+            {invite.code}
+          </p>
+          <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+            {t('jcTitle', 'Join {who}’s class?', { who: invite.teacher })}
+          </h1>
+          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+            {t('jcBody', 'Your app remembers the class on this device only. Nothing about you is sent anywhere.')}
+          </p>
+          <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={join}>
+              {t('jcJoin', 'Join class')}
+            </Chunky>
+            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+              {t('dismiss', 'Not now')}
+            </Chunky>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** A #assign= link: intro → the Lesson machine over the assignment's exact
+   seeded queue (same questions for every student) → send the result back to
+   the teacher as a receipt link. Never touches Journey progress. */
+function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
+  const [stage, setStage] = useState('intro') // intro | play | done
+  const [result, setResult] = useState(null)
+  const queue = useMemo(() => buildAssignmentQueue(assignment), [assignment])
+  if (!queue.length) return <ChallengeMissing onHome={onHome} />
+  if (stage === 'intro') return <AssignmentIntro assignment={assignment} count={queue.length} onStart={() => setStage('play')} onHome={onHome} />
+  if (stage === 'play') {
+    return (
+      <Lesson
+        level={{ id: 'assignment', n: '✎', title: t('asTitle', 'Assignment') }}
+        seed={assignment.seed}
+        soundOn={soundOn}
+        noDemo
+        practiceQueue={queue}
+        onFinish={(levelId, res) => {
+          if (!res) { onHome(); return }
+          markAssignmentDone()
+          onDone?.()
+          setResult(res)
+          setStage('done')
+        }}
+        onReplay={() => setStage('intro')}
+      />
+    )
+  }
+  return <AssignmentDone assignment={assignment} total={queue.length} accuracy={result?.accuracy ?? 0} missed={result?.missed || []} onHome={onHome} />
+}
+
+function AssignmentIntro({ assignment, count, onStart, onHome }) {
+  useEscapeKey(onHome)
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+        {t('asTitle', 'Assignment')}
+      </p>
+      <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('asFrom', '{who} sent your class homework!', { who: assignment.teacher })}
+      </h1>
+      <p className="mono mt-3 font-black" style={{ color: 'var(--muted)' }}>
+        {t('asDetail', '{n} questions · due {date}', { n: count, date: formatEthiopic(toEthiopic(assignment.due)).latin })}
+      </p>
+      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>
+          {t('asStart', 'Start assignment')}
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('asLater', 'Later')}
+        </Chunky>
+      </div>
+    </div>
+  )
+}
+
+/** The receipt sender. The score (and which letters were missed, so the
+   teacher can actually teach) travels ONLY inside the link the family
+   chooses to share back to the teacher (WhatsApp / share sheet). */
+function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
+  // Remember the name across assignments - typed once, kept locally.
+  const [name, setName] = useState(() => loadFromStorage('fq.student.v1', '') || loadFromStorage('fq.nickname', ''))
+  const [copied, setCopied] = useState(false)
+  const score = Math.max(0, Math.min(total, Math.round((accuracy * total) / 100)))
+  const clean = sanitizeName(name)
+  const send = async () => {
+    try { localStorage.setItem('fq.student.v1', clean) } catch { /* session-only */ }
+    const url = receiptUrl(
+      {
+        code: assignment.code,
+        student: clean,
+        score,
+        total,
+        day: dayStamp(),
+        assignmentSeed: assignment.seed,
+        missed: [...new Set(missed.map((k) => String(k).replace(/-\d+$/, '')))],
+      },
+      appShareUrl(),
+    )
+    if (!url) return
+    const text = `${t('asShareBack', 'Fidel Quest result for {who}:', { who: assignment.teacher })} ${url}`
+    track('assignment_receipt')
+    if (isNativePlatform()) {
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      return
+    }
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text, url }); return }
+    } catch { return /* user dismissed */ }
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* clipboard blocked */ }
+  }
+  return (
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-6 py-10 text-center">
+      <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+        <Hero size={128} />
+      </motion.div>
+      <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+        {t('asDoneTitle', 'Assignment done!')}
+      </h1>
+      <p className="mono mt-2 text-xl font-black" style={{ color: 'var(--ink)' }}>
+        {t('asScore', '{score} of {n} on the first try', { score, n: total })}
+      </p>
+      <label className="mt-6 block w-full max-w-sm text-left text-xs font-black" htmlFor="as-name">
+        {t('asName', 'Your name (the teacher sees it)')}
+      </label>
+      <input
+        id="as-name"
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={16}
+        placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
+        className={`mt-1 w-full max-w-sm rounded-2xl border-2 px-4 py-3 text-center font-bold ${FOCUS}`}
+        style={{ background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+      />
+      <div className="mt-4 flex w-full max-w-sm flex-col gap-3">
+        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={send} disabled={!clean}>
+          <span className="flex items-center justify-center gap-2">
+            <Send className="h-5 w-5" aria-hidden="true" />
+            {copied ? t('linkCopied', 'Link copied!') : t('asSend', 'Send result to teacher')}
+          </span>
+        </Chunky>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
+          {t('goHome', 'Home')}
+        </Chunky>
+      </div>
     </div>
   )
 }
@@ -2093,11 +3243,24 @@ export function drawAnbessa(g, s, mood = 'happy') {
   g.beginPath()
   g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
   g.fill()
-  // mouth
+  // mouth. `hungry`/`eating` open it wide so a letter can drop in.
+  const open = mood === 'hungry' || mood === 'eating'
   g.strokeStyle = '#8a5a00'
   g.lineWidth = s * 0.014
   g.lineCap = 'round'
-  if (mood === 'happy') {
+  if (open) {
+    // big open maw with a tongue; `eating` opens a touch wider (mid-chomp)
+    const rx = s * (mood === 'eating' ? 0.085 : 0.07)
+    const ry = s * (mood === 'eating' ? 0.075 : 0.058)
+    g.fillStyle = '#7a3b2e'
+    g.beginPath()
+    g.ellipse(cx, s * 0.5, rx, ry, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#ef8fa0'
+    g.beginPath()
+    g.ellipse(cx, s * 0.53, rx * 0.62, ry * 0.5, 0, 0, 7)
+    g.fill()
+  } else if (mood === 'happy') {
     g.beginPath()
     g.arc(cx - s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
     g.stroke()
@@ -2112,7 +3275,7 @@ export function drawAnbessa(g, s, mood = 'happy') {
   }
   // eyes
   g.fillStyle = '#3c2a10'
-  const eyeH = mood === 'happy' ? s * 0.038 : s * 0.026
+  const eyeH = mood === 'happy' || open ? s * 0.038 : s * 0.026
   for (const side of [-1, 1]) {
     g.beginPath()
     g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, eyeH, 0, 0, 7)
@@ -2123,7 +3286,7 @@ export function drawAnbessa(g, s, mood = 'happy') {
     g.fill()
     g.fillStyle = '#3c2a10'
   }
-  if (mood !== 'happy') {
+  if (mood !== 'happy' && !open) {
     // worried brows
     g.strokeStyle = '#3c2a10'
     g.lineWidth = s * 0.012
@@ -2331,6 +3494,148 @@ function ringTexture() {
   })
 }
 
+/* ── the runner characters ── */
+
+/* Anbessa and Jibby are real low-poly meshes in the runner (not billboard
+   sprites): chunky bodies from scaled spheres, legs that pivot at the hip so
+   they can pump, and a soft blob shadow that grounds them on the track. Both
+   are built feet-at-origin facing -Z (down the road, away from the chase
+   camera) like every classic kids' runner. */
+
+function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
+  m.position.set(x, y, z)
+  m.scale.set(sx, sy, sz)
+  parent.add(m)
+  return m
+}
+
+function blobShadow(group, r) {
+  const m = new THREE.Mesh(
+    new THREE.CircleGeometry(r, 22),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false }),
+  )
+  m.rotation.x = -Math.PI / 2
+  m.position.y = 0.02
+  group.add(m)
+}
+
+function legAt(parent, x, y, z, r, h, color) {
+  const leg = new THREE.Group()
+  leg.position.set(x, y, z)
+  cyl(leg, r, r + 0.01, h, color, 0, -h / 2, 0)
+  sphAt(leg, r + 0.02, color, 0, -h, -0.02, 1, 0.7, 1.15)
+  parent.add(leg)
+  return leg
+}
+
+function buildRunnerLion() {
+  const group = new THREE.Group()
+  blobShadow(group, 0.46)
+  const body = new THREE.Group()
+  group.add(body)
+  const legs = [[-0.15, 0.16], [0.15, 0.16], [-0.15, -0.14], [0.15, -0.14]]
+    .map(([lx, lz]) => legAt(body, lx, 0.44, lz, 0.065, 0.42, 0xe08300))
+  sphAt(body, 0.34, 0xf7a83c, 0, 0.64, 0.03, 1, 1.02, 1.3)
+  // his signature star on the rump
+  const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
+    starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
+    g.fillStyle = '#ffc800'
+    g.fill()
+    g.lineWidth = 6
+    g.strokeStyle = '#e0a400'
+    g.stroke()
+  }), transparent: true }))
+  star.scale.set(0.28, 0.28, 1)
+  star.position.set(-0.18, 0.74, 0.52)
+  body.add(star)
+  // tail up and wagging when happy; setMood droops it
+  const tail = new THREE.Group()
+  tail.position.set(0.12, 0.7, 0.34)
+  tail.rotation.x = 0.3
+  tail.rotation.z = -0.7
+  cyl(tail, 0.04, 0.05, 0.45, 0xe08300, 0, 0.22, 0)
+  sphAt(tail, 0.08, 0x8a5a00, 0, 0.47, 0)
+  body.add(tail)
+  // head straight down the road: the mane halo IS the silhouette
+  const head = new THREE.Group()
+  head.position.set(0, 1.08, -0.06)
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2
+    sphAt(head, 0.125, 0xd97706, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.02, 1, 1, 0.7)
+  }
+  sphAt(head, 0.24, 0xf7a83c, 0, 0, -0.04)
+  // ears poke out past the mane; groups so the worried droop carries the pinks
+  const ears = [-1, 1].map((side) => {
+    const ear = new THREE.Group()
+    ear.position.set(side * 0.26, 0.3, 0)
+    sphAt(ear, 0.1, 0xf7a83c, 0, 0, 0, 1, 1, 0.6)
+    sphAt(ear, 0.05, 0xffb7c5, 0, 0.01, 0.06, 1, 1, 0.5)
+    head.add(ear)
+    return ear
+  })
+  body.add(head)
+  return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
+}
+
+function buildRunnerHyena() {
+  const coat = 0x9a8b76, dark = 0x6e614f, crest = 0x57493a, belly = 0xc9b99d
+  const group = new THREE.Group()
+  blobShadow(group, 0.42)
+  const body = new THREE.Group()
+  group.add(body)
+  const legs = [[-0.14, 0.18], [0.14, 0.18], [-0.14, -0.16], [0.14, -0.16]]
+    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.055, 0.38, dark))
+  // sloped torso: haunches low at the rear, shoulders high at the front
+  sphAt(body, 0.32, coat, 0, 0.6, 0.04, 1, 0.95, 1.4).rotation.x = 0.16
+  // dorsal crest down the spine
+  for (let i = 0; i < 5; i++) {
+    cone(body, 0.05, 0.16, crest, 0, 0.99 - i * 0.04, -0.25 + i * 0.15)
+  }
+  // spots on the haunches
+  for (const [sx, sy, sz] of [[-0.2, 0.7, 0.22], [0.22, 0.66, 0.18], [-0.16, 0.52, 0.3], [0.14, 0.5, 0.32], [0.02, 0.62, 0.38]]) {
+    sphAt(body, 0.045, dark, sx, sy, sz, 1, 1, 0.5)
+  }
+  const tail = new THREE.Group()
+  tail.position.set(0.08, 0.56, 0.42)
+  tail.rotation.x = -0.7
+  tail.rotation.z = -0.35
+  cyl(tail, 0.035, 0.045, 0.3, crest, 0, 0.14, 0)
+  sphAt(tail, 0.065, crest, 0, 0.3, 0)
+  body.add(tail)
+  // head turned to flash the grin back down the road
+  const head = new THREE.Group()
+  head.position.set(0, 0.98, -0.36)
+  head.rotation.y = 1.15
+  sphAt(head, 0.22, coat, 0, 0, -0.02)
+  for (const side of [-1, 1]) {
+    sphAt(head, 0.105, 0x8a7d6a, side * 0.16, 0.2, 0.02, 1, 1.15, 0.5)
+    sphAt(head, 0.055, crest, side * 0.16, 0.2, -0.02, 1, 1.15, 0.5)
+  }
+  sphAt(head, 0.115, belly, 0, -0.06, -0.2, 0.85, 0.7, 1.05)
+  sphAt(head, 0.04, 0x3a2d1c, 0, -0.02, -0.31)
+  // open grin: dark mouth band + teeth
+  sphAt(head, 0.09, 0x3a2216, 0, -0.125, -0.2, 0.9, 0.45, 0.95)
+  for (const tx of [-0.05, 0, 0.05]) {
+    cone(head, 0.018, 0.05, 0xffffff, tx, -0.135, -0.285).rotation.x = Math.PI
+  }
+  // eyes + heavy mischievous brows
+  for (const side of [-1, 1]) {
+    sphAt(head, 0.045, 0xffffff, side * 0.1, 0.06, -0.185)
+    sphAt(head, 0.022, 0x241c12, side * 0.1, 0.055, -0.225)
+    cyl(head, 0.015, 0.015, 0.09, crest, side * 0.1, 0.125, -0.19).rotation.z = Math.PI / 2 - side * 0.25
+  }
+  body.add(head)
+  return { group, body, legs, tail }
+}
+
+/* Diagonal leg pairs swing in opposite phase - a simple believable run. */
+function runnerLegSwing(legs, run, amp) {
+  for (let i = 0; i < legs.length; i++) {
+    legs[i].rotation.x = Math.sin(run + (i % 2 === 0 ? 0 : Math.PI) + (i > 1 ? Math.PI : 0)) * amp
+  }
+}
+
 /* ── tiny mesh helpers ── */
 
 const MATS = new Map()
@@ -2495,8 +3800,12 @@ class RunnerWorld {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
-    this.camera.position.set(0, 3.6, 7.6)
-    this.camera.lookAt(0, 1.2, -12)
+    // Classic centered chase camera, straight down the track. The run
+    // sprites are drawn from behind at three-quarter (glancing back over
+    // the shoulder), so Anbessa faces the letter gates by construction and
+    // the lanes line up with the screen: left lane is left of the screen.
+    this.camera.position.set(0, 3.9, 7.2)
+    this.camera.lookAt(0, 1.1, -11)
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
@@ -2512,15 +3821,16 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    this.playerTexHappy = charTexture(drawAnbessa, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessa, 'worried')
-    this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
-    this.player.scale.set(2.3, 2.3, 1)
-    this.player.position.set(0, 1.25, 0)
+    // Anbessa as a real low-poly mesh (feet at the group origin), seen from
+    // behind running toward the letters.
+    this.playerChar = buildRunnerLion()
+    this.player = this.playerChar.group
+    this.player.scale.setScalar(1.9)
+    this.player.position.set(0, 0, 0)
     this.scene.add(this.player)
 
     this.ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture(), transparent: true, opacity: 0 }))
-    this.ring.position.copy(this.player.position)
+    this.ring.position.set(0, 1.2, 0)
     this.scene.add(this.ring)
 
     // Kokeb the star rides along above Anbessa, brightening with his power.
@@ -2537,15 +3847,31 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: charTexture(drawHyena), transparent: true }))
-    this.muncher.scale.set(1.9, 1.9, 1)
-    this.muncher.position.set(1.4, 1.1, 5.9)
+    this.munchChar = buildRunnerHyena()
+    this.muncher = this.munchChar.group
+    this.muncher.scale.setScalar(1.75)
+    this.muncher.position.set(1.4, 0, 3.9)
     this.scene.add(this.muncher)
+    this._munchScale = 1.75
+
+    // Extra hyenas that join the chase as wrong answers pile up, so the pressure
+    // is visible: one more Jibby per mistake, closing in, and swarming Anbessa
+    // when the boss round is lost.
+    this.extras = []
+    for (let i = 0; i < 3; i++) {
+      const char = buildRunnerHyena()
+      const sp = char.group
+      sp.scale.setScalar(0)
+      sp.position.set(0, 0, 7.5)
+      this.scene.add(sp)
+      this.extras.push({ sp, char, sc: 0 })
+    }
 
     this.chunks = []
     this.gate = null
     this.laneIndex = 1
-    this.speed = 13
+    this.speedScale = 1
+    this.speed = RUNNER_BASE_SPEED
     this.threat = 0 // 0..RUNNER_QPL wrong feeds
     this.bossMode = null // null | 'win' | 'lose'
     this.ringT = -1
@@ -2581,17 +3907,17 @@ class RunnerWorld {
     for (let lane = 0; lane < 3; lane++) {
       const form = INDEXES.byAudioKey.get(options[lane])
       const sign = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.9, 1.9),
+        new THREE.PlaneGeometry(2.4, 2.4),
         new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true }),
       )
-      sign.position.set(LANE_X[lane], 1.75, 0)
+      sign.position.set(LANE_X[lane], 1.95, 0)
       g.add(sign)
       cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
     }
     box(g, 8.4, 0.22, 0.22, 0xe0b25a, 0, 3, 0)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
-    g.position.z = -105
+    g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false
     this.scene.add(g)
@@ -2606,6 +3932,12 @@ class RunnerWorld {
 
   burst() {
     this.ringT = 0
+  }
+
+  /** Kid-selectable pace: scales how fast the track (and letters) approach. */
+  setSpeed(scale) {
+    this.speedScale = scale
+    this.speed = RUNNER_BASE_SPEED * scale
   }
 
   tick(dt, running) {
@@ -2627,26 +3959,55 @@ class RunnerWorld {
     }
 
     const px = LANE_X[this.laneIndex]
-    this.player.position.x += (px - this.player.position.x) * Math.min(1, dt * 10)
-    this.player.position.y = 1.25 + (this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.22)
+    const steer = px - this.player.position.x
+    this.player.position.x += steer * Math.min(1, dt * 10)
+    // Bounce and pump the legs (the blob shadow stays on the ground); lean
+    // the whole body toward the lane being steered to.
+    this.playerChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.1
+    if (!this.reduced) runnerLegSwing(this.playerChar.legs, this.t * 10, 0.65)
+    this.player.rotation.z = Math.max(-0.22, Math.min(0.22, -steer * 0.35))
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
-    let mz = 6.2 - this.threat * 0.85
-    let my = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7) * 0.12)
-    if (this.bossMode === 'lose') {
-      mz = 0.4
-      my = 1.25
-    }
+    // Baseline sits at the bottom edge of the centered chase camera (ears and
+    // grin looming into frame); every wrong feed brings him up toward Anbessa.
+    let mz = 3.9 - this.threat * 0.75
+    let my = 0
+    if (this.bossMode === 'lose') mz = 0.4
     if (this.bossMode === 'win') {
       mz = 10.5
-      my = 5.5 + this.t * 0.01
+      my = 4
     }
     this.muncher.position.z += (mz - this.muncher.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2.5))
-    this.muncher.position.x += (this.player.position.x * 0.75 - this.muncher.position.x) * Math.min(1, dt * 2)
-    this.muncher.position.y = my
-    const mscale = this.bossMode === 'lose' ? 3.1 : 1.9
-    this.muncher.scale.x += (mscale - this.muncher.scale.x) * Math.min(1, dt * 4)
-    this.muncher.scale.y = this.muncher.scale.x
+    // Chase from the right shoulder so he never hides Anbessa; pile straight
+    // on when the boss round is lost.
+    const mx = this.player.position.x * 0.75 + (this.bossMode === 'lose' ? 0 : 1.15)
+    this.muncher.position.x += (mx - this.muncher.position.x) * Math.min(1, dt * 2)
+    this.muncher.position.y += (my - this.muncher.position.y) * Math.min(1, dt * 3)
+    this.munchChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7)) * 0.08
+    if (!this.reduced) runnerLegSwing(this.munchChar.legs, this.t * 10.5, 0.6)
+    const mscale = this.bossMode === 'lose' ? 2.9 : 1.75
+    this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
+    // Jibby leans toward the lion he is chasing.
+    this.muncher.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
+    this.muncher.scale.setScalar(this._munchScale)
+
+    // The growing pack: one extra Jibby per mistake beyond the first, flanking
+    // and closing in; on a lost boss they all pile onto Anbessa.
+    for (let i = 0; i < this.extras.length; i++) {
+      const e = this.extras[i]
+      const active = this.bossMode === 'lose' || this.threat > i + 1
+      const target = active ? (this.bossMode === 'lose' ? 2.2 : 1.5) : 0
+      e.sc += (target - e.sc) * Math.min(1, dt * 4)
+      const side = i % 2 === 0 ? -1 : 1
+      const tx = this.player.position.x * 0.6 + side * (1.7 + i * 0.35)
+      const tz = this.bossMode === 'lose' ? 0.9 + i * 0.7 : 4.4 - this.threat * 0.7 + i * 0.9
+      e.sp.position.x += (tx - e.sp.position.x) * Math.min(1, dt * 2)
+      e.sp.position.z += (tz - e.sp.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2))
+      e.char.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7 + i * 1.7)) * 0.08
+      if (!this.reduced && e.sc > 0.2) runnerLegSwing(e.char.legs, this.t * 10.5 + i * 1.3, 0.6)
+      e.sp.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - e.sp.position.x) * 0.16))
+      e.sp.scale.setScalar(e.sc)
+    }
 
     if (this.ringT >= 0) {
       this.ringT += dt
@@ -2655,7 +4016,7 @@ class RunnerWorld {
         this.ringT = -1
         this.ring.material.opacity = 0
       } else {
-        this.ring.position.set(this.player.position.x, this.player.position.y, 0.1)
+        this.ring.position.set(this.player.position.x, 1.2 + this.playerChar.body.position.y, 0.1)
         this.ring.scale.setScalar(1.2 + k * 3.2)
         this.ring.material.opacity = 1 - k
       }
@@ -2663,15 +4024,21 @@ class RunnerWorld {
 
     const bs = 0.7 + this.power * 0.13 + (this.reduced ? 0 : Math.sin(this.t * 5) * 0.05)
     this.buddy.scale.set(bs, bs, 1)
-    this.buddy.position.set(this.player.position.x - 1.15, this.player.position.y + 1.5, 0)
+    this.buddy.position.set(this.player.position.x - 1.15, 2.75 + this.playerChar.body.position.y, 0)
     this.buddy.material.rotation = Math.sin(this.t * 2.2) * 0.25
 
     this.renderer.render(this.scene, this.camera)
   }
 
   setMood(worried) {
-    this.player.material.map = worried ? this.playerTexWorried : this.playerTexHappy
-    this.player.material.needsUpdate = true
+    // Readable from behind: worried droops the ears sideways and the tail down.
+    const c = this.playerChar
+    for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
+      ear.position.y = worried ? 0.24 : 0.3
+      ear.rotation.z = worried ? side * -0.9 : 0
+    }
+    c.tail.rotation.x = worried ? 1.6 : 0.3
+    c.tail.rotation.z = worried ? -0.2 : -0.7
   }
 
   resize(w, h) {
@@ -2696,32 +4063,45 @@ function Arcade3D({ children }) {
   return children
 }
 
-function ArcadeGateway({ node, seed, soundOn, onDone, onRetry }) {
+function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool, allLetters = false }) {
   const isRunner = node.gateway.mode === 'runner'
+  // Quitting is NOT winning: the games report how far the run actually got
+  // when they exit, and only a real achievement completes the Journey node -
+  // the runner must beat at least one boss (reach level 2), Skylands must
+  // have this node's island cleared. Anything less just goes back to the
+  // path with the node still open.
+  const finish = (r = {}) => {
+    const won = isRunner
+      ? (r.level ?? 1) >= 2 || !!r.survivedBoss
+      : (r.sessionsCompleted ?? 0) >= (node.gateway.island ?? 1)
+    if (won) onDone()
+    else onCancel()
+  }
   if (isDegraded()) {
     return isRunner ? (
-      <Runner2D seed={seed} soundOn={soundOn} onExit={onDone} />
+      <Runner2D seed={seed} soundOn={soundOn} onExit={finish} pool={pool} />
     ) : (
-      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={onDone} />
+      <Skylands2D island={node.gateway.island} seed={seed} soundOn={soundOn} onExit={finish} allLetters={allLetters} />
     )
   }
   return (
     <Arcade3D>
-      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={onDone} onRetry={onRetry} /> : <FidelSkylands onExit={onDone} />}
+      {isRunner ? <Runner seed={seed} soundOn={soundOn} onExit={finish} onRetry={onRetry} pool={pool} /> : <FidelSkylands onExit={finish} allLetters={allLetters} />}
     </Arcade3D>
   )
 }
 
 /* ── the 3D runner screen ── */
 
-function Runner({ seed, soundOn, onExit, onRetry }) {
-  const [ctx, dispatch] = useReducer(runnerReducer, seed, runnerInitial)
+function Runner({ seed, soundOn, onExit, onRetry, pool }) {
+  const [ctx, dispatch] = useReducer(runnerReducer, { seed, pool }, (a) => runnerInitial(a.seed, a.pool))
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const worldRef = useRef(null)
   const ctxRef = useRef(ctx)
   ctxRef.current = ctx
   const [lane, setLane] = useState(1)
+  const [speedName, setSpeedName] = useState(loadRunnerSpeed)
   const [webglOk, setWebglOk] = useState(true)
   const [banner, setBanner] = useState(true)
   const [demo, setDemo] = useState(() => !hasOnboarded('runner') && !prefersReducedMotion())
@@ -2776,6 +4156,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
       return undefined
     }
     worldRef.current = world
+    world.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
     let raf
     let last = performance.now()
     const loop = (now) => {
@@ -2804,6 +4185,12 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
       worldRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Apply the chosen pace to the live world and remember it.
+  useEffect(() => {
+    worldRef.current?.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
+    saveRunnerSpeed(speedName)
+  }, [speedName])
 
   // Level changes re-dress the world and show the destination banner.
   useEffect(() => {
@@ -2880,7 +4267,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
   return (
     <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onExit} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -2913,9 +4300,24 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
             3D graphics are not available on this device. Try the lesson levels instead!
           </div>
         )}
+        {/* Speed selector — kids pick how fast the letters come. */}
+        <div className="absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full p-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          {RUNNER_SPEED_ORDER.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSpeedName(s)}
+              aria-pressed={speedName === s}
+              className={`rounded-full px-2.5 py-1 text-xs font-black ${FOCUS}`}
+              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
+            >
+              {t(`speed_${s}`, s)}
+            </button>
+          ))}
+        </div>
         <AnimatePresence>
           {banner && (
-            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-4 text-center">
+            <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-14 text-center">
               <span className="rounded-2xl px-4 py-2 text-sm font-black uppercase tracking-widest text-white" style={{ background: 'rgba(0,0,0,0.45)' }}>
                 Level {ctx.level} — {place.name}, {place.country}
               </span>
@@ -2924,7 +4326,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
           {boss && (
             <motion.div key="bosscap" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
               <span className="rounded-2xl px-4 py-2 text-base font-black uppercase tracking-wider text-white" style={{ background: ctx.survivedBoss ? 'var(--go)' : 'var(--bad)' }}>
-                {ctx.survivedBoss ? 'Anbessa’s letter power wins!' : 'Jibby the hyena attacks!'}
+                {ctx.survivedBoss ? t('runBossWin', 'Anbessa’s letter power wins!') : t('runBossAttack', 'Jibby the hyena attacks!')}
               </span>
             </motion.div>
           )}
@@ -2957,7 +4359,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
               </motion.p>
             )}
           </AnimatePresence>
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move left" onClick={() => steer(-1)} data-tut="steer-left">
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label={t('runMoveLeft', 'Move left')} onClick={() => steer(-1)} data-tut="steer-left">
             <ChevronLeft className="h-8 w-8" aria-hidden="true" />
           </Chunky>
           <div className="flex gap-1.5" aria-hidden="true">
@@ -2965,7 +4367,7 @@ function Runner({ seed, soundOn, onExit, onRetry }) {
               <span key={i} className="block h-2.5 w-6 rounded-full" style={{ background: i === lane ? 'var(--accent)' : 'var(--line)' }} />
             ))}
           </div>
-          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label="Move right" onClick={() => steer(1)} data-tut="steer-right">
+          <Chunky tone="card" className="flex h-16 flex-1 items-center justify-center" aria-label={t('runMoveRight', 'Move right')} onClick={() => steer(1)} data-tut="steer-right">
             <ChevronLeft className="h-8 w-8 rotate-180" aria-hidden="true" />
           </Chunky>
         </div>
@@ -3010,7 +4412,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         </div>
         <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {isBest ? 'New best!' : 'Best'}
+            {isBest ? t('runNewBest', 'New best!') : t('runBest', 'Best')}
           </p>
           <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>
             {Math.max(best.fed, ctx.fed)}
@@ -3022,7 +4424,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
           {t('runAgain', 'Run again')}
         </Chunky>
-        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onExit}>
+        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })}>
           {t('home', 'Home')}
         </Chunky>
       </div>

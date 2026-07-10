@@ -11,11 +11,22 @@ const styles = [...html.matchAll(/<style[^>]*>[\s\S]*?<\/style>/g)].map((m) => m
 const scripts = [...html.matchAll(/<script type="module"[^>]*>[\s\S]*?<\/script>/g)].map((m) => m[0])
 if (!styles.length || !scripts.length) throw new Error('extraction failed')
 
-const dir = root + 'public/audio/fidel/letters/'
+// Embed every clip the memory pack may resolve: the base letters, the
+// Tigrinya-distinct overrides under letters/ti/, and the words. Keys mirror the
+// AudioEngine's effective keys (letters/ha-1, letters/ti/ae-1, words/feres).
+const audioRoot = root + 'public/audio/fidel/'
 const map = {}
-for (const f of readdirSync(dir)) {
-  if (!f.endsWith('.mp3')) continue
-  map['letters/' + f.slice(0, -4)] = 'data:audio/mpeg;base64,' + readFileSync(dir + f).toString('base64')
+for (const rel of ['letters', 'letters/ti', 'words']) {
+  let files
+  try {
+    files = readdirSync(audioRoot + rel)
+  } catch {
+    continue // optional subdir
+  }
+  for (const f of files) {
+    if (!f.endsWith('.mp3')) continue
+    map[rel + '/' + f.slice(0, -4)] = 'data:audio/mpeg;base64,' + readFileSync(audioRoot + rel + '/' + f).toString('base64')
+  }
 }
 
 const fragment =

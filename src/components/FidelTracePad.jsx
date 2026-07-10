@@ -78,11 +78,14 @@ export const STROKE_HINTS = {}
 // Tolerance widens the target early and tightens it by chapter (1..4).
 // origin: max px from the expected start; needDir: whether the direction
 // cue is armed at all (advisory only until the later chapters).
+// Widened for little fingers: a chunky trace covers the mask more readily, so
+// a genuine attempt registers instead of feeling fussy. Still tightens by
+// chapter, and stray tolerance keeps scribbling from counting.
 export const TRACE_TOLERANCE = {
-  1: { cover: 20, stray: 42, origin: 96, needDir: false },
-  2: { cover: 17, stray: 34, origin: 76, needDir: false },
-  3: { cover: 14, stray: 28, origin: 58, needDir: true },
-  4: { cover: 12, stray: 22, origin: 44, needDir: true },
+  1: { cover: 27, stray: 50, origin: 112, needDir: false },
+  2: { cover: 23, stray: 42, origin: 90, needDir: false },
+  3: { cover: 19, stray: 34, origin: 70, needDir: true },
+  4: { cover: 16, stray: 28, origin: 56, needDir: true },
 }
 
 /** Expected start point + primary axis, from override or glyph mask. Pure. */
@@ -226,7 +229,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
     ctx.beginPath()
     ctx.moveTo(point[0], point[1])
     ctx.strokeStyle = STROKE_COLORS[(strokeCountRef.current - 1) % STROKE_COLORS.length]
-    ctx.lineWidth = 18
+    ctx.lineWidth = 26
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     setHasInk(true)

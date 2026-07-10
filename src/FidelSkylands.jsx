@@ -29,11 +29,14 @@ import { Float, Sparkles, Billboard } from '@react-three/drei'
 import { useSpring, animated, config as springConfig } from '@react-spring/three'
 import * as THREE from 'three'
 import { audio as audioEngine } from './platform/audioEngine'
+import { rngShuffle } from './platform/rng'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
 import { recordAnswer } from './platform/telemetry'
+import { t } from './platform/i18n'
 import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
 import { LOW_END } from './platform/quality'
+import { loadSkySave, persistSkySave } from './platform/skylandsSave'
 
 /* ============================================================================
    §1 DATA
@@ -78,35 +81,21 @@ export const SESSIONS = [
 /** Cumulative pool for game level n: sessions 1..n. */
 const cumulativePool = (n) => SESSIONS.slice(0, n).flatMap((s) => s.pool)
 const sessionOfKey = (key) => SESSIONS.find((s) => s.pool.includes(key))
+/** Every base letter - used when the player opts into "all letters" instead of
+   the default island-cumulative pool. */
+const ALL_BASE = BASE_FORMS.map((f) => f.audioKey)
 
 /* ============================================================================
-   §2 QUESTIONS (seeded, cumulative, twin-safe)
+   §2 QUESTIONS (seeded, cumulative, twin-safe) — over the shared platform RNG
    ========================================================================== */
-
-function rngNext(state) {
-  let t = (state + 0x6d2b79f5) | 0
-  let r = Math.imul(t ^ (t >>> 15), 1 | t)
-  r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r
-  return [((r ^ (r >>> 14)) >>> 0) / 4294967296, t]
-}
-function rngShuffle(items, state) {
-  const out = items.slice()
-  for (let i = out.length - 1; i > 0; i--) {
-    let v
-    ;[v, state] = rngNext(state)
-    const j = Math.floor(v * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return [out, state]
-}
 
 /**
  * Level n quiz: 5+n questions over the cumulative pool. Twin letters that
  * share a sound are never shown together. Recent-session letters are
  * guaranteed at least half the questions so new material gets practiced.
  */
-export function buildQuiz(n, seed) {
-  const pool = cumulativePool(n)
+export function buildQuiz(n, seed, allForms = false) {
+  const pool = allForms ? ALL_BASE : cumulativePool(n)
   const fresh = SESSIONS[n - 1].pool
   const older = pool.filter((k) => !fresh.includes(k))
   const count = 5 + n
@@ -140,8 +129,8 @@ export function buildQuiz(n, seed) {
  * EARLIER sessions (the review material); level 1 steals from its own pool.
  * Stolen letters have pairwise-distinct sounds so each is findable by ear.
  */
-export function pickStolen(n, seed) {
-  const pool = cumulativePool(Math.max(1, n - 1))
+export function pickStolen(n, seed, allForms = false) {
+  const pool = allForms ? ALL_BASE : cumulativePool(Math.max(1, n - 1))
   const [shuffled] = rngShuffle(pool, (seed ^ 0x9e37) | 1)
   const chosen = []
   for (const k of shuffled) {
@@ -161,22 +150,9 @@ export function pickStolen(n, seed) {
      - game n draws questions from sessions 1..n (see §2)
    ========================================================================== */
 
-const SAVE_KEY = 'fq3.skylands'
-function loadSave() {
-  try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}
-    return { sessionsCompleted: s.sessionsCompleted | 0, learnedSessions: s.learnedSessions | 0 }
-  } catch {
-    return { sessionsCompleted: 0, learnedSessions: 0 }
-  }
-}
-function persist(save) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(save))
-  } catch {
-    /* session-only */
-  }
-}
+// The save lives in platform/skylandsSave (shared with the 2D fallback).
+const loadSave = loadSkySave
+const persist = persistSkySave
 
 export const canLearn = (st, n) => n >= 1 && n <= SESSIONS.length && n <= st.sessionsCompleted + 1
 export const canPlay = (st, n) => n >= 1 && n <= SESSIONS.length && st.learnedSessions >= n && n <= st.sessionsCompleted + 1
@@ -196,11 +172,11 @@ function reducer(st, a) {
       if (st.mode !== 'learning' || st.heard.length < SESSIONS[st.session - 1].pool.length) return st
       const learnedSessions = Math.max(st.learnedSessions, st.session)
       persist({ sessionsCompleted: st.sessionsCompleted, learnedSessions })
-      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed), stolen: pickStolen(st.session, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, learnedSessions, mode: 'game', quiz: buildQuiz(st.session, a.seed, a.allForms), stolen: pickStolen(st.session, a.seed, a.allForms), qIndex: 0, phase: 'question', correct: 0 }
     }
     case 'OPEN_GAME':
       if (!canPlay(st, a.n)) return st
-      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed), stolen: pickStolen(a.n, a.seed), qIndex: 0, phase: 'question', correct: 0 }
+      return { ...st, mode: 'game', session: a.n, quiz: buildQuiz(a.n, a.seed, a.allForms), stolen: pickStolen(a.n, a.seed, a.allForms), qIndex: 0, phase: 'question', correct: 0 }
     case 'PLUCK': {
       if (st.mode !== 'game') return st
       if (st.phase === 'question') {
@@ -299,19 +275,51 @@ function glyphTex(char) {
   return TEXTURES[char]
 }
 
+/* Front-facing character art (kept local so this mode stays self-contained /
+   standalone-bundleable). These are the detailed chibi versions — tail, paws,
+   full mane, cheeks, mouth for Anbessa; crest, heavy brow, spots and a toothy
+   grin for Jibby — so the Skylands boss/waiting sprites match the rest of the
+   app instead of looking flat. Front-facing is deliberate here: Jibby looms
+   toward the player as a boss, Anbessa waits and greets. */
 function drawAnbessa(g, s) {
   const cx = s / 2
+  // tail with a tuft
+  g.strokeStyle = '#e08300'
+  g.lineWidth = s * 0.04
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx + s * 0.14, s * 0.8)
+  g.quadraticCurveTo(cx + s * 0.34, s * 0.82, cx + s * 0.33, s * 0.66)
+  g.stroke()
+  g.fillStyle = '#8a5a00'
+  g.beginPath()
+  g.arc(cx + s * 0.33, s * 0.64, s * 0.045, 0, 7)
+  g.fill()
+  // body
   g.fillStyle = '#f7a83c'
   g.beginPath()
   g.roundRect(cx - s * 0.15, s * 0.58, s * 0.3, s * 0.32, s * 0.13)
   g.fill()
+  // belly
   g.fillStyle = '#ffdfae'
   g.beginPath()
   g.ellipse(cx, s * 0.76, s * 0.1, s * 0.11, 0, 0, 7)
   g.fill()
+  // paws
+  g.fillStyle = '#e08300'
+  for (const px of [-0.08, 0.08]) {
+    g.beginPath()
+    g.ellipse(cx + px * s, s * 0.895, s * 0.05, s * 0.028, 0, 0, 7)
+    g.fill()
+  }
+  // star on his chest
   starPath(g, cx, s * 0.72, s * 0.062, s * 0.028)
   g.fillStyle = '#ffc800'
   g.fill()
+  g.lineWidth = s * 0.012
+  g.strokeStyle = '#e0a400'
+  g.stroke()
+  // mane
   g.fillStyle = '#d97706'
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2
@@ -319,24 +327,40 @@ function drawAnbessa(g, s) {
     g.arc(cx + Math.cos(a) * s * 0.28, s * 0.4 + Math.sin(a) * s * 0.28, s * 0.1, 0, 7)
     g.fill()
   }
+  // ears
   for (const side of [-1, 1]) {
     g.fillStyle = '#f7a83c'
     g.beginPath()
     g.arc(cx + side * s * 0.19, s * 0.17, s * 0.07, 0, 7)
     g.fill()
+    g.fillStyle = '#ffdfae'
+    g.beginPath()
+    g.arc(cx + side * s * 0.19, s * 0.175, s * 0.038, 0, 7)
+    g.fill()
   }
+  // head
   g.fillStyle = '#f7a83c'
   g.beginPath()
   g.arc(cx, s * 0.4, s * 0.265, 0, 7)
   g.fill()
+  // cheeks
+  g.fillStyle = 'rgba(255,120,80,0.35)'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.16, s * 0.46, s * 0.035, 0, 7)
+    g.fill()
+  }
+  // muzzle
   g.fillStyle = '#ffe9c8'
   g.beginPath()
   g.ellipse(cx, s * 0.475, s * 0.115, s * 0.085, 0, 0, 7)
   g.fill()
+  // nose
   g.fillStyle = '#8a5a00'
   g.beginPath()
   g.ellipse(cx, s * 0.44, s * 0.034, s * 0.024, 0, 0, 7)
   g.fill()
+  // happy mouth
   g.strokeStyle = '#8a5a00'
   g.lineWidth = s * 0.014
   g.lineCap = 'round'
@@ -345,32 +369,64 @@ function drawAnbessa(g, s) {
     g.arc(cx + side * s * 0.032, s * 0.468, s * 0.032, 0.15 * Math.PI, 0.85 * Math.PI)
     g.stroke()
   }
+  // eyes
   g.fillStyle = '#3c2a10'
   for (const side of [-1, 1]) {
     g.beginPath()
     g.ellipse(cx + side * s * 0.1, s * 0.375, s * 0.027, s * 0.038, 0, 0, 7)
     g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.1 - s * 0.008, s * 0.365, s * 0.009, 0, 7)
+    g.fill()
+    g.fillStyle = '#3c2a10'
   }
 }
 
 function drawJibby(g, s) {
   const cx = s / 2
+  // big rounded ears
   for (const side of [-1, 1]) {
     g.fillStyle = '#8a7d6a'
     g.beginPath()
     g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
     g.fill()
+    g.fillStyle = '#57493a'
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.18, s * 0.185, s * 0.045, s * 0.07, side * 0.25, 0, 7)
+    g.fill()
   }
+  // scruffy crest
+  g.fillStyle = '#57493a'
+  for (let i = -2; i <= 2; i++) {
+    g.beginPath()
+    g.moveTo(cx + i * s * 0.055 - s * 0.03, s * 0.185)
+    g.lineTo(cx + i * s * 0.055, s * 0.1)
+    g.lineTo(cx + i * s * 0.055 + s * 0.03, s * 0.185)
+    g.closePath()
+    g.fill()
+  }
+  // head
   g.fillStyle = '#9a8b76'
   g.beginPath()
   g.arc(cx, s * 0.43, s * 0.28, 0, 7)
   g.fill()
+  // spots
   g.fillStyle = '#6e614f'
-  for (const [px, py] of [[0.3, 0.3], [0.68, 0.27], [0.74, 0.42]]) {
+  for (const [px, py, pr] of [[0.3, 0.3, 0.028], [0.68, 0.27, 0.024], [0.74, 0.42, 0.02], [0.26, 0.46, 0.022]]) {
     g.beginPath()
-    g.arc(px * s, py * s, 0.024 * s, 0, 7)
+    g.arc(px * s, py * s, pr * s, 0, 7)
     g.fill()
   }
+  // heavy brow
+  g.strokeStyle = '#57493a'
+  g.lineWidth = s * 0.03
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.16, s * 0.3)
+  g.quadraticCurveTo(cx, s * 0.27, cx + s * 0.16, s * 0.3)
+  g.stroke()
+  // mischievous eyes
   for (const side of [-1, 1]) {
     g.fillStyle = '#fff'
     g.beginPath()
@@ -381,10 +437,17 @@ function drawJibby(g, s) {
     g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
     g.fill()
   }
+  // muzzle
   g.fillStyle = '#c9b99d'
   g.beginPath()
   g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
   g.fill()
+  // nose
+  g.fillStyle = '#3a2d1c'
+  g.beginPath()
+  g.ellipse(cx, s * 0.485, s * 0.045, s * 0.03, 0, 0, 7)
+  g.fill()
+  // toothy grin
   g.strokeStyle = '#3a2d1c'
   g.lineWidth = s * 0.016
   g.beginPath()
@@ -502,7 +565,11 @@ function Fruit({ form, position, color, state, heard, onPluck }) {
         </mesh>
         <mesh
           castShadow
-          onClick={(e) => {
+          // Fire on press, not click: the fruits float/bob, so a touch that
+          // lands and lifts on slightly different coords fails onClick and the
+          // tap is lost - which stalls learning (Start stays disabled) and the
+          // quiz. onPointerDown registers the tap reliably on mobile.
+          onPointerDown={(e) => {
             e.stopPropagation()
             onPluck(form.audioKey)
           }}
@@ -898,7 +965,7 @@ function Scene({ st, dispatch, soundOn }) {
 
 const BTN = 'chunk rounded-2xl font-extrabold tracking-wide text-white disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-export default function FidelSkylands({ onExit }) {
+export default function FidelSkylands({ onExit, allLetters = false }) {
   const [st, dispatch] = useReducer(reducer, undefined, initialState)
   const [soundOn, setSoundOn] = useState(() => {
     try {
@@ -917,6 +984,42 @@ export default function FidelSkylands({ onExit }) {
       return !v
     })
   }
+
+  // The fruit glyphs are canvas-baked into GPU textures. If a texture is baked
+  // before the bundled Ethiopic font has loaded, the letter comes out blank and
+  // stays cached that way ("letters not loading"). Rebake once fonts are ready.
+  const [glyphV, setGlyphV] = useState(0)
+  useEffect(() => {
+    const fonts = typeof document !== 'undefined' ? document.fonts : null
+    if (!fonts || !fonts.load) return undefined
+    // Common case first: main.jsx preloads the face at startup, so by the
+    // time Skylands mounts it is usually ready and the first bake was fine -
+    // skip the rebake entirely (a remount would pointlessly tear down the
+    // whole R3F scene on exactly the low-end devices this mode protects).
+    try { if (fonts.check?.("900 64px 'Noto Sans Ethiopic'")) return undefined } catch { /* fall through */ }
+    let cancelled = false
+    const rebake = () => {
+      if (cancelled) return
+      // Drop the cached single-char glyph textures (named textures like
+      // 'anbessa'/'star' are longer keys and are kept) so the fruit letters
+      // re-bake now that the font is available. Deliberately NOT calling
+      // dispose(): the still-mounted scene's materials reference these
+      // textures until the keyed remount commits, and disposing live GPU
+      // textures blanks the fruit for a frame. The handful of orphaned
+      // 128px canvases are garbage-collected with the old scene.
+      for (const k of Object.keys(TEXTURES)) {
+        if (Array.from(k).length === 1) delete TEXTURES[k]
+      }
+      setGlyphV((v) => v + 1)
+    }
+    // Await the Ethiopic font specifically (fonts.ready can resolve before a
+    // never-referenced font has even started loading). Rebake on success or
+    // failure so we never get stuck on blank fruit.
+    Promise.resolve()
+      .then(() => fonts.load("900 64px 'Noto Sans Ethiopic'"))
+      .then(rebake, rebake)
+    return () => { cancelled = true }
+  }, [])
 
   const [hint, setHint] = useState(() => !hasOnboarded('skylands') && !prefersReducedMotion())
   useEffect(() => {
@@ -958,7 +1061,7 @@ export default function FidelSkylands({ onExit }) {
   return (
     <div className="fixed inset-0" style={{ background: 'var(--paper)' }}>
       <Canvas shadows={!LOW_END} dpr={LOW_END ? [1, 1.25] : [1, 2]} camera={{ fov: 50, position: [0, 7.5, 17.5] }}>
-        <Scene st={st} dispatch={dispatch} soundOn={soundOn} />
+        <Scene key={glyphV} st={st} dispatch={dispatch} soundOn={soundOn} />
       </Canvas>
 
       {hint && st.mode === 'learning' && typeof window !== 'undefined' && (
@@ -969,19 +1072,19 @@ export default function FidelSkylands({ onExit }) {
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <header className="flex items-center gap-2 p-3">
           {st.mode === 'map' && onExit && (
-            <button type="button" onClick={onExit} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-              Home
+            <button type="button" onClick={() => onExit({ sessionsCompleted: st.sessionsCompleted })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+              {t('home', 'Home')}
             </button>
           )}
           {st.mode !== 'map' && (
             <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} pointer-events-auto px-4 py-2 text-sm`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-              Map
+              {t('skyMap', 'Map')}
             </button>
           )}
           <span className="rounded-2xl px-3 py-1.5 text-sm font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
-            {st.mode === 'map' && 'Fidel Skylands'}
-            {st.mode === 'learning' && `Session ${st.session} · ${session.place}`}
-            {st.mode === 'game' && `Level ${st.session} · ${session.place}`}
+            {st.mode === 'map' && t('skylandsTitle', 'Fidel Skylands')}
+            {st.mode === 'learning' && `${t('skySession', 'Session')} ${st.session} · ${session.place}`}
+            {st.mode === 'game' && `${t('level', 'Level')} ${st.session} · ${session.place}`}
           </span>
           <span className="ml-auto flex items-center gap-1 rounded-2xl px-3 py-1.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-label={`${st.sessionsCompleted} of ${SESSIONS.length} islands cleared`}>
             <span aria-hidden="true" style={{ color: 'var(--star)' }}>★</span>
@@ -997,28 +1100,28 @@ export default function FidelSkylands({ onExit }) {
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {champion ? (
                 <p className="text-center text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  All four skylands cleared — Anbessa is a Fidel Champion!
+                  {t('skyAllCleared', 'All four skylands cleared — Anbessa is a Fidel Champion!')}
                 </p>
               ) : (
                 <>
                   <p className="text-center font-bold">
                     <span className="font-black">{SESSIONS[nextLearn - 1].place}, {SESSIONS[nextLearn - 1].country}</span>
                     {' — '}
-                    {st.learnedSessions >= nextLearn ? `ready for Level ${nextLearn}: it tests Sessions 1–${nextLearn}!` : `learn Session ${nextLearn}'s letters to wake the tree.`}
+                    {st.learnedSessions >= nextLearn ? t('skyReady', `ready for Level ${nextLearn}: it tests Sessions 1–${nextLearn}!`, { n: nextLearn }) : t('skyLearnPrompt', `learn Session ${nextLearn}'s letters to wake the tree.`, { n: nextLearn })}
                   </p>
                   <div className="mt-3 flex justify-center gap-2">
                     <button type="button" onClick={() => dispatch({ type: 'OPEN_LEARNING', n: nextLearn })} className={`${BTN} pointer-events-auto px-5 py-3`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)' }}>
-                      Learn Session {nextLearn}
+                      {t('skyLearnBtn', `Learn Session ${nextLearn}`, { n: nextLearn })}
                     </button>
-                    <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1 })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                      Play Level {nextLearn}
+                    <button type="button" disabled={st.learnedSessions < nextLearn} onClick={() => dispatch({ type: 'OPEN_GAME', n: nextLearn, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} px-5 py-3 pointer-events-auto`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                      {t('skyPlayBtn', `Play Level ${nextLearn}`, { n: nextLearn })}
                     </button>
                   </div>
                   {st.sessionsCompleted > 0 && (
                     <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                      Replay: {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
-                        <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1 })} className="pointer-events-auto mx-1 underline">
-                          Level {s.n}
+                      {t('skyReplay', 'Replay:')} {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
+                        <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className="pointer-events-auto mx-1 underline">
+                          {t('level', 'Level')} {s.n}
                         </button>
                       ))}
                     </p>
@@ -1031,13 +1134,13 @@ export default function FidelSkylands({ onExit }) {
           {st.mode === 'learning' && (
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               <p className="font-bold">
-                Tap every fruit to hear its letter —{' '}
+                {t('skyLearnTap', 'Tap every fruit to hear its letter —')}{' '}
                 <span className="mono font-black" style={{ color: 'var(--sky)' }}>
                   {st.heard.length}/{session.pool.length}
                 </span>
               </p>
-              <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1 })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                {allHeard ? `Start Level ${st.session} quest` : 'Listen to them all first'}
+              <button type="button" disabled={!allHeard} onClick={() => dispatch({ type: 'FINISH_LEARNING', seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className={`${BTN} mt-3 px-6 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+                {allHeard ? t('skyStartQuest', `Start Level ${st.session} quest`, { n: st.session }) : t('skyListenFirst', 'Listen to them all first')}
               </button>
             </div>
           )}
@@ -1051,7 +1154,7 @@ export default function FidelSkylands({ onExit }) {
               </div>
               {st.phase === 'question' && (
                 <p className="font-bold">
-                  Pluck the fruit that says{' '}
+                  {t('skyPluck', 'Pluck the fruit that says')}{' '}
                   <button type="button" onClick={() => playKey(question.target, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
                     🔊 “{targetForm.sound}”
                   </button>
@@ -1059,18 +1162,18 @@ export default function FidelSkylands({ onExit }) {
               )}
               {st.phase === 'good' && (
                 <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  Yes! {targetForm.char} says “{targetForm.sound}”
+                  {t('skyRight', 'Yes!')} {targetForm.char} “{targetForm.sound}”
                 </p>
               )}
               {st.phase === 'bad' && (
                 <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
-                  Jibby giggles — listen again for “{targetForm.sound}”
+                  {t('skyWrong', 'Jibby giggles — listen again for')} “{targetForm.sound}”
                 </p>
               )}
               {st.phase === 'boss' && bossForm && (
                 <p className="font-bold">
-                  <span className="font-black" style={{ color: 'var(--bad-ink)' }}>Jibby stole {st.stolen.length} letters!</span>{' '}
-                  Win back the one that says{' '}
+                  <span className="font-black" style={{ color: 'var(--bad-ink)' }}>{t('skyStole', `Jibby stole ${st.stolen.length} letters!`, { n: st.stolen.length })}</span>{' '}
+                  {t('skyWinBack', 'Win back the one that says')}{' '}
                   <button type="button" onClick={() => playKey(bossForm.audioKey, soundOn)} className={`${BTN} pointer-events-auto inline-flex items-center gap-1 px-3 py-1 align-middle`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
                     🔊 “{bossForm.sound}”
                   </button>
@@ -1078,12 +1181,12 @@ export default function FidelSkylands({ onExit }) {
               )}
               {st.phase === 'boss-good' && bossForm && (
                 <p className="text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  Rescued! {bossForm.char} says “{bossForm.sound}”
+                  {t('skyRescued', 'Rescued!')} {bossForm.char} “{bossForm.sound}”
                 </p>
               )}
               {st.phase === 'boss-bad' && bossForm && (
                 <p className="text-lg font-black" style={{ color: 'var(--bad-ink)' }}>
-                  Jibby holds on tight — listen again for “{bossForm.sound}”
+                  {t('skyHold', 'Jibby holds on tight — listen again for')} “{bossForm.sound}”
                 </p>
               )}
             </div>
@@ -1092,13 +1195,13 @@ export default function FidelSkylands({ onExit }) {
           {st.phase === 'complete' && (
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-5 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               <p className="text-2xl font-black uppercase" style={{ color: 'var(--go-ink)' }}>
-                Island cleared!
+                {t('skyCleared', 'Island cleared!')}
               </p>
               <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
-                {st.quiz.length} letters + 3 rescued from Jibby · {st.session < SESSIONS.length ? `the bridge to ${SESSIONS[st.session].place} has grown!` : 'every skyland is free!'}
+                {t('skyClearedSub', `${st.quiz.length} letters + 3 rescued from Jibby ·`, { n: st.quiz.length })} {st.session < SESSIONS.length ? t('skyBridge', `the bridge to ${SESSIONS[st.session].place} has grown!`, { place: SESSIONS[st.session].place }) : t('skyAllFree', 'every skyland is free!')}
               </p>
               <button type="button" onClick={() => dispatch({ type: 'TO_MAP' })} className={`${BTN} mt-3 px-8 py-3`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
-                Continue
+                {t('continue', 'Continue')}
               </button>
             </div>
           )}

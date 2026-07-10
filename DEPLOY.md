@@ -29,6 +29,18 @@ npm run build
 - `VITE_ANALYTICS_URL` — **optional**. Omit it and the app sends nothing and
   stays 100% offline. Set it (to your server's `/api/events`) to measure the
   funnel.
+- `VITE_SHOP_URL` — **optional**. The storefront the Tee Shop's "Order a real
+  shirt" button opens (the earned design id is appended as `?design=<id>`, so
+  a print-on-demand store — Printful/Printify/Gelato — or even a Google Form
+  can preselect it). Leave it unset and "Order" gracefully falls back to
+  saving the print-ready PNG, which a parent can take to any local printer.
+  This is the app's opt-in income lever: kids unlock a new shirt design each
+  chapter, parents buy.
+- `VITE_SOCIAL_URL` — **optional**. Turns on **Family & Friends** (Phase 2:
+  private weekly leaderboards). Point it at your server (the same one below).
+  Leave it unset and the whole surface stays dormant — the Backpack entry is
+  hidden and nothing hits the network, so the game stays 100% offline. See
+  section 7 for the endpoints and the safety model.
 
 ### Host
 
@@ -131,11 +143,15 @@ open https://YOUR-SERVER/dashboard               # enter OWNER_TOKEN
 
 **Ship-blockers (do these before a public launch):**
 
-- [ ] **Record the letter audio.** The current voices are synthesized
-      placeholders. Drop real mp3s into `public/audio/fidel/` (see the audio
-      section of the repo) and rebuild — the single biggest quality lever.
-- [ ] **Native-speaker review** of the Amharic UI strings
-      (`src/platform/i18n.js`) and the Tigrinya pack (`src/packs/ti.js`).
+- [x] **Letter + word audio is real human voice** for Amharic (all 33
+      families, 25 words). Tigrinya reuses these and adds four distinct human
+      consonants (ሐ/ኀ/ኸ/ዐ) under `public/audio/fidel/letters/ti/`. The one
+      remaining chant on the synth fallback is ጨ (chhe); the Tigrinya word
+      list is not recorded yet.
+- [ ] **Native-speaker review** of: the Amharic UI strings
+      (`src/platform/i18n.js`); the Tigrinya pack sounds/words
+      (`src/packs/ti.js`); and confirmation that the twin-audio inferences
+      (ኸ→ከ, ሠ→ሰ) match the intended Amharic pronunciation.
 - [ ] **HTTPS** on both hosts (PWA + secure context).
 - [ ] **Icons present**: `public/icon-192.png`, `icon-512.png`,
       `apple-touch-icon.png`, `icon.svg` (already in the repo — confirm they
@@ -154,6 +170,101 @@ open https://YOUR-SERVER/dashboard               # enter OWNER_TOKEN
 - [ ] Point a custom domain at each host.
 - [ ] Publish the native shells (Capacitor scaffold is in the repo) to the app
       stores once the web version is validated.
+
+---
+
+## 6. Reviewer guide & feedback page (`/review`)
+
+A self-contained page ships at **`https://YOUR-APP-DOMAIN/review`**
+(`public/review/index.html`). It is a feature-by-feature walkthrough with an
+honest verdict on each part, followed by a **feedback form** so testers — kids
+or grown-ups — can score the app and leave notes. Share this URL with anyone
+reviewing the app.
+
+It is deliberately outside the game: no router entry, `noindex`, and precached
+so it also works offline. It is the only place in the project that makes a
+network call, and only when someone submits a review.
+
+**Where the reviews go — Netlify Forms (zero backend):**
+
+- The form (`name="fidel-review"`) uses Netlify's built-in form handling. On a
+  **Netlify** deploy, submissions are captured automatically — no server, no
+  env vars.
+- Read them in **Netlify dashboard → your site → Forms → `fidel-review`**.
+  Turn on **email notifications** there (Forms → Settings & usage →
+  notifications) to get each review in your inbox, and use **Export as CSV** to
+  consolidate them in a spreadsheet.
+- Netlify's free tier includes 100 submissions/month; that is plenty for a test
+  round. Make sure **Form detection** is enabled (Site settings → Forms) — it
+  is on by default. Fields are detected from the static HTML at deploy time, so
+  a fresh deploy after any form change is what registers new fields.
+
+**It never loses a review, even off Netlify:**
+
+- Every submission is also saved to the tester's device (`localStorage`,
+  `fq.reviews.v1`) as a backup, and the form offers **"Download a copy"**.
+- If the site is hosted somewhere **other than Netlify** (Cloudflare Pages,
+  S3, etc.), the POST simply fails gracefully: the review is still saved on the
+  device and the tester is prompted to download it and email it to you.
+- Running a test session on **one shared tablet**? Every review sent from that
+  device accumulates locally; the **"Download all reviews saved on this
+  device"** link exports them as one JSON file to consolidate.
+
+No child's game progress, name, or voice is ever included in a review — only
+what the tester types into the form.
+
+---
+
+## 7. Family & Friends (Phase 2 private leaderboards)
+
+Private, closed-group weekly leaderboards among people a family already knows.
+It lives on the **same server** as the analytics/landing (section 2) — the
+routes are already wired; you just point the app at it.
+
+**Turn it on:**
+
+1. Deploy the server (section 2). Family & Friends is active whenever the
+   server runs — no extra env on the server side.
+2. Build the app with `VITE_SOCIAL_URL=https://YOUR-SERVER` (its root, not a
+   sub-path). Without it, the feature is dormant and hidden.
+
+**Endpoints** (JSON, CORS-open; membership is authorized by a server-issued
+secret token, not the origin):
+
+| Method + path                  | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `POST /api/social/groups`      | Create a group `{nickname, consent:true}` -> `{groupId, code, memberId, memberToken}` |
+| `POST /api/social/groups/join` | Join by code `{code, nickname, consent:true}`       |
+| `POST /api/social/score`       | Submit this week's score `{groupId, memberId, memberToken, metric, value}` |
+| `GET  /api/social/board`       | Read a week's board `?groupId=&memberId=&memberToken=&metric=&week=` |
+
+**Safety model** (see `docs/social-play.md`):
+
+- **Closed network.** You only appear on a board you joined with a **code**
+  shared out-of-band by an adult. No discovery, no public boards, no chat.
+- **Parent consent** is required (`consent:true`) to create or join — the app
+  collects it with a grown-up tick behind the Backpack. (A production build
+  should back this with real email double-opt-in; that is the one piece left
+  as a deploy step.)
+- **Data minimization.** The server stores only a moderated **nickname** and
+  numeric weekly **scores** — no email, no IP, no per-question data, no other
+  PII. Each membership's secret token is stored **hashed**, so a dump cannot
+  impersonate anyone; writes must present the token.
+- **Caps:** 30 members/group, metric allow-list, values clamped, scores are
+  monotone per week (only climb).
+
+**What is intentionally NOT built yet** (future hardening): full public-key
+(Ed25519) score signing instead of a per-member token, and email-verified
+parental consent. The current token model is safe within a small known group;
+the doc's Phase 3 (live co-play/calls) is unchanged and still future work.
+
+**Read/verify:**
+
+```bash
+curl -X POST https://YOUR-SERVER/api/social/groups \
+  -H 'content-type: application/json' -d '{"nickname":"Mom","consent":true}'
+# -> {"ok":true,"groupId":"...","code":"ABC234","memberId":"...","memberToken":"..."}
+```
 
 ---
 

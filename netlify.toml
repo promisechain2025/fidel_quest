@@ -1,0 +1,13 @@
+# Netlify build config for the Fidel Quest PWA. (Cloudflare Pages uses the same
+# build command / output dir set in its dashboard; both hosts read public/_headers.)
+# The game has NO client router, so there is intentionally no SPA rewrite — every
+# screen is one URL, and missing files should 404 rather than mask as index.html.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Set VITE_APP_URL in the site's environment (Netlify: Site settings > Env, or
+# Pages: Settings > Variables) to your deployed URL so shared links preview with
+# a card. Optional: VITE_ANALYTICS_URL, VITE_SHOP_URL (see DEPLOY.md).
+[build.environment]
+  NODE_VERSION = "22"
