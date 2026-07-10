@@ -48,6 +48,15 @@ describe('license (honest free trial)', () => {
     expect(web('2026-09-01').phase).toBe('ended')
   })
 
+  it('the feedback extension works exactly once', () => {
+    web('2026-07-01')
+    expect(grantFeedbackGrace('2026-08-01')).toBe(FEEDBACK_GRACE_DAYS)
+    expect(web('2026-08-01').feedbackAvailable).toBe(false)
+    // grace over; a second attempt grants nothing
+    expect(grantFeedbackGrace('2026-09-01')).toBe(0)
+    expect(web('2026-09-01').phase).toBe('ended')
+  })
+
   it('supported is permanent and silences all asks', () => {
     web('2026-07-01')
     markSupported('test')

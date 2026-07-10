@@ -13,7 +13,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, Share2, ShoppingBag } from 'lucide-react'
 import { t } from '../platform/i18n'
-import { grantFeedbackGrace, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
+import { grantFeedbackGrace, licenseState, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from '../platform/support'
 import { Sprite2D, drawAnbessa } from '../FidelQuestApp'
 
@@ -22,6 +22,8 @@ const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outli
 export default function SupportAsk({ onClose, onFeedbackGranted }) {
   const [thanked, setThanked] = useState(false)
   const buy = buyUrl()
+  // the honest-feedback extension is one-time; afterwards buy/gift only
+  const [canFeedback] = useState(() => licenseState().feedbackAvailable)
 
   const feedback = () => {
     grantFeedbackGrace()
@@ -56,12 +58,12 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
           <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>
             {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
           </p>
-          {!thanked && (
+          {!thanked && canFeedback && (
             <button type="button" onClick={feedback} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> {t('payFeedback', 'Not buying? Tell us honestly why')}
             </button>
           )}
-          {!thanked && (
+          {!thanked && canFeedback && (
             <p className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
               <Heart className="h-3.5 w-3.5" aria-hidden="true" /> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}
             </p>

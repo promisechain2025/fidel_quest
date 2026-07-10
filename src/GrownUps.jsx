@@ -345,22 +345,24 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                       <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                         {t('payFamily', 'Ask family to gift it')}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          grantFeedbackGrace()
-                          try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
-                          forceRefresh((n) => n + 1)
-                        }}
-                        className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
-                        style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
-                      >
-                        {t('payFeedback', 'Not buying? Tell us honestly why')}
-                      </button>
+                      {lic.feedbackAvailable && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            grantFeedbackGrace()
+                            try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
+                            forceRefresh((n) => n + 1)
+                          }}
+                          className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
+                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                        >
+                          {t('payFeedback', 'Not buying? Tell us honestly why')}
+                        </button>
+                      )}
                     </div>
                     <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}{' '}
-                      {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}
+                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
+                      {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
                     </p>
                     <button type="button" onClick={() => { markSupported('grownups'); forceRefresh((n) => n + 1) }} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
                       {t('payOwned', 'My family already bought it')}

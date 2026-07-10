@@ -32,8 +32,8 @@ const envInt = (v, fallback) => {
   const n = Math.round(Number(v))
   return Number.isFinite(n) && n > 0 ? n : fallback
 }
-export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 14)
-export const FEEDBACK_GRACE_DAYS = 14
+export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 7)
+export const FEEDBACK_GRACE_DAYS = 4
 
 function load() {
   try {
@@ -71,8 +71,9 @@ export function licenseState(today = dayStamp(), native = isNativePlatform()) {
   const trialEnd = addDaysStamp(s.startDay, TRIAL_DAYS)
   const until = s.graceUntil && s.graceUntil > trialEnd ? s.graceUntil : trialEnd
   const daysLeft = Math.max(0, daysSince(today, until))
-  if (daysLeft > 0) return { phase: 'trial', daysLeft, shouldAsk: false }
-  return { phase: 'ended', daysLeft: 0, shouldAsk: s.askedDay !== today }
+  const feedbackAvailable = !s.feedbackUsed
+  if (daysLeft > 0) return { phase: 'trial', daysLeft, shouldAsk: false, feedbackAvailable }
+  return { phase: 'ended', daysLeft: 0, shouldAsk: s.askedDay !== today, feedbackAvailable }
 }
 
 /** Remember that today's ask was shown - at most one per calendar day. */
@@ -82,9 +83,13 @@ export function markAsked(today = dayStamp()) {
   save(s)
 }
 
-/** Honest feedback earns more free days (stacked from today). */
+/** Honest feedback earns more free days - ONCE. After that the only paths
+    are buying it or a relative gifting it. Returns the days granted (0 if
+    the one extension was already used). */
 export function grantFeedbackGrace(today = dayStamp()) {
   const s = load()
+  if (s.feedbackUsed) return 0
+  s.feedbackUsed = true
   s.graceUntil = addDaysStamp(today, FEEDBACK_GRACE_DAYS)
   save(s)
   return FEEDBACK_GRACE_DAYS
