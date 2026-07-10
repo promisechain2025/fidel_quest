@@ -554,6 +554,14 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmTvHint', 'Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner.')}
               </p>
+              {/* There is no in-app cast button - a web app cannot push
+                 itself onto a TV. The phone's own mirroring does it, so
+                 spell out the three ways right here. */}
+              <ul className="mt-2 flex flex-col gap-1 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                <li>{t('tmTvHow1', 'iPhone/iPad: Control Center - Screen Mirroring (AirPlay).')}</li>
+                <li>{t('tmTvHow2', 'Android: swipe down - Cast / Smart View to the TV.')}</li>
+                <li>{t('tmTvHow3', 'Most reliable: an HDMI cable - or open the app in the TV browser.')}</li>
+              </ul>
               <button type="button" onClick={() => onTv(null)} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                 <Tv className="h-5 w-5" aria-hidden="true" /> {t('tmTvOpen', 'Open TV display')}
               </button>
