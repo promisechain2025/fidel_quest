@@ -3461,182 +3461,6 @@ export function drawZebra(g, s) {
   g.stroke()
 }
 
-/** Anbessa running away down the road, seen from behind at three-quarter,
-   glancing back over his shoulder - so his face, eye and smile stay visible
-   inside the mane ring while his body credibly faces the letter gates. Used
-   only by the runner sprites; the chibi front view (drawAnbessa) still fronts
-   the home screen, closet and rewards. */
-export function drawAnbessaRun(g, s, mood = 'happy') {
-  const worried = mood === 'worried' || mood === 'hungry'
-  const cx = s / 2
-  // tail swung out to the left with the dark tuft (droops when worried)
-  g.strokeStyle = '#e08300'; g.lineWidth = s * 0.05; g.lineCap = 'round'
-  g.beginPath(); g.moveTo(cx - s * 0.13, s * 0.78)
-  g.quadraticCurveTo(cx - s * 0.34, s * (worried ? 0.82 : 0.72), cx - s * 0.3, s * (worried ? 0.7 : 0.52))
-  g.stroke()
-  g.fillStyle = '#8a5a00'; g.beginPath(); g.arc(cx - s * 0.3, s * (worried ? 0.68 : 0.5), s * 0.05, 0, 7); g.fill()
-  // running hind legs: left leg planted, right leg kicked up showing the paw pad
-  g.strokeStyle = '#e08300'; g.lineWidth = s * 0.065
-  g.beginPath(); g.moveTo(cx - s * 0.09, s * 0.74); g.lineTo(cx - s * 0.12, s * 0.9); g.stroke()
-  g.fillStyle = '#e08300'; g.beginPath(); g.ellipse(cx - s * 0.12, s * 0.905, s * 0.05, s * 0.032, 0, 0, 7); g.fill()
-  g.strokeStyle = '#e08300'
-  g.beginPath(); g.moveTo(cx + s * 0.1, s * 0.74); g.lineTo(cx + s * 0.17, s * 0.84); g.stroke()
-  // kicked-up paw seen sole-first: pad dots
-  g.fillStyle = '#e08300'; g.beginPath(); g.arc(cx + s * 0.19, s * 0.85, s * 0.06, 0, 7); g.fill()
-  g.fillStyle = '#8a5a00'
-  g.beginPath(); g.ellipse(cx + s * 0.19, s * 0.865, s * 0.028, s * 0.02, 0, 0, 7); g.fill()
-  for (const dx of [-0.025, 0.0, 0.025]) { g.beginPath(); g.arc(cx + s * (0.19 + dx), s * 0.832, s * 0.009, 0, 7); g.fill() }
-  // body seen from the back: shoulders under the mane widening to round hips
-  g.fillStyle = '#f7a83c'
-  g.beginPath()
-  g.moveTo(cx - s * 0.14, s * 0.5)
-  g.quadraticCurveTo(cx - s * 0.22, s * 0.68, cx - s * 0.16, s * 0.82)
-  g.quadraticCurveTo(cx, s * 0.9, cx + s * 0.16, s * 0.82)
-  g.quadraticCurveTo(cx + s * 0.22, s * 0.68, cx + s * 0.14, s * 0.5)
-  g.closePath(); g.fill()
-  // spine shading down the middle of the back
-  g.fillStyle = '#e59328'
-  g.beginPath(); g.roundRect(cx - s * 0.022, s * 0.52, s * 0.044, s * 0.26, s * 0.022); g.fill()
-  // his signature star on the hip
-  starPath(g, cx - s * 0.1, s * 0.68, s * 0.055, s * 0.025)
-  g.fillStyle = '#ffc800'; g.fill()
-  g.lineWidth = s * 0.01; g.strokeStyle = '#e0a400'; g.stroke()
-  // mane: full ring of scallops framing the head
-  g.fillStyle = '#d97706'
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2
-    g.beginPath(); g.arc(cx + Math.cos(a) * s * 0.26, s * 0.36 + Math.sin(a) * s * 0.26, s * 0.095, 0, 7); g.fill()
-  }
-  // head, turned over the right shoulder so the face shows at three-quarter
-  g.fillStyle = '#f7a83c'; g.beginPath(); g.arc(cx + s * 0.02, s * 0.36, s * 0.24, 0, 7); g.fill()
-  // soft gradient on the far side of the head sells the turn
-  g.save()
-  g.beginPath(); g.arc(cx + s * 0.02, s * 0.36, s * 0.24, 0, 7); g.clip()
-  const sh = g.createLinearGradient(cx - s * 0.22, 0, cx + s * 0.02, 0)
-  sh.addColorStop(0, 'rgba(197,111,0,0.28)')
-  sh.addColorStop(1, 'rgba(197,111,0,0)')
-  g.fillStyle = sh
-  g.fillRect(cx - s * 0.22, s * 0.1, s * 0.24, s * 0.52)
-  g.restore()
-  // ears: far ear shows its back, near (right) ear turns its pink inner to us
-  const earY = worried ? s * 0.185 : s * 0.145
-  g.fillStyle = '#f7a83c'; g.beginPath()
-  if (worried) g.ellipse(cx - s * 0.16, earY + s * 0.02, s * 0.075, s * 0.05, -0.5, 0, 7)
-  else g.arc(cx - s * 0.15, earY, s * 0.07, 0, 7)
-  g.fill()
-  g.fillStyle = '#d97706'; g.beginPath()
-  if (worried) g.ellipse(cx - s * 0.16, earY + s * 0.028, s * 0.038, s * 0.024, -0.5, 0, 7)
-  else g.arc(cx - s * 0.15, earY + s * 0.01, s * 0.034, 0, 7)
-  g.fill()
-  g.fillStyle = '#f7a83c'; g.beginPath()
-  if (worried) g.ellipse(cx + s * 0.19, earY + s * 0.02, s * 0.075, s * 0.05, 0.5, 0, 7)
-  else g.arc(cx + s * 0.18, earY, s * 0.07, 0, 7)
-  g.fill()
-  g.fillStyle = '#ffb7c5'; g.beginPath()
-  if (worried) g.ellipse(cx + s * 0.19, earY + s * 0.026, s * 0.04, s * 0.026, 0.5, 0, 7)
-  else g.arc(cx + s * 0.18, earY + s * 0.012, s * 0.036, 0, 7)
-  g.fill()
-  // the glancing-back face on the right side of the head
-  g.fillStyle = '#ffe9c8'; g.beginPath(); g.ellipse(cx + s * 0.17, s * 0.43, s * 0.085, s * 0.065, 0.15, 0, 7); g.fill()
-  g.fillStyle = '#8a5a00'; g.beginPath(); g.ellipse(cx + s * 0.235, s * 0.405, s * 0.024, s * 0.019, 0.15, 0, 7); g.fill()
-  if (worried) {
-    g.fillStyle = '#8a5a00'; g.beginPath(); g.ellipse(cx + s * 0.19, s * 0.465, s * 0.026, s * 0.032, 0, 0, 7); g.fill()
-  } else {
-    g.strokeStyle = '#8a5a00'; g.lineWidth = s * 0.014
-    g.beginPath(); g.moveTo(cx + s * 0.225, s * 0.44); g.quadraticCurveTo(cx + s * 0.18, s * 0.49, cx + s * 0.12, s * 0.46); g.stroke()
-  }
-  // one big eye at three-quarter (+ worried brow)
-  g.fillStyle = '#3c2a10'; g.beginPath()
-  g.ellipse(cx + s * 0.1, s * 0.345, s * 0.03, worried ? s * 0.024 : s * 0.038, 0, 0, 7); g.fill()
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + s * 0.092, s * 0.333, s * 0.01, 0, 7); g.fill()
-  if (worried) {
-    g.strokeStyle = '#3c2a10'; g.lineWidth = s * 0.013
-    g.beginPath(); g.moveTo(cx + s * 0.055, s * 0.285); g.lineTo(cx + s * 0.135, s * 0.305); g.stroke()
-  }
-}
-
-/** Jibby chasing, seen from behind at three-quarter: big spotted haunches,
-   dorsal crest down the spine, head turned to flash the toothy grin.
-   Runner-only, same as above. */
-export function drawJibbyRun(g, s) {
-  const coat = '#9a8b76', dark = '#6e614f', crest = '#57493a', belly = '#c9b99d'
-  const cx = s / 2
-  // tail hanging low to the left
-  g.strokeStyle = crest; g.lineWidth = s * 0.05; g.lineCap = 'round'
-  g.beginPath(); g.moveTo(cx - s * 0.15, s * 0.66); g.quadraticCurveTo(cx - s * 0.27, s * 0.78, cx - s * 0.23, s * 0.92); g.stroke()
-  // running hind legs
-  g.strokeStyle = dark; g.lineWidth = s * 0.06
-  g.beginPath(); g.moveTo(cx - s * 0.08, s * 0.76); g.lineTo(cx - s * 0.12, s * 0.91); g.stroke()
-  g.fillStyle = dark; g.beginPath(); g.ellipse(cx - s * 0.12, s * 0.915, s * 0.045, s * 0.03, 0, 0, 7); g.fill()
-  g.beginPath(); g.moveTo(cx + s * 0.11, s * 0.78); g.lineTo(cx + s * 0.2, s * 0.88); g.stroke()
-  g.beginPath(); g.arc(cx + s * 0.21, s * 0.885, s * 0.045, 0, 7); g.fill()
-  // hyena body from behind: big round haunches low, tapering up to shoulders
-  g.fillStyle = coat
-  g.beginPath()
-  g.moveTo(cx - s * 0.12, s * 0.46)
-  g.quadraticCurveTo(cx - s * 0.26, s * 0.62, cx - s * 0.18, s * 0.84)
-  g.quadraticCurveTo(cx, s * 0.93, cx + s * 0.18, s * 0.84)
-  g.quadraticCurveTo(cx + s * 0.26, s * 0.62, cx + s * 0.12, s * 0.46)
-  g.closePath(); g.fill()
-  // dorsal crest of scruffy triangles down the spine
-  g.fillStyle = crest
-  for (let i = 0; i < 5; i++) {
-    const y = s * (0.5 + i * 0.07)
-    g.beginPath(); g.moveTo(cx - s * 0.03, y); g.lineTo(cx, y - s * 0.055); g.lineTo(cx + s * 0.03, y); g.closePath(); g.fill()
-  }
-  // spots across the haunches
-  g.fillStyle = dark
-  for (const [px, py, pr] of [[-0.14, 0.62, 0.026], [0.13, 0.6, 0.024], [-0.09, 0.76, 0.022], [0.11, 0.75, 0.02], [0.0, 0.84, 0.018]]) {
-    g.beginPath(); g.arc(cx + px * s, py * s, pr * s, 0, 7); g.fill()
-  }
-  // head, turned to the right to flash the grin back at the road
-  g.fillStyle = coat; g.beginPath(); g.arc(cx + s * 0.02, s * 0.34, s * 0.22, 0, 7); g.fill()
-  g.save()
-  g.beginPath(); g.arc(cx + s * 0.02, s * 0.34, s * 0.22, 0, 7); g.clip()
-  const shj = g.createLinearGradient(cx - s * 0.2, 0, cx + s * 0.02, 0)
-  shj.addColorStop(0, 'rgba(58,45,28,0.24)')
-  shj.addColorStop(1, 'rgba(58,45,28,0)')
-  g.fillStyle = shj
-  g.fillRect(cx - s * 0.2, s * 0.1, s * 0.22, s * 0.48)
-  g.restore()
-  // head spots
-  g.fillStyle = dark
-  for (const [px, py, pr] of [[-0.08, 0.26, 0.02], [0.02, 0.22, 0.018], [-0.13, 0.38, 0.018]]) {
-    g.beginPath(); g.arc(cx + px * s, py * s, pr * s, 0, 7); g.fill()
-  }
-  // big rounded hyena ears, dark inners
-  for (const side of [-1, 1]) {
-    g.fillStyle = '#8a7d6a'; g.beginPath()
-    g.ellipse(cx + side * s * 0.17, s * 0.155, s * 0.085, s * 0.105, side * 0.25, 0, 7); g.fill()
-    g.fillStyle = crest; g.beginPath()
-    g.ellipse(cx + side * s * 0.17, s * 0.165, s * 0.045, s * 0.06, side * 0.25, 0, 7); g.fill()
-  }
-  // scruffy tuft between the ears
-  g.fillStyle = crest
-  for (let i = -1; i <= 1; i++) {
-    g.beginPath()
-    g.moveTo(cx + i * s * 0.05 - s * 0.024, s * 0.145)
-    g.lineTo(cx + i * s * 0.05, s * 0.07)
-    g.lineTo(cx + i * s * 0.05 + s * 0.024, s * 0.145)
-    g.closePath(); g.fill()
-  }
-  // the turned snout: sloping muzzle, nose, open toothy grin
-  g.fillStyle = belly; g.beginPath(); g.ellipse(cx + s * 0.17, s * 0.4, s * 0.095, s * 0.065, 0.25, 0, 7); g.fill()
-  g.fillStyle = '#3a2d1c'; g.beginPath(); g.ellipse(cx + s * 0.245, s * 0.375, s * 0.024, s * 0.019, 0.25, 0, 7); g.fill()
-  g.fillStyle = '#3a2216'
-  g.beginPath(); g.moveTo(cx + s * 0.1, s * 0.435); g.lineTo(cx + s * 0.23, s * 0.415); g.lineTo(cx + s * 0.165, s * 0.51); g.closePath(); g.fill()
-  g.fillStyle = '#fff'
-  for (let i = 0; i < 3; i++) {
-    const x = cx + s * (0.115 + i * 0.036)
-    g.beginPath(); g.moveTo(x, s * 0.44); g.lineTo(x + s * 0.016, s * 0.478); g.lineTo(x + s * 0.032, s * 0.436); g.closePath(); g.fill()
-  }
-  // eye + heavy mischievous brow
-  g.fillStyle = '#fff'; g.beginPath(); g.ellipse(cx + s * 0.08, s * 0.315, s * 0.032, s * 0.027, 0, 0, 7); g.fill()
-  g.fillStyle = '#241c12'; g.beginPath(); g.arc(cx + s * 0.092, s * 0.32, s * 0.014, 0, 7); g.fill()
-  g.strokeStyle = crest; g.lineWidth = s * 0.02
-  g.beginPath(); g.moveTo(cx + s * 0.03, s * 0.265); g.lineTo(cx + s * 0.13, s * 0.28); g.stroke()
-}
-
 /** Draw-function -> WebGL sprite texture. */
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -3659,6 +3483,148 @@ function ringTexture() {
     g.arc(s / 2, s / 2, s * 0.42, 0, 7)
     g.stroke()
   })
+}
+
+/* ── the runner characters ── */
+
+/* Anbessa and Jibby are real low-poly meshes in the runner (not billboard
+   sprites): chunky bodies from scaled spheres, legs that pivot at the hip so
+   they can pump, and a soft blob shadow that grounds them on the track. Both
+   are built feet-at-origin facing -Z (down the road, away from the chase
+   camera) like every classic kids' runner. */
+
+function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
+  m.position.set(x, y, z)
+  m.scale.set(sx, sy, sz)
+  parent.add(m)
+  return m
+}
+
+function blobShadow(group, r) {
+  const m = new THREE.Mesh(
+    new THREE.CircleGeometry(r, 22),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16, depthWrite: false }),
+  )
+  m.rotation.x = -Math.PI / 2
+  m.position.y = 0.02
+  group.add(m)
+}
+
+function legAt(parent, x, y, z, r, h, color) {
+  const leg = new THREE.Group()
+  leg.position.set(x, y, z)
+  cyl(leg, r, r + 0.01, h, color, 0, -h / 2, 0)
+  sphAt(leg, r + 0.02, color, 0, -h, -0.02, 1, 0.7, 1.15)
+  parent.add(leg)
+  return leg
+}
+
+function buildRunnerLion() {
+  const group = new THREE.Group()
+  blobShadow(group, 0.46)
+  const body = new THREE.Group()
+  group.add(body)
+  const legs = [[-0.15, 0.16], [0.15, 0.16], [-0.15, -0.14], [0.15, -0.14]]
+    .map(([lx, lz]) => legAt(body, lx, 0.44, lz, 0.065, 0.42, 0xe08300))
+  sphAt(body, 0.34, 0xf7a83c, 0, 0.64, 0.03, 1, 1.02, 1.3)
+  // his signature star on the rump
+  const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
+    starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
+    g.fillStyle = '#ffc800'
+    g.fill()
+    g.lineWidth = 6
+    g.strokeStyle = '#e0a400'
+    g.stroke()
+  }), transparent: true }))
+  star.scale.set(0.28, 0.28, 1)
+  star.position.set(-0.18, 0.74, 0.52)
+  body.add(star)
+  // tail up and wagging when happy; setMood droops it
+  const tail = new THREE.Group()
+  tail.position.set(0.12, 0.7, 0.34)
+  tail.rotation.x = 0.3
+  tail.rotation.z = -0.7
+  cyl(tail, 0.04, 0.05, 0.45, 0xe08300, 0, 0.22, 0)
+  sphAt(tail, 0.08, 0x8a5a00, 0, 0.47, 0)
+  body.add(tail)
+  // head straight down the road: the mane halo IS the silhouette
+  const head = new THREE.Group()
+  head.position.set(0, 1.08, -0.06)
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2
+    sphAt(head, 0.125, 0xd97706, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.02, 1, 1, 0.7)
+  }
+  sphAt(head, 0.24, 0xf7a83c, 0, 0, -0.04)
+  // ears poke out past the mane; groups so the worried droop carries the pinks
+  const ears = [-1, 1].map((side) => {
+    const ear = new THREE.Group()
+    ear.position.set(side * 0.26, 0.3, 0)
+    sphAt(ear, 0.1, 0xf7a83c, 0, 0, 0, 1, 1, 0.6)
+    sphAt(ear, 0.05, 0xffb7c5, 0, 0.01, 0.06, 1, 1, 0.5)
+    head.add(ear)
+    return ear
+  })
+  body.add(head)
+  return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
+}
+
+function buildRunnerHyena() {
+  const coat = 0x9a8b76, dark = 0x6e614f, crest = 0x57493a, belly = 0xc9b99d
+  const group = new THREE.Group()
+  blobShadow(group, 0.42)
+  const body = new THREE.Group()
+  group.add(body)
+  const legs = [[-0.14, 0.18], [0.14, 0.18], [-0.14, -0.16], [0.14, -0.16]]
+    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.055, 0.38, dark))
+  // sloped torso: haunches low at the rear, shoulders high at the front
+  sphAt(body, 0.32, coat, 0, 0.6, 0.04, 1, 0.95, 1.4).rotation.x = 0.16
+  // dorsal crest down the spine
+  for (let i = 0; i < 5; i++) {
+    cone(body, 0.05, 0.16, crest, 0, 0.99 - i * 0.04, -0.25 + i * 0.15)
+  }
+  // spots on the haunches
+  for (const [sx, sy, sz] of [[-0.2, 0.7, 0.22], [0.22, 0.66, 0.18], [-0.16, 0.52, 0.3], [0.14, 0.5, 0.32], [0.02, 0.62, 0.38]]) {
+    sphAt(body, 0.045, dark, sx, sy, sz, 1, 1, 0.5)
+  }
+  const tail = new THREE.Group()
+  tail.position.set(0.08, 0.56, 0.42)
+  tail.rotation.x = -0.7
+  tail.rotation.z = -0.35
+  cyl(tail, 0.035, 0.045, 0.3, crest, 0, 0.14, 0)
+  sphAt(tail, 0.065, crest, 0, 0.3, 0)
+  body.add(tail)
+  // head turned to flash the grin back down the road
+  const head = new THREE.Group()
+  head.position.set(0, 0.98, -0.36)
+  head.rotation.y = 1.15
+  sphAt(head, 0.22, coat, 0, 0, -0.02)
+  for (const side of [-1, 1]) {
+    sphAt(head, 0.105, 0x8a7d6a, side * 0.16, 0.2, 0.02, 1, 1.15, 0.5)
+    sphAt(head, 0.055, crest, side * 0.16, 0.2, -0.02, 1, 1.15, 0.5)
+  }
+  sphAt(head, 0.115, belly, 0, -0.06, -0.2, 0.85, 0.7, 1.05)
+  sphAt(head, 0.04, 0x3a2d1c, 0, -0.02, -0.31)
+  // open grin: dark mouth band + teeth
+  sphAt(head, 0.09, 0x3a2216, 0, -0.125, -0.2, 0.9, 0.45, 0.95)
+  for (const tx of [-0.05, 0, 0.05]) {
+    cone(head, 0.018, 0.05, 0xffffff, tx, -0.135, -0.285).rotation.x = Math.PI
+  }
+  // eyes + heavy mischievous brows
+  for (const side of [-1, 1]) {
+    sphAt(head, 0.045, 0xffffff, side * 0.1, 0.06, -0.185)
+    sphAt(head, 0.022, 0x241c12, side * 0.1, 0.055, -0.225)
+    cyl(head, 0.015, 0.015, 0.09, crest, side * 0.1, 0.125, -0.19).rotation.z = Math.PI / 2 - side * 0.25
+  }
+  body.add(head)
+  return { group, body, legs, tail }
+}
+
+/* Diagonal leg pairs swing in opposite phase - a simple believable run. */
+function runnerLegSwing(legs, run, amp) {
+  for (let i = 0; i < legs.length; i++) {
+    legs[i].rotation.x = Math.sin(run + (i % 2 === 0 ? 0 : Math.PI) + (i > 1 ? Math.PI : 0)) * amp
+  }
 }
 
 /* ── tiny mesh helpers ── */
@@ -3846,18 +3812,16 @@ class RunnerWorld {
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
 
-    // Over-the-shoulder chase pose: seen from behind but glancing back, so
-    // the face, mane ring and hip star all stay visible while he credibly
-    // runs toward the letters.
-    this.playerTexHappy = charTexture(drawAnbessaRun, 'happy')
-    this.playerTexWorried = charTexture(drawAnbessaRun, 'worried')
-    this.player = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.playerTexHappy, transparent: true }))
-    this.player.scale.set(2.3, 2.3, 1)
-    this.player.position.set(0, 1.25, 0)
+    // Anbessa as a real low-poly mesh (feet at the group origin), seen from
+    // behind running toward the letters.
+    this.playerChar = buildRunnerLion()
+    this.player = this.playerChar.group
+    this.player.scale.setScalar(1.9)
+    this.player.position.set(0, 0, 0)
     this.scene.add(this.player)
 
     this.ring = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTexture(), transparent: true, opacity: 0 }))
-    this.ring.position.copy(this.player.position)
+    this.ring.position.set(0, 1.2, 0)
     this.scene.add(this.ring)
 
     // Kokeb the star rides along above Anbessa, brightening with his power.
@@ -3874,23 +3838,24 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchTex = charTexture(drawJibbyRun) // over-the-shoulder chase pose; shared by the whole pack
-    this.muncher = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
-    this.muncher.scale.set(1.9, 1.9, 1)
-    this.muncher.position.set(1.4, 1.1, 3.9)
+    this.munchChar = buildRunnerHyena()
+    this.muncher = this.munchChar.group
+    this.muncher.scale.setScalar(1.75)
+    this.muncher.position.set(1.4, 0, 3.9)
     this.scene.add(this.muncher)
-    this._munchScale = 1.9
+    this._munchScale = 1.75
 
     // Extra hyenas that join the chase as wrong answers pile up, so the pressure
     // is visible: one more Jibby per mistake, closing in, and swarming Anbessa
     // when the boss round is lost.
     this.extras = []
     for (let i = 0; i < 3; i++) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.munchTex, transparent: true }))
-      sp.scale.set(0, 0, 1)
-      sp.position.set(0, 1.1, 7.5)
+      const char = buildRunnerHyena()
+      const sp = char.group
+      sp.scale.setScalar(0)
+      sp.position.set(0, 0, 7.5)
       this.scene.add(sp)
-      this.extras.push({ sp, sc: 0 })
+      this.extras.push({ sp, char, sc: 0 })
     }
 
     this.chunks = []
@@ -3987,52 +3952,52 @@ class RunnerWorld {
     const px = LANE_X[this.laneIndex]
     const steer = px - this.player.position.x
     this.player.position.x += steer * Math.min(1, dt * 10)
-    this.player.position.y = 1.25 + (this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.22)
-    // Front-facing (watching the letters); lean toward the lane being steered
-    // to for a sense of motion, easing back upright once settled.
-    this.player.material.rotation = Math.max(-0.28, Math.min(0.28, -steer * 0.5))
-    this.player.scale.x = 2.3
-    this.player.scale.y = 2.3
+    // Bounce and pump the legs (the blob shadow stays on the ground); lean
+    // the whole body toward the lane being steered to.
+    this.playerChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 9)) * 0.1
+    if (!this.reduced) runnerLegSwing(this.playerChar.legs, this.t * 10, 0.65)
+    this.player.rotation.z = Math.max(-0.22, Math.min(0.22, -steer * 0.35))
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
-    // Baseline sits at the bottom edge of the centered chase camera (head and
+    // Baseline sits at the bottom edge of the centered chase camera (ears and
     // grin looming into frame); every wrong feed brings him up toward Anbessa.
     let mz = 3.9 - this.threat * 0.75
-    let my = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7) * 0.12)
-    if (this.bossMode === 'lose') {
-      mz = 0.4
-      my = 1.25
-    }
+    let my = 0
+    if (this.bossMode === 'lose') mz = 0.4
     if (this.bossMode === 'win') {
       mz = 10.5
-      my = 5.5 + this.t * 0.01
+      my = 4
     }
     this.muncher.position.z += (mz - this.muncher.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2.5))
-    this.muncher.position.x += (this.player.position.x * 0.75 - this.muncher.position.x) * Math.min(1, dt * 2)
-    this.muncher.position.y = my
-    const mscale = this.bossMode === 'lose' ? 3.1 : 1.9
+    // Chase from the right shoulder so he never hides Anbessa; pile straight
+    // on when the boss round is lost.
+    const mx = this.player.position.x * 0.75 + (this.bossMode === 'lose' ? 0 : 1.15)
+    this.muncher.position.x += (mx - this.muncher.position.x) * Math.min(1, dt * 2)
+    this.muncher.position.y += (my - this.muncher.position.y) * Math.min(1, dt * 3)
+    this.munchChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7)) * 0.08
+    if (!this.reduced) runnerLegSwing(this.munchChar.legs, this.t * 10.5, 0.6)
+    const mscale = this.bossMode === 'lose' ? 2.9 : 1.75
     this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
-    // Jibby faces forward too, leaning toward the lion he is chasing.
-    this.muncher.material.rotation = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
-    this.muncher.scale.x = this._munchScale
-    this.muncher.scale.y = this._munchScale
+    // Jibby leans toward the lion he is chasing.
+    this.muncher.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
+    this.muncher.scale.setScalar(this._munchScale)
 
     // The growing pack: one extra Jibby per mistake beyond the first, flanking
     // and closing in; on a lost boss they all pile onto Anbessa.
     for (let i = 0; i < this.extras.length; i++) {
       const e = this.extras[i]
       const active = this.bossMode === 'lose' || this.threat > i + 1
-      const target = active ? (this.bossMode === 'lose' ? 2.4 : 1.6) : 0
+      const target = active ? (this.bossMode === 'lose' ? 2.2 : 1.5) : 0
       e.sc += (target - e.sc) * Math.min(1, dt * 4)
       const side = i % 2 === 0 ? -1 : 1
       const tx = this.player.position.x * 0.6 + side * (1.7 + i * 0.35)
       const tz = this.bossMode === 'lose' ? 0.9 + i * 0.7 : 4.4 - this.threat * 0.7 + i * 0.9
       e.sp.position.x += (tx - e.sp.position.x) * Math.min(1, dt * 2)
       e.sp.position.z += (tz - e.sp.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2))
-      e.sp.position.y = 1.1 + (this.reduced ? 0 : Math.sin(this.t * 7 + i * 1.7) * 0.12)
-      e.sp.material.rotation = Math.max(-0.24, Math.min(0.24, (this.player.position.x - e.sp.position.x) * 0.16))
-      e.sp.scale.x = e.sc
-      e.sp.scale.y = e.sc
+      e.char.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7 + i * 1.7)) * 0.08
+      if (!this.reduced && e.sc > 0.2) runnerLegSwing(e.char.legs, this.t * 10.5 + i * 1.3, 0.6)
+      e.sp.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - e.sp.position.x) * 0.16))
+      e.sp.scale.setScalar(e.sc)
     }
 
     if (this.ringT >= 0) {
@@ -4042,7 +4007,7 @@ class RunnerWorld {
         this.ringT = -1
         this.ring.material.opacity = 0
       } else {
-        this.ring.position.set(this.player.position.x, this.player.position.y, 0.1)
+        this.ring.position.set(this.player.position.x, 1.2 + this.playerChar.body.position.y, 0.1)
         this.ring.scale.setScalar(1.2 + k * 3.2)
         this.ring.material.opacity = 1 - k
       }
@@ -4050,15 +4015,21 @@ class RunnerWorld {
 
     const bs = 0.7 + this.power * 0.13 + (this.reduced ? 0 : Math.sin(this.t * 5) * 0.05)
     this.buddy.scale.set(bs, bs, 1)
-    this.buddy.position.set(this.player.position.x - 1.15, this.player.position.y + 1.5, 0)
+    this.buddy.position.set(this.player.position.x - 1.15, 2.75 + this.playerChar.body.position.y, 0)
     this.buddy.material.rotation = Math.sin(this.t * 2.2) * 0.25
 
     this.renderer.render(this.scene, this.camera)
   }
 
   setMood(worried) {
-    this.player.material.map = worried ? this.playerTexWorried : this.playerTexHappy
-    this.player.material.needsUpdate = true
+    // Readable from behind: worried droops the ears sideways and the tail down.
+    const c = this.playerChar
+    for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
+      ear.position.y = worried ? 0.24 : 0.3
+      ear.rotation.z = worried ? side * -0.9 : 0
+    }
+    c.tail.rotation.x = worried ? 1.6 : 0.3
+    c.tail.rotation.z = worried ? -0.2 : -0.7
   }
 
   resize(w, h) {
