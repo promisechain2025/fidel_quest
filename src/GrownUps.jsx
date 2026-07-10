@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
+import { resetEverything } from './utils/devUnlock'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t } from './platform/i18n'
@@ -326,12 +327,12 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                 <button
                   type="button"
                   onClick={() => {
+                    // A TRUE fresh player: journey, islands, classic stars,
+                    // streak/coach, hunt, plan and the learning ledger. This
+                    // is the recovery path when a device carries leftover QA
+                    // (?unlock) data - it must not leave anything behind.
                     clearLedger()
-                    try {
-                      for (const k of ['fq2.progress', 'fq2.runner', 'fq3.skylands', 'fq.onboarded.v1']) localStorage.removeItem(k)
-                    } catch {
-                      /* ignore */
-                    }
+                    resetEverything()
                     setConfirmReset(false)
                     forceRefresh((n) => n + 1)
                   }}

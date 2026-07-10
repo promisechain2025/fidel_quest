@@ -2,8 +2,10 @@
 
 Most of this can't be exercised in CI/headless (3D, microphone, cross-device
 transfer, native notifications), so here's a running list to check by hand.
-Tip: append **`?unlock`** to the URL to open all content, **`?reset`** to wipe
-back to a new player.
+Tip: append **`?unlock`** to the URL to open all content (it asks for
+confirmation, and opens Skylands islands without marking them cleared),
+**`?reset`** to wipe back to a new player. Grown-ups -> "Reset all progress"
+now does a full wipe too - journey, islands, classic stars, streak, hunt.
 
 ## 3D games (need a real GPU/device)
 - [ ] **Runner** — classic chase view: the road runs straight down the middle
@@ -17,6 +19,10 @@ back to a new player.
 - [ ] **Skylands** — tap fruits in the learning phase; the count fills and the
       **Start** button enables (this was the "can't progress" bug — now uses
       onPointerDown). Then the quiz and boss advance on tap.
+- [ ] **Skylands never starts at 4/4** — on a fresh player the map opens at
+      0/4 on island 1; even after `?unlock` it opens at 3/4 with island 4
+      playable (unlock grants access, not completion). 4/4 and the champion
+      banner appear only after really beating island 4.
 - [ ] Low-end device: the 2D fallback (Runner2D / Skylands2D) still plays.
 
 ## Family Voice (needs two devices, ideally one iOS + one Android)
@@ -156,8 +162,8 @@ back to a new player.
 - [ ] **Quitting is not winning** — open Letter Runner or Skylands from the
       path and quit immediately: back on the path, the node is still the
       pulsing next step. Beat one runner boss (or clear the island) and it
-      completes for real. If an old test device shows everything already
-      cleared, open the app once with `?reset` (leftover `?unlock` QA data).
+      completes for real. A device with leftover QA data can be cleaned from
+      inside the app: Grown-ups -> Reset all progress (or `?reset` in the URL).
 - [ ] **Runner look** — the characters are low-poly 3D meshes with blob
       shadows on a straight centered road (lanes line up with the screen);
       confirm they no longer look like flat stickers.
