@@ -136,7 +136,9 @@ now does a full wipe too - journey, islands, classic stars, streak, hunt.
       giant letter, the family's 7 orders, auto-advance with audio,
       arrow-keys/remote and taps drive it, join-QR in the corner, Escape or X
       exits. Cast/plug into a TV and check it reads across the room.
-- [ ] TV **Chant** — the header-left button opens **Choose letters**: the
+- [ ] TV **Chant** — the board opens PAUSED on the first letter (a Play
+      button shows); the teacher gets the class ready and presses Play to
+      start the chant. The header-left button opens **Choose letters**: the
       teacher pre-selects today's families (All / Done); the chant cycles
       only those. Each family is chanted **forward then backward**
       (ሀ ሁ … ሆ, then ህ ሄ … ሀ) before moving to the next family. **Say after me** toggle: the app says the letter, shows

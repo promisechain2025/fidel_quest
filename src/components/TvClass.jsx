@@ -63,7 +63,9 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
   const [dir, setDir] = useState(1) // the chant direction: forward, then back
   const [echo, setEcho] = useState(false) // the turn letters get a second beat
   const [beat, setBeat] = useState(0) // bumped when the SAME letter must sound again
-  const [auto, setAuto] = useState(true)
+  // The board opens PAUSED: the first letter is up while the teacher gets
+  // the class ready, and the chant only runs once they press Play.
+  const [auto, setAuto] = useState(false)
   const [sayAfter, setSayAfter] = useState(false)
   const [yourTurn, setYourTurn] = useState(false)
   const family = scoped[Math.min(fam, scoped.length - 1)]
