@@ -23,8 +23,8 @@
    Backpack Teacher tile - both behind the parental gate.
    ========================================================================== */
 
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check, CalendarDays, Flame } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check, CalendarDays, Flame } from 'lucide-react'
 import QRCode from 'qrcode'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
@@ -95,20 +95,32 @@ function ShareLinkButton({ url, text, label, tone = 'go', small = false }) {
   )
 }
 
-function SectionCard({ icon, title, children }) {
+/** Card scaffold. Collapsible by default so the page reads as a short list
+    of headings on a phone - the teacher opens only what they need; the Term
+    Plan (the working surface) starts open. */
+function SectionCard({ icon, title, children, collapsible = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const heading = (
+    <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+      {icon} {title}
+    </h2>
+  )
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-      <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-        {icon} {title}
-      </h2>
-      {children}
+      {collapsible ? (
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex w-full items-center justify-between gap-2 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
+          {heading}
+          <ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--muted)' }} aria-hidden="true" />
+        </button>
+      ) : heading}
+      {(!collapsible || open) && children}
     </section>
   )
 }
 
 /** The five-line mental model. Shown in full before a class exists; kept as
     a compact reminder afterwards so the flow is never a mystery. */
-function HowItWorksCard() {
+function HowItWorksCard({ defaultOpen = true }) {
   const steps = [
     t('tmHow1', 'Create your class once - it lives on this phone, no account.'),
     t('tmHow2', 'Invite students: they open one link or scan the QR code.'),
@@ -117,7 +129,7 @@ function HowItWorksCard() {
     t('tmHow5', 'Results come back as links - open them here and the roster fills itself.'),
   ]
   return (
-    <SectionCard icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmHowTitle', 'How it works')}>
+    <SectionCard collapsible defaultOpen={defaultOpen} icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmHowTitle', 'How it works')}>
       <ol className="mt-3 flex flex-col gap-2">
         {steps.map((s, i) => (
           <li key={i} className="flex items-start gap-2.5">
@@ -192,11 +204,18 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
   const cls = loadTeacher().classes[code]
   const plan = cls?.plan || null
   const [, bump] = useState(0)
+  const [changing, setChanging] = useState(false)
   const refresh = () => { bump((n) => n + 1); onChanged?.() }
   const weeks = plan ? termWeeks(plan.perWeek) : []
   const nowIdx = plan ? currentWeekIndex(plan) : 0
   const assignments = assignmentsFor(code)
   const weekAssignment = (i) => assignments.find((a) => a.week === i)
+  // The week list scrolls inside the card (33 chill-pace weeks would bury
+  // everything below); land on the current week.
+  const listRef = useRef(null)
+  useEffect(() => {
+    listRef.current?.querySelector('[data-now="1"]')?.scrollIntoView({ block: 'center' })
+  }, [plan?.perWeek]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendHomework = (i, familyIds) => {
     let a = weekAssignment(i)
@@ -227,13 +246,13 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
   }
 
   return (
-    <SectionCard icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={`${t('tmPlanTitle', 'Term plan')} · ${t('tmPerWeek', '{n} families a week', { n: plan.perWeek })}`}>
-      <div className="mt-3 flex flex-col gap-2">
+    <SectionCard collapsible defaultOpen icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={`${t('tmPlanTitle', 'Term plan')} · ${t('tmPerWeek', '{n} families a week', { n: plan.perWeek })}`}>
+      <div ref={listRef} className="mt-3 flex max-h-[45vh] flex-col gap-2 overflow-y-auto pr-1">
         {weeks.map((familyIds, i) => {
           const a = weekAssignment(i)
           const isNow = i === nowIdx
           return (
-            <div key={i} className="rounded-2xl border-2 p-3" style={isNow
+            <div key={i} data-now={isNow ? 1 : 0} className="rounded-2xl border-2 p-3" style={isNow
               ? { background: 'var(--go-soft)', borderColor: 'var(--go)' }
               : { background: 'var(--paper)', borderColor: 'var(--line)', opacity: i < nowIdx ? 0.75 : 1 }}>
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -257,9 +276,23 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
           )
         })}
       </div>
-      <button type="button" onClick={() => { saveTermPlan(code, (plan.perWeek % 3) + 1, plan.startDay); refresh() }} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
-        {t('tmChangePace', 'Change pace')}
-      </button>
+      {/* Explicit pace chooser: tapping Change pace shows the three options
+         (the old link silently cycled the pace, which read as broken). */}
+      {changing ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[1, 2, 3].map((n) => (
+            <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
+              ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
+              : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+              {t('tmPerWeek', '{n} families a week', { n })}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <button type="button" onClick={() => setChanging(true)} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+          {t('tmChangePace', 'Change pace')}
+        </button>
+      )}
     </SectionCard>
   )
 }
@@ -268,7 +301,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
 function TroubleCard({ code }) {
   const trouble = classTroubleLetters(code)
   return (
-    <SectionCard icon={<Flame className="h-4 w-4" aria-hidden="true" />} title={t('tmTroubleTitle', 'Class trouble letters')}>
+    <SectionCard collapsible defaultOpen={false} icon={<Flame className="h-4 w-4" aria-hidden="true" />} title={t('tmTroubleTitle', 'Class trouble letters')}>
       {trouble.length === 0 ? (
         <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
           {t('tmTroubleEmpty', 'Nothing yet - missed letters arrive inside result links and gather here.')}
@@ -313,7 +346,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
     }
   }
   return (
-    <SectionCard icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmNewAssign', 'Extra assignment')}>
+    <SectionCard collapsible defaultOpen={false} icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />} title={t('tmNewAssign', 'Extra assignment')}>
       <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
         {t('tmAssignHint', 'Every student gets the same questions. When they finish, the app builds a result link they send back to you.')}
       </p>
@@ -380,7 +413,7 @@ function SentAssignments({ code }) {
   const list = assignmentsFor(code)
   if (!list.length) return null
   return (
-    <SectionCard icon={<Check className="h-4 w-4" aria-hidden="true" />} title={t('tmSent', 'Sent assignments')}>
+    <SectionCard collapsible defaultOpen={false} icon={<Check className="h-4 w-4" aria-hidden="true" />} title={t('tmSent', 'Sent assignments')}>
       <div className="mt-3 flex flex-col gap-2">
         {list.map((a) => (
           <div key={`${a.seed}`} className="rounded-2xl border-2 p-3" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
@@ -403,7 +436,7 @@ function SentAssignments({ code }) {
 function RosterCard({ code }) {
   const roster = rosterByStudent(code)
   return (
-    <SectionCard icon={<Users className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Students')}>
+    <SectionCard collapsible defaultOpen={false} icon={<Users className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Students')}>
       {roster.length === 0 ? (
         <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
           {t('tmRosterEmpty', 'No results yet. When a student finishes, they send you a result link - open it on this device and it files itself here.')}
@@ -538,7 +571,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
             <SentAssignments code={code} />
             <RosterCard code={code} />
 
-            <SectionCard icon={<Link2 className="h-4 w-4" aria-hidden="true" />} title={`${t('tmInvite', 'Invite students')} · ${code}`}>
+            <SectionCard collapsible defaultOpen={false} icon={<Link2 className="h-4 w-4" aria-hidden="true" />} title={`${t('tmInvite', 'Invite students')} · ${code}`}>
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmInviteHint', 'A student opens this link (or scans the code) once - their app joins your class. Works over WhatsApp.')}
               </p>
@@ -550,7 +583,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
 
             <AssignmentBuilder code={code} teacher={cls.teacher} onSaved={refresh} />
 
-            <SectionCard icon={<Tv className="h-4 w-4" aria-hidden="true" />} title={t('tmTv', 'TV display')}>
+            <SectionCard collapsible defaultOpen={false} icon={<Tv className="h-4 w-4" aria-hidden="true" />} title={t('tmTv', 'TV display')}>
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmTvHint', 'Cast or plug this device into a TV: big letters and sound for the whole class, with the join code in the corner.')}
               </p>
@@ -559,7 +592,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               </button>
             </SectionCard>
 
-            <HowItWorksCard />
+            <HowItWorksCard defaultOpen={false} />
 
             <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {!confirmRemove ? (

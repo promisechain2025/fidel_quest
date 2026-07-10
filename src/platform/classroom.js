@@ -413,7 +413,15 @@ export function saveTermPlan(code, perWeek, startDay = dayStamp()) {
   const t = loadTeacher()
   if (!t.classes[c]) return null
   const per = Math.max(1, Math.min(4, Math.round(Number(perWeek) || 0)))
+  const prev = t.classes[c].plan
   t.classes = { ...t.classes, [c]: { ...t.classes[c], plan: { perWeek: per, startDay } } }
+  // A pace change redraws the week boundaries, so week-linked assignments no
+  // longer describe the same letters: unlink them. They stay in the sent
+  // list and keep tracking turn-ins - `week` is local bookkeeping only, the
+  // links already shared with families remain valid.
+  if (prev && prev.perWeek !== per) {
+    t.assignments = (t.assignments || []).map((a) => (a.code === c && a.week != null ? { ...a, week: null } : a))
+  }
   return writeJson(TEACHER_KEY, t)
 }
 
