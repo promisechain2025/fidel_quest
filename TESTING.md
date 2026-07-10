@@ -78,10 +78,15 @@ back to a new player.
       `community:<CODE>` event is reported.)
 
 ## Teacher Mode (link + receipt, no server)
-- [ ] Grown-ups → **Teacher tools** — create a class (name + code). The
-      Invite card shows a **QR code** and a share-link button. Once a class
-      exists, a **Teacher tile appears in the Backpack** as a shortcut — it
-      still passes through the parental gate.
+- [ ] The Backpack has two separate grown-up doors: **Parents** (child's
+      progress, behind the hold-and-tap gate) and **Teacher** (its own tile,
+      always visible). Parents page has no teacher content.
+- [ ] **Teacher tile, first time** — the parental gate, then create a class
+      (name + code). The Invite card shows a **QR code** and a share-link
+      button.
+- [ ] **Teacher tile, afterwards** — opening it asks for the **class code**
+      (the teacher's own key); a wrong code is rejected, the right one opens
+      the class. Result links opened from WhatsApp still file directly.
 - [ ] **Term plan** — pick "2 families a week": the whole term lays out as
       weeks (Week 1 highlighted "this week", each with its letters and due
       date). Week rows carry **TV lesson** and **Send homework** buttons.

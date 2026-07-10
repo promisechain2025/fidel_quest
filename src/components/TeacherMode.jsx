@@ -429,6 +429,47 @@ function RosterCard({ code }) {
   )
 }
 
+/** The teacher's own lock: the CLASS CODE is the key. A kid poking the
+    Teacher tile cannot open the roster or send assignments, and the teacher
+    types the code they invented - no extra password to remember. Before a
+    class exists the parental gate covers creation instead. */
+function CodeLock({ onOpen }) {
+  const [val, setVal] = useState('')
+  const [wrong, setWrong] = useState(false)
+  const tryOpen = () => {
+    const c = sanitizeClassCode(val)
+    if (Object.keys(loadTeacher().classes).includes(c)) onOpen()
+    else setWrong(true)
+  }
+  return (
+    <div className="mt-6 rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('tmLockTitle', 'Teacher area')}</h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('tmLockBody', 'Enter your class code to open your class.')}
+      </p>
+      <div className="mt-3 flex gap-2">
+        <input
+          type="text" value={val} maxLength={12}
+          onChange={(e) => { setVal(e.target.value); setWrong(false) }}
+          onKeyDown={(e) => { if (e.key === 'Enter') tryOpen() }}
+          placeholder={t('tmCodePh', 'e.g. STMARY1')}
+          aria-label={t('tmLockTitle', 'Teacher area')}
+          className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
+          style={{ background: 'var(--paper)', borderColor: wrong ? 'var(--bad)' : 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        />
+        <button type="button" onClick={tryOpen} disabled={!val.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: val.trim() ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+          {t('tmLockOpen', 'Open')}
+        </button>
+      </div>
+      {wrong && (
+        <p className="mt-2 text-xs font-bold" style={{ color: 'var(--bad-ink)' }} role="alert">
+          {t('tmLockWrong', 'That is not the class code.')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function TeacherMode({ onBack, onTv, incomingReceipt = null, needsGate = false }) {
   const [open, setOpen] = useState(!needsGate)
   const [, bump] = useState(0)
@@ -467,7 +508,11 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
       </header>
 
       {!open ? (
-        <ParentalGate onOpen={() => setOpen(true)} />
+        // With a class on the device the CLASS CODE unlocks (the teacher's
+        // own key); before that, the parental gate covers class creation.
+        codes.length > 0
+          ? <CodeLock onOpen={() => setOpen(true)} />
+          : <ParentalGate onOpen={() => setOpen(true)} />
       ) : (
       <div className="mt-6 flex flex-col gap-5">
         {/* An opened receipt link lands here with the filing outcome. */}

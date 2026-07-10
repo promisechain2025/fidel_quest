@@ -1091,7 +1091,6 @@ export default function FidelQuestApp() {
                 onBack={goBack}
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
-                onTeacher={() => setScreen({ name: 'teacher' })}
               />
             </Screen>
           )}
@@ -2027,12 +2026,11 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
             <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
-            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('grownupsShort', 'Grown-ups')} onClick={onGrownUps} />
-            {/* Teacher shortcut: only once a class exists on this device, and
-               still behind the parental gate (the tile is kid-visible). */}
-            {Object.keys(loadTeacher().classes).length > 0 && (
-              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
-            )}
+            {/* Two separate grown-up doors: PARENTS (the child's progress,
+               behind the hold-and-tap gate) and TEACHER (class tools, locked
+               by the teacher's own class code once a class exists). */}
+            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
+            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}
             {isApplePlatform() && (

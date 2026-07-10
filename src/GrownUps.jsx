@@ -12,7 +12,7 @@
 
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, Star, Flame, Sparkles, Trash2, School } from 'lucide-react'
+import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
@@ -191,26 +191,7 @@ function CommunityCard() {
   )
 }
 
-/** Doorway to Teacher Mode (components/TeacherMode.jsx): class links,
-    assignments, results, and the TV chant board. Lives behind the same
-    parental gate - teachers are grown-ups. */
-function TeacherCard({ onTeacher }) {
-  return (
-    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-      <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-        <School className="h-4 w-4" aria-hidden="true" /> {t('tmTitle', 'Teacher tools')}
-      </h2>
-      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-        {t('tmCardBlurb', 'Run a class with links: invite students, send assignments, collect results, and put the letters on a TV. No accounts, no server.')}
-      </p>
-      <button type="button" onClick={onTeacher} className={`chunk mt-3 rounded-2xl px-4 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-        {t('tmOpen', 'Open teacher tools')}
-      </button>
-    </section>
-  )
-}
-
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onTeacher }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [, forceRefresh] = useState(0)
@@ -266,8 +247,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onTeacher 
           <PlanCard />
 
           <CommunityCard />
-
-          <TeacherCard onTeacher={onTeacher} />
 
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
