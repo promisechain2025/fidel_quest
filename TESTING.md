@@ -185,6 +185,15 @@ journey, islands, classic stars, streak, hunt.
       confirm they no longer look like flat stickers.
 
 ## Audio resilience
+- [ ] **Voice ships with the app** — visit once online (the install now
+      precaches ALL ~230 voice clips, ~3.6MB), then turn on airplane mode
+      and play: EVERY letter must still speak with a human voice, including
+      letters never played before. This was the "voice totally not working
+      on some devices" bug: clips used to be cached only after being played
+      online once.
+- [ ] **First tap speaks** — open the app fresh (no taps yet) and enter a
+      screen that voices a letter: if the browser blocked the first clip
+      (autoplay policy), the very next tap anywhere must replay it.
 - [ ] **Back-and-forth audio** — start a lesson (voice plays), switch to
       another app (or take a call / lock the screen), come back, and tap
       anything: the voice must return on that tap. Repeat several times,
@@ -193,6 +202,11 @@ journey, islands, classic stars, streak, hunt.
 - [ ] **Flaky network** — with a poor connection, if a letter fails to load
       once it should be voiced again on a later attempt once the network
       recovers (chime is only permanent for genuinely missing recordings).
+- [ ] **Sound check** — Grown-ups has a "Sound check" button: it plays ሀ
+      and prints the raw audio facts (context state, clip source, manifest
+      size). On a "no sound" device, tap it and read the line; also check
+      the hint below it (iPhone silent switch, media volume, battery
+      saver - the app cannot override those).
 
 ## Learning flow polish
 - [ ] **Feed Anbessa** (Echo/Shuffle) — tapping a wrong letter flashes it RED

@@ -36,9 +36,12 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
-        // Precache the shell + the self-hosted Ethiopic fonts (woff2) so Ge'ez
-        // renders offline from first launch. Audio stays runtime-cached (below).
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+        // Precache the shell, the self-hosted Ethiopic fonts (woff2) AND the
+        // whole voice set (~3.6MB of mp3s + the coverage manifest). The voice
+        // IS the product for a pre-reader: a device that installs the app and
+        // then goes offline must still speak every letter. Runtime caching
+        // below stays as a safety net for anything outside the precache.
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2,mp3,json}'],
         // The generated SW registers an SPA navigation fallback (every
         // navigation resolves to index.html). The /review page is a SEPARATE
         // static document, not part of the SPA, so it must be exempt — without

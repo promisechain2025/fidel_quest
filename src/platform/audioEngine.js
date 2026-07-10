@@ -159,7 +159,19 @@ export class AudioEngine {
     const kick = () => {
       const ctx = this.ctx
       if (ctx && ctx.state !== 'running' && ctx.state !== 'closed') {
-        try { ctx.resume()?.catch?.(() => {}) } catch { /* keep listening */ }
+        try {
+          const resumed = ctx.resume()
+          // A clip requested while the context was still locked never sounded
+          // (autoplay policy). Replay it on THIS tap so the child hears the
+          // letter now instead of silence-then-confusion.
+          Promise.resolve(resumed).then(() => {
+            const b = this.lastBlocked
+            if (b && Date.now() - b.at < 30000) {
+              this.lastBlocked = null
+              this.play(b.key, b.opts)
+            }
+          }).catch(() => {})
+        } catch { /* keep listening */ }
       }
     }
     target.addEventListener('pointerdown', kick, { capture: true, passive: true })
@@ -245,6 +257,11 @@ export class AudioEngine {
    */
   async play(key, { enabled = true, interrupt = true, chime = null } = {}) {
     if (!enabled) return
+    // Remember a play that starts against a locked context (autoplay policy:
+    // resume only works inside a user gesture). The unlock kick replays it.
+    const ctx0 = this.getCtx()
+    if (ctx0 && ctx0.state !== 'running') this.lastBlocked = { key, opts: { enabled, interrupt, chime }, at: Date.now() }
+    else this.lastBlocked = null
     await this.ensureManifest()
     const source = this.resolve(key)
     this.emit('play', { key, source: source.type })
