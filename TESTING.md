@@ -126,7 +126,8 @@ back to a new player.
       exits. Cast/plug into a TV and check it reads across the room.
 - [ ] TV **Chant** — the header-left button opens **Choose letters**: the
       teacher pre-selects today's families (All / Done); the chant cycles
-      only those. **Say after me** toggle: the app says the letter, shows
+      only those. Each family is chanted **forward then backward**
+      (ሀ ሁ … ሆ, then ህ ሄ … ሀ) before moving to the next family. **Say after me** toggle: the app says the letter, shows
       "Your turn - say it!", holds ~5s for the class to chant, then moves on.
 - [ ] TV **Quiz** tab — asks ONLY the letters the teacher selected (the
       teacher decides when the class is ready by switching tabs). Each
