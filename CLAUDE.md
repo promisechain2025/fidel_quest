@@ -135,6 +135,20 @@ npm run lint
   `src/data/fidelGameData.js` — a wrong character in the fidel table is the
   worst bug this app can ship.
 
+## Before building anything (the standing checklist)
+
+1. **Is there a better and easier way?** Prefer the boring answer.
+2. **Which platform module owns this state?** Child progress never gets a
+   new ad-hoc localStorage key without registering it in
+   `src/platform/progress.js` (the app-level progress registry).
+3. Does it work **offline**, on a **low-end device**, in **all 8
+   languages** (audit with the split script - zero missing keys)?
+4. Is the logic **pure and seeded** so it tests headless?
+5. Does anything here **block a child mid-task**? It must not.
+
+See `docs/architecture-review.md` for the full must-do list and the
+current scorecard.
+
 ## Branching
 
 - Default branch: `main`
