@@ -50,7 +50,8 @@ import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
 import { licenseState, markAsked } from './platform/license'
-import { useChildModel } from './platform/childModel'
+import { useChildModel, useAppDay } from './platform/childModel'
+import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
@@ -704,6 +705,7 @@ function saveProgress(progress) {
   } catch {
     /* storage unavailable: play session-only */
   }
+  progressChanged()
 }
 export function mergeResult(progress, levelId, result) {
   const prev = progress[levelId] || { stars: 0, bestStreak: 0, plays: 0 }
@@ -730,6 +732,7 @@ export function saveRunnerBest(best) {
   } catch {
     /* session-only */
   }
+  progressChanged()
 }
 
 function loadSoundOn() {
@@ -834,24 +837,9 @@ export default function FidelQuestApp() {
   const [gift, setGift] = useState(loadGift)
   const [giftOpened, setGiftOpened] = useState(null) // { reward } | { reward: null }
   // The calendar day everything daily derives from (gift, hunt, Ethiopic
-  // date, holiday, streak). An installed PWA commonly stays resident past
-  // midnight, so refresh on focus/visibility and once a minute — otherwise
-  // yesterday's hunt banner and holiday would stick until a full reload.
-  const [dayKey, setDayKey] = useState(() => todayKey())
-  useEffect(() => {
-    const refresh = () => setDayKey((prev) => {
-      const now = todayKey()
-      return now === prev ? prev : now
-    })
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', refresh)
-    const id = setInterval(refresh, 60000)
-    return () => {
-      window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', refresh)
-      clearInterval(id)
-    }
-  }, [])
+  // date, holiday, streak). Owned by the child model (platform/childModel):
+  // rollover past midnight is announced like any other child-state change.
+  const dayKey = useAppDay()
   const today = dayKey
   const [backpackOpen, setBackpackOpen] = useState(false)
   const [giftOpen, setGiftOpen] = useState(false)

@@ -15,9 +15,8 @@
 import { progressChanged } from '../platform/childModel'
 import { JOURNEY, saveJourney, grantReward } from '../journey'
 import { wipeProgress } from '../platform/progress'
-
-const CLASSIC_KEY = 'fidel-quest-progress-v1'
-const SKY_KEY = 'fq3.skylands'
+import { persistSkySave } from '../platform/skylandsSave'
+import { saveClassicProgress } from '../platform/classicSave'
 
 export function unlockEverything() {
   // Journey: every node done + every wearable owned and equipped.
@@ -26,14 +25,10 @@ export function unlockEverything() {
   JOURNEY.forEach((n) => grantReward(p, n.id))
   saveJourney(p)
   // Classic: three stars on every level unlocks all seven.
-  try {
-    localStorage.setItem(CLASSIC_KEY, JSON.stringify({ stars: { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3 }, bestScore: 0, missCounts: {} }))
-  } catch { /* storage blocked */ }
+  saveClassicProgress({ stars: { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3 }, bestScore: 0, missCounts: {} })
   // Skylands: every island learned and REACHABLE (sessionsCompleted 3 opens
   // island 4) without pretending they were beaten - no 4/4 on start.
-  try {
-    localStorage.setItem(SKY_KEY, JSON.stringify({ sessionsCompleted: 3, learnedSessions: 4 }))
-  } catch { /* storage blocked */ }
+  persistSkySave({ sessionsCompleted: 3, learnedSessions: 4 })
   // Don't nag with the first-run onboarding once everything is open.
   try { localStorage.setItem('fq.onboarded.v1', JSON.stringify({ lesson: true, runner: true, skylands: true })) } catch { /* ignore */ }
   progressChanged()

@@ -25,6 +25,7 @@ import {
 } from '../FidelQuestApp'
 import { buildQuiz, pickStolen, SESSIONS } from '../FidelSkylands'
 import { playForm, playEffect } from '../platform/audioEngine'
+import { markIslandCleared } from '../platform/skylandsSave'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 
@@ -209,14 +210,8 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
     if (!done) return
     playEffect('win', soundOn)
     // Clearing the island on the 2D fallback counts exactly like the 3D
-    // map: persist into the shared Skylands save so both views agree.
-    try {
-      const s = JSON.parse(localStorage.getItem('fq3.skylands')) || {}
-      localStorage.setItem('fq3.skylands', JSON.stringify({
-        sessionsCompleted: Math.max(s.sessionsCompleted | 0, island),
-        learnedSessions: Math.max(s.learnedSessions | 0, island),
-      }))
-    } catch { /* session-only */ }
+    // map: one shared save (platform/skylandsSave), both views agree.
+    markIslandCleared(island)
   }, [done]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (done) {

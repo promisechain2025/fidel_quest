@@ -14,6 +14,7 @@
    second source of truth - just invalidation.
    ========================================================================== */
 import { useSyncExternalStore } from 'react'
+import { dayStamp } from './streak'
 
 let version = 0
 const listeners = new Set()
@@ -44,4 +45,43 @@ export function useChildModel() {
     progressVersion,
     progressVersion,
   )
+}
+
+/* ── the app day ─────────────────────────────────────────────────────────
+   Everything daily (hunt, gift, streak, Ethiopic date, holiday, trial ask)
+   derives from one calendar-day value owned here. An installed PWA commonly
+   stays resident past midnight, so the watcher refreshes on focus and
+   visibility and once a minute; a rollover is announced exactly like any
+   other child-state change. */
+
+let currentDay = dayStamp()
+
+function checkDay() {
+  const now = dayStamp()
+  if (now !== currentDay) {
+    currentDay = now
+    progressChanged()
+  }
+}
+
+let dayWatcherArmed = false
+function armDayWatcher() {
+  if (dayWatcherArmed || typeof window === 'undefined') return
+  dayWatcherArmed = true
+  window.addEventListener('focus', checkDay)
+  document.addEventListener('visibilitychange', checkDay)
+  setInterval(checkDay, 60000)
+}
+
+/** Today's 'YYYY-MM-DD', re-checked on read so it never goes stale. */
+export function appDay() {
+  checkDay()
+  return currentDay
+}
+
+/** React hook: today's day stamp, live across midnight rollovers. */
+export function useAppDay() {
+  armDayWatcher()
+  useChildModel()
+  return appDay()
 }

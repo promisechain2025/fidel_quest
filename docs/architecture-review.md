@@ -148,7 +148,10 @@ Added to CLAUDE.md alongside this review:
   modes bundle as standalone artifacts). Hold the line: pure logic keeps
   moving to `platform/`, and any §-section touched by 3+ features gets
   extracted.
-- Two screens still touch localStorage directly (`ArcadeFallback`,
-  `AmharicFidelGame`); migrate them to platform modules opportunistically.
-- Day-rollover logic (`dayKey` effects) is scattered; the child-model
-  store is the natural place to centralize it when 3a lands.
+- ~~Two screens still touch localStorage directly~~ **DONE**: the Skylands
+  save lives in `platform/skylandsSave.js` (3D map, 2D fallback and QA
+  unlock all write through it) and Classic stars live in
+  `platform/classicSave.js`. No screen writes progress keys directly.
+- ~~Day-rollover logic is scattered~~ **DONE**: the child model owns the
+  app day (`useAppDay()` - focus/visibility/minute watcher); a midnight
+  rollover is announced like any other child-state change.

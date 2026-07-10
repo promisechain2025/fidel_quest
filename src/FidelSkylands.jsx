@@ -36,6 +36,7 @@ import { t } from './platform/i18n'
 import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
 import { LOW_END } from './platform/quality'
+import { loadSkySave, persistSkySave } from './platform/skylandsSave'
 
 /* ============================================================================
    §1 DATA
@@ -149,22 +150,9 @@ export function pickStolen(n, seed, allForms = false) {
      - game n draws questions from sessions 1..n (see §2)
    ========================================================================== */
 
-const SAVE_KEY = 'fq3.skylands'
-function loadSave() {
-  try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}
-    return { sessionsCompleted: s.sessionsCompleted | 0, learnedSessions: s.learnedSessions | 0 }
-  } catch {
-    return { sessionsCompleted: 0, learnedSessions: 0 }
-  }
-}
-function persist(save) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(save))
-  } catch {
-    /* session-only */
-  }
-}
+// The save lives in platform/skylandsSave (shared with the 2D fallback).
+const loadSave = loadSkySave
+const persist = persistSkySave
 
 export const canLearn = (st, n) => n >= 1 && n <= SESSIONS.length && n <= st.sessionsCompleted + 1
 export const canPlay = (st, n) => n >= 1 && n <= SESSIONS.length && st.learnedSessions >= n && n <= st.sessionsCompleted + 1

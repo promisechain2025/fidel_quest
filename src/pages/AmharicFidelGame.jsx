@@ -32,6 +32,7 @@ import ScopeToggle from '../components/ScopeToggle'
 import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScope'
 import { audio as platformAudio } from '../platform/audioEngine'
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
+import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
 import {
   FIDEL_FAMILIES,
   ALL_FORMS,
@@ -296,26 +297,9 @@ function baseLevelOf(level) {
   return LEVELS.find((l) => l.id === level.id) || level
 }
 
-function loadProgress() {
-  try {
-    const parsed = JSON.parse(loadFromStorage(STORAGE_KEY, 'null')) || {}
-    return {
-      stars: parsed.stars || {},
-      bestScore: parsed.bestScore || 0,
-      missCounts: parsed.missCounts || {},
-    }
-  } catch {
-    return { stars: {}, bestScore: 0, missCounts: {} }
-  }
-}
-
-function saveProgress(progress) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
-  } catch {
-    // Storage unavailable (private mode) — progress just won't persist.
-  }
-}
+// Storage moved to platform/classicSave (registered app-level progress).
+const loadProgress = loadClassicProgress
+const saveProgress = saveClassicProgress
 
 /* ── AUDIO ───────────────────────────────────────────────────────────────────
    Letters/words: the shared platform AudioEngine (human recordings with a
