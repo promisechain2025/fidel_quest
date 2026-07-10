@@ -59,6 +59,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
   const [fam, setFam] = useState(0)
   const [order, setOrder] = useState(1)
   const [dir, setDir] = useState(1) // the chant direction: forward, then back
+  const [echo, setEcho] = useState(false) // the turn letters get a second beat
   const [auto, setAuto] = useState(true)
   const [sayAfter, setSayAfter] = useState(false)
   const [yourTurn, setYourTurn] = useState(false)
@@ -66,10 +67,14 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
   const orders = family ? Array.from(family.chars) : []
   const form = family ? formOf(`${family.id}-${order}`) : null
 
-  // Say the letter on every change.
+  // Say the letter on every change - and AGAIN on the echo beat (the letter
+  // itself does not change at a turn, so [form] alone would stay silent).
   useEffect(() => {
     if (form) playForm(form, true)
   }, [form])
+  useEffect(() => {
+    if (echo && form) playForm(form, true)
+  }, [echo]) // eslint-disable-line react-hooks/exhaustive-deps
   // In say-after-me, cue the class to repeat once the clip has had a moment
   // to land. Separate from the play effect so toggling the mode mid-letter
   // cues immediately instead of waiting for the next letter.
@@ -78,11 +83,12 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
     if (!form || !sayAfter) return undefined
     const cue = setTimeout(() => setYourTurn(true), 1500)
     return () => clearTimeout(cue)
-  }, [form, sayAfter])
+  }, [form, sayAfter, echo])
 
   // Manual stepping (arrows/remote): plain linear movement.
   const step = useCallback((d) => {
     if (!scoped.length) return
+    setEcho(false)
     setOrder((o) => {
       const n = o + d
       if (n > orders.length) { setFam((f) => (f + 1) % scoped.length); setDir(1); return 1 }
@@ -91,29 +97,28 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
     })
   }, [orders.length, scoped.length])
 
-  // The auto-chant goes down the row and BACK UP - the traditional weekend-
-  // school pattern (ha hu hi haa hie h ho ... h hie haa hi hu ha) - and only
-  // then moves to the next family.
+  // The auto-chant goes down the row and BACK UP, the traditional weekend-
+  // school pattern, and the TURN letters are chanted TWICE - once ending a
+  // pass, once starting the next: ha hu hi haa hie h ho HO h hie haa hi hu
+  // ha HA - and only then the next family.
   const chantStep = useCallback(() => {
     if (!scoped.length) return
-    setOrder((o) => {
-      if (dir === 1) {
-        if (o < orders.length) return o + 1
-        setDir(-1) // reached the end: turn around
-        return o - 1
-      }
-      if (o > 1) return o - 1
-      setDir(1) // back at the start: next family, forward again
-      setFam((f) => (f + 1) % scoped.length)
-      return 1
-    })
-  }, [dir, orders.length, scoped.length])
+    if (dir === 1) {
+      if (order < orders.length) { setOrder(order + 1); return }
+      if (!echo) { setEcho(true); return } // say the LAST letter again
+      setEcho(false); setDir(-1); setOrder(orders.length - 1); return
+    }
+    if (order > 1) { setOrder(order - 1); return }
+    if (!echo) { setEcho(true); return } // say the FIRST letter again
+    setEcho(false); setDir(1); setFam((f) => (f + 1) % scoped.length); setOrder(1)
+  }, [dir, echo, order, orders.length, scoped.length])
 
   const jumpFamily = useCallback((d) => {
     if (!scoped.length) return
     setFam((f) => (f + d + scoped.length) % scoped.length)
     setOrder(1)
     setDir(1)
+    setEcho(false)
   }, [scoped.length])
 
   // The chant clock. Say-after-me holds the beat much longer so the class
@@ -123,7 +128,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
     if (!auto || pick || !form) return undefined
     const id = setTimeout(() => chantStep(), sayAfter ? SAY_AFTER_MS : STEP_MS)
     return () => clearTimeout(id)
-  }, [auto, pick, sayAfter, fam, order, dir, chantStep, form])
+  }, [auto, pick, sayAfter, fam, order, dir, echo, chantStep, form])
 
   // TV remotes and keyboards: arrows step, Enter/Space toggles the chant.
   useEffect(() => {
@@ -179,7 +184,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack }) {
 
       <div className="mx-auto mb-4 flex max-w-full flex-wrap items-center justify-center gap-2 px-4">
         {orders.map((ch, i) => (
-          <button key={i} type="button" onClick={() => setOrder(i + 1)} aria-pressed={order === i + 1} className={`geez flex h-16 w-16 items-center justify-center rounded-2xl text-4xl font-black ${FOCUS}`} style={order === i + 1
+          <button key={i} type="button" onClick={() => { setEcho(false); setOrder(i + 1) }} aria-pressed={order === i + 1} className={`geez flex h-16 w-16 items-center justify-center rounded-2xl text-4xl font-black ${FOCUS}`} style={order === i + 1
             ? { background: GOLD, color: BOARD, outlineColor: INK }
             : { background: DIM, color: INK, outlineColor: GOLD }}>
             {ch}
