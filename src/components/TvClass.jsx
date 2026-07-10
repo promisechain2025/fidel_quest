@@ -241,9 +241,12 @@ function Quiz({ familyIds, joinUrl, onBack }) {
   const [round, setRound] = useState(0)
   const [revealed, setRevealed] = useState(null) // tapped key | null
   // A fresh seed per entry; within a session the queue loops with new draws.
+  // ALL SEVEN orders of the selected families are fair game - the chant
+  // teaches the whole row (ha hu hi haa hie h ho), so the quiz asks the
+  // whole row, not just the base letter.
   const [seed] = useState(() => (Date.now() % 1000000) | 1)
   const queue = useMemo(
-    () => buildReviewQueue(seed + round * 97, familyIds, [], 10),
+    () => buildReviewQueue(seed + round * 97, familyIds, [], 10, [1, 2, 3, 4, 5, 6, 7]),
     [seed, round, familyIds],
   )
   const [i, setI] = useState(0)
