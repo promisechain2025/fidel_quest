@@ -41,8 +41,10 @@ now does a full wipe too - journey, islands, classic stars, streak, hunt.
 - [ ] **Daily Letter Hunt** — the blue banner under the home header pulses
       until played. Jibby hides 5 of the child's letters behind bushes/rocks;
       Kokeb calls a sound; tapping the right letter pops it out (tapping the
-      bush counts too — big hit target). A wrong tap ducks the letter and
-      Jibby smirks; the same call repeats. Finishing shows "Open the treasure"
+      bush counts too — big hit target). A right tap plays just the happy
+      chime (no letter repeat) and Kokeb calls the next one; a wrong tap
+      ducks the letter, Jibby smirks, and after the miss sound Kokeb says
+      the asked letter again. Finishing shows "Open the treasure"
       (the daily gift) and the banner flips to "Done today". Next calendar day:
       a brand-new hunt (new letters, new hiding spots).
 - [ ] **Hunt uses the child's letters** — with "My letters" scope it only hides
@@ -157,8 +159,10 @@ now does a full wipe too - journey, islands, classic stars, streak, hunt.
       the app's own list (never the iOS wheel).
 - [ ] **Today's plan strip** — one slim chip row above the path; the path's
       current step stays visible without scrolling.
-- [ ] **Correct-answer echo** — in any find-the-letter quiz, a right answer
-      plays the chime and then says the letter again.
+- [ ] **Correct-answer echo** — in the find-the-letter quizzes, a right
+      answer plays the chime and then says the letter again. The Daily Hunt
+      is the exception: a right tap is chime-only (the next call follows
+      immediately), and a wrong tap re-voices the asked letter instead.
 - [ ] **Quitting is not winning** — open Letter Runner or Skylands from the
       path and quit immediately: back on the path, the node is still the
       pulsing next step. Beat one runner boss (or clear the island) and it

@@ -101,7 +101,8 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
   const [ctx, setCtx] = useState(() => buildHunt(seed, forms))
   const [feedback, setFeedback] = useState(null) // 'good' | 'bad'
   const feedbackTimer = useRef(null)
-  useEffect(() => () => clearTimeout(feedbackTimer.current), [])
+  const revoiceTimer = useRef(null)
+  useEffect(() => () => { clearTimeout(feedbackTimer.current); clearTimeout(revoiceTimer.current) }, [])
   const doneRef = useRef(false)
   const target = huntTarget(ctx)
   const targetForm = ctx.hidden.find((f) => f.audioKey === target) || null
@@ -128,12 +129,16 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
     if (!accepted) return
     const good = next.found.length > ctx.found.length
     if (heard) recordAnswer(heard, key, 'hunt')
+    clearTimeout(revoiceTimer.current)
     if (good) {
-      const f = ctx.hidden.find((x) => x.audioKey === key)
-      if (f) playForm(f, soundOn)
+      // Just the happy chime - the kid already knows the letter they found,
+      // and Kokeb calls the next one right after.
       playEffect('good', soundOn)
     } else {
+      // Miss sound first, then Kokeb repeats the letter she is asking for.
       playEffect('bad', soundOn)
+      const f = ctx.hidden.find((x) => x.audioKey === heard)
+      if (f) revoiceTimer.current = setTimeout(() => playForm(f, soundOn), 650)
     }
     setFeedback(good ? 'good' : 'bad')
     clearTimeout(feedbackTimer.current)
