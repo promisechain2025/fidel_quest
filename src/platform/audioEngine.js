@@ -272,11 +272,28 @@ export class AudioEngine {
    * synth fallback stays per-letter deterministic. Cross-fades over any
    * clip still playing unless {interrupt:false}.
    */
+  /** iOS can leave a context claiming 'running' while its clock is frozen
+      (after a call/Siri/route change) - everything schedules, nothing
+      sounds. Detect the frozen clock across successive plays and rebuild.
+      AudioBuffers are context-independent, so the decoded cache survives. */
+  healZombie(ctx) {
+    if (!ctx || ctx.state !== 'running') { this._zw = null; return ctx }
+    const now = Date.now()
+    if (this._zw && this._zw.t === ctx.currentTime && now - this._zw.at > 700) {
+      try { ctx.close() } catch { /* already dead */ }
+      this.ctx = null
+      this._zw = null
+      return this.getCtx()
+    }
+    this._zw = { t: ctx.currentTime, at: now }
+    return ctx
+  }
+
   async play(key, { enabled = true, interrupt = true, chime = null } = {}) {
     if (!enabled) return
     // Remember a play that starts against a locked context (autoplay policy:
     // resume only works inside a user gesture). The unlock kick replays it.
-    const ctx0 = this.getCtx()
+    const ctx0 = this.healZombie(this.getCtx())
     if (ctx0 && ctx0.state !== 'running') this.lastBlocked = { key, opts: { enabled, interrupt, chime }, at: Date.now() }
     else this.lastBlocked = null
     await this.ensureManifest()

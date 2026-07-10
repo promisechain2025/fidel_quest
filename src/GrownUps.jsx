@@ -206,16 +206,45 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   // clips resolve to real files, how many clips the manifest covers).
   const [soundInfo, setSoundInfo] = useState(null)
   const soundCheck = async () => {
+    const parts = []
     try {
       await audio.ensureManifest()
-      const form = INDEXES.byAudioKey.get('ha-1')
-      playForm(form, true)
       const ctx = audio.getCtx()
-      const src = audio.resolve('letters/ha-1')
-      setSoundInfo(`ctx: ${ctx ? ctx.state : 'none'} · source: ${src.type} · manifest: ${audio.manifest ? audio.manifest.size : 'none'} · missing: ${audio.missing.size}`)
+      parts.push(`ctx: ${ctx ? ctx.state : 'none'}`)
+      // 1. a plain tone through Web Audio; onended proves the graph RUNS.
+      // 'stuck' = the context claims running but its clock is frozen.
+      const tone = await new Promise((res) => {
+        if (!ctx) return res('skip')
+        try {
+          const osc = ctx.createOscillator()
+          const g = ctx.createGain()
+          g.gain.value = 0.25
+          osc.frequency.value = 880
+          osc.connect(g).connect(ctx.destination)
+          osc.onended = () => res('done')
+          osc.start()
+          osc.stop(ctx.currentTime + 0.4)
+          setTimeout(() => res('stuck'), 2500)
+        } catch { res('err') }
+      })
+      parts.push(`tone: ${tone}`)
+      // 2. the voice through the engine (what the whole app uses)
+      parts.push(`source: ${audio.resolve('letters/ha-1').type}`)
+      playForm(INDEXES.byAudioKey.get('ha-1'), true)
+      // 3. a bare <audio> element, bypassing Web Audio entirely
+      const el = await new Promise((res) => {
+        try {
+          const a = new Audio('/audio/fidel/letters/ha-1.mp3')
+          a.play().then(() => res('ok'), () => res('blocked'))
+          setTimeout(() => res('slow'), 3000)
+        } catch { res('err') }
+      })
+      parts.push(`<audio>: ${el}`)
+      parts.push(`manifest: ${audio.manifest ? audio.manifest.size : 'none'} · missing: ${audio.missing.size}`)
     } catch (e) {
-      setSoundInfo(`error: ${e?.message || e}`)
+      parts.push(`error: ${e?.message || e}`)
     }
+    setSoundInfo(parts.join(' · '))
   }
   // Re-renders whenever any child state is written; every read below is
   // a fresh pure-selector pass, so no manual refresh bumps are needed.
@@ -403,7 +432,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               {soundInfo && <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{soundInfo}</p>}
             </div>
             <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              {t('gpSoundHint', 'No sound? Check the phone is not on silent (iPhone side switch), media volume is up, and battery saver is off.')}
+              {t('gpSoundHint', 'No sound? Check the phone is not on silent (iPhone side switch), media volume is up, battery saver is off - and that sound is not going to paired Bluetooth earphones or a speaker.')}
             </p>
           </section>
 
