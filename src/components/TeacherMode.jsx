@@ -215,7 +215,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
   const listRef = useRef(null)
   useEffect(() => {
     listRef.current?.querySelector('[data-now="1"]')?.scrollIntoView({ block: 'center' })
-  }, [plan?.perWeek]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [plan?.perWeek])
 
   const sendHomework = (i, familyIds) => {
     let a = weekAssignment(i)

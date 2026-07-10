@@ -6,9 +6,11 @@ Tip: append **`?unlock`** to the URL to open all content, **`?reset`** to wipe
 back to a new player.
 
 ## 3D games (need a real GPU/device)
-- [ ] **Runner** — Anbessa and Jibby now face **forward** (toward the letters),
-      leaning toward the lane being steered to. Confirm they no longer look
-      sideways/right.
+- [ ] **Runner** — classic chase view: the road runs straight down the middle
+      of the screen toward the letter gates. Anbessa is seen from behind,
+      glancing back over his shoulder (face, mane and hip star visible);
+      Jibby's ears and grin loom into the bottom of the frame behind him and
+      close in as mistakes pile up.
 - [ ] **Runner** — as mistakes pile up, the extra Jibbys close in.
 - [ ] **Skylands** — tap fruits in the learning phase; the count fills and the
       **Start** button enables (this was the "can't progress" bug — now uses
@@ -154,8 +156,9 @@ back to a new player.
       pulsing next step. Beat one runner boss (or clear the island) and it
       completes for real. If an old test device shows everything already
       cleared, open the app once with `?reset` (leftover `?unlock` QA data).
-- [ ] **Runner look** — Anbessa and Jibby run in side profile (faces
-      visible) on a three-quarter angled road.
+- [ ] **Runner look** — Anbessa and Jibby are drawn from behind at
+      three-quarter, both glancing back so their faces stay visible on a
+      straight centered road (lanes line up with the screen).
 
 ## Audio resilience
 - [ ] **Back-and-forth audio** — start a lesson (voice plays), switch to
