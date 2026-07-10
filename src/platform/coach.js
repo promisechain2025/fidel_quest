@@ -20,6 +20,7 @@
    default args at the caller's boundary.
    ========================================================================== */
 
+import { progressChanged } from './childModel'
 import { rngShuffle } from './rng'
 import { dayStamp } from './streak'
 import { letterStats, troubleLetters } from './telemetry'
@@ -52,6 +53,7 @@ export function savePlan(plan) {
   } catch {
     /* session-only */
   }
+  progressChanged()
   return plan
 }
 export function makePlan(pace, { requireWarmup = false, today = dayStamp() } = {}) {
@@ -97,6 +99,7 @@ export function markWarmupDone(today = dayStamp()) {
   } catch {
     /* session-only */
   }
+  progressChanged()
   return next
 }
 

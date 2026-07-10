@@ -219,6 +219,12 @@ journey, islands, classic stars, streak, hunt.
       `-a / -u / Ge'ez / Ka'ib` order labels are romanized transliterations
       (data), intentionally left untranslated.
 
+## App updates (web + PWA builds)
+- [ ] **Update toast** — with the app open, deploy a new build, then reopen
+      (or refresh) the app: a green "New version ready - tap to update"
+      button appears at the bottom; tapping it swaps to the new build
+      immediately. No more silently-stale builds on test phones.
+
 ## Paid app / free trial (web + PWA builds)
 - [ ] **Full free trial** — a fresh install runs EVERYTHING free for 7 days
       (`VITE_TRIAL_DAYS` to change). Grown-ups shows "Free try-out: N days

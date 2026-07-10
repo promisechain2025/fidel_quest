@@ -14,6 +14,7 @@
    ========================================================================== */
 
 import { FIDEL_FAMILIES } from './platform/ethiopic'
+import { progressChanged } from './platform/childModel'
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson
@@ -123,6 +124,7 @@ export function saveJourney(p) {
   } catch {
     /* session-only; the app still works, progress just is not persisted */
   }
+  progressChanged()
 }
 
 /* One-time port of the pre-refactor blobs so returning children keep their

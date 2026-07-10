@@ -13,6 +13,7 @@
    enters at the boundary (daySeed / markHuntDone default args).
    ========================================================================== */
 
+import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
 import { rngShuffle } from './rng'
 
@@ -107,5 +108,6 @@ export function markHuntDone(today = dayStamp()) {
   } catch {
     /* session-only */
   }
+  progressChanged()
   return next
 }

@@ -30,7 +30,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new build shows a tap-to-update toast (main.jsx) instead
+      // of silently activating on some later visit - testers kept seeing
+      // stale builds with autoUpdate.
+      registerType: 'prompt',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
         // Precache the shell + the self-hosted Ethiopic fonts (woff2) so Ge'ez

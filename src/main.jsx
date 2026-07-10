@@ -36,3 +36,31 @@ createRoot(document.getElementById('root')).render(
 
 // Native shell setup (status bar, splash, Android back button). No-op on web.
 initNative()
+
+// PWA updates are visible, not silent: when a new build is waiting, show a
+// tap-to-update toast (kid-size target). vite-plugin-pwa registerType is
+// 'prompt', so nothing swaps under the user mid-session.
+async function armUpdateToast() {
+  try {
+    const { registerSW } = await import('virtual:pwa-register')
+    const updateSW = registerSW({
+      onNeedRefresh() {
+        if (document.getElementById('fq-update-toast')) return
+        const btn = document.createElement('button')
+        btn.id = 'fq-update-toast'
+        btn.type = 'button'
+        btn.textContent = t('swUpdate', 'New version ready - tap to update')
+        btn.style.cssText = [
+          'position:fixed', 'left:50%', 'bottom:18px', 'transform:translateX(-50%)',
+          'z-index:9999', 'padding:14px 22px', 'border-radius:18px', 'border:none',
+          'background:var(--go, #22a860)', 'color:#fff', 'font-weight:800',
+          'font-family:inherit', 'font-size:15px', 'box-shadow:0 4px 0 rgba(0,0,0,0.25)',
+          'cursor:pointer',
+        ].join(';')
+        btn.onclick = () => updateSW(true)
+        document.body.appendChild(btn)
+      },
+    })
+  } catch { /* not built with the PWA plugin (tests, odd envs) */ }
+}
+armUpdateToast()

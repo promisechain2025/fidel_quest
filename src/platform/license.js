@@ -23,6 +23,7 @@
    Deliberately NOT part of the progress keys: "Reset all progress" gives a
    fresh player, not a fresh trial.
    ========================================================================== */
+import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
 
@@ -45,6 +46,7 @@ function load() {
 }
 function save(s) {
   try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* session-only */ }
+  progressChanged()
 }
 
 /** Whole days from a to b ('YYYY-MM-DD' stamps; UTC parse keeps it stable). */

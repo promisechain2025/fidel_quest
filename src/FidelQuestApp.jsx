@@ -50,6 +50,7 @@ import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
 import { licenseState, markAsked } from './platform/license'
+import { useChildModel } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
@@ -858,19 +859,21 @@ export default function FidelQuestApp() {
   const [streak, setStreak] = useState(0)
   useEffect(() => { setStreak(bumpStreak().count) }, [dayKey])
   // Daily Letter Hunt: one seeded hunt per calendar day.
-  const [huntDone, setHuntDone] = useState(() => huntDoneToday())
-  useEffect(() => { setHuntDone(huntDoneToday()) }, [dayKey])
+  // The child model: one version number that ticks whenever ANY child
+  // state is written (platform/childModel.js). Everything below derives
+  // fresh from the pure selectors instead of holding copies.
+  const childVer = useChildModel()
+  const huntDone = useMemo(() => huntDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
   // Session coach: the daily warm-up review + the registered learning plan.
   const [plan, setPlan] = useState(loadPlan)
-  const [warmupDone, setWarmupDone] = useState(() => warmupDoneToday())
-  useEffect(() => { setWarmupDone(warmupDoneToday()) }, [dayKey])
+  const warmupDone = useMemo(() => warmupDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
   // The honest free-trial ask: at most once per calendar day, after the
   // trial ends (platform/license.js). Never blocks - always dismissible.
   const [askSupport, setAskSupport] = useState(false)
   useEffect(() => {
     const lic = licenseState(dayKey)
     if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
-  }, [dayKey])
+  }, [dayKey, childVer])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
   // A teacher's assignment opened from a link waits in fq.assign.v1 until done.
   const [pendingAssign, setPendingAssign] = useState(loadPendingAssignment)
@@ -1071,7 +1074,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
                 onTreasure={() => { goBack(); openGift() }}
-                onDone={() => { markHuntDone(); setHuntDone(true); track('hunt_complete') }}
+                onDone={() => { markHuntDone(); track('hunt_complete') }}
                 onBack={goBack}
               />
             </Screen>
@@ -1197,7 +1200,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 noDemo
                 practiceQueue={screen.queue}
-                onFinish={() => { markWarmupDone(); setWarmupDone(true); track('warmup'); goBack() }}
+                onFinish={() => { markWarmupDone(); track('warmup'); goBack() }}
                 onQuit={goBack}
                 onReplay={startWarmup}
               />

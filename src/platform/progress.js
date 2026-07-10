@@ -14,6 +14,7 @@
    The snapshot moves over WhatsApp/AirDrop as a small .json - no server,
    nothing leaves the device unless the family shares it.
    ========================================================================== */
+import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
 
@@ -65,6 +66,7 @@ export function restoreProgress(snap) {
       n++
     } catch { /* skip malformed entries */ }
   }
+  if (n > 0) progressChanged()
   return n
 }
 
@@ -73,6 +75,7 @@ export function wipeProgress() {
   for (const k of PROGRESS_KEYS) {
     try { localStorage.removeItem(k) } catch { /* ignore */ }
   }
+  progressChanged()
 }
 
 /* ── moving between phones (no server: a small .json over WhatsApp) ──── */

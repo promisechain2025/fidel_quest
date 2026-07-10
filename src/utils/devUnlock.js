@@ -12,6 +12,7 @@
    are NOT marked cleared, so the map never starts on a fake "4/4 champion"
    screen. (Journey nodes do get marked done - that is what opens the path -
    but the arcade saves themselves stay honest.) */
+import { progressChanged } from '../platform/childModel'
 import { JOURNEY, saveJourney, grantReward } from '../journey'
 import { wipeProgress } from '../platform/progress'
 
@@ -35,6 +36,7 @@ export function unlockEverything() {
   } catch { /* storage blocked */ }
   // Don't nag with the first-run onboarding once everything is open.
   try { localStorage.setItem('fq.onboarded.v1', JSON.stringify({ lesson: true, runner: true, skylands: true })) } catch { /* ignore */ }
+  progressChanged()
 }
 
 export function resetEverything() {

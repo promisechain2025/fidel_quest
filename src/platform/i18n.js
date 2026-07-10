@@ -242,6 +242,7 @@ const STRINGS = {
     gpMoveHint: 'ሁሉንም የመማር ሂደት እንደ አንድ ትንሽ ፋይል ያስቀምጡ፣ ወደ አዲሱ ስልክ ይላኩት (ዋትስአፕ ይሰራል)፣ ከዚያ እዚያ ይጫኑት።',
     gpExport: 'የሂደት ፋይል አስቀምጥ',
     gpImport: 'የሂደት ፋይል ጫን',
+    swUpdate: 'አዲስ ስሪት ደርሷል - ለማዘመን ንኩ',
     // Fidel Skylands HUD.
     skyMap: 'ካርታ',
     skySession: 'ክፍለ ጊዜ',
@@ -719,6 +720,7 @@ const STRINGS = {
     gpMoveHint: 'ኩሉ ናይ ትምህርቲ ኣካይዳ ከም ሓደ ንእሽቶ ፋይል ኣቐምጡ፣ ናብቲ ሓድሽ ስልኪ ስደዱዎ (ዋትስኣፕ ይሰርሕ)፣ ድሕሪኡ ኣብኡ ጽዓኑዎ።',
     gpExport: 'ፋይል ኣካይዳ ኣቐምጥ',
     gpImport: 'ፋይል ኣካይዳ ጽዓን',
+    swUpdate: 'ሓድሽ ስሪት በጺሑ - ንምሕዳስ ጠውቑ',
     skyMap: 'ካርታ',
     skySession: 'ክፍለ ግዜ',
     skyAllCleared: 'ኩለን ኣርባዕተ ደሴታት ተዛዚመን — ኣንበሳ ሻምፒዮን ፊደል እዩ!',

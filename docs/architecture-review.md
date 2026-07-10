@@ -90,6 +90,12 @@ size. The gaps are specific:
 
 ### 3a. Make the child model reactive (the real fix behind the state miss)
 
+> **Status: DONE.** `platform/childModel.js` ships the store below; all
+> child-state writers (journey, ledger, hunt, coach/plan, license,
+> progress restore/wipe, QA unlock) call `progressChanged()`, and the app
+> shell + Grown-ups consume `useChildModel()` - the forceRefresh bumps
+> are gone.
+
 One tiny store, no new dependency:
 
     // platform/childModel.js (sketch)
@@ -116,6 +122,9 @@ migration (valuable someday, not this month, and CLAUDE.md already rules
 it out without a plan).
 
 ### 3b. Service-worker update prompt
+
+> **Status: DONE.** registerType is 'prompt' and main.jsx shows a
+> tap-to-update toast (translated in all 8 packs).
 
 Switch vite-plugin-pwa to `registerType: 'prompt'` + a small "New version
 — tap to update" toast. Small change; kills the recurring "my phone still

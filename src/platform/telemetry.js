@@ -11,6 +11,7 @@
    Event: { k: heardKey, p: pickedKey, m: mode, d: YYYYMMDD }
    ========================================================================== */
 
+import { progressChanged } from './childModel'
 const KEY = 'fq.telemetry.v1'
 const CAP = 600
 
@@ -33,6 +34,7 @@ export function recordAnswer(heardKey, pickedKey, mode) {
     const events = loadLedger()
     events.push({ k: heardKey, p: pickedKey, m: mode, d: dayStamp() })
     localStorage.setItem(KEY, JSON.stringify({ v: 1, events: events.slice(-CAP) }))
+    progressChanged()
   } catch {
     /* telemetry must never break gameplay */
   }
@@ -41,6 +43,7 @@ export function recordAnswer(heardKey, pickedKey, mode) {
 export function clearLedger() {
   try {
     localStorage.removeItem(KEY)
+    progressChanged()
   } catch {
     /* ignore */
   }

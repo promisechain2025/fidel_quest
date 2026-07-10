@@ -15,6 +15,7 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
+import { useChildModel } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
 import { shareProgressSnapshot, importProgressFile } from './platform/progress'
@@ -199,7 +200,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
-  const [, forceRefresh] = useState(0)
+  // Re-renders whenever any child state is written; every read below is
+  // a fresh pure-selector pass, so no manual refresh bumps are needed.
+  useChildModel()
 
   const events = useMemo(() => (open ? loadLedger() : []), [open])
   const stats = useMemo(() => letterStats(events), [events])
@@ -352,7 +355,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                           onClick={() => {
                             grantFeedbackGrace()
                             try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
-                            forceRefresh((n) => n + 1)
                           }}
                           className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
                           style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
@@ -365,7 +367,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                       {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
                       {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
                     </p>
-                    <button type="button" onClick={() => { markSupported('grownups'); forceRefresh((n) => n + 1) }} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
                       {t('payOwned', 'My family already bought it')}
                     </button>
                   </>
@@ -424,7 +426,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                   onClick={() => {
                     unlockEverything()
                     setConfirmUnlock(false)
-                    forceRefresh((n) => n + 1)
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
@@ -459,7 +460,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
                     clearLedger()
                     resetEverything()
                     setConfirmReset(false)
-                    forceRefresh((n) => n + 1)
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
