@@ -238,8 +238,25 @@ journey, islands, classic stars, streak, hunt.
       Android - see the Backpack Gift guide). Once the family has the store
       app, it is licensed automatically (native builds never show the ask).
       On web, Grown-ups -> "My family already bought it" marks it supported.
+- [ ] **After expiry the app narrows to a free taste** — only the first two
+      letter families (ሀ ለ and their mix) and the chapter-1 arcade gateway
+      still open; tapping ANY other step (including the third family, all
+      quizzes, later arcades) pops the buy-or-gift dialog instead. The
+      full-alphabet surfaces (Letter Explorer, Classic, First Words) pop it
+      too. Practice over already-learned letters stays open: warm-up, Star
+      Practice, Daily Hunt, Closet - we never confiscate what the child
+      earned.
 - [ ] **Reset does not restart the trial** — "Reset all progress" wipes the
       child's progress but the trial clock keeps its start date.
+
+## Move to another phone
+- [ ] Grown-ups → **Move to another phone** → "Save progress file" shares or
+      downloads one small .json (the whole learning state: journey, islands,
+      runner, classic, streak, hunt, plan, mastery ledger - NOT settings,
+      teacher data, or the trial clock).
+- [ ] On the other device: "Load progress file" → pick the file → the app
+      reloads with the child exactly where they left off. A random .json is
+      refused (nothing is written).
 
 ## Store readiness (once paid)
 - [ ] **Gift** (Apple) — Backpack → Gift walks through Apple's "Gift App";

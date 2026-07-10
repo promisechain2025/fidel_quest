@@ -17,6 +17,7 @@ import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFo
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
+import { shareProgressSnapshot, importProgressFile } from './platform/progress'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t } from './platform/i18n'
@@ -372,6 +373,38 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               </section>
             )
           })()}
+
+          {/* move to another phone: the child's whole progress as one small
+             file (platform/progress.js) - share it out, load it on the new
+             device. No server; travels over WhatsApp/AirDrop like a photo. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            <h2 className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('gpMoveTitle', 'Move to another phone')}
+            </h2>
+            <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => shareProgressSnapshot()} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                {t('gpExport', 'Save progress file')}
+              </button>
+              <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
+                {t('gpImport', 'Load progress file')}
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!f) return
+                    const n = await importProgressFile(f)
+                    if (n > 0) window.location.reload()
+                  }}
+                />
+              </label>
+            </div>
+          </section>
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.

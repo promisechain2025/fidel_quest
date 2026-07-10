@@ -13,13 +13,10 @@
    screen. (Journey nodes do get marked done - that is what opens the path -
    but the arcade saves themselves stay honest.) */
 import { JOURNEY, saveJourney, grantReward } from '../journey'
+import { wipeProgress } from '../platform/progress'
 
 const CLASSIC_KEY = 'fidel-quest-progress-v1'
 const SKY_KEY = 'fq3.skylands'
-const PROGRESS_KEYS = [
-  'fq.journey.v1', CLASSIC_KEY, SKY_KEY, 'fq2.runner', 'fq.onboarded.v1', 'fq.learn.v1', 'fq2.progress',
-  'fq.coach.v1', 'fq.hunt.v1', 'fq.plan.v1', 'fq.telemetry.v1',
-]
 
 export function unlockEverything() {
   // Journey: every node done + every wearable owned and equipped.
@@ -41,9 +38,7 @@ export function unlockEverything() {
 }
 
 export function resetEverything() {
-  for (const k of PROGRESS_KEYS) {
-    try { localStorage.removeItem(k) } catch { /* ignore */ }
-  }
+  wipeProgress() // the registry in platform/progress.js is the source of truth
 }
 
 /** Apply ?unlock / ?reset from the URL, then strip the param so a refresh does

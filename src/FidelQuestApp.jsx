@@ -36,7 +36,7 @@ import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
 import { toEthiopic, formatEthiopic, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
@@ -1005,6 +1005,12 @@ export default function FidelQuestApp() {
   }, [setScreen])
 
   const openNode = useCallback((node, opts = {}) => {
+    // Paid app: after the trial ends, only the free taste opens (first two
+    // families + the chapter-1 gateway). Anything else asks to buy or gift.
+    if (licenseState().phase === 'ended' && !isNodeFree(node)) {
+      setAskSupport(true)
+      return
+    }
     // Games come AFTER the day's warm-up: kids rush to the arcade, so the
     // gateway nudges (or, if the plan enforces it, requires) a quick review
     // of yesterday's letters first. Reads storage fresh - the plan may have
@@ -1322,10 +1328,10 @@ export default function FidelQuestApp() {
               teeBadge={newTeeCount(progressStats(journey).families)}
               onTees={openTeeShop}
               onCloset={openCloset}
-              onWords={() => { setBackpackOpen(false); startWords() }}
+              onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
               onPractice={startPractice}
-              onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
-              onClassic={() => { setBackpackOpen(false); setScreen({ name: 'classic' }) }}
+              onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
+              onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
