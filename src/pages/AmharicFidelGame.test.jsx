@@ -247,14 +247,17 @@ describe('directional tracing (P6)', () => {
 })
 
 describe('<AmharicFidelGame />', () => {
-  it('renders the menu with all levels and only level 1 unlocked', () => {
+  it('renders one current-level card and a level strip with the rest locked', () => {
     render(<AmharicFidelGame />)
     expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
-    LEVELS.forEach((level) => expect(screen.getByText(level.title)).toBeInTheDocument())
-    const level2Button = screen.getByText('More Letters').closest('button')
-    expect(level2Button).toBeDisabled()
-    const level1Button = screen.getByText('First Letters').closest('button')
-    expect(level1Button).toBeEnabled()
+    // Only the CURRENT level gets a full card; the others live as chips.
+    expect(screen.getByText('First Letters').closest('button')).toBeEnabled()
+    expect(screen.queryByText('More Letters')).not.toBeInTheDocument()
+    LEVELS.forEach((level) => {
+      const chip = screen.getByRole('listitem', { name: new RegExp(`^Level ${level.id} - `) })
+      if (level.id === 1) expect(chip).toBeEnabled()
+      else expect(chip).toBeDisabled()
+    })
   })
 
   it('unlocks later levels from persisted progress', () => {

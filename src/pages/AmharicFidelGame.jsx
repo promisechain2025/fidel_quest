@@ -14,7 +14,6 @@ import {
   BookOpen,
   Gamepad2,
   RotateCcw,
-  Lock,
   CheckCircle2,
   XCircle,
   Smile,
@@ -1120,47 +1119,81 @@ export default function AmharicFidelGame() {
         </div>
       )}
 
-      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-        {LEVELS.map((lvl) => {
-          const unlocked = isLevelUnlocked(lvl)
-          const stars = progress.stars[lvl.id] || 0
-          return (
-            <button
-              key={lvl.id}
-              type="button"
-              disabled={!unlocked}
-              onClick={() => startLevel(lvl)}
-              className={`group relative overflow-hidden rounded-2xl p-5 text-left shadow-lg transition-all duration-200 ${FOCUS_RING} ${
-                unlocked
-                  ? 'bg-white/90 hover:-translate-y-1 hover:shadow-xl active:scale-95 dark:bg-gray-800/90'
-                  : 'cursor-not-allowed bg-white/40 opacity-70 dark:bg-gray-800/40'
-              }`}
-            >
-              <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${lvl.accent}`} aria-hidden="true" />
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {t('level', { n: lvl.id })}
-                  </p>
-                  <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{tLevelTitle(lvl)}</h2>
-                  <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">{tLevelSubtitle(lvl)}</p>
+      {/* ONE current-level card + a compact chip strip. The child sees where
+         they stand in a single row (finished chips replay their level, the
+         current one pulses, the rest wait dim) and the page stays short -
+         seven near-identical cards taught nothing extra. */}
+      {(() => {
+        const current =
+          LEVELS.find((lvl) => isLevelUnlocked(lvl) && (progress.stars[lvl.id] || 0) === 0) ||
+          LEVELS.find((lvl) => (progress.stars[lvl.id] || 0) < 3) ||
+          null
+        return (
+          <div className="flex w-full max-w-md flex-col items-center gap-5">
+            <div className="flex items-center justify-center gap-2" role="list">
+              {LEVELS.map((lvl) => {
+                const stars = progress.stars[lvl.id] || 0
+                const unlocked = isLevelUnlocked(lvl)
+                const isCurrent = current?.id === lvl.id
+                return (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    role="listitem"
+                    disabled={!unlocked}
+                    onClick={() => startLevel(lvl)}
+                    aria-label={`${t('level', { n: lvl.id })} - ${tLevelTitle(lvl)}`}
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-full text-base font-extrabold shadow-md transition-all duration-200 ${FOCUS_RING} ${
+                      isCurrent
+                        ? `bg-gradient-to-br ${lvl.accent} scale-110 text-white`
+                        : stars > 0
+                          ? 'bg-amber-400 text-white hover:-translate-y-0.5'
+                          : unlocked
+                            ? 'bg-white/80 text-amber-800 dark:bg-gray-800/80 dark:text-amber-200'
+                            : 'cursor-not-allowed bg-white/40 text-gray-400 opacity-70 dark:bg-gray-800/40 dark:text-gray-500'
+                    }`}
+                  >
+                    {!isCurrent && stars >= 3 ? <Star className="h-5 w-5 fill-current" /> : lvl.id}
+                    {stars > 0 && stars < 3 && (
+                      <span className="absolute -bottom-2 flex gap-0.5" aria-hidden="true">
+                        {Array.from({ length: stars }, (_, i) => (
+                          <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        ))}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {current && (
+              <button
+                type="button"
+                onClick={() => startLevel(current)}
+                className={`group relative w-full overflow-hidden rounded-2xl bg-white/90 p-5 text-left shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 dark:bg-gray-800/90 ${FOCUS_RING}`}
+              >
+                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${current.accent}`} aria-hidden="true" />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      {t('level', { n: current.id })}
+                    </p>
+                    <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{tLevelTitle(current)}</h2>
+                    <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">{tLevelSubtitle(current)}</p>
+                  </div>
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${current.accent} text-white shadow-md transition-transform group-hover:scale-110`}
+                  >
+                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                  </div>
                 </div>
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${lvl.accent} text-white shadow-md transition-transform group-hover:scale-110`}
-                >
-                  {unlocked ? <Play className="ml-0.5 h-6 w-6 fill-current" /> : <Lock className="h-6 w-6" />}
+                <div className="mt-3">
+                  <StarRating count={progress.stars[current.id] || 0} size="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <StarRating count={stars} size="h-5 w-5" />
-                {!unlocked && (
-                  <span className="text-xs font-semibold text-gray-400">{t('earnStar', { n: lvl.id - 1 })}</span>
-                )}
-              </div>
-            </button>
-          )
-        })}
-      </div>
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <button
