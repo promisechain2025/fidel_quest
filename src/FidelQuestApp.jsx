@@ -95,7 +95,6 @@ import {
   TreePine,
   Pencil,
   Shirt,
-  ShoppingBag,
   Share2,
   Gift,
   Mic,
@@ -1256,7 +1255,14 @@ export default function FidelQuestApp() {
               <Suspense fallback={null}>
                 <TeacherMode
                   onBack={goBackOrHome}
-                  onTv={(families) => setScreen({ name: 'tv', families })}
+                  onTv={(families) => setStack((s) => [
+                    // The teacher just passed the gate to reach this button.
+                    // Clear the flag on the entry beneath so closing the TV
+                    // board mid-lesson does NOT re-ask for the class code.
+                    ...s.slice(0, -1),
+                    { ...s[s.length - 1], gate: false },
+                    { name: 'tv', families },
+                  ])}
                   incomingReceipt={screen.receipt || null}
                   needsGate={!!screen.gate}
                 />
@@ -2022,7 +2028,10 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
         <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
           <div className="grid grid-cols-3 gap-2.5">
             <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
-            <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} />
+            {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
+               sell - the screen, unlock logic, and tests all stay wired, so
+               relaunching is just restoring this one tile.
+            <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
             <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
