@@ -1252,7 +1252,7 @@ export default function FidelQuestApp() {
               <PlanSetup
                 learned={learnedFamilyIds(journey).length}
                 today={dayKey}
-                onSave={(pace) => { setPlan(makePlan(pace, { today: dayKey })); goBack() }}
+                onSave={(pace) => { setPlan(makePlan(pace, { today: dayKey, requireWarmup: !!loadPlan()?.requireWarmup })); goBack() }}
                 onBack={goBack}
               />
             </Screen>
@@ -1720,7 +1720,8 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
 /* Registering the learning plan: pick a pace, see the finish date live.
    A parent or the child can do this - enforcement stays in Grown-ups. */
 function PlanSetup({ learned, today, onSave, onBack }) {
-  const [pace, setPace] = useState('steady')
+  // Editing is the same screen as creating: open on the current pace.
+  const [pace, setPace] = useState(() => loadPlan()?.pace || 'steady')
   const labels = {
     chill: t('paceChill', 'Chill - 1 letter family a week'),
     steady: t('paceSteady', 'Steady - 2 families a week'),
@@ -1886,9 +1887,9 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         <div className="flex items-baseline justify-between gap-2 px-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
           {coach?.hasPlan && coach?.eta ? (
-            <p className="truncate text-[11px] font-bold" style={{ color: 'var(--go-ink)' }}>
+            <button type="button" onClick={onPlanSetup} className={`truncate text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
               {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: coach.eta })}
-            </p>
+            </button>
           ) : (
             <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
               {t('planMake', 'Make my learning plan')}
@@ -2286,6 +2287,13 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   const [pace, setPace] = useState('normal')
   const stopPlay = useCallback(() => setPlaying(false), [])
   const startPlay = () => { setPlayIdx(0); setPlaying(true) }
+  // Autoplay marches through all 33 tiles; on a phone most of the grid is
+  // below the fold, so follow the active tile - the class must SEE the
+  // letter being said, especially when the screen is mirrored to a TV.
+  useEffect(() => {
+    if (!playing) return
+    try { document.querySelector('[data-play-active="1"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch { /* ignore */ }
+  }, [playing, playIdx])
 
   useEffect(() => {
     if (!playing || family) return undefined
@@ -2359,6 +2367,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
               return (
                 <motion.button
                   key={f.id}
+                  data-play-active={isActive ? 1 : undefined}
                   type="button"
                   onClick={() => {
                     stopPlay()
@@ -2701,7 +2710,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="fq-land-grid4 grid grid-cols-2 gap-3">
           {question?.options.map((key) => {
             const form = formOf(key)
             const isTarget = key === question.target
@@ -2716,7 +2725,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: key } })}
                 animate={showAsWrong ? { x: [0, -9, 9, -6, 6, 0] } : showAsCorrect ? { scale: [1, 1.08, 1] } : {}}
                 transition={{ duration: 0.4 }}
-                className={`chunk geez flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
+                className={`chunk geez fq-land-tile flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
                 style={{
                   background: showAsCorrect ? 'var(--go-soft)' : showAsWrong ? 'var(--bad-soft)' : 'var(--card)',
                   borderColor: showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--line)',

@@ -200,6 +200,33 @@ function TurnIns({ code, seed }) {
  * THE TERM PLAN - the teacher's syllabus. Each week owns its TV lesson,
  * its homework link (created once, re-shared identical), and its turn-ins.
  */
+/** Free pace choice: the presets are suggestions, not limits - a teacher
+    types any 1-10 families a week and the term relays out around it. */
+function PerWeekInput({ current = null, onSet }) {
+  const [val, setVal] = useState('')
+  const n = Math.floor(Number(val))
+  const ok = Number.isFinite(n) && n >= 1 && n <= 10
+  return (
+    <form
+      className="mt-2 flex items-center gap-2"
+      onSubmit={(e) => { e.preventDefault(); if (ok) { onSet(n); setVal('') } }}
+    >
+      <input
+        type="number" min="1" max="10" inputMode="numeric" value={val}
+        onChange={(e) => setVal(e.target.value)}
+        placeholder={current ? String(current) : '5'}
+        aria-label={t('tmPerWeekAny', 'Your own pace (1-10)')}
+        className={`mono w-20 rounded-2xl border-2 px-3 py-2 text-center font-black ${FOCUS}`}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+      />
+      <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('tmPerWeekUnit', 'families a week')}</span>
+      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+        {t('tmPerWeekSet', 'Set')}
+      </button>
+    </form>
+  )
+}
+
 function TermPlanCard({ code, teacher, onTv, onChanged }) {
   const cls = loadTeacher().classes[code]
   const plan = cls?.plan || null
@@ -241,6 +268,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
             </button>
           ))}
         </div>
+        <PerWeekInput onSet={(n) => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} />
       </SectionCard>
     )
   }
@@ -279,14 +307,17 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
       {/* Explicit pace chooser: tapping Change pace shows the three options
          (the old link silently cycled the pace, which read as broken). */}
       {changing ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {[1, 2, 3].map((n) => (
-            <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
-              ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
-              : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-              {t('tmPerWeek', '{n} families a week', { n })}
-            </button>
-          ))}
+        <div className="mt-3">
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3].map((n) => (
+              <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
+                ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
+                : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                {t('tmPerWeek', '{n} families a week', { n })}
+              </button>
+            ))}
+          </div>
+          <PerWeekInput current={plan.perWeek} onSet={(n) => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} />
         </div>
       ) : (
         <button type="button" onClick={() => setChanging(true)} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>

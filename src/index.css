@@ -198,3 +198,12 @@ input, textarea, [contenteditable='true'] {
   .fq-tv-center { flex-direction: row !important; gap: 2.5rem; }
   .fq-tv-letter { font-size: min(32vh, 32vw); }
 }
+
+/* Short-landscape (a phone on its side / mirrored to a TV): the quiz lays
+   its four options in one row of shorter tiles, and fixed-height game areas
+   cap to the viewport so nothing pushes below the fold. */
+@media (orientation: landscape) and (max-height: 600px) {
+  .fq-land-grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .fq-land-tile { height: 6rem !important; }
+  .fq-land-short { height: min(20rem, 48vh) !important; }
+}

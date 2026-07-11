@@ -400,8 +400,11 @@ export function classTroubleLetters(code, limit = 6) {
  * owns its TV lesson, its homework link, and its turn-ins. The week list is
  * derived, never stored; only {perWeek, startDay} persists per class.
  */
+// The teacher chooses the pace freely (1-10 families a week) - presets are
+// suggestions, not limits. 10 covers even an intensive summer program.
+export const TERM_PER_WEEK_MAX = 10
 export function termWeeks(perWeek) {
-  const per = Math.max(1, Math.min(4, Math.round(Number(perWeek) || 0)))
+  const per = Math.max(1, Math.min(TERM_PER_WEEK_MAX, Math.round(Number(perWeek) || 0)))
   const ids = FIDEL_FAMILIES.map((f) => f.id)
   const weeks = []
   for (let i = 0; i < ids.length; i += per) weeks.push(ids.slice(i, i + per))
@@ -412,7 +415,7 @@ export function saveTermPlan(code, perWeek, startDay = dayStamp()) {
   const c = sanitizeClassCode(code)
   const t = loadTeacher()
   if (!t.classes[c]) return null
-  const per = Math.max(1, Math.min(4, Math.round(Number(perWeek) || 0)))
+  const per = Math.max(1, Math.min(TERM_PER_WEEK_MAX, Math.round(Number(perWeek) || 0)))
   const prev = t.classes[c].plan
   t.classes = { ...t.classes, [c]: { ...t.classes[c], plan: { perWeek: per, startDay } } }
   // A pace change redraws the week boundaries, so week-linked assignments no

@@ -190,6 +190,9 @@ describe('teacher memory: assignments, turn-ins, trouble, term plan', () => {
   it('lays the term out as weeks and tracks the current one', () => {
     expect(termWeeks(2).length).toBe(Math.ceil(FIDEL_FAMILIES.length / 2))
     expect(termWeeks(2)[0]).toEqual(FIDEL_FAMILIES.slice(0, 2).map((f) => f.id))
+    // the teacher chooses freely up to 10 families a week; junk clamps
+    expect(termWeeks(10).length).toBe(Math.ceil(FIDEL_FAMILIES.length / 10))
+    expect(termWeeks(99)[0].length).toBe(10)
     createClass('ABEBA1', 'Mekdes')
     saveTermPlan('ABEBA1', 2, '2026-07-06')
     const plan = loadTeacher().classes.ABEBA1.plan

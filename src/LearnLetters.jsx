@@ -468,7 +468,7 @@ function StarTrail({ ctx, onTouch }) {
         {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
         {t('starHint', 'Slide star to star and draw the constellation')}
       </p>
-      <div {...handlers} className="relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #1b2b4a, #2c3f66)' }}>
+      <div {...handlers} className="fq-land-short relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #1b2b4a, #2c3f66)' }}>
         {/* twinkle dust */}
         {[12, 30, 55, 70, 88, 42, 62].map((left, i) => (
           <motion.span key={i} className="absolute h-1 w-1 rounded-full bg-white" style={{ left: `${left}%`, top: `${(i * 31) % 80 + 6}%` }} animate={{ opacity: [0.2, 0.9, 0.2] }} transition={{ duration: 2 + (i % 3), repeat: Infinity }} aria-hidden="true" />
