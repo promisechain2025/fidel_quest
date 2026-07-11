@@ -64,13 +64,20 @@ export function setActivePack(id) {
   return true
 }
 
+/** The script families a pack actually uses: most are shared by every
+    language, but a family tagged `only` (e.g. qhe/ቐ, Tigrinya-specific)
+    exists solely for the packs it names. */
+export function packFamilies(script, pack) {
+  return script.families.filter((f) => !f.only || f.only.includes(pack.id))
+}
+
 /** Join script + pack into the family shape the modes have always used. */
 export function mergeFamilies(script = ETHIOPIC_SCRIPT, pack = PACKS[getActivePackId()]) {
   const twinOfId = {}
   for (const group of pack.twins) {
     for (const id of group.slice(1)) twinOfId[id] = group[0]
   }
-  return script.families.map((f) => {
+  return packFamilies(script, pack).map((f) => {
     const lang = pack.families[f.id] || { name: f.id, consonant: '' }
     const merged = { id: f.id, chars: f.chars, ...lang }
     if (f.labial) merged.labial = f.labial
@@ -110,7 +117,10 @@ export function deriveIndexes(forms) {
  */
 export function validatePack(script, pack) {
   const errors = []
-  const ids = new Set(script.families.map((f) => f.id))
+  // Only the families applicable to THIS pack are required of it - and a
+  // pack must not define one that is not applicable to it (e.g. qhe in am).
+  const applicable = packFamilies(script, pack)
+  const ids = new Set(applicable.map((f) => f.id))
 
   if (!pack.id) errors.push('pack has no id')
   if (!Array.isArray(pack.orders) || pack.orders.length !== script.orderCount) {
@@ -163,8 +173,8 @@ export function validatePack(script, pack) {
     }
   }
 
-  // Words must be writable in the script (labialized forms included).
-  const scriptChars = new Set(script.families.flatMap((f) => [...Array.from(f.chars), ...(f.labial ? [f.labial] : [])]))
+  // Words must be writable in this pack's script (labialized forms included).
+  const scriptChars = new Set(applicable.flatMap((f) => [...Array.from(f.chars), ...(f.labial ? [f.labial] : [])]))
   for (const [id, fam] of Object.entries(pack.families)) {
     if (!fam.word) continue
     for (const ch of Array.from(fam.word.geez)) {

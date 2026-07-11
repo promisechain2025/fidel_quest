@@ -123,11 +123,11 @@ export const LEVELS = Object.freeze([
   { id: 'level-1', n: 1, kind: 'base', title: 'First Letters', blurb: 'Meet the first eight Fidel', from: 0, to: 8 },
   { id: 'level-2', n: 2, kind: 'base', title: 'More Letters', blurb: 'Eight new friends', from: 8, to: 16 },
   { id: 'level-3', n: 3, kind: 'base', title: 'Even More Letters', blurb: 'The middle of the table', from: 16, to: 24 },
-  { id: 'level-4', n: 4, kind: 'base', title: 'The Last Letters', blurb: 'Finish the whole alphabet', from: 24, to: 33 },
+  { id: 'level-4', n: 4, kind: 'base', title: 'The Last Letters', blurb: 'Finish the whole alphabet', from: 24, to: FIDEL_FAMILIES.length },
   { id: 'level-5', n: 5, kind: 'orders', title: 'Vowel Magic', blurb: 'Same letter, seven sounds', from: 0, to: 8 },
   { id: 'level-6', n: 6, kind: 'orders', title: 'More Vowel Magic', blurb: 'New families, all their sounds', from: 8, to: 16 },
   { id: 'level-7', n: 7, kind: 'orders', title: 'Deep Vowels', blurb: 'The middle families, every order', from: 16, to: 24 },
-  { id: 'level-8', n: 8, kind: 'orders', title: 'Vowel Master', blurb: 'All 231 letters conquered', from: 24, to: 33 },
+  { id: 'level-8', n: 8, kind: 'orders', title: 'Vowel Master', blurb: `All ${FIDEL_FAMILIES.length * 7} letters conquered`, from: 24, to: FIDEL_FAMILIES.length },
 ].map((l) => ({
   ...l,
   families: FIDEL_FAMILIES.slice(l.from, l.to).map((f) => f.id),

@@ -262,7 +262,7 @@ function saveLearn(state) {
 export function buildStones() {
   const stones = []
   for (let g = 0; g < 4; g++) {
-    const familyIds = FIDEL_FAMILIES.slice(g * 8, g === 3 ? 33 : g * 8 + 8).map((f) => f.id)
+    const familyIds = FIDEL_FAMILIES.slice(g * 8, g === 3 ? FIDEL_FAMILIES.length : g * 8 + 8).map((f) => f.id)
     familyIds.forEach((fid, i) => {
       stones.push({ type: 'family', id: fid, group: g + 1 })
       if (i > 0) {
@@ -285,7 +285,7 @@ export function stoneUnlocked(learn, index) {
 
 /** A quiz group is playable once all its families are mastered. */
 export function groupMastered(learn, group) {
-  return FIDEL_FAMILIES.slice((group - 1) * 8, group === 4 ? 33 : (group - 1) * 8 + 8).every((f) =>
+  return FIDEL_FAMILIES.slice((group - 1) * 8, group === 4 ? FIDEL_FAMILIES.length : (group - 1) * 8 + 8).every((f) =>
     learn.mastered.includes(f.id),
   )
 }
@@ -1197,7 +1197,7 @@ export default function LearnLetters({ soundOn, onBack }) {
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-black leading-tight">{t('learnTitle', 'Letter Steps')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {t('learnSub', 'Learn every letter, one step at a time')} · {masteredCount}/33
+            {t('learnSub', 'Learn every letter, one step at a time')} · {masteredCount}/{FIDEL_FAMILIES.length}
           </p>
         </div>
         <Hero size={56} />

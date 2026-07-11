@@ -11,9 +11,10 @@
    STATUS: sounds are best-effort romanizations and the word list is small;
    REQUIRES NATIVE-SPEAKER REVIEW before this pack is user-facing. Letter
    audio is live: the pack reuses the Amharic recordings for shared sounds and
-   redirects the four Tigrinya-distinct consonants (hha/kha/khe/ae) to human
-   recordings under letters/ti/ (see audioOverride below). Words fall back to
-   the deterministic chime until a Tigrinya word list is recorded.
+   redirects the Tigrinya-distinct consonants (hha/kha/khe/ae, plus the
+   Tigrinya-ONLY qhe/ቐ family) to human recordings under letters/ti/ (see
+   audioOverride below). Words fall back to the deterministic chime until a
+   Tigrinya word list is recorded.
    ========================================================================== */
 
 export const TI_PACK = Object.freeze({
@@ -50,6 +51,9 @@ export const TI_PACK = Object.freeze({
     },
     she: { name: 'She', consonant: 'sh', word: { geez: 'ሻሂ', latin: 'shahi', meaning: 'tea', picture: '🍵' } },
     qe: { name: 'Qe', consonant: 'q', word: { geez: 'ቆልዓ', latin: 'qola', meaning: 'child', picture: '👶' } },
+    // Tigrinya-only family (the script tags it only:['ti']): the explosive
+    // ቐ that Amharic folds into plain ቀ. Human recording under letters/ti/.
+    qhe: { name: 'Qhe', consonant: 'qh' },
     be: {
       name: 'Be', consonant: 'b', word: { geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' },
       words: [{ geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles-ti', meaning: 'cactus fig', picture: '🍈' }, { geez: 'ቡን', latin: 'bun', meaning: 'coffee', picture: '☕' }, { geez: 'ቡምባ', latin: 'bumba', meaning: 'water tap', picture: '🚰' }, { geez: 'ባኒ', latin: 'bani', meaning: 'bread', picture: '🍞' }],
@@ -97,5 +101,5 @@ export const TI_PACK = Object.freeze({
   // audioEngine). Sharing the base means no clip is duplicated on disk.
   audioBase: '/audio/fidel/',
   manifestUrl: '/audio/fidel/manifest.json',
-  audioOverride: { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae'] },
+  audioOverride: { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae', 'qhe'] },
 })

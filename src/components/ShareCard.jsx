@@ -3,7 +3,7 @@
    share sheet (WhatsApp / social) via the Web Share API, falling back to a
    PNG download. No backend, no accounts, no data leaves the device unless the
    parent chooses to share the image. */
-import { drawAnbessa, drawWearables } from '../FidelQuestApp'
+import { drawAnbessa, drawWearables, FIDEL_FAMILIES } from '../FidelQuestApp'
 import { track } from '../platform/analytics'
 import { isNativePlatform, isApplePlatform } from '../platform/native'
 import { appStoreUrl } from '../platform/gift'
@@ -110,7 +110,7 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   g.textAlign = 'center'
   g.textBaseline = 'middle'
   g.font = `900 ${S * 0.055}px system-ui, sans-serif`
-  g.fillText(`${forms} / 231 letters learned`, S / 2, pillY + pillH * 0.5)
+  g.fillText(`${forms} / ${FIDEL_FAMILIES.length * 7} letters learned`, S / 2, pillY + pillH * 0.5)
 
   // Footer tagline.
   g.fillStyle = '#7c3d00'

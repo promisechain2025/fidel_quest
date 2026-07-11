@@ -4,6 +4,9 @@
    orders. Everything language-specific (sounds, names, twins, words, UI
    copy) lives in a language pack (src/packs/*). GENERATED from the
    validated src/data/fidelGameData.js — regenerate, never hand-edit.
+   Families used by only SOME languages carry `only: [packId, ...]` (e.g.
+   qhe/ቐ exists in Tigrinya but not Amharic); the engine filters them per
+   pack, and the codepoints are locked down by the script-table tests.
    ========================================================================== */
 
 export const ETHIOPIC_SCRIPT = Object.freeze({
@@ -19,6 +22,7 @@ export const ETHIOPIC_SCRIPT = Object.freeze({
     {"id":"se","chars":"ሰሱሲሳሴስሶ","labial":"ሷ"},
     {"id":"she","chars":"ሸሹሺሻሼሽሾ","labial":"ሿ"},
     {"id":"qe","chars":"ቀቁቂቃቄቅቆ","labial":"ቋ"},
+    {"id":"qhe","chars":"ቐቑቒቓቔቕቖ","labial":"ቘ","only":["ti"]},
     {"id":"be","chars":"በቡቢባቤብቦ","labial":"ቧ"},
     {"id":"te","chars":"ተቱቲታቴትቶ","labial":"ቷ"},
     {"id":"che","chars":"ቸቹቺቻቼችቾ","labial":"ቿ"},

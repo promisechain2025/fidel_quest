@@ -75,7 +75,7 @@ export const SESSIONS = [
 ].map((s, i) => ({
   ...s,
   fruit: SESSION_FRUIT[i],
-  pool: BASE_FORMS.slice(i * 8, i === 3 ? 33 : i * 8 + 8).map((f) => f.audioKey),
+  pool: BASE_FORMS.slice(i * 8, i === 3 ? BASE_FORMS.length : i * 8 + 8).map((f) => f.audioKey),
 }))
 
 /** Cumulative pool for game level n: sessions 1..n. */

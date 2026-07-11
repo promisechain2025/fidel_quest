@@ -68,9 +68,10 @@ export function isNodeFree(node) {
   return false // quiz bosses and vowel laps are part of the paid app
 }
 
-/** Family ids for chapter c (0..3): the 8/8/8/9 groups. */
+/** Family ids for chapter c (0..3): groups of 8, the last chapter taking
+    the remainder (9 in Amharic, 10 in Tigrinya with its extra ቐ family). */
 export function chapterFamilies(c) {
-  return FIDEL_FAMILIES.slice(c * 8, c === 3 ? 33 : c * 8 + 8).map((f) => f.id)
+  return FIDEL_FAMILIES.slice(c * 8, c === 3 ? FIDEL_FAMILIES.length : c * 8 + 8).map((f) => f.id)
 }
 
 /* The ordered path. Each chapter is:
@@ -239,7 +240,13 @@ export function chapterComplete(p, nodeId) {
 /** Child-facing progress for the share card and Closet. */
 export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length
-  return { families, totalFamilies: 33, forms: families * 7, totalForms: 231, nodes: Object.keys(p.done || {}).length }
+  return {
+    families,
+    totalFamilies: FIDEL_FAMILIES.length,
+    forms: families * 7,
+    totalForms: FIDEL_FAMILIES.length * 7,
+    nodes: Object.keys(p.done || {}).length,
+  }
 }
 
 /** The family ids the child has actually learned (completed LEARN nodes), in
