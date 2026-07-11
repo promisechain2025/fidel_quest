@@ -458,22 +458,30 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   // Wrong-pick feedback is view-local: which card is shaking and how many
   // misses on the CURRENT stone. At SINK_MISSES Anbessa slips into the
   // water and the rescue banner takes over; a correct pick (the pulsing
-  // card) pulls him back up and the crossing continues.
+  // card) pulls him back up and the crossing continues. `teachKey` pins
+  // the letter the banner teaches to the one that was actually MISSED -
+  // the live target advances in the same tap that rescues him, so reading
+  // it from ctx would flash the next letter as a free hint.
   const [wrongKey, setWrongKey] = useState(null)
   const [misses, setMisses] = useState(0)
+  const [teachKey, setTeachKey] = useState(null)
   const wrongTimer = useRef(null)
   useEffect(() => () => clearTimeout(wrongTimer.current), [])
-  useEffect(() => {
-    setMisses(0)
-  }, [activeKey])
   const sunk = misses >= SINK_MISSES
   const tray = useMemo(() => (forward ? ctx.forms : trayMix(ctx.forms, seed)), [forward, ctx.forms, seed])
   const pick = useCallback(
     (k) => {
       if (k === activeKey) {
+        // Clear the sink state in the SAME event as the advance: doing it in
+        // an activeKey effect runs after paint, leaving a visible moment
+        // where the banner and pulse point at the next letter.
+        setMisses(0)
+        setWrongKey(null)
+        clearTimeout(wrongTimer.current)
         playPluck(formOf(k)?.order ?? 1, soundOn)
       } else {
         setWrongKey(k)
+        setTeachKey(activeKey)
         setMisses((m) => m + 1)
         clearTimeout(wrongTimer.current)
         wrongTimer.current = setTimeout(() => setWrongKey(null), 520)
@@ -591,7 +599,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <span className="geez text-4xl font-black" style={{ color: 'var(--accent-deep)' }}>{activeForm?.char}</span>
+              <span className="geez text-4xl font-black" style={{ color: 'var(--accent-deep)' }}>{formOf(teachKey)?.char}</span>
               <span className="text-left text-sm font-extrabold leading-tight" style={{ color: 'var(--ink)' }}>
                 {t('stoneTeach', 'This is the letter! Tap it below to pull Anbessa up')}
               </span>
@@ -607,7 +615,8 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           const wrong = k === wrongKey
           // Once Anbessa is in the water the right card pulses: the rescue
           // is guided, so the sink teaches instead of stalling the child.
-          const hinted = sunk && k === activeKey
+          // Keyed to the MISSED letter, never the live target.
+          const hinted = sunk && k === teachKey
           return (
             <motion.button
               key={k}
