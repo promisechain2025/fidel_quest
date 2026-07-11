@@ -4,10 +4,12 @@
    Kids must LEARN letters before being quizzed on them. Per family:
 
      MEET      each form arrives alone, huge; touch it to hear it
-     FORWARD   stepping stones: tap each letter card in the tray and
-               Anbessa hops the river, letter by letter (tray in order)
-     BACKWARD  hop back home the other way with the tray lightly mixed
-               (breaks rote position-memory)
+     FORWARD   stepping stones: a letter is SPOKEN; pick it from the
+               bottom tray and Anbessa hops the next stone (tray in
+               reading order)
+     BACKWARD  the same trip home with the tray lightly mixed; two
+               misses and Anbessa sinks - the missed letter is taught
+               (big + voiced), never a wall
      ECHO      a form is spoken; touch it in the ORDERED row (position helps)
      SHUFFLE   the row scrambles; five spoken rounds prove real recognition
 
@@ -291,8 +293,8 @@ export function groupMastered(learn, group) {
 /* ============================================================================
    §3 UI — every phase is a mini-game
    MEET     Bubble Pop: the letter drifts in a wobbling bubble; pop it
-   FORWARD/ Stepping Stones: tap the letter card in the bottom tray and
-   BACKWARD Anbessa hops onto that stone; ordered out, lightly mixed back
+   FORWARD/ Stepping Stones: hear a letter, pick its card in the bottom
+   BACKWARD tray, Anbessa hops on; two misses = he sinks + we teach it
    ECHO     Feed Anbessa: touch the spoken cookie and it flies to his mouth
    SHUFFLE  Jibby the Thief: he creeps toward the cookies each round; grab
             the spoken letter and he retreats (tension, never punishment)
@@ -415,15 +417,18 @@ function BubbleMeet({ ctx, onTouch }) {
 
 /* ── STEPPING STONES ──
    The seven forms are stones across a river, and their letter CARDS sit in
-   a tray at the bottom. The child taps the card that matches the glowing
-   stone and ANBESSA HOPS onto it - cross the river one way, then hop back
-   home: the exact ordered traversal the step machine asks for, told as a
-   story a four-year-old reads at a glance. Difficulty is staged: the first
-   crossing keeps the tray in reading order (learn the sequence), the trip
-   home lightly mixes it (prove it without the position crutch), and the
-   spoken games after go harder still. A wrong card shakes and speaks
-   itself; after two misses on one stone the right card pulses so nobody
-   gets stuck. Each hop plays a rising pentatonic plop. */
+   a tray at the bottom. The game is LISTEN-AND-FIND: the app speaks the
+   next letter, the child picks its card by ear, and ANBESSA HOPS onto the
+   next stone - cross the river one way, then hop back home: the exact
+   ordered traversal the step machine asks for. Difficulty is staged: the
+   first crossing keeps the tray in reading order, the trip home lightly
+   mixes it, and the spoken games after go harder still. A wrong pick
+   shakes the card and re-voices the ASKED letter; on the second miss
+   Anbessa SINKS and the rescue banner teaches the missed letter (shown
+   big, voiced, its card pulsing) - tapping it pulls him back up, so a
+   sink is a lesson, never a wall. Every pick lands in the trouble ledger,
+   so the warm-up coach later recommends reviewing the letters that sank
+   him. Each hop plays a rising pentatonic plop. */
 const STONE_POINTS = [0, 1, 2, 3, 4, 5, 6].map((i) => ({
   left: 12 + i * 12.6,
   top: i % 2 === 0 ? 62 : 40,
@@ -444,11 +449,16 @@ export function trayMix(forms, seed) {
   return arr
 }
 
+const SINK_MISSES = 2
+
 function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const forward = ctx.phase === LearnPhase.FORWARD
   const activeKey = ctx.forms[ctx.idx]
-  // Wrong-pick feedback is view-local: which card is shaking, and how many
-  // misses on the CURRENT stone (two misses -> the right card pulses).
+  const activeForm = formOf(activeKey)
+  // Wrong-pick feedback is view-local: which card is shaking and how many
+  // misses on the CURRENT stone. At SINK_MISSES Anbessa slips into the
+  // water and the rescue banner takes over; a correct pick (the pulsing
+  // card) pulls him back up and the crossing continues.
   const [wrongKey, setWrongKey] = useState(null)
   const [misses, setMisses] = useState(0)
   const wrongTimer = useRef(null)
@@ -456,6 +466,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   useEffect(() => {
     setMisses(0)
   }, [activeKey])
+  const sunk = misses >= SINK_MISSES
   const tray = useMemo(() => (forward ? ctx.forms : trayMix(ctx.forms, seed)), [forward, ctx.forms, seed])
   const pick = useCallback(
     (k) => {
@@ -478,10 +489,21 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const stand = standIdx < 0 ? BANKS.left : standIdx >= ctx.forms.length ? BANKS.right : STONE_POINTS[standIdx]
   return (
     <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
-      <p className="flex items-center gap-2 text-lg font-extrabold">
-        {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
-        {forward ? t('stoneFwd', 'Tap the letter below to hop across!') : t('stoneBack', 'Find each letter to hop back home!')}
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="flex items-center gap-2 text-lg font-extrabold">
+          {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
+          {forward ? t('stoneFwd', 'Listen! Tap the letter to hop across!') : t('stoneBack', 'Listen! Hop back home!')}
+        </p>
+        <button
+          type="button"
+          onClick={() => playForm(activeForm, soundOn)}
+          aria-label={t('hearIt', 'Hear it again')}
+          className={`chunk flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${FOCUS}`}
+          style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+        >
+          <Volume2 className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
       {/* The river is a picture now, not a touch target: the child plays the
           TRAY below, and the stones show where Anbessa is going. */}
       <div className="fq-land-short pointer-events-none relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #aee3ff 0%, #7ecbfa 26%, #2fa8ec 30%, #1287cf 100%)' }} aria-hidden="true">
@@ -494,7 +516,10 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
         {[18, 42, 66, 84].map((left, i) => (
           <motion.span key={i} className="absolute h-1.5 w-10 rounded-full" style={{ left: `${left}%`, top: `${34 + (i * 17) % 46}%`, background: 'rgba(255,255,255,0.35)' }} animate={{ x: [0, 10, 0], opacity: [0.25, 0.6, 0.25] }} transition={{ duration: 3 + i, repeat: Infinity }} />
         ))}
-        {/* the stones */}
+        {/* The stones are BLANK until crossed: showing their letters would
+            let the child shape-match card to stone instead of picking by
+            ear. A stone earns its letter (golden) once Anbessa lands on
+            it, leaving a readable trail of the crossing so far. */}
         {ctx.forms.map((k, i) => {
           const form = formOf(k)
           const p2 = STONE_POINTS[i]
@@ -513,29 +538,66 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
                   : active
                     ? 'radial-gradient(circle at 35% 30%, #fffbe9, #efe3c8)'
                     : 'radial-gradient(circle at 35% 30%, #d7dde2, #97a3ac)',
-                color: done ? '#7c5200' : active ? '#6b5316' : '#4b5560',
+                color: '#7c5200',
                 border: `3px solid ${done ? '#c98d0a' : active ? '#ffc800' : 'rgba(255,255,255,0.55)'}`,
                 boxShadow: active
                   ? '0 0 0 5px rgba(255,200,0,0.35), 0 6px 0 rgba(0,0,0,0.22)'
                   : '0 6px 0 rgba(0,0,0,0.22)',
               }}
             >
-              {form?.char}
+              {done ? form?.char : ''}
             </motion.div>
           )
         })}
-        {/* Anbessa hops to the stone he just won (spring = the jump) */}
+        {/* Anbessa hops to the stone he just won (spring = the jump). The
+            animated element is a ZERO-SIZE anchor at the stone's center and
+            the sprite hangs off it by fixed pixel offsets - framer-motion
+            owns `transform`, so percentage self-offsets there get dropped
+            and he would drift off the stones (the bug this replaces).
+            When the child misses twice he SINKS: the anchor drops into the
+            water, he tilts, and a splash ring blooms on the surface. */}
         <motion.div
-          className="absolute z-10"
+          className="absolute z-10 h-0 w-0"
           initial={false}
-          animate={{ left: `${stand.left}%`, top: `${stand.top}%` }}
+          animate={{ left: `${stand.left}%`, top: `${stand.top + (sunk ? 15 : 0)}%` }}
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-          style={{ transform: 'translate(-50%, -100%)' }}
         >
-          <div className="-translate-x-1/2 -translate-y-[92%]">
+          <motion.div className="absolute" style={{ left: -27, top: -66 }} animate={{ rotate: sunk ? -16 : 0 }}>
             <Hero size={54} />
-          </div>
+          </motion.div>
         </motion.div>
+        <AnimatePresence>
+          {sunk && (
+            <motion.div
+              key="splash"
+              className="absolute z-10 h-4 w-16 rounded-full"
+              style={{ left: `calc(${stand.left}% - 2rem)`, top: `${stand.top}%`, border: '3px solid rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.25)' }}
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: [0, 0.9, 0.5], scale: [0.4, 1.15, 1] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7 }}
+            />
+          )}
+        </AnimatePresence>
+        {/* Rescue banner: the sink becomes the lesson - the missed letter,
+            big and voiced, with its card pulsing in the tray below. */}
+        <AnimatePresence>
+          {sunk && (
+            <motion.div
+              key="teach"
+              className="absolute inset-x-0 top-2 z-20 mx-auto flex w-fit max-w-[92%] items-center gap-3 rounded-2xl px-4 py-2"
+              style={{ background: 'var(--card)', boxShadow: '0 6px 18px rgba(0,0,0,0.3)' }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <span className="geez text-4xl font-black" style={{ color: 'var(--accent-deep)' }}>{activeForm?.char}</span>
+              <span className="text-left text-sm font-extrabold leading-tight" style={{ color: 'var(--ink)' }}>
+                {t('stoneTeach', 'This is the letter! Tap it below to pull Anbessa up')}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
       {/* the tray: FORWARD keeps reading order, BACKWARD is lightly mixed */}
       <div className="grid w-full grid-cols-7 gap-1.5" role="group" aria-label={t('stoneTray', 'Letter cards')}>
@@ -543,7 +605,9 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           const form = formOf(k)
           const done = isDone(ctx.forms.indexOf(k))
           const wrong = k === wrongKey
-          const hinted = misses >= 2 && k === activeKey
+          // Once Anbessa is in the water the right card pulses: the rescue
+          // is guided, so the sink teaches instead of stalling the child.
+          const hinted = sunk && k === activeKey
           return (
             <motion.button
               key={k}
@@ -849,9 +913,26 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     (key) => {
       const { advanced, correct } = learnTransition(ctx, key)
       const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
+      const stones = ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD
+      // The stones are a listen-and-find game: the target was already spoken,
+      // so a correct pick needs no re-voicing (the pluck + hop confirm it) and
+      // a wrong pick re-voices the ASKED letter, same as the feed game. Every
+      // pick lands in the trouble ledger so the warm-up coach later recommends
+      // reviewing the letters that sank Anbessa.
+      if (stones) {
+        recordAnswer(ctx.forms[ctx.idx], key, 'learn')
+        if (!correct) {
+          playEffect('bad', soundOn)
+          clearTimeout(retargetTimer.current)
+          retargetTimer.current = setTimeout(() => playForm(formOf(ctx.forms[ctx.idx]), soundOn), 420)
+        }
+        if (advanced) setBurst((b) => b + 1)
+        dispatch(key)
+        return
+      }
       // Outside the feed game every tap voices the letter it touched (that IS
-      // the point - hear each star / bubble). In the feed game we never voice
-      // the tapped letter: a correct pick is announced as the next target, and
+      // the point - hear each bubble). In the feed game we never voice the
+      // tapped letter: a correct pick is announced as the next target, and
       // a wrong pick is deliberately NOT voiced (see the wrong branch below).
       if (!spoken) playForm(formOf(key), soundOn)
       if (spoken) {
@@ -896,6 +977,22 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     },
     [soundOn],
   )
+
+  // Stones: the game is listen-and-find, so speak the letter to pick whenever
+  // it becomes the target. Entering the phase waits longer - the last bubble
+  // (or the far bank's last letter) may still be voicing - and the engine's
+  // voice queue guards whatever this timing misses.
+  const prevStonePhase = useRef(null)
+  useEffect(() => {
+    if (ctx.phase !== LearnPhase.FORWARD && ctx.phase !== LearnPhase.BACKWARD) {
+      prevStonePhase.current = null
+      return undefined
+    }
+    const entering = prevStonePhase.current !== ctx.phase
+    prevStonePhase.current = ctx.phase
+    const timer = setTimeout(() => playForm(formOf(ctx.forms[ctx.idx]), soundOn), entering ? 1400 : 700)
+    return () => clearTimeout(timer)
+  }, [ctx.phase, ctx.idx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Speak spoken-round targets; celebrate phase changes and completion.
   const prevSpokenPhase = useRef(null)
