@@ -11,6 +11,7 @@ import {
   STONES,
   stoneUnlocked,
   groupMastered,
+  trayMix,
 } from './LearnLetters'
 import { INDEXES, FIDEL_FAMILIES } from './FidelQuestApp'
 
@@ -114,6 +115,26 @@ describe('the step machine', () => {
     }
     expect(run(11)).toBe(run(11))
     expect(run(11)).not.toBe(run(12))
+  })
+})
+
+describe('the stepping-stone tray (staged difficulty)', () => {
+  const forms = learnInitial('ha', 7).forms
+  it('BACKWARD gets "a little mix": same letters, deterministic, near home', () => {
+    const mixed = trayMix(forms, 7)
+    expect(mixed).toEqual(trayMix(forms, 7)) // seeded = reproducible
+    expect([...mixed].sort()).toEqual([...forms].sort()) // nothing lost
+    // Light mix only: every card is at most one step from reading order.
+    mixed.forEach((k, i) => {
+      expect(Math.abs(forms.indexOf(k) - i)).toBeLessThanOrEqual(1)
+    })
+  })
+  it('actually mixes for typical seeds (not a no-op)', () => {
+    const moved = [7, 13, 42, 99, 123].filter((s) => {
+      const mixed = trayMix(forms, s)
+      return mixed.some((k, i) => k !== forms[i])
+    })
+    expect(moved.length).toBeGreaterThan(0)
   })
 })
 

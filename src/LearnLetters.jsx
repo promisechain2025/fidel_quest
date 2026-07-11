@@ -4,8 +4,10 @@
    Kids must LEARN letters before being quizzed on them. Per family:
 
      MEET      each form arrives alone, huge; touch it to hear it
-     FORWARD   stepping stones: hop across the river, letter by letter
-     BACKWARD  hop back home the other way (breaks rote position-memory)
+     FORWARD   stepping stones: tap each letter card in the tray and
+               Anbessa hops the river, letter by letter (tray in order)
+     BACKWARD  hop back home the other way with the tray lightly mixed
+               (breaks rote position-memory)
      ECHO      a form is spoken; touch it in the ORDERED row (position helps)
      SHUFFLE   the row scrambles; five spoken rounds prove real recognition
 
@@ -14,15 +16,15 @@
    spoken round ambiguous. Mastering a group unlocks that group's quiz
    level on the home screen.
 
-   Touch-first by design: rows use pointermove + elementFromPoint so a
-   finger SLIDING across letters plays them - no precise tapping required -
-   and every target is finger-of-a-four-year-old sized.
+   Touch-first by design: every target is finger-of-a-four-year-old sized,
+   wrong touches speak the letter instead of punishing, and a stuck child
+   always gets a pulsing hint - nothing here ever blocks.
 
    The step machine is pure and seeded like every other machine in the app;
    the UI dispatches TOUCH events and renders the phase.
    ========================================================================== */
 
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
@@ -289,44 +291,13 @@ export function groupMastered(learn, group) {
 /* ============================================================================
    §3 UI — every phase is a mini-game
    MEET     Bubble Pop: the letter drifts in a wobbling bubble; pop it
-   FORWARD/ Star Constellation: slide finger star-to-star across a night
-   BACKWARD band; a glowing trail draws behind the finger
+   FORWARD/ Stepping Stones: tap the letter card in the bottom tray and
+   BACKWARD Anbessa hops onto that stone; ordered out, lightly mixed back
    ECHO     Feed Anbessa: touch the spoken cookie and it flies to his mouth
    SHUFFLE  Jibby the Thief: he creeps toward the cookies each round; grab
             the spoken letter and he retreats (tension, never punishment)
    The machine (§1) is untouched - these are pure presentation.
    ========================================================================== */
-
-/** Shared slide/touch resolution: fingers, not clicks. */
-function useSlideTouch(onTouch) {
-  const lastRef = useRef(null)
-  const touchAt = useCallback(
-    (clientX, clientY) => {
-      const el = document.elementFromPoint(clientX, clientY)
-      const cell = el && el.closest('[data-form]')
-      if (!cell) return
-      const key = cell.getAttribute('data-form')
-      if (key && key !== lastRef.current) {
-        lastRef.current = key
-        onTouch(key)
-      }
-    },
-    [onTouch],
-  )
-  return {
-    style: { touchAction: 'none' },
-    onPointerDown: (e) => {
-      lastRef.current = null
-      touchAt(e.clientX, e.clientY)
-    },
-    onPointerMove: (e) => {
-      if (e.buttons > 0 || e.pointerType === 'touch') touchAt(e.clientX, e.clientY)
-    },
-    onPointerUp: () => {
-      lastRef.current = null
-    },
-  }
-}
 
 /* Bubble palette: vivid, glossy balls carrying a WHITE letter. Legibility here
    is luminance-based, not hue-based, so it stays clear for color-blind kids and
@@ -442,51 +413,86 @@ function BubbleMeet({ ctx, onTouch }) {
   )
 }
 
-/** Star positions in a vertical zigzag (percent coordinates): the seven stars
-   alternate left/right and step down the tall stage, so adjacent stars sit far
-   apart. On a phone that leaves room for small fingers to swipe from one star
-   to the next without the two overlapping, and it fills the vertical space. */
-/* ── STEPPING STONES (replaces the krar) ──
-   The seven forms are stones across a river. The child taps (or slides
-   along) them in order and ANBESSA HOPS from stone to stone - cross the
-   river one way, then hop back home: the exact ordered traversal the step
-   machine asks for, told as a story a four-year-old reads at a glance.
-   Every touch speaks its letter; only the ordered one advances (it is the
-   stone that pulses). Each hop plays a rising pentatonic plop. */
+/* ── STEPPING STONES ──
+   The seven forms are stones across a river, and their letter CARDS sit in
+   a tray at the bottom. The child taps the card that matches the glowing
+   stone and ANBESSA HOPS onto it - cross the river one way, then hop back
+   home: the exact ordered traversal the step machine asks for, told as a
+   story a four-year-old reads at a glance. Difficulty is staged: the first
+   crossing keeps the tray in reading order (learn the sequence), the trip
+   home lightly mixes it (prove it without the position crutch), and the
+   spoken games after go harder still. A wrong card shakes and speaks
+   itself; after two misses on one stone the right card pulses so nobody
+   gets stuck. Each hop plays a rising pentatonic plop. */
 const STONE_POINTS = [0, 1, 2, 3, 4, 5, 6].map((i) => ({
   left: 12 + i * 12.6,
   top: i % 2 === 0 ? 62 : 40,
 }))
-const BANKS = { left: { left: 2, top: 52 }, right: { left: 98, top: 52 } }
+const BANKS = { left: { left: 9, top: 58 }, right: { left: 92, top: 58 } }
 
-function StoneHops({ ctx, onTouch, soundOn = true }) {
+/** BACKWARD tray: "a little mix" - seeded swaps of adjacent pairs, so every
+    card sits at most one step from its reading-order spot. Deterministic in
+    the lesson seed like everything else. */
+export function trayMix(forms, seed) {
+  const arr = forms.slice()
+  let state = ((seed ?? 1) | 0) ^ 0x51ed
+  for (let i = 0; i + 1 < arr.length; i += 2) {
+    let value
+    ;[value, state] = rngNext(state)
+    if (value < 0.7) [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
+  }
+  return arr
+}
+
+function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const forward = ctx.phase === LearnPhase.FORWARD
-  const hop = useCallback((k) => {
-    playPluck(formOf(k)?.order ?? 1, soundOn)
-    onTouch(k)
-  }, [onTouch, soundOn])
-  const handlers = useSlideTouch(hop)
   const activeKey = ctx.forms[ctx.idx]
+  // Wrong-pick feedback is view-local: which card is shaking, and how many
+  // misses on the CURRENT stone (two misses -> the right card pulses).
+  const [wrongKey, setWrongKey] = useState(null)
+  const [misses, setMisses] = useState(0)
+  const wrongTimer = useRef(null)
+  useEffect(() => () => clearTimeout(wrongTimer.current), [])
+  useEffect(() => {
+    setMisses(0)
+  }, [activeKey])
+  const tray = useMemo(() => (forward ? ctx.forms : trayMix(ctx.forms, seed)), [forward, ctx.forms, seed])
+  const pick = useCallback(
+    (k) => {
+      if (k === activeKey) {
+        playPluck(formOf(k)?.order ?? 1, soundOn)
+      } else {
+        setWrongKey(k)
+        setMisses((m) => m + 1)
+        clearTimeout(wrongTimer.current)
+        wrongTimer.current = setTimeout(() => setWrongKey(null), 520)
+      }
+      onTouch(k)
+    },
+    [onTouch, soundOn, activeKey],
+  )
   const isDone = (i) => (forward ? i < ctx.idx : i > ctx.idx)
   // Anbessa stands on the last stone he won; before the first win he waits
   // on the bank he is crossing FROM.
   const standIdx = forward ? ctx.idx - 1 : ctx.idx + 1
   const stand = standIdx < 0 ? BANKS.left : standIdx >= ctx.forms.length ? BANKS.right : STONE_POINTS[standIdx]
   return (
-    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
+    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
       <p className="flex items-center gap-2 text-lg font-extrabold">
         {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
-        {forward ? t('stoneFwd', 'Hop across the river!') : t('stoneBack', 'Now hop back home!')}
+        {forward ? t('stoneFwd', 'Tap the letter below to hop across!') : t('stoneBack', 'Find each letter to hop back home!')}
       </p>
-      <div {...handlers} className="fq-land-short relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #aee3ff 0%, #7ecbfa 26%, #2fa8ec 30%, #1287cf 100%)' }}>
+      {/* The river is a picture now, not a touch target: the child plays the
+          TRAY below, and the stones show where Anbessa is going. */}
+      <div className="fq-land-short pointer-events-none relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #aee3ff 0%, #7ecbfa 26%, #2fa8ec 30%, #1287cf 100%)' }} aria-hidden="true">
         {/* far bank, sun, and the two grassy shores */}
-        <div className="pointer-events-none absolute inset-x-0 top-[22%] h-3" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(3px)' }} aria-hidden="true" />
-        <div className="pointer-events-none absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: 'radial-gradient(circle at 40% 35%, #fff3b0, #ffc800)', boxShadow: '0 0 24px 6px rgba(255,200,0,0.45)' }} aria-hidden="true" />
-        <div className="pointer-events-none absolute bottom-0 left-0 top-[26%] w-[9%] rounded-r-3xl" style={{ background: 'linear-gradient(to right, #58cc02, #3f9302)' }} aria-hidden="true" />
-        <div className="pointer-events-none absolute bottom-0 right-0 top-[26%] w-[9%] rounded-l-3xl" style={{ background: 'linear-gradient(to left, #58cc02, #3f9302)' }} aria-hidden="true" />
+        <div className="absolute inset-x-0 top-[22%] h-3" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(3px)' }} />
+        <div className="absolute left-[46%] top-2 h-10 w-10 rounded-full" style={{ background: 'radial-gradient(circle at 40% 35%, #fff3b0, #ffc800)', boxShadow: '0 0 24px 6px rgba(255,200,0,0.45)' }} />
+        <div className="absolute bottom-0 left-0 top-[26%] w-[9%] rounded-r-3xl" style={{ background: 'linear-gradient(to right, #58cc02, #3f9302)' }} />
+        <div className="absolute bottom-0 right-0 top-[26%] w-[9%] rounded-l-3xl" style={{ background: 'linear-gradient(to left, #58cc02, #3f9302)' }} />
         {/* drifting ripples */}
         {[18, 42, 66, 84].map((left, i) => (
-          <motion.span key={i} className="pointer-events-none absolute h-1.5 w-10 rounded-full" style={{ left: `${left}%`, top: `${34 + (i * 17) % 46}%`, background: 'rgba(255,255,255,0.35)' }} animate={{ x: [0, 10, 0], opacity: [0.25, 0.6, 0.25] }} transition={{ duration: 3 + i, repeat: Infinity }} aria-hidden="true" />
+          <motion.span key={i} className="absolute h-1.5 w-10 rounded-full" style={{ left: `${left}%`, top: `${34 + (i * 17) % 46}%`, background: 'rgba(255,255,255,0.35)' }} animate={{ x: [0, 10, 0], opacity: [0.25, 0.6, 0.25] }} transition={{ duration: 3 + i, repeat: Infinity }} />
         ))}
         {/* the stones */}
         {ctx.forms.map((k, i) => {
@@ -497,15 +503,8 @@ function StoneHops({ ctx, onTouch, soundOn = true }) {
           return (
             <motion.div
               key={k}
-              data-form={k}
-              role="button"
-              tabIndex={0}
-              aria-label={`Stone ${form?.sound}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') hop(k)
-              }}
               animate={active ? { scale: [1, 1.12, 1], transition: { duration: 0.9, repeat: Infinity } } : { scale: 1 }}
-              className={`geez absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center rounded-[45%] text-2xl font-black ${FOCUS}`}
+              className="geez absolute flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center rounded-[45%] text-2xl font-black"
               style={{
                 left: `${p2.left}%`,
                 top: `${p2.top}%`,
@@ -519,7 +518,6 @@ function StoneHops({ ctx, onTouch, soundOn = true }) {
                 boxShadow: active
                   ? '0 0 0 5px rgba(255,200,0,0.35), 0 6px 0 rgba(0,0,0,0.22)'
                   : '0 6px 0 rgba(0,0,0,0.22)',
-                outlineColor: 'var(--sky)',
               }}
             >
               {form?.char}
@@ -528,17 +526,56 @@ function StoneHops({ ctx, onTouch, soundOn = true }) {
         })}
         {/* Anbessa hops to the stone he just won (spring = the jump) */}
         <motion.div
-          className="pointer-events-none absolute z-10"
+          className="absolute z-10"
           initial={false}
           animate={{ left: `${stand.left}%`, top: `${stand.top}%` }}
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
           style={{ transform: 'translate(-50%, -100%)' }}
-          aria-hidden="true"
         >
           <div className="-translate-x-1/2 -translate-y-[92%]">
             <Hero size={54} />
           </div>
         </motion.div>
+      </div>
+      {/* the tray: FORWARD keeps reading order, BACKWARD is lightly mixed */}
+      <div className="grid w-full grid-cols-7 gap-1.5" role="group" aria-label={t('stoneTray', 'Letter cards')}>
+        {tray.map((k) => {
+          const form = formOf(k)
+          const done = isDone(ctx.forms.indexOf(k))
+          const wrong = k === wrongKey
+          const hinted = misses >= 2 && k === activeKey
+          return (
+            <motion.button
+              key={k}
+              type="button"
+              onClick={() => pick(k)}
+              disabled={done}
+              aria-label={`Letter ${form?.sound}`}
+              animate={
+                wrong
+                  ? { x: [0, -7, 7, -5, 5, 0], transition: { duration: 0.42 } }
+                  : hinted
+                    ? { scale: [1, 1.12, 1], transition: { duration: 0.8, repeat: Infinity } }
+                    : { x: 0, scale: 1 }
+              }
+              className={`geez flex h-14 w-full select-none items-center justify-center rounded-xl border-b-4 text-2xl font-black ${FOCUS}`}
+              style={{
+                background: done
+                  ? 'var(--line)'
+                  : wrong
+                    ? 'radial-gradient(circle at 32% 26%, #ff9a8a, #e23b2c)'
+                    : 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
+                borderColor: done ? 'transparent' : wrong ? '#8f160c' : hinted ? 'var(--accent)' : '#a06a30',
+                color: done ? 'var(--muted)' : wrong ? '#fff' : '#5b3a12',
+                opacity: done ? 0.45 : 1,
+                boxShadow: hinted ? '0 0 0 4px rgba(255,150,0,0.4)' : undefined,
+                outlineColor: 'var(--sky)',
+              }}
+            >
+              {form?.char}
+            </motion.button>
+          )
+        })}
       </div>
     </motion.div>
   )
@@ -919,7 +956,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
-          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} />}
+          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
             const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
