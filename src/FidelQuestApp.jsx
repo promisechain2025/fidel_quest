@@ -1066,6 +1066,19 @@ export default function FidelQuestApp() {
       setWarmupNudge({ node, enforced })
       return
     }
+    // NEW letters also wait when the ledger holds unresolved trouble letters:
+    // no stacking fresh families on top of shaky ones. Unlike the arcade
+    // nudge this only appears when there is something to heal, and it is
+    // always required - the warm-up drills exactly those letters. Quiz
+    // bosses are exempt: they run their own 80% + fix-it loop.
+    if (
+      (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) && !opts.skipWarmup &&
+      !warmupDoneToday() && learnedFamilyIds(journeyRef.current).length > 0 &&
+      troubleLetters(loadLedger()).length > 0
+    ) {
+      setWarmupNudge({ node, enforced: true })
+      return
+    }
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
@@ -1698,7 +1711,11 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
       <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <Sprite2D draw={drawAnbessa} size={104} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
-        <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>{t('warmNudgeBody', 'A quick review of your letters, then the game!')}</p>
+        <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
+          {enforced
+            ? t('warmNudgeMustBody', 'Some letters need more practice first. A quick warm-up, then onward!')
+            : t('warmNudgeBody', 'A quick review of your letters, then the game!')}
+        </p>
         <div className="mt-5 flex flex-col gap-3">
           <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
             {t('warmStart', 'Start warm-up')}
