@@ -71,6 +71,21 @@ describe('Fidel data integrity', () => {
     })
   })
 
+  it('per-vowel words start within their OWN family and have unique audio keys', () => {
+    // The primer promise: a family's example words begin with one of that
+    // family's seven forms (or its labial), so "which letter starts it?"
+    // always has an in-family answer.
+    FIDEL_FAMILIES.forEach((f) => {
+      const list = Array.isArray(f.words) ? f.words : f.word ? [f.word] : []
+      list.forEach((w) => {
+        const chars = f.labialForm ? f.chars + f.labialForm.char : f.chars
+        expect([...chars].includes([...w.geez][0])).toBe(true)
+      })
+    })
+    const latins = WORDS.map((w) => w.latin)
+    expect(new Set(latins).size).toBe(latins.length)
+  })
+
   it('levels reference valid families and forms', () => {
     LEVELS.forEach((level) => {
       level.familyIndices.forEach((fi) => expect(FIDEL_FAMILIES[fi]).toBeDefined())

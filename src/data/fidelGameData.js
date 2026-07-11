@@ -31,15 +31,24 @@ export const GEEZ_ORDER_NAMES = ["Ge'ez", "Ka'ib", 'Sals', "Rab'", 'Hams', 'Sadi
 const VOWEL_SOUNDS = ['a', 'u', 'ee', 'aa', 'e', 'ih', 'o']
 
 const RAW_FAMILIES = [
-  { name: 'Ha', consonant: 'h', chars: 'ሀሁሂሃሄህሆ', nickname: 'Haleta Ha' },
+  {
+    name: 'Ha', consonant: 'h', chars: 'ሀሁሂሃሄህሆ', nickname: 'Haleta Ha',
+    word: { geez: 'ሀገር', latin: 'hager', meaning: 'country', picture: '🗺️', noAudio: true },
+    words: [{ geez: 'ሀገር', latin: 'hager', meaning: 'country', picture: '🗺️', noAudio: true }, { geez: 'ሁለት', latin: 'hulet', meaning: 'two', picture: '✌️', noAudio: true }],
+  },
   {
     name: 'Le', consonant: 'l', chars: 'ለሉሊላሌልሎ', labial: 'ሏ',
     word: { geez: 'ልጅ', latin: 'lij', meaning: 'child', picture: '👶' },
+    words: [{ geez: 'ልጅ', latin: 'lij', meaning: 'child', picture: '👶' }, { geez: 'ላም', latin: 'lam', meaning: 'cow', picture: '🐄', noAudio: true }, { geez: 'ሎሚ', latin: 'lomi', meaning: 'lime', picture: '🍋', noAudio: true }],
   },
-  { name: 'Hha', consonant: 'h', chars: 'ሐሑሒሓሔሕሖ', twinOf: 'Ha', nickname: 'Hameru Hha' },
+  {
+    name: 'Hha', consonant: 'h', chars: 'ሐሑሒሓሔሕሖ', twinOf: 'Ha', nickname: 'Hameru Hha',
+    word: { geez: 'ሐመር', latin: 'hamer', meaning: 'ship', picture: '🚢', noAudio: true },
+  },
   {
     name: 'Me', consonant: 'm', chars: 'መሙሚማሜምሞ', labial: 'ሟ',
     word: { geez: 'ማር', latin: 'mar', meaning: 'honey', picture: '🍯' },
+    words: [{ geez: 'ማር', latin: 'mar', meaning: 'honey', picture: '🍯' }, { geez: 'መኪና', latin: 'mekina', meaning: 'car', picture: '🚗', noAudio: true }, { geez: 'ሙዝ', latin: 'muz', meaning: 'banana', picture: '🍌', noAudio: true }, { geez: 'ሜዳ', latin: 'meda', meaning: 'field', picture: '🏞️', noAudio: true }],
   },
   {
     name: 'Sse', consonant: 's', chars: 'ሠሡሢሣሤሥሦ', twinOf: 'Se', nickname: 'Nigusu Sse',
@@ -48,45 +57,55 @@ const RAW_FAMILIES = [
   {
     name: 'Re', consonant: 'r', chars: 'ረሩሪራሬርሮ', labial: 'ሯ',
     word: { geez: 'ሩዝ', latin: 'ruz', meaning: 'rice', picture: '🍚' },
+    words: [{ geez: 'ሩዝ', latin: 'ruz', meaning: 'rice', picture: '🍚' }, { geez: 'ራስ', latin: 'ras', meaning: 'head', picture: '👤', noAudio: true }, { geez: 'ሬዲዮ', latin: 'radiyo', meaning: 'radio', picture: '📻', noAudio: true }],
   },
   {
     name: 'Se', consonant: 's', chars: 'ሰሱሲሳሴስሶ', nickname: 'Isatu Se', labial: 'ሷ',
     word: { geez: 'ሳር', latin: 'sar', meaning: 'grass', picture: '🌿' },
+    words: [{ geez: 'ሳር', latin: 'sar', meaning: 'grass', picture: '🌿' }, { geez: 'ሰው', latin: 'sew', meaning: 'person', picture: '🧍', noAudio: true }, { geez: 'ሱሪ', latin: 'suri', meaning: 'trousers', picture: '👖', noAudio: true }, { geez: 'ሲኒ', latin: 'sini', meaning: 'cup', picture: '☕', noAudio: true }],
   },
   {
     name: 'She', consonant: 'sh', chars: 'ሸሹሺሻሼሽሾ', labial: 'ሿ',
     word: { geez: 'ሻይ', latin: 'shai', meaning: 'tea', picture: '🍵' },
+    words: [{ geez: 'ሻይ', latin: 'shai', meaning: 'tea', picture: '🍵' }, { geez: 'ሽንኩርት', latin: 'shinkurt', meaning: 'onion', picture: '🧅', noAudio: true }, { geez: 'ሾርባ', latin: 'shorba', meaning: 'soup', picture: '🍲', noAudio: true }],
   },
   {
     name: 'Qe', consonant: 'q', chars: 'ቀቁቂቃቄቅቆ', labial: 'ቋ',
     word: { geez: 'ቀይ', latin: 'qey', meaning: 'red', picture: '🔴' },
+    words: [{ geez: 'ቀይ', latin: 'qey', meaning: 'red', picture: '🔴' }, { geez: 'ቁልፍ', latin: 'qulf', meaning: 'key', picture: '🔑', noAudio: true }, { geez: 'ቂጣ', latin: 'qita', meaning: 'flatbread', picture: '🫓', noAudio: true }, { geez: 'ቆሎ', latin: 'qolo', meaning: 'roasted grain', picture: '🥜', noAudio: true }],
   },
   {
     name: 'Be', consonant: 'b', chars: 'በቡቢባቤብቦ', labial: 'ቧ',
     word: { geez: 'ቤት', latin: 'biet', meaning: 'house', picture: '🏠' },
+    words: [{ geez: 'ቤት', latin: 'biet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles', meaning: 'fig', picture: '🍈', noAudio: true }, { geez: 'ቡና', latin: 'buna', meaning: 'coffee', picture: '☕', noAudio: true }, { geez: 'ብርቱካን', latin: 'birtukan', meaning: 'orange', picture: '🍊', noAudio: true }, { geez: 'ቦርሳ', latin: 'borsa', meaning: 'school bag', picture: '🎒', noAudio: true }],
   },
   {
     name: 'Te', consonant: 't', chars: 'ተቱቲታቴትቶ', labial: 'ቷ',
     word: { geez: 'ተራራ', latin: 'terara', meaning: 'mountain', picture: '⛰️' },
+    words: [{ geez: 'ተራራ', latin: 'terara', meaning: 'mountain', picture: '⛰️' }, { geez: 'ቲማቲም', latin: 'timatim', meaning: 'tomato', picture: '🍅', noAudio: true }, { geez: 'ትል', latin: 'til', meaning: 'worm', picture: '🐛', noAudio: true }],
   },
   {
     name: 'Che', consonant: 'ch', chars: 'ቸቹቺቻቼችቾ', labial: 'ቿ',
     word: { geez: 'ቸኮሌት', latin: 'chokolet', meaning: 'chocolate', picture: '🍫' },
+    words: [{ geez: 'ቸኮሌት', latin: 'chokolet', meaning: 'chocolate', picture: '🍫' }, { geez: 'ችግኝ', latin: 'chiginy', meaning: 'seedling', picture: '🌱', noAudio: true }],
   },
   { name: 'Kha', consonant: 'h', chars: 'ኀኁኂኃኄኅኆ', twinOf: 'Ha', nickname: 'Bizuhanu Kha', labial: 'ኋ' },
   {
     name: 'Ne', consonant: 'n', chars: 'ነኑኒናኔንኖ', labial: 'ኗ',
     word: { geez: 'ንብ', latin: 'nib', meaning: 'bee', picture: '🐝' },
+    words: [{ geez: 'ንብ', latin: 'nib', meaning: 'bee', picture: '🐝' }, { geez: 'ነብር', latin: 'nebir', meaning: 'leopard', picture: '🐆', noAudio: true }],
   },
   { name: 'Nye', consonant: 'ny', chars: 'ኘኙኚኛኜኝኞ', labial: 'ኟ' },
   // The vowel-bearer families: no consonant, so their sounds are raw vowels.
   {
     name: 'A', consonant: '', chars: 'አኡኢኣኤእኦ', sounds: VOWEL_SOUNDS, nickname: 'Alfau A',
     word: { geez: 'አሳ', latin: 'asa', meaning: 'fish', picture: '🐟' },
+    words: [{ geez: 'አሳ', latin: 'asa', meaning: 'fish', picture: '🐟' }, { geez: 'አንበሳ', latin: 'anbesa', meaning: 'lion', picture: '🦁', noAudio: true }, { geez: 'ኢትዮጵያ', latin: 'ityopya', meaning: 'Ethiopia', picture: '🇪🇹', noAudio: true }, { geez: 'እንቁላል', latin: 'inqulal', meaning: 'egg', picture: '🥚', noAudio: true }],
   },
   {
     name: 'Ke', consonant: 'k', chars: 'ከኩኪካኬክኮ', labial: 'ኳ',
     word: { geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' },
+    words: [{ geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' }, { geez: 'ከረሜላ', latin: 'keremela', meaning: 'candy', picture: '🍬', noAudio: true }, { geez: 'ኩባያ', latin: 'kubaya', meaning: 'cup', picture: '🥤', noAudio: true }],
   },
   // Modern Amharic merges ኸ into ከ (both said "k"); twinned so the two are
   // never asked apart, and so ኸ reuses the Ke recording. Tigrinya keeps ኸ
@@ -95,6 +114,7 @@ const RAW_FAMILIES = [
   {
     name: 'We', consonant: 'w', chars: 'ወዉዊዋዌውዎ',
     word: { geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' },
+    words: [{ geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' }, { geez: 'ወተት', latin: 'wetet', meaning: 'milk', picture: '🥛', noAudio: true }, { geez: 'ወፍ', latin: 'wef', meaning: 'bird', picture: '🐦', noAudio: true }],
   },
   {
     name: 'Ae', consonant: '', chars: 'ዐዑዒዓዔዕዖ', sounds: VOWEL_SOUNDS, twinOf: 'A', nickname: 'Aynu Ae',
@@ -103,28 +123,34 @@ const RAW_FAMILIES = [
   {
     name: 'Ze', consonant: 'z', chars: 'ዘዙዚዛዜዝዞ', labial: 'ዟ',
     word: { geez: 'ዛፍ', latin: 'zaf', meaning: 'tree', picture: '🌳' },
+    words: [{ geez: 'ዛፍ', latin: 'zaf', meaning: 'tree', picture: '🌳' }, { geez: 'ዘንባባ', latin: 'zenbaba', meaning: 'palm tree', picture: '🌴', noAudio: true }, { geez: 'ዝሆን', latin: 'zihon', meaning: 'elephant', picture: '🐘', noAudio: true }],
   },
   { name: 'Zhe', consonant: 'zh', chars: 'ዠዡዢዣዤዥዦ' },
   { name: 'Ye', consonant: 'y', chars: 'የዩዪያዬይዮ' },
   {
     name: 'De', consonant: 'd', chars: 'ደዱዲዳዴድዶ', labial: 'ዷ',
     word: { geez: 'ድመት', latin: 'dimet', meaning: 'cat', picture: '🐈' },
+    words: [{ geez: 'ድመት', latin: 'dimet', meaning: 'cat', picture: '🐈' }, { geez: 'ደብተር', latin: 'debter', meaning: 'notebook', picture: '📓', noAudio: true }, { geez: 'ዳቦ', latin: 'dabo', meaning: 'bread', picture: '🍞', noAudio: true }, { geez: 'ዶሮ', latin: 'doro', meaning: 'chicken', picture: '🐔', noAudio: true }],
   },
   {
     name: 'Je', consonant: 'j', chars: 'ጀጁጂጃጄጅጆ', labial: 'ጇ',
     word: { geez: 'ጆሮ', latin: 'joro', meaning: 'ear', picture: '👂' },
+    words: [{ geez: 'ጆሮ', latin: 'joro', meaning: 'ear', picture: '👂' }, { geez: 'ጀልባ', latin: 'jelba', meaning: 'boat', picture: '⛵', noAudio: true }],
   },
   {
     name: 'Ge', consonant: 'g', chars: 'ገጉጊጋጌግጎ', labial: 'ጓ',
     word: { geez: 'ግመል', latin: 'gimel', meaning: 'camel', picture: '🐫' },
+    words: [{ geez: 'ግመል', latin: 'gimel', meaning: 'camel', picture: '🐫' }, { geez: 'ገንዘብ', latin: 'genzeb', meaning: 'money', picture: '💰', noAudio: true }, { geez: 'ጉንዳን', latin: 'gundan', meaning: 'ant', picture: '🐜', noAudio: true }],
   },
   {
     name: 'The', consonant: "t'", chars: 'ጠጡጢጣጤጥጦ', labial: 'ጧ',
     word: { geez: 'ጥርስ', latin: 'tirs', meaning: 'tooth', picture: '🦷' },
+    words: [{ geez: 'ጥርስ', latin: 'tirs', meaning: 'tooth', picture: '🦷' }, { geez: 'ጤፍ', latin: 'tef', meaning: 'teff', picture: '🌾', noAudio: true }, { geez: 'ጠርሙስ', latin: 'termus', meaning: 'bottle', picture: '🧴', noAudio: true }],
   },
   {
     name: 'Chhe', consonant: "ch'", chars: 'ጨጩጪጫጬጭጮ', labial: 'ጯ',
     word: { geez: 'ጨረቃ', latin: 'chereqa', meaning: 'moon', picture: '🌙' },
+    words: [{ geez: 'ጨረቃ', latin: 'chereqa', meaning: 'moon', picture: '🌙' }, { geez: 'ጨው', latin: 'chew', meaning: 'salt', picture: '🧂', noAudio: true }],
   },
   { name: 'Ppe', consonant: "p'", chars: 'ጰጱጲጳጴጵጶ' },
   {
@@ -138,10 +164,12 @@ const RAW_FAMILIES = [
   {
     name: 'Fe', consonant: 'f', chars: 'ፈፉፊፋፌፍፎ', labial: 'ፏ',
     word: { geez: 'ፈረስ', latin: 'feres', meaning: 'horse', picture: '🐎' },
+    words: [{ geez: 'ፈረስ', latin: 'feres', meaning: 'horse', picture: '🐎' }, { geez: 'ፊደል', latin: 'fidel', meaning: 'alphabet', picture: '🔤', noAudio: true }, { geez: 'ፍየል', latin: 'fiyel', meaning: 'goat', picture: '🐐', noAudio: true }, { geez: 'ፎቶ', latin: 'foto', meaning: 'photo', picture: '📷', noAudio: true }],
   },
   {
     name: 'Pe', consonant: 'p', chars: 'ፐፑፒፓፔፕፖ',
     word: { geez: 'ፓፓያ', latin: 'papaya', meaning: 'papaya', picture: '🥭' },
+    words: [{ geez: 'ፓፓያ', latin: 'papaya', meaning: 'papaya', picture: '🥭' }, { geez: 'ፖሊስ', latin: 'polis', meaning: 'police', picture: '👮', noAudio: true }],
   },
 ]
 
@@ -186,11 +214,10 @@ export const CHAR_TO_FORM = new Map(ALL_FORMS.map((form) => [form.char, form]))
 
 // Word entries for the First Words level: each carries the form of its
 // leading character so the quiz can ask "which letter starts this word?".
-export const WORDS = FIDEL_FAMILIES.filter((f) => f.word).map((f) => ({
-  ...f.word,
-  familyIndex: f.familyIndex,
-  startChar: [...f.word.geez][0],
-}))
+export const WORDS = FIDEL_FAMILIES.flatMap((f) => {
+  const list = Array.isArray(f.words) && f.words.length ? f.words : f.word ? [f.word] : []
+  return list.map((w) => ({ ...w, familyIndex: f.familyIndex, startChar: [...w.geez][0] }))
+})
 
 /* ── UI STRINGS ──────────────────────────────────────────────────────────────
    Keys interpolate {placeholders}. English is canonical; missing Amharic
