@@ -29,6 +29,7 @@ import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, INDEXES } from '../platform/ethiopic'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { buildReviewQueue } from '../platform/coach'
+import { isNativePlatform } from '../platform/native'
 import { useKeepAwake } from '../platform/wakeLock'
 import { QrPanel } from './TeacherMode'
 
@@ -356,8 +357,15 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
   const [sel, setSel] = useState(() => (chooseFirst ? new Set() : new Set(scopeIds)))
   const selectedIds = scopeIds.filter((id) => sel.has(id))
 
-  // Best-effort fullscreen on entry (a projection wants no browser chrome).
+  // Best-effort fullscreen on entry (a projection wants no browser chrome) -
+  // WEB ONLY. The native shell is already fullscreen, and asking WKWebView
+  // for HTML fullscreen there makes iOS present its own fullscreen container
+  // over the app (view-service churn, frozen-feeling UI). Also blur any
+  // focused input: arriving from the class-code field otherwise carries a
+  // live keyboard session onto the board.
   useEffect(() => {
+    try { document.activeElement?.blur?.() } catch { /* ignore */ }
+    if (isNativePlatform()) return undefined
     try { document.documentElement.requestFullscreen?.() } catch { /* not allowed */ }
     return () => { try { if (document.fullscreenElement) document.exitFullscreen?.() } catch { /* ignore */ } }
   }, [])
