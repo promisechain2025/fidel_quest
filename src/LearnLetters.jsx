@@ -56,10 +56,10 @@ export const ECHO_ROUNDS = 3
 export const SHUFFLE_ROUNDS = 3
 export const MIX_ROUNDS = 4
 
-// Writing finale: trace a spread of the family's forms (not just the base) so
-// the child practises writing several real letters, hearing each first. Form
-// indices into the 7-order row (base, mid, last) - a variety of diacritics.
-export const TRACE_ORDERS = [0, 3, 6]
+// Writing finale: trace EVERY form of the family, hearing each first. Kids
+// should write all 7 real letters, not a sample - the pad never blocks, so
+// a quick pass per letter keeps it light while covering the full row.
+export const TRACE_ORDERS = [0, 1, 2, 3, 4, 5, 6]
 
 // `avoid` may be a single key or a list of keys (the letters already eaten
 // this round-set). Excluding all of them keeps the spoken target inside the
