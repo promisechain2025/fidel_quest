@@ -367,7 +367,7 @@ describe('<AmharicFidelGame />', () => {
 
   it('opens trace mode and falls back gracefully without canvas support', () => {
     render(<AmharicFidelGame />)
-    fireEvent.click(screen.getByText(/Tracing — draw the letters/))
+    fireEvent.click(screen.getByRole('button', { name: 'Tracing' }))
     expect(screen.getByText('Trace the letters')).toBeInTheDocument()
     // Pick the Ha family; jsdom has no canvas 2D, so the pad shows its
     // unsupported note instead of crashing.

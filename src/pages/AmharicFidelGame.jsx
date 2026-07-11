@@ -556,9 +556,9 @@ function ConfettiBurst({ pieceCount = 32 }) {
 /* The mascot: a smiling star named Kokeb ("star" in Amharic). Reacts to the
    game — bounces with sparkles on a correct answer, wiggles gently on a miss. */
 function Mascot({ mood, size = 'md' }) {
-  const dims = size === 'lg' ? 'h-28 w-28' : 'h-20 w-20'
-  const starDims = size === 'lg' ? 'h-24 w-24' : 'h-16 w-16'
-  const faceDims = size === 'lg' ? 'h-9 w-9' : 'h-6 w-6'
+  const dims = size === 'lg' ? 'h-28 w-28' : size === 'sm' ? 'h-12 w-12' : 'h-20 w-20'
+  const starDims = size === 'lg' ? 'h-24 w-24' : size === 'sm' ? 'h-11 w-11' : 'h-16 w-16'
+  const faceDims = size === 'lg' ? 'h-9 w-9' : size === 'sm' ? 'h-4 w-4' : 'h-6 w-6'
   const wrapAnim =
     mood === 'happy' || mood === 'party'
       ? 'fq-anim-bounce'
@@ -1093,22 +1093,24 @@ export default function AmharicFidelGame() {
   /* ── SCREENS ── */
 
   const renderMenu = () => (
-    <div className="fq-anim-pop mx-auto flex w-full max-w-3xl flex-col items-center gap-8">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <Mascot mood="idle" size="lg" />
-        <h1 className="text-4xl font-extrabold tracking-tight text-amber-900 sm:text-5xl dark:text-amber-100">
-          {t('title')}
-        </h1>
-        <p className="max-w-md text-lg font-medium text-amber-800/80 dark:text-amber-200/80">
-          {t('tagline')}
-        </p>
-        <div className="flex items-center gap-4 rounded-full bg-white/70 px-5 py-2 shadow-md backdrop-blur dark:bg-gray-800/70">
-          <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
-            <Star className="h-5 w-5 fill-amber-400 text-amber-500" /> {totalStars} / {LEVELS.length * 3}
+    <div className="fq-anim-pop mx-auto flex w-full max-w-3xl flex-col items-center gap-4">
+      {/* Compact header: everything the old hero said, on one row - this
+         page must fit a phone WITHOUT scrolling (features below the fold
+         may as well not exist for a child). */}
+      <div className="flex w-full max-w-md flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <Mascot mood="idle" size="sm" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-amber-900 dark:text-amber-100">
+            {t('title')}
+          </h1>
+        </div>
+        <div className="flex items-center gap-3 rounded-full bg-white/70 px-4 py-1.5 shadow-md backdrop-blur dark:bg-gray-800/70">
+          <span className="flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300">
+            <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> {totalStars}/{LEVELS.length * 3}
           </span>
-          <span className="h-5 w-px bg-amber-300/60" aria-hidden="true" />
-          <span className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
-            <Trophy className="h-5 w-5 text-orange-500" /> {t('best', { n: progress.bestScore })}
+          <span className="h-4 w-px bg-amber-300/60" aria-hidden="true" />
+          <span className="flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300">
+            <Trophy className="h-4 w-4 text-orange-500" /> {t('best', { n: progress.bestScore })}
           </span>
         </div>
       </div>
@@ -1201,46 +1203,23 @@ export default function AmharicFidelGame() {
         )
       })()}
 
-      <div className="flex w-full max-w-md flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            setScreen('explore')
-            playSfx('tap')
-          }}
-          className={`flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
-        >
-          <BookOpen className="h-6 w-6" />
-          {t('exploreCta')}
-          <ChevronRight className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setScreen('trace')
-            setTraceFamilyIndex(null)
-            setTraceFormIndex(0)
-            setTraceResult(null)
-            playSfx('tap')
-          }}
-          className={`flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
-        >
-          <Pencil className="h-6 w-6" />
-          {t('traceCta')}
-          <ChevronRight className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setScreen('master')
-            playSfx('tap')
-          }}
-          className={`flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-400 to-purple-500 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
-        >
-          <Music className="h-6 w-6" />
-          {t('masterCta')}
-          <ChevronRight className="h-5 w-5" />
-        </button>
+      <div className="grid w-full max-w-md grid-cols-3 gap-3">
+        {[
+          ['explore', BookOpen, 'from-sky-400 to-blue-500', t('exploreCta'), () => { setScreen('explore'); playSfx('tap') }],
+          ['trace', Pencil, 'from-rose-400 to-pink-500', t('traceCta'), () => { setScreen('trace'); setTraceFamilyIndex(null); setTraceFormIndex(0); setTraceResult(null); playSfx('tap') }],
+          ['master', Music, 'from-violet-400 to-purple-500', t('masterCta'), () => { setScreen('master'); playSfx('tap') }],
+        ].map(([id, Icon, grad, cta, go]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={go}
+            title={cta}
+            className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-br ${grad} px-2 py-4 font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+          >
+            <Icon className="h-7 w-7" aria-hidden="true" />
+            <span className="text-center text-xs leading-tight">{cta.split(/\u2014|-/)[0].trim()}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
