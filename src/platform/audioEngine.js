@@ -480,6 +480,26 @@ export function playForm(form, enabled = true) {
 export function playEffect(kind, enabled = true) {
   audio.playEffect(kind, enabled)
 }
+
+/* The krar's tuning: a pentatonic (kinit-style) scale across the seven
+   vocal orders, so strumming a family rises left to right like a real
+   instrument - the child HEARS the direction of the strum, not only the
+   letters. Order 1..7 -> C4 pentatonic steps extended over one octave. */
+const PLUCK_SEMITONES = [0, 2, 4, 7, 9, 12, 14]
+export function playPluck(order, enabled = true) {
+  if (!enabled) return
+  const ctx = audio.getCtx()
+  if (!ctx) return
+  const step = PLUCK_SEMITONES[Math.min(Math.max(1, Math.round(order || 1)), 7) - 1]
+  const freq = 261.63 * Math.pow(2, step / 12)
+  const t = ctx.currentTime
+  // A plucked-string voice: two slightly detuned triangles with a fast
+  // decay reads as a string, not a beep - quiet enough to sit UNDER the
+  // spoken letter like an accompanist.
+  audio.note(freq, t, 0.5, 0.11, 'triangle')
+  audio.note(freq * 1.005, t, 0.35, 0.06, 'triangle')
+  audio.note(freq * 2, t, 0.18, 0.03, 'sine')
+}
 export function preloadForms(forms) {
   audio.preload(forms.filter(Boolean).map((f) => `letters/${f.audioKey}`))
 }

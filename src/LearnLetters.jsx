@@ -26,7 +26,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check, Music } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
-import { playForm, playEffect } from './platform/audioEngine'
+import { playForm, playEffect, playPluck } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero, Sprite2D, drawAnbessa, drawHyena } from './FidelQuestApp'
@@ -453,9 +453,16 @@ function BubbleMeet({ ctx, onTouch }) {
    a drill. Whole-column hit areas make strumming forgiving for small
    fingers; every touch speaks its letter (the parent voices any touch), and
    only the ordered pluck advances - the glowing string shows which. */
-function KrarStrings({ ctx, onTouch }) {
+function KrarStrings({ ctx, onTouch, soundOn = true }) {
   const forward = ctx.phase === LearnPhase.FORWARD
-  const handlers = useSlideTouch(onTouch)
+  // Every string carries its own NOTE (pentatonic, rising left to right),
+  // plucked instantly under the spoken letter - so a strum sounds like an
+  // ascending run going forward and a descending one coming back.
+  const strum = useCallback((k) => {
+    playPluck(formOf(k)?.order ?? 1, soundOn)
+    onTouch(k)
+  }, [onTouch, soundOn])
+  const handlers = useSlideTouch(strum)
   const activeKey = ctx.forms[ctx.idx]
   const isDone = (i) => (forward ? i < ctx.idx : i > ctx.idx)
   return (
@@ -495,7 +502,7 @@ function KrarStrings({ ctx, onTouch }) {
                 tabIndex={0}
                 aria-label={`String ${form?.sound}`}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') onTouch(k)
+                  if (e.key === 'Enter' || e.key === ' ') strum(k)
                 }}
                 className={`relative flex flex-1 select-none justify-center ${FOCUS}`}
                 style={{ outlineColor: 'var(--sky)' }}
@@ -921,7 +928,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
-          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <KrarStrings key={ctx.phase} ctx={ctx} onTouch={touch} />}
+          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <KrarStrings key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
             const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
