@@ -4445,7 +4445,11 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
 
   useEffect(() => {
     if (ctx.status !== GameState.PRESENTATION || !word) return undefined
-    audioPlayWord(word, soundOn)
+    // Reading rounds (geez word -> picture) stay SILENT: the child must READ
+    // the word, so speaking it would give the answer away. Glyph rounds keep
+    // the voice - the twin spellings sound identical, so it reveals nothing,
+    // and the child needs the word aloud to connect it to the picture.
+    if (isGlyph) audioPlayWord(word, soundOn)
     const timer = setTimeout(() => dispatch({ type: GameEvent.PRESENTATION_DONE }), 1400)
     return () => clearTimeout(timer)
   }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -4453,9 +4457,15 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
   useEffect(() => {
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
+      // Reading rounds voice the word AFTER the correct match, as the reward:
+      // read it, find it, then hear it confirmed.
+      const voice = word && !isGlyph ? setTimeout(() => audioPlayWord(word, soundOn), 350) : null
       if (word) recordAnswer(`word:${word.latin}`, `word:${word.latin}`, 'words')
       const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+        if (voice) clearTimeout(voice)
+      }
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
@@ -4507,19 +4517,28 @@ function WordMatch({ seed, soundOn, onFinish, onReplay }) {
           ) : (
             <p className="geez text-6xl font-black">{word?.geez}</p>
           )}
-          <button
-            type="button"
-            onClick={() => audioPlayWord(word, soundOn)}
-            className={`chunk mt-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
-            aria-label={`Play the word ${word?.latin} again`}
-          >
-            <Volume2 className="h-5 w-5" aria-hidden="true" />
-            {word?.latin}
-          </button>
-          {isGlyph && (
-            <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
-              {t('whichStart', 'Which letter does it start with?')}
+          {/* Reading rounds get NO voice button and no transliteration: the
+             child must read the geez word themselves and find its picture.
+             The word is voiced as the reward after a correct match. */}
+          {isGlyph ? (
+            <>
+              <button
+                type="button"
+                onClick={() => audioPlayWord(word, soundOn)}
+                className={`chunk mt-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-white ${FOCUS}`}
+                style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+                aria-label={`Play the word ${word?.latin} again`}
+              >
+                <Volume2 className="h-5 w-5" aria-hidden="true" />
+                {word?.latin}
+              </button>
+              <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
+                {t('whichStart', 'Which letter does it start with?')}
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 font-bold" style={{ color: 'var(--muted)' }}>
+              {t('readAndMatch', 'Read the word, then tap its picture')}
             </p>
           )}
         </div>
