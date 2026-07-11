@@ -191,10 +191,31 @@ function buildPool(level, familyIndexSet = null) {
     return pool
   }
   if (!familyIndexSet) return build(level.familyIndices)
-  const scoped = build(level.familyIndices.filter((fi) => familyIndexSet.has(fi)))
-  // Keep the quiz playable: if the child has learned too few of this level's
-  // letters to make real choices, fall back to the full level pool.
-  return scoped.length >= 4 ? scoped : build(level.familyIndices)
+  // In 'learned' scope a child must NEVER be quizzed on a letter they have
+  // not met. When the learned slice of this level is too thin for real
+  // choices (fewer than 4 forms), widen with OTHER vocal orders of learned
+  // families - first the level's own, then any learned family - instead of
+  // falling back to unlearned strangers.
+  const inLevel = level.familyIndices.filter((fi) => familyIndexSet.has(fi))
+  const pool = build(inLevel)
+  const widen = (indices) => {
+    const seen = new Set(pool.map((f) => f.char))
+    for (const fi of indices) {
+      if (pool.length >= 4) return
+      for (const form of FIDEL_FAMILIES[fi].forms) {
+        if (form && !seen.has(form.char)) {
+          seen.add(form.char)
+          pool.push(form)
+          if (pool.length >= 4) return
+        }
+      }
+    }
+  }
+  if (pool.length < 4) widen(inLevel)
+  if (pool.length < 4) widen([...familyIndexSet].filter((fi) => !inLevel.includes(fi)))
+  // Nothing learned at all cannot happen (scope falls back to the first
+  // family), but keep the quiz playable no matter what.
+  return pool.length >= 4 ? pool : build(level.familyIndices)
 }
 
 /* Pick 3 distractors for a target. Guarantees no distractor shares the
@@ -242,8 +263,16 @@ export function weightTargets(forms, missCounts = {}) {
    starts it. The target is the form of the word's leading character;
    distractors come from the whole fidel table via buildQuestion, which
    already guarantees unique characters and pronunciations.                  */
-export function buildWordQuestions(level) {
-  const words = shuffle(WORDS)
+export function buildWordQuestions(level, familyIndexSet = null) {
+  // Same scope rule as the letter rounds: in 'learned' mode only ask about
+  // words whose answer letter the child has met, with distractors from
+  // learned families. Falls back to the full word list only when too few
+  // words are in scope to make a real round.
+  const inScope = (form) => !familyIndexSet || familyIndexSet.has(form.familyIndex)
+  const scopedWords = WORDS.filter((w) => inScope(CHAR_TO_FORM.get(w.startChar)))
+  const useScoped = familyIndexSet && scopedWords.length >= 4
+  const words = shuffle(useScoped ? scopedWords : WORDS)
+  const pool = useScoped ? ALL_FORMS.filter(inScope) : ALL_FORMS
   const questions = []
   for (let i = 0; i < level.questionCount; i++) {
     let word = words[i % words.length]
@@ -252,13 +281,13 @@ export function buildWordQuestions(level) {
       word = words[(i + 1) % words.length]
     }
     const target = CHAR_TO_FORM.get(word.startChar)
-    questions.push({ ...buildQuestion(level, target, ALL_FORMS), word })
+    questions.push({ ...buildQuestion(level, target, pool), word })
   }
   return questions
 }
 
 export function buildQuestions(level, { missCounts = {}, targetForms = null, familyIndices = null } = {}) {
-  if (level.mode === 'word-to-char') return buildWordQuestions(level)
+  if (level.mode === 'word-to-char') return buildWordQuestions(level, familyIndices)
   const pool = buildPool(level, familyIndices)
   // Practice rounds narrow the targets to just-missed letters while keeping
   // the full level pool available for distractors.

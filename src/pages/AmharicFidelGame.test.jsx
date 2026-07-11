@@ -96,6 +96,22 @@ describe('question generation', () => {
     })
   })
 
+  it('never quizzes outside the learned families in scoped mode', () => {
+    // A child three families into the journey (below the 4-form floor that
+    // used to trigger a full-level fallback) must still only ever see
+    // letters from those families - widened by vocal order, not strangers.
+    const learnedIdx = new Set([0, 1, 2]) // ha, le, hha
+    for (const level of [LEVELS[0], LEVELS[1]]) {
+      const qs = buildQuestions(level, { familyIndices: learnedIdx })
+      expect(qs.length).toBeGreaterThan(0)
+      for (const q of qs) {
+        for (const form of [q.target, ...q.options]) {
+          expect(learnedIdx.has(form.familyIndex)).toBe(true)
+        }
+      }
+    }
+  })
+
   it('never offers a same-sounding twin as a distractor', () => {
     const level = LEVELS[0] // contains both Ha (ሀ) and Hha (ሐ)
     const pool = level.familyIndices.flatMap((fi) => [FIDEL_FAMILIES[fi].forms[0]])
