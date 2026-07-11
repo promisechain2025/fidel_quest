@@ -151,7 +151,8 @@ current scorecard.
 
 ## Branching
 
-- Default branch: `main`
-- Feature work for agent sessions goes on `claude/<task>-<id>` branches and
-  opens PRs against `main`.
+- Default branch: `main`, and work lands DIRECTLY on `main` (owner's
+  decision, July 2026): this is a solo-maintained app where the deployed
+  PWA and the store builds should always match the tip of one branch.
+  Commit and push to `main`; no PR round-trips.
 - Never force-push, never skip hooks.
