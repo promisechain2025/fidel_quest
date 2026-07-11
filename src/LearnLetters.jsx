@@ -55,6 +55,10 @@ export const LearnPhase = Object.freeze({
 export const ECHO_ROUNDS = 3
 export const SHUFFLE_ROUNDS = 3
 export const MIX_ROUNDS = 4
+// Mix tray size: base form of every mastered family plus extra vocal orders
+// up to this many sound-distinct letters. 12 wraps to three rows of cards on
+// a phone and makes the challenge feel like a real review, not a rerun.
+export const MIX_POOL_SIZE = 12
 
 // Writing finale: trace EVERY form of the family, hearing each first. Kids
 // should write all 7 real letters, not a sample - the pad never blocks, so
@@ -114,7 +118,7 @@ export function mixInitial(familyIds, seed) {
     rngState,
   )
   for (const key of extras) {
-    if (pool.length >= 8) break
+    if (pool.length >= MIX_POOL_SIZE) break
     const form = formOf(key)
     if (form && !usedSounds.has(form.sound)) {
       usedSounds.add(form.sound)
@@ -833,13 +837,20 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   )
 
   // Speak spoken-round targets; celebrate phase changes and completion.
+  const prevSpokenPhase = useRef(null)
   useEffect(() => {
     if ((ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE) && ctx.target) {
       // After a correct feed the letter takes ~0.9s to be eaten; hold the next
       // spoken target until it lands so the prompt does not race the eating.
-      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), 850)
+      // Entering the phase waits longer still: the previous game's last letter
+      // (the final star of the trail) is often still being voiced, and the
+      // first prompt must not talk over it.
+      const entering = prevSpokenPhase.current !== ctx.phase
+      prevSpokenPhase.current = ctx.phase
+      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), entering ? 1700 : 850)
       return () => clearTimeout(timer)
     }
+    prevSpokenPhase.current = ctx.phase
     return undefined
   }, [ctx.phase, ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
   // Writing phase: say each letter as it appears so the child traces by ear.
