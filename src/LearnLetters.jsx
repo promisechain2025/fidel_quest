@@ -4,8 +4,8 @@
    Kids must LEARN letters before being quizzed on them. Per family:
 
      MEET      each form arrives alone, huge; touch it to hear it
-     FORWARD   the family becomes a KRAR: strum across the strings in order
-     BACKWARD  strum back the other way (breaks rote position-memory)
+     FORWARD   stepping stones: hop across the river, letter by letter
+     BACKWARD  hop back home the other way (breaks rote position-memory)
      ECHO      a form is spoken; touch it in the ORDERED row (position helps)
      SHUFFLE   the row scrambles; five spoken rounds prove real recognition
 
@@ -24,7 +24,7 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check, Music } from 'lucide-react'
+import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { playForm, playEffect, playPluck } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
@@ -446,108 +446,99 @@ function BubbleMeet({ ctx, onTouch }) {
    alternate left/right and step down the tall stage, so adjacent stars sit far
    apart. On a phone that leaves room for small fingers to swipe from one star
    to the next without the two overlapping, and it fills the vertical space. */
-/* ── the KRAR: Ethiopia's lyre (replaces the old star trail) ──
-   The seven forms become seven strings. The child STRUMS across the family
-   - one way, then back - which is exactly the ordered traversal the step
-   machine asks for, but it feels like playing an instrument, not repeating
-   a drill. Whole-column hit areas make strumming forgiving for small
-   fingers; every touch speaks its letter (the parent voices any touch), and
-   only the ordered pluck advances - the glowing string shows which. */
-function KrarStrings({ ctx, onTouch, soundOn = true }) {
+/* ── STEPPING STONES (replaces the krar) ──
+   The seven forms are stones across a river. The child taps (or slides
+   along) them in order and ANBESSA HOPS from stone to stone - cross the
+   river one way, then hop back home: the exact ordered traversal the step
+   machine asks for, told as a story a four-year-old reads at a glance.
+   Every touch speaks its letter; only the ordered one advances (it is the
+   stone that pulses). Each hop plays a rising pentatonic plop. */
+const STONE_POINTS = [0, 1, 2, 3, 4, 5, 6].map((i) => ({
+  left: 12 + i * 12.6,
+  top: i % 2 === 0 ? 62 : 40,
+}))
+const BANKS = { left: { left: 2, top: 52 }, right: { left: 98, top: 52 } }
+
+function StoneHops({ ctx, onTouch, soundOn = true }) {
   const forward = ctx.phase === LearnPhase.FORWARD
-  // Every string carries its own NOTE (pentatonic, rising left to right),
-  // plucked instantly under the spoken letter - so a strum sounds like an
-  // ascending run going forward and a descending one coming back.
-  const strum = useCallback((k) => {
+  const hop = useCallback((k) => {
     playPluck(formOf(k)?.order ?? 1, soundOn)
     onTouch(k)
   }, [onTouch, soundOn])
-  const handlers = useSlideTouch(strum)
+  const handlers = useSlideTouch(hop)
   const activeKey = ctx.forms[ctx.idx]
   const isDone = (i) => (forward ? i < ctx.idx : i > ctx.idx)
+  // Anbessa stands on the last stone he won; before the first win he waits
+  // on the bank he is crossing FROM.
+  const standIdx = forward ? ctx.idx - 1 : ctx.idx + 1
+  const stand = standIdx < 0 ? BANKS.left : standIdx >= ctx.forms.length ? BANKS.right : STONE_POINTS[standIdx]
   return (
     <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
       <p className="flex items-center gap-2 text-lg font-extrabold">
         {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
-        {forward ? t('krarFwd', 'Strum the krar - this way!') : t('krarBack', 'Now strum back the other way!')}
+        {forward ? t('stoneFwd', 'Hop across the river!') : t('stoneBack', 'Now hop back home!')}
       </p>
-      <div {...handlers} className="fq-land-short relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #33195c 0%, #5b2a70 62%, #83421f 100%)' }}>
-        {/* dusk glow behind the instrument */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(255,171,64,0.35), transparent 70%)' }} aria-hidden="true" />
-        {/* crossbar with Kokeb perched on it */}
-        <div className="pointer-events-none absolute left-[5%] right-[5%] top-6 h-4 rounded-full" style={{ background: 'linear-gradient(to bottom, #d97706, #92400e)', boxShadow: '0 3px 0 rgba(0,0,0,0.35)' }} aria-hidden="true" />
-        <Star className="pointer-events-none absolute right-[7%] top-1.5 h-6 w-6" fill="#ffc800" style={{ color: '#a86a00' }} aria-hidden="true" />
-        {/* side arms */}
-        <div className="pointer-events-none absolute left-[5%] top-7 bottom-12 w-3 rounded-full" style={{ background: 'linear-gradient(to right, #b45309, #78350f)' }} aria-hidden="true" />
-        <div className="pointer-events-none absolute right-[5%] top-7 bottom-12 w-3 rounded-full" style={{ background: 'linear-gradient(to left, #b45309, #78350f)' }} aria-hidden="true" />
-        {/* soundbox with its hole; Anbessa listens beside it */}
-        <div className="pointer-events-none absolute inset-x-[9%] bottom-2 flex h-16 items-center justify-center rounded-[2.5rem]" style={{ background: 'radial-gradient(ellipse at 50% 28%, #d97706, #92400e 72%)', boxShadow: 'inset 0 4px 8px rgba(255,255,255,0.22), 0 4px 0 rgba(0,0,0,0.3)' }} aria-hidden="true">
-          <div className="h-8 w-8 rounded-full" style={{ background: 'radial-gradient(circle at 40% 35%, #451a03, #1c0a01)' }} />
-        </div>
-        <div className="pointer-events-none absolute bottom-4 right-4" aria-hidden="true">
-          <Hero size={52} />
-        </div>
-        {/* the strings: full-height columns so strumming is forgiving */}
-        <div className="absolute inset-x-[12%] top-9 bottom-16 flex">
-          {ctx.forms.map((k, i) => {
-            const form = formOf(k)
-            const active = k === activeKey
-            const done = isDone(i)
-            const touched = ctx.lastTouch === k
-            return (
-              <div
-                key={k}
-                data-form={k}
-                role="button"
-                tabIndex={0}
-                aria-label={`String ${form?.sound}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') strum(k)
-                }}
-                className={`relative flex flex-1 select-none justify-center ${FOCUS}`}
-                style={{ outlineColor: 'var(--sky)' }}
-              >
-                <motion.div
-                  className="pointer-events-none absolute inset-y-0 left-1/2 w-[3px] -translate-x-1/2 rounded-full"
-                  animate={touched ? { x: [0, -3, 3, -2, 2, 0] } : { x: 0 }}
-                  transition={{ duration: 0.35 }}
-                  style={{
-                    background: done ? 'linear-gradient(#fde68a, #f59e0b)' : active ? '#fff8dc' : 'rgba(255,255,255,0.35)',
-                    boxShadow: active ? '0 0 12px 2px rgba(255,220,120,0.85)' : done ? '0 0 6px rgba(253,230,138,0.5)' : 'none',
-                  }}
-                />
-                <motion.div
-                  className="geez pointer-events-none absolute top-1/2 flex h-14 w-12 -translate-y-1/2 items-center justify-center rounded-2xl text-2xl font-black"
-                  animate={active
-                    ? { scale: [1, 1.16, 1], transition: { duration: 0.9, repeat: Infinity } }
-                    : touched
-                      ? { scale: [1, 1.2, 1], transition: { duration: 0.3 } }
-                      : { scale: 1 }}
-                  style={{
-                    background: done ? 'var(--star)' : active ? '#fff8e7' : 'rgba(255,255,255,0.16)',
-                    color: done || active ? '#7c5200' : '#efe3ff',
-                    border: `2px solid ${done ? '#b45309' : active ? '#fbbf24' : 'rgba(255,255,255,0.28)'}`,
-                    boxShadow: done || active ? '0 3px 0 rgba(0,0,0,0.25)' : 'none',
-                  }}
-                >
-                  {form?.char}
-                </motion.div>
-                {touched && (
-                  <motion.span
-                    key={`note-${k}-${ctx.idx}`}
-                    className="pointer-events-none absolute top-8"
-                    initial={{ opacity: 0.95, y: 0, scale: 0.7 }}
-                    animate={{ opacity: 0, y: -30, scale: 1.25 }}
-                    transition={{ duration: 0.8 }}
-                    aria-hidden="true"
-                  >
-                    <Music className="h-5 w-5" style={{ color: '#fde68a' }} />
-                  </motion.span>
-                )}
-              </div>
-            )
-          })}
-        </div>
+      <div {...handlers} className="fq-land-short relative h-80 w-full overflow-hidden rounded-3xl" style={{ ...handlers.style, background: 'linear-gradient(to bottom, #aee3ff 0%, #7ecbfa 26%, #2fa8ec 30%, #1287cf 100%)' }}>
+        {/* far bank, sun, and the two grassy shores */}
+        <div className="pointer-events-none absolute inset-x-0 top-[22%] h-3" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(3px)' }} aria-hidden="true" />
+        <div className="pointer-events-none absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: 'radial-gradient(circle at 40% 35%, #fff3b0, #ffc800)', boxShadow: '0 0 24px 6px rgba(255,200,0,0.45)' }} aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-0 left-0 top-[26%] w-[9%] rounded-r-3xl" style={{ background: 'linear-gradient(to right, #58cc02, #3f9302)' }} aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-0 right-0 top-[26%] w-[9%] rounded-l-3xl" style={{ background: 'linear-gradient(to left, #58cc02, #3f9302)' }} aria-hidden="true" />
+        {/* drifting ripples */}
+        {[18, 42, 66, 84].map((left, i) => (
+          <motion.span key={i} className="pointer-events-none absolute h-1.5 w-10 rounded-full" style={{ left: `${left}%`, top: `${34 + (i * 17) % 46}%`, background: 'rgba(255,255,255,0.35)' }} animate={{ x: [0, 10, 0], opacity: [0.25, 0.6, 0.25] }} transition={{ duration: 3 + i, repeat: Infinity }} aria-hidden="true" />
+        ))}
+        {/* the stones */}
+        {ctx.forms.map((k, i) => {
+          const form = formOf(k)
+          const p2 = STONE_POINTS[i]
+          const active = k === activeKey
+          const done = isDone(i)
+          return (
+            <motion.div
+              key={k}
+              data-form={k}
+              role="button"
+              tabIndex={0}
+              aria-label={`Stone ${form?.sound}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') hop(k)
+              }}
+              animate={active ? { scale: [1, 1.12, 1], transition: { duration: 0.9, repeat: Infinity } } : { scale: 1 }}
+              className={`geez absolute flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center rounded-[45%] text-2xl font-black ${FOCUS}`}
+              style={{
+                left: `${p2.left}%`,
+                top: `${p2.top}%`,
+                background: done
+                  ? 'radial-gradient(circle at 35% 30%, #ffe08a, #f5b91e)'
+                  : active
+                    ? 'radial-gradient(circle at 35% 30%, #fffbe9, #efe3c8)'
+                    : 'radial-gradient(circle at 35% 30%, #d7dde2, #97a3ac)',
+                color: done ? '#7c5200' : active ? '#6b5316' : '#4b5560',
+                border: `3px solid ${done ? '#c98d0a' : active ? '#ffc800' : 'rgba(255,255,255,0.55)'}`,
+                boxShadow: active
+                  ? '0 0 0 5px rgba(255,200,0,0.35), 0 6px 0 rgba(0,0,0,0.22)'
+                  : '0 6px 0 rgba(0,0,0,0.22)',
+                outlineColor: 'var(--sky)',
+              }}
+            >
+              {form?.char}
+            </motion.div>
+          )
+        })}
+        {/* Anbessa hops to the stone he just won (spring = the jump) */}
+        <motion.div
+          className="pointer-events-none absolute z-10"
+          initial={false}
+          animate={{ left: `${stand.left}%`, top: `${stand.top}%` }}
+          transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+          style={{ transform: 'translate(-50%, -100%)' }}
+          aria-hidden="true"
+        >
+          <div className="-translate-x-1/2 -translate-y-[92%]">
+            <Hero size={54} />
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   )
@@ -928,7 +919,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
-          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <KrarStrings key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} />}
+          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} />}
           {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
             const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
