@@ -313,9 +313,12 @@ export function buildQuestions(level, { missCounts = {}, targetForms = null, fam
   return questions
 }
 
+// The mastery bar: 2 stars (80 percent) is a PASS and unlocks the next
+// level; 1 star means the level wants another go after practicing.
+export const PASS_RATE = 0.8
 export function starsForAccuracy(accuracy) {
   if (accuracy >= 0.9) return 3
-  if (accuracy >= 0.65) return 2
+  if (accuracy >= PASS_RATE) return 2
   return 1
 }
 
@@ -1077,8 +1080,11 @@ export default function AmharicFidelGame() {
     setTraceResult(null)
   }, [])
 
+  // A level opens once the one before is PASSED (2 stars = the mastery
+  // bar). Levels the child already played stay open - progress recorded
+  // under the old any-star rule is never taken away.
   const isLevelUnlocked = useCallback(
-    (lvl) => lvl.id === 1 || (progress.stars[lvl.id - 1] || 0) > 0,
+    (lvl) => lvl.id === 1 || (progress.stars[lvl.id - 1] || 0) >= 2 || (progress.stars[lvl.id] || 0) > 0,
     [progress],
   )
 
@@ -1647,7 +1653,7 @@ export default function AmharicFidelGame() {
         )}
 
         <div className="flex w-full flex-col gap-3">
-          {!level.practice && nextLevel && earnedStars > 0 && (
+          {!level.practice && nextLevel && earnedStars >= 2 && (
             <button
               type="button"
               onClick={() => startLevel(nextLevel)}
