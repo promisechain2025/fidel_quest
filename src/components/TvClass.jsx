@@ -29,6 +29,7 @@ import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, INDEXES } from '../platform/ethiopic'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { buildReviewQueue } from '../platform/coach'
+import { useKeepAwake } from '../platform/wakeLock'
 import { QrPanel } from './TeacherMode'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -175,16 +176,18 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
-        <p key={`${family?.id}-${order}-${beat}`} className="geez fq-tv-pop font-black leading-none" style={{ fontSize: 'min(40vh, 40vw)', textShadow: '0 10px 0 rgba(0,0,0,0.35)' }}>
+      <div className="fq-tv-center flex min-h-0 flex-1 flex-col items-center justify-center">
+        <p key={`${family?.id}-${order}-${beat}`} className="geez fq-tv-pop fq-tv-letter font-black leading-none" style={{ textShadow: '0 10px 0 rgba(0,0,0,0.35)' }}>
           {form?.char}
         </p>
-        <p className="mono mt-1 text-4xl font-black" style={{ color: GOLD }}>
-          {form?.sound}
-        </p>
-        <p className="mt-2 h-10 text-3xl font-black" style={{ color: GOLD, opacity: sayAfter && yourTurn ? 1 : 0, transition: 'opacity 0.3s' }} aria-live="polite">
-          {t('tvYourTurn', 'Your turn - say it!')}
-        </p>
+        <div className="flex flex-col items-center">
+          <p className="mono mt-1 text-4xl font-black" style={{ color: GOLD }}>
+            {form?.sound}
+          </p>
+          <p className="mt-2 h-10 text-3xl font-black" style={{ color: GOLD, opacity: sayAfter && yourTurn ? 1 : 0, transition: 'opacity 0.3s' }} aria-live="polite">
+            {t('tvYourTurn', 'Your turn - say it!')}
+          </p>
+        </div>
       </div>
 
       <div className="mx-auto mb-4 flex max-w-full flex-wrap items-center justify-center gap-2 px-4">
@@ -358,6 +361,9 @@ export default function TvClass({ onBack, joinUrl = null, families = null }) {
     try { document.documentElement.requestFullscreen?.() } catch { /* not allowed */ }
     return () => { try { if (document.fullscreenElement) document.exitFullscreen?.() } catch { /* ignore */ } }
   }, [])
+  // A projected lesson runs untouched for minutes at a time - the phone must
+  // not dim or lock mid-chant.
+  useKeepAwake()
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: BOARD, color: INK }}>

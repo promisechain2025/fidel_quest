@@ -96,6 +96,22 @@ describe('question generation', () => {
     })
   })
 
+  it('never quizzes outside the learned families in scoped mode', () => {
+    // A child three families into the journey (below the 4-form floor that
+    // used to trigger a full-level fallback) must still only ever see
+    // letters from those families - widened by vocal order, not strangers.
+    const learnedIdx = new Set([0, 1, 2]) // ha, le, hha
+    for (const level of [LEVELS[0], LEVELS[1]]) {
+      const qs = buildQuestions(level, { familyIndices: learnedIdx })
+      expect(qs.length).toBeGreaterThan(0)
+      for (const q of qs) {
+        for (const form of [q.target, ...q.options]) {
+          expect(learnedIdx.has(form.familyIndex)).toBe(true)
+        }
+      }
+    }
+  })
+
   it('never offers a same-sounding twin as a distractor', () => {
     const level = LEVELS[0] // contains both Ha (ሀ) and Hha (ሐ)
     const pool = level.familyIndices.flatMap((fi) => [FIDEL_FAMILIES[fi].forms[0]])
@@ -231,14 +247,17 @@ describe('directional tracing (P6)', () => {
 })
 
 describe('<AmharicFidelGame />', () => {
-  it('renders the menu with all levels and only level 1 unlocked', () => {
+  it('renders one current-level card and a level strip with the rest locked', () => {
     render(<AmharicFidelGame />)
     expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
-    LEVELS.forEach((level) => expect(screen.getByText(level.title)).toBeInTheDocument())
-    const level2Button = screen.getByText('More Letters').closest('button')
-    expect(level2Button).toBeDisabled()
-    const level1Button = screen.getByText('First Letters').closest('button')
-    expect(level1Button).toBeEnabled()
+    // Only the CURRENT level gets a full card; the others live as chips.
+    expect(screen.getByText('First Letters').closest('button')).toBeEnabled()
+    expect(screen.queryByText('More Letters')).not.toBeInTheDocument()
+    LEVELS.forEach((level) => {
+      const chip = screen.getByRole('listitem', { name: new RegExp(`^Level ${level.id} - `) })
+      if (level.id === 1) expect(chip).toBeEnabled()
+      else expect(chip).toBeDisabled()
+    })
   })
 
   it('unlocks later levels from persisted progress', () => {

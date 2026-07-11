@@ -14,15 +14,21 @@ describe('buildWarmup', () => {
   })
   it('is empty only when nothing is learned', () => {
     expect(buildWarmup(1, [], [])).toEqual([])
-    expect(buildWarmup(1, ['ha'], []).length).toBe(1)
+    // A single learned family still fills a whole warm-up: its 7 forms
+    // carry 7 distinct vowel sounds.
+    expect(buildWarmup(1, ['ha'], []).length).toBe(WARMUP_SIZE)
   })
-  it('caps at WARMUP_SIZE and stays within/around the learned pool for targets', () => {
+  it('caps at WARMUP_SIZE and reviews any form of the learned families', () => {
+    const famOf = (k) => k.replace(/-\d+$/, '')
     const qs = buildWarmup(5, learned, [])
     expect(qs.length).toBe(WARMUP_SIZE)
     for (const q of qs) {
-      expect(learned.map((id) => `${id}-1`)).toContain(q.target)
+      expect(learned).toContain(famOf(q.target))
       expect(q.options).toContain(q.target)
     }
+    // ...and does range beyond the base form (the whole point).
+    const many = [1, 2, 3, 4, 5].flatMap((s) => buildWarmup(s, learned, []))
+    expect(many.some((q) => !q.target.endsWith('-1'))).toBe(true)
   })
   it('puts actually-missed letters into the set', () => {
     // The child keeps confusing se: heard se, picked re, twice.

@@ -81,7 +81,6 @@ export function resolveSource(key, state) {
 }
 
 const FADE_IN_S = 0.015
-const CROSSFADE_S = 0.12
 
 export class AudioEngine {
   constructor({
@@ -269,8 +268,8 @@ export class AudioEngine {
 
   /**
    * Play the clip for a key. `chime` carries {familyIndex, order} so the
-   * synth fallback stays per-letter deterministic. Cross-fades over any
-   * clip still playing unless {interrupt:false}.
+   * synth fallback stays per-letter deterministic. Voices never overlap:
+   * a play during a clip waits its turn, and the newest waiter wins.
    */
   /** iOS can leave a context claiming 'running' while its clock is frozen
       (after a call/Siri/route change) - everything schedules, nothing
@@ -289,18 +288,37 @@ export class AudioEngine {
     return ctx
   }
 
-  async play(key, { enabled = true, interrupt = true, chime = null } = {}) {
+  async play(key, { enabled = true, chime = null } = {}) {
     if (!enabled) return
+    // ONE VOICE AT A TIME, app-wide. A request that arrives while a clip is
+    // still sounding WAITS for it to finish - and newer requests replace the
+    // waiting one, so the LAST ask wins. No per-screen bookkeeping, no two
+    // voices talking over each other anywhere. Effects/chimes stay instant
+    // (they are punctuation, not speech). A watchdog frees a lock whose
+    // clip never reported ending (suspended context) so voicing cannot die.
+    if (this._voiceBusy && Date.now() < (this._voiceUntil || 0)) {
+      this._pendingVoice = { key, opts: { enabled, chime } }
+      return
+    }
+    this._voiceBusy = true
+    this._voiceUntil = Date.now() + 4000 // until the real duration is known
+    const free = () => {
+      this._voiceBusy = false
+      const next = this._pendingVoice
+      this._pendingVoice = null
+      if (next) this.play(next.key, next.opts)
+    }
     // Remember a play that starts against a locked context (autoplay policy:
     // resume only works inside a user gesture). The unlock kick replays it.
     const ctx0 = this.healZombie(this.getCtx())
-    if (ctx0 && ctx0.state !== 'running') this.lastBlocked = { key, opts: { enabled, interrupt, chime }, at: Date.now() }
+    if (ctx0 && ctx0.state !== 'running') this.lastBlocked = { key, opts: { enabled, chime }, at: Date.now() }
     else this.lastBlocked = null
     await this.ensureManifest()
     const source = this.resolve(key)
     this.emit('play', { key, source: source.type })
     if (source.type === 'chime') {
       this.playChime(chime)
+      free()
       return
     }
     try {
@@ -311,21 +329,14 @@ export class AudioEngine {
       node.buffer = buffer
       node.connect(gain).connect(ctx.destination)
       const now = ctx.currentTime
-      if (interrupt && this.current) {
-        try {
-          this.current.gain.gain.setValueAtTime(this.current.gain.gain.value, now)
-          this.current.gain.gain.linearRampToValueAtTime(0.0001, now + CROSSFADE_S)
-          this.current.source.stop(now + CROSSFADE_S + 0.02)
-        } catch {
-          /* already ended */
-        }
-      }
       gain.gain.setValueAtTime(0.0001, now)
       gain.gain.linearRampToValueAtTime(1, now + FADE_IN_S)
       node.start(now)
       this.current = { source: node, gain }
+      this._voiceUntil = Date.now() + buffer.duration * 1000 + 800
       node.onended = () => {
         if (this.current?.source === node) this.current = null
+        free()
       }
     } catch (err) {
       // Buffer path failed: fall back gracefully — first to a plain
@@ -336,7 +347,8 @@ export class AudioEngine {
       if (source.type === 'file' && typeof Audio !== 'undefined') {
         try {
           const a = new Audio(source.src)
-          a.addEventListener('error', () => this.playChime(chime), { once: true })
+          a.addEventListener('ended', free, { once: true })
+          a.addEventListener('error', () => { this.playChime(chime); free() }, { once: true })
           await a.play()
           return
         } catch {
@@ -348,6 +360,7 @@ export class AudioEngine {
         this.emit('missing', { key, src: source.src })
       }
       this.playChime(chime)
+      free()
     }
   }
 

@@ -14,7 +14,6 @@ import {
   BookOpen,
   Gamepad2,
   RotateCcw,
-  Lock,
   CheckCircle2,
   XCircle,
   Smile,
@@ -191,10 +190,31 @@ function buildPool(level, familyIndexSet = null) {
     return pool
   }
   if (!familyIndexSet) return build(level.familyIndices)
-  const scoped = build(level.familyIndices.filter((fi) => familyIndexSet.has(fi)))
-  // Keep the quiz playable: if the child has learned too few of this level's
-  // letters to make real choices, fall back to the full level pool.
-  return scoped.length >= 4 ? scoped : build(level.familyIndices)
+  // In 'learned' scope a child must NEVER be quizzed on a letter they have
+  // not met. When the learned slice of this level is too thin for real
+  // choices (fewer than 4 forms), widen with OTHER vocal orders of learned
+  // families - first the level's own, then any learned family - instead of
+  // falling back to unlearned strangers.
+  const inLevel = level.familyIndices.filter((fi) => familyIndexSet.has(fi))
+  const pool = build(inLevel)
+  const widen = (indices) => {
+    const seen = new Set(pool.map((f) => f.char))
+    for (const fi of indices) {
+      if (pool.length >= 4) return
+      for (const form of FIDEL_FAMILIES[fi].forms) {
+        if (form && !seen.has(form.char)) {
+          seen.add(form.char)
+          pool.push(form)
+          if (pool.length >= 4) return
+        }
+      }
+    }
+  }
+  if (pool.length < 4) widen(inLevel)
+  if (pool.length < 4) widen([...familyIndexSet].filter((fi) => !inLevel.includes(fi)))
+  // Nothing learned at all cannot happen (scope falls back to the first
+  // family), but keep the quiz playable no matter what.
+  return pool.length >= 4 ? pool : build(level.familyIndices)
 }
 
 /* Pick 3 distractors for a target. Guarantees no distractor shares the
@@ -242,8 +262,16 @@ export function weightTargets(forms, missCounts = {}) {
    starts it. The target is the form of the word's leading character;
    distractors come from the whole fidel table via buildQuestion, which
    already guarantees unique characters and pronunciations.                  */
-export function buildWordQuestions(level) {
-  const words = shuffle(WORDS)
+export function buildWordQuestions(level, familyIndexSet = null) {
+  // Same scope rule as the letter rounds: in 'learned' mode only ask about
+  // words whose answer letter the child has met, with distractors from
+  // learned families. Falls back to the full word list only when too few
+  // words are in scope to make a real round.
+  const inScope = (form) => !familyIndexSet || familyIndexSet.has(form.familyIndex)
+  const scopedWords = WORDS.filter((w) => inScope(CHAR_TO_FORM.get(w.startChar)))
+  const useScoped = familyIndexSet && scopedWords.length >= 4
+  const words = shuffle(useScoped ? scopedWords : WORDS)
+  const pool = useScoped ? ALL_FORMS.filter(inScope) : ALL_FORMS
   const questions = []
   for (let i = 0; i < level.questionCount; i++) {
     let word = words[i % words.length]
@@ -252,13 +280,13 @@ export function buildWordQuestions(level) {
       word = words[(i + 1) % words.length]
     }
     const target = CHAR_TO_FORM.get(word.startChar)
-    questions.push({ ...buildQuestion(level, target, ALL_FORMS), word })
+    questions.push({ ...buildQuestion(level, target, pool), word })
   }
   return questions
 }
 
 export function buildQuestions(level, { missCounts = {}, targetForms = null, familyIndices = null } = {}) {
-  if (level.mode === 'word-to-char') return buildWordQuestions(level)
+  if (level.mode === 'word-to-char') return buildWordQuestions(level, familyIndices)
   const pool = buildPool(level, familyIndices)
   // Practice rounds narrow the targets to just-missed letters while keeping
   // the full level pool available for distractors.
@@ -388,8 +416,8 @@ function vibrate(pattern) {
 }
 
 // Recitation cadence: ~0.8s clip + a beat of silence, so syllables never
-// overlap (with interrupt:true they also cross-fade cleanly). The chant offers
-// three paces; slow gives the most room to say each letter along.
+// overlap (the engine's voice queue also holds any stragglers). The chant
+// offers three paces; slow gives the most room to say each letter along.
 const CHANT_PACES = { slow: 1900, normal: 1300, fast: 850 }
 const CHANT_PACE_ORDER = ['slow', 'normal', 'fast']
 const CHANT_CADENCE_MS = CHANT_PACES.normal
@@ -406,7 +434,7 @@ function speakMotivation(clips) {
   try {
     const key = clips[Math.floor(Math.random() * clips.length)]
     // Only play when a real recording exists; a 'chime' resolution is skipped.
-    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key, { interrupt: false })
+    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key)
   } catch {
     /* audio unavailable — the SFX cue already fired */
   }
@@ -1091,47 +1119,81 @@ export default function AmharicFidelGame() {
         </div>
       )}
 
-      <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-        {LEVELS.map((lvl) => {
-          const unlocked = isLevelUnlocked(lvl)
-          const stars = progress.stars[lvl.id] || 0
-          return (
-            <button
-              key={lvl.id}
-              type="button"
-              disabled={!unlocked}
-              onClick={() => startLevel(lvl)}
-              className={`group relative overflow-hidden rounded-2xl p-5 text-left shadow-lg transition-all duration-200 ${FOCUS_RING} ${
-                unlocked
-                  ? 'bg-white/90 hover:-translate-y-1 hover:shadow-xl active:scale-95 dark:bg-gray-800/90'
-                  : 'cursor-not-allowed bg-white/40 opacity-70 dark:bg-gray-800/40'
-              }`}
-            >
-              <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${lvl.accent}`} aria-hidden="true" />
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {t('level', { n: lvl.id })}
-                  </p>
-                  <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{tLevelTitle(lvl)}</h2>
-                  <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">{tLevelSubtitle(lvl)}</p>
+      {/* ONE current-level card + a compact chip strip. The child sees where
+         they stand in a single row (finished chips replay their level, the
+         current one pulses, the rest wait dim) and the page stays short -
+         seven near-identical cards taught nothing extra. */}
+      {(() => {
+        const current =
+          LEVELS.find((lvl) => isLevelUnlocked(lvl) && (progress.stars[lvl.id] || 0) === 0) ||
+          LEVELS.find((lvl) => (progress.stars[lvl.id] || 0) < 3) ||
+          null
+        return (
+          <div className="flex w-full max-w-md flex-col items-center gap-5">
+            <div className="flex items-center justify-center gap-2" role="list">
+              {LEVELS.map((lvl) => {
+                const stars = progress.stars[lvl.id] || 0
+                const unlocked = isLevelUnlocked(lvl)
+                const isCurrent = current?.id === lvl.id
+                return (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    role="listitem"
+                    disabled={!unlocked}
+                    onClick={() => startLevel(lvl)}
+                    aria-label={`${t('level', { n: lvl.id })} - ${tLevelTitle(lvl)}`}
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-full text-base font-extrabold shadow-md transition-all duration-200 ${FOCUS_RING} ${
+                      isCurrent
+                        ? `bg-gradient-to-br ${lvl.accent} scale-110 text-white`
+                        : stars > 0
+                          ? 'bg-amber-400 text-white hover:-translate-y-0.5'
+                          : unlocked
+                            ? 'bg-white/80 text-amber-800 dark:bg-gray-800/80 dark:text-amber-200'
+                            : 'cursor-not-allowed bg-white/40 text-gray-400 opacity-70 dark:bg-gray-800/40 dark:text-gray-500'
+                    }`}
+                  >
+                    {!isCurrent && stars >= 3 ? <Star className="h-5 w-5 fill-current" /> : lvl.id}
+                    {stars > 0 && stars < 3 && (
+                      <span className="absolute -bottom-2 flex gap-0.5" aria-hidden="true">
+                        {Array.from({ length: stars }, (_, i) => (
+                          <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        ))}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {current && (
+              <button
+                type="button"
+                onClick={() => startLevel(current)}
+                className={`group relative w-full overflow-hidden rounded-2xl bg-white/90 p-5 text-left shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-xl active:scale-95 dark:bg-gray-800/90 ${FOCUS_RING}`}
+              >
+                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${current.accent}`} aria-hidden="true" />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      {t('level', { n: current.id })}
+                    </p>
+                    <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{tLevelTitle(current)}</h2>
+                    <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">{tLevelSubtitle(current)}</p>
+                  </div>
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${current.accent} text-white shadow-md transition-transform group-hover:scale-110`}
+                  >
+                    <Play className="ml-0.5 h-6 w-6 fill-current" />
+                  </div>
                 </div>
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${lvl.accent} text-white shadow-md transition-transform group-hover:scale-110`}
-                >
-                  {unlocked ? <Play className="ml-0.5 h-6 w-6 fill-current" /> : <Lock className="h-6 w-6" />}
+                <div className="mt-3">
+                  <StarRating count={progress.stars[current.id] || 0} size="h-5 w-5" />
                 </div>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <StarRating count={stars} size="h-5 w-5" />
-                {!unlocked && (
-                  <span className="text-xs font-semibold text-gray-400">{t('earnStar', { n: lvl.id - 1 })}</span>
-                )}
-              </div>
-            </button>
-          )
-        })}
-      </div>
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="flex w-full max-w-md flex-col gap-3">
         <button

@@ -7,6 +7,7 @@ import {
   ECHO_ROUNDS,
   SHUFFLE_ROUNDS,
   MIX_ROUNDS,
+  MIX_POOL_SIZE,
   STONES,
   stoneUnlocked,
   groupMastered,
@@ -122,7 +123,9 @@ describe('mix challenges', () => {
       const ctx = mixInitial(['ha', 'le', 'hha'], seed) // ha and hha are twins
       const sounds = ctx.order.map(soundOf)
       expect(new Set(sounds).size).toBe(sounds.length)
-      expect(ctx.order.length).toBeGreaterThanOrEqual(2)
+      // Three families carry more than enough distinct sounds to fill the
+      // whole tray - the mix should feel like a real review.
+      expect(ctx.order.length).toBe(MIX_POOL_SIZE)
       expect(ctx.phase).toBe(LearnPhase.SHUFFLE)
       expect(ctx.order).toContain(ctx.target)
     }

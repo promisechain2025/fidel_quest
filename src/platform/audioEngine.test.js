@@ -210,6 +210,40 @@ describe('AudioEngine', () => {
     vi.unstubAllGlobals()
   })
 
+  it('voices never overlap: a play during a clip waits, the newest waiter wins', async () => {
+    const sources = []
+    class VoiceCtx extends FakeCtx {
+      decodeAudioData() { return Promise.resolve({ duration: 1 }) }
+      createBufferSource() {
+        const n = { connect: (x) => x, start() {}, buffer: null }
+        sources.push(n)
+        return n
+      }
+    }
+    vi.stubGlobal('AudioContext', VoiceCtx)
+    vi.stubGlobal('Audio', undefined)
+    const fetchImpl = vi.fn().mockImplementation((url) =>
+      url.endsWith('manifest.json')
+        ? Promise.resolve({ ok: true, json: async () => ({ coverage: ['letters/ha-1', 'letters/le-1', 'letters/me-1'] }) })
+        : Promise.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) }),
+    )
+    const engine = new AudioEngine({ fetchImpl, getMemory: () => null })
+    const spoken = []
+    engine.on('play', (e) => spoken.push(e.key))
+    await engine.play('letters/ha-1')
+    // Two more requests while ha is still sounding: le waits, me replaces it.
+    await engine.play('letters/le-1')
+    await engine.play('letters/me-1')
+    expect(sources.length).toBe(1) // nothing overlapped ha
+    sources[0].onended() // ha finishes; the queue drains
+    await new Promise((r) => setTimeout(r, 20))
+    expect(sources.length).toBe(2) // exactly one follow-up clip
+    expect(spoken).toEqual(['letters/ha-1', 'letters/me-1']) // le was superseded
+    sources[1].onended()
+    expect(engine._voiceBusy).toBe(false) // free again - no deadlock
+    vi.unstubAllGlobals()
+  })
+
   it('getCtx wakes an interrupted context (iOS backgrounding)', () => {
     vi.stubGlobal('AudioContext', FakeCtx)
     const engine = new AudioEngine({ fetchImpl: vi.fn(), getMemory: () => null })

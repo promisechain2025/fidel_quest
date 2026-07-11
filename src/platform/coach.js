@@ -171,8 +171,15 @@ export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMU
  * first (actually missed, from the answer ledger), then the least-recently-
  * practiced. Empty only when nothing is learned yet.
  */
+const ALL_ORDERS = [1, 2, 3, 4, 5, 6, 7]
+
 export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) {
-  const pool = learnedIds.map((id) => `${id}-1`)
+  // The letter steps teach (and trace) every form of a family, so the
+  // warm-up reviews across ALL seven vocal orders of the learned families,
+  // not just each family's base letter.
+  const pool = learnedIds
+    .flatMap((id) => ALL_ORDERS.map((o) => `${id}-${o}`))
+    .filter((k) => INDEXES.byAudioKey.has(k))
   // Trouble first (limited so the warm-up is never all pain)...
   const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 3 })
     .map((t) => t.key)
@@ -182,5 +189,5 @@ export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) 
   const staleFirst = pool
     .filter((k) => !trouble.includes(k))
     .sort((a, b) => (stats.get(a)?.lastDay || 0) - (stats.get(b)?.lastDay || 0) || (a < b ? -1 : 1))
-  return buildReviewQueue(seed, learnedIds, [...trouble, ...staleFirst], count)
+  return buildReviewQueue(seed, learnedIds, [...trouble, ...staleFirst], count, ALL_ORDERS)
 }
