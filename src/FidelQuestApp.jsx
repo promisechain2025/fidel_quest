@@ -2475,21 +2475,20 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
     return () => clearTimeout(t)
   }, [ctx.status, ctx.cursor]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Feedback sounds fire on state entry. A correct pick ECHOES the letter
-  // right after the success chime - hearing "you got it: ha" once more is
-  // the reinforcement moment, not just a beep.
+  // Feedback sounds fire on state entry. A correct pick gets ONLY the
+  // success chime - the child just proved they know the letter, so saying
+  // it again merely talks over the next question. A WRONG pick repeats the
+  // target after the miss chime: that is the moment to listen once more.
   useEffect(() => {
     const q = ctx.queue[ctx.cursor]
     let echo
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q && !demoRef.current) {
-        recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
-        echo = setTimeout(() => playForm(formOf(q.target), soundOn), 380)
-      }
+      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
+      if (q) echo = setTimeout(() => playForm(formOf(q.target), soundOn), 500)
       if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)

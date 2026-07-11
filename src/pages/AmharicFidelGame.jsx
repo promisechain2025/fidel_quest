@@ -416,8 +416,8 @@ function vibrate(pattern) {
 }
 
 // Recitation cadence: ~0.8s clip + a beat of silence, so syllables never
-// overlap (with interrupt:true they also cross-fade cleanly). The chant offers
-// three paces; slow gives the most room to say each letter along.
+// overlap (the engine's voice queue also holds any stragglers). The chant
+// offers three paces; slow gives the most room to say each letter along.
 const CHANT_PACES = { slow: 1900, normal: 1300, fast: 850 }
 const CHANT_PACE_ORDER = ['slow', 'normal', 'fast']
 const CHANT_CADENCE_MS = CHANT_PACES.normal
@@ -434,7 +434,7 @@ function speakMotivation(clips) {
   try {
     const key = clips[Math.floor(Math.random() * clips.length)]
     // Only play when a real recording exists; a 'chime' resolution is skipped.
-    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key, { interrupt: false })
+    if (platformAudio.resolve(key).type !== 'chime') platformAudio.play(key)
   } catch {
     /* audio unavailable — the SFX cue already fired */
   }
