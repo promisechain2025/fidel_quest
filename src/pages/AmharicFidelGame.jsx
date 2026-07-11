@@ -1203,7 +1203,10 @@ export default function AmharicFidelGame() {
         )
       })()}
 
-      <div className="grid w-full max-w-md grid-cols-3 gap-3">
+      {/* The three modes: full-width rows, one under the other - the compact
+         header freed the room, so each gets its icon, name AND description
+         while the whole page still fits a phone without scrolling. */}
+      <div className="flex w-full max-w-md flex-col gap-3">
         {[
           ['explore', BookOpen, 'from-sky-400 to-blue-500', t('exploreCta'), () => { setScreen('explore'); playSfx('tap') }],
           ['trace', Pencil, 'from-rose-400 to-pink-500', t('traceCta'), () => { setScreen('trace'); setTraceFamilyIndex(null); setTraceFormIndex(0); setTraceResult(null); playSfx('tap') }],
@@ -1213,11 +1216,11 @@ export default function AmharicFidelGame() {
             key={id}
             type="button"
             onClick={go}
-            title={cta}
-            className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-br ${grad} px-2 py-4 font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+            className={`flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r ${grad} px-5 py-3.5 text-left font-extrabold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
           >
-            <Icon className="h-7 w-7" aria-hidden="true" />
-            <span className="text-center text-xs leading-tight">{cta.split(/\u2014|-/)[0].trim()}</span>
+            <Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+            <span className="flex-1 text-base leading-snug">{cta}</span>
+            <ChevronRight className="h-5 w-5 shrink-0" aria-hidden="true" />
           </button>
         ))}
       </div>
