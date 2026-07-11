@@ -155,11 +155,11 @@ describe('question generation', () => {
     })
   })
 
-  it('awards stars by accuracy bands', () => {
+  it('awards stars by accuracy bands (0.8 = the pass bar)', () => {
     expect(starsForAccuracy(1)).toBe(3)
     expect(starsForAccuracy(0.9)).toBe(3)
-    expect(starsForAccuracy(0.7)).toBe(2)
-    expect(starsForAccuracy(0.5)).toBe(1)
+    expect(starsForAccuracy(0.8)).toBe(2)
+    expect(starsForAccuracy(0.7)).toBe(1)
     expect(starsForAccuracy(0)).toBe(1)
   })
 })

@@ -323,41 +323,87 @@ export function buildPracticeQueue(events, seed, count = 8) {
   let rngState = seed
   let targets = Array.from({ length: count }, (_, i) => trouble[i % trouble.length].key)
   ;[targets, rngState] = rngShuffle(targets, rngState)
-  const queue = targets.map((target) => {
-    const form = INDEXES.byAudioKey.get(target)
-    const confused = pairs
-      .filter((p) => p.heard === target)
-      .map((p) => p.picked)
+  const queue = []
+  for (const target of targets) {
+    let q
+    ;[q, rngState] = practiceQuestion(target, pairs, rngState)
+    queue.push(q)
+  }
+  return queue
+}
+
+/** One practice question for a target key: the child's actual confusion
+    partners as distractors first (twin-safe), then same-order peers from
+    the target's letter group. Pure in (target, pairs, rngState). */
+function practiceQuestion(target, pairs, rngState) {
+  const form = INDEXES.byAudioKey.get(target)
+  const confused = pairs
+    .filter((p) => p.heard === target)
+    .map((p) => p.picked)
+    .filter((k) => {
+      const other = INDEXES.byAudioKey.get(k)
+      return other && other.sound !== form.sound
+    })
+  const groupStart = Math.floor(form.familyIndex / 8) * 8
+  let peers
+  ;[peers, rngState] = rngShuffle(
+    FIDEL_FAMILIES.slice(groupStart, Math.min(groupStart + 8, FIDEL_FAMILIES.length))
+      .map((f) => `${f.id}-${form.order}`)
       .filter((k) => {
         const other = INDEXES.byAudioKey.get(k)
-        return other && other.sound !== form.sound
-      })
-    const groupStart = Math.floor(form.familyIndex / 8) * 8
-    let peers
-    ;[peers, rngState] = rngShuffle(
-      FIDEL_FAMILIES.slice(groupStart, Math.min(groupStart + 8, FIDEL_FAMILIES.length))
-        .map((f) => `${f.id}-${form.order}`)
-        .filter((k) => {
-          const other = INDEXES.byAudioKey.get(k)
-          return k !== target && other && other.sound !== form.sound && !confused.includes(k)
-        }),
-      rngState,
-    )
-    // Build options greedily with UNIQUE SOUNDS - confusion partners first,
-    // then peers - so twins (e.g. Se/Sse) never co-occur in one question.
-    const usedSounds = new Set([form.sound])
-    const picked = [target]
-    for (const k of [...confused, ...peers]) {
-      if (picked.length >= 4) break
-      const other = INDEXES.byAudioKey.get(k)
-      if (!other || usedSounds.has(other.sound) || picked.includes(k)) continue
-      usedSounds.add(other.sound)
-      picked.push(k)
+        return k !== target && other && other.sound !== form.sound && !confused.includes(k)
+      }),
+    rngState,
+  )
+  // Build options greedily with UNIQUE SOUNDS - confusion partners first,
+  // then peers - so twins (e.g. Se/Sse) never co-occur in one question.
+  const usedSounds = new Set([form.sound])
+  const picked = [target]
+  for (const k of [...confused, ...peers]) {
+    if (picked.length >= 4) break
+    const other = INDEXES.byAudioKey.get(k)
+    if (!other || usedSounds.has(other.sound) || picked.includes(k)) continue
+    usedSounds.add(other.sound)
+    picked.push(k)
+  }
+  let options
+  ;[options, rngState] = rngShuffle(picked, rngState)
+  return [{ target, options }, rngState]
+}
+
+/**
+ * The FIX-IT round: after a failed quiz, a short targeted queue - every
+ * missed letter asked twice, INTERLEAVED with a couple of letters the child
+ * got right (an all-pain drill demoralizes and teaches worse). Pure in
+ * (events, missedKeys, solidKeys, seed). Distractors reuse the child's own
+ * confusion history, exactly like Star Practice.
+ */
+export function buildFixItQueue(events, missedKeys, solidKeys, seed) {
+  const missed = [...new Set(missedKeys)].filter((k) => INDEXES.byAudioKey.has(k))
+  if (!missed.length) return []
+  const pairs = confusions(events, { minCount: 1, limit: 12 })
+  let rngState = seed
+  let solid
+  ;[solid, rngState] = rngShuffle(
+    [...new Set(solidKeys)].filter((k) => INDEXES.byAudioKey.has(k) && !missed.includes(k)),
+    rngState,
+  )
+  let targets
+  ;[targets, rngState] = rngShuffle([...missed, ...missed, ...solid.slice(0, 2)], rngState)
+  // No letter twice in a row - hearing the same prompt back to back reads
+  // as a glitch to a child, even when repetition is the point.
+  for (let i = 1; i < targets.length; i++) {
+    if (targets[i] === targets[i - 1]) {
+      const j = targets.findIndex((k, x) => x > i && k !== targets[i])
+      if (j > 0) [targets[i], targets[j]] = [targets[j], targets[i]]
     }
-    let options
-    ;[options, rngState] = rngShuffle(picked, rngState)
-    return { target, options }
-  })
+  }
+  const queue = []
+  for (const target of targets) {
+    let q
+    ;[q, rngState] = practiceQuestion(target, pairs, rngState)
+    queue.push(q)
+  }
   return queue
 }
 
@@ -435,7 +481,12 @@ export const selectAccuracy = (ctx) => {
   const firstTry = ctx.history.filter((h) => h.attempts === 1).length
   return Math.round((firstTry / ctx.history.length) * 100)
 }
-export const starsForAccuracy = (accuracy) => (accuracy >= 90 ? 3 : accuracy >= 65 ? 2 : 1)
+// MASTERY BAR: a real quiz passes at 80 percent first-try accuracy. Two
+// stars means passed; one star means the level needs another go - the
+// fix-it loop (below the Lesson screen) enforces it rather than nagging.
+export const PASS_ACCURACY = 80
+export const FIXIT_MAX_CYCLES = 2
+export const starsForAccuracy = (accuracy) => (accuracy >= 90 ? 3 : accuracy >= PASS_ACCURACY ? 2 : 1)
 const formOf = (audioKey) => INDEXES.byAudioKey.get(audioKey)
 
 /* ============================================================================
@@ -1004,12 +1055,15 @@ export default function FidelQuestApp() {
     // Games come AFTER the day's warm-up: kids rush to the arcade, so the
     // gateway nudges (or, if the plan enforces it, requires) a quick review
     // of yesterday's letters first. Reads storage fresh - the plan may have
-    // just changed in Grown-ups.
+    // just changed in Grown-ups. The warm-up also becomes REQUIRED (no
+    // "Play anyway") whenever the ledger holds unresolved trouble letters:
+    // the day starts by healing gaps before rewards.
     if (
       node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
       learnedFamilyIds(journeyRef.current).length > 0
     ) {
-      setWarmupNudge({ node, enforced: !!loadPlan()?.requireWarmup })
+      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).length > 0
+      setWarmupNudge({ node, enforced })
       return
     }
     setRunSeed((Date.now() % 1000000) | 1)
@@ -1211,13 +1265,16 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 onFinish={(levelId, result) => {
                   // Quitting (result === null) never completes the node - a
-                  // boss quiz is a real gate, not a tap-through. Only a
-                  // finished level marks its Journey node done + grants reward.
+                  // boss quiz is a real gate, not a tap-through. A finished
+                  // level records its stars either way, but only a PASSED run
+                  // (>= PASS_ACCURACY; the Lesson's fix-it loop enforces it)
+                  // marks the Journey node done and grants the reward.
                   if (!result) {
                     goBack()
                   } else if (screen.nodeId) {
                     setProgress((p) => { const n = mergeResult(p, levelId, result); saveProgress(n); return n })
-                    markNodeDone(screen.nodeId, result.stars ?? 3)
+                    if (result.passed !== false) markNodeDone(screen.nodeId, result.stars ?? 3)
+                    else goBack()
                   } else {
                     finishLevel(levelId, result)
                   }
@@ -2418,6 +2475,14 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
   const isPractice = level.id === 'practice'
   const isChallenge = !!incoming
+  // MASTERY LOOP state: a real level (not practice/warm-up/challenge) must
+  // reach PASS_ACCURACY. Below it, a short fix-it drill of the missed
+  // letters runs, then the quiz re-offers - at most FIXIT_MAX_CYCLES per
+  // sitting, then the child leaves with encouragement and the node stays
+  // open (tomorrow's warm-up picks the same letters up from the ledger).
+  const isRealLevel = !practiceQueue && !isChallenge && LEVELS.some((l) => l.id === level.id)
+  const drilling = ctx.levelId === 'fixit'
+  const [fixit, setFixit] = useState({ cycle: 0 })
 
   // Shadow tutorial: on first open the Ghost Hand plays one question of the
   // REAL machine, then the level restarts fresh and the child takes over.
@@ -2484,12 +2549,12 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
     let echo
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
-      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice ? 'practice' : 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, q.target, isPractice || drilling ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       playEffect('bad', soundOn)
       if (q) echo = setTimeout(() => playForm(formOf(q.target), soundOn), 500)
-      if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice ? 'practice' : 'lesson')
+      if (q && !demoRef.current) recordAnswer(q.target, ctx.wrongPicks[ctx.wrongPicks.length - 1], isPractice || drilling ? 'practice' : 'lesson')
     }
     if (ctx.status === GameState.LEVEL_COMPLETE) playEffect('win', soundOn)
     return () => clearTimeout(echo)
@@ -2512,6 +2577,18 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   }, [ctx.status, ctx.cursor])
 
   if (ctx.status === GameState.LEVEL_COMPLETE) {
+    // The fix-it drill finished: offer the quiz retake (fresh seed, missed
+    // letters already 3x-weighted by the ledger's missCounts).
+    if (drilling) {
+      return (
+        <FixItReady
+          onRetry={() => {
+            const qseed = ((seed * 7919 + fixit.cycle * 131 + 17) % 1000000) | 1
+            dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed } })
+          }}
+        />
+      )
+    }
     // `missed` = targets that took more than one try; assignment receipts
     // carry them back to the teacher as the class's trouble letters.
     const result = isPractice
@@ -2521,7 +2598,31 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
           bestStreak: ctx.bestStreak,
           accuracy,
           missed: [...new Set(ctx.history.filter((h) => h.attempts > 1).map((h) => h.target))],
+          passed: !isRealLevel || accuracy >= PASS_ACCURACY,
         }
+    // Below the mastery bar: no completion. Practice the missed letters and
+    // try again - or, after the per-sitting cap, leave with encouragement
+    // (the node stays open and becomes tomorrow's first step).
+    if (isRealLevel && !isPractice && accuracy < PASS_ACCURACY) {
+      const goHome = () => onFinish(level.id, result)
+      if (fixit.cycle < FIXIT_MAX_CYCLES) {
+        return (
+          <FixItGate
+            missedCount={result.missed.length}
+            onPractice={() => {
+              const dseed = ((ctx.seed * 31 + fixit.cycle * 977 + 7) % 1000000) | 1
+              const solid = ctx.history.filter((h) => h.attempts === 1).map((h) => h.target)
+              const queue = buildFixItQueue(loadLedger(), result.missed, solid, dseed)
+              setFixit((f) => ({ cycle: f.cycle + 1 }))
+              if (queue.length) dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: 'fixit', seed: dseed, queue } })
+              else dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: dseed } })
+            }}
+            onHome={goHome}
+          />
+        )
+      }
+      return <FixItCap onHome={goHome} />
+    }
     // Any finished REAL level can be turned into a challenge link, built from
     // the EXACT effective seed the queue was drawn from (ctx.seed, which
     // survives the one-time tutorial reseed). Preset-queue runs (warm-up,
@@ -2734,6 +2835,59 @@ function ChallengeShareButton({ payload, label }) {
         {copied ? t('linkCopied', 'Link copied!') : label}
       </span>
     </Chunky>
+  )
+}
+
+/* ── the mastery loop screens ──
+   A failed quiz is never a dead end: FixItGate offers the targeted drill,
+   FixItReady hands the retake back, FixItCap ends the sitting warmly after
+   the cycle cap (the open node resurfaces as tomorrow's first step). */
+
+function FixItGate({ missedCount, onPractice, onHome }) {
+  return (
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
+      <Hero size={110} />
+      <h2 className="text-3xl font-black">{t('fixTitle', 'Almost!')}</h2>
+      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+        {t('fixBody', '{n} letters want a little more practice. Master them, then try again!', { n: missedCount })}
+      </p>
+      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onPractice}>
+        {t('fixCta', 'Practice the tricky ones')}
+      </Chunky>
+      <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        {t('home', 'Home')}
+      </button>
+    </div>
+  )
+}
+
+function FixItReady({ onRetry }) {
+  return (
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
+      <Hero size={110} />
+      <h2 className="text-3xl font-black">{t('fixReady', 'Nice practice!')}</h2>
+      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+        {t('fixReadyBody', 'You are ready. Show those letters who is the boss!')}
+      </p>
+      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
+        {t('fixRetry', 'Try the quiz again')}
+      </Chunky>
+    </div>
+  )
+}
+
+function FixItCap({ onHome }) {
+  return (
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
+      <Hero size={110} />
+      <h2 className="text-3xl font-black">{t('fixCapTitle', 'Great practice today!')}</h2>
+      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+        {t('fixCapBody', 'Those letters are getting stronger. We will warm up with them next time and beat this quiz!')}
+      </p>
+      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
+        {t('home', 'Home')}
+      </Chunky>
+    </div>
   )
 }
 

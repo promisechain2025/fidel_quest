@@ -17,6 +17,7 @@ import FidelQuestApp, {
   selectRunnerQuestion,
   INDEXES,
   buildPracticeQueue,
+  buildFixItQueue,
   isLevelUnlocked,
   buildWordQueue,
   WORDS,
@@ -139,10 +140,11 @@ describe('runner machine', () => {
 })
 
 describe('scoring', () => {
-  it('maps accuracy to stars', () => {
+  it('maps accuracy to stars around the 80 percent mastery bar', () => {
     expect(starsForAccuracy(100)).toBe(3)
     expect(starsForAccuracy(90)).toBe(3)
-    expect(starsForAccuracy(70)).toBe(2)
+    expect(starsForAccuracy(80)).toBe(2) // 2 stars = passed
+    expect(starsForAccuracy(70)).toBe(1) // below the bar: not passed
     expect(starsForAccuracy(40)).toBe(1)
   })
 })
@@ -210,6 +212,27 @@ describe('vowel levels and Star Practice', () => {
     }
     expect(buildPracticeQueue([], 42)).toEqual([])
     expect(JSON.stringify(buildPracticeQueue(events, 7))).toBe(JSON.stringify(buildPracticeQueue(events, 7)))
+  })
+
+  it('builds the fix-it drill: missed letters twice, interleaved with solid ones', () => {
+    const missed = ['ha-1', 'se-1']
+    const solid = ['le-1', 'me-1', 'qe-1']
+    const queue = buildFixItQueue([], missed, solid, 42)
+    // every missed letter appears exactly twice, plus up to two solid letters
+    const counts = queue.reduce((m, q) => ((m[q.target] = (m[q.target] || 0) + 1), m), {})
+    expect(counts['ha-1']).toBe(2)
+    expect(counts['se-1']).toBe(2)
+    expect(queue.filter((q) => solid.includes(q.target)).length).toBe(2)
+    // never the same prompt twice in a row; options twin-safe with the target
+    for (let i = 1; i < queue.length; i++) expect(queue[i].target).not.toBe(queue[i - 1].target)
+    for (const q of queue) {
+      expect(q.options).toContain(q.target)
+      const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
+      expect(new Set(sounds).size).toBe(q.options.length)
+    }
+    // deterministic in its seed; empty misses build nothing
+    expect(JSON.stringify(buildFixItQueue([], missed, solid, 7))).toBe(JSON.stringify(buildFixItQueue([], missed, solid, 7)))
+    expect(buildFixItQueue([], [], solid, 7)).toEqual([])
   })
 
   it('the machine runs a preset practice queue to completion', () => {
