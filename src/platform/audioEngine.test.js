@@ -275,4 +275,76 @@ describe('AudioEngine', () => {
     await engine.play('letters/ha-1', { enabled: false })
     expect(fetchImpl).not.toHaveBeenCalled()
   })
+
+  describe('the double-voice bug: unlock replay vs clips that DID sound', () => {
+    const makeVoiceEngine = () => {
+      const sources = []
+      class VoiceCtx extends FakeCtx {
+        decodeAudioData() { return Promise.resolve({ duration: 1 }) }
+        createBufferSource() {
+          const n = { connect: (x) => x, start() {}, buffer: null }
+          sources.push(n)
+          return n
+        }
+      }
+      vi.stubGlobal('AudioContext', VoiceCtx)
+      vi.stubGlobal('Audio', undefined)
+      const fetchImpl = vi.fn().mockImplementation((url) =>
+        url.endsWith('manifest.json')
+          ? Promise.resolve({ ok: true, json: async () => ({ coverage: ['letters/ha-1'] }) })
+          : Promise.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) }),
+      )
+      const engine = new AudioEngine({ fetchImpl, getMemory: () => null })
+      const handlers = {}
+      const target = { addEventListener: (ev, fn) => { handlers[ev] = fn }, document: null }
+      engine.installUnlock(target)
+      const spoken = []
+      engine.on('play', (e) => spoken.push(e.key))
+      return { engine, sources, handlers, spoken }
+    }
+
+    it('a clip that started suspended but finished sounding is NOT replayed', async () => {
+      const { engine, sources, handlers, spoken } = makeVoiceEngine()
+      const ctx = engine.getCtx()
+      // iOS outside a gesture: resume() is silently ignored, the context
+      // stays parked - and the play comes from a TIMER, not a tap.
+      ctx.resume = () => Promise.resolve()
+      ctx.state = 'suspended'
+      await engine.play('letters/ha-1')
+      expect(engine.lastBlocked?.key).toBe('letters/ha-1')
+      // The context resumes (unlock kick) and the queued buffer sounds to the end.
+      ctx.state = 'running'
+      sources[0].onended()
+      expect(engine.lastBlocked).toBe(null)
+      // The child's next tap must NOT speak the letter again.
+      handlers.click()
+      await new Promise((r) => setTimeout(r, 10))
+      expect(spoken).toEqual(['letters/ha-1'])
+    })
+
+    it('no replay while another voice is already sounding (stale prompt)', async () => {
+      const { engine, handlers, spoken } = makeVoiceEngine()
+      engine.getCtx().state = 'running'
+      engine.lastBlocked = { key: 'letters/ha-1', opts: {}, at: Date.now() }
+      engine._voiceBusy = true
+      engine._voiceUntil = Date.now() + 2000
+      handlers.click()
+      await new Promise((r) => setTimeout(r, 10))
+      expect(spoken).toEqual([]) // dropped, not queued behind the live voice
+      expect(engine.lastBlocked).toBe(null)
+    })
+
+    it('a clip that truly never sounded IS replayed exactly once', async () => {
+      const { engine, handlers, spoken } = makeVoiceEngine()
+      engine.getCtx().state = 'running'
+      engine.lastBlocked = { key: 'letters/ha-1', opts: {}, at: Date.now() }
+      handlers.click()
+      await new Promise((r) => setTimeout(r, 10))
+      expect(spoken).toEqual(['letters/ha-1'])
+      handlers.click() // second tap: nothing left to recover
+      await new Promise((r) => setTimeout(r, 10))
+      expect(spoken).toEqual(['letters/ha-1'])
+      expect(engine.lastBlocked).toBe(null)
+    })
+  })
 })

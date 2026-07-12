@@ -157,10 +157,17 @@ export class AudioEngine {
     this.unlockInstalled = true
     const replayBlocked = () => {
       const b = this.lastBlocked
-      if (b && Date.now() - b.at < 30000) {
-        this.lastBlocked = null
-        this.play(b.key, b.opts)
-      }
+      if (!b) return
+      this.lastBlocked = null
+      if (Date.now() - b.at >= 30000) return
+      // Replay ONLY a clip that truly never sounded and whose moment has
+      // not passed. A buffer started against a suspended context is NOT
+      // lost - it sounds as soon as the context resumes (usually via this
+      // very tap) - so if a voice is busy right now the "blocked" clip is
+      // either already sounding or superseded, and replaying it would
+      // voice every letter twice (the double-speak bug).
+      if (this._voiceBusy && Date.now() < (this._voiceUntil || 0)) return
+      this.play(b.key, b.opts)
     }
     const kick = () => {
       // Create the context INSIDE the gesture if it does not exist yet -
@@ -309,10 +316,13 @@ export class AudioEngine {
       if (next) this.play(next.key, next.opts)
     }
     // Remember a play that starts against a locked context (autoplay policy:
-    // resume only works inside a user gesture). The unlock kick replays it.
+    // resume only works inside a user gesture). The unlock kick replays it -
+    // but ONLY if the clip never ends up sounding: `blocked` is a token this
+    // exact play clears from lastBlocked the moment its clip finishes, so a
+    // clip that merely started suspended and then resumed is never doubled.
     const ctx0 = this.healZombie(this.getCtx())
-    if (ctx0 && ctx0.state !== 'running') this.lastBlocked = { key, opts: { enabled, chime }, at: Date.now() }
-    else this.lastBlocked = null
+    const blocked = ctx0 && ctx0.state !== 'running' ? { key, opts: { enabled, chime }, at: Date.now() } : null
+    this.lastBlocked = blocked
     await this.ensureManifest()
     const source = this.resolve(key)
     this.emit('play', { key, source: source.type })
@@ -336,6 +346,9 @@ export class AudioEngine {
       this._voiceUntil = Date.now() + buffer.duration * 1000 + 800
       node.onended = () => {
         if (this.current?.source === node) this.current = null
+        // The clip audibly finished, so it was never lost to the autoplay
+        // policy - the unlock kick must not replay it.
+        if (blocked && this.lastBlocked === blocked) this.lastBlocked = null
         free()
       }
     } catch (err) {
@@ -347,7 +360,10 @@ export class AudioEngine {
       if (source.type === 'file' && typeof Audio !== 'undefined') {
         try {
           const a = new Audio(source.src)
-          a.addEventListener('ended', free, { once: true })
+          a.addEventListener('ended', () => {
+            if (blocked && this.lastBlocked === blocked) this.lastBlocked = null
+            free()
+          }, { once: true })
           a.addEventListener('error', () => { this.playChime(chime); free() }, { once: true })
           await a.play()
           return
