@@ -269,7 +269,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="relative w-full max-w-xs">
+      <div className="fq-land-pad relative w-full max-w-xs">
         <canvas
           ref={canvasRef}
           width={CANVAS_SIZE}

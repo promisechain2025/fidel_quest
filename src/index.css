@@ -130,6 +130,19 @@ body {
     system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
+/* Bigger screens get a proportionally bigger game. Tailwind sizes are
+   rem-based, so raising the root font size scales layout, type, spacing,
+   and the max-w-* content columns together - while viewport-unit math
+   (min-h-screen, the TV chant board) and the pure game logic stay exact.
+   The min-height guard keeps phones held sideways out of this tier: short
+   landscape has its own fq-land-* rules further down. */
+@media (min-width: 700px) and (min-height: 640px) {
+  html { font-size: 18px; }
+}
+@media (min-width: 960px) and (min-height: 760px) {
+  html { font-size: 20px; }
+}
+
 /* A kids' game, not a document: tapping letters must never select text or
    pop the copy/lookup callout (iOS long-press). Typing fields opt back in. */
 body {
@@ -200,10 +213,14 @@ input, textarea, [contenteditable='true'] {
 }
 
 /* Short-landscape (a phone on its side / mirrored to a TV): the quiz lays
-   its four options in one row of shorter tiles, and fixed-height game areas
-   cap to the viewport so nothing pushes below the fold. */
+   its four options in one row of shorter tiles, fixed-height game areas
+   cap to the viewport, the stones' letter tray flattens, and the square
+   trace pad shrinks to fit the height - a child must never have to scroll
+   in the middle of a round. */
 @media (orientation: landscape) and (max-height: 600px) {
   .fq-land-grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
   .fq-land-tile { height: 6rem !important; }
-  .fq-land-short { height: min(20rem, 48vh) !important; }
+  .fq-land-short { height: min(20rem, 42vh) !important; }
+  .fq-land-card { height: 2.75rem !important; }
+  .fq-land-pad { width: min(100%, 58vh) !important; }
 }

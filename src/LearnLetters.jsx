@@ -335,7 +335,7 @@ function BubbleMeet({ ctx, onTouch }) {
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
-      <div className="relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
+      <div className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
         {/* floating sparkles for a lively stage */}
         {[14, 40, 66, 88, 28, 74].map((left, i) => (
           <motion.span
@@ -451,10 +451,26 @@ export function trayMix(forms, seed) {
 
 const SINK_MISSES = 2
 
+/** Root font size in px, tracked across resize/rotation. The big-screen
+    tiers in index.css scale the app by raising it, and anything sized in
+    raw px (the canvas-drawn Hero) follows through this. */
+function useRootRem() {
+  const read = () =>
+    typeof window === 'undefined' ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  const [rem, setRem] = useState(read)
+  useEffect(() => {
+    const update = () => setRem(read())
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return rem
+}
+
 function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const forward = ctx.phase === LearnPhase.FORWARD
   const activeKey = ctx.forms[ctx.idx]
   const activeForm = formOf(activeKey)
+  const rem = useRootRem()
   // Wrong-pick feedback is view-local: which card is shaking and how many
   // misses on the CURRENT stone. At SINK_MISSES Anbessa slips into the
   // water and the rescue banner takes over; a correct pick (the pulsing
@@ -570,8 +586,10 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           animate={{ left: `${stand.left}%`, top: `${stand.top + (sunk ? 15 : 0)}%` }}
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
         >
-          <motion.div className="absolute" style={{ left: -27, top: -66 }} animate={{ rotate: sunk ? -16 : 0 }}>
-            <Hero size={54} />
+          {/* Offsets in rem and size from the live root font, so he scales
+              with the stones on tablets instead of shrinking off them. */}
+          <motion.div className="absolute" style={{ left: '-1.7rem', top: '-4.15rem' }} animate={{ rotate: sunk ? -16 : 0 }}>
+            <Hero size={Math.round(rem * 3.375)} />
           </motion.div>
         </motion.div>
         <AnimatePresence>
@@ -631,7 +649,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
                     ? { scale: [1, 1.12, 1], transition: { duration: 0.8, repeat: Infinity } }
                     : { x: 0, scale: 1 }
               }
-              className={`geez flex h-14 w-full select-none items-center justify-center rounded-xl border-b-4 text-2xl font-black ${FOCUS}`}
+              className={`geez fq-land-card flex h-14 w-full select-none items-center justify-center rounded-xl border-b-4 text-2xl font-black ${FOCUS}`}
               style={{
                 background: done
                   ? 'var(--line)'
