@@ -306,11 +306,13 @@ describe('twin-letter differentiation (P5)', () => {
     expect(found).toBe(true)
   })
 
-  it('excludes unvoiced (noAudio) words so every prompt can actually speak', () => {
+  it('every word can speak: the full recorded vocabulary is in play', () => {
+    // The whole word list is human-recorded now (July 2026 session), so
+    // nothing is filtered out - the once-unvoiced words are included.
     expect(WORDS.some((w) => w.noAudio)).toBe(false)
-    expect(WORDS.map((w) => w.latin)).not.toContain('hager')
-    expect(WORDS.map((w) => w.latin)).not.toContain('hamer')
-    expect(WORDS.length).toBeGreaterThanOrEqual(25)
+    expect(WORDS.map((w) => w.latin)).toContain('hager')
+    expect(WORDS.map((w) => w.latin)).toContain('hamer')
+    expect(WORDS.length).toBeGreaterThanOrEqual(70)
   })
 
   it('seats the phonetic twin as a distractor in every glyph round', () => {
