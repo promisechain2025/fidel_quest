@@ -1686,7 +1686,7 @@ function PlanChip({ step, done, label, onClick, pulse }) {
       onClick={onClick}
       animate={pulse && !done ? { scale: [1, 1.04, 1] } : {}}
       transition={{ duration: 1.6, repeat: Infinity }}
-      className={`chunk flex shrink-0 items-center gap-1.5 rounded-full py-2 pl-2 pr-3 text-xs font-black ${FOCUS}`}
+      className={`chunk flex min-w-0 flex-auto items-center justify-center gap-1.5 rounded-full py-1.5 pl-2 pr-2.5 text-xs font-black sm:flex-none sm:justify-start sm:py-2 sm:pr-3 ${FOCUS}`}
       style={done
         ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
         : pulse
@@ -1696,7 +1696,7 @@ function PlanChip({ step, done, label, onClick, pulse }) {
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
         {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step}
       </span>
-      <span>{label}</span>
+      <span className="min-w-0 whitespace-normal text-center leading-tight [overflow-wrap:anywhere] sm:text-left">{label}</span>
     </motion.button>
   )
 }
@@ -1939,9 +1939,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             </button>
           )}
         </div>
-        {/* Wraps instead of scrolling sideways: longer translations (German,
-            French) must never hide a plan step behind a scroll edge. */}
-        <div className="mt-1.5 flex flex-wrap gap-2 px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
+        {/* One row always: chips share the width and long translations
+            (German, French) wrap INSIDE their chip - never a sideways
+            scroll, never a second row of buttons. */}
+        <div className="mt-1.5 flex gap-2 px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
           {coach?.warmupState !== 'none' && (
             <PlanChip
               step={1}
