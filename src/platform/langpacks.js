@@ -2,20 +2,22 @@
    DIASPORA UI LANGUAGES
    ----------------------------------------------------------------------------
    Extra app-text languages for the countries with the largest Ethiopian &
-   Eritrean communities: English (default), Amharic, German, Italian, Swedish,
-   Dutch, Norwegian, French. English is every key's fallback, so these packs
-   cover the high-visibility core (navigation, buttons, feedback, celebrations,
+   Eritrean communities: English (default), German, Italian, Swedish, Dutch,
+   Norwegian, French. English is every key's fallback, so these packs cover
+   the high-visibility core (navigation, buttons, feedback, celebrations,
    Fidel Master, Tee Shop) plus the full REINFORCEMENT word lists; anything a
    pack omits simply shows in English. Best-effort translations, FLAGGED FOR
-   NATIVE-SPEAKER REVIEW. (Hebrew/Arabic are also big diaspora languages but are
-   right-to-left and need layout work first — tracked for a later pass.)
+   NATIVE-SPEAKER REVIEW. Amharic and Tigrinya are LEARN languages only
+   (owner's decision, July 2026): the app text is for the diaspora parent
+   reading over the child's shoulder, and unreviewed Ge'ez-script UI copy
+   was removed rather than shipped. (Hebrew/Arabic are also big diaspora
+   languages but are right-to-left and need layout work first — tracked for
+   a later pass.)
    ========================================================================== */
 
 // Order shown in the picker. `label` is the language's own endonym.
 export const LANG_META = [
   { id: 'en', label: 'English' },
-  { id: 'am', label: 'አማርኛ' },
-  { id: 'ti', label: 'ትግርኛ' },
   { id: 'de', label: 'Deutsch' },
   { id: 'it', label: 'Italiano' },
   { id: 'sv', label: 'Svenska' },
@@ -32,15 +34,6 @@ export const REINFORCE = {
   en: {
     praise: ['Great job!', 'Wonderful!', 'You are a star!', 'Brilliant!', 'Amazing!', 'Fantastic!', 'You did it!', 'Way to go!', 'Superb!', 'Awesome!'],
     encourage: ['Try again!', 'So close!', 'You can do it!', 'Almost!', 'Keep going!', 'Nearly there!', 'Give it another go!', 'Listen again!'],
-  },
-  am: {
-    praise: ['ጎበዝ!', 'በጣም ጎበዝ!', 'ኮከብ ነህ!', 'ድንቅ!', 'እሰይ!', 'ግሩም!', 'አሪፍ!', 'ተባረክ!', 'ዋው!'],
-    encourage: ['እንደገና ሞክር!', 'ተቃርበሃል!', 'ትችላለህ!', 'አይዞህ!', 'በርታ!', 'ደግመህ ስማ!'],
-  },
-  // Tigrinya (best-effort; flagged for native-speaker review).
-  ti: {
-    praise: ['ጽቡቕ!', 'ኣዝዩ ጽቡቕ!', 'ኮኸብ ኢኻ!', 'ግሩም!', 'ብሉጽ!', 'መስተንክር!', 'ሰሪሕካዮ!', 'ኣንቱም!', 'ዋው!'],
-    encourage: ['ደጊምካ ፈትን!', 'ተቐሪብካ!', 'ትኽእሎ ኢኻ!', 'ኣይዞኻ!', 'ቀጽል!', 'ደጊምካ ስማዕ!'],
   },
   de: {
     praise: ['Super!', 'Toll gemacht!', 'Du bist ein Star!', 'Klasse!', 'Fantastisch!', 'Wunderbar!', 'Du hast es geschafft!', 'Ausgezeichnet!', 'Bravo!'],
