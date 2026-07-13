@@ -968,6 +968,17 @@ export default function AmharicFidelGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, questionIndex, level])
 
+  // Tracing: voice each letter as it appears so the child writes by ear.
+  // The page's sound toggle silences this too (playLetter checks it), so a
+  // classroom can trace quietly without losing the flow.
+  useEffect(() => {
+    if (screen !== 'trace' || traceFamilyIndex === null) return undefined
+    const form = FIDEL_FAMILIES[traceFamilyIndex]?.forms[traceFormIndex]
+    if (!form) return undefined
+    const timer = setTimeout(() => playLetter(form), 400)
+    return () => clearTimeout(timer)
+  }, [screen, traceFamilyIndex, traceFormIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── explore mode control ── */
 
   const handleExploreTap = useCallback(
@@ -1333,6 +1344,29 @@ export default function AmharicFidelGame() {
                 ))}
               </div>
             </div>
+            {/* The sounding letter, BIG. On a phone the seven order tiles sit
+                in a 2-column grid, so the rolling chant glow is easy to lose -
+                this banner mirrors the current order at a size the whole room
+                can follow, like the classroom TV board. */}
+            {(() => {
+              const glowForm = glowingChar
+                ? family.forms.find((f) => f.char === glowingChar) ||
+                  (family.labialForm?.char === glowingChar ? family.labialForm : null)
+                : null
+              return glowForm ? (
+                <div className="mx-auto mb-5 flex max-w-md items-center justify-center gap-6 rounded-3xl bg-white/95 px-8 py-3 shadow-xl ring-4 ring-amber-300 dark:bg-gray-800/95" aria-hidden="true">
+                  <span className="text-8xl font-bold text-amber-500" style={ETHIOPIC_FONT}>{glowForm.char}</span>
+                  <span className="text-left">
+                    <span className="block text-xs font-bold uppercase tracking-wide text-gray-400">
+                      {ORDER_NAMES[glowForm.order]
+                        ? `${ORDER_NAMES[glowForm.order]} · ${GEEZ_ORDER_NAMES[glowForm.order]}`
+                        : t('bonusLabial')}
+                    </span>
+                    <span className="block text-3xl font-extrabold text-amber-700 dark:text-amber-300">{glowForm.sound}</span>
+                  </span>
+                </div>
+              ) : null
+            })()}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-7">
               {family.forms.map((form) => {
                 const isGlowing = glowingChar === form.char
@@ -1487,16 +1521,25 @@ export default function AmharicFidelGame() {
               aria-label={t('playWordSound', { word: word.geez })}
               className={`flex items-center gap-4 rounded-3xl bg-gradient-to-br from-lime-50 to-green-100 px-8 py-3 shadow-inner transition-transform active:scale-95 dark:from-lime-900/30 dark:to-green-900/30 ${FOCUS_RING}`}
             >
-              <span className="text-6xl" aria-hidden="true">{word.picture}</span>
-              <span className="text-left">
-                <span className="block text-5xl font-bold text-green-800 dark:text-green-200" style={ETHIOPIC_FONT}>
-                  {word.geez}
+              {/* The word is HEARD and pictured, never written, while the
+                  question is open - its first letter IS the answer. The
+                  spelling appears after the correct pick as the payoff. */}
+              <span className="text-7xl" aria-hidden="true">{word.picture}</span>
+              {phase === 'correct' ? (
+                <span className="fq-anim-pop text-left">
+                  <span className="block text-5xl font-bold text-green-800 dark:text-green-200" style={ETHIOPIC_FONT}>
+                    {word.geez}
+                  </span>
+                  <span className="block text-sm font-semibold text-green-700/70 dark:text-green-300/70">
+                    {word.latin} — {word.meaning}
+                  </span>
                 </span>
-                <span className="block text-sm font-semibold text-green-700/70 dark:text-green-300/70">
-                  {word.latin} — {word.meaning}
+              ) : (
+                <span className="flex items-center gap-2 text-lg font-extrabold text-green-800 dark:text-green-200">
+                  <Volume2 className="h-7 w-7 shrink-0 text-green-600" aria-hidden="true" />
+                  {t('hearWord')}
                 </span>
-              </span>
-              <Volume2 className="h-6 w-6 shrink-0 text-green-600" />
+              )}
             </button>
           )}
           <div className="flex min-h-10 items-center justify-center gap-3">

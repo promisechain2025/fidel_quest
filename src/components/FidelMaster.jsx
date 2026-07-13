@@ -201,14 +201,14 @@ export default function FidelMaster({ onBack, soundOn = true }) {
       {/* AUTO-VOICE + SAY-IT share the big current-letter card */}
       {(tab === 'auto' || tab === 'say') && (
         <div className="mt-4 flex flex-col items-center gap-4">
-          {/* Vowel-order selector: master one vowel at a time, or the abugida */}
-          <div className="w-full overflow-x-auto pb-1">
-            <div className="flex gap-1.5">
-              <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0) }} />
-              {ORDERS.map((o) => (
-                <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={o.vowel} onClick={() => { setOrder(o.index); setIdx(0) }} />
-              ))}
-            </div>
+          {/* Vowel-order selector: master one vowel at a time, or the abugida.
+              A grid, not a scroll strip - all seven orders must be VISIBLE
+              at once on a phone or nobody discovers them. */}
+          <div className="grid w-full grid-cols-4 gap-1.5">
+            <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0) }} />
+            {ORDERS.map((o) => (
+              <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={`-${o.vowel}`} onClick={() => { setOrder(o.index); setIdx(0) }} />
+            ))}
           </div>
 
           <div className="flex w-full items-center justify-between text-sm font-black" style={{ color: 'var(--muted)' }}>
@@ -234,6 +234,11 @@ export default function FidelMaster({ onBack, soundOn = true }) {
             {form?.char}
           </motion.button>
           <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{form?.sound}</p>
+          {/* Which of the seven orders is sounding - essential during the
+              whole-abugida mix, where the order jumps letter to letter. */}
+          <p className="-mt-2 text-sm font-black" style={{ color: 'var(--muted)' }}>
+            {form ? `${ORDERS[(form.order ?? 1) - 1]?.geezName ?? ''} · ${form.order}/${ORDERS.length}` : ''}
+          </p>
 
           {/* "Your turn" echo cue during the say-with-me repeat window */}
           {tab === 'auto' && sayWithMe && (
