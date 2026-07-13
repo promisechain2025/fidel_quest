@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { FIDEL_FAMILIES } from './ethiopic'
+import { FIDEL_FAMILIES, mergeFamilies } from './ethiopic'
+import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
+import { TI_PACK } from '../packs/ti'
 import { buildCharFamilies, familiesOfWord, unlockStage, isDecodable, decodableWords, newlyDecodable } from './words'
 
 const stageName = (g) => FIDEL_FAMILIES[unlockStage(g)]?.name
@@ -46,6 +48,42 @@ describe('decodable words (the early-unlock engine)', () => {
     expect(readable.length).toBeGreaterThanOrEqual(15)
     expect(readable.map((w) => w.geez)).toContain('ሰላም')
     expect(readable.map((w) => w.geez)).toContain('ሽሮ')
+  })
+})
+
+describe('decodable words in the Tigrinya pack', () => {
+  const tiFams = mergeFamilies(ETHIOPIC_SCRIPT, TI_PACK)
+  const tiChars = buildCharFamilies(tiFams)
+  const tiStage = (g) => tiFams[unlockStage(g, tiFams, tiChars)]?.id
+  const tiWords = tiFams.flatMap((f) => (Array.isArray(f.words) && f.words.length ? f.words : f.word ? [f.word] : []))
+
+  it('maps the Tigrinya-only qhe family, which the Amharic map must not know', () => {
+    expect(tiChars.get('ቐ')).toBe('qhe')
+    expect(tiChars.get('ቘ')).toBe('qhe') // labialized
+    expect(buildCharFamilies().get('ቐ')).toBeUndefined()
+  })
+
+  it('early words unlock where the ti journey expects them', () => {
+    expect(tiStage('ሰላም')).toBe('se')
+    expect(tiStage('ሻሽ')).toBe('she')
+    expect(tiStage('መቐስ')).toBe('qhe') // the flagship qhe word
+  })
+
+  it('every ti pack word is writable in the ti script', () => {
+    for (const w of tiWords) expect(familiesOfWord(w.geez, tiChars), w.geez).not.toBe(null)
+  })
+
+  it('learning qhe newly unlocks meqhes and nothing already readable', () => {
+    const before = tiFams.slice(0, 9).map((f) => f.id) // ha..qe
+    const fresh = newlyDecodable(tiWords, before, 'qhe', tiChars)
+    expect(fresh.map((w) => w.geez)).toEqual(['መቐስ'])
+  })
+
+  it('after the first 8 ti families a child can read a real shelf', () => {
+    const learned = tiFams.slice(0, 8).map((f) => f.id)
+    const readable = decodableWords(tiWords, learned, tiChars)
+    expect(readable.length).toBeGreaterThanOrEqual(10)
+    expect(readable.map((w) => w.geez)).toContain('ሰላም')
   })
 })
 
