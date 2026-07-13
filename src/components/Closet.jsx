@@ -43,7 +43,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
           <Hero size={148} worn={worn} />
         </motion.div>
         <p className="mono text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-          {t('lettersLearned', `${stats.forms} / 231 letters learned`, { n: stats.forms })}
+          {t('lettersLearned', `${stats.forms} / ${stats.totalForms} letters learned`, { n: stats.forms, total: stats.totalForms })}
         </p>
         <button
           type="button"

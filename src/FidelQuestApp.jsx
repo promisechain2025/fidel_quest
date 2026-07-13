@@ -42,7 +42,7 @@ import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
 import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
-import { bumpStreak, dayStamp } from './platform/streak'
+import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -1792,6 +1792,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
   const [langOpen, setLangOpen] = useState(false)
+  const [streakOpen, setStreakOpen] = useState(false)
   const worn = wornLayers(journey.collection)
   const [stepInView, setStepInView] = useState(true)
   const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
@@ -1833,17 +1834,17 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="geez hidden truncate min-[420px]:inline">{PACKS[getActivePackId()].nativeName}</span>
+                <span className="geez hidden max-w-24 truncate align-middle min-[420px]:inline-block">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {streak > 0 && (
-            <span className="chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })} title={t('streakDays', `${streak}-day streak`, { n: streak })}>
+            <button type="button" onClick={() => setStreakOpen(true)} className={`chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
               <Flame className="h-5 w-5" fill="currentColor" style={{ color: 'var(--accent)' }} aria-hidden="true" />
               <span className="mono text-sm" style={{ color: 'var(--ink)' }}>{streak}</span>
-            </span>
+            </button>
           )}
           {giftReady && (
             <motion.button
@@ -1883,6 +1884,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
 
       <AnimatePresence>
         {langOpen && <LanguageSheet key="lang-sheet" onClose={() => setLangOpen(false)} />}
+        {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -2087,6 +2089,46 @@ function LanguagePicker() {
         />
       </div>
     </div>
+  )
+}
+
+/* The flame explained: tapping the streak chip must DO something - kids tap
+   everything. A small sheet says what the fire is (days played in a row),
+   shows the best run, and nudges tomorrow's visit. */
+function StreakSheet({ streak, onClose }) {
+  useEscapeKey(onClose)
+  const best = Math.max(loadStreak().best || 0, streak)
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}
+        className="w-full max-w-sm rounded-3xl p-6 text-center"
+        style={{ background: 'var(--paper)' }}
+        initial={{ scale: 0.9, y: 14 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <motion.div animate={{ scale: [1, 1.12, 1] }} transition={{ duration: 1.4, repeat: Infinity }} className="mx-auto flex h-20 w-20 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
+          <Flame className="h-11 w-11" fill="currentColor" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+        </motion.div>
+        <h2 className="mt-3 text-2xl font-black">{t('streakDays', `${streak}-day streak`, { n: streak })}</h2>
+        <p className="mt-2 font-bold" style={{ color: 'var(--muted)' }}>
+          {t('streakBody', 'Play a little every day and the flame grows. Skip a day and it starts over - keep it alive!')}
+        </p>
+        {best > 1 && (
+          <p className="mt-2 text-sm font-black" style={{ color: 'var(--accent-deep)' }}>
+            {t('streakBest', `Best: ${best} days`, { n: best })}
+          </p>
+        )}
+        <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          {t('keepGoing', 'Keep going!')}
+        </button>
+      </motion.div>
+    </motion.div>
   )
 }
 
