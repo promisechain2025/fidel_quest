@@ -1939,7 +1939,9 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             </button>
           )}
         </div>
-        <div className="mt-1.5 flex gap-2 overflow-x-auto px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
+        {/* Wraps instead of scrolling sideways: longer translations (German,
+            French) must never hide a plan step behind a scroll edge. */}
+        <div className="mt-1.5 flex flex-wrap gap-2 px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
           {coach?.warmupState !== 'none' && (
             <PlanChip
               step={1}
@@ -2246,7 +2248,8 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
           </span>
           <ScopeToggle scope={scope} onChange={changeScope} />
         </div>
-        <LanguagePicker />
+        {/* Language moved to the home-screen pill (header) - one home for
+            the choice instead of two competing ones. */}
       </motion.div>
     </motion.div>
   )
@@ -2442,8 +2445,8 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
 
       {/* Vowel-order selector: see and practise one vowel across all families */}
       {!family && (
-        <div className="mt-4 overflow-x-auto pb-1">
-          <div className="flex gap-1.5">
+        <div className="mt-4 pb-1">
+          <div className="flex flex-wrap gap-1.5">
             {ORDERS.map((o) => {
               const on = order === o.index
               return (
