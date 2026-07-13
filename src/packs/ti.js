@@ -73,10 +73,7 @@ export const TI_PACK = Object.freeze({
       name: 'Be', consonant: 'b', word: { geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' },
       words: [{ geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles-ti', meaning: 'cactus fig', picture: '🍈' }, { geez: 'ቡን', latin: 'bun', meaning: 'coffee', picture: '☕' }, { geez: 'ቡምባ', latin: 'bumba', meaning: 'water tap', picture: '🚰' }, { geez: 'ባኒ', latin: 'bani', meaning: 'bread', picture: '🍞' }, { geez: 'ባቡር', latin: 'babur', meaning: 'train', picture: '🚂', noAudio: true }],
     },
-    te: {
-      name: 'Te', consonant: 't', word: { geez: 'ተመን', latin: 'temen', meaning: 'snake', picture: '🐍' },
-      words: [{ geez: 'ተመን', latin: 'temen', meaning: 'snake', picture: '🐍' }, { geez: 'ቲማቲም', latin: 'timatim-ti', meaning: 'tomato', picture: '🍅', noAudio: true }],
-    },
+    te: { name: 'Te', consonant: 't', word: { geez: 'ተመን', latin: 'temen', meaning: 'snake', picture: '🐍' } },
     che: { name: 'Che', consonant: 'ch' },
     kha: { name: 'Kha', consonant: 'ḫ' },
     ne: { name: 'Ne', consonant: 'n', word: { geez: 'ነብሪ', latin: 'nebri', meaning: 'leopard', picture: '🐆' } },
