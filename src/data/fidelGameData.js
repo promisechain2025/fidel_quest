@@ -48,7 +48,7 @@ const RAW_FAMILIES = [
   {
     name: 'Me', consonant: 'm', chars: 'መሙሚማሜምሞ', labial: 'ሟ',
     word: { geez: 'ማር', latin: 'mar', meaning: 'honey', picture: '🍯' },
-    words: [{ geez: 'ማር', latin: 'mar', meaning: 'honey', picture: '🍯' }, { geez: 'መኪና', latin: 'mekina', meaning: 'car', picture: '🚗' }, { geez: 'ሙዝ', latin: 'muz', meaning: 'banana', picture: '🍌' }, { geez: 'ሜዳ', latin: 'meda', meaning: 'field', picture: '🏞️' }, { geez: 'ምሳ', latin: 'misa', meaning: 'lunch', picture: '🍽️', noAudio: true }, { geez: 'ማማ', latin: 'mama', meaning: 'mommy', picture: '👩', noAudio: true }, { geez: 'ሚስማር', latin: 'mismar', meaning: 'nail', picture: '🔩', noAudio: true }, { geez: 'መቀስ', latin: 'meqes', meaning: 'scissors', picture: '✂️', noAudio: true }, { geez: 'መስቀል', latin: 'mesqel', meaning: 'cross', picture: '✝️', noAudio: true }, { geez: 'ሙሽራ', latin: 'mushira', meaning: 'bride', picture: '👰', noAudio: true }],
+    words: [{ geez: 'ማር', latin: 'mar', meaning: 'honey', picture: '🍯' }, { geez: 'መኪና', latin: 'mekina', meaning: 'car', picture: '🚗' }, { geez: 'ሙዝ', latin: 'muz', meaning: 'banana', picture: '🍌' }, { geez: 'ሜዳ', latin: 'meda', meaning: 'field', picture: '🏞️' }, { geez: 'ምሳ', latin: 'misa', meaning: 'lunch', picture: '🍽️', noAudio: true }, { geez: 'ማማ', latin: 'mama', meaning: 'mommy', picture: '👩', noAudio: true }, { geez: 'ሚስማር', latin: 'mismar', meaning: 'nail', picture: '📌', noAudio: true }, { geez: 'መቀስ', latin: 'meqes', meaning: 'scissors', picture: '✂️', noAudio: true }, { geez: 'መስቀል', latin: 'mesqel', meaning: 'cross', picture: '✝️', noAudio: true }, { geez: 'ሙሽራ', latin: 'mushira', meaning: 'bride', picture: '👰', noAudio: true }],
   },
   {
     name: 'Sse', consonant: 's', chars: 'ሠሡሢሣሤሥሦ', twinOf: 'Se', nickname: 'Nigusu Sse',
