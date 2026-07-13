@@ -1791,6 +1791,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
+  const [langOpen, setLangOpen] = useState(false)
   const worn = wornLayers(journey.collection)
   const [stepInView, setStepInView] = useState(true)
   const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
@@ -1809,15 +1810,34 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
       <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-        <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`flex items-center gap-2 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
-          <Hero size={48} worn={worn} />
-          <div className="text-left">
+        <div className="flex min-w-0 items-center gap-2">
+          <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
+            <Hero size={48} worn={worn} />
+          </button>
+          <div className="min-w-0 text-left">
             <h1 className="text-base font-black leading-none">Fidel Quest</h1>
-            <p className="mono text-xs font-bold" style={{ color: 'var(--muted)' }}>
-              {doneCount}/{JOURNEY.length}
-            </p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+              <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                {doneCount}/{JOURNEY.length}
+              </span>
+              {/* One quiet pill for BOTH language axes - the alphabet the
+                  child learns and the language the app speaks - so the
+                  choice lives on the home screen without another header
+                  icon. On a narrow phone (four chips on the right) it
+                  collapses to the globe alone. */}
+              <button
+                type="button"
+                onClick={() => setLangOpen(true)}
+                aria-label={t('langTitle', 'Language')}
+                className={`flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black ${FOCUS}`}
+                style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
+              >
+                <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span className="geez hidden truncate min-[420px]:inline">{PACKS[getActivePackId()].nativeName}</span>
+              </button>
+            </div>
           </div>
-        </button>
+        </div>
         <div className="flex items-center gap-2">
           {streak > 0 && (
             <span className="chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })} title={t('streakDays', `${streak}-day streak`, { n: streak })}>
@@ -1860,6 +1880,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </button>
         </div>
       </header>
+
+      <AnimatePresence>
+        {langOpen && <LanguageSheet key="lang-sheet" onClose={() => setLangOpen(false)} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {justEarned && (
@@ -2063,6 +2087,44 @@ function LanguagePicker() {
         />
       </div>
     </div>
+  )
+}
+
+/* The home-screen language sheet: the same two-axis picker the Backpack
+   carries, reachable from the header pill so a family can switch what the
+   child LEARNS (Amharic/Tigrinya letters + voice) and what the app SPEAKS
+   without hunting through utilities. Both axes reload on change by design. */
+function LanguageSheet({ onClose }) {
+  useEscapeKey(onClose)
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('langTitle', 'Language')}
+        className="w-full max-w-sm rounded-3xl p-5"
+        style={{ background: 'var(--paper)' }}
+        initial={{ scale: 0.9, y: 14 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-xl font-black">
+            <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
+            {t('langTitle', 'Language')}
+          </h2>
+          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+        <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+          {t('langSheetBody', 'Choose the alphabet to learn and the language of the app text.')}
+        </p>
+        <LanguagePicker />
+      </motion.div>
+    </motion.div>
   )
 }
 
