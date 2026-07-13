@@ -33,6 +33,7 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.hunt.v1', // Daily Hunt day state
   'fq.plan.v1', // the learning plan
   'fq.telemetry.v1', // the answer ledger (mastery, trouble letters)
+  'fq.words.v1', // decodable words already practiced (Word Steps)
 ])
 
 const SNAPSHOT_KIND = 'fidel-quest-progress'

@@ -43,6 +43,9 @@ import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
 import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
 import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
+import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
+import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
+import WordSteps from './components/WordSteps'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -421,6 +424,15 @@ export const WORDS = FIDEL_FAMILIES.flatMap((f, familyIndex) =>
 )
 export const WORD_BY_LATIN = new Map(WORDS.map((w) => [w.latin, w]))
 
+/* EVERY word, including the not-yet-recorded ones: the decodable-words
+   rails (unlock moments, Build-it) are letter-first, so a missing
+   whole-word clip must not hide a word. Listening games keep WORDS. */
+export const ALL_WORDS = FIDEL_FAMILIES.flatMap((f, familyIndex) =>
+  familyWordList(f).map((w) => ({ ...w, familyId: f.id, familyIndex })),
+).filter((w, i, arr) => arr.findIndex((x) => x.latin === w.latin) === i)
+/** Word Steps seeded start, distractors drawn from the full word list. */
+export const wordStepsStart = (words, seed) => wordStepsInitial(words, seed, ALL_WORDS)
+
 /** The look-alike sibling of a family, if any: its twin parent, or a family
     that twins onto it. This is where a phonetic twin is allowed to appear. */
 function twinSiblingOf(fam) {
@@ -443,11 +455,11 @@ export const wordFamilyHasTwin = (latin) => {
      not by sound (exactly how Ethiopian schools teach twins via nicknames).
    Options in a glyph round are Ge'ez chars; in a picture round, word latins.
    `wordLatin` always carries the prompt word so the renderer is type-blind. */
-export function buildWordQueue(seed, count = 6) {
+export function buildWordQueue(seed, count = 6, pool = WORDS) {
   let rngState = seed
   let shuffled
-  ;[shuffled, rngState] = rngShuffle(WORDS, rngState)
-  return shuffled.slice(0, Math.min(count, WORDS.length)).map((target) => {
+  ;[shuffled, rngState] = rngShuffle(pool, rngState)
+  return shuffled.slice(0, Math.min(count, pool.length)).map((target) => {
     const fam = FIDEL_FAMILIES[target.familyIndex]
     const sibling = twinSiblingOf(fam)
     if (sibling) {
@@ -822,6 +834,15 @@ export default function FidelQuestApp() {
   // pops one page; goHome resets to the path.
   const [stack, setStack] = useState(() => {
     try {
+      // QA preview (same convention as ?unlock): ?wordmoment=le opens the
+      // "New words!" flow with the words that family unlocks. Local, dev.
+      const wm = new URLSearchParams(window.location.search).get('wordmoment')
+      if (wm) {
+        const stage = FIDEL_FAMILIES.findIndex((f) => f.id === wm)
+        const before = FIDEL_FAMILIES.slice(0, stage).map((f) => f.id)
+        const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
+        if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
+      }
       const ch = readChallengeFromHash(window.location.hash)
       if (ch) return [{ name: 'challenge', challenge: ch }]
       // Classroom deep links (platform/classroom.js): a class invite, a
@@ -1203,8 +1224,37 @@ export default function FidelQuestApp() {
               <StoneLessonForNode
                 node={screen.node}
                 soundOn={soundOn}
-                onDone={() => markNodeDone(screen.node.id)}
+                onDone={() => {
+                  // Which words did THIS family just unlock? Computed before
+                  // the node is marked done (newlyDecodable needs the before
+                  // state), practiced words never re-run.
+                  const node = screen.node
+                  let fresh = []
+                  if (node.kind === NodeKind.LEARN) {
+                    const practiced = loadWordsPracticed()
+                    fresh = pickUnlockWords(
+                      newlyDecodable(ALL_WORDS, learnedFamilyIds(journeyRef.current), node.familyId).filter((w) => !practiced[w.latin]),
+                      node.familyId,
+                    )
+                  }
+                  markNodeDone(node.id)
+                  if (fresh.length) {
+                    setRunSeed((Date.now() % 1000000) | 1)
+                    setScreen({ name: 'wordsteps', words: fresh })
+                  }
+                }}
                 onBack={goBack}
+              />
+            </Screen>
+          )}
+          {screen.name === 'wordsteps' && (
+            <Screen key={`wordsteps-${runSeed}`}>
+              <WordSteps
+                words={screen.words}
+                seed={runSeed}
+                soundOn={soundOn}
+                onDone={() => { markWordsPracticed(screen.words.map((w) => w.latin)); goBack() }}
+                onSkip={() => { markWordsPracticed(screen.words.map((w) => w.latin)); goBack() }}
               />
             </Screen>
           )}
@@ -4732,7 +4782,15 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
 
 function WordMatch({ seed, soundOn, onFinish, onReplay }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () =>
-    transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed) } }).next,
+    () => {
+      // Prefer the words the child can actually READ (decodable from the
+      // learned families); when too few for a queue, the full voiced list
+      // keeps the game rich. The 'all letters' scope opens everything.
+      const learned = new Set(learnedFamilyIds(loadJourney()))
+      const dec = getScope() === SCOPES.ALL ? WORDS : WORDS.filter((w) => isDecodable(w.geez, learned))
+      const pool = dec.length >= 6 ? dec : WORDS
+      return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, 6, pool) } }).next
+    },
   )
   const question = selectQuestion(ctx)
   const word = question ? WORD_BY_LATIN.get(question.wordLatin ?? question.target) : null

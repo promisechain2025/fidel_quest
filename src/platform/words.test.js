@@ -48,3 +48,18 @@ describe('decodable words (the early-unlock engine)', () => {
     expect(readable.map((w) => w.geez)).toContain('ሽሮ')
   })
 })
+
+describe('pickUnlockWords', () => {
+  it('celebrates the new family first, shortest builds first', async () => {
+    const { pickUnlockWords } = await import('./words')
+    const pool = [
+      { geez: 'ምሳ', latin: 'misa', familyId: 'me' },
+      { geez: 'ሚስማር', latin: 'mismar', familyId: 'me' },
+      { geez: 'ራስ', latin: 'ras', familyId: 're' },
+      { geez: 'ሰላም', latin: 'selam', familyId: 'se' },
+      { geez: 'ሱሪ', latin: 'suri', familyId: 'se' },
+    ]
+    const picked = pickUnlockWords(pool, 'se')
+    expect(picked.map((w) => w.latin)).toEqual(['suri', 'selam', 'misa'])
+  })
+})

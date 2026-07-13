@@ -73,3 +73,17 @@ export function newlyDecodable(words, learnedIds, newId, charFamilies = CHAR_FAM
     (w) => isDecodable(w.geez, withNew, charFamilies) && !isDecodable(w.geez, without, charFamilies),
   )
 }
+
+/** Choose which unlocked words to celebrate: words that START with the new
+    family's letter first (the thematic payoff - learn Se, read selam), then
+    shortest first (2-3 letter words build best), capped at n. */
+export function pickUnlockWords(words, newFamilyId, n = 3) {
+  return words
+    .slice()
+    .sort(
+      (a, b) =>
+        (a.familyId === newFamilyId ? 0 : 1) - (b.familyId === newFamilyId ? 0 : 1) ||
+        Array.from(a.geez).length - Array.from(b.geez).length,
+    )
+    .slice(0, n)
+}
