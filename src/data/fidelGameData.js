@@ -53,6 +53,7 @@ const RAW_FAMILIES = [
   {
     name: 'Sse', consonant: 's', chars: 'ሠሡሢሣሤሥሦ', twinOf: 'Se', nickname: 'Nigusu Sse',
     word: { geez: 'ሠዓሊ', latin: 'seali', meaning: 'painter', picture: '🎨' },
+    words: [{ geez: 'ሠዓሊ', latin: 'seali', meaning: 'painter', picture: '🎨' }, { geez: 'ሥዕል', latin: 'siil', meaning: 'drawing', picture: '🖼️', noAudio: true }],
   },
   {
     name: 'Re', consonant: 'r', chars: 'ረሩሪራሬርሮ', labial: 'ሯ',
@@ -77,7 +78,7 @@ const RAW_FAMILIES = [
   {
     name: 'Be', consonant: 'b', chars: 'በቡቢባቤብቦ', labial: 'ቧ',
     word: { geez: 'ቤት', latin: 'biet', meaning: 'house', picture: '🏠' },
-    words: [{ geez: 'ቤት', latin: 'biet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles', meaning: 'fig', picture: '🍈' }, { geez: 'ቡና', latin: 'buna', meaning: 'coffee', picture: '☕' }, { geez: 'ብርቱካን', latin: 'birtukan', meaning: 'orange', picture: '🍊' }, { geez: 'ቦርሳ', latin: 'borsa', meaning: 'school bag', picture: '🎒' }, { geez: 'በሬ', latin: 'bere', meaning: 'ox', picture: '🐂', noAudio: true }, { geez: 'ብር', latin: 'birr', meaning: 'money (birr)', picture: '💵', noAudio: true }, { geez: 'በቆሎ', latin: 'beqolo', meaning: 'corn', picture: '🌽', noAudio: true }, { geez: 'ቢራቢሮ', latin: 'birabiro', meaning: 'butterfly', picture: '🦋', noAudio: true }, { geez: 'በሶ', latin: 'beso', meaning: 'besso', picture: '🥣', noAudio: true }],
+    words: [{ geez: 'ቤት', latin: 'biet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles', meaning: 'fig', picture: '🍈' }, { geez: 'ቡና', latin: 'buna', meaning: 'coffee', picture: '☕' }, { geez: 'ብርቱካን', latin: 'birtukan', meaning: 'orange', picture: '🍊' }, { geez: 'ቦርሳ', latin: 'borsa', meaning: 'school bag', picture: '🎒' }, { geez: 'በሬ', latin: 'bere', meaning: 'ox', picture: '🐂', noAudio: true }, { geez: 'ብር', latin: 'birr', meaning: 'money (birr)', picture: '💵', noAudio: true }, { geez: 'በቆሎ', latin: 'beqolo', meaning: 'corn', picture: '🌽', noAudio: true }, { geez: 'ቢራቢሮ', latin: 'birabiro', meaning: 'butterfly', picture: '🦋', noAudio: true }, { geez: 'በሶ', latin: 'beso', meaning: 'besso', picture: '🥣', noAudio: true }, { geez: 'ቢጫ', latin: 'bicha', meaning: 'yellow', picture: '🟡', noAudio: true }],
   },
   {
     name: 'Te', consonant: 't', chars: 'ተቱቲታቴትቶ', labial: 'ቷ',
@@ -93,19 +94,19 @@ const RAW_FAMILIES = [
   {
     name: 'Ne', consonant: 'n', chars: 'ነኑኒናኔንኖ', labial: 'ኗ',
     word: { geez: 'ንብ', latin: 'nib', meaning: 'bee', picture: '🐝' },
-    words: [{ geez: 'ንብ', latin: 'nib', meaning: 'bee', picture: '🐝' }, { geez: 'ነብር', latin: 'nebir', meaning: 'leopard', picture: '🐆' }],
+    words: [{ geez: 'ንብ', latin: 'nib', meaning: 'bee', picture: '🐝' }, { geez: 'ነብር', latin: 'nebir', meaning: 'leopard', picture: '🐆' }, { geez: 'ነጭ', latin: 'nech', meaning: 'white', picture: '⚪', noAudio: true }],
   },
   { name: 'Nye', consonant: 'ny', chars: 'ኘኙኚኛኜኝኞ', labial: 'ኟ' },
   // The vowel-bearer families: no consonant, so their sounds are raw vowels.
   {
     name: 'A', consonant: '', chars: 'አኡኢኣኤእኦ', sounds: VOWEL_SOUNDS, nickname: 'Alfau A',
     word: { geez: 'አሳ', latin: 'asa', meaning: 'fish', picture: '🐟' },
-    words: [{ geez: 'አሳ', latin: 'asa', meaning: 'fish', picture: '🐟' }, { geez: 'አንበሳ', latin: 'anbesa', meaning: 'lion', picture: '🦁' }, { geez: 'ኢትዮጵያ', latin: 'ityopya', meaning: 'Ethiopia', picture: '🇪🇹' }, { geez: 'እንቁላል', latin: 'inqulal', meaning: 'egg', picture: '🥚' }],
+    words: [{ geez: 'አሳ', latin: 'asa', meaning: 'fish', picture: '🐟' }, { geez: 'አንበሳ', latin: 'anbesa', meaning: 'lion', picture: '🦁' }, { geez: 'ኢትዮጵያ', latin: 'ityopya', meaning: 'Ethiopia', picture: '🇪🇹' }, { geez: 'እንቁላል', latin: 'inqulal', meaning: 'egg', picture: '🥚' }, { geez: 'አራት', latin: 'arat', meaning: 'four', picture: '4️⃣', noAudio: true }, { geez: 'አምስት', latin: 'amist', meaning: 'five', picture: '5️⃣', noAudio: true }, { geez: 'እባብ', latin: 'ibab', meaning: 'snake', picture: '🐍', noAudio: true }],
   },
   {
     name: 'Ke', consonant: 'k', chars: 'ከኩኪካኬክኮ', labial: 'ኳ',
     word: { geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' },
-    words: [{ geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' }, { geez: 'ከረሜላ', latin: 'keremela', meaning: 'candy', picture: '🍬' }, { geez: 'ኩባያ', latin: 'kubaya', meaning: 'cup', picture: '🥤' }],
+    words: [{ geez: 'ኮከብ', latin: 'kokeb', meaning: 'star', picture: '⭐' }, { geez: 'ከረሜላ', latin: 'keremela', meaning: 'candy', picture: '🍬' }, { geez: 'ኩባያ', latin: 'kubaya', meaning: 'cup', picture: '🥤' }, { geez: 'ኬክ', latin: 'kek', meaning: 'cake', picture: '🍰', noAudio: true }, { geez: 'ካሮት', latin: 'karot', meaning: 'carrot', picture: '🥕', noAudio: true }],
   },
   // Modern Amharic merges ኸ into ከ (both said "k"); twinned so the two are
   // never asked apart, and so ኸ reuses the Ke recording. Tigrinya keeps ኸ
@@ -114,7 +115,7 @@ const RAW_FAMILIES = [
   {
     name: 'We', consonant: 'w', chars: 'ወዉዊዋዌውዎ',
     word: { geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' },
-    words: [{ geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' }, { geez: 'ወተት', latin: 'wetet', meaning: 'milk', picture: '🥛' }, { geez: 'ወፍ', latin: 'wef', meaning: 'bird', picture: '🐦' }],
+    words: [{ geez: 'ውሻ', latin: 'wisha', meaning: 'dog', picture: '🐕' }, { geez: 'ወተት', latin: 'wetet', meaning: 'milk', picture: '🥛' }, { geez: 'ወፍ', latin: 'wef', meaning: 'bird', picture: '🐦' }, { geez: 'ወንበር', latin: 'wenber', meaning: 'chair', picture: '🪑', noAudio: true }],
   },
   {
     name: 'Ae', consonant: '', chars: 'ዐዑዒዓዔዕዖ', sounds: VOWEL_SOUNDS, twinOf: 'A', nickname: 'Aynu Ae',
@@ -123,39 +124,46 @@ const RAW_FAMILIES = [
   {
     name: 'Ze', consonant: 'z', chars: 'ዘዙዚዛዜዝዞ', labial: 'ዟ',
     word: { geez: 'ዛፍ', latin: 'zaf', meaning: 'tree', picture: '🌳' },
-    words: [{ geez: 'ዛፍ', latin: 'zaf', meaning: 'tree', picture: '🌳' }, { geez: 'ዘንባባ', latin: 'zenbaba', meaning: 'palm tree', picture: '🌴' }, { geez: 'ዝሆን', latin: 'zihon', meaning: 'elephant', picture: '🐘' }],
+    words: [{ geez: 'ዛፍ', latin: 'zaf', meaning: 'tree', picture: '🌳' }, { geez: 'ዘንባባ', latin: 'zenbaba', meaning: 'palm tree', picture: '🌴' }, { geez: 'ዝሆን', latin: 'zihon', meaning: 'elephant', picture: '🐘' }, { geez: 'ዝናብ', latin: 'zinab', meaning: 'rain', picture: '🌧️', noAudio: true }],
   },
-  { name: 'Zhe', consonant: 'zh', chars: 'ዠዡዢዣዤዥዦ' },
+  {
+    name: 'Zhe', consonant: 'zh', chars: 'ዠዡዢዣዤዥዦ',
+    word: { geez: 'ዥዋዥዌ', latin: 'zhwazhwe', meaning: 'swing', picture: '🛝', noAudio: true },
+  },
   { name: 'Ye', consonant: 'y', chars: 'የዩዪያዬይዮ' },
   {
     name: 'De', consonant: 'd', chars: 'ደዱዲዳዴድዶ', labial: 'ዷ',
     word: { geez: 'ድመት', latin: 'dimet', meaning: 'cat', picture: '🐈' },
-    words: [{ geez: 'ድመት', latin: 'dimet', meaning: 'cat', picture: '🐈' }, { geez: 'ደብተር', latin: 'debter', meaning: 'notebook', picture: '📓' }, { geez: 'ዳቦ', latin: 'dabo', meaning: 'bread', picture: '🍞' }, { geez: 'ዶሮ', latin: 'doro', meaning: 'chicken', picture: '🐔' }],
+    words: [{ geez: 'ድመት', latin: 'dimet', meaning: 'cat', picture: '🐈' }, { geez: 'ደብተር', latin: 'debter', meaning: 'notebook', picture: '📓' }, { geez: 'ዳቦ', latin: 'dabo', meaning: 'bread', picture: '🍞' }, { geez: 'ዶሮ', latin: 'doro', meaning: 'chicken', picture: '🐔' }, { geez: 'ደመና', latin: 'demena', meaning: 'cloud', picture: '☁️', noAudio: true }],
   },
   {
     name: 'Je', consonant: 'j', chars: 'ጀጁጂጃጄጅጆ', labial: 'ጇ',
     word: { geez: 'ጆሮ', latin: 'joro', meaning: 'ear', picture: '👂' },
-    words: [{ geez: 'ጆሮ', latin: 'joro', meaning: 'ear', picture: '👂' }, { geez: 'ጀልባ', latin: 'jelba', meaning: 'boat', picture: '⛵' }],
+    words: [{ geez: 'ጆሮ', latin: 'joro', meaning: 'ear', picture: '👂' }, { geez: 'ጀልባ', latin: 'jelba', meaning: 'boat', picture: '⛵' }, { geez: 'ጅብ', latin: 'jib', meaning: 'hyena', picture: '🐺', noAudio: true }],
   },
   {
     name: 'Ge', consonant: 'g', chars: 'ገጉጊጋጌግጎ', labial: 'ጓ',
     word: { geez: 'ግመል', latin: 'gimel', meaning: 'camel', picture: '🐫' },
-    words: [{ geez: 'ግመል', latin: 'gimel', meaning: 'camel', picture: '🐫' }, { geez: 'ገንዘብ', latin: 'genzeb', meaning: 'money', picture: '💰' }, { geez: 'ጉንዳን', latin: 'gundan', meaning: 'ant', picture: '🐜' }],
+    words: [{ geez: 'ግመል', latin: 'gimel', meaning: 'camel', picture: '🐫' }, { geez: 'ገንዘብ', latin: 'genzeb', meaning: 'money', picture: '💰' }, { geez: 'ጉንዳን', latin: 'gundan', meaning: 'ant', picture: '🐜' }, { geez: 'ጎመን', latin: 'gomen', meaning: 'kale', picture: '🥬', noAudio: true }, { geez: 'ገበያ', latin: 'gebeya', meaning: 'market', picture: '🛒', noAudio: true }],
   },
   {
     name: 'The', consonant: "t'", chars: 'ጠጡጢጣጤጥጦ', labial: 'ጧ',
     word: { geez: 'ጥርስ', latin: 'tirs', meaning: 'tooth', picture: '🦷' },
-    words: [{ geez: 'ጥርስ', latin: 'tirs', meaning: 'tooth', picture: '🦷' }, { geez: 'ጤፍ', latin: 'tef', meaning: 'teff', picture: '🌾' }, { geez: 'ጠርሙስ', latin: 'termus', meaning: 'bottle', picture: '🧴' }],
+    words: [{ geez: 'ጥርስ', latin: 'tirs', meaning: 'tooth', picture: '🦷' }, { geez: 'ጤፍ', latin: 'tef', meaning: 'teff', picture: '🌾' }, { geez: 'ጠርሙስ', latin: 'termus', meaning: 'bottle', picture: '🧴' }, { geez: 'ጣት', latin: 'tat', meaning: 'finger', picture: '☝️', noAudio: true }, { geez: 'ጥቁር', latin: 'tikur', meaning: 'black', picture: '⚫', noAudio: true }],
   },
   {
     name: 'Chhe', consonant: "ch'", chars: 'ጨጩጪጫጬጭጮ', labial: 'ጯ',
     word: { geez: 'ጨረቃ', latin: 'chereqa', meaning: 'moon', picture: '🌙' },
-    words: [{ geez: 'ጨረቃ', latin: 'chereqa', meaning: 'moon', picture: '🌙' }, { geez: 'ጨው', latin: 'chew', meaning: 'salt', picture: '🧂' }],
+    words: [{ geez: 'ጨረቃ', latin: 'chereqa', meaning: 'moon', picture: '🌙' }, { geez: 'ጨው', latin: 'chew', meaning: 'salt', picture: '🧂' }, { geez: 'ጫማ', latin: 'chama', meaning: 'shoe', picture: '👟', noAudio: true }],
   },
-  { name: 'Ppe', consonant: "p'", chars: 'ጰጱጲጳጴጵጶ' },
+  {
+    name: 'Ppe', consonant: "p'", chars: 'ጰጱጲጳጴጵጶ',
+    word: { geez: 'ጳጉሜ', latin: 'pagume', meaning: 'Pagume (13th month)', picture: '🗓️', noAudio: true },
+  },
   {
     name: 'Tse', consonant: "ts'", chars: 'ጸጹጺጻጼጽጾ', nickname: 'Tselotu Tse', labial: 'ጿ',
     word: { geez: 'ጸሎት', latin: 'tselot', meaning: 'prayer', picture: '🙏' },
+    words: [{ geez: 'ጸሎት', latin: 'tselot', meaning: 'prayer', picture: '🙏' }, { geez: 'ጽጌረዳ', latin: 'tsigereda', meaning: 'rose', picture: '🌹', noAudio: true }],
   },
   {
     name: 'Ttse', consonant: "ts'", chars: 'ፀፁፂፃፄፅፆ', twinOf: 'Tse', nickname: 'Tsehayu Ttse',
@@ -169,7 +177,7 @@ const RAW_FAMILIES = [
   {
     name: 'Pe', consonant: 'p', chars: 'ፐፑፒፓፔፕፖ',
     word: { geez: 'ፓፓያ', latin: 'papaya', meaning: 'papaya', picture: '🥭' },
-    words: [{ geez: 'ፓፓያ', latin: 'papaya', meaning: 'papaya', picture: '🥭' }, { geez: 'ፖሊስ', latin: 'polis', meaning: 'police', picture: '👮' }],
+    words: [{ geez: 'ፓፓያ', latin: 'papaya', meaning: 'papaya', picture: '🥭' }, { geez: 'ፖሊስ', latin: 'polis', meaning: 'police', picture: '👮' }, { geez: 'ፓስታ', latin: 'pasta', meaning: 'pasta', picture: '🍝', noAudio: true }],
   },
 ]
 

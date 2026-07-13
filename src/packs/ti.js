@@ -47,10 +47,13 @@ export const TI_PACK = Object.freeze({
       name: 'Le', consonant: 'l', word: { geez: 'ልቢ', latin: 'lbi', meaning: 'heart', picture: '❤️' },
       words: [{ geez: 'ልቢ', latin: 'lbi', meaning: 'heart', picture: '❤️' }, { geez: 'ላም', latin: 'lam-ti', meaning: 'cow', picture: '🐄' }, { geez: 'ለይቲ', latin: 'leyti', meaning: 'night', picture: '🌙' }, { geez: 'ሉል', latin: 'lul-ti', meaning: 'pearl', picture: '💎', noAudio: true }],
     },
-    hha: { name: 'Hha', consonant: 'ḥ', word: { geez: 'ሓርማዝ', latin: 'harmaz', meaning: 'elephant', picture: '🐘' } },
+    hha: {
+      name: 'Hha', consonant: 'ḥ', word: { geez: 'ሓርማዝ', latin: 'harmaz', meaning: 'elephant', picture: '🐘' },
+      words: [{ geez: 'ሓርማዝ', latin: 'harmaz', meaning: 'elephant', picture: '🐘' }, { geez: 'ሓሙሽተ', latin: 'hamushte', meaning: 'five', picture: '5️⃣', noAudio: true }],
+    },
     me: {
       name: 'Me', consonant: 'm', word: { geez: 'ማይ', latin: 'may', meaning: 'water', picture: '💧' },
-      words: [{ geez: 'ማይ', latin: 'may', meaning: 'water', picture: '💧' }, { geez: 'መኪና', latin: 'mekina-ti', meaning: 'car', picture: '🚗' }, { geez: 'ሙዝ', latin: 'muz-ti', meaning: 'banana', picture: '🍌' }, { geez: 'ማማ', latin: 'mama-ti', meaning: 'mom', picture: '👩', noAudio: true }, { geez: 'ምሳሕ', latin: 'misah', meaning: 'lunch', picture: '🍽️', noAudio: true }, { geez: 'መስመር', latin: 'mesmer', meaning: 'line', picture: '📏', noAudio: true }, { geez: 'መቐስ', latin: 'meqhes', meaning: 'scissors', picture: '✂️', noAudio: true }],
+      words: [{ geez: 'ማይ', latin: 'may', meaning: 'water', picture: '💧' }, { geez: 'መኪና', latin: 'mekina-ti', meaning: 'car', picture: '🚗' }, { geez: 'ሙዝ', latin: 'muz-ti', meaning: 'banana', picture: '🍌' }, { geez: 'ማማ', latin: 'mama-ti', meaning: 'mom', picture: '👩', noAudio: true }, { geez: 'ምሳሕ', latin: 'misah', meaning: 'lunch', picture: '🍽️', noAudio: true }, { geez: 'መስመር', latin: 'mesmer', meaning: 'line', picture: '📏', noAudio: true }, { geez: 'መቐስ', latin: 'meqhes', meaning: 'scissors', picture: '✂️', noAudio: true }, { geez: 'ማንካ', latin: 'manka', meaning: 'spoon', picture: '🥄', noAudio: true }, { geez: 'ማዕጾ', latin: 'maetso', meaning: 'door', picture: '🚪', noAudio: true }, { geez: 'መጽሓፍ', latin: 'metshaf', meaning: 'book', picture: '📖', noAudio: true }],
     },
     sse: { name: 'Sse', consonant: 's' },
     re: { name: 'Re', consonant: 'r' },
@@ -60,7 +63,7 @@ export const TI_PACK = Object.freeze({
     },
     she: {
       name: 'She', consonant: 'sh', word: { geez: 'ሻሂ', latin: 'shahi', meaning: 'tea', picture: '🍵' },
-      words: [{ geez: 'ሻሂ', latin: 'shahi', meaning: 'tea', picture: '🍵' }, { geez: 'ሽሮ', latin: 'shiro-ti', meaning: 'shiro stew', picture: '🥘', noAudio: true }, { geez: 'ሻሽ', latin: 'shash-ti', meaning: 'headscarf', picture: '🧕', noAudio: true }],
+      words: [{ geez: 'ሻሂ', latin: 'shahi', meaning: 'tea', picture: '🍵' }, { geez: 'ሽሮ', latin: 'shiro-ti', meaning: 'shiro stew', picture: '🥘', noAudio: true }, { geez: 'ሻሽ', latin: 'shash-ti', meaning: 'headscarf', picture: '🧕', noAudio: true }, { geez: 'ሽኮር', latin: 'shikor', meaning: 'sugar', picture: '🍬', noAudio: true }],
     },
     qe: {
       name: 'Qe', consonant: 'q', word: { geez: 'ቆልዓ', latin: 'qola', meaning: 'child', picture: '👶' },
@@ -71,7 +74,7 @@ export const TI_PACK = Object.freeze({
     qhe: { name: 'Qhe', consonant: 'qh' },
     be: {
       name: 'Be', consonant: 'b', word: { geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' },
-      words: [{ geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles-ti', meaning: 'cactus fig', picture: '🍈' }, { geez: 'ቡን', latin: 'bun', meaning: 'coffee', picture: '☕' }, { geez: 'ቡምባ', latin: 'bumba', meaning: 'water tap', picture: '🚰' }, { geez: 'ባኒ', latin: 'bani', meaning: 'bread', picture: '🍞' }, { geez: 'ባቡር', latin: 'babur', meaning: 'train', picture: '🚂', noAudio: true }],
+      words: [{ geez: 'ቤት', latin: 'bet', meaning: 'house', picture: '🏠' }, { geez: 'በለስ', latin: 'beles-ti', meaning: 'cactus fig', picture: '🍈' }, { geez: 'ቡን', latin: 'bun', meaning: 'coffee', picture: '☕' }, { geez: 'ቡምባ', latin: 'bumba', meaning: 'water tap', picture: '🚰' }, { geez: 'ባኒ', latin: 'bani', meaning: 'bread', picture: '🍞' }, { geez: 'ባቡር', latin: 'babur', meaning: 'train', picture: '🚂', noAudio: true }, { geez: 'በጊዕ', latin: 'begi', meaning: 'sheep', picture: '🐑', noAudio: true }],
     },
     te: { name: 'Te', consonant: 't', word: { geez: 'ተመን', latin: 'temen', meaning: 'snake', picture: '🐍' } },
     che: { name: 'Che', consonant: 'ch' },
@@ -80,28 +83,40 @@ export const TI_PACK = Object.freeze({
     nye: { name: 'Nye', consonant: 'ny' },
     a: {
       name: 'A', consonant: '', word: { geez: 'ዓሳ', latin: 'asa', meaning: 'fish', picture: '🐟' },
-      words: [{ geez: 'ዓሳ', latin: 'asa', meaning: 'fish', picture: '🐟' }, { geez: 'ኣንበሳ', latin: 'anbesa-ti', meaning: 'lion', picture: '🦁' }],
+      words: [{ geez: 'ዓሳ', latin: 'asa', meaning: 'fish', picture: '🐟' }, { geez: 'ኣንበሳ', latin: 'anbesa-ti', meaning: 'lion', picture: '🦁' }, { geez: 'እምኒ', latin: 'imni', meaning: 'stone', picture: '🪨', noAudio: true }, { geez: 'ኢድ', latin: 'iid', meaning: 'hand', picture: '✋', noAudio: true }, { geez: 'እዝኒ', latin: 'izni', meaning: 'ear', picture: '👂', noAudio: true }, { geez: 'እግሪ', latin: 'igri', meaning: 'foot', picture: '🦶', noAudio: true }, { geez: 'ኣፍ', latin: 'af', meaning: 'mouth', picture: '👄', noAudio: true }, { geez: 'ኣፍንጫ', latin: 'afincha', meaning: 'nose', picture: '👃', noAudio: true }, { geez: 'ኣርባዕተ', latin: 'arbaate', meaning: 'four', picture: '4️⃣', noAudio: true }],
     },
     ke: {
       name: 'Ke', consonant: 'k', word: { geez: 'ኮኾብ', latin: 'kokhob', meaning: 'star', picture: '⭐' },
-      words: [{ geez: 'ኮኾብ', latin: 'kokhob', meaning: 'star', picture: '⭐' }, { geez: 'ከልቢ', latin: 'kelbi', meaning: 'dog', picture: '🐕' }, { geez: 'ኩዕሶ', latin: 'kuso', meaning: 'ball', picture: '⚽' }],
+      words: [{ geez: 'ኮኾብ', latin: 'kokhob', meaning: 'star', picture: '⭐' }, { geez: 'ከልቢ', latin: 'kelbi', meaning: 'dog', picture: '🐕' }, { geez: 'ኩዕሶ', latin: 'kuso', meaning: 'ball', picture: '⚽' }, { geez: 'ክልተ', latin: 'kilte', meaning: 'two', picture: '2️⃣', noAudio: true }],
     },
     khe: { name: 'Khe', consonant: 'kh' },
     we: { name: 'We', consonant: 'w', word: { geez: 'ወርሒ', latin: 'werhi', meaning: 'moon', picture: '🌙' } },
-    ae: { name: 'Ae', consonant: 'ʿ', word: { geez: 'ዓይኒ', latin: 'ayni', meaning: 'eye', picture: '👁️' } },
-    ze: { name: 'Ze', consonant: 'z', word: { geez: 'ዘይቲ', latin: 'zeyti', meaning: 'oil', picture: '🫒' } },
+    ae: {
+      name: 'Ae', consonant: 'ʿ', word: { geez: 'ዓይኒ', latin: 'ayni', meaning: 'eye', picture: '👁️' },
+      words: [{ geez: 'ዓይኒ', latin: 'ayni', meaning: 'eye', picture: '👁️' }, { geez: 'ዓራት', latin: 'arat-ti', meaning: 'bed', picture: '🛏️', noAudio: true }],
+    },
+    ze: {
+      name: 'Ze', consonant: 'z', word: { geez: 'ዘይቲ', latin: 'zeyti', meaning: 'oil', picture: '🫒' },
+      words: [{ geez: 'ዘይቲ', latin: 'zeyti', meaning: 'oil', picture: '🫒' }, { geez: 'ዝብኢ', latin: 'zibi', meaning: 'hyena', picture: '🐺', noAudio: true }],
+    },
     zhe: { name: 'Zhe', consonant: 'zh' },
     ye: { name: 'Ye', consonant: 'y' },
-    de: { name: 'De', consonant: 'd', word: { geez: 'ደርሆ', latin: 'derho', meaning: 'chicken', picture: '🐔' } },
+    de: {
+      name: 'De', consonant: 'd', word: { geez: 'ደርሆ', latin: 'derho', meaning: 'chicken', picture: '🐔' },
+      words: [{ geez: 'ደርሆ', latin: 'derho', meaning: 'chicken', picture: '🐔' }, { geez: 'ደርፊ', latin: 'derfi', meaning: 'song', picture: '🎵', noAudio: true }],
+    },
     je: { name: 'Je', consonant: 'j' },
     ge: {
       name: 'Ge', consonant: 'g', word: { geez: 'ገዛ', latin: 'geza', meaning: 'house', picture: '🏠' },
       words: [{ geez: 'ገዛ', latin: 'geza', meaning: 'house', picture: '🏠' }, { geez: 'ጎቦ', latin: 'gobo', meaning: 'mountain', picture: '⛰️' }],
     },
-    the: { name: 'The', consonant: "t'" },
+    the: { name: 'The', consonant: "t'", word: { geez: 'ጤል', latin: 'tiel', meaning: 'goat', picture: '🐐', noAudio: true } },
     chhe: { name: 'Chhe', consonant: "ch'" },
     ppe: { name: 'Ppe', consonant: "p'" },
-    tse: { name: 'Tse', consonant: "ts'", word: { geez: 'ጸሓይ', latin: 'tsehay-ti', meaning: 'sun', picture: '☀️' } },
+    tse: {
+      name: 'Tse', consonant: "ts'", word: { geez: 'ጸሓይ', latin: 'tsehay-ti', meaning: 'sun', picture: '☀️' },
+      words: [{ geez: 'ጸሓይ', latin: 'tsehay-ti', meaning: 'sun', picture: '☀️' }, { geez: 'ጸባ', latin: 'tseba', meaning: 'milk', picture: '🥛', noAudio: true }],
+    },
     ttse: { name: 'Ttse', consonant: "ts'" },
     fe: {
       name: 'Fe', consonant: 'f', word: { geez: 'ፈረስ', latin: 'feres-ti', meaning: 'horse', picture: '🐎' },
