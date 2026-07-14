@@ -47,5 +47,7 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Fidel Quest uses the microphone only when a grown-up chooses to record letters or a short voice message for the child (Family Voice and Voice Postcards). Recordings stay on this device and are never uploaded.</string>
 </dict>
 </plist>

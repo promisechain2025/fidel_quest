@@ -38,4 +38,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Family Voice / Voice Postcards let a grown-up record audio for the
+         child via the WebView's getUserMedia. Without this the recording UI
+         appears but the permission request fails and nothing is captured. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest>
