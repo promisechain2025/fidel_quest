@@ -646,10 +646,14 @@ export function runInvariants() {
   const checks = []
   const check = (name, pass, detail = '') => checks.push({ name, pass, detail })
 
-  check('33 consonant families', FIDEL_FAMILIES.length === 33)
+  // Counts derive from the active pack: Amharic has 33 families (231 forms),
+  // Tigrinya adds the qhe family (34/238). Hardcoding 33/231 here made these
+  // invariants scream in the console whenever the ti pack was active.
+  const FORMS_TOTAL = FIDEL_FAMILIES.length * 7
+  check('At least 33 consonant families', FIDEL_FAMILIES.length >= 33)
   check('Every family has exactly 7 forms', FIDEL_FAMILIES.every((f) => Array.from(f.chars).length === 7))
   const chars = ALL_FORMS.map((f) => f.char)
-  check('All 231 characters unique', new Set(chars).size === 231)
+  check('All characters unique', new Set(chars).size === FORMS_TOTAL)
   check(
     'All characters in the Ethiopic block',
     chars.every((c) => {
@@ -657,7 +661,7 @@ export function runInvariants() {
       return cp >= 0x1200 && cp <= 0x137f
     }),
   )
-  check('Audio keys unique and resolvable', new Set(ALL_FORMS.map((f) => f.audioKey)).size === 231 && INDEXES.byAudioKey.size === 231)
+  check('Audio keys unique and resolvable', new Set(ALL_FORMS.map((f) => f.audioKey)).size === FORMS_TOTAL && INDEXES.byAudioKey.size === FORMS_TOTAL)
   check('Twin references resolve', FIDEL_FAMILIES.every((f) => !f.twinOf || FIDEL_FAMILIES.some((g) => g.name === f.twinOf)))
 
   for (const level of LEVELS) {
