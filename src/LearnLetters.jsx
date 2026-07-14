@@ -336,13 +336,15 @@ function BubbleMeet({ ctx, onTouch }) {
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
       <div className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
-        {/* floating sparkles for a lively stage */}
+        {/* floating sparkles for a lively stage. Sky-tinted and faint, never
+            solid white: the glyph on the bubble is white, so any bright white
+            shape on this stage reads as part of a letter. */}
         {[14, 40, 66, 88, 28, 74].map((left, i) => (
           <motion.span
             key={i}
-            className="absolute h-1.5 w-1.5 rounded-full bg-white"
-            style={{ left: `${left}%`, top: `${(i * 37) % 78 + 8}%` }}
-            animate={{ opacity: [0.15, 0.8, 0.15], scale: [0.6, 1.2, 0.6] }}
+            className="absolute h-1.5 w-1.5 rounded-full"
+            style={{ left: `${left}%`, top: `${(i * 37) % 78 + 8}%`, background: '#9fd4f5' }}
+            animate={{ opacity: [0.1, 0.45, 0.1], scale: [0.6, 1.2, 0.6] }}
             transition={{ duration: 2 + (i % 3) * 0.7, repeat: Infinity, delay: i * 0.3 }}
             aria-hidden="true"
           />
@@ -396,7 +398,6 @@ function BubbleMeet({ ctx, onTouch }) {
           >
             {form.char}
           </motion.span>
-          <span className="absolute left-8 top-7 h-7 w-11 rotate-[-25deg] rounded-full bg-white/85" aria-hidden="true" />
         </motion.button>
       </div>
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
