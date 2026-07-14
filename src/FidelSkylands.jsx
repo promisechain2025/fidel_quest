@@ -865,9 +865,12 @@ function CameraRig({ mode, session, sessionsCompleted }) {
       target = new THREE.Vector3(mid + sway, 7.5 + bob, 17.5)
       lookAt = new THREE.Vector3(mid + sway * 0.35, 0.6, 0)
     } else {
+      // Pulled back from z+9.2/y4.4: the close-up framed the tree so tight it
+      // filled the whole portrait screen; more distance keeps the tree, the
+      // island rim, and Anbessa in view together.
       const p = islandPos(session - 1)
-      target = new THREE.Vector3(p[0] + 0.4, 4.4, p[2] + 9.2)
-      lookAt = new THREE.Vector3(p[0], 2.4, p[2])
+      target = new THREE.Vector3(p[0] + 0.4, 5.8, p[2] + 13.8)
+      lookAt = new THREE.Vector3(p[0], 2.0, p[2])
     }
     camera.position.lerp(target, k)
     look.current.lerp(lookAt, k)
