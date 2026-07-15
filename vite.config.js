@@ -66,7 +66,7 @@ export default defineConfig({
             urlPattern: /\/audio\/fidel\/.*\.mp3$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'fidel-audio-v6',
+              cacheName: 'fidel-audio-v7',
               expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
