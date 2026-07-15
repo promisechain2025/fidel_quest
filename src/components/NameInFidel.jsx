@@ -88,7 +88,9 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
             <button key={o.index} type="button" aria-pressed={order === o.index} onClick={() => setOrder(o.index)} className={`chunk min-w-[3rem] rounded-2xl px-3 py-2 text-center font-black ${FOCUS}`} style={order === o.index
               ? { background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
               : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-              <span className="geez block text-xl leading-none">{formOf(`ke-${o.index}`)?.char}</span>
+              {/* Show the pure vowel-bearer (the አ family): its seven forms ARE
+                  the vowels, so they read as vowel sounds, not "ka, ku, ki...". */}
+              <span className="geez block text-xl leading-none">{formOf(`a-${o.index}`)?.char}</span>
               <span className="mt-0.5 block text-[11px] font-bold opacity-80">{o.vowel}</span>
             </button>
           ))}

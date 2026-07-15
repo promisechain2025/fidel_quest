@@ -32,13 +32,16 @@ const TABS = [
   { id: 'auto', icon: Play, key: 'masterAuto', label: 'Auto-voice' },
 ]
 
-function OrderChip({ active, label, sub, onClick }) {
+function OrderChip({ active, glyph, label, sub, title, onClick }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active}
-      className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-xs font-black leading-tight ${FOCUS}`}
-      style={{ background: active ? 'var(--go)' : 'var(--card)', color: active ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
-      <span>{label}</span>
-      {sub ? <span className="mono text-[10px] font-bold opacity-80">{sub}</span> : null}
+    <button type="button" onClick={onClick} aria-pressed={active} aria-label={title || label}
+      className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-2 py-2 font-black leading-none ${FOCUS}`}
+      style={{ background: active ? 'var(--go)' : 'var(--card)', color: active ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+      {/* A vowel order reads clearest as its actual glyph (the አ family's forms
+          ARE the pure vowels), big and high-contrast; the Abugida chip has no
+          single glyph, so it keeps a text label. */}
+      {glyph ? <span className="geez text-2xl">{glyph}</span> : <span className="text-sm">{label}</span>}
+      {sub ? <span className="mono mt-1 text-xs font-bold" style={{ opacity: active ? 0.9 : 0.75 }}>{sub}</span> : null}
     </button>
   )
 }
@@ -207,7 +210,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           <div className="grid w-full grid-cols-4 gap-1.5">
             <OrderChip active={order == null} label={t('masterAbugida', 'Abugida')} onClick={() => { setOrder(null); setIdx(0) }} />
             {ORDERS.map((o) => (
-              <OrderChip key={o.index} active={order === o.index} label={o.geezName} sub={`-${o.vowel}`} onClick={() => { setOrder(o.index); setIdx(0) }} />
+              <OrderChip key={o.index} active={order === o.index} glyph={formOf(`a-${o.index}`)?.char} sub={`-${o.vowel}`} title={o.geezName} onClick={() => { setOrder(o.index); setIdx(0) }} />
             ))}
           </div>
 
