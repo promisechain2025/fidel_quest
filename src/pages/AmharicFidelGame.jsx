@@ -32,15 +32,14 @@ import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScop
 import { audio as platformAudio } from '../platform/audioEngine'
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
-import {
-  FIDEL_FAMILIES,
-  ALL_FORMS,
-  CHAR_TO_FORM,
-  WORDS,
-  UI_STRINGS,
-  ORDER_NAMES,
-  GEEZ_ORDER_NAMES,
-} from '../data/fidelGameData'
+import { UI_STRINGS, ORDER_NAMES, GEEZ_ORDER_NAMES } from '../data/fidelGameData'
+import { buildClassicData } from '../data/classicPack'
+import { getActivePackId } from '../platform/ethiopic'
+
+// Classic now speaks the active learn language: Amharic stays the validated
+// table, Tigrinya (and any future pack) is derived from the pack. Computed at
+// module load - a language switch reloads the app, so this re-derives with it.
+const { FIDEL_FAMILIES, ALL_FORMS, CHAR_TO_FORM, WORDS } = buildClassicData(getActivePackId())
 
 // Re-exported so tests (and future callers) keep a single import site.
 export { FIDEL_FAMILIES, ALL_FORMS, CHAR_TO_FORM, WORDS }

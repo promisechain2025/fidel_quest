@@ -2291,13 +2291,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            {/* Classic is the original Amharic-only mode (raw fidelGameData, its
-               own twins and audio). It cannot represent Tigrinya, so it is
-               hidden whenever a non-Amharic learn pack is active - the
-               pack-aware Explorer and Fidel Master cover that surface. */}
-            {getActivePackId() === 'am' && (
-              <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
-            )}
+            <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
             {troubleCount > 0 && (
               <BackpackTile icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}

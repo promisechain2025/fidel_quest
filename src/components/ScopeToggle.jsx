@@ -4,14 +4,16 @@
    persists it via setScope so the choice carries across games. */
 import { t } from '../platform/i18n'
 import { SCOPES, learnedCount } from '../platform/letterScope'
+import { FIDEL_FAMILIES } from '../platform/ethiopic'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
 export default function ScopeToggle({ scope, onChange, className = '' }) {
   const learned = learnedCount()
+  const total = FIDEL_FAMILIES.length // 33 (Amharic) or 34 (Tigrinya, +qhe)
   const options = [
-    { id: SCOPES.LEARNED, label: t('scopeLearned', 'My letters'), sub: `${learned}/33` },
-    { id: SCOPES.ALL, label: t('scopeAll', 'All letters'), sub: '33' },
+    { id: SCOPES.LEARNED, label: t('scopeLearned', 'My letters'), sub: `${learned}/${total}` },
+    { id: SCOPES.ALL, label: t('scopeAll', 'All letters'), sub: `${total}` },
   ]
   return (
     <div className={`flex items-center gap-1.5 ${className}`} role="group" aria-label={t('scopeLabel', 'Which letters')}>
