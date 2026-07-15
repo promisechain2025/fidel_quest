@@ -737,7 +737,13 @@ export function runInvariants() {
   return checks
 }
 
-export const INVARIANTS = runInvariants()
+// Run the self-test suite in development and under Vitest (where a broken
+// invariant must surface loudly), but NOT in the shipped production bundle:
+// it is pure verification (headless playthroughs + 25-seed sweeps) that would
+// otherwise re-run synchronously on every cold app launch on-device, on the
+// critical path before first paint. The vitest suite still asserts every
+// check passes, so coverage is unchanged.
+export const INVARIANTS = import.meta.env.PROD ? [] : runInvariants()
 for (const c of INVARIANTS) {
   if (!c.pass) console.error(`[FidelQuest invariant failed] ${c.name}`, c.detail)
 }
