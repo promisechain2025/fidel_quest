@@ -107,6 +107,7 @@ import {
   Globe,
   ArrowDown,
   Send,
+  Search,
 } from 'lucide-react'
 
 /* ============================================================================
@@ -865,16 +866,24 @@ export default function FidelQuestApp() {
     return [{ name: 'home' }]
   })
   const screen = stack[stack.length - 1]
+  // A screen opened from the Backpack remembers that origin (fromBackpack), so
+  // Back returns to the Backpack instead of straight home. The ref lets
+  // setScreen see the Backpack's open state at push time without re-creating
+  // the callback (the handlers close the Backpack, so its own state has already
+  // been scheduled false by the time setScreen runs - the ref still reads true).
+  const backpackOpenRef = useRef(false)
   const setScreen = useCallback((next) => setStack((s) => {
+    const tagged = backpackOpenRef.current && !next.fromBackpack ? { ...next, fromBackpack: true } : next
     const top = s[s.length - 1]
-    return top && top.name === next.name ? [...s.slice(0, -1), next] : [...s, next]
+    return top && top.name === tagged.name ? [...s.slice(0, -1), tagged] : [...s, tagged]
   }), [])
-  const goBack = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), [])
+  const reopenBackpackIf = (s) => { if (s.length && s[s.length - 1].fromBackpack) setBackpackOpen(true) }
+  const goBack = useCallback(() => setStack((s) => { if (s.length <= 1) return s; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
   // Hardware back: pop, but from a non-home ROOT (e.g. a #challenge deep link,
   // whose initial stack is just [challenge]) fall through to home - otherwise
   // the back button would neither navigate nor exit the app.
-  const goBackOrHome = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : [{ name: 'home' }])), [])
+  const goBackOrHome = useCallback(() => setStack((s) => { if (s.length <= 1) return [{ name: 'home' }]; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   useEffect(() => {
     try {
       document.documentElement.lang = getLang()
@@ -923,6 +932,7 @@ export default function FidelQuestApp() {
   const dayKey = useAppDay()
   const today = dayKey
   const [backpackOpen, setBackpackOpen] = useState(false)
+  useEffect(() => { backpackOpenRef.current = backpackOpen }, [backpackOpen])
   const [giftOpen, setGiftOpen] = useState(false)
   // Daily streak: count each day's visit (re-bumps if the day rolls over).
   const [streak, setStreak] = useState(0)
@@ -1739,24 +1749,29 @@ const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
 /* One chip of the Today's-plan strip: number -> check when done. Chips sit
    in a single horizontal row so the coach guides without burying the path
    (the old stacked card pushed the Journey below the fold on small phones). */
-function PlanChip({ step, done, label, onClick, pulse }) {
+/* A plan step reads as its own pill: an ICON says what it is (no step number
+   to decode), and the BACKGROUND says its state - solid sky = do this now,
+   soft green = done, plain card = later. Each pill sizes to its label and the
+   row wraps whole pills to a second line, so a long translation never breaks
+   mid-word or forces a sideways scroll. */
+function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
+  const active = pulse && !done
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      animate={pulse && !done ? { scale: [1, 1.04, 1] } : {}}
+      aria-current={active ? 'step' : undefined}
+      animate={active ? { scale: [1, 1.04, 1] } : {}}
       transition={{ duration: 1.6, repeat: Infinity }}
-      className={`chunk flex min-w-0 flex-auto items-center justify-center gap-1.5 rounded-full py-1.5 pl-2 pr-2.5 text-xs font-black sm:flex-none sm:justify-start sm:py-2 sm:pr-3 ${FOCUS}`}
+      className={`chunk flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
       style={done
-        ? { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--muted)', outlineColor: 'var(--sky)' }
-        : pulse
-          ? { background: 'var(--sky)', boxShadow: '0 2px 0 var(--sky-deep)', '--chunk-depth': '2px', color: '#fff', outlineColor: 'var(--accent)' }
-          : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        ? { background: 'var(--go-soft)', color: 'var(--go-ink)', boxShadow: '0 2px 0 rgba(0,0,0,0.05)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }
+        : active
+          ? { background: 'var(--sky)', color: '#fff', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }
+          : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-black" style={{ background: done ? 'var(--go-soft)' : 'rgba(0,0,0,0.08)', color: done ? 'var(--go-ink)' : 'inherit' }}>
-        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : step}
-      </span>
-      <span className="min-w-0 whitespace-normal text-center leading-tight [overflow-wrap:anywhere] sm:text-left">{label}</span>
+      {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+      <span className="whitespace-nowrap">{label}</span>
     </motion.button>
   )
 }
@@ -2002,10 +2017,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         {/* One row always: chips share the width and long translations
             (German, French) wrap INSIDE their chip - never a sideways
             scroll, never a second row of buttons. */}
-        <div className="mt-1.5 flex gap-2 px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
+        <div className="mt-1.5 flex flex-wrap gap-2 px-1 pb-1.5" role="list" aria-label={t('planTitle', "Today's plan")}>
           {coach?.warmupState !== 'none' && (
             <PlanChip
-              step={1}
+              icon={Sparkles}
               done={coach?.warmupState === 'done'}
               label={t('warmTitle', 'Warm-up')}
               onClick={onWarmup}
@@ -2014,7 +2029,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           )}
           {coach?.assignment && (
             <PlanChip
-              step={(coach?.warmupState !== 'none' ? 1 : 0) + 1}
+              icon={ClipboardCheck}
               done={false}
               label={t('asTitle', 'Assignment')}
               onClick={onAssignment}
@@ -2023,7 +2038,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           )}
           {current && (
             <PlanChip
-              step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + 1}
+              icon={Play}
               done={false}
               label={t('planNewShort', 'New step')}
               onClick={() => onOpen(current)}
@@ -2031,7 +2046,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             />
           )}
           <PlanChip
-            step={(coach?.warmupState !== 'none' ? 1 : 0) + (coach?.assignment ? 1 : 0) + (current ? 1 : 0) + 1}
+            icon={Search}
             done={huntDone}
             label={t('huntShort', 'Daily Hunt')}
             onClick={onHunt}
