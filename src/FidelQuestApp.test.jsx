@@ -22,6 +22,7 @@ import FidelQuestApp, {
   buildWordQueue,
   WORDS,
   WORD_BY_LATIN,
+  WordMatch,
 } from './FidelQuestApp'
 
 beforeEach(() => {
@@ -279,6 +280,16 @@ describe('First Words', () => {
       expect(typeof w.meaning).toBe('string')
       expect(Array.from(w.geez).length).toBeGreaterThan(0)
     }
+  })
+
+  it('mounts a live round without crashing', () => {
+    // Guards the WordMatch useReducer initializer: a stray extra arrow once
+    // made it return a function as state, so selectQuestion(ctx) read off a
+    // function and the first round crashed into the ErrorBoundary. The
+    // pure-queue tests above never render the component, so only a mount test
+    // catches it. The Quit control renders on every round type.
+    render(<WordMatch seed={7} soundOn={false} onFinish={() => {}} onReplay={() => {}} />)
+    expect(screen.getByLabelText('Quit words')).toBeInTheDocument()
   })
 })
 

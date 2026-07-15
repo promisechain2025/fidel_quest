@@ -4790,18 +4790,16 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
 
 /* ── First Words: hear the word, tap its picture ── */
 
-function WordMatch({ seed, soundOn, onFinish, onReplay }) {
-  const [ctx, dispatch] = useReducer(machineReducer, undefined, () =>
-    () => {
-      // Prefer the words the child can actually READ (decodable from the
-      // learned families); when too few for a queue, the full voiced list
-      // keeps the game rich. The 'all letters' scope opens everything.
-      const learned = new Set(learnedFamilyIds(loadJourney()))
-      const dec = getScope() === SCOPES.ALL ? WORDS : WORDS.filter((w) => isDecodable(w.geez, learned))
-      const pool = dec.length >= 6 ? dec : WORDS
-      return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, 6, pool) } }).next
-    },
-  )
+export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
+  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => {
+    // Prefer the words the child can actually READ (decodable from the
+    // learned families); when too few for a queue, the full voiced list
+    // keeps the game rich. The 'all letters' scope opens everything.
+    const learned = new Set(learnedFamilyIds(loadJourney()))
+    const dec = getScope() === SCOPES.ALL ? WORDS : WORDS.filter((w) => isDecodable(w.geez, learned))
+    const pool = dec.length >= 6 ? dec : WORDS
+    return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, 6, pool) } }).next
+  })
   const question = selectQuestion(ctx)
   const word = question ? WORD_BY_LATIN.get(question.wordLatin ?? question.target) : null
   const isGlyph = question?.type === 'glyph'
