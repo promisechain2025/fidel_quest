@@ -191,7 +191,7 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
         </div>
       </div>
 
-      <div className="mx-auto mb-4 flex max-w-full flex-wrap items-center justify-center gap-2 px-4">
+      <div className="fq-tv-orders mx-auto mb-4 flex max-w-full flex-wrap items-center justify-center gap-2 px-4">
         {orders.map((ch, i) => (
           <button key={i} type="button" onClick={() => { setEcho(false); setOrder(i + 1) }} aria-pressed={order === i + 1} className={`geez flex h-16 w-16 items-center justify-center rounded-2xl text-4xl font-black ${FOCUS}`} style={order === i + 1
             ? { background: GOLD, color: BOARD, outlineColor: INK }

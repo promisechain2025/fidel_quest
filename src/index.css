@@ -208,8 +208,14 @@ input, textarea, [contenteditable='true'] {
    (landscape but tall) keeps the stacked projection look. */
 .fq-tv-letter { font-size: min(40vh, 40vw); }
 @media (orientation: landscape) and (max-height: 600px) {
-  .fq-tv-center { flex-direction: row !important; gap: 2.5rem; }
-  .fq-tv-letter { font-size: min(32vh, 32vw); }
+  /* Phone held sideways: the vertical budget is tight, so the chant letter
+     sits beside its sound AND shrinks enough to clear the orders row below
+     it (at 32vh the glyph's foot bled onto the first order tile), and the
+     order tiles themselves go compact to give the letter that headroom. */
+  .fq-tv-center { flex-direction: row !important; gap: 2rem; }
+  .fq-tv-letter { font-size: min(24vh, 24vw); }
+  .fq-tv-orders { gap: 0.4rem !important; margin-bottom: 0.5rem !important; }
+  .fq-tv-orders button { height: 3rem !important; width: 3rem !important; font-size: 1.6rem !important; }
 }
 
 /* Short-landscape (a phone on its side / mirrored to a TV): the quiz lays
