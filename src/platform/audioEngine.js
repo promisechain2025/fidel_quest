@@ -298,12 +298,11 @@ export class AudioEngine {
   }
 
   /**
-   * Cut the current voice NOW: fast fade (no click), cancel any in-flight
-   * load, forget autoplay-recovery state. VOICE-PAGE SYNC: a clip still
-   * talking when this is called belongs to a moment the screen has already
-   * left - the navigation shell calls this on every screen change, and
-   * play() calls it so the newest ask speaks immediately instead of
-   * queueing behind a stale one.
+   * Cut the current voice NOW: fast fade (no click), drop the pending
+   * (last-wins) ask, cancel any in-flight load, forget autoplay-recovery
+   * state. ONLY for real navigation: the shell calls this when the screen
+   * changes, because a clip still talking then belongs to a page the child
+   * has left. Within a game, voices always play out in full (see play()).
    */
   stopVoice() {
     this._playGen = (this._playGen || 0) + 1 // supersedes in-flight play()s
@@ -327,20 +326,28 @@ export class AudioEngine {
 
   async play(key, { enabled = true, chime = null } = {}) {
     if (!enabled) return
-    // ONE VOICE AT A TIME, app-wide - and the NEWEST ask wins NOW. A child
-    // who taps ahead has already moved to the next letter/word/page, so a
-    // new request CUTS the sounding clip (fast fade) and speaks immediately;
-    // it never waits behind stale speech. In-flight loads are superseded via
-    // a generation token. Effects/chimes stay instant (they are punctuation,
-    // not speech). The _voiceUntil watchdog still frees a lock whose clip
-    // never reported ending (suspended context) so voicing cannot die.
-    this.stopVoice()
-    const gen = this._playGen // stopVoice() bumped it; this play owns it now
+    // ONE VOICE AT A TIME, app-wide. A request that arrives while a clip is
+    // still sounding WAITS for it to finish - and newer requests replace the
+    // waiting one, so the LAST ask wins and no voice debt ever piles up: a
+    // child racing ahead hears the current word out in full, then exactly
+    // the voice that matches the page they are on now. Voices are never cut
+    // mid-word within a game; only real navigation (leaving the screen)
+    // silences, via stopVoice(). Effects/chimes stay instant (they are
+    // punctuation, not speech). A watchdog frees a lock whose clip never
+    // reported ending (suspended context) so voicing cannot die.
+    if (this._voiceBusy && Date.now() < (this._voiceUntil || 0)) {
+      this._pendingVoice = { key, opts: { enabled, chime } }
+      return
+    }
+    const gen = ++this._playGen // stopVoice() supersedes in-flight plays
     this._voiceBusy = true
     this._voiceUntil = Date.now() + 4000 // until the real duration is known
     const free = () => {
-      if (this._playGen !== gen) return // a newer play owns the voice now
+      if (this._playGen !== gen) return // stopVoice took the lock meanwhile
       this._voiceBusy = false
+      const next = this._pendingVoice
+      this._pendingVoice = null
+      if (next) this.play(next.key, next.opts)
     }
     // Remember a play that starts against a locked context (autoplay policy:
     // resume only works inside a user gesture). The unlock kick replays it -

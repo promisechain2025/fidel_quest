@@ -960,10 +960,11 @@ export default function FidelQuestApp() {
   // rollover past midnight is announced like any other child-state change.
   const dayKey = useAppDay()
   const today = dayKey
-  // VOICE-PAGE SYNC: a voice still talking when the screen changes belongs
+  // VOICE-PAGE SYNC: a voice still talking when the SCREEN changes belongs
   // to the page the child just left - cut it centrally, here, instead of in
-  // every game. Within a screen, the engine's newest-ask-wins rule keeps
-  // fast taps in sync (see audioEngine.play).
+  // every game. Within a screen, voices always play out in full and the
+  // engine's last-wins queue plays exactly the voice matching the current
+  // page next (see audioEngine.play) - no cutting, no voice debt.
   useEffect(() => { audio.stopVoice() }, [screen])
   const [backpackOpen, setBackpackOpen] = useState(false)
   useEffect(() => { backpackOpenRef.current = backpackOpen }, [backpackOpen])
@@ -4877,13 +4878,11 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
       // Reading rounds voice the word AFTER the correct match, as the reward:
-      // read it, find it, then hear it confirmed. The feedback beat is longer
-      // on those rounds so the reward finishes BEFORE the next round starts -
-      // under the engine's newest-ask-wins rule the next round's voice would
-      // otherwise cut it mid-word.
+      // read it, find it, then hear it confirmed. The engine queues the next
+      // round's voice behind it (last-wins), so the reward always plays out.
       const voice = word && !isGlyph ? setTimeout(() => audioPlayWord(word, soundOn), 350) : null
       if (word) recordAnswer(`word:${word.latin}`, `word:${word.latin}`, 'words')
-      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), isGlyph ? 1100 : 1800)
+      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
       return () => {
         clearTimeout(timer)
         if (voice) clearTimeout(voice)
