@@ -11,7 +11,7 @@
 :root {
   --paper: #fdf9f2;
   --ink: #3c3529;
-  --muted: #9b8b76;
+  --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
   --card: #ffffff;
   --line: #e5dcc9;
   --accent: #ff9600;
@@ -76,7 +76,7 @@
 :root[data-theme="light"] {
   --paper: #fdf9f2;
   --ink: #3c3529;
-  --muted: #9b8b76;
+  --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
   --card: #ffffff;
   --line: #e5dcc9;
   --accent: #ff9600;

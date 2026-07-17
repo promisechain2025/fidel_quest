@@ -1176,7 +1176,7 @@ export default function AmharicFidelGame() {
                           ? 'bg-amber-400 text-white hover:-translate-y-0.5'
                           : unlocked
                             ? 'bg-white/80 text-amber-800 dark:bg-gray-800/80 dark:text-amber-200'
-                            : 'cursor-not-allowed bg-white/40 text-gray-400 opacity-70 dark:bg-gray-800/40 dark:text-gray-500'
+                            : 'cursor-not-allowed bg-white/40 text-gray-500 opacity-70 dark:bg-gray-800/40 dark:text-gray-400'
                     }`}
                   >
                     {!isCurrent && stars >= 3 ? <Star className="h-5 w-5 fill-current" /> : lvl.id}
@@ -1200,7 +1200,7 @@ export default function AmharicFidelGame() {
                 <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${current.accent}`} aria-hidden="true" />
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                    <p className="text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       {t('level', { n: current.id })}
                     </p>
                     <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100">{tLevelTitle(current)}</h2>
@@ -1364,7 +1364,7 @@ export default function AmharicFidelGame() {
                 <div className="mx-auto mb-5 flex max-w-md items-center justify-center gap-6 rounded-3xl bg-white/95 px-8 py-3 shadow-xl ring-4 ring-amber-300 dark:bg-gray-800/95" aria-hidden="true">
                   <span className="text-8xl font-bold text-amber-500" style={ETHIOPIC_FONT}>{glowForm.char}</span>
                   <span className="text-left">
-                    <span className="block text-xs font-bold uppercase tracking-wide text-gray-400">
+                    <span className="block text-xs font-bold uppercase tracking-wide text-gray-500">
                       {ORDER_NAMES[glowForm.order]
                         ? `${ORDER_NAMES[glowForm.order]} · ${GEEZ_ORDER_NAMES[glowForm.order]}`
                         : t('bonusLabial')}
@@ -1387,7 +1387,7 @@ export default function AmharicFidelGame() {
                       isGlowing ? 'fq-anim-glow ring-4 ring-amber-300' : ''
                     }`}
                   >
-                    <span className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                    <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
                       {ORDER_NAMES[form.order]} · {GEEZ_ORDER_NAMES[form.order]}
                     </span>
                     <span
@@ -1434,7 +1434,7 @@ export default function AmharicFidelGame() {
               <div className="mx-auto mt-6 flex max-w-md items-center justify-center gap-4 rounded-2xl bg-white/90 px-6 py-4 shadow-lg dark:bg-gray-800/90">
                 <span className="text-5xl" aria-hidden="true">{family.word.picture}</span>
                 <div className="text-left">
-                  <p className="text-xs font-extrabold uppercase tracking-wide text-gray-400">{t('wordToKnow')}</p>
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-gray-500">{t('wordToKnow')}</p>
                   <p className="text-3xl font-bold text-gray-800 dark:text-gray-100" style={ETHIOPIC_FONT}>
                     {family.word.geez}
                   </p>
@@ -1493,7 +1493,7 @@ export default function AmharicFidelGame() {
             className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 font-extrabold shadow-md transition-colors ${
               streak >= 2
                 ? 'bg-orange-500 text-white'
-                : 'bg-white/80 text-gray-400 dark:bg-gray-800/80 dark:text-gray-500'
+                : 'bg-white/80 text-gray-500 dark:bg-gray-800/80 dark:text-gray-400'
             }`}
           >
             <Flame className={`h-5 w-5 ${streak >= 2 ? 'fill-yellow-300 text-yellow-200' : ''}`} aria-hidden="true" />
@@ -1507,7 +1507,7 @@ export default function AmharicFidelGame() {
           <div className="absolute -top-6 left-4">
             <Mascot mood={mascotMood} />
           </div>
-          <p className="text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          <p className="text-sm font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
             {isWordMode ? t('whichStarts') : t('findLetter')}
           </p>
           {isSoundToChar && (
@@ -1646,7 +1646,7 @@ export default function AmharicFidelGame() {
             <p className="text-xs font-bold uppercase text-orange-600/70 dark:text-orange-300/70">{t('bestStreak')}</p>
           </div>
         </div>
-        <p className="text-sm font-semibold text-gray-400">{t('accuracy', { n: Math.round(accuracy * 100) })}</p>
+        <p className="text-sm font-semibold text-gray-500">{t('accuracy', { n: Math.round(accuracy * 100) })}</p>
 
         {missedForms.length > 0 ? (
           <div className="w-full rounded-2xl bg-rose-50 p-4 dark:bg-rose-900/20">
@@ -1666,7 +1666,7 @@ export default function AmharicFidelGame() {
                     {form.char}
                   </span>
                   <span className="text-sm font-extrabold text-rose-500 dark:text-rose-300">{form.sound}</span>
-                  <Volume2 className="h-4 w-4 text-gray-400" />
+                  <Volume2 className="h-4 w-4 text-gray-500" />
                 </button>
               ))}
             </div>
@@ -1704,7 +1704,7 @@ export default function AmharicFidelGame() {
           <button
             type="button"
             onClick={goToMenu}
-            className="rounded-2xl px-6 py-2 font-bold text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+            className="rounded-2xl px-6 py-2 font-bold text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
           >
             {t('backToMenu')}
           </button>
@@ -1789,7 +1789,7 @@ export default function AmharicFidelGame() {
             <button
               type="button"
               onClick={goToMenu}
-              className="rounded-2xl px-6 py-2 font-bold text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-2xl px-6 py-2 font-bold text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t('backToMenu')}
             </button>
@@ -1860,7 +1860,7 @@ export default function AmharicFidelGame() {
             <button
               type="button"
               onClick={skipTraceForm}
-              className="rounded-full px-4 py-1.5 text-sm font-bold text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-full px-4 py-1.5 text-sm font-bold text-gray-500 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t('traceSkip')} <ChevronRight className="inline h-4 w-4" />
             </button>

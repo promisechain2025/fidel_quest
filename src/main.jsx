@@ -19,6 +19,18 @@ if (typeof document !== 'undefined' && document.fonts?.load) {
   document.fonts.load("700 48px 'Noto Sans Ethiopic'").catch(() => {})
 }
 
+// Keep the `.dark` class in lockstep with the OS theme. The token system
+// (index.css) themes via the media query on its own, but Classic mode's
+// dark: styles use Tailwind's class-based variant - without this sync those
+// styles never activate and Classic renders as a light island (with the
+// dark body showing as a black band) on a dark-mode phone.
+if (typeof window !== 'undefined' && window.matchMedia) {
+  const mq = window.matchMedia('(prefers-color-scheme: dark)')
+  const syncDark = () => document.documentElement.classList.toggle('dark', mq.matches)
+  syncDark()
+  mq.addEventListener?.('change', syncDark)
+}
+
 // Testing: ?unlock opens all content, ?reset wipes it. No-op without the param.
 applyUrlUnlock()
 // Re-activate the chosen Family Voice (if any) so Anbessa keeps that voice.

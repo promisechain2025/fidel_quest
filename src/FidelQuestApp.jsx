@@ -2553,18 +2553,21 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
         </div>
       </header>
 
-      {/* Vowel-order selector: see and practise one vowel across all families */}
+      {/* Vowel-order selector: see and practise one vowel across all families.
+         Shown as the አ family's glyphs - its seven forms ARE the pure vowels -
+         matching Fidel Master's selector, with the traditional order name on
+         the aria-label for screen readers. */}
       {!family && (
         <div className="mt-4 pb-1">
           <div className="flex flex-wrap gap-1.5">
             {ORDERS.map((o) => {
               const on = order === o.index
               return (
-                <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on}
-                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 text-xs font-black leading-tight ${FOCUS}`}
-                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
-                  <span>{o.geezName}</span>
-                  <span className="mono text-[10px] font-bold opacity-80">-{o.vowel}</span>
+                <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on} aria-label={o.geezName}
+                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
+                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                  <span className="geez text-xl">{INDEXES.byAudioKey.get(`a-${o.index}`)?.char}</span>
+                  <span className="mono mt-0.5 text-[10px] font-bold" style={{ opacity: on ? 0.9 : 0.75 }}>-{o.vowel}</span>
                 </button>
               )
             })}
