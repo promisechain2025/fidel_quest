@@ -341,7 +341,13 @@ export function buildQuestionQueue(level, seed) {
  * (events, seed). Empty when there is nothing worth practicing yet.
  */
 export function buildPracticeQueue(events, seed, count = 8) {
-  const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 5 })
+  // The ledger also carries word:* keys (First Words / Word Steps misses);
+  // practice drills LETTERS, and practiceQuestion dereferences the key in
+  // INDEXES - an unfiltered word key is a TypeError that bricks the whole
+  // Star Practice button. Keep to keys that resolve to a real form.
+  const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 5 }).filter((t) =>
+    INDEXES.byAudioKey.has(t.key),
+  )
   if (!trouble.length) return []
   const pairs = confusions(events, { minCount: 1, limit: 12 })
   let rngState = seed
@@ -1020,7 +1026,9 @@ export default function FidelQuestApp() {
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
-    () => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).length,
+    // Letter keys only: word:* trouble cannot be drilled by Star Practice,
+    // so it must not light the badge (or the queue behind it comes up empty).
+    () => troubleLetters(loadLedger(), { minSeen: 2, minRate: 0.25, limit: 5 }).filter((t) => INDEXES.byAudioKey.has(t.key)).length,
     [journey], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
@@ -1141,7 +1149,7 @@ export default function FidelQuestApp() {
       node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
       learnedFamilyIds(journeyRef.current).length > 0
     ) {
-      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).length > 0
+      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
       setWarmupNudge({ node, enforced })
       return
     }
@@ -1153,7 +1161,9 @@ export default function FidelQuestApp() {
     if (
       (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) && !opts.skipWarmup &&
       !warmupDoneToday() && learnedFamilyIds(journeyRef.current).length > 0 &&
-      troubleLetters(loadLedger()).length > 0
+      // Letter trouble only: the warm-up drills letters and cannot heal a
+      // word:* miss, so word trouble must not force the gate.
+      troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
     ) {
       setWarmupNudge({ node, enforced: true })
       return
@@ -3067,7 +3077,9 @@ function ChallengeShareButton({ payload, label }) {
   const [copied, setCopied] = useState(false)
   const share = async () => {
     const by = loadFromStorage('fq.nickname', '')
-    const url = challengeUrl({ ...payload, by }, window.location.origin)
+    // Native shells have a capacitor://localhost origin - a shared link
+    // built from it is unopenable. Always share the public app URL.
+    const url = challengeUrl({ ...payload, by }, appShareUrl() || window.location.origin)
     const text = `${t('challengeShareText', 'Beat my Fidel Quest score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {

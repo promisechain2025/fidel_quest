@@ -29,12 +29,12 @@ import FidelTracePad from '../components/FidelTracePad'
 import FidelMaster from '../components/FidelMaster'
 import ScopeToggle from '../components/ScopeToggle'
 import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScope'
-import { audio as platformAudio, afterVoice } from '../platform/audioEngine'
+import { audio as platformAudio, afterVoice, effectiveKey } from '../platform/audioEngine'
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
 import { UI_STRINGS, ORDER_NAMES, GEEZ_ORDER_NAMES } from '../data/fidelGameData'
 import { buildClassicData } from '../data/classicPack'
-import { getActivePackId } from '../platform/ethiopic'
+import { getActivePackId, PACKS } from '../platform/ethiopic'
 
 // Classic now speaks the active learn language: Amharic stays the validated
 // table, Tigrinya (and any future pack) is derived from the pack. Computed at
@@ -221,6 +221,13 @@ function buildPool(level, familyIndexSet = null) {
    and dedupes by sound so char-to-sound questions never show two identical
    choices. `preferSameFamily` front-loads siblings of the target family to
    train vowel discrimination in Level 3.                                     */
+// The active pack can voice one order AS another (Amharic plays ሀ ha-1 as
+// the ha-4 clip): two options with different sound LABELS can be one
+// identical recording, making a listen-question unanswerable and a correct
+// pick "wrong". Options must be distinct by the clip that actually plays.
+const PACK_AUDIO_OVERRIDE = PACKS[getActivePackId()].audioOverride || null
+const clipOf = (form) => effectiveKey(`letters/${form.audioKey}`, PACK_AUDIO_OVERRIDE)
+
 export function buildQuestion(level, target, pool) {
   const candidates = pool.filter(
     (form) => form.char !== target.char && form.sound !== target.sound,
@@ -234,11 +241,13 @@ export function buildQuestion(level, target, pool) {
 
   const seenSounds = new Set([target.sound])
   const seenChars = new Set([target.char])
+  const seenClips = new Set([clipOf(target)])
   const distractors = []
   for (const form of ordered) {
-    if (seenSounds.has(form.sound) || seenChars.has(form.char)) continue
+    if (seenSounds.has(form.sound) || seenChars.has(form.char) || seenClips.has(clipOf(form))) continue
     seenSounds.add(form.sound)
     seenChars.add(form.char)
+    seenClips.add(clipOf(form))
     distractors.push(form)
     if (distractors.length === 3) break
   }

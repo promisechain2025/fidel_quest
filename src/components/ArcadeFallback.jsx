@@ -147,7 +147,9 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
                     className={`geez chunk flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
                     style={{
                       background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'var(--card)',
-                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : isTarget ? 'var(--accent)' : 'var(--line)',
+                      // Never hint the answer: the 2D runner is a LISTEN-and-pick game, same
+                      // as the 3D one - an accent border on the target made it tap-the-color.
+                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
                       boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)'}`,
                       '--chunk-depth': '5px',
                       outlineColor: 'var(--sky)',
