@@ -30,7 +30,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
-import { playForm, playEffect, playPluck } from './platform/audioEngine'
+import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero, Sprite2D, drawAnbessa, drawHyena } from './FidelQuestApp'
@@ -926,7 +926,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     () => () => {
       clearTimeout(moodTimer.current)
       clearTimeout(refuseTimer.current)
-      clearTimeout(meetTimer.current)
+      meetTimer.current?.() // afterVoice cancel, not a timeout id
       clearTimeout(retargetTimer.current)
     },
     [],
@@ -1008,15 +1008,16 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     return () => clearTimeout(id)
   }, [ctx.phase, ctx.traceIdx, touch])
 
-  // MEET (Bubble Pop): voice the letter right away, but hold the advance so the
-  // popped bubble can fade out while it is being spoken - only then does the
-  // next letter drift in (otherwise it appears mid-word and confuses the child).
+  // MEET (Bubble Pop): voice the letter right away, but hold the advance so
+  // the popped bubble can fade while it is being spoken. VOICE-PAGE SYNC:
+  // the advance YIELDS to the voice (afterVoice) - the next letter only
+  // drifts in once this one has been fully spoken, never mid-word.
   const popMeet = useCallback(
     (key) => {
       playForm(formOf(key), soundOn)
       setBurst((b) => b + 1)
-      clearTimeout(meetTimer.current)
-      meetTimer.current = setTimeout(() => dispatch(key), 900)
+      meetTimer.current?.()
+      meetTimer.current = afterVoice(() => dispatch(key), 900)
     },
     [soundOn],
   )

@@ -103,7 +103,7 @@ export class AudioEngine {
     this.current = null // { source, gain } of the playing clip, for cross-fade
     this.currentEl = null // HTMLAudio fallback element, so stopVoice cuts it too
     this._playGen = 0 // generation token: a newer play/stop supersedes in-flight ones
-    this.listeners = { missing: new Set(), play: new Set() }
+    this.listeners = { missing: new Set(), play: new Set(), voicedone: new Set() }
   }
 
   /**
@@ -322,6 +322,31 @@ export class AudioEngine {
     if (el) { try { el.pause() } catch { /* detached */ } }
     this._voiceBusy = false
     this._voiceUntil = 0
+    this.emit('voicedone', { key: null }) // release any yielded pages instantly
+  }
+
+  /**
+   * VOICE-PAGE SYNC, normal-routine side: resolves once nothing is talking,
+   * so an AUTO-advance can yield - the next page renders only after the
+   * current voice has cleared. Resolves immediately when idle, instantly on
+   * stopVoice (a user's back/home wins over any wait), and is hard-capped so
+   * a stuck clip can never block a child.
+   */
+  whenVoiceDone(capMs = 6000) {
+    if (!this._voiceBusy || Date.now() >= (this._voiceUntil || 0)) return Promise.resolve()
+    return new Promise((resolve) => {
+      let settled = false
+      let off = () => {}
+      const finish = () => {
+        if (settled) return
+        settled = true
+        off()
+        clearTimeout(cap)
+        resolve()
+      }
+      off = this.on('voicedone', finish)
+      const cap = setTimeout(finish, Math.min(capMs, Math.max(0, (this._voiceUntil || 0) - Date.now()) + 250))
+    })
   }
 
   async play(key, { enabled = true, chime = null } = {}) {
@@ -348,6 +373,7 @@ export class AudioEngine {
       const next = this._pendingVoice
       this._pendingVoice = null
       if (next) this.play(next.key, next.opts)
+      else this.emit('voicedone', { key }) // queue drained: yielded pages may advance
     }
     // Remember a play that starts against a locked context (autoplay policy:
     // resume only works inside a user gesture). The unlock kick replays it -
@@ -523,6 +549,21 @@ export class AudioEngine {
    the OS suspends (backgrounding, calls) re-wakes on the next tap. */
 export const audio = new AudioEngine()
 audio.installUnlock()
+
+/**
+ * The page-advance timer for NORMAL-ROUTINE transitions: waits at least
+ * minMs, then yields until the current voice has cleared, then runs cb.
+ * User actions never route through this - taps dispatch directly, and
+ * back/home call stopVoice() which releases the yield instantly. Returns a
+ * cancel function; callers clean it up exactly like a plain setTimeout.
+ */
+export function afterVoice(cb, minMs = 0, capMs = 6000) {
+  let cancelled = false
+  const t = setTimeout(() => {
+    audio.whenVoiceDone(capMs).then(() => { if (!cancelled) cb() })
+  }, minMs)
+  return () => { cancelled = true; clearTimeout(t) }
+}
 
 /* Compat wrappers matching the historical per-mode call signatures. */
 export function playForm(form, enabled = true) {

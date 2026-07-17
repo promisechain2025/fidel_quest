@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
-import { audio, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
+import { audio, afterVoice, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
@@ -2815,11 +2815,13 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   // Auto-advance: a correct answer moves to the next question on its own (no
   // Continue tap); a wrong answer shows the miss briefly, then returns for a
   // second try. The tutorial demo drives its own pacing, so skip it there.
+  // VOICE-PAGE SYNC: the advance to the NEXT question yields to any voice
+  // still talking (afterVoice), so a new page never renders over old speech;
+  // the wrong-answer retry stays on the same page and needs no yield.
   useEffect(() => {
     if (demoRef.current) return undefined
     if (ctx.status === GameState.SUCCESS_BURST) {
-      const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1050)
-      return () => clearTimeout(t)
+      return afterVoice(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1050)
     }
     if (ctx.status === GameState.ERROR_RECOVERY) {
       const t = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1600)
@@ -4878,13 +4880,13 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
       // Reading rounds voice the word AFTER the correct match, as the reward:
-      // read it, find it, then hear it confirmed. The engine queues the next
-      // round's voice behind it (last-wins), so the reward always plays out.
+      // read it, find it, then hear it confirmed. VOICE-PAGE SYNC: the next
+      // round yields (afterVoice) until that reward has fully played out.
       const voice = word && !isGlyph ? setTimeout(() => audioPlayWord(word, soundOn), 350) : null
       if (word) recordAnswer(`word:${word.latin}`, `word:${word.latin}`, 'words')
-      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
+      const cancel = afterVoice(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
       return () => {
-        clearTimeout(timer)
+        cancel()
         if (voice) clearTimeout(voice)
       }
     }

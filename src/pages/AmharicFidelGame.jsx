@@ -29,7 +29,7 @@ import FidelTracePad from '../components/FidelTracePad'
 import FidelMaster from '../components/FidelMaster'
 import ScopeToggle from '../components/ScopeToggle'
 import { getScope, setScope, scopedFamilyIndexSet } from '../platform/letterScope'
-import { audio as platformAudio } from '../platform/audioEngine'
+import { audio as platformAudio, afterVoice } from '../platform/audioEngine'
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
 import { UI_STRINGS, ORDER_NAMES, GEEZ_ORDER_NAMES } from '../data/fidelGameData'
@@ -718,6 +718,12 @@ export default function AmharicFidelGame() {
   const runIdRef = useRef(0) // bumps per startLevel so per-run guards reset
   const glowTimerRef = useRef(null)
   const chantTimerRef = useRef(null)
+  // advance/chant refs may hold a timeout id OR an afterVoice cancel fn.
+  const cancelRef = (ref) => {
+    if (typeof ref.current === 'function') ref.current()
+    else clearTimeout(ref.current)
+    ref.current = null
+  }
   const traceTimerRef = useRef(null)
   const soundOnRef = useRef(soundOn)
   soundOnRef.current = soundOn
@@ -726,9 +732,9 @@ export default function AmharicFidelGame() {
 
   useEffect(
     () => () => {
-      clearTimeout(advanceTimerRef.current)
+      cancelRef(advanceTimerRef)
       clearTimeout(glowTimerRef.current)
-      clearTimeout(chantTimerRef.current)
+      cancelRef(chantTimerRef)
       clearTimeout(traceTimerRef.current)
     },
     [],
@@ -761,7 +767,7 @@ export default function AmharicFidelGame() {
 
   const startLevel = useCallback(
     (lvl, { targetForms = null } = {}) => {
-      clearTimeout(advanceTimerRef.current)
+      cancelRef(advanceTimerRef)
       advancedForIndexRef.current = -1
       answeredForIndexRef.current = -1
       runIdRef.current += 1
@@ -899,7 +905,7 @@ export default function AmharicFidelGame() {
     // first one through may move the question index.
     if (advancedForIndexRef.current === questionIndex) return
     advancedForIndexRef.current = questionIndex
-    clearTimeout(advanceTimerRef.current)
+    cancelRef(advanceTimerRef)
     if (questionIndex >= (level?.questionCount || 0) - 1) {
       finishLevel(correctCount, score)
     } else {
@@ -922,8 +928,9 @@ export default function AmharicFidelGame() {
   // null level, which crashed the app to the error screen.
   useEffect(() => {
     if (screen !== 'game' || !level || phase !== 'correct') return undefined
-    advanceTimerRef.current = setTimeout(advance, 1300)
-    return () => clearTimeout(advanceTimerRef.current)
+    // VOICE-PAGE SYNC: the next question yields to any voice still talking.
+    advanceTimerRef.current = afterVoice(advance, 1300)
+    return () => cancelRef(advanceTimerRef)
   }, [screen, level, phase, advance])
 
   // Number keys 1-4 answer; kids on shared family laptops love this, and it
@@ -991,7 +998,7 @@ export default function AmharicFidelGame() {
   const handleExploreTap = useCallback(
     (form) => {
       clearTimeout(glowTimerRef.current)
-      clearTimeout(chantTimerRef.current)
+      cancelRef(chantTimerRef)
       setGlowingChar(form.char)
       playLetter(form)
       glowTimerRef.current = setTimeout(() => setGlowingChar(null), 950)
@@ -1004,7 +1011,7 @@ export default function AmharicFidelGame() {
   const chantFamily = useCallback(
     (family) => {
       clearTimeout(glowTimerRef.current)
-      clearTimeout(chantTimerRef.current)
+      cancelRef(chantTimerRef)
       const step = (index) => {
         if (index >= family.forms.length) {
           setGlowingChar(null)
@@ -1016,7 +1023,8 @@ export default function AmharicFidelGame() {
         // recitation never overlaps itself; the cadence leaves each ~0.8s clip
         // room to finish with a beat of silence before the next.
         playLetter(form, { interrupt: true })
-        chantTimerRef.current = setTimeout(() => step(index + 1), CHANT_PACES[chantPaceRef.current] || CHANT_CADENCE_MS)
+        // VOICE-PAGE SYNC: the chant highlight yields to the letter's voice.
+        chantTimerRef.current = afterVoice(() => step(index + 1), CHANT_PACES[chantPaceRef.current] || CHANT_CADENCE_MS)
       }
       step(0)
     },
@@ -1024,7 +1032,7 @@ export default function AmharicFidelGame() {
   )
 
   const stopChant = useCallback(() => {
-    clearTimeout(chantTimerRef.current)
+    cancelRef(chantTimerRef)
     setGlowingChar(null)
   }, [])
 
@@ -1078,8 +1086,8 @@ export default function AmharicFidelGame() {
   }, [playSfx])
 
   const goToMenu = useCallback(() => {
-    clearTimeout(advanceTimerRef.current)
-    clearTimeout(chantTimerRef.current)
+    cancelRef(advanceTimerRef)
+    cancelRef(chantTimerRef)
     clearTimeout(glowTimerRef.current)
     clearTimeout(traceTimerRef.current)
     advancedForIndexRef.current = -1

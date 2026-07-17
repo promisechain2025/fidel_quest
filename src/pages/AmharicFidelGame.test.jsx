@@ -12,6 +12,7 @@ import AmharicFidelGame, {
   weightTargets,
 } from './AmharicFidelGame'
 import { computeTraceResult, computeTraceResultV2, strokeSpec, TRACE_TOLERANCE } from '../components/FidelTracePad'
+import { audio as platformAudio } from '../platform/audioEngine'
 
 // jsdom has no Audio; the component guards construction, but stubbing lets
 // us assert the game never crashes on sound calls.
@@ -344,21 +345,27 @@ describe('<AmharicFidelGame />', () => {
     expect(screen.getByRole('status').textContent.length).toBeGreaterThan(1)
   })
 
-  it('chants a family row in sequence with a rolling glow', () => {
+  it('chants a family row in sequence with a rolling glow', async () => {
     vi.useFakeTimers()
+    // The chant step yields to the letter's voice (afterVoice). jsdom's
+    // stubbed audio never reports ending, so resolve the yield instantly -
+    // the cadence itself is what this test drives.
+    const doneSpy = vi.spyOn(platformAudio, 'whenVoiceDone').mockResolvedValue(undefined)
     try {
       render(<AmharicFidelGame />)
       fireEvent.click(screen.getByText(/Explore Mode/))
       fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
       fireEvent.click(screen.getByRole('button', { name: /Chant the row/ }))
-      // First form glows immediately, second after the chant interval (1300ms).
+      // First form glows immediately, second after the chant interval (1300ms)
+      // plus the flushed voice-yield microtask.
       expect(screen.getByRole('button', { name: /1st.*form ለ/ }).className).toContain('fq-anim-glow')
-      act(() => vi.advanceTimersByTime(1350))
+      await act(async () => { await vi.advanceTimersByTimeAsync(1350) })
       expect(screen.getByRole('button', { name: /2nd.*form ሉ/ }).className).toContain('fq-anim-glow')
       // Runs to the end and stops cleanly.
-      act(() => vi.advanceTimersByTime(7000))
+      await act(async () => { await vi.advanceTimersByTimeAsync(9000) })
       expect(screen.getByRole('button', { name: /1st.*form ለ/ }).className).not.toContain('fq-anim-glow')
     } finally {
+      doneSpy.mockRestore()
       vi.useRealTimers()
     }
   })

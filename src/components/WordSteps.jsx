@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mic, Volume2 } from 'lucide-react'
 import { WordPhase, wordStepsTransition } from '../platform/wordSteps'
-import { playForm, playEffect, audio } from '../platform/audioEngine'
+import { playForm, playEffect, audio, afterVoice } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { Hero, INDEXES, wordStepsStart } from '../FidelQuestApp'
@@ -113,10 +113,11 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
       return undefined
     }
     const cue = setTimeout(() => setYourTurn(true), 1300)
-    const done = setTimeout(() => setCtx((c) => wordStepsTransition(c, { type: 'SAY_DONE' }).next), 3400)
+    // VOICE-PAGE SYNC: the move to the next page yields to the word's voice.
+    const done = afterVoice(() => setCtx((c) => wordStepsTransition(c, { type: 'SAY_DONE' }).next), 3400)
     return () => {
       clearTimeout(cue)
-      clearTimeout(done)
+      done()
     }
   }, [ctx.phase, ctx.wi])
 

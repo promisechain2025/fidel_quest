@@ -27,7 +27,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight, Grid3X3, Mic, Pause, Play, Volume2, X } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, INDEXES } from '../platform/ethiopic'
-import { playForm, playEffect } from '../platform/audioEngine'
+import { playForm, playEffect, afterVoice } from '../platform/audioEngine'
 import { buildReviewQueue } from '../platform/coach'
 import { isNativePlatform } from '../platform/native'
 import { useKeepAwake } from '../platform/wakeLock'
@@ -133,8 +133,9 @@ function Chant({ scopeIds, sel, setSel, joinUrl, onBack, chooseFirst = false }) 
   // move so a tap gets a full beat.
   useEffect(() => {
     if (!auto || pick || !form) return undefined
-    const id = setTimeout(() => chantStep(), sayAfter ? SAY_AFTER_MS : STEP_MS)
-    return () => clearTimeout(id)
+    // VOICE-PAGE SYNC: the next chant letter yields to the current voice.
+    const id = afterVoice(() => chantStep(), sayAfter ? SAY_AFTER_MS : STEP_MS)
+    return () => id()
   }, [auto, pick, sayAfter, fam, order, dir, echo, beat, chantStep, form])
 
   // TV remotes and keyboards: arrows step, Enter/Space toggles the chant.
@@ -289,7 +290,7 @@ function Quiz({ familyIds, joinUrl, onBack }) {
     if (revealed || !q) return
     setRevealed(key)
     playEffect(key === q.target ? 'good' : 'bad', true)
-    setTimeout(next, 2200)
+    afterVoice(next, 2200) // next quiz page yields to any voice still talking
   }, [revealed, q, next])
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'
-import { playForm } from '../platform/audioEngine'
+import { playForm, afterVoice } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
 import { buildMasterSequence, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder } from '../fidelMaster'
 import { getScope, setScope, scopedForms, scopedFamilySet } from '../platform/letterScope'
@@ -104,11 +104,12 @@ export default function FidelMaster({ onBack, soundOn = true }) {
     if (sayWithMe) {
       // Speed sets the repeat window too, so "slow" gives more time to echo.
       const cue = setTimeout(() => setYourTurn(true), CLIP_LEAD_MS)
-      const step = setTimeout(advance, CLIP_LEAD_MS + AUTOPLAY_SPEEDS[speed])
-      return () => { clearTimeout(cue); clearTimeout(step) }
+      // VOICE-PAGE SYNC: the next letter card yields to this letter's voice.
+      const step = afterVoice(advance, CLIP_LEAD_MS + AUTOPLAY_SPEEDS[speed])
+      return () => { clearTimeout(cue); step() }
     }
-    const step = setTimeout(advance, AUTOPLAY_SPEEDS[speed])
-    return () => clearTimeout(step)
+    const step = afterVoice(advance, AUTOPLAY_SPEEDS[speed])
+    return () => step()
   }, [tab, playing, idx, speed, seq, play, sayWithMe, autoAdvance, order])
 
   // Stop autoplay when leaving the auto tab.
