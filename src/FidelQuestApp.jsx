@@ -2513,7 +2513,10 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
 // Cheerful, colour-blind-safe tile colours for the Explorer grid (vivid bases
 // dark enough for white glyphs to clear contrast), cycled across the families.
 const EXPLORE_TILES = ['#e6304f', '#f0700f', '#7d43d8', '#1f83db', '#e6459a', '#1aa15a', '#0c988f', '#c2570b', '#4a63e0']
-const EXPLORE_PACE = { slow: 1700, normal: 1150, fast: 750 }
+// Minimum gap between chant steps; the step also yields to the clip itself
+// (~1-1.5s), so FAST means "next letter the moment this one finishes" and
+// the slower tiers add real breathing room on top of the voice.
+const EXPLORE_PACE = { slow: 2300, normal: 1700, fast: 850 }
 
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
@@ -2541,8 +2544,13 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
     const f = FIDEL_FAMILIES[playIdx]
     const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
     playForm(cell, soundOn)
-    const id = setTimeout(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
-    return () => clearTimeout(id)
+    // VOICE-PAGE SYNC: the pace is the MINIMUM gap; the step then yields to
+    // the letter's voice. Without the yield, "fast" (750ms) outran the ~1.2s
+    // clips and the last-wins queue audibly skipped letters - the highlight
+    // said ha..hu..hi while the speaker said ha..hi. Now every letter is
+    // spoken in full and "fast" simply means no pause between letters.
+    const cancel = afterVoice(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
+    return cancel
   }, [playing, playIdx, order, pace, family, soundOn])
 
   return (
