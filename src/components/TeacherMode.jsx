@@ -26,12 +26,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check, CalendarDays, Flame } from 'lucide-react'
 import QRCode from 'qrcode'
-import { t } from '../platform/i18n'
+import { t, getLang } from '../platform/i18n'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { sanitizeName } from '../utils/challenge'
 import { addDays } from '../platform/coach'
 import { dayStamp } from '../platform/streak'
-import { toEthiopic, formatEthiopic } from '../platform/ethioCalendar'
+import { formatDual } from '../platform/ethioCalendar'
 import { appShareUrl } from './ShareCard'
 import { isNativePlatform } from '../platform/native'
 import { track } from '../platform/analytics'
@@ -48,7 +48,8 @@ const glyphOf = (id) => Array.from(FIDEL_FAMILIES.find((f) => f.id === id)?.char
 const newSeed = () => (Date.now() % 1000000) | 1
 // Dates are stored Gregorian (tokens, storage) but SHOWN on the Ethiopian
 // calendar, same as the child's plan card - this is a church-school tool.
-const ethioDay = (stamp) => formatEthiopic(toEthiopic(stamp)).latin
+// Both calendars, everywhere a due date shows: 'Hamle 8, 2018 (Jul 15, 2026)'.
+const ethioDay = (stamp) => formatDual(stamp, getLang())
 
 /** Render a URL as a QR code (offline, via the qrcode package). */
 export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }) {

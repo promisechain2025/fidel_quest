@@ -34,7 +34,7 @@ import DailyHunt from './components/DailyHunt'
 import VoicePostcard from './components/VoicePostcard'
 import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
-import { toEthiopic, formatEthiopic, holidayFor } from './platform/ethioCalendar'
+import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import Closet from './components/Closet'
@@ -989,7 +989,10 @@ export default function FidelQuestApp() {
     if (screen.name === 'home') { setPlan(loadPlan()); setPendingAssign(loadPendingAssignment()) }
   }, [screen.name])
   // The living Ethiopian calendar: today's Ethiopic date + any holiday.
-  const ethioToday = useMemo(() => formatEthiopic(toEthiopic(dayKey)), [dayKey])
+  const ethioToday = useMemo(
+    () => ({ ...formatEthiopic(toEthiopic(dayKey)), gregorian: formatGregorian(dayKey, getLang()) }),
+    [dayKey],
+  )
   const holiday = useMemo(() => holidayFor(dayKey), [dayKey])
   const [soundOn, setSoundOn] = useState(loadSoundOn)
   const [runSeed, setRunSeed] = useState(() => (Date.now() % 1000000) | 1)
@@ -1178,7 +1181,7 @@ export default function FidelQuestApp() {
                 coach={{
                   warmupState: learnedFamilyIds(journey).length === 0 ? 'none' : warmupDone ? 'done' : 'todo',
                   hasPlan: !!plan,
-                  eta: plan ? formatEthiopic(toEthiopic(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null,
+                  eta: plan ? formatDual(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek), getLang()) : null,
                   assignment: pendingAssign,
                 }}
                 onWarmup={startWarmup}
@@ -1849,7 +1852,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
     zoom: t('paceZoom', 'Zoom - 4 families a week'),
   }
   const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
-  const eta = formatEthiopic(toEthiopic(etaStamp(today, learned, per)))
+  const eta = formatDual(etaStamp(today, learned, per), getLang())
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-6">
       <header className="flex items-center gap-3">
@@ -1871,7 +1874,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
         ))}
       </div>
       <p className="mt-4 text-center font-bold" style={{ color: 'var(--go-ink)' }}>
-        {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta.latin })}
+        {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta })}
       </p>
       <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
         {t('planSave', 'Start my plan')}
@@ -2020,7 +2023,9 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         >
           <p className="geez text-2xl font-black">እንኳን አደረሳችሁ!</p>
           <p className="text-sm font-bold text-white/95">{holidayName(holiday.id)}</p>
+          {/* The family lives on both calendars: Ethiopic first, Gregorian under it. */}
           <p className="geez mt-0.5 text-xs font-bold text-white/85">{ethioDate.geez}</p>
+          {ethioDate.gregorian && <p className="mono text-[11px] font-bold text-white/75">{ethioDate.gregorian}</p>}
         </motion.div>
       )}
 
@@ -3400,7 +3405,7 @@ function AssignmentIntro({ assignment, count, onStart, onHome }) {
         {t('asFrom', '{who} sent your class homework!', { who: assignment.teacher })}
       </h1>
       <p className="mono mt-3 font-black" style={{ color: 'var(--muted)' }}>
-        {t('asDetail', '{n} questions · due {date}', { n: count, date: formatEthiopic(toEthiopic(assignment.due)).latin })}
+        {t('asDetail', '{n} questions · due {date}', { n: count, date: formatDual(assignment.due, getLang()) })}
       </p>
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onStart}>

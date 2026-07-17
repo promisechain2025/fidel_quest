@@ -21,7 +21,7 @@ import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
 import { shareProgressSnapshot, importProgressFile } from './platform/progress'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
-import { t } from './platform/i18n'
+import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
@@ -29,7 +29,7 @@ import { communityCode, setCommunityCode } from './platform/community'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { dayStamp } from './platform/streak'
-import { toEthiopic, formatEthiopic } from './platform/ethioCalendar'
+import { formatDual } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -124,7 +124,7 @@ function PlanCard() {
   }
   const pick = (pace) => setPlanState(makePlan(pace, { requireWarmup: !!plan?.requireWarmup }))
   const toggle = () => { setRequireWarmup(!plan?.requireWarmup); setPlanState(loadPlan()) }
-  const eta = plan ? formatEthiopic(toEthiopic(etaStamp(dayStamp(), learned, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek))).latin : null
+  const eta = plan ? formatDual(etaStamp(dayStamp(), learned, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek), getLang()) : null
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('gpPlanTitle', 'Learning plan')}</h2>

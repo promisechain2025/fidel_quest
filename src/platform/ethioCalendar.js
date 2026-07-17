@@ -65,6 +65,25 @@ export function formatEthiopic(e) {
   }
 }
 
+/** Localized Gregorian display for a 'YYYY-MM-DD' stamp ("Jul 15, 2026").
+    Pure of the wall clock; the caller passes the app-text language as the
+    locale. UTC pinning keeps the shown day identical to the stamp's day in
+    every device timezone. */
+export function formatGregorian(stamp, locale = undefined) {
+  const [y, m, d] = String(stamp).split('-').map(Number)
+  if (!y || !m || !d) return String(stamp)
+  try {
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+  } catch {
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  }
+}
+
+/** Both calendars the family lives on, together: "Hamle 2, 2018 (Jul 9, 2026)". */
+export function formatDual(stamp, locale = undefined) {
+  return `${formatEthiopic(toEthiopic(stamp)).latin} (${formatGregorian(stamp, locale)})`
+}
+
 /* ── holidays ─────────────────────────────────────────────────────────────
    Fixed on the Ethiopic calendar unless noted. Genna and Timkat are defined
    here by their Ethiopic dates (Tahsas 29 / Tir 11); the one-day drift some
