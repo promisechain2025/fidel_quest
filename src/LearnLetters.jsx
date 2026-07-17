@@ -993,6 +993,21 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
     [ctx, soundOn, flashMood],
   )
 
+  // TRACE without a 2D canvas (locked-down WebViews, privacy modes, memory
+  // pressure): the pad renders its unsupported note and can never score, so
+  // the phase would brick the whole Journey at the first family. Auto-satisfy
+  // each trace form instead - the child keeps moving, per the app's
+  // never-block contract. Re-fires per traceIdx to walk every trace form.
+  useEffect(() => {
+    if (ctx.phase !== LearnPhase.TRACE) return undefined
+    try {
+      const probe = document.createElement('canvas')
+      if (probe.getContext && probe.getContext('2d')) return undefined
+    } catch { /* no canvas at all: treat as unsupported */ }
+    const id = setTimeout(() => touch('__traced__'), 450)
+    return () => clearTimeout(id)
+  }, [ctx.phase, ctx.traceIdx, touch])
+
   // MEET (Bubble Pop): voice the letter right away, but hold the advance so the
   // popped bubble can fade out while it is being spoken - only then does the
   // next letter drift in (otherwise it appears mid-word and confuses the child).

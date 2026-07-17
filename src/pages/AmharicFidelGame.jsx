@@ -267,9 +267,17 @@ export function buildWordQuestions(level, familyIndexSet = null) {
   // learned families. Falls back to the full word list only when too few
   // words are in scope to make a real round.
   const inScope = (form) => !familyIndexSet || familyIndexSet.has(form.familyIndex)
-  const scopedWords = WORDS.filter((w) => inScope(CHAR_TO_FORM.get(w.startChar)))
+  // A word flagged noAudio has no recording yet: as a LISTEN-and-pick prompt
+  // it would play only the fallback chime - a meaningless question. Keep the
+  // rounds to voiced words (fall back to the full list only if a pack ever
+  // ships with zero voiced words, rather than render an empty level).
+  const voiced = WORDS.filter((w) => !w.noAudio)
+  // Also drop any word whose leading character has no base form (a future
+  // labial-initial word would otherwise crash the scope lookup below).
+  const askable = (voiced.length >= 4 ? voiced : WORDS).filter((w) => CHAR_TO_FORM.has(w.startChar))
+  const scopedWords = askable.filter((w) => inScope(CHAR_TO_FORM.get(w.startChar)))
   const useScoped = familyIndexSet && scopedWords.length >= 4
-  const words = shuffle(useScoped ? scopedWords : WORDS)
+  const words = shuffle(useScoped ? scopedWords : askable)
   const pool = useScoped ? ALL_FORMS.filter(inScope) : ALL_FORMS
   const questions = []
   for (let i = 0; i < level.questionCount; i++) {

@@ -24,7 +24,14 @@ import { progressChanged } from './childModel'
 import { rngShuffle } from './rng'
 import { dayStamp } from './streak'
 import { letterStats, troubleLetters } from './telemetry'
-import { INDEXES, FIDEL_FAMILIES } from './ethiopic'
+import { INDEXES, FIDEL_FAMILIES, PACKS, getActivePackId } from './ethiopic'
+import { effectiveKey } from './audioEngine'
+
+// Two option keys can carry DIFFERENT logical sounds yet play the SAME clip
+// via the pack's order remap (Amharic ሀ 1st order plays the 4th-order "haa"
+// recording). Question options must be distinct by what the child actually
+// HEARS, so dedupe on the effective clip, not just the sound label.
+const clipOf = (k) => effectiveKey(`letters/${k}`, PACKS[getActivePackId()].audioOverride || null)
 
 const PLAN_KEY = 'fq.plan.v1'
 const COACH_KEY = 'fq.coach.v1'
@@ -152,12 +159,14 @@ export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMU
     let candidates
     ;[candidates, state] = rngShuffle([...pool, ...inFamily].filter((k) => k !== target), state)
     const used = new Set([sound])
+    const usedClips = new Set([clipOf(target)])
     const picked = [target]
     for (const k of candidates) {
       if (picked.length >= 4) break
       const s = soundOf(k)
-      if (!s || used.has(s)) continue
+      if (!s || used.has(s) || usedClips.has(clipOf(k))) continue
       used.add(s)
+      usedClips.add(clipOf(k))
       picked.push(k)
     }
     let options

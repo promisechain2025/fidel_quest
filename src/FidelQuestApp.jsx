@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
-import { playForm, playEffect, preloadForms } from './platform/audioEngine'
+import { playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
@@ -267,12 +267,21 @@ export function transition(ctx, event) {
    §4 QUESTION FACTORY (pure, seeded)
    ========================================================================== */
 
+// The active pack's audio redirects (order remaps + ti/ sub-paths): question
+// builders must compare EFFECTIVE clips, not logical keys, or two options can
+// sound identical (see the orders branch below).
+const PACK_AUDIO_OVERRIDE = PACKS[getActivePackId()].audioOverride || null
+
 export function buildQuestionQueue(level, seed) {
   let rngState = seed
   if (level.kind === 'orders') {
     // Target any of the group's 7-order cells; distractors are OTHER ORDERS
     // OF THE SAME FAMILY, so the only difference the child hears and sees
-    // is the vowel. Twin letters are irrelevant here by construction.
+    // is the vowel. Twin letters are irrelevant here by construction — BUT
+    // the pack's audio order-remap is not: Amharic voices ሀ (1st order)
+    // exactly like ሃ (4th), so a question offering both is unanswerable by
+    // ear and the child's correct pick gets marked wrong. Exclude siblings
+    // whose EFFECTIVE clip (after the remap) matches the target's.
     let cells
     ;[cells, rngState] = rngShuffle(
       level.families.flatMap((fid) => ORDERS.map((o) => `${fid}-${o.index}`)),
@@ -285,8 +294,19 @@ export function buildQuestionQueue(level, seed) {
         ORDERS.map((o) => `${fid}-${o.index}`).filter((k) => k !== target),
         rngState,
       )
+      // Every option must be distinct by EAR: dedupe on the effective clip so
+      // neither the target nor any two distractors share one recording.
+      const clips = new Set([effectiveKey(`letters/${target}`, PACK_AUDIO_OVERRIDE)])
+      const picked = []
+      for (const k of siblings) {
+        if (picked.length >= level.optionCount - 1) break
+        const clip = effectiveKey(`letters/${k}`, PACK_AUDIO_OVERRIDE)
+        if (clips.has(clip)) continue
+        clips.add(clip)
+        picked.push(k)
+      }
       let options
-      ;[options, rngState] = rngShuffle([target, ...siblings.slice(0, level.optionCount - 1)], rngState)
+      ;[options, rngState] = rngShuffle([target, ...picked], rngState)
       return { target, options }
     })
     return [queue, rngState]
@@ -683,14 +703,23 @@ export function runInvariants() {
   }
 
   for (const level of LEVELS.filter((l) => l.kind === 'orders')) {
-    const [queue] = buildQuestionQueue(level, 42)
     check(
-      `${level.id}: options isolate the vowel within one family`,
-      queue.every((q) => {
-        const fid = q.target.slice(0, q.target.lastIndexOf('-'))
-        const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
-        return q.options.every((k) => k.startsWith(fid + '-')) && new Set(sounds).size === q.options.length
-      }),
+      `${level.id}: options isolate the vowel within one family (25 seeds)`,
+      Array.from({ length: 25 }, (_, s) => buildQuestionQueue(level, s + 1)[0]).every((queue) =>
+        queue.every((q) => {
+          const fid = q.target.slice(0, q.target.lastIndexOf('-'))
+          const sounds = q.options.map((k) => INDEXES.byAudioKey.get(k).sound)
+          // Distinct by the clip that actually PLAYS, not just the logical
+          // sound: the pack order-remap voices ሀ (1st) as ሃ (4th), so two
+          // options with different .sound labels can be one identical audio.
+          const clips = q.options.map((k) => effectiveKey(`letters/${k}`, PACK_AUDIO_OVERRIDE))
+          return (
+            q.options.every((k) => k.startsWith(fid + '-')) &&
+            new Set(sounds).size === q.options.length &&
+            new Set(clips).size === q.options.length
+          )
+        }),
+      ),
     )
   }
 

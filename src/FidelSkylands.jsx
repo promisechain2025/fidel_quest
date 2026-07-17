@@ -1102,9 +1102,21 @@ export default function FidelSkylands({ onExit, allLetters = false }) {
           {st.mode === 'map' && (
             <div className="pointer-events-auto mx-auto max-w-md rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {champion ? (
-                <p className="text-center text-lg font-black" style={{ color: 'var(--go-ink)' }}>
-                  {t('skyAllCleared', 'All four skylands cleared — Anbessa is a Fidel Champion!')}
-                </p>
+                <>
+                  <p className="text-center text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+                    {t('skyAllCleared', 'All four skylands cleared — Anbessa is a Fidel Champion!')}
+                  </p>
+                  {/* A champion must still be able to PLAY: without this row the
+                     finished screen had zero controls and the whole mode was a
+                     dead-end for the kid who beat it. */}
+                  <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                    {t('skyReplay', 'Replay:')} {SESSIONS.slice(0, st.sessionsCompleted).map((s) => (
+                      <button key={s.n} type="button" onClick={() => dispatch({ type: 'OPEN_GAME', n: s.n, seed: (Date.now() % 1000000) | 1, allForms: allLetters })} className="pointer-events-auto mx-1 underline">
+                        {t('level', 'Level')} {s.n}
+                      </button>
+                    ))}
+                  </p>
+                </>
               ) : (
                 <>
                   <p className="text-center font-bold">
