@@ -9,11 +9,22 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'three-vendor': ['three'],
-          'r3f-vendor': ['@react-three/fiber', '@react-three/drei', '@react-spring/three'],
-          'motion-vendor': ['framer-motion'],
+        // Function form on purpose: the object form also pulled SHARED
+        // helper deps (tslib, zustand, ...) into the 3D chunks, which gave
+        // the entry a static import of r3f-vendor and preloaded the whole
+        // three.js stack on the home path. Here only the 3D packages
+        // themselves are pinned; shared helpers stay with their importers,
+        // so the 3D chunks load strictly behind the lazy arcade imports.
+        manualChunks(id) {
+          // Vite's preload helper is shared by every lazy chunk; left to
+          // Rollup it can land inside three-vendor and staticly chain the
+          // entry to the 3D stack. Pin it to the always-loaded react chunk.
+          if (id.includes('vite/preload-helper')) return 'react-vendor'
+          if (!id.includes('node_modules')) return undefined
+          if (/[\\/]node_modules[\\/](three|@react-three|@react-spring)[\\/]/.test(id)) return 'three-vendor'
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react-vendor'
+          if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) return 'motion-vendor'
+          return undefined
         },
       },
     },

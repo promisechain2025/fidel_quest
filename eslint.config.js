@@ -40,7 +40,7 @@ export default [
     // screens together, like pages/AmharicFidelGame.jsx) and FidelSkylands
     // renders React Three Fiber JSX, whose three.js props (position, args,
     // castShadow, ...) are unknown to the react plugin.
-    files: ['src/FidelQuestApp.jsx', 'src/FidelSkylands.jsx', 'src/LearnLetters.jsx'],
+    files: ['src/FidelQuestApp.jsx', 'src/FidelSkylands.jsx', 'src/LearnLetters.jsx', 'src/Runner3D.jsx'],
     rules: {
       'react/no-unknown-property': 'off',
       'react-refresh/only-export-components': 'off',

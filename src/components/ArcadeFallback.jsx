@@ -23,7 +23,7 @@ import {
   rngShuffle,
   rngNext,
 } from '../FidelQuestApp'
-import { buildQuiz, pickStolen, SESSIONS } from '../FidelSkylands'
+import { buildQuiz, pickStolen, SESSIONS } from '../skylandsCore'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { markIslandCleared } from '../platform/skylandsSave'
 import { recordAnswer } from '../platform/telemetry'

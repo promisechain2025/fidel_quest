@@ -71,6 +71,11 @@ src/
   FidelSkylands.jsx            # Skylands mode: R3F scene, session
                                # progression machine, cumulative quiz + boss
   FidelSkylands.test.jsx
+  skylandsCore.js              # pure Skylands data + quiz factory; imported
+                               # by the 2D fallback WITHOUT touching three.js
+  Runner3D.jsx                 # the WebGL Letter Runner scene (three.js);
+                               # lazy-loaded with FidelSkylands so the 3D
+                               # stack stays off the home path
   journey.js                   # unified Journey model: nodes, fq.journey.v1
                                # progress, rewards, legacy migration (pure)
   journey.test.js
