@@ -210,12 +210,12 @@ describe('AudioEngine', () => {
     vi.unstubAllGlobals()
   })
 
-  it('voices never overlap: a play during a clip waits, the newest waiter wins', async () => {
+  it('voices never overlap: a new ask CUTS the sounding clip and speaks now', async () => {
     const sources = []
     class VoiceCtx extends FakeCtx {
       decodeAudioData() { return Promise.resolve({ duration: 1 }) }
       createBufferSource() {
-        const n = { connect: (x) => x, start() {}, buffer: null }
+        const n = { connect: (x) => x, start() {}, stop() { n.stopped = true }, buffer: null }
         sources.push(n)
         return n
       }
@@ -231,16 +231,53 @@ describe('AudioEngine', () => {
     const spoken = []
     engine.on('play', (e) => spoken.push(e.key))
     await engine.play('letters/ha-1')
-    // Two more requests while ha is still sounding: le waits, me replaces it.
+    // VOICE-PAGE SYNC: a request while ha is sounding cuts ha and speaks
+    // immediately - the child has already moved on; stale speech never
+    // outlives its page and the newest ask never waits.
     await engine.play('letters/le-1')
+    expect(sources.length).toBe(2)
+    expect(sources[0].stopped).toBe(true) // ha was cut, not overlapped
     await engine.play('letters/me-1')
-    expect(sources.length).toBe(1) // nothing overlapped ha
-    sources[0].onended() // ha finishes; the queue drains
-    await new Promise((r) => setTimeout(r, 20))
-    expect(sources.length).toBe(2) // exactly one follow-up clip
-    expect(spoken).toEqual(['letters/ha-1', 'letters/me-1']) // le was superseded
-    sources[1].onended()
+    expect(sources.length).toBe(3)
+    expect(sources[1].stopped).toBe(true)
+    expect(spoken).toEqual(['letters/ha-1', 'letters/le-1', 'letters/me-1'])
+    sources[2].onended()
     expect(engine._voiceBusy).toBe(false) // free again - no deadlock
+    vi.unstubAllGlobals()
+  })
+
+  it('stopVoice silences the current clip and cancels an in-flight play', async () => {
+    const sources = []
+    let releaseBuffer
+    class VoiceCtx extends FakeCtx {
+      decodeAudioData() { return Promise.resolve({ duration: 1 }) }
+      createBufferSource() {
+        const n = { connect: (x) => x, start() {}, stop() { n.stopped = true }, buffer: null }
+        sources.push(n)
+        return n
+      }
+    }
+    vi.stubGlobal('AudioContext', VoiceCtx)
+    vi.stubGlobal('Audio', undefined)
+    const fetchImpl = vi.fn().mockImplementation((url) => {
+      if (url.endsWith('manifest.json')) return Promise.resolve({ ok: true, json: async () => ({ coverage: ['letters/ha-1', 'letters/le-1'] }) })
+      if (url.includes('le-1')) return new Promise((r) => { releaseBuffer = () => r({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) }) })
+      return Promise.resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) })
+    })
+    const engine = new AudioEngine({ fetchImpl, getMemory: () => null })
+    await engine.play('letters/ha-1')
+    expect(sources.length).toBe(1)
+    // Navigation cut: the sounding clip stops and the engine frees.
+    engine.stopVoice()
+    expect(sources[0].stopped).toBe(true)
+    expect(engine._voiceBusy).toBe(false)
+    // A play whose clip is still LOADING when stopVoice fires never sounds.
+    const p = engine.play('letters/le-1')
+    while (!releaseBuffer) await new Promise((r) => setTimeout(r, 0)) // let the fetch start
+    engine.stopVoice()
+    releaseBuffer()
+    await p
+    expect(sources.length).toBe(1) // the superseded load created no source
     vi.unstubAllGlobals()
   })
 

@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import FidelSkylands from './FidelSkylands'
-import { playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
+import { audio, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
@@ -960,6 +960,11 @@ export default function FidelQuestApp() {
   // rollover past midnight is announced like any other child-state change.
   const dayKey = useAppDay()
   const today = dayKey
+  // VOICE-PAGE SYNC: a voice still talking when the screen changes belongs
+  // to the page the child just left - cut it centrally, here, instead of in
+  // every game. Within a screen, the engine's newest-ask-wins rule keeps
+  // fast taps in sync (see audioEngine.play).
+  useEffect(() => { audio.stopVoice() }, [screen])
   const [backpackOpen, setBackpackOpen] = useState(false)
   useEffect(() => { backpackOpenRef.current = backpackOpen }, [backpackOpen])
   const [giftOpen, setGiftOpen] = useState(false)
@@ -4872,10 +4877,13 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
     if (ctx.status === GameState.SUCCESS_BURST) {
       playEffect('good', soundOn)
       // Reading rounds voice the word AFTER the correct match, as the reward:
-      // read it, find it, then hear it confirmed.
+      // read it, find it, then hear it confirmed. The feedback beat is longer
+      // on those rounds so the reward finishes BEFORE the next round starts -
+      // under the engine's newest-ask-wins rule the next round's voice would
+      // otherwise cut it mid-word.
       const voice = word && !isGlyph ? setTimeout(() => audioPlayWord(word, soundOn), 350) : null
       if (word) recordAnswer(`word:${word.latin}`, `word:${word.latin}`, 'words')
-      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), 1100)
+      const timer = setTimeout(() => dispatch({ type: GameEvent.FEEDBACK_DONE }), isGlyph ? 1100 : 1800)
       return () => {
         clearTimeout(timer)
         if (voice) clearTimeout(voice)

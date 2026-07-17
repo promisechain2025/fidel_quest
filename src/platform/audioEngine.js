@@ -101,6 +101,8 @@ export class AudioEngine {
     this.missing = new Set() // keys that failed; never retried
     this.manifest = undefined // undefined = not loaded, null = unavailable
     this.current = null // { source, gain } of the playing clip, for cross-fade
+    this.currentEl = null // HTMLAudio fallback element, so stopVoice cuts it too
+    this._playGen = 0 // generation token: a newer play/stop supersedes in-flight ones
     this.listeners = { missing: new Set(), play: new Set() }
   }
 
@@ -295,25 +297,50 @@ export class AudioEngine {
     return ctx
   }
 
+  /**
+   * Cut the current voice NOW: fast fade (no click), cancel any in-flight
+   * load, forget autoplay-recovery state. VOICE-PAGE SYNC: a clip still
+   * talking when this is called belongs to a moment the screen has already
+   * left - the navigation shell calls this on every screen change, and
+   * play() calls it so the newest ask speaks immediately instead of
+   * queueing behind a stale one.
+   */
+  stopVoice() {
+    this._playGen = (this._playGen || 0) + 1 // supersedes in-flight play()s
+    this._pendingVoice = null
+    this.lastBlocked = null
+    const cur = this.current
+    this.current = null
+    if (cur?.source) {
+      try {
+        const now = this.ctx?.currentTime ?? 0
+        cur.gain?.gain?.setTargetAtTime?.(0.0001, now, 0.02)
+        cur.source.stop(now + 0.06)
+      } catch { try { cur.source.stop() } catch { /* already stopped */ } }
+    }
+    const el = this.currentEl
+    this.currentEl = null
+    if (el) { try { el.pause() } catch { /* detached */ } }
+    this._voiceBusy = false
+    this._voiceUntil = 0
+  }
+
   async play(key, { enabled = true, chime = null } = {}) {
     if (!enabled) return
-    // ONE VOICE AT A TIME, app-wide. A request that arrives while a clip is
-    // still sounding WAITS for it to finish - and newer requests replace the
-    // waiting one, so the LAST ask wins. No per-screen bookkeeping, no two
-    // voices talking over each other anywhere. Effects/chimes stay instant
-    // (they are punctuation, not speech). A watchdog frees a lock whose
-    // clip never reported ending (suspended context) so voicing cannot die.
-    if (this._voiceBusy && Date.now() < (this._voiceUntil || 0)) {
-      this._pendingVoice = { key, opts: { enabled, chime } }
-      return
-    }
+    // ONE VOICE AT A TIME, app-wide - and the NEWEST ask wins NOW. A child
+    // who taps ahead has already moved to the next letter/word/page, so a
+    // new request CUTS the sounding clip (fast fade) and speaks immediately;
+    // it never waits behind stale speech. In-flight loads are superseded via
+    // a generation token. Effects/chimes stay instant (they are punctuation,
+    // not speech). The _voiceUntil watchdog still frees a lock whose clip
+    // never reported ending (suspended context) so voicing cannot die.
+    this.stopVoice()
+    const gen = this._playGen // stopVoice() bumped it; this play owns it now
     this._voiceBusy = true
     this._voiceUntil = Date.now() + 4000 // until the real duration is known
     const free = () => {
+      if (this._playGen !== gen) return // a newer play owns the voice now
       this._voiceBusy = false
-      const next = this._pendingVoice
-      this._pendingVoice = null
-      if (next) this.play(next.key, next.opts)
     }
     // Remember a play that starts against a locked context (autoplay policy:
     // resume only works inside a user gesture). The unlock kick replays it -
@@ -324,6 +351,7 @@ export class AudioEngine {
     const blocked = ctx0 && ctx0.state !== 'running' ? { key, opts: { enabled, chime }, at: Date.now() } : null
     this.lastBlocked = blocked
     await this.ensureManifest()
+    if (this._playGen !== gen) return // superseded while the manifest loaded
     const source = this.resolve(key)
     this.emit('play', { key, source: source.type })
     if (source.type === 'chime') {
@@ -333,6 +361,7 @@ export class AudioEngine {
     }
     try {
       const buffer = await this.ensureBuffer(source.src)
+      if (this._playGen !== gen) return // superseded while the clip loaded
       const ctx = this.getCtx()
       const gain = ctx.createGain()
       const node = ctx.createBufferSource()
@@ -361,11 +390,14 @@ export class AudioEngine {
         try {
           const a = new Audio(source.src)
           a.addEventListener('ended', () => {
+            if (this.currentEl === a) this.currentEl = null
             if (blocked && this.lastBlocked === blocked) this.lastBlocked = null
             free()
           }, { once: true })
           a.addEventListener('error', () => { this.playChime(chime); free() }, { once: true })
+          this.currentEl = a // stopVoice() can cut this fallback too
           await a.play()
+          if (this._playGen !== gen) { try { a.pause() } catch { /* detached */ } }
           return
         } catch {
           /* fall through to chime */
