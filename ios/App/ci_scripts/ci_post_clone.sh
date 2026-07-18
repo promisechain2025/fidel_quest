@@ -24,8 +24,8 @@ retry() {
   _n=1
   while true; do
     "$@" && return 0
+    echo "retry: attempt $_n of $_max for '$*' failed at $(date)" >&2
     if [ "$_n" -ge "$_max" ]; then
-      echo "retry: '$*' failed after $_max attempts" >&2
       return 1
     fi
     sleep $((10 * _n))
@@ -51,11 +51,17 @@ retry 3 npm ci --no-audit --no-fund
 npm run build
 retry 3 npx cap copy ios
 
-# CocoaPods. Plain install first; if the CDN keeps resetting, force a spec
-# refresh once before giving up. The Podfile is committed, so plain install
-# is all a clean runner needs.
+# CocoaPods. EVERY pod in this Podfile is a local :path pod into
+# node_modules - nothing is resolved from the CocoaPods CDN. The only CDN
+# contact is CocoaPods' first-run setup of its default 'trunk' repo on a
+# fresh runner, which is pure overhead here and is exactly what hung and
+# reset ("SSL_connect ... cdn.cocoapods.org"). Pre-seeding the trunk marker
+# makes CocoaPods treat the repo as already set up, so pod install runs
+# fully offline. (If a remote pod is ever added, delete this pre-seed.)
 export COCOAPODS_DISABLE_STATS=true
+mkdir -p "$HOME/.cocoapods/repos/trunk"
+[ -f "$HOME/.cocoapods/repos/trunk/.url" ] || echo "https://cdn.cocoapods.org/" > "$HOME/.cocoapods/repos/trunk/.url"
 cd ios/App
-retry 4 pod install || retry 2 pod install --repo-update
+retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
