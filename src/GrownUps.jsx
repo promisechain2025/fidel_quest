@@ -26,6 +26,7 @@ import ParentalGate from './components/ParentalGate'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
+import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { dayStamp } from './platform/streak'
@@ -160,6 +161,42 @@ function PlanCard() {
 }
 
 /** Community / affiliate code: credit a church, school, or community group. */
+/* Shown only when the boundary has caught something on this device: the
+   crash notes a grown-up can screenshot into a support mail. Local only. */
+function CrashCard() {
+  const [crashes, setCrashes] = useState(loadCrashes)
+  if (!crashes.length) return null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--bad-ink)' }}>
+        {t('gpCrashTitle', `App health · ${crashes.length} recent errors`, { n: crashes.length })}
+      </h2>
+      <ul className="mt-2 space-y-1.5">
+        {crashes.map((c, i) => (
+          <li key={i} className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            <span className="mono">{c.day}</span> — {c.msg}
+            {c.at ? <span className="block pl-4 opacity-80">{c.at}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpCrashHint', 'The game recovered each time. If this keeps happening, screenshot this card and email us.')}
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          clearCrashes()
+          setCrashes([])
+        }}
+        className="chunk mt-3 rounded-xl px-3 py-1.5 text-xs font-extrabold"
+        style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}
+      >
+        {t('gpCrashClear', 'Clear the notes')}
+      </button>
+    </section>
+  )
+}
+
 function CommunityCard() {
   const [code, setCode] = useState(communityCode())
   const [input, setInput] = useState('')
@@ -255,6 +292,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <PlanCard />
 
           <CommunityCard />
+
+          <CrashCard />
 
           {/* mastery grid */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>

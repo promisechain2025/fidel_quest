@@ -17,10 +17,18 @@ export default class ErrorBoundary extends Component {
     return { failed: true }
   }
 
-  componentDidCatch(error) {
+  componentDidCatch(error, info) {
     // Surface in the console for debugging; never throw from here.
     try {
       console.error('Fidel Quest caught:', error)
+    } catch {
+      /* ignore */
+    }
+    // Field diagnostics + anonymous crash count, via dynamic import so this
+    // boundary stays renderable even when the app bundle is what broke.
+    try {
+      import('../platform/crashLog').then((m) => m.recordCrash(error, info)).catch(() => {})
+      import('../platform/analytics').then((m) => m.track('error')).catch(() => {})
     } catch {
       /* ignore */
     }
