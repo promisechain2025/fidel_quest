@@ -14,19 +14,19 @@
   --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
   --card: #ffffff;
   --line: #e5dcc9;
-  --accent: #ff9600;
-  --accent-deep: #e08300;
+  --accent: #d97f00;
+  --accent-deep: #bf6f00;
   --star: #ffc800;
-  --go: #58cc02;
-  --go-deep: #46a302;
+  --go: #49a902;
+  --go-deep: #3a8702;
   --go-soft: #d7ffb8;
   --go-ink: #58a700;
   --bad: #ff4b4b;
   --bad-deep: #ea2b2b;
   --bad-soft: #ffdfe0;
   --bad-ink: #ea2b2b;
-  --sky: #1cb0f6;
-  --sky-deep: #1899d6;
+  --sky: #199ede;
+  --sky-deep: #1689c0;
   --overlay: rgba(60, 53, 41, 0.4);
 }
 @media (prefers-color-scheme: dark) {
@@ -36,19 +36,19 @@
     --muted: #8c9da6;
     --card: #1b2b33;
     --line: #37464f;
-    --accent: #ff9600;
-    --accent-deep: #cc7800;
+    --accent: #d97f00;
+    --accent-deep: #bf6f00;
     --star: #ffc800;
-    --go: #58cc02;
-    --go-deep: #3f9302;
+    --go: #49a902;
+    --go-deep: #3a8702;
     --go-soft: #17301a;
     --go-ink: #79d631;
     --bad: #ff5252;
     --bad-deep: #d13c3c;
     --bad-soft: #3a1c1f;
     --bad-ink: #ff7b7b;
-    --sky: #1cb0f6;
-    --sky-deep: #1480b3;
+    --sky: #199ede;
+    --sky-deep: #1689c0;
     --overlay: rgba(0, 0, 0, 0.55);
   }
 }
@@ -58,19 +58,19 @@
   --muted: #8c9da6;
   --card: #1b2b33;
   --line: #37464f;
-  --accent: #ff9600;
-  --accent-deep: #cc7800;
+  --accent: #d97f00;
+  --accent-deep: #bf6f00;
   --star: #ffc800;
-  --go: #58cc02;
-  --go-deep: #3f9302;
+  --go: #49a902;
+  --go-deep: #3a8702;
   --go-soft: #17301a;
   --go-ink: #79d631;
   --bad: #ff5252;
   --bad-deep: #d13c3c;
   --bad-soft: #3a1c1f;
   --bad-ink: #ff7b7b;
-  --sky: #1cb0f6;
-  --sky-deep: #1480b3;
+  --sky: #199ede;
+  --sky-deep: #1689c0;
   --overlay: rgba(0, 0, 0, 0.55);
 }
 :root[data-theme="light"] {
@@ -79,19 +79,19 @@
   --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
   --card: #ffffff;
   --line: #e5dcc9;
-  --accent: #ff9600;
-  --accent-deep: #e08300;
+  --accent: #d97f00;
+  --accent-deep: #bf6f00;
   --star: #ffc800;
-  --go: #58cc02;
-  --go-deep: #46a302;
+  --go: #49a902;
+  --go-deep: #3a8702;
   --go-soft: #d7ffb8;
   --go-ink: #58a700;
   --bad: #ff4b4b;
   --bad-deep: #ea2b2b;
   --bad-soft: #ffdfe0;
   --bad-ink: #ea2b2b;
-  --sky: #1cb0f6;
-  --sky-deep: #1899d6;
+  --sky: #199ede;
+  --sky-deep: #1689c0;
   --overlay: rgba(60, 53, 41, 0.4);
 }
 
