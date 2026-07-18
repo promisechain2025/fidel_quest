@@ -125,11 +125,11 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
 
         {boss ? (
           <h2 className="text-2xl font-black" style={{ color: ctx.survivedBoss ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
-            {ctx.survivedBoss ? t('levelComplete', 'Level up!') : t('munched', 'The Muncher wins!')}
+            {ctx.survivedBoss ? t('levelUp', 'Level up!') : t('muncherWins', 'The Muncher wins!')}
           </h2>
         ) : (
           <>
-            <p className="text-lg font-extrabold">{t('steerInto', 'Feed Anbessa the letter Kokeb says')}</p>
+            <p className="text-lg font-extrabold">{t('runFeedHint', 'Feed Anbessa the letter Kokeb says')}</p>
             <div className="grid w-full grid-cols-3 gap-3">
               {q?.options.map((opt) => {
                 const form = formOf(opt)
@@ -220,7 +220,7 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
         <Sprite2D draw={drawAnbessa} size={120} />
-        <h2 className="text-2xl font-black">{t('levelComplete', 'Island cleared!')}</h2>
+        <h2 className="text-2xl font-black">{t('islandCleared', 'Island cleared!')}</h2>
         <button type="button" onClick={() => onExit({ sessionsCompleted: island })} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
           {t('continue', 'Continue')}
         </button>
@@ -259,11 +259,11 @@ export function Skylands2D({ island = 1, seed, soundOn, onExit, allLetters = fal
         <AnimatePresence>
           {q.boss && (
             <motion.div key="jibby" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2 rounded-2xl px-4 py-2 font-black" style={{ background: 'var(--bad-soft)', color: 'var(--bad-ink)' }}>
-              <Sprite2D draw={drawHyena} size={40} /> {t('catchHint', 'Jibby stole it! Grab the letter you hear')}
+              <Sprite2D draw={drawHyena} size={40} /> {t('stolenHint', 'Jibby stole it! Grab the letter you hear')}
             </motion.div>
           )}
         </AnimatePresence>
-        <p className="text-lg font-extrabold">{t('feedHint', 'Tap the letter Kokeb says')}</p>
+        <p className="text-lg font-extrabold">{t('tapFeedHint', 'Tap the letter Kokeb says')}</p>
         <div className="grid w-full grid-cols-3 gap-3">
           {q.options.map((opt) => {
             const form = formOf(opt)

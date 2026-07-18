@@ -2460,7 +2460,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
             </button>
           )}
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: reward ? 'var(--card)' : 'var(--go)', border: reward ? '2px solid var(--line)' : 'none', color: reward ? 'var(--ink)' : '#fff', boxShadow: `0 4px 0 ${reward ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-            {reward ? t('keepGoing', 'Keep going') : t('gotIt', 'Got it')}
+            {reward ? t('keepGoing', 'Keep going!') : t('gotIt', 'Got it')}
           </button>
         </div>
       </motion.div>
@@ -2513,7 +2513,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
             </button>
           )}
           <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-            {t('keepGoing', 'Keep going')}
+            {t('keepGoing', 'Keep going!')}
           </button>
         </div>
       </motion.div>
@@ -3024,7 +3024,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
       <AnimatePresence>
         {yourTurn && (
           <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
-            {t('yourTurn', 'Your turn!')}
+            {t('nowYouTry', 'Your turn!')}
           </motion.p>
         )}
       </AnimatePresence>
