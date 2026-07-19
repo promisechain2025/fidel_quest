@@ -1697,7 +1697,7 @@ export function Chunky({ tone = 'go', className = '', style, children, depth = 4
 
 /* ── Shared: character sprites (canvas art rendered into the DOM) ── */
 
-export function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
+export function Sprite2D({ draw, mood = 'happy', size = 96, className = '', pose = 'stand' }) {
   const ref = useRef(null)
   useEffect(() => {
     const c = ref.current
@@ -1706,8 +1706,8 @@ export function Sprite2D({ draw, mood = 'happy', size = 96, className = '' }) {
     const g = c.getContext('2d')
     if (!g) return
     g.clearRect(0, 0, 256, 256)
-    draw(g, 256, mood)
-  }, [draw, mood])
+    draw(g, 256, mood, pose)
+  }, [draw, mood, pose])
   return <canvas ref={ref} className={className} style={{ width: size, height: size }} aria-hidden="true" />
 }
 
@@ -1784,19 +1784,19 @@ export function drawWearables(g, s, worn) {
 }
 
 /** Anbessa the lion cub, in his current wardrobe, with Kokeb bobbing along. */
-export function Hero({ size = 104, mood = 'happy', worn = [] }) {
+export function Hero({ size = 104, mood = 'happy', worn = [], pose = 'stand' }) {
   const wornKey = worn.map((w) => w.id).join(',')
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
-      <Sprite2D draw={drawAnbessa} mood={mood} size={size} />
+      <Sprite2D draw={drawAnbessa} mood={mood} size={size} pose={pose} />
       {worn.length > 0 && <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />}
       <motion.div
         className="absolute"
-        style={{ right: -size * 0.08, top: -size * 0.04 }}
+        style={{ right: -size * 0.14, top: -size * 0.06 }}
         animate={{ y: [0, -size * 0.05, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <Star style={{ width: size * 0.3, height: size * 0.3, color: 'var(--star)', fill: 'var(--star)' }} strokeWidth={1} />
+        <Sprite2D draw={drawKokeb} size={size * 0.34} />
       </motion.div>
     </div>
   )
@@ -1811,7 +1811,13 @@ export function Hero({ size = 104, mood = 'happy', worn = [] }) {
 
 const nodeGlyph = (node) => {
   if (node.kind === NodeKind.LEARN) return formOf(`${node.familyId}-1`)?.char ?? '?'
-  if (node.kind === NodeKind.MIX) return '፨'
+  if (node.kind === NodeKind.MIX) {
+    // Show WHICH letters get mixed (first + newest family) instead of the
+    // abstract ፨ mark, which meant nothing to a pre-reader.
+    const a = formOf(`${node.families[0]}-1`)?.char ?? ''
+    const b = formOf(`${node.families[node.families.length - 1]}-1`)?.char ?? ''
+    return `${a}${b}`
+  }
   return null
 }
 
@@ -1838,7 +1844,20 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
-    <div ref={innerRef} className="flex flex-col items-center">
+    <div ref={innerRef} className="relative flex flex-col items-center">
+        {/* Anbessa waits at the child's next step, bobbing gently - the path
+           has a character on it, not just tiles. */}
+        {highlight && (
+          <motion.div
+            className="pointer-events-none absolute z-10"
+            style={{ top: -34 }}
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            aria-hidden="true"
+          >
+            <Sprite2D draw={drawAnbessa} size={40} />
+          </motion.div>
+        )}
         <motion.button
           type="button"
           disabled={!unlocked}
@@ -1850,7 +1869,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             width: size,
             height: size,
             borderRadius: radius,
-            fontSize: big ? 22 : 26,
+            fontSize: big ? 22 : node.kind === NodeKind.MIX ? 17 : 26,
             background: bg,
             color: fg,
             borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
@@ -1890,6 +1909,19 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
 // DOM and focus order stay in journey order for keyboard and screen-reader
 // users. Computed once: JOURNEY and PATH_COLS are module constants.
 const PATH_COLS = 3
+
+/* Each chapter of the path is a place on the journey through Ethiopia and
+   Eritrea (mirroring the Runner levels), with its own gentle tint band so
+   the home screen changes as the child climbs instead of being one long
+   amber wall. Tints are translucent over var(--paper), so they hold in
+   both themes. */
+const CHAPTER_TINT = {
+  1: { name: 'Lalibela', band: 'rgba(217,127,0,0.08)', line: 'rgba(217,127,0,0.35)', ink: '#8a5200' },
+  2: { name: 'Aksum', band: 'rgba(73,169,2,0.08)', line: 'rgba(73,169,2,0.35)', ink: '#2f6b01' },
+  3: { name: 'Simien', band: 'rgba(25,158,222,0.08)', line: 'rgba(25,158,222,0.35)', ink: '#0f628b' },
+  4: { name: 'Massawa', band: 'rgba(199,86,151,0.09)', line: 'rgba(199,86,151,0.35)', ink: '#8d3467' },
+  5: { name: 'Vowel Skies', band: 'rgba(122,90,248,0.08)', line: 'rgba(122,90,248,0.35)', ink: '#5638c9' },
+}
 function serpentineRows(nodes, cols) {
   const rows = []
   for (let i = 0; i < nodes.length; i += cols) rows.push(nodes.slice(i, i + cols))
@@ -2208,31 +2240,54 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         </div>
       </div>
 
-      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-4 px-2">
-        {PATH_ROWS.map((row, r) => (
-          <div key={r} className="grid items-center gap-3" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))` }}>
-            {row.map((node, i) => {
-              const done = !!journey.done[node.id]
-              const isNext = current ? node.id === current.id : false
-              const unlocked = isNext || done
-              return (
-                <div key={node.id} className="flex justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
-                  <PathNode
-                    node={node}
-                    done={done}
-                    unlocked={unlocked}
-                    highlight={isNext}
-                    innerRef={isNext ? currentRef : null}
-                    onClick={unlocked ? () => onOpen(node) : undefined}
-                  />
+      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-3 px-2">
+        {PATH_ROWS.map((row, r) => {
+          const chapter = row[0]?.chapter ?? 1
+          const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
+          return (
+            <div key={r}>
+              {chapter !== prevChapter && (
+                <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
+                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                  <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink }}>
+                    {t(`chapterName_${chapter}`, CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`)}
+                  </span>
+                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
                 </div>
-              )
-            })}
-          </div>
-        ))}
+              )}
+              <div className="grid items-center gap-3 rounded-3xl px-1 py-2" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))`, background: CHAPTER_TINT[chapter]?.band }}>
+                {row.map((node, i) => {
+                  const done = !!journey.done[node.id]
+                  const isNext = current ? node.id === current.id : false
+                  const unlocked = isNext || done
+                  return (
+                    <div key={node.id} className="flex justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
+                      <PathNode
+                        node={node}
+                        done={done}
+                        unlocked={unlocked}
+                        highlight={isNext}
+                        innerRef={isNext ? currentRef : null}
+                        onClick={unlocked ? () => onOpen(node) : undefined}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
         {!current && (
-          <div className="mt-4 flex items-center gap-2 rounded-2xl px-4 py-2 font-extrabold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
-            <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion - every star earned!')}
+          <div className="mt-4 flex flex-col items-center gap-3 rounded-3xl border-2 px-5 py-6 text-center" style={{ background: 'var(--go-soft)', borderColor: 'var(--go)' }}>
+            <Hero size={96} worn={worn} pose="cheer" />
+            <p className="flex items-center gap-2 text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+              <Sparkles className="h-5 w-5" aria-hidden="true" /> {t('champion', 'Fidel Champion - every star earned!')}
+            </p>
+            <div className="flex gap-1" aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} className="h-6 w-6" style={{ color: 'var(--star)', fill: 'var(--star)' }} strokeWidth={1} />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -3123,7 +3178,11 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
 
       <main className="flex flex-1 flex-col justify-center gap-6 py-6">
         <div className="text-center">
-          <p className="text-lg font-extrabold">
+          <p className="flex items-center justify-center gap-2 text-lg font-extrabold">
+            {/* Kokeb ASKS the question - the caller finally has a face. */}
+            <motion.span animate={{ rotate: [0, -8, 0, 8, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} aria-hidden="true">
+              <Sprite2D draw={drawKokeb} size={34} />
+            </motion.span>
             {t('whichLetter', 'Which letter says')}{' '}
             <button
               type="button"
@@ -3336,7 +3395,14 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
     <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-5 py-10 text-center">
       <Confetti />
       <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
-        <span className="flex items-end gap-3"><Sprite2D draw={drawZebra} size={84} /><Hero size={124} /></span>
+        <motion.span
+          className="flex items-end gap-3"
+          animate={{ y: [0, -10, 0] }}
+          transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
+        >
+          <Sprite2D draw={drawZebra} size={84} />
+          <Hero size={124} pose="cheer" />
+        </motion.span>
       </motion.div>
 
       <motion.h1 className="mt-4 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--go-ink)' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
@@ -3721,7 +3787,7 @@ export function starPath(g, cx, cy, outer, inner) {
    screens (via <Sprite2D/>) and the WebGL sprites (via charTexture). */
 
 /** Anbessa the lion cub — the hero. Chibi proportions, star on his chest. */
-export function drawAnbessa(g, s, mood = 'happy') {
+export function drawAnbessa(g, s, mood = 'happy', pose = 'stand') {
   const cx = s / 2
   // tail with a tuft
   g.strokeStyle = '#e08300'
@@ -3854,6 +3920,58 @@ export function drawAnbessa(g, s, mood = 'happy') {
       g.stroke()
     }
   }
+  // Celebration pose: front paws thrown up beside the mane. Drawn last so
+  // the raised arms overlay the head like a real cheer.
+  if (pose === 'cheer') {
+    g.strokeStyle = '#f7a83c'
+    g.lineWidth = s * 0.055
+    g.lineCap = 'round'
+    for (const side of [-1, 1]) {
+      g.beginPath()
+      g.moveTo(cx + side * s * 0.13, s * 0.66)
+      g.quadraticCurveTo(cx + side * s * 0.3, s * 0.55, cx + side * s * 0.35, s * 0.4)
+      g.stroke()
+      g.fillStyle = '#e08300'
+      g.beginPath()
+      g.arc(cx + side * s * 0.36, s * 0.37, s * 0.052, 0, 7)
+      g.fill()
+    }
+  }
+}
+
+/** Kokeb the star — the companion who calls the letters. A star with a
+    face, so the character the copy keeps naming actually exists on screen
+    (previously she was indistinguishable from the reward stars). */
+export function drawKokeb(g, s) {
+  const cx = s / 2
+  const cy = s / 2
+  starPath(g, cx, cy, s * 0.42, s * 0.19)
+  g.fillStyle = '#ffc800'
+  g.fill()
+  g.lineWidth = s * 0.03
+  g.strokeStyle = '#e0a400'
+  g.stroke()
+  // eyes
+  g.fillStyle = '#3a2a15'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.085, cy - s * 0.02, s * 0.034, 0, 7)
+    g.fill()
+  }
+  // smile
+  g.strokeStyle = '#3a2a15'
+  g.lineWidth = s * 0.024
+  g.lineCap = 'round'
+  g.beginPath()
+  g.arc(cx, cy + s * 0.05, s * 0.07, 0.15 * Math.PI, 0.85 * Math.PI)
+  g.stroke()
+  // blush
+  g.fillStyle = 'rgba(255,120,90,0.5)'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.arc(cx + side * s * 0.165, cy + s * 0.045, s * 0.034, 0, 7)
+    g.fill()
+  }
 }
 
 /** Jibby the hyena — the Letter Muncher. Mischievous, not scary. */
@@ -3984,16 +4102,18 @@ export function drawZebra(g, s) {
   g.beginPath()
   g.ellipse(cx, s * 0.44, s * 0.24, s * 0.3, 0, 0, 7)
   g.fill()
-  // stripes
-  g.strokeStyle = '#2b2b2b'
-  g.lineWidth = s * 0.032
-  g.lineCap = 'round'
+  // stripes: filled chevrons hugging the head's sides. (The old open-ended
+  // strokes across the face read as scribble at the celebration moment.)
+  g.fillStyle = '#2b2b2b'
   for (const side of [-1, 1]) {
     for (let i = 0; i < 3; i++) {
+      const y = s * (0.22 + i * 0.095)
       g.beginPath()
-      g.moveTo(cx + side * s * (0.1 + i * 0.055), s * 0.2)
-      g.quadraticCurveTo(cx + side * s * (0.22 + i * 0.05), s * (0.3 + i * 0.05), cx + side * s * (0.17 + i * 0.045), s * (0.42 + i * 0.04))
-      g.stroke()
+      g.moveTo(cx + side * s * 0.235, y)
+      g.quadraticCurveTo(cx + side * s * 0.12, y + s * 0.02, cx + side * s * 0.1, y + s * 0.05)
+      g.quadraticCurveTo(cx + side * s * 0.17, y + s * 0.055, cx + side * s * 0.235, y + s * 0.04)
+      g.closePath()
+      g.fill()
     }
   }
   // eyes
