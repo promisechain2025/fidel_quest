@@ -34,7 +34,17 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.plan.v1', // the learning plan
   'fq.telemetry.v1', // the answer ledger (mastery, trouble letters)
   'fq.words.v1', // decodable words already practiced (Word Steps)
+  'fq.streak.v1', // daily streak count + best
+  'fq.gift.v1', // daily gift claim state
+  'fq.tees.v1', // tee designs already seen/earned
+  'fq.student.v1', // class membership (this child's class link)
+  'fq.assign.v1', // pending homework assignment
 ])
+// Additive only: restoreProgress ignores unknown keys, so snapshots made
+// before these five keys existed import cleanly, and old app versions
+// simply skip them. Two more child keys (fq.nickname, fq.scope.v1) hold
+// raw strings, which this JSON-validated format cannot carry - profile
+// switching swaps them via profiles.js SWAP_KEYS instead.
 
 const SNAPSHOT_KIND = 'fidel-quest-progress'
 export const SNAPSHOT_VERSION = 1

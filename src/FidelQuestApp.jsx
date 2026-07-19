@@ -51,6 +51,7 @@ import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
 import { licenseState, markAsked } from './platform/license'
+import { loadProfiles, switchProfile, profileLabel } from './platform/profiles'
 import { useChildModel, useAppDay } from './platform/childModel'
 import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
@@ -2307,6 +2308,11 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
   // default; this switches them (and the arcade games) to the whole abugida.
   const [scope, setScopeState] = useState(getScope)
   const changeScope = (s) => { setScopeState(s); setScope(s) }
+  // Sibling switcher: only exists once a grown-up has added a second child
+  // (Family Pack). Switching is safe (all progress is parked, nothing is
+  // lost), so the child-facing surface needs no parental gate.
+  const [profileReg] = useState(loadProfiles)
+  const [whoOpen, setWhoOpen] = useState(false)
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -2337,6 +2343,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
            panel can still scroll on a very short device as a safety net. */}
         <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
           <div className="grid grid-cols-3 gap-2.5">
+            {profileReg.list.length > 1 && (
+              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={() => setWhoOpen(true)} />
+            )}
             <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
             {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
                sell - the screen, unlock logic, and tests all stay wired, so
@@ -2379,6 +2388,59 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
         </div>
         {/* Language moved to the home-screen pill (header) - one home for
             the choice instead of two competing ones. */}
+        <AnimatePresence>
+          {whoOpen && (
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center p-6"
+              style={{ background: 'rgba(0,0,0,0.45)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setWhoOpen(false)}
+            >
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('whoTitle', 'Who is playing?')}
+                className="w-full max-w-sm rounded-3xl p-5"
+                style={{ background: 'var(--paper)' }}
+                initial={{ scale: 0.92 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.92 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h2 className="text-center text-xl font-black">{t('whoTitle', 'Who is playing?')}</h2>
+                <div className="mt-4 space-y-2.5">
+                  {profileReg.list.map((p) => {
+                    const active = p.id === profileReg.active
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={active}
+                        onClick={() => {
+                          if (switchProfile(p.id)) window.location.reload()
+                        }}
+                        className={`chunk flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-lg font-black ${FOCUS}`}
+                        style={
+                          active
+                            ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
+                            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }
+                        }
+                      >
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full text-base" style={{ background: active ? 'rgba(255,255,255,0.25)' : 'var(--accent)', color: '#fff' }}>
+                          {(profileLabel(p, t('gpChild', 'Child'))[0] || '?').toUpperCase()}
+                        </span>
+                        <span className="flex-1 truncate text-left">{profileLabel(p, t('gpChild', 'Child'))}</span>
+                        {active && <span className="text-xs font-black uppercase">{t('whoNow', 'Now')}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   )

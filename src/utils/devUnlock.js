@@ -31,6 +31,8 @@ export function unlockEverything() {
   persistSkySave({ sessionsCompleted: 3, learnedSessions: 4 })
   // Don't nag with the first-run onboarding once everything is open.
   try { localStorage.setItem('fq.onboarded.v1', JSON.stringify({ lesson: true, runner: true, skylands: true })) } catch { /* ignore */ }
+  // QA convenience: the Family Pack (per-child profiles) opens too.
+  try { localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'dev' })) } catch { /* ignore */ }
   progressChanged()
 }
 

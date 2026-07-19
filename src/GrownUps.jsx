@@ -27,6 +27,8 @@ import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
+import { loadProfiles, addProfile, switchProfile, deleteProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
+import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { dayStamp } from './platform/streak'
@@ -161,6 +163,140 @@ function PlanCard() {
 }
 
 /** Community / affiliate code: credit a church, school, or community group. */
+/* One device, several children: each child gets their own path, streak,
+   rewards, and trouble letters. Adding a second child is the paid Family
+   Pack; on native store builds only a redeem code is offered (store rules
+   forbid pointing at outside payment). Switching reloads the app - every
+   screen holds the active child's state. */
+function ProfilesCard() {
+  const [reg, setReg] = useState(loadProfiles)
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [code, setCode] = useState('')
+  const [codeState, setCodeState] = useState('') // '' | 'bad'
+  const unlocked = familyPackUnlocked()
+  const refresh = () => setReg(loadProfiles())
+
+  const doSwitch = (id) => {
+    if (switchProfile(id)) window.location.reload()
+  }
+  const doAdd = () => {
+    if (addProfile(newName)) window.location.reload()
+  }
+  const doRedeem = () => {
+    if (redeemFamilyCode(code)) {
+      setCodeState('')
+      refresh()
+    } else setCodeState('bad')
+  }
+
+  const inputCls = `w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`
+  const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }
+  const buyLink = familyPackUrl() || buyUrl()
+
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpProfilesTitle', 'Children on this device')}
+      </h2>
+      <ul className="mt-3 space-y-2">
+        {reg.list.map((p) => (
+          <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
+            <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
+            {p.id === reg.active ? (
+              <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>
+                {t('gpActiveNow', 'Playing')}
+              </span>
+            ) : (
+              <>
+                <button type="button" onClick={() => doSwitch(p.id)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                  {t('gpSwitchTo', 'Switch')}
+                </button>
+                <button
+                  type="button"
+                  aria-label={t('gpDeleteChild', `Delete ${profileLabel(p)}`, { name: profileLabel(p) })}
+                  onClick={() => {
+                    if (window.confirm(t('gpDeleteConfirm', `Delete ${profileLabel(p)} and all their progress? This cannot be undone.`, { name: profileLabel(p) }))) {
+                      deleteProfile(p.id)
+                      refresh()
+                    }
+                  }}
+                  className={`flex h-8 w-8 items-center justify-center rounded-xl ${FOCUS}`}
+                  style={{ color: 'var(--bad-ink)' }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {reg.list.length < MAX_PROFILES &&
+        (unlocked ? (
+          adding ? (
+            <div className="mt-3 space-y-2">
+              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
+              <div className="flex gap-2">
+                <button type="button" onClick={doAdd} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                  {t('gpAddStart', 'Add and start fresh')}
+                </button>
+                <button type="button" onClick={() => setAdding(false)} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+                  {t('gpCancel', 'Cancel')}
+                </button>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                {t('gpAddHint', 'The child playing now keeps everything; the new child starts at the first letter.')}
+              </p>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAdding(true)} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+              {t('gpAddChild', 'Add another child')}
+            </button>
+          )
+        ) : (
+          <div className="mt-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}>
+            <p className="text-sm font-extrabold">{t('gpPackTitle', 'Family Pack — profiles for every child')}</p>
+            <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+              {isNativePlatform()
+                ? t('gpPackNative', 'Each child gets their own path, streak, and rewards on this device. Have a Family Pack code? Enter it below.')
+                : t('gpPackWeb', `One ${FAMILY_PACK_PRICE} unlock gives every child in the family their own path, streak, and rewards on this device — instead of buying the app again.`, { price: FAMILY_PACK_PRICE })}
+            </p>
+            {!isNativePlatform() && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {buyLink ? (
+                  <a href={buyLink} target="_blank" rel="noreferrer" className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                    {t('gpPackBuy', `Get the Family Pack (${FAMILY_PACK_PRICE})`, { price: FAMILY_PACK_PRICE })}
+                  </a>
+                ) : null}
+                <button type="button" onClick={() => { unlockFamilyPack('web'); refresh() }} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+                  {t('gpPackPaid', 'I already paid')}
+                </button>
+              </div>
+            )}
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => { setCode(e.target.value); setCodeState('') }}
+                placeholder={t('gpPackCodePh', 'FAM code')}
+                aria-label={t('gpPackCodePh', 'FAM code')}
+                className={inputCls}
+                style={{ ...inputStyle, ...(codeState === 'bad' ? { borderColor: 'var(--bad)' } : null) }}
+              />
+              <button type="button" onClick={doRedeem} className={`chunk shrink-0 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                {t('gpPackRedeem', 'Redeem')}
+              </button>
+            </div>
+            {codeState === 'bad' && (
+              <p className="mt-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackCodeBad', 'That code does not look right — check it and try again.')}</p>
+            )}
+          </div>
+        ))}
+    </section>
+  )
+}
+
 /* Shown only when the boundary has caught something on this device: the
    crash notes a grown-up can screenshot into a support mail. Local only. */
 function CrashCard() {
@@ -285,6 +421,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
               </div>
             ))}
           </div>
+
+          <ProfilesCard />
 
           <NicknameField />
 
