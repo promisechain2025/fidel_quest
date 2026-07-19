@@ -26,6 +26,7 @@ import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
+import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
@@ -1074,6 +1075,11 @@ export default function FidelQuestApp() {
     setScreen({ name: 'stories' })
   }, [setScreen])
 
+  const startPlacement = useCallback(() => {
+    setRunSeed((Date.now() % 1000000) | 1)
+    setScreen({ name: 'placement', window: 0, placed: [] })
+  }, [setScreen])
+
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
     const queue = buildPracticeQueue(loadLedger(), seed)
@@ -1262,6 +1268,7 @@ export default function FidelQuestApp() {
                 onBack={goBack}
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
+                onPlacement={startPlacement}
               />
             </Screen>
           )}
@@ -1365,6 +1372,47 @@ export default function FidelQuestApp() {
           {screen.name === 'stories' && (
             <Screen key="stories">
               <StoryTime soundOn={soundOn} onBack={goBack} />
+            </Screen>
+          )}
+          {screen.name === 'placement' && (
+            <Screen key={`placement-${screen.window}-${runSeed}`}>
+              <Lesson
+                level={{ id: 'placement', n: '➤', title: t('placeTitle', `Skip-ahead check ${screen.window + 1}`, { n: screen.window + 1 }) }}
+                seed={(runSeed + screen.window * 97) | 1}
+                soundOn={soundOn}
+                noDemo
+                practiceQueue={buildPlacementQueue((runSeed + screen.window * 97) | 1, placementWindows()[screen.window])}
+                onFinish={(id, result) => {
+                  const windows = placementWindows()
+                  const passed = !!result && result.accuracy >= PLACEMENT_PASS_RATE
+                  const placed = passed ? [...screen.placed, ...windows[screen.window]] : screen.placed
+                  if (passed && screen.window + 1 < windows.length) {
+                    setScreen({ name: 'placement', window: screen.window + 1, placed })
+                  } else {
+                    setScreen({ name: 'placement-done', credited: applyPlacement(placed), families: placed.length })
+                  }
+                }}
+                onQuit={() => setScreen({ name: 'placement-done', credited: applyPlacement(screen.placed), families: screen.placed.length })}
+                onReplay={startPlacement}
+              />
+            </Screen>
+          )}
+          {screen.name === 'placement-done' && (
+            <Screen key="placement-done">
+              <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
+                <Sprite2D draw={drawAnbessa} size={110} mood="happy" />
+                <h1 className="text-2xl font-black">
+                  {screen.families > 0 ? t('placeDoneTitle', 'Placed!') : t('placeFreshTitle', 'Starting fresh!')}
+                </h1>
+                <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
+                  {screen.families > 0
+                    ? t('placeDoneBody', `${screen.families} letter families credited — the path now starts right where the learning does.`, { n: screen.families })
+                    : t('placeFreshBody', 'The first letters are the perfect place to grow. Off we go!')}
+                </p>
+                <button type="button" onClick={goHome} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+                  {t('placeGo', 'To the path')}
+                </button>
+              </div>
             </Screen>
           )}
           {screen.name === 'practice' && (

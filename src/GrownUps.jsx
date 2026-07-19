@@ -410,7 +410,7 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
@@ -464,6 +464,22 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           </div>
 
           <ProfilesCard />
+
+          {/* Skip-ahead: shown while the journey is young enough that a
+             heritage child might be grinding letters they already read. */}
+          {onPlacement && learnedFamilyIds(loadJourney()).length < FIDEL_FAMILIES.length && (
+            <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+              <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                {t('gpPlaceTitle', 'Already knows some letters?')}
+              </h2>
+              <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+                {t('gpPlaceBody', 'A short listening check places the child on the path: each passed group of letters is credited, and the first miss ends the check. Hand the device to the child for this.')}
+              </p>
+              <button type="button" onClick={onPlacement} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                {t('gpPlaceCta', 'Start the skip-ahead check')}
+              </button>
+            </section>
+          )}
 
           <NicknameField />
 
