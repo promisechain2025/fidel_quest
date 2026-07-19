@@ -17,6 +17,7 @@ import { INDEXES, getActivePackId } from '../platform/ethiopic'
 import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
+import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
 import WordPicture from './Pictures'
@@ -53,6 +54,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [story, setStory] = useState(null)
   const [pageIdx, setPageIdx] = useState(0)
   const [finished, setFinished] = useState(false)
+  const [quiz, setQuiz] = useState(null) // null | 'asking' | 'missed' | 'done'
   const [spokenWord, setSpokenWord] = useState(-1)
   const cancelRef = useRef(() => {})
 
@@ -65,8 +67,10 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   const openStory = (s) => {
     stopSpeech()
+    sayPrompt('tapWords', soundOn)
     setStory(s)
     setPageIdx(0)
+    setQuiz(null)
     setFinished(false)
   }
   const closeReader = () => {
@@ -120,6 +124,15 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       setPageIdx(pageIdx + 1)
       return
     }
+    // One comprehension question before the celebration, when the story
+    // has one: turning pages is not reading, answering shows it was.
+    if (story.q && quiz !== 'done') {
+      setQuiz('asking')
+      return
+    }
+    finishStory()
+  }
+  const finishStory = () => {
     const count = markStoryRead(story.id)
     setReadCounts((r) => ({ ...r, [story.id]: count }))
     // A completed read is a correct 'story' event - together with the
@@ -127,8 +140,21 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     recordAnswer(`story:${story.id}`, `story:${story.id}`, 'story')
     // Opened from a Journey story node: finishing ANY story completes it.
     onStoryComplete?.()
+    setQuiz(null)
     setFinished(true)
     playEffect('win', soundOn)
+  }
+  const answerQuiz = (opt) => {
+    if (opt.ok) {
+      recordAnswer(`storyq:${story.id}`, `storyq:${story.id}`, 'story')
+      playEffect('good', soundOn)
+      setQuiz('done')
+      finishStory()
+    } else {
+      recordAnswer(`storyq:${story.id}`, `storyq:${story.id}:miss`, 'story')
+      playEffect('bad', soundOn)
+      setQuiz('missed')
+    }
   }
   const prevPage = () => {
     stopSpeech()
@@ -154,6 +180,27 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
             {t('storyMore', 'More stories')}
           </button>
         </div>
+      </div>
+    )
+  }
+
+  /* ── comprehension question ── */
+  if (story && (quiz === 'asking' || quiz === 'missed')) {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-6 text-center">
+        <Sprite2D draw={drawAnbessa} size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
+        <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
+        {story.q.g && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
+        <div className="flex gap-4">
+          {story.q.a.map((opt, i) => (
+            <button key={i} type="button" onClick={() => answerQuiz(opt)} className={`chunk flex h-32 w-32 items-center justify-center rounded-3xl border-2 ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px' }}>
+              <WordPicture emoji={opt.pic} size={84} />
+            </button>
+          ))}
+        </div>
+        {quiz === 'missed' && (
+          <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>{t('storyQAgain', 'Look at the story again - you can do it!')}</p>
+        )}
       </div>
     )
   }

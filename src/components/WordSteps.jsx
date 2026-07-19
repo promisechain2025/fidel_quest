@@ -12,6 +12,7 @@ import { WordPhase, wordStepsTransition } from '../platform/wordSteps'
 import { playForm, playEffect, audio, afterVoice } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import WordPicture from './Pictures'
+import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
 import { Hero, INDEXES, wordStepsStart } from '../FidelQuestApp'
 
@@ -76,6 +77,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
   const [ctx, setCtx] = useState(() => wordStepsStart(words, seed))
   const [yourTurn, setYourTurn] = useState(false)
   const timers = useRef([])
+  useEffect(() => { sayPrompt('buildWord', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms))
 

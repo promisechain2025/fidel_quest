@@ -29,6 +29,7 @@ import { dueKeys } from './platform/srs'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
 // at the question factory). Wired here, after both sides exist.
 queueMicrotask(() => setDuePriorityProvider(() => dueKeys()))
+import { sayPrompt } from './platform/prompts'
 import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
 import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
@@ -3037,6 +3038,9 @@ function machineReducer(ctx, event) {
 
 function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, practiceQueue = null, noDemo = false, incoming = null }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
+  // Spoken instruction for pre-readers, once per session; the engine's
+  // wait-queue lets it finish before the first target letter plays.
+  useEffect(() => { sayPrompt('whichLetter', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const isPractice = level.id === 'practice'
   const isChallenge = !!incoming
   // MASTERY LOOP state: a real level (not practice/warm-up/challenge) must
@@ -4358,6 +4362,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
     const pool = dec.length >= 6 ? dec : base
     return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, twinsOnly ? 8 : 6, pool) } }).next
   })
+  useEffect(() => { sayPrompt(twinsOnly ? 'whichGlyph' : 'tapPicture', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const question = selectQuestion(ctx)
   const word = question ? WORD_BY_LATIN.get(question.wordLatin ?? question.target) : null
   const isGlyph = question?.type === 'glyph'

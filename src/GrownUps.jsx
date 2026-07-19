@@ -338,6 +338,41 @@ function ProfilesCard() {
   )
 }
 
+/* Native only: appears when the daily on-device backup file exists, so a
+   family recovering from storage eviction or a reinstall has one tap back. */
+function BackupCard() {
+  const [info, setInfo] = useState(null)
+  const [state, setState] = useState('') // '' | 'done' | 'none'
+  useEffect(() => {
+    import('./platform/backup').then((m) => m.backupInfo().then(setInfo)).catch(() => {})
+  }, [])
+  if (!info) return null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpBackupTitle', 'Device backup')}
+      </h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpBackupBody', `Progress is saved to this device daily (last: ${info.day}, ${info.children} child${info.children > 1 ? 'ren' : ''}) and travels with your phone backup. If the app ever loses its memory, restore here.`, { day: info.day, n: info.children })}
+      </p>
+      <button
+        type="button"
+        onClick={async () => {
+          const m = await import('./platform/backup')
+          const n = await m.restoreBackup()
+          if (n > 0) window.location.reload()
+          else setState('none')
+        }}
+        className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`}
+        style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
+      >
+        {t('gpBackupRestore', 'Restore from backup')}
+      </button>
+      {state === 'none' && <p className="mt-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpBackupNone', 'Nothing restorable was found.')}</p>}
+    </section>
+  )
+}
+
 /* Shown only when the boundary has caught something on this device: the
    crash notes a grown-up can screenshot into a support mail. Local only. */
 function CrashCard() {
@@ -487,6 +522,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           <PlanCard />
 
           <CommunityCard />
+
+          <BackupCard />
 
           <CrashCard />
 
