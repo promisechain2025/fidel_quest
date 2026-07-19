@@ -49,6 +49,7 @@ import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
 import StoryTime from './components/StoryTime'
+import WordPicture from './components/Pictures'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -4345,7 +4346,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
           {/* Glyph rounds show the PICTURE (not the spelled word, which would
               reveal the target letter); picture rounds show the geez word. */}
           {isGlyph ? (
-            <p className="text-7xl" aria-hidden="true">{word?.picture}</p>
+            <span className="flex justify-center" aria-hidden="true"><WordPicture emoji={word?.picture} size={104} /></span>
           ) : (
             <p className="geez text-6xl font-black">{word?.geez}</p>
           )}
@@ -4401,7 +4402,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
                 }}
                 aria-label={isGlyph ? `Letter ${opt}` : `Picture of ${option?.meaning}`}
               >
-                <span aria-hidden="true">{isGlyph ? opt : option?.picture}</span>
+                <span aria-hidden="true" className="flex items-center justify-center">{isGlyph ? opt : <WordPicture emoji={option?.picture} size={64} />}</span>
               </motion.button>
             )
           })}

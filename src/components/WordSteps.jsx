@@ -11,6 +11,7 @@ import { X, Mic, Volume2 } from 'lucide-react'
 import { WordPhase, wordStepsTransition } from '../platform/wordSteps'
 import { playForm, playEffect, audio, afterVoice } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
+import WordPicture from './Pictures'
 import { t } from '../platform/i18n'
 import { Hero, INDEXES, wordStepsStart } from '../FidelQuestApp'
 
@@ -145,7 +146,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
           {ctx.phase === WordPhase.BUILD && (
             <motion.div key={`build-${ctx.wi}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-5">
               <p className="text-lg font-extrabold">{t('buildWord', 'Tap the letters in order')}</p>
-              <p className="text-7xl" aria-hidden="true">{word?.picture}</p>
+              <span className="flex justify-center" aria-hidden="true"><WordPicture emoji={word?.picture} size={104} /></span>
               <BuildBoard word={word} ctx={ctx} onTile={(i) => act({ type: 'TILE', index: i })} />
             </motion.div>
           )}
@@ -200,7 +201,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
           {ctx.phase === WordPhase.PROVE && round?.type === 'rebuild' && (
             <motion.div key={`rebuild-${ctx.qi}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-5">
               <p className="text-lg font-extrabold">{t('rebuildWord', 'Build the word for the picture')}</p>
-              <p className="text-7xl" aria-hidden="true">{round.word.picture}</p>
+              <span className="flex justify-center" aria-hidden="true"><WordPicture emoji={round.word.picture} size={104} /></span>
               <BuildBoard word={round.word} ctx={ctx} onTile={(i) => act({ type: 'TILE', index: i })} />
             </motion.div>
           )}

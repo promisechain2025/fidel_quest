@@ -18,6 +18,7 @@ import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead 
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
+import WordPicture from './Pictures'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
 
@@ -164,7 +165,7 @@ export default function StoryTime({ soundOn, onBack }) {
         </header>
 
         <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <div className="text-7xl" aria-hidden="true">{page.pic}</div>
+          <div className="flex justify-center" aria-hidden="true"><WordPicture emoji={page.pic} size={110} /></div>
           <AnimatePresence mode="wait">
             <motion.div key={pageIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-wrap items-center justify-center gap-2 px-2">
               {words.map((w, i) => (
