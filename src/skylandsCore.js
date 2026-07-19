@@ -10,6 +10,7 @@
 
 import { rngShuffle } from './platform/rng'
 import { FIDEL_FAMILIES, ORDERS as PACK_ORDERS } from './platform/ethiopic'
+import { skylandsPlaces } from './platform/places'
 
 
 /* Families come from the Ethiopic Engine (script table + active pack). */
@@ -25,25 +26,14 @@ export const FORM_BY_KEY = new Map(BASE_FORMS.map((f) => [f.audioKey, f]))
 
 const SESSION_FRUIT = ['#ff7a59', '#ffc24b', '#8ed069', '#5db7ff']
 
-export const SESSIONS = [
-  {
-    n: 1, title: 'First Letters', place: 'Lalibela', country: 'Ethiopia',
-    rock: '#9a6a45', grass: '#8fbf5a', landmark: 'lalibela',
-  },
-  {
-    n: 2, title: 'More Letters', place: 'Aksum', country: 'Ethiopia',
-    rock: '#b3905c', grass: '#a8c060', landmark: 'aksum',
-  },
-  {
-    n: 3, title: 'Even More Letters', place: 'Simien Mountains', country: 'Ethiopia',
-    rock: '#7d8a63', grass: '#6fae58', landmark: 'simien',
-  },
-  {
-    n: 4, title: 'The Last Letters', place: 'Massawa', country: 'Eritrea',
-    rock: '#c9b489', grass: '#9fc987', landmark: 'massawa',
-  },
-].map((s, i) => ({
-  ...s,
+/* Island geography follows the language being learned (platform/places.js):
+   Ethiopian islands for Amharic, Eritrea + Axum for Tigrinya. */
+const SESSION_TITLES = ['First Letters', 'More Letters', 'Even More Letters', 'The Last Letters']
+
+export const SESSIONS = skylandsPlaces().map((placeSpec, i) => ({
+  n: i + 1,
+  title: SESSION_TITLES[i],
+  ...placeSpec,
   fruit: SESSION_FRUIT[i],
   pool: BASE_FORMS.slice(i * 8, i === 3 ? BASE_FORMS.length : i * 8 + 8).map((f) => f.audioKey),
 }))

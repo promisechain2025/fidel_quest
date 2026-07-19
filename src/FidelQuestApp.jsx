@@ -27,6 +27,7 @@ import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, set
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
 import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
+import { chapterPlaces } from './platform/places'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
@@ -1910,17 +1911,18 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
 // users. Computed once: JOURNEY and PATH_COLS are module constants.
 const PATH_COLS = 3
 
-/* Each chapter of the path is a place on the journey through Ethiopia and
-   Eritrea (mirroring the Runner levels), with its own gentle tint band so
-   the home screen changes as the child climbs instead of being one long
-   amber wall. Tints are translucent over var(--paper), so they hold in
-   both themes. */
+/* Each chapter of the path is a place on the journey - Ethiopian places for
+   the Amharic pack, Eritrea + Axum for Tigrinya (platform/places.js) - with
+   its own gentle tint band so the home screen changes as the child climbs
+   instead of being one long amber wall. Tints are translucent over
+   var(--paper), so they hold in both themes. */
+const CHAPTER_PLACE_NAMES = chapterPlaces()
 const CHAPTER_TINT = {
-  1: { name: 'Lalibela', band: 'rgba(217,127,0,0.08)', line: 'rgba(217,127,0,0.35)', ink: '#8a5200' },
-  2: { name: 'Aksum', band: 'rgba(73,169,2,0.08)', line: 'rgba(73,169,2,0.35)', ink: '#2f6b01' },
-  3: { name: 'Simien', band: 'rgba(25,158,222,0.08)', line: 'rgba(25,158,222,0.35)', ink: '#0f628b' },
-  4: { name: 'Massawa', band: 'rgba(199,86,151,0.09)', line: 'rgba(199,86,151,0.35)', ink: '#8d3467' },
-  5: { name: 'Vowel Skies', band: 'rgba(122,90,248,0.08)', line: 'rgba(122,90,248,0.35)', ink: '#5638c9' },
+  1: { name: CHAPTER_PLACE_NAMES[0], band: 'rgba(217,127,0,0.08)', line: 'rgba(217,127,0,0.35)', ink: '#8a5200' },
+  2: { name: CHAPTER_PLACE_NAMES[1], band: 'rgba(73,169,2,0.08)', line: 'rgba(73,169,2,0.35)', ink: '#2f6b01' },
+  3: { name: CHAPTER_PLACE_NAMES[2], band: 'rgba(25,158,222,0.08)', line: 'rgba(25,158,222,0.35)', ink: '#0f628b' },
+  4: { name: CHAPTER_PLACE_NAMES[3], band: 'rgba(199,86,151,0.09)', line: 'rgba(199,86,151,0.35)', ink: '#8d3467' },
+  5: { name: CHAPTER_PLACE_NAMES[4], band: 'rgba(122,90,248,0.08)', line: 'rgba(122,90,248,0.35)', ink: '#5638c9' },
 }
 function serpentineRows(nodes, cols) {
   const rows = []
@@ -2249,8 +2251,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
               {chapter !== prevChapter && (
                 <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
                   <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                  {/* Place names are proper nouns from the active pack's
+                     geography - never translated. */}
                   <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink }}>
-                    {t(`chapterName_${chapter}`, CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`)}
+                    {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
                   </span>
                   <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
                 </div>
