@@ -1106,6 +1106,11 @@ export default function FidelQuestApp() {
     setScreen({ name: 'stories' })
   }, [setScreen])
 
+  const startTwins = useCallback(() => {
+    setRunSeed((Date.now() % 1000000) | 1)
+    setScreen({ name: 'twins' })
+  }, [setScreen])
+
   const startPlacement = useCallback(() => {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'placement', window: 0, placed: [] })
@@ -1405,6 +1410,11 @@ export default function FidelQuestApp() {
               <StoryTime soundOn={soundOn} onBack={goBack} />
             </Screen>
           )}
+          {screen.name === 'twins' && (
+            <Screen key={`twins-${runSeed}`}>
+              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
+            </Screen>
+          )}
           {screen.name === 'placement' && (
             <Screen key={`placement-${screen.window}-${runSeed}`}>
               <Lesson
@@ -1609,6 +1619,7 @@ export default function FidelQuestApp() {
               onCloset={openCloset}
               onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
               onStories={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startStories() }}
+              onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
               onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
@@ -2451,7 +2462,7 @@ function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2502,6 +2513,16 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            {/* Twin Drill appears once a same-sound pair is learned - the
+               spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
+            {(() => {
+              const learned = new Set(learnedFamilyIds(loadJourney()))
+              const ready = FIDEL_FAMILIES.some((f) => {
+                const s = twinSiblingOf(f)
+                return s && learned.has(f.id) && learned.has(s.id)
+              })
+              return ready ? <BackpackTile icon={<span className="geez text-lg font-black">ሀሐ</span>} tone="var(--sky)" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
+            })()}
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
             <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
             {troubleCount > 0 && (
@@ -4260,15 +4281,22 @@ function ArcadeLoading() {
 
 /* ── First Words: hear the word, tap its picture ── */
 
-export function WordMatch({ seed, soundOn, onFinish, onReplay }) {
+/** Words whose family has a same-sound twin - the pool for the Twin Drill,
+    where every round is a which-glyph-writes-it question. */
+export const twinWords = () => WORDS.filter((w) => twinSiblingOf(FIDEL_FAMILIES[w.familyIndex]))
+
+export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => {
     // Prefer the words the child can actually READ (decodable from the
     // learned families); when too few for a queue, the full voiced list
     // keeps the game rich. The 'all letters' scope opens everything.
+    // Twin Drill: only words from twin families, so every question is the
+    // spelling choice Ethiopian schools teach by word (ሰላም takes ሰ, not ሠ).
     const learned = new Set(learnedFamilyIds(loadJourney()))
-    const dec = getScope() === SCOPES.ALL ? WORDS : WORDS.filter((w) => isDecodable(w.geez, learned))
-    const pool = dec.length >= 6 ? dec : WORDS
-    return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, 6, pool) } }).next
+    const base = twinsOnly ? twinWords() : WORDS
+    const dec = getScope() === SCOPES.ALL ? base : base.filter((w) => isDecodable(w.geez, learned))
+    const pool = dec.length >= 6 ? dec : base
+    return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, twinsOnly ? 8 : 6, pool) } }).next
   })
   const question = selectQuestion(ctx)
   const word = question ? WORD_BY_LATIN.get(question.wordLatin ?? question.target) : null

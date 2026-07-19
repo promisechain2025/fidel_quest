@@ -1150,7 +1150,7 @@ export default function AmharicFidelGame() {
       <ScopeToggle scope={scope} onChange={changeScope} />
 
       {LEVELS.every((l) => (progress.stars[l.id] || 0) >= 3) && (
-        <div className="fq-anim-pop flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-400 to-pink-500 px-6 py-4 text-white shadow-xl">
+        <div className="fq-anim-pop flex items-center gap-3 rounded-2xl fq-token-go px-6 py-4 text-white shadow-xl">
           <PartyPopper className="h-8 w-8 shrink-0" />
           <div className="text-left">
             <p className="text-lg font-extrabold">{t('champion')}</p>
@@ -1343,7 +1343,7 @@ export default function AmharicFidelGame() {
               <button
                 type="button"
                 onClick={() => chantFamily(family)}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-400 to-teal-500 px-6 py-2.5 font-extrabold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/70"
+                className="flex items-center gap-2 rounded-full fq-token-go px-6 py-2.5 font-extrabold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300/70"
               >
                 <Play className="h-4 w-4 fill-current" /> {t('chant')}
               </button>
@@ -1460,7 +1460,7 @@ export default function AmharicFidelGame() {
                   type="button"
                   onClick={() => playWord(family.word)}
                   aria-label={t('playWordSound', { word: family.word.geez })}
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md transition-all hover:shadow-lg active:scale-90 ${FOCUS_RING}`}
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full fq-token-accent text-white shadow-md transition-all hover:shadow-lg active:scale-90 ${FOCUS_RING}`}
                 >
                   <Volume2 className="h-6 w-6" />
                 </button>
@@ -1529,7 +1529,7 @@ export default function AmharicFidelGame() {
               type="button"
               onClick={() => playLetter(target)}
               aria-label={t('playAgainSound', { sound: target.sound })}
-              className={`flex items-center gap-3 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-8 py-3 shadow-lg transition-all hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+              className={`flex items-center gap-3 rounded-full fq-token-accent px-8 py-3 shadow-lg transition-all hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
             >
               <Volume2 className="h-7 w-7 text-white" />
               <span className="text-4xl font-extrabold text-white drop-shadow">{target.sound}</span>
@@ -1687,7 +1687,7 @@ export default function AmharicFidelGame() {
             <button
               type="button"
               onClick={startPractice}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 px-6 py-3 font-extrabold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-300/70"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl fq-token-accent px-6 py-3 font-extrabold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-300/70"
             >
               <RotateCcw className="h-5 w-5" /> {t('practiceThese')}
             </button>
@@ -1796,7 +1796,7 @@ export default function AmharicFidelGame() {
                 setTraceResult(null)
                 playSfx('tap')
               }}
-              className={`flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-rose-400 to-pink-500 px-6 py-3 font-extrabold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
+              className={`flex items-center justify-center gap-2 rounded-2xl fq-token-accent px-6 py-3 font-extrabold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95 ${FOCUS_RING}`}
             >
               <Pencil className="h-5 w-5" /> {t('allLetters')}
             </button>
@@ -1836,7 +1836,7 @@ export default function AmharicFidelGame() {
                 type="button"
                 onClick={() => playLetter(currentForm)}
                 aria-label={t('traceHear')}
-                className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md transition-all hover:shadow-lg active:scale-90 ${FOCUS_RING}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full fq-token-accent text-white shadow-md transition-all hover:shadow-lg active:scale-90 ${FOCUS_RING}`}
               >
                 <Volume2 className="h-5 w-5" />
               </button>
@@ -1885,7 +1885,7 @@ export default function AmharicFidelGame() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-amber-100 via-yellow-50 to-emerald-100 px-4 py-8 sm:py-12 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950">
+    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:py-12" style={{ background: 'var(--paper)' }}>
       <style>{GAME_KEYFRAMES}</style>
       {confettiKey > 0 && <ConfettiBurst key={confettiKey} />}
 

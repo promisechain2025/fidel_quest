@@ -243,3 +243,9 @@ input, textarea, [contenteditable='true'] {
   .fq-land-card { height: 2.75rem !important; }
   .fq-land-pad { width: min(100%, 58vh) !important; }
 }
+
+/* Classic mode chrome, re-skinned onto the app tokens: the page ground and
+   generic buttons follow the one design system, while the per-level accent
+   gradients stay as playful CONTENT color-coding inside cards. */
+.fq-token-accent { background: var(--accent); }
+.fq-token-go { background: var(--go); }
