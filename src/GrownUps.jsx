@@ -27,6 +27,7 @@ import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
+import { loadStoriesRead } from './platform/stories'
 import { loadProfiles, addProfile, switchProfile, deleteProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
@@ -338,6 +339,41 @@ function ProfilesCard() {
   )
 }
 
+/* The reading signal: stories finished, comprehension accuracy, and how
+   often the child asked for word help - the surface where the whole
+   curriculum pays off finally reports to the parent. */
+function ReadingCard({ events }) {
+  const read = Object.values(loadStoriesRead().read).reduce((a, b) => a + b, 0)
+  const compRight = events.filter((e) => e.m === 'story' && e.k.startsWith('storyq:') && e.p === e.k).length
+  const compMiss = events.filter((e) => e.m === 'story' && e.k.startsWith('storyq:') && e.p !== e.k).length
+  const helpTaps = events.filter((e) => e.m === 'story' && e.k.startsWith('sword:')).length
+  if (read === 0 && helpTaps === 0) return null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpReadingTitle', 'Reading')}
+      </h2>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{read}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingReads', 'Stories read')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{compRight + compMiss > 0 ? `${Math.round((compRight / (compRight + compMiss)) * 100)}%` : '—'}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingComp', 'Understood')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>{helpTaps}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingHelp', 'Word helps')}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpReadingHint', 'Fewer word helps on a re-read means growing fluency. Re-reading favorites is exactly right at this age.')}
+      </p>
+    </section>
+  )
+}
+
 /* Native only: appears when the daily on-device backup file exists, so a
    family recovering from storage eviction or a reinstall has one tap back. */
 function BackupCard() {
@@ -522,6 +558,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           <PlanCard />
 
           <CommunityCard />
+
+          <ReadingCard events={events} />
 
           <BackupCard />
 

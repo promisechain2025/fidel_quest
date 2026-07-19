@@ -27,6 +27,7 @@ export const NodeKind = Object.freeze({
   QUIZ: 'quiz', // BOSS node -> the audio matching Lesson (a level)
   ARCADE: 'arcade', // GATEWAY  -> a 3D Runner leg / Skylands island
   STORY: 'story', // read a decodable story - real reading ON the spine
+  REVIEW: 'review', // service the spaced-repetition backlog ON the spine
 })
 
 // One earned 3D gateway per chapter (P1 decision: no free-play menu; a child
@@ -54,6 +55,14 @@ export const REWARD_TABLE = [
   { id: 'hat-crown', slot: 'hat', name: 'Gold Crown' },
   { id: 'scarf-blue', slot: 'scarf', name: 'Sky Scarf' },
   { id: 'cape-royal', slot: 'cape', name: 'Royal Cape' },
+  // Second lap of the table (the 9 originals saturated against ~80 nodes,
+  // leaving chapters 3-4 a reward drought of silent duplicates).
+  { id: 'scarf-green', slot: 'scarf', name: 'Meadow Scarf' },
+  { id: 'cape-sunset', slot: 'cape', name: 'Sunset Cape' },
+  { id: 'scarf-plum', slot: 'scarf', name: 'Plum Scarf' },
+  { id: 'cape-sky', slot: 'cape', name: 'Sky Cape' },
+  { id: 'scarf-rose', slot: 'scarf', name: 'Rose Scarf' },
+  { id: 'cape-night', slot: 'cape', name: 'Night Cape' },
 ]
 export const REWARD_BY_ID = new Map(REWARD_TABLE.map((r) => [r.id, r]))
 export const WEARABLE_SLOTS = Object.freeze(['hat', 'scarf', 'cape'])
@@ -100,6 +109,10 @@ export function buildJourney() {
     // on an empty library).
     if (PACK_HAS_STORIES) push({ id: `story:${chapter}`, kind: NodeKind.STORY, chapter })
     push({ id: `arcade:${chapter}`, kind: NodeKind.ARCADE, chapter, gateway: ARCADE_GATEWAYS[c] })
+    // The chapter closes with a review leg: the memory schedule's due
+    // forms get a guaranteed traffic lane on the path itself, not just
+    // the optional daily warm-up (the SRS was scheduled but starved).
+    push({ id: `review:${chapter}`, kind: NodeKind.REVIEW, chapter })
   }
   for (let c = 0; c < 4; c++) {
     push({ id: `vowel:${c + 1}`, kind: NodeKind.QUIZ, chapter: 5, levelId: `level-${c + 5}`, vowel: true })

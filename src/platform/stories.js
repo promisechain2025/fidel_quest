@@ -137,7 +137,7 @@ export const STORIES = [
     ],
     /* Comprehension check (DRAFT, en-first; native review adds the Amharic
        question). One tap, picture answers, gentle retry - see StoryTime. */
-    q: { en: 'Who got the lime?', a: [{ pic: '🐱', ok: true }, { pic: '🐄', ok: false }] },
+    q: { en: 'Who got the lime?', a: [{ pic: '🐱', ok: true }, { pic: '🐄', ok: false }, { pic: '🐶', ok: false }] },
   },
   {
     id: 'lemlem',
@@ -185,7 +185,7 @@ export const STORIES = [
       { g: 'ላም ቆሎ በላች።', lt: 'lam qolo belach.', en: 'The cow ate qolo.', pic: '🌰' },
       { g: 'አንበሳ እና ላም ተኙ።', lt: 'anbesa ina lam tegnu.', en: 'The lion and the cow slept.', pic: '😴' },
     ],
-    q: { en: 'What did the lion eat?', a: [{ pic: '🍋', ok: true }, { pic: '💧', ok: false }] },
+    q: { en: 'What did the lion eat?', a: [{ pic: '🍋', ok: true }, { pic: '💧', ok: false }, { pic: '🥛', ok: false }] },
   },
   {
     id: 'inat-abat',

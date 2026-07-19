@@ -1250,6 +1250,15 @@ export default function FidelQuestApp() {
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
+    if (node.kind === NodeKind.REVIEW) {
+      const seed = (Date.now() % 1000000) | 1
+      setRunSeed(seed)
+      return setScreen({
+        name: 'review-node',
+        nodeId: node.id,
+        queue: buildWarmup(seed, learnedFamilyIds(journeyRef.current), loadLedger(), 8, dueKeys()),
+      })
+    }
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
 
@@ -1445,6 +1454,25 @@ export default function FidelQuestApp() {
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
               <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
+            </Screen>
+          )}
+          {screen.name === 'review-node' && (
+            <Screen key={`review-node-${runSeed}`}>
+              <Lesson
+                level={{ id: 'review', n: '↻', title: t('reviewNodeTitle', 'Letter check-in') }}
+                seed={runSeed}
+                soundOn={soundOn}
+                noDemo
+                practiceQueue={screen.queue}
+                onFinish={(id, result) => {
+                  // Finishing the check-in completes the node (it is
+                  // practice, not a gate); quitting mid-way does not.
+                  if (result) markNodeDone(screen.nodeId, result.stars ?? 2)
+                  goBack()
+                }}
+                onQuit={goBack}
+                onReplay={() => {}}
+              />
             </Screen>
           )}
           {screen.name === 'placement' && (
@@ -1749,8 +1777,8 @@ export function Sprite2D({ draw, mood = 'happy', size = 96, className = '', pose
 /* Anbessa's wardrobe (Pillar 3). Wearables are drawn in code as extra
    layers composited over the base sprite - no image assets, consistent with
    the rest of the character art. Order: cape (behind), scarf, hat (on top). */
-const CAPE_COLORS = { 'cape-green': '#2fae66', 'cape-star': '#6b46c1', 'cape-royal': '#b23a48' }
-const SCARF_COLORS = { 'scarf-red': '#e5484d', 'scarf-gold': '#f5b301', 'scarf-blue': '#4aa3e0' }
+const CAPE_COLORS = { 'cape-green': '#2fae66', 'cape-star': '#6b46c1', 'cape-royal': '#b23a48', 'cape-sunset': '#e07b39', 'cape-sky': '#199ede', 'cape-night': '#2b3d66' }
+const SCARF_COLORS = { 'scarf-red': '#e5484d', 'scarf-gold': '#f5b301', 'scarf-blue': '#4aa3e0', 'scarf-green': '#49a902', 'scarf-plum': '#8b5cf6', 'scarf-rose': '#e0709b' }
 export function drawWearables(g, s, worn) {
   const cx = s / 2
   const cape = worn.find((w) => w.slot === 'cape')
@@ -1860,6 +1888,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isBoss = node.kind === NodeKind.QUIZ
   const isArcade = node.kind === NodeKind.ARCADE
   const isStory = node.kind === NodeKind.STORY
+  const isReview = node.kind === NodeKind.REVIEW
   const big = isBoss || isArcade
   const size = big ? 76 : 60
   const label =
@@ -1869,7 +1898,9 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
         ? 'Mix challenge'
         : isStory
           ? 'Story time'
-          : isBoss
+          : isReview
+            ? 'Letter check-in'
+            : isBoss
             ? `Quiz level ${node.levelId?.split('-')[1]}`
             : node.gateway.mode === 'runner'
               ? 'Letter Runner'
@@ -1923,6 +1954,8 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
           ) : isStory ? (
             <BookOpen className="h-7 w-7" aria-hidden="true" />
+          ) : isReview ? (
+            <RotateCcw className="h-6 w-6" aria-hidden="true" />
           ) : (
             nodeGlyph(node)
           )}
@@ -2593,20 +2626,24 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
             <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
-            {/* Two separate grown-up doors: PARENTS (the child's progress,
-               behind the hold-and-tap gate) and TEACHER (class tools, locked
-               by the teacher's own class code once a class exists). */}
-            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--accent)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
-            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
+          </div>
+          {/* Adult utilities live in their own visually quieter row so a
+             child's play grid is not interleaved with settings doors. */}
+          <p className="mt-3 px-1 text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+            {t('grownupRow', 'For grown-ups')}
+          </p>
+          <div className="mt-1.5 grid grid-cols-3 gap-2.5 opacity-90">
+            <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--muted)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
+            <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--muted)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
                store path for gifting a paid app. Hidden on Android/Play. */}
             {isApplePlatform() && (
-              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--accent)" title={t('giftShort', 'Gift')} onClick={onGift} />
+              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--muted)" title={t('giftShort', 'Gift')} onClick={onGift} />
             )}
             {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
                category store build has no un-gated external link. */}
             {!isNativePlatform() && (
-              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--sky)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
+              <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--muted)" title={t('reviewShort', 'Review')} onClick={() => window.open('/review', '_blank', 'noopener,noreferrer')} />
             )}
           </div>
         </div>
@@ -3502,6 +3539,8 @@ function NextUpTeaser({ levelId }) {
       t('nextUpBoss', 'a boss quiz!')
     ) : target.kind === NodeKind.STORY ? (
       t('nextUpStory', 'a story to read!')
+    ) : target.kind === NodeKind.REVIEW ? (
+      t('nextUpReview', 'a letter check-in!')
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (
