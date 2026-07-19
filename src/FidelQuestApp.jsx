@@ -26,6 +26,9 @@ import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
+// Boss quizzes service the spaced-repetition backlog (see the provider note
+// at the question factory). Wired here, after both sides exist.
+queueMicrotask(() => setDuePriorityProvider(() => dueKeys()))
 import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
 import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
@@ -285,6 +288,16 @@ export function transition(ctx, event) {
 // sound identical (see the orders branch below).
 const PACK_AUDIO_OVERRIDE = PACKS[getActivePackId()].audioOverride || null
 
+/* Due-review servicing: the SRS backlog cannot live on one 5-question
+   warm-up a day, so boss quizzes prioritize DUE forms among their targets.
+   Injected as a provider (pure no-op default) so the question factory stays
+   a deterministic function of (level, seed) under test; the shell wires it
+   to srs.dueKeys() at startup. */
+let DUE_PROVIDER = () => []
+export function setDuePriorityProvider(fn) {
+  DUE_PROVIDER = typeof fn === 'function' ? fn : () => []
+}
+
 export function buildQuestionQueue(level, seed) {
   let rngState = seed
   // One order-discrimination question: distractors are OTHER ORDERS of the
@@ -334,6 +347,9 @@ export function buildQuestionQueue(level, seed) {
   const orderMix = Math.min(level.orderMix || 0, level.questionCount)
   let targets
   ;[targets, rngState] = rngShuffle(level.pool, rngState)
+  // Due forms first (stable within the seeded shuffle), then the rest.
+  const due = new Set(DUE_PROVIDER())
+  if (due.size) targets = [...targets.filter((k) => due.has(k)), ...targets.filter((k) => !due.has(k))]
   targets = targets.slice(0, level.questionCount - orderMix)
 
   const queue = targets.map((target) => {
@@ -346,11 +362,20 @@ export function buildQuestionQueue(level, seed) {
       level.pool.filter((k) => k !== target && INDEXES.byAudioKey.get(k).sound !== targetSound),
       rngState,
     )
+    // Distractors must also be pairwise-distinct by sound: two same-sound
+    // twins (ሰ and ሠ, both "sa") in one option row is answerable but
+    // violates the one-sound-one-option rule every other builder keeps.
+    const seenSounds = new Set([targetSound])
+    const picked = []
+    for (const k of distractors) {
+      if (picked.length >= level.optionCount - 1) break
+      const s2 = INDEXES.byAudioKey.get(k).sound
+      if (seenSounds.has(s2)) continue
+      seenSounds.add(s2)
+      picked.push(k)
+    }
     let options
-    ;[options, rngState] = rngShuffle(
-      [target, ...distractors.slice(0, level.optionCount - 1)],
-      rngState,
-    )
+    ;[options, rngState] = rngShuffle([target, ...picked], rngState)
     return { target, options }
   })
   if (orderMix > 0) {
@@ -1223,6 +1248,7 @@ export default function FidelQuestApp() {
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
+    if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
 
@@ -1238,6 +1264,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 onToggleSound={toggleSound}
                 onOpen={openNode}
+                onPlacement={startPlacement}
                 onBackpack={() => setBackpackOpen(true)}
                 onCloset={openCloset}
                 giftReady={giftAvailable(gift, today)}
@@ -1407,7 +1434,11 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'stories' && (
             <Screen key="stories">
-              <StoryTime soundOn={soundOn} onBack={goBack} />
+              <StoryTime
+                soundOn={soundOn}
+                onBack={goBack}
+                onStoryComplete={screen.nodeId ? () => markNodeDone(screen.nodeId, 3) : null}
+              />
             </Screen>
           )}
           {screen.name === 'twins' && (
@@ -1827,6 +1858,7 @@ const nodeGlyph = (node) => {
 function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isBoss = node.kind === NodeKind.QUIZ
   const isArcade = node.kind === NodeKind.ARCADE
+  const isStory = node.kind === NodeKind.STORY
   const big = isBoss || isArcade
   const size = big ? 76 : 60
   const label =
@@ -1834,16 +1866,18 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
       ? `Learn ${node.familyId}`
       : node.kind === NodeKind.MIX
         ? 'Mix challenge'
-        : isBoss
-          ? `Quiz level ${node.levelId?.split('-')[1]}`
-          : node.gateway.mode === 'runner'
-            ? 'Letter Runner'
-            : 'Fidel Skylands'
+        : isStory
+          ? 'Story time'
+          : isBoss
+            ? `Quiz level ${node.levelId?.split('-')[1]}`
+            : node.gateway.mode === 'runner'
+              ? 'Letter Runner'
+              : 'Fidel Skylands'
   // Locked nodes keep the original muted tile colour, but now show WHAT they
   // are (the letter, or the game icon) with a small lock badge instead of only
   // a lock, so kids can preview what is coming.
-  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : 'var(--card)') : 'var(--line)'
-  const fg = done ? '#7c5200' : unlocked ? (big ? '#fff' : 'var(--ink)') : 'var(--muted)'
+  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
+  const fg = done ? '#7c5200' : unlocked ? (big || isStory ? '#fff' : 'var(--ink)') : 'var(--muted)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
@@ -1886,6 +1920,8 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <TreePine className="h-7 w-7" aria-hidden="true" />
           ) : isBoss ? (
             <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+          ) : isStory ? (
+            <BookOpen className="h-7 w-7" aria-hidden="true" />
           ) : (
             nodeGlyph(node)
           )}
@@ -2049,10 +2085,17 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
+  // First-run skip-ahead offer: the heritage child who half-knows the fidel
+  // must meet placement BEFORE grinding from ha - not buried in Grown-Ups.
+  const [placeOfferOpen, setPlaceOfferOpen] = useState(() => doneCount === 0 && !hasOnboarded('placeoffer'))
+  const dismissPlaceOffer = () => {
+    markOnboarded('placeoffer')
+    setPlaceOfferOpen(false)
+  }
   const [langOpen, setLangOpen] = useState(false)
   const [streakOpen, setStreakOpen] = useState(false)
   const worn = wornLayers(journey.collection)
@@ -2244,6 +2287,21 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
         </div>
       </div>
 
+      {placeOfferOpen && onPlacement && (
+        <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
+          <Sprite2D draw={drawKokeb} size={36} />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black">{t('placeOfferTitle', 'Already knows some letters?')}</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('placeOfferBody', 'A quick listening check skips what you already know.')}</p>
+          </div>
+          <button type="button" onClick={() => { dismissPlaceOffer(); onPlacement() }} className={`chunk shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+            {t('placeOfferCta', 'Skip ahead')}
+          </button>
+          <button type="button" onClick={dismissPlaceOffer} aria-label={t('placeOfferSkip', 'Not now')} className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)' }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-3 px-2">
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
@@ -3438,6 +3496,8 @@ function NextUpTeaser({ levelId }) {
       t('nextUpMix', 'a mix challenge!')
     ) : target.kind === NodeKind.QUIZ ? (
       t('nextUpBoss', 'a boss quiz!')
+    ) : target.kind === NodeKind.STORY ? (
+      t('nextUpStory', 'a story to read!')
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (

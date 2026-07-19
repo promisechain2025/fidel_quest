@@ -16,6 +16,7 @@ import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
 import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
 import { loadJourney, learnedFamilyIds } from '../journey'
+import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
 import WordPicture from './Pictures'
@@ -46,7 +47,7 @@ function speakWord(geez, soundOn) {
   }
 }
 
-export default function StoryTime({ soundOn, onBack }) {
+export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [library] = useState(() => storyLibrary(learnedFamilyIds(loadJourney()), undefined, getActivePackId()))
   const [readCounts, setReadCounts] = useState(() => loadStoriesRead().read)
   const [story, setStory] = useState(null)
@@ -80,6 +81,10 @@ export default function StoryTime({ soundOn, onBack }) {
   const tapWord = (w, i) => {
     stopSpeech()
     setSpokenWord(i)
+    // Reading telemetry: a tapped word is a help request - the one signal
+    // the reading surface produces. Prefixed key so letter-practice
+    // consumers (which filter on real audio keys) never see it.
+    recordAnswer(`sword:${w}`, `sword:${w}:help`, 'story')
     cancelRef.current = speakWord(w, soundOn)
   }
 
@@ -117,6 +122,11 @@ export default function StoryTime({ soundOn, onBack }) {
     }
     const count = markStoryRead(story.id)
     setReadCounts((r) => ({ ...r, [story.id]: count }))
+    // A completed read is a correct 'story' event - together with the
+    // sword: help taps this gives Grown-Ups a real reading signal.
+    recordAnswer(`story:${story.id}`, `story:${story.id}`, 'story')
+    // Opened from a Journey story node: finishing ANY story completes it.
+    onStoryComplete?.()
     setFinished(true)
     playEffect('win', soundOn)
   }

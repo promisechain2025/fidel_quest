@@ -32,7 +32,8 @@ describe('SM-2-lite entry transitions (pure)', () => {
     let e
     for (let i = 0; i < 30; i++) e = reviewEntry(e, false, 1000 + i)
     expect(e[1]).toBe(EASE_MIN)
-    for (let i = 0; i < 60; i++) e = reviewEntry(e, true, 2000 + i)
+    // Reviews at the due day (the spacing guard ignores crammed successes).
+    for (let i = 0; i < 60; i++) e = reviewEntry(e, true, e[3])
     expect(e[1]).toBe(EASE_MAX)
   })
 
@@ -40,6 +41,21 @@ describe('SM-2-lite entry transitions (pure)', () => {
     let e = [5, EASE_MIN, 4, 0, 0] // low ease could round to the same ivl
     e = reviewEntry(e, true, 3000)
     expect(e[2]).toBeGreaterThan(4)
+  })
+
+  it('spacing guard: crammed same-session successes cannot inflate the schedule', () => {
+    const D = 1000
+    let e = reviewEntry(undefined, true, D) // new form: due D+1
+    const before = [...e]
+    // Four more correct touches in the same session - a normal lesson.
+    for (let i = 0; i < 4; i++) e = reviewEntry(e, true, D)
+    expect(e).toEqual(before) // unchanged: no time has passed
+    // A miss before due ALWAYS counts (forgetting is evidence).
+    e = reviewEntry(e, false, D)
+    expect(e[0]).toBe(0)
+    // Once due, a correct advances normally.
+    e = reviewEntry(e, true, e[3])
+    expect(e[0]).toBe(1)
   })
 })
 

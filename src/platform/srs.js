@@ -45,8 +45,14 @@ function saveSrs(table) {
   }
 }
 
-/** Pure SM-2-lite transition for one form. Returns the new entry array. */
+/** Pure SM-2-lite transition for one form. Returns the new entry array.
+    Spacing guard (the Anki rule): a CORRECT answer before the entry is due
+    changes nothing - a six-phase lesson touches a form five times in ten
+    minutes, and without this guard those crammed successes ratchet the
+    interval to weeks with zero time-spacing evidence. Misses always count:
+    forgetting is evidence whenever it happens. */
 export function reviewEntry(entry, correct, today) {
+  if (correct && entry && Array.isArray(entry) && entry.length >= 5 && today < entry[3]) return entry
   let [reps, ease, ivl] = entry || [0, EASE_START, 0]
   if (correct) {
     reps += 1
