@@ -67,8 +67,11 @@ export function storyMissingFamilies(story, learnedIds) {
 
 /** Library view: every story tagged { unlocked, stage, missing } and sorted
     unlocked-first by stage, so the next locked story is the next goal. */
-export function storyLibrary(learnedIds, stories = STORIES) {
-  return stories
+export function storyLibrary(learnedIds, stories = STORIES, packId = null) {
+  // Stories are written in a LANGUAGE, not just a script: a Tigrinya
+  // learner must not be handed Amharic sentences as "reading practice".
+  const inPack = packId ? stories.filter((s) => s.pack === packId) : stories
+  return inPack
     .map((s) => {
       const unlocked = storyDecodable(s, learnedIds)
       return { ...s, unlocked, stage: storyStage(s), missing: unlocked ? [] : storyMissingFamilies(s, learnedIds) }

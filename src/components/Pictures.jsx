@@ -293,6 +293,259 @@ const DRAWERS = {
     circle(g, -s * 0.28, 0, s * 0.09, P.ink) // head
     g.restore()
   },
+  /* tree (acacia-flavored) */
+  '🌳': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#a9713f'
+    g.beginPath()
+    g.moveTo(cx - s * 0.05, s * 0.78)
+    g.lineTo(cx - s * 0.02, s * 0.42)
+    g.lineTo(cx + s * 0.02, s * 0.42)
+    g.lineTo(cx + s * 0.05, s * 0.78)
+    g.closePath()
+    g.fill()
+    g.strokeStyle = '#a9713f'
+    g.lineWidth = s * 0.03
+    g.beginPath()
+    g.moveTo(cx, s * 0.55)
+    g.lineTo(cx + s * 0.16, s * 0.42)
+    g.stroke()
+    g.fillStyle = '#6faf58'
+    g.beginPath()
+    g.ellipse(cx, s * 0.34, s * 0.34, s * 0.14, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#84c168'
+    g.beginPath()
+    g.ellipse(cx - s * 0.08, s * 0.28, s * 0.2, s * 0.09, 0, 0, 7)
+    g.fill()
+  },
+  /* mango */
+  '🥭': (g, s) => {
+    const cx = s / 2
+    g.save()
+    g.translate(cx, s / 2)
+    g.rotate(0.4)
+    const grad = g.createLinearGradient(-s * 0.2, -s * 0.2, s * 0.2, s * 0.2)
+    grad.addColorStop(0, '#f5a623')
+    grad.addColorStop(1, '#e26a4a')
+    g.fillStyle = grad
+    g.beginPath()
+    g.ellipse(0, 0, s * 0.26, s * 0.33, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#7fae3f'
+    g.beginPath()
+    g.ellipse(-s * 0.06, -s * 0.34, s * 0.09, s * 0.045, 0.7, 0, 7)
+    g.fill()
+    g.restore()
+  },
+  /* bird */
+  '🐦': (g, s) => {
+    const cx = s / 2
+    circle(g, cx + s * 0.02, s * 0.5, s * 0.22, '#4db3ef') // body
+    circle(g, cx + s * 0.2, s * 0.34, s * 0.13, '#4db3ef') // head
+    g.fillStyle = '#2f89bd' // wing
+    g.beginPath()
+    g.ellipse(cx - s * 0.06, s * 0.5, s * 0.14, s * 0.09, -0.5, 0, 7)
+    g.fill()
+    g.fillStyle = '#f5a623' // beak
+    g.beginPath()
+    g.moveTo(cx + s * 0.31, s * 0.32)
+    g.lineTo(cx + s * 0.42, s * 0.36)
+    g.lineTo(cx + s * 0.3, s * 0.4)
+    g.closePath()
+    g.fill()
+    circle(g, cx + s * 0.22, s * 0.31, s * 0.025, P.ink)
+    g.strokeStyle = '#f5a623'
+    g.lineWidth = s * 0.03
+    g.lineCap = 'round'
+    for (const dx of [-0.03, 0.05]) {
+      g.beginPath()
+      g.moveTo(cx + dx * s, s * 0.71)
+      g.lineTo(cx + dx * s, s * 0.8)
+      g.stroke()
+    }
+  },
+  /* fish */
+  '🐟': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#4db3ef'
+    g.beginPath()
+    g.ellipse(cx - s * 0.04, s / 2, s * 0.27, s * 0.17, 0, 0, 7)
+    g.fill()
+    g.beginPath() // tail
+    g.moveTo(cx + s * 0.2, s / 2)
+    g.lineTo(cx + s * 0.38, s * 0.36)
+    g.lineTo(cx + s * 0.38, s * 0.64)
+    g.closePath()
+    g.fill()
+    g.fillStyle = '#2f89bd'
+    g.beginPath()
+    g.ellipse(cx - s * 0.04, s * 0.44, s * 0.12, s * 0.05, 0.2, 0, 7)
+    g.fill()
+    circle(g, cx - s * 0.2, s * 0.47, s * 0.028, P.ink)
+    g.strokeStyle = 'rgba(255,255,255,0.6)'
+    g.lineWidth = s * 0.02
+    g.beginPath()
+    g.arc(cx - s * 0.02, s * 0.52, s * 0.1, 0.2, 1.2)
+    g.stroke()
+  },
+  /* horse */
+  '🐎': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#a9713f'
+    g.beginPath() // neck + head silhouette
+    g.moveTo(cx - s * 0.18, s * 0.75)
+    g.lineTo(cx - s * 0.05, s * 0.3)
+    g.quadraticCurveTo(cx, s * 0.2, cx + s * 0.12, s * 0.22)
+    g.lineTo(cx + s * 0.3, s * 0.34)
+    g.lineTo(cx + s * 0.26, s * 0.42)
+    g.lineTo(cx + s * 0.1, s * 0.38)
+    g.quadraticCurveTo(cx + s * 0.05, s * 0.6, cx + s * 0.08, s * 0.75)
+    g.closePath()
+    g.fill()
+    g.fillStyle = '#6b4423' // mane
+    g.beginPath()
+    g.moveTo(cx - s * 0.08, s * 0.28)
+    g.quadraticCurveTo(cx - s * 0.16, s * 0.45, cx - s * 0.12, s * 0.7)
+    g.lineTo(cx - s * 0.02, s * 0.68)
+    g.quadraticCurveTo(cx - s * 0.04, s * 0.45, cx + s * 0.0, s * 0.26)
+    g.closePath()
+    g.fill()
+    // ear + eye
+    g.fillStyle = '#a9713f'
+    g.beginPath()
+    g.moveTo(cx + s * 0.02, s * 0.22)
+    g.lineTo(cx + s * 0.06, s * 0.12)
+    g.lineTo(cx + s * 0.1, s * 0.22)
+    g.closePath()
+    g.fill()
+    circle(g, cx + s * 0.12, s * 0.28, s * 0.025, P.ink)
+  },
+  /* camel */
+  '🐫': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#d9a95c'
+    // body with two humps
+    g.beginPath()
+    g.moveTo(cx - s * 0.3, s * 0.62)
+    g.quadraticCurveTo(cx - s * 0.22, s * 0.36, cx - s * 0.1, s * 0.52)
+    g.quadraticCurveTo(cx - s * 0.0, s * 0.34, cx + s * 0.12, s * 0.52)
+    g.lineTo(cx + s * 0.28, s * 0.52)
+    g.lineTo(cx + s * 0.28, s * 0.62)
+    g.closePath()
+    g.fill()
+    // neck + head
+    g.beginPath()
+    g.moveTo(cx + s * 0.2, s * 0.56)
+    g.lineTo(cx + s * 0.26, s * 0.3)
+    g.quadraticCurveTo(cx + s * 0.28, s * 0.24, cx + s * 0.36, s * 0.26)
+    g.lineTo(cx + s * 0.4, s * 0.32)
+    g.lineTo(cx + s * 0.3, s * 0.36)
+    g.lineTo(cx + s * 0.3, s * 0.56)
+    g.closePath()
+    g.fill()
+    // legs
+    g.strokeStyle = '#d9a95c'
+    g.lineWidth = s * 0.045
+    for (const dx of [-0.24, -0.12, 0.1, 0.22]) {
+      g.beginPath()
+      g.moveTo(cx + dx * s, s * 0.6)
+      g.lineTo(cx + dx * s, s * 0.8)
+      g.stroke()
+    }
+    circle(g, cx + s * 0.33, s * 0.28, s * 0.02, P.ink)
+  },
+  /* mountain */
+  '⛰️': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#8a9a6b'
+    g.beginPath()
+    g.moveTo(cx - s * 0.42, s * 0.74)
+    g.lineTo(cx - s * 0.1, s * 0.22)
+    g.lineTo(cx + s * 0.16, s * 0.74)
+    g.closePath()
+    g.fill()
+    g.fillStyle = '#a9b789'
+    g.beginPath()
+    g.moveTo(cx - s * 0.02, s * 0.74)
+    g.lineTo(cx + s * 0.24, s * 0.36)
+    g.lineTo(cx + s * 0.44, s * 0.74)
+    g.closePath()
+    g.fill()
+    g.fillStyle = P.cream // snow cap
+    g.beginPath()
+    g.moveTo(cx - s * 0.17, s * 0.34)
+    g.lineTo(cx - s * 0.1, s * 0.22)
+    g.lineTo(cx - s * 0.03, s * 0.34)
+    g.lineTo(cx - s * 0.07, s * 0.38)
+    g.lineTo(cx - s * 0.12, s * 0.34)
+    g.closePath()
+    g.fill()
+  },
+  /* coffee - drawn as a jebena, because this is an Ethiopian app */
+  '☕': (g, s) => {
+    const cx = s / 2
+    g.fillStyle = '#3d2b1f'
+    g.beginPath() // round body
+    g.arc(cx, s * 0.56, s * 0.22, 0, 7)
+    g.fill()
+    g.beginPath() // neck
+    g.moveTo(cx - s * 0.07, s * 0.38)
+    g.lineTo(cx - s * 0.04, s * 0.22)
+    g.lineTo(cx + s * 0.04, s * 0.22)
+    g.lineTo(cx + s * 0.07, s * 0.38)
+    g.closePath()
+    g.fill()
+    circle(g, cx, s * 0.2, s * 0.05, '#3d2b1f') // lid knob
+    g.strokeStyle = '#3d2b1f' // spout
+    g.lineWidth = s * 0.045
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(cx + s * 0.18, s * 0.48)
+    g.quadraticCurveTo(cx + s * 0.34, s * 0.42, cx + s * 0.36, s * 0.3)
+    g.stroke()
+    g.beginPath() // handle
+    g.arc(cx - s * 0.24, s * 0.46, s * 0.09, Math.PI * 0.6, Math.PI * 1.7)
+    g.stroke()
+    g.strokeStyle = '#bdbdbd' // steam
+    g.lineWidth = s * 0.02
+    g.beginPath()
+    g.moveTo(cx + s * 0.36, s * 0.24)
+    g.quadraticCurveTo(cx + s * 0.4, s * 0.16, cx + s * 0.36, s * 0.08)
+    g.stroke()
+  },
+  /* red ball */
+  '🔴': (g, s) => {
+    circle(g, s / 2, s / 2, s * 0.32, '#e05a4e')
+    g.fillStyle = 'rgba(255,255,255,0.45)'
+    g.beginPath()
+    g.ellipse(s * 0.4, s * 0.4, s * 0.09, s * 0.05, -0.6, 0, 7)
+    g.fill()
+  },
+  /* baby */
+  '👶': (g, s) => {
+    const cx = s / 2
+    circle(g, cx, s * 0.5, s * 0.28, '#eab88f') // face
+    g.fillStyle = '#6b4423' // curl
+    g.beginPath()
+    g.arc(cx, s * 0.24, s * 0.06, Math.PI, Math.PI * 2.4)
+    g.stroke?.()
+    g.strokeStyle = '#6b4423'
+    g.lineWidth = s * 0.035
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(cx, s * 0.24)
+    g.quadraticCurveTo(cx + s * 0.06, s * 0.16, cx + s * 0.1, s * 0.2)
+    g.stroke()
+    for (const side of [-1, 1]) circle(g, cx + side * s * 0.1, s * 0.46, s * 0.032, P.ink)
+    g.strokeStyle = P.ink
+    g.lineWidth = s * 0.02
+    g.beginPath()
+    g.arc(cx, s * 0.58, s * 0.06, 0.15 * Math.PI, 0.85 * Math.PI)
+    g.stroke()
+    g.fillStyle = 'rgba(255,120,90,0.4)'
+    for (const side of [-1, 1]) circle(g, cx + side * s * 0.17, s * 0.55, s * 0.035, 'rgba(255,120,90,0.4)')
+  },
   /* star */
   '⭐': (g, s) => {
     const cx = s / 2
@@ -310,6 +563,11 @@ const DRAWERS = {
     g.stroke()
   },
 }
+
+/* Aliases: emoji that share a drawing (dog variants, cat variants, tea). */
+DRAWERS['🐕'] = DRAWERS['🐶']
+DRAWERS['🐈'] = DRAWERS['🐱']
+DRAWERS['🍵'] = DRAWERS['☕']
 
 /** Which emoji have an owned drawing (exported for tests). */
 export const DRAWN_PICTURES = Object.freeze(Object.keys(DRAWERS))

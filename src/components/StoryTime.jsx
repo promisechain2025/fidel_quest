@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
-import { INDEXES } from '../platform/ethiopic'
+import { INDEXES, getActivePackId } from '../platform/ethiopic'
 import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { t } from '../platform/i18n'
@@ -47,7 +47,7 @@ function speakWord(geez, soundOn) {
 }
 
 export default function StoryTime({ soundOn, onBack }) {
-  const [library] = useState(() => storyLibrary(learnedFamilyIds(loadJourney())))
+  const [library] = useState(() => storyLibrary(learnedFamilyIds(loadJourney()), undefined, getActivePackId()))
   const [readCounts, setReadCounts] = useState(() => loadStoriesRead().read)
   const [story, setStory] = useState(null)
   const [pageIdx, setPageIdx] = useState(0)
@@ -218,6 +218,14 @@ export default function StoryTime({ soundOn, onBack }) {
       <p className="mt-1 text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>
         {t('storySub', 'Little books you can already read - every letter is one you learned.')}
       </p>
+      {library.length === 0 && (
+        <div className="mt-8 flex flex-col items-center gap-3 text-center">
+          <Sprite2D draw={drawAnbessa} size={90} />
+          <p className="max-w-xs text-sm font-bold" style={{ color: 'var(--muted)' }}>
+            {t('storyNonePack', 'Story books in this language are on their way! Every letter you learn now will be ready to read them.')}
+          </p>
+        </div>
+      )}
       <ul className="mt-4 space-y-2.5">
         {library.map((s) => (
           <li key={s.id}>
