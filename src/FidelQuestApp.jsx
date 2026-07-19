@@ -3138,8 +3138,19 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   const presenting = ctx.status === GameState.PRESENTATION
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-44 pt-5">
-      <header className="flex items-center gap-3">
+    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col overflow-hidden px-5 pb-44 pt-5">
+      {/* Scene framing: a soft ground swell with Anbessa watching from the
+         corner, so the quiz floats in a place instead of empty paper. Purely
+         decorative - zero pointer events, behind everything. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ zIndex: 0 }} aria-hidden="true">
+        <div className="relative">
+          <div style={{ height: 110, background: 'var(--go-soft)', borderRadius: '55% 45% 0 0 / 100% 80% 0 0', opacity: 0.55, transform: 'scaleX(1.35)' }} />
+          <div className="absolute bottom-0 left-1" style={{ opacity: 0.95 }}>
+            <Sprite2D draw={drawAnbessa} size={54} mood={ctx.status === GameState.ERROR_RECOVERY ? 'worried' : 'happy'} />
+          </div>
+        </div>
+      </div>
+      <header className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
         <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
@@ -3170,7 +3181,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         </AnimatePresence>
       </header>
 
-      <main className="flex flex-1 flex-col justify-center gap-6 py-6">
+      <main className="relative flex flex-1 flex-col justify-center gap-6 py-6" style={{ zIndex: 1 }}>
         <div className="text-center">
           <p className="flex items-center justify-center gap-2 text-lg font-extrabold">
             {/* Kokeb ASKS the question - the caller finally has a face. */}
@@ -3383,6 +3394,57 @@ function FixItCap({ onHome }) {
   )
 }
 
+/* The come-back-tomorrow bridge: name the NEXT thing on the path so the
+   session ends with a concrete tomorrow, not a dead stop. Gentle version of
+   the hook every leading app relies on - a preview, never a guilt trip. */
+function NextUpTeaser({ levelId }) {
+  const j = loadJourney()
+  const cur = nextNode(j)
+  if (!cur) return null
+  // A just-finished boss is still "next" until Continue marks it done; the
+  // real teaser is the node after it. Anything else (warm-up, practice,
+  // replay) teases the actual next step.
+  const target = cur.levelId === levelId ? NODE_BY_ID.get(JOURNEY[cur.index + 1]?.id) : cur
+  if (!target) return null
+  const streak = loadStreak()
+  const what =
+    target.kind === NodeKind.LEARN ? (
+      <>
+        {t('nextUpLetter', 'a new letter:')} <span className="geez text-2xl">{formOf(`${target.familyId}-1`)?.char}</span>
+      </>
+    ) : target.kind === NodeKind.MIX ? (
+      t('nextUpMix', 'a mix challenge!')
+    ) : target.kind === NodeKind.QUIZ ? (
+      t('nextUpBoss', 'a boss quiz!')
+    ) : target.gateway?.mode === 'runner' ? (
+      t('nextUpRunner', 'the Letter Runner!')
+    ) : (
+      t('nextUpSky', 'Fidel Skylands!')
+    )
+  return (
+    <motion.div
+      className="mt-5 flex w-full max-w-sm items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left"
+      style={{ background: 'var(--card)', borderColor: 'var(--line)' }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 1.0 }}
+    >
+      <Sprite2D draw={drawKokeb} size={40} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-black">
+          {t('nextUp', 'Next on the path:')} {what}
+        </p>
+        {streak.count >= 2 && (
+          <p className="mt-0.5 flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
+            <Flame className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true" />
+            {t('nextUpStreak', `Come back tomorrow to keep the ${streak.count}-day flame!`, { n: streak.count })}
+          </p>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
   const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
@@ -3461,6 +3523,8 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           </p>
         </motion.div>
       )}
+
+      {!incoming && <NextUpTeaser levelId={level.id} />}
 
       <motion.div className="mt-8 flex w-full max-w-sm flex-col gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
         {incoming ? (
