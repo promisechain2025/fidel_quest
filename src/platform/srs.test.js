@@ -86,3 +86,14 @@ describe('schedule table + due selection', () => {
     expect(t.f['le-1'][3]).toBe(epochDay() + 1)
   })
 })
+
+describe('pseudo-key hygiene', () => {
+  it('colon-namespaced telemetry keys never enter the schedule', () => {
+    srsReview('sword:ሎሚ', false)
+    srsReview('story:lomi', true)
+    srsReview('word:lomi', false)
+    srsReview('ha-1', true)
+    expect(srsSize()).toBe(1)
+    expect(dueKeys(epochDay() + 2)).toEqual(['ha-1'])
+  })
+})

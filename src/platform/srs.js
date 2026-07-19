@@ -69,6 +69,9 @@ export function reviewEntry(entry, correct, today) {
 /** Record one answer into the schedule. Called from the telemetry seam. */
 export function srsReview(audioKey, correct, today = epochDay()) {
   if (!audioKey || typeof audioKey !== 'string') return
+  // Letter forms only: telemetry also records word:/story:/sword: pseudo-key
+  // events (all colon-namespaced), which must never occupy review slots.
+  if (audioKey.includes(':')) return
   const table = loadSrs()
   table.f[audioKey] = reviewEntry(table.f[audioKey], !!correct, today)
   saveSrs(table)
