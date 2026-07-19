@@ -145,6 +145,9 @@ export const LEVELS = Object.freeze([
   pool: FIDEL_FAMILIES.slice(l.from, l.to).map((f) => `${f.id}-1`),
   questionCount: 8,
   optionCount: 4,
+  // Base bosses carry two vowel-order questions so order discrimination is
+  // assessed from the first chapter (see buildQuestionQueue).
+  orderMix: l.kind === 'base' ? 2 : 0,
 })))
 
 /* ============================================================================
@@ -281,6 +284,30 @@ const PACK_AUDIO_OVERRIDE = PACKS[getActivePackId()].audioOverride || null
 
 export function buildQuestionQueue(level, seed) {
   let rngState = seed
+  // One order-discrimination question: distractors are OTHER ORDERS of the
+  // target's family, deduped on the EFFECTIVE clip (pack order-remaps can
+  // voice two orders identically). Shared by the 'orders' levels and the
+  // orderMix questions interleaved into the base bosses.
+  const makeOrderQuestion = (target) => {
+    const fid = target.slice(0, target.lastIndexOf('-'))
+    let siblings
+    ;[siblings, rngState] = rngShuffle(
+      ORDERS.map((o) => `${fid}-${o.index}`).filter((k) => k !== target),
+      rngState,
+    )
+    const clips = new Set([effectiveKey(`letters/${target}`, PACK_AUDIO_OVERRIDE)])
+    const picked = []
+    for (const k of siblings) {
+      if (picked.length >= level.optionCount - 1) break
+      const clip = effectiveKey(`letters/${k}`, PACK_AUDIO_OVERRIDE)
+      if (clips.has(clip)) continue
+      clips.add(clip)
+      picked.push(k)
+    }
+    let options
+    ;[options, rngState] = rngShuffle([target, ...picked], rngState)
+    return { target, options }
+  }
   if (level.kind === 'orders') {
     // Target any of the group's 7-order cells; distractors are OTHER ORDERS
     // OF THE SAME FAMILY, so the only difference the child hears and sees
@@ -294,33 +321,17 @@ export function buildQuestionQueue(level, seed) {
       level.families.flatMap((fid) => ORDERS.map((o) => `${fid}-${o.index}`)),
       rngState,
     )
-    const queue = cells.slice(0, level.questionCount).map((target) => {
-      const fid = target.slice(0, target.lastIndexOf('-'))
-      let siblings
-      ;[siblings, rngState] = rngShuffle(
-        ORDERS.map((o) => `${fid}-${o.index}`).filter((k) => k !== target),
-        rngState,
-      )
-      // Every option must be distinct by EAR: dedupe on the effective clip so
-      // neither the target nor any two distractors share one recording.
-      const clips = new Set([effectiveKey(`letters/${target}`, PACK_AUDIO_OVERRIDE)])
-      const picked = []
-      for (const k of siblings) {
-        if (picked.length >= level.optionCount - 1) break
-        const clip = effectiveKey(`letters/${k}`, PACK_AUDIO_OVERRIDE)
-        if (clips.has(clip)) continue
-        clips.add(clip)
-        picked.push(k)
-      }
-      let options
-      ;[options, rngState] = rngShuffle([target, ...picked], rngState)
-      return { target, options }
-    })
+    const queue = cells.slice(0, level.questionCount).map(makeOrderQuestion)
     return [queue, rngState]
   }
+  // Base bosses interleave a few order questions (level.orderMix) so vowel
+  // discrimination is assessed from chapter 1, not months later in the
+  // second lap - the abugida's hard part must never live in an assessment
+  // shadow. The rest are the classic base-form questions.
+  const orderMix = Math.min(level.orderMix || 0, level.questionCount)
   let targets
   ;[targets, rngState] = rngShuffle(level.pool, rngState)
-  targets = targets.slice(0, level.questionCount)
+  targets = targets.slice(0, level.questionCount - orderMix)
 
   const queue = targets.map((target) => {
     // Twin letters (e.g. ሀ/ሐ/ኀ) share a modern pronunciation; a distractor
@@ -339,6 +350,17 @@ export function buildQuestionQueue(level, seed) {
     )
     return { target, options }
   })
+  if (orderMix > 0) {
+    let cells
+    ;[cells, rngState] = rngShuffle(
+      level.families.flatMap((fid) => ORDERS.slice(1).map((o) => `${fid}-${o.index}`)),
+      rngState,
+    )
+    for (const target of cells.slice(0, orderMix)) queue.push(makeOrderQuestion(target))
+    let mixed
+    ;[mixed, rngState] = rngShuffle(queue, rngState)
+    return [mixed, rngState]
+  }
   return [queue, rngState]
 }
 
@@ -712,6 +734,23 @@ export function runInvariants() {
       Array.from({ length: 25 }, (_, s) => buildQuestionQueue(level, s + 1)[0]).every((queue) =>
         queue.every((q) => q.options.every((o) => o === q.target || soundOf(o) !== soundOf(q.target))),
       ),
+    )
+  }
+
+  for (const level of LEVELS.filter((l) => l.kind === 'base')) {
+    check(
+      `${level.id}: carries ${level.orderMix} clip-safe order questions (25 seeds)`,
+      Array.from({ length: 25 }, (_, s) => buildQuestionQueue(level, s + 1)[0]).every((queue) => {
+        const orderQs = queue.filter((q) => !q.target.endsWith('-1'))
+        return (
+          orderQs.length === level.orderMix &&
+          orderQs.every((q) => {
+            const fid = q.target.slice(0, q.target.lastIndexOf('-'))
+            const clips = q.options.map((k) => effectiveKey(`letters/${k}`, PACK_AUDIO_OVERRIDE))
+            return q.options.every((k) => k.startsWith(fid + '-')) && new Set(clips).size === q.options.length
+          })
+        )
+      }),
     )
   }
 
