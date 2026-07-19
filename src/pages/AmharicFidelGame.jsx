@@ -35,6 +35,7 @@ import { loadClassicProgress, saveClassicProgress } from '../platform/classicSav
 import { UI_STRINGS, ORDER_NAMES, GEEZ_ORDER_NAMES } from '../data/fidelGameData'
 import { buildClassicData } from '../data/classicPack'
 import { getActivePackId, PACKS } from '../platform/ethiopic'
+import { soundEnabled, setSoundEnabled } from '../platform/sound'
 
 // Classic now speaks the active learn language: Amharic stays the validated
 // table, Tigrinya (and any future pack) is derived from the pack. Computed at
@@ -645,7 +646,7 @@ function StarRating({ count, size = 'h-8 w-8' }) {
 export default function AmharicFidelGame() {
   // screen: menu | explore | game | complete | trace
   const [screen, setScreen] = useState('menu')
-  const [soundOn, setSoundOn] = useState(() => loadFromStorage('fidel-quest-sound', 'on') !== 'off')
+  const [soundOn, setSoundOn] = useState(soundEnabled)
   // UI language follows the single global app-text setting (set in the main
   // app's Backpack). Classic's own strings live in UI_STRINGS (en/am); any
   // other diaspora language falls back to English here, while the spoken/shown
@@ -654,11 +655,7 @@ export default function AmharicFidelGame() {
   const [progress, setProgress] = useState(loadProgress)
 
   useEffect(() => {
-    try {
-      localStorage.setItem('fidel-quest-sound', soundOn ? 'on' : 'off')
-    } catch {
-      // Storage unavailable — the toggle just won't persist.
-    }
+    setSoundEnabled(soundOn)
   }, [soundOn])
 
   // Tiny i18n: current-language lookup with English fallback and

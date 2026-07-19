@@ -37,6 +37,7 @@ import GhostHand from './GhostHand'
 import { hasOnboarded, markOnboarded, prefersReducedMotion } from './platform/tutorial'
 import { LOW_END } from './platform/quality'
 import { loadSkySave, persistSkySave } from './platform/skylandsSave'
+import { soundEnabled, setSoundEnabled } from './platform/sound'
 
 /* ============================================================================
    §1 DATA + §2 QUESTIONS — live in skylandsCore.js (pure, no three/R3F) so
@@ -876,20 +877,10 @@ const BTN = 'chunk rounded-2xl font-extrabold tracking-wide text-white disabled:
 
 export default function FidelSkylands({ onExit, allLetters = false }) {
   const [st, dispatch] = useReducer(reducer, undefined, initialState)
-  const [soundOn, setSoundOn] = useState(() => {
-    try {
-      return localStorage.getItem('fq3.sound') !== '0'
-    } catch {
-      return true
-    }
-  })
+  const [soundOn, setSoundOn] = useState(soundEnabled)
   const toggleSound = () => {
     setSoundOn((v) => {
-      try {
-        localStorage.setItem('fq3.sound', v ? '0' : '1')
-      } catch {
-        /* session-only */
-      }
+      setSoundEnabled(!v)
       return !v
     })
   }

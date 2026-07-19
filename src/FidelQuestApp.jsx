@@ -28,6 +28,7 @@ import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform
 import { dueKeys } from './platform/srs'
 import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
 import { chapterPlaces } from './platform/places'
+import { soundEnabled, setSoundEnabled } from './platform/sound'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
@@ -845,7 +846,6 @@ export { playForm, playEffect }
    ========================================================================== */
 
 const PROGRESS_KEY = 'fq2.progress'
-const SOUND_KEY = 'fq2.sound'
 
 export function loadProgress() {
   try {
@@ -890,13 +890,7 @@ export function saveRunnerBest(best) {
   progressChanged()
 }
 
-function loadSoundOn() {
-  try {
-    return localStorage.getItem(SOUND_KEY) !== '0'
-  } catch {
-    return true
-  }
-}
+const loadSoundOn = () => soundEnabled()
 
 export const isLevelUnlocked = (progress, index) =>
   index === 0 || (progress[LEVELS[index - 1].id]?.stars ?? 0) >= 1
@@ -1081,11 +1075,7 @@ export default function FidelQuestApp() {
 
   const toggleSound = useCallback(() => {
     setSoundOn((on) => {
-      try {
-        localStorage.setItem(SOUND_KEY, on ? '0' : '1')
-      } catch {
-        /* session-only */
-      }
+      setSoundEnabled(!on)
       return !on
     })
   }, [])
