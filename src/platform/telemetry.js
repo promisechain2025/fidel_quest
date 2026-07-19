@@ -12,6 +12,7 @@
    ========================================================================== */
 
 import { progressChanged } from './childModel'
+import { srsReview } from './srs'
 const KEY = 'fq.telemetry.v1'
 const CAP = 600
 
@@ -34,6 +35,9 @@ export function recordAnswer(heardKey, pickedKey, mode) {
     const events = loadLedger()
     events.push({ k: heardKey, p: pickedKey, m: mode, d: dayStamp() })
     localStorage.setItem(KEY, JSON.stringify({ v: 1, events: events.slice(-CAP) }))
+    // The memory schedule outlives the capped ledger: every answer also
+    // advances (or resets) the heard form's spaced-repetition entry.
+    srsReview(heardKey, pickedKey === heardKey)
     progressChanged()
   } catch {
     /* telemetry must never break gameplay */

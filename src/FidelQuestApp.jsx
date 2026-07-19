@@ -25,6 +25,7 @@ import { audio, afterVoice, playForm, playEffect, preloadForms, effectiveKey } f
 import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
+import { dueKeys } from './platform/srs'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
 import NameInFidel from './components/NameInFidel'
@@ -1130,7 +1131,7 @@ export default function FidelQuestApp() {
   // The daily warm-up: a short refresher quiz over the child's own learned
   // letters (trouble letters first), reusing the Lesson machine wholesale.
   const startWarmup = useCallback(() => {
-    const queue = buildWarmup(daySeed(), learnedFamilyIds(journeyRef.current), loadLedger())
+    const queue = buildWarmup(daySeed(), learnedFamilyIds(journeyRef.current), loadLedger(), undefined, dueKeys())
     if (!queue.length) return
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'warmup', queue })

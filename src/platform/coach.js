@@ -182,7 +182,7 @@ export function buildReviewQueue(seed, poolIds, priorityKeys = [], count = WARMU
  */
 const ALL_ORDERS = [1, 2, 3, 4, 5, 6, 7]
 
-export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) {
+export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE, due = []) {
   // The letter steps teach (and trace) every form of a family, so the
   // warm-up reviews across ALL seven vocal orders of the learned families,
   // not just each family's base letter.
@@ -193,10 +193,13 @@ export function buildWarmup(seed, learnedIds, events = [], count = WARMUP_SIZE) 
   const trouble = troubleLetters(events, { minSeen: 2, minRate: 0.25, limit: 3 })
     .map((t) => t.key)
     .filter((k) => pool.includes(k))
+  // ...then forms the memory schedule says are DUE (srs.js dueKeys) - the
+  // forgetting curve, not just the mistakes...
+  const dueHere = due.filter((k) => pool.includes(k) && !trouble.includes(k))
   // ...then the letters the child has not touched for the longest.
   const stats = letterStats(events)
   const staleFirst = pool
-    .filter((k) => !trouble.includes(k))
+    .filter((k) => !trouble.includes(k) && !dueHere.includes(k))
     .sort((a, b) => (stats.get(a)?.lastDay || 0) - (stats.get(b)?.lastDay || 0) || (a < b ? -1 : 1))
-  return buildReviewQueue(seed, learnedIds, [...trouble, ...staleFirst], count, ALL_ORDERS)
+  return buildReviewQueue(seed, learnedIds, [...trouble, ...dueHere, ...staleFirst], count, ALL_ORDERS)
 }

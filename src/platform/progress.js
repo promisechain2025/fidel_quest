@@ -39,6 +39,7 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.tees.v1', // tee designs already seen/earned
   'fq.student.v1', // class membership (this child's class link)
   'fq.assign.v1', // pending homework assignment
+  'fq.srs.v1', // per-form spaced-repetition schedule
 ])
 // Additive only: restoreProgress ignores unknown keys, so snapshots made
 // before these five keys existed import cleanly, and old app versions
