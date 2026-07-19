@@ -10,7 +10,7 @@
    then match a written number word to its digits.
    ========================================================================== */
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
@@ -29,6 +29,7 @@ import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadProfiles, addProfile, switchProfile, deleteProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
+import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { dayStamp } from './platform/streak'
@@ -174,8 +175,30 @@ function ProfilesCard() {
   const [newName, setNewName] = useState('')
   const [code, setCode] = useState('')
   const [codeState, setCodeState] = useState('') // '' | 'bad'
-  const unlocked = familyPackUnlocked()
-  const refresh = () => setReg(loadProfiles())
+  const [unlocked, setUnlocked] = useState(familyPackUnlocked)
+  // Native store price for the IAP button; '' until fetched (or unavailable).
+  const [storePrice, setStorePrice] = useState('')
+  const [iapMsg, setIapMsg] = useState('') // '' | 'error' | 'none'
+  useEffect(() => {
+    if (!unlocked && iapAvailable()) familyPackStorePrice().then(setStorePrice)
+  }, [unlocked])
+  const refresh = () => {
+    setReg(loadProfiles())
+    setUnlocked(familyPackUnlocked())
+  }
+  const doBuyNative = async () => {
+    setIapMsg('')
+    const r = await buyFamilyPack()
+    if (r === 'purchased') refresh()
+    else if (r === 'error' || r === 'unavailable') setIapMsg('error')
+  }
+  const doRestore = async () => {
+    setIapMsg('')
+    const r = await restoreFamilyPack()
+    if (r === 'restored') refresh()
+    else if (r === 'none') setIapMsg('none')
+    else if (r === 'error') setIapMsg('error')
+  }
 
   const doSwitch = (id) => {
     if (switchProfile(id)) window.location.reload()
@@ -258,10 +281,28 @@ function ProfilesCard() {
           <div className="mt-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}>
             <p className="text-sm font-extrabold">{t('gpPackTitle', 'Family Pack — profiles for every child')}</p>
             <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              {isNativePlatform()
+              {isNativePlatform() && !iapAvailable()
                 ? t('gpPackNative', 'Each child gets their own path, streak, and rewards on this device. Have a Family Pack code? Enter it below.')
                 : t('gpPackWeb', `One ${FAMILY_PACK_PRICE} unlock gives every child in the family their own path, streak, and rewards on this device — instead of buying the app again.`, { price: FAMILY_PACK_PRICE })}
             </p>
+            {iapAvailable() && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                  {storePrice
+                    ? t('gpPackBuyStore', `Get the Family Pack (${storePrice})`, { price: storePrice })
+                    : t('gpPackBuyStoreNoPrice', 'Get the Family Pack')}
+                </button>
+                <button type="button" onClick={doRestore} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
+                  {t('gpPackRestore', 'Restore purchase')}
+                </button>
+                {iapMsg === 'error' && (
+                  <span className="text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackIapError', 'The store did not respond — try again in a moment.')}</span>
+                )}
+                {iapMsg === 'none' && (
+                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('gpPackIapNone', 'No Family Pack found on this account.')}</span>
+                )}
+              </div>
+            )}
             {!isNativePlatform() && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {buyLink ? (

@@ -35,6 +35,9 @@ if (typeof window !== 'undefined' && window.matchMedia) {
 applyUrlUnlock()
 // Re-activate the chosen Family Voice (if any) so Anbessa keeps that voice.
 initVoice()
+// Native store builds: sync an already-owned Family Pack (reinstall case).
+// Dormant no-op on web or until the RevenueCat keys are configured.
+import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Re-arm the daily reminder if a grown-up opted in (native only).
 initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
 
