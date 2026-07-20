@@ -1,4 +1,4 @@
-# Fly.io config for the Fidel Quest analytics + share-landing server.
+# Fly.io config for the eGeez analytics + share-landing server.
 #   fly launch --no-deploy      (creates the app; edit the name below)
 #   fly secrets set OWNER_TOKEN=... APP_URL=https://your-app OG_IMAGE=https://your-app/icon-512.png
 #   fly deploy

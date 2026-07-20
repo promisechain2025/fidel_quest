@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Privacy-safe aggregate analytics + Open Graph share landing for Fidel Quest. No accounts, no PII. Zero runtime dependencies (Node built-in http + test runner).",
+  "description": "Privacy-safe aggregate analytics + Open Graph share landing for eGeez. No accounts, no PII. Zero runtime dependencies (Node built-in http + test runner).",
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test"

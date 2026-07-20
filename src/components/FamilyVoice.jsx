@@ -43,7 +43,7 @@ export default function FamilyVoice({ onBack }) {
       await choose(id)
       setToast(t('fvImported', 'Voice imported!'))
     } catch {
-      setToast(t('fvImportFail', "That file isn't a Fidel Quest voice."))
+      setToast(t('fvImportFail', "That file isn't a eGeez voice."))
     }
   }
 

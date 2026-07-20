@@ -1,7 +1,7 @@
 /* ============================================================================
    THE JOURNEY  (Pillars 1 + 3)  -  pure, data-derived, deterministic
    ----------------------------------------------------------------------------
-   Fidel Quest used to present nine sibling screens and three separate
+   eGeez used to present nine sibling screens and three separate
    progress blobs. This module is the single spine that replaces them: one
    ordered array of typed nodes (JOURNEY), one progress record
    (fq.journey.v1), and one derived "next step" (nextNode). Every screen is

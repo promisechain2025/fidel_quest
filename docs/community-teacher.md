@@ -57,7 +57,7 @@ comes out of *your* net after the 15–30% store fee — which is exactly why th
 "Follow and see each kid's progress easily" needs the kids' progress to reach
 the teacher's device. That is **collecting + sharing children's data** →
 parental consent + a backend + data governance. So it is a **separate opt-in
-"Fidel Quest for Community" tier**, never the default kids app.
+"eGeez for Community" tier**, never the default kids app.
 
 ### The good news: the skeleton exists
 `server/src/social.js` (the dormant Family & Friends backend) already has the

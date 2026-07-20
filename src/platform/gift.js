@@ -1,4 +1,4 @@
-/* Gifting Fidel Quest through Apple's App Store "Gift App" flow.
+/* Gifting eGeez through Apple's App Store "Gift App" flow.
 
    Apple has a built-in way to gift a PAID app: on the app's App Store page the
    parent taps the share (...) button and chooses "Gift App"; Apple takes the

@@ -153,7 +153,7 @@ describe('scoring', () => {
 describe('app shell', () => {
   it('renders the unified Journey path with one current step (Pillar 1)', () => {
     render(<FidelQuestApp />)
-    expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument()
     // Exactly one node is the current step; utilities are off the main path.
     expect(screen.getAllByText('Start')).toHaveLength(1)
     expect(screen.getByLabelText('Open backpack')).toBeInTheDocument()

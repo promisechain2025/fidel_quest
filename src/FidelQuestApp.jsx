@@ -14,7 +14,7 @@
 
    Design language: Duolingo-inspired — chunky press-down buttons, segmented
    lesson progress, bottom feedback sheets, streak flame, star rewards —
-   on the Fidel Quest amber identity.
+   on the eGeez amber identity.
 
    Provenance: the character table is generated from the test-verified data
    module in the fidel_quest repository, not hand-typed.
@@ -71,7 +71,7 @@ import { isNativePlatform, isApplePlatform } from './platform/native'
 import GiftAppModal from './components/GiftModal'
 import Dropdown from './components/Dropdown'
 
-// The original Fidel Quest game (chant mode, tracing pad, first words) lives
+// The original eGeez game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
 const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
@@ -1943,7 +1943,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             <Hero size={48} worn={worn} />
           </button>
           <div className="min-w-0 text-left">
-            <h1 className="text-base font-black leading-none">Fidel Quest</h1>
+            <h1 className="text-base font-black leading-none">eGeez</h1>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
               <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
                 {doneCount}/{JOURNEY.length}
@@ -3145,15 +3145,15 @@ function ChallengeShareButton({ payload, label }) {
     // Native shells have a capacitor://localhost origin - a shared link
     // built from it is unopenable. Always share the public app URL.
     const url = challengeUrl({ ...payload, by }, appShareUrl() || window.location.origin)
-    const text = `${t('challengeShareText', 'Beat my Fidel Quest score! Can you?')} ${url}`
+    const text = `${t('challengeShareText', 'Beat my eGeez score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
     }
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Fidel Quest', text, url })
+        await navigator.share({ title: 'eGeez', text, url })
         return
       }
     } catch {
@@ -3539,14 +3539,14 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
       appShareUrl(),
     )
     if (!url) return
-    const text = `${t('asShareBack', 'Fidel Quest result for {who}:', { who: assignment.teacher })} ${url}`
+    const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
     track('assignment_receipt')
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
     }
     try {
-      if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text, url }); return }
+      if (navigator.share) { await navigator.share({ title: 'eGeez', text, url }); return }
     } catch { return /* user dismissed */ }
     try {
       await navigator.clipboard.writeText(text)

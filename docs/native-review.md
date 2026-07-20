@@ -197,7 +197,7 @@
 | 163 | `challengeLose` | So close! | ተቃርበሃል! |  |
 | 164 | `challengeTie` | It's a tie! | አቻ ነው! |  |
 | 165 | `challengeGone` | This challenge is not available. | ይህ ፉክክር አይገኝም። |  |
-| 166 | `challengeShareText` | Beat my Fidel Quest score! Can you? | የፊደል ኩዌስት ውጤቴን ብለጥ! ትችላለህ? |  |
+| 166 | `challengeShareText` | Beat my eGeez score! Can you? | የፊደል ኩዌስት ውጤቴን ብለጥ! ትችላለህ? |  |
 | 167 | `scopeLearned` | My letters | የኔ ፊደላት |  |
 | 168 | `scopeAll` | All letters | ሁሉም ፊደላት |  |
 | 169 | `scopeLabel` | Which letters | የትኞቹ ፊደላት |  |
@@ -233,21 +233,21 @@
 | 199 | `gpUnlockAll` | Open everything (for testing)… | ሁሉንም ክፈት (ለሙከራ)… |  |
 | 200 | `gpUnlockConfirm` | Open every level, island and letter for testing? | ለሙከራ ሁሉም ደረጃዎች፣ ደሴቶች እና ፊደላት ይከፈቱ? |  |
 | 201 | `gpUnlockYes` | Yes, open all | አዎ፣ ሁሉንም ክፈት |  |
-| 202 | `paySupport` | Support Fidel Quest | ፊደል ኩዌስትን ደግፉ |  |
-| 203 | `payTitle` | Keep learning with Fidel Quest | መማሩ ይቀጥል! |  |
+| 202 | `paySupport` | Support eGeez | ፊደል ኩዌስትን ደግፉ |  |
+| 203 | `payTitle` | Keep learning with eGeez | መማሩ ይቀጥል! |  |
 | 204 | `payBody` | Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing. | የ{n} ቀን ነፃ ሙከራችሁ አልቋል። መተግበሪያውን መግዛት ለልጅዎ መስራቱን እና ማደጉን ያስቀጥላል። |  |
 | 205 | `payLeft` | Free try-out: {n} days left | ነፃ ሙከራ · {n} ቀን ቀርቷል |  |
 | 206 | `payEnded` | Your free try-out has ended. | ነፃ ሙከራችሁ አልቋል። |  |
 | 207 | `payBuy` | Buy the app | መተግበሪያውን ግዙ |  |
 | 208 | `payFamily` | Ask family to gift it | ቤተሰብ በስጦታ እንዲገዛ ጠይቁ |  |
 | 209 | `payFamilyHint` | No way to pay where you live? A relative anywhere in the world can gift it - share this with them. | እርስዎ ዘንድ መክፈያ መንገድ ከሌለ በየትም ያለ ዘመድ በስጦታ ሊገዛላችሁ ይችላል - ይህን ያጋሩት። |  |
-| 210 | `payShareText` | Our kids are learning the Ethiopian alphabet with Fidel Quest. Could you gift us the app? | ልጆቻችን በፊደል ኩዌስት ፊደል እየተማሩ ነው። እባካችሁ መተግበሪያውን በስጦታ ልትገዙልን ትችላላችሁ? |  |
+| 210 | `payShareText` | Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app? | ልጆቻችን በፊደል ኩዌስት ፊደል እየተማሩ ነው። እባካችሁ መተግበሪያውን በስጦታ ልትገዙልን ትችላላችሁ? |  |
 | 211 | `payFeedback` | Not buying? Tell us honestly why | አልገዙም? ለምን እንደሆነ በግልጽ ንገሩን |  |
 | 212 | `payFeedbackHint` | Honest feedback earns {n} more free days. | ግልጽ አስተያየት ተጨማሪ {n} ነፃ ቀናት ያስገኛል። |  |
 | 213 | `payFeedbackBody` | What we liked:nnWhat should be better:nnWhy we did not buy it:n | የወደድነው:\n\nመሻሻል ያለበት:\n\nያልገዛንበት ምክንያት:\n |  |
 | 214 | `payFeedbackDone` | Thank you! {n} more free days added. | እናመሰግናለን! ተጨማሪ {n} ነፃ ቀናት ተጨምረዋል። |  |
 | 215 | `payOwned` | My family already bought it | ቤተሰቤ ገዝቶታል |  |
-| 216 | `payThanks` | Thank you for supporting Fidel Quest! | ፊደል ኩዌስትን ስለደገፋችሁ እናመሰግናለን! |  |
+| 216 | `payThanks` | Thank you for supporting eGeez! | ፊደል ኩዌስትን ስለደገፋችሁ እናመሰግናለን! |  |
 | 217 | `gpMoveTitle` | Move to another phone | ወደ ሌላ ስልክ ማዛወር |  |
 | 218 | `gpMoveHint` | Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there. | ሁሉንም የመማር ሂደት እንደ አንድ ትንሽ ፋይል ያስቀምጡ፣ ወደ አዲሱ ስልክ ይላኩት (ዋትስአፕ ይሰራል)፣ ከዚያ እዚያ ይጫኑት። |  |
 | 219 | `gpExport` | Save progress file | የሂደት ፋይል አስቀምጥ |  |
@@ -292,7 +292,7 @@
 | 258 | `fvDefaultVoice` | Back to the default voice | ወደ ነባሪው ድምፅ ተመልሷል |  |
 | 259 | `fvGateIntro` | Recording is for grown-ups — it uses the microphone. | መቅዳት ለወላጆች ነው — ማይክሮፎን ይጠቀማል። |  |
 | 260 | `fvImported` | Voice imported! | ድምፅ ገብቷል! |  |
-| 261 | `fvImportFail` | That file isn't a Fidel Quest voice. | ይህ ፋይል የፊደል ኩዌስት ድምፅ አይደለም። |  |
+| 261 | `fvImportFail` | That file isn't a eGeez voice. | ይህ ፋይል የፊደል ኩዌስት ድምፅ አይደለም። |  |
 | 262 | `fvEmpty` | No family voices yet. Record one, or import a voice a relative sent you. | እስካሁን የቤተሰብ ድምፅ የለም። አንድ ይቅዱ፣ ወይም ዘመድ የላከዎትን ድምፅ ያስገቡ። |  |
 | 263 | `fvForGrownups` | For grown-ups | ለወላጆች |  |
 | 264 | `fvRecordTitle` | Record your voice | ድምፅዎን ይቅዱ |  |
@@ -374,7 +374,7 @@
 | 340 | `jcJoin` | Join class | ክፍል ተቀላቀል |  |
 | 341 | `jcJoined` | You're in {who}'s class! | የ{who} ክፍል ውስጥ ገብተሃል! |  |
 | 342 | `jcJoinedBody` | Assignments from your teacher will show up in your daily plan. | የመምህርህ ሥራዎች በዕለታዊ ዕቅድህ ውስጥ ይታያሉ። |  |
-| 343 | `jcShareText` | Join my Fidel Quest class: | የFidel Quest ክፍሌን ተቀላቀሉ፦ |  |
+| 343 | `jcShareText` | Join my eGeez class: | የeGeez ክፍሌን ተቀላቀሉ፦ |  |
 | 344 | `asTitle` | Assignment | የቤት ሥራ |  |
 | 345 | `asFrom` | {who} sent your class homework! | {who} ለክፍላችሁ የቤት ሥራ ልኳል! |  |
 | 346 | `asDetail` | {n} questions · due {date} | {n} ጥያቄዎች · እስከ {date} |  |
@@ -384,8 +384,8 @@
 | 350 | `asScore` | {score} of {n} on the first try | ከ{n} ውስጥ {score} በመጀመሪያ ሙከራ |  |
 | 351 | `asName` | Your name (the teacher sees it) | ስምህ (መምህሩ ያየዋል) |  |
 | 352 | `asSend` | Send result to teacher | ውጤቱን ለመምህር ላክ |  |
-| 353 | `asShareText` | Fidel Quest homework from your teacher: | ከመምህራችሁ የFidel Quest የቤት ሥራ፦ |  |
-| 354 | `asShareBack` | Fidel Quest result for {who}: | የFidel Quest ውጤት ለ{who}፦ |  |
+| 353 | `asShareText` | eGeez homework from your teacher: | ከመምህራችሁ የeGeez የቤት ሥራ፦ |  |
+| 354 | `asShareBack` | eGeez result for {who}: | የeGeez ውጤት ለ{who}፦ |  |
 | 355 | `tmTitle` | Teacher tools | የመምህር መሣሪያዎች |  |
 | 356 | `tmSub` | Class links, assignments, results - no accounts | የክፍል ማገናኛዎች፣ ሥራዎች፣ ውጤቶች — ያለ መለያ |  |
 | 357 | `tmCardBlurb` | (dynamic) | ክፍልን በማገናኛዎች ብቻ ያካሂዱ፦ ተማሪዎችን ይጋብዙ፣ ሥራ ይላኩ፣ ውጤት ይሰብስቡ፣ ፊደላቱንም በቲቪ ላይ ያሳዩ። ያለ መለያ፣ ያለ አገልጋይ። |  |
@@ -665,7 +665,7 @@
 | 166 | `challengeLose` | So close! | ተቐሪብካ! |  |
 | 167 | `challengeTie` | It's a tie! | ማዕረ ኮይኑ! |  |
 | 168 | `challengeGone` | This challenge is not available. | እዚ ብድሆ ኣይርከብን። |  |
-| 169 | `challengeShareText` | Beat my Fidel Quest score! Can you? | ናይ ፊደል ኩዌስት ነጥበይ ብለጾ! ትኽእል ዶ? |  |
+| 169 | `challengeShareText` | Beat my eGeez score! Can you? | ናይ ፊደል ኩዌስት ነጥበይ ብለጾ! ትኽእል ዶ? |  |
 | 170 | `scopeLearned` | My letters | ናተይ ፊደላት |  |
 | 171 | `scopeAll` | All letters | ኩሎም ፊደላት |  |
 | 172 | `scopeLabel` | Which letters | ኣየኖት ፊደላት |  |
@@ -702,21 +702,21 @@
 | 203 | `gpUnlockAll` | Open everything (for testing)… | ኩሉ ክፈት (ንፈተና)… |  |
 | 204 | `gpUnlockConfirm` | Open every level, island and letter for testing? | ንፈተና ኩሉ ደረጃታት፣ ደሴታትን ፊደላትን ክኽፈቱ? |  |
 | 205 | `gpUnlockYes` | Yes, open all | እወ፣ ኩሉ ክፈት |  |
-| 206 | `paySupport` | Support Fidel Quest | ንፊደል ኩዌስት ደግፉ |  |
-| 207 | `payTitle` | Keep learning with Fidel Quest | ትምህርቲ ይቀጽል! |  |
+| 206 | `paySupport` | Support eGeez | ንፊደል ኩዌስት ደግፉ |  |
+| 207 | `payTitle` | Keep learning with eGeez | ትምህርቲ ይቀጽል! |  |
 | 208 | `payBody` | Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing. | ናይ {n} መዓልቲ ነጻ ፈተነኹም ወዲኡ። ነቲ መተግበሪ ምግዛእ ንውላድኩም ምስራሑን ምዕባዩን የቐጽሎ። |  |
 | 209 | `payLeft` | Free try-out: {n} days left | ነጻ ፈተነ · {n} መዓልቲ ተሪፉ |  |
 | 210 | `payEnded` | Your free try-out has ended. | ነጻ ፈተነኹም ወዲኡ። |  |
 | 211 | `payBuy` | Buy the app | ነቲ መተግበሪ ግዝኡ |  |
 | 212 | `payFamily` | Ask family to gift it | ስድራቤት ብህያብ ክገዝኡ ሕተቱ |  |
 | 213 | `payFamilyHint` | No way to pay where you live? A relative anywhere in the world can gift it - share this with them. | ኣብ ቦታኹም መኽፈሊ መንገዲ እንተዘየለ፣ ኣብ ዝኾነ ቦታ ዘሎ ዘመድ ብህያብ ክገዝኣልኩም ይኽእል - ነዚ ኣካፍሉዎ። |  |
-| 214 | `payShareText` | Our kids are learning the Ethiopian alphabet with Fidel Quest. Could you gift us the app? | ደቅና ብፊደል ኩዌስት ፊደል ይመሃሩ ኣለዉ። በጃኹም ነቲ መተግበሪ ብህያብ ክትገዝኡልና ትኽእሉ ዶ? |  |
+| 214 | `payShareText` | Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app? | ደቅና ብፊደል ኩዌስት ፊደል ይመሃሩ ኣለዉ። በጃኹም ነቲ መተግበሪ ብህያብ ክትገዝኡልና ትኽእሉ ዶ? |  |
 | 215 | `payFeedback` | Not buying? Tell us honestly why | ኣይገዛእኩምን? ስለምንታይ ብቕንዕና ንገሩና |  |
 | 216 | `payFeedbackHint` | Honest feedback earns {n} more free days. | ቅኑዕ ርእይቶ ተወሳኺ {n} ነጻ መዓልታት የውህብ። |  |
 | 217 | `payFeedbackBody` | What we liked:nnWhat should be better:nnWhy we did not buy it:n | ዝፈተናዮ:\n\nክመሓየሽ ዘለዎ:\n\nዘይገዛእናሉ ምኽንያት:\n |  |
 | 218 | `payFeedbackDone` | Thank you! {n} more free days added. | የቐንየልና! ተወሳኺ {n} ነጻ መዓልታት ተወሲኹ። |  |
 | 219 | `payOwned` | My family already bought it | ስድራቤተይ ገዚኦሞ |  |
-| 220 | `payThanks` | Thank you for supporting Fidel Quest! | ንፊደል ኩዌስት ስለ ዝደገፍኩም የቐንየልና! |  |
+| 220 | `payThanks` | Thank you for supporting eGeez! | ንፊደል ኩዌስት ስለ ዝደገፍኩም የቐንየልና! |  |
 | 221 | `gpMoveTitle` | Move to another phone | ናብ ካልእ ስልኪ ምስግጋር |  |
 | 222 | `gpMoveHint` | Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there. | ኩሉ ናይ ትምህርቲ ኣካይዳ ከም ሓደ ንእሽቶ ፋይል ኣቐምጡ፣ ናብቲ ሓድሽ ስልኪ ስደዱዎ (ዋትስኣፕ ይሰርሕ)፣ ድሕሪኡ ኣብኡ ጽዓኑዎ። |  |
 | 223 | `gpExport` | Save progress file | ፋይል ኣካይዳ ኣቐምጥ |  |
@@ -761,7 +761,7 @@
 | 262 | `fvDefaultVoice` | Back to the default voice | ናብ ንቡር ድምጺ ተመሊሱ |  |
 | 263 | `fvGateIntro` | Recording is for grown-ups — it uses the microphone. | ምቕዳሕ ንወለዲ እዩ — ማይክሮፎን ይጥቀም። |  |
 | 264 | `fvImported` | Voice imported! | ድምጺ ኣትዩ! |  |
-| 265 | `fvImportFail` | That file isn't a Fidel Quest voice. | እዚ ፋይል ናይ ፊደል ኩዌስት ድምጺ ኣይኮነን። |  |
+| 265 | `fvImportFail` | That file isn't a eGeez voice. | እዚ ፋይል ናይ ፊደል ኩዌስት ድምጺ ኣይኮነን። |  |
 | 266 | `fvEmpty` | No family voices yet. Record one, or import a voice a relative sent you. | ክሳብ ሕጂ ድምጺ ስድራ የለን። ሓደ ቕዳሕ፣ ወይ ዘመድ ዝሰደደልካ ድምጺ ኣእቱ። |  |
 | 267 | `fvForGrownups` | For grown-ups | ንወለዲ |  |
 | 268 | `fvRecordTitle` | Record your voice | ድምጽኻ ቅዳሕ |  |
@@ -843,7 +843,7 @@
 | 344 | `jcJoin` | Join class | ክፍሊ ተጸንበር |  |
 | 345 | `jcJoined` | You're in {who}'s class! | ኣብ ክፍሊ {who} ኣቲኻ! |  |
 | 346 | `jcJoinedBody` | Assignments from your teacher will show up in your daily plan. | ዕዮታት መምህርካ ኣብ ዕለታዊ መደብካ ክርኣዩ እዮም። |  |
-| 347 | `jcShareText` | Join my Fidel Quest class: | ናብ ክፍሊ Fidel Quest ናተይ ተጸንበሩ፦ |  |
+| 347 | `jcShareText` | Join my eGeez class: | ናብ ክፍሊ eGeez ናተይ ተጸንበሩ፦ |  |
 | 348 | `asTitle` | Assignment | ዕዮ ገዛ |  |
 | 349 | `asFrom` | {who} sent your class homework! | {who} ንክፍልኹም ዕዮ ገዛ ሰዲዱ! |  |
 | 350 | `asDetail` | {n} questions · due {date} | {n} ሕቶታት · ክሳብ {date} |  |
@@ -853,8 +853,8 @@
 | 354 | `asScore` | {score} of {n} on the first try | ካብ {n} {score} ብቐዳማይ ፈተነ |  |
 | 355 | `asName` | Your name (the teacher sees it) | ስምካ (እቲ መምህር ይርእዮ) |  |
 | 356 | `asSend` | Send result to teacher | ውጽኢት ናብ መምህር ስደድ |  |
-| 357 | `asShareText` | Fidel Quest homework from your teacher: | ካብ መምህርኩም ዕዮ ገዛ Fidel Quest፦ |  |
-| 358 | `asShareBack` | Fidel Quest result for {who}: | ውጽኢት Fidel Quest ን{who}፦ |  |
+| 357 | `asShareText` | eGeez homework from your teacher: | ካብ መምህርኩም ዕዮ ገዛ eGeez፦ |  |
+| 358 | `asShareBack` | eGeez result for {who}: | ውጽኢት eGeez ን{who}፦ |  |
 | 359 | `tmTitle` | Teacher tools | መሳርሒታት መምህር |  |
 | 360 | `tmSub` | Class links, assignments, results - no accounts | መራኸቢታት ክፍሊ፣ ዕዮታት፣ ውጽኢታት — ብዘይ ሕሳብ |  |
 | 361 | `tmCardBlurb` | (dynamic) | ክፍሊ ብመራኸቢታት ጥራይ ኣካይድ፦ ተመሃሮ ዓድም፣ ዕዮ ስደድ፣ ውጽኢት ኣክብ፣ ፊደላት ከኣ ኣብ ቲቪ ኣርኢ። ብዘይ ሕሳብ፣ ብዘይ ኣገልጋሊ። |  |

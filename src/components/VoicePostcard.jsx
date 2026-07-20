@@ -116,7 +116,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
     setPhase('sending')
     const r = RECIPIENT_STRINGS[getActivePackId()] || RECIPIENT_STRINGS.am
     // Sign with the child's nickname when set, then add the app link with an
-    // invite so Gashe / Ayay can pass Fidel Quest on to others.
+    // invite so Gashe / Ayay can pass eGeez on to others.
     const url = appShareUrl()
     const message = name ? `${r.shareText} — ${name}` : r.shareText
     const result = await shareVoicePostcard({

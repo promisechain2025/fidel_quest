@@ -1,4 +1,4 @@
-# Fidel Quest — Game Design Review Packet
+# eGeez — Game Design Review Packet
 
 > **For the reviewer.** This is a self-contained description of a shipped
 > children's educational game, written for external review. You have not
@@ -8,7 +8,7 @@
 
 ## What the app is
 
-**Fidel Quest** is an Amharic alphabet (Fidel) learning game for children
+**eGeez** is an Amharic alphabet (Fidel) learning game for children
 who cannot yet read. It is a standalone, mobile-first, fully client-side
 product — no backend, no accounts; all progress lives in the browser's
 local storage. The Amharic script (Fidel/Ge'ez) has 33 base consonant

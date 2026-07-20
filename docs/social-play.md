@@ -1,6 +1,6 @@
 # Social play: sharing, challenges, and learning together (even on a call)
 
-How Fidel Quest can grow from a solo game into something kids **share, compete
+How eGeez can grow from a solo game into something kids **share, compete
 at over time, and eventually play live with family** — without ever becoming a
 place a child can be contacted by a stranger.
 

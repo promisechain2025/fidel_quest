@@ -18,7 +18,7 @@ The moving parts:
 
 1. Make sure your Paid Applications agreement, banking, and tax forms are
    active (Agreements, Tax, and Banking) - IAP cannot be tested without it.
-2. My Apps -> Fidel Quest -> Monetization -> In-App Purchases -> `+`.
+2. My Apps -> eGeez -> Monetization -> In-App Purchases -> `+`.
    - Type: **Non-Consumable**
    - Reference name: `Family Pack`
    - Product ID: `family_pack`
@@ -35,7 +35,7 @@ The moving parts:
 ## 2. Google Play Console
 
 1. Monetization setup must be complete (payments profile).
-2. Fidel Quest -> Monetize -> Products -> In-app products -> Create.
+2. eGeez -> Monetize -> Products -> In-app products -> Create.
    - Product ID: `family_pack`
    - Name: `Family Pack` / description as above
    - Price: $4.99 (auto-converts per country; round if you like)
@@ -46,7 +46,7 @@ The moving parts:
 
 ## 3. RevenueCat (free at your scale)
 
-1. Create an account at app.revenuecat.com -> New project `Fidel Quest`.
+1. Create an account at app.revenuecat.com -> New project `eGeez`.
 2. Add two apps to the project:
    - Apple App Store app: bundle id `net.promisechain.fidelquest`.
      Upload the App Store Connect **In-App Purchase key** (App Store

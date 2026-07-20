@@ -26,5 +26,5 @@ const app = createApp(store, {
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`Fidel Quest analytics + share landing on :${PORT}`)
+  console.log(`eGeez analytics + share landing on :${PORT}`)
 })

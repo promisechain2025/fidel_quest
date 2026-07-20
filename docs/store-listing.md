@@ -7,7 +7,7 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 
 | | |
 | --- | --- |
-| App name | **Fidel Quest** |
+| App name | **eGeez** |
 | Bundle / package id | `net.promisechain.fidelquest` |
 | Category | Education (Apple: Kids > Education; Play: Education + Designed for Families) |
 | Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). The free web trial lives at the PWA URL; the stores sell the full app. Family Pack (per-child profiles) is a separate **$4.99** web unlock. |
@@ -16,7 +16,7 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 
 ## Apple App Store (English)
 
-- **Name (30 chars):** `Fidel Quest`
+- **Name (30 chars):** `eGeez`
 - **Subtitle (30 chars):** `Learn the Ethiopian alphabet`
 - **Promotional text (170):**
   `Anbessa the lion cub teaches kids all 231 fidel letters with real human
@@ -27,7 +27,7 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 - **Description:**
 
 ```
-Fidel Quest turns learning the Ethiopian alphabet into an adventure.
+eGeez turns learning the Ethiopian alphabet into an adventure.
 
 Anbessa the lion cub guides children along a journey through all 33
 letter families and 231 letters of the fidel - the script used by
@@ -72,7 +72,7 @@ PRIVACY FIRST
 - **Review notes (paste into App Review Information):**
 
 ```
-Fidel Quest is a fully offline children's education app. No account or
+eGeez is a fully offline children's education app. No account or
 login exists. Notes for review:
 
 1. PARENTAL GATE: adult areas (Parents dashboard, purchases links,
@@ -92,7 +92,7 @@ login exists. Notes for review:
 
 ## Google Play (English)
 
-- **Title (30):** `Fidel Quest`
+- **Title (30):** `eGeez`
 - **Short description (80):**
   `Learn the Ethiopian alphabet with games and real voice. Offline, no ads.`
 - **Full description:** same as the Apple description above.

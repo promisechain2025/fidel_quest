@@ -1,6 +1,6 @@
-# Shipping Fidel Quest to the App Store & Google Play
+# Shipping eGeez to the App Store & Google Play
 
-Fidel Quest runs as a native app through **Capacitor** — the same web build
+eGeez runs as a native app through **Capacitor** — the same web build
 (`dist/`) wrapped in a thin Android/iOS shell. This repo already contains
 everything that can be prepared on any machine; the actual **builds and
 submissions must happen on a Mac** (iOS needs Xcode; both need the store
@@ -34,7 +34,7 @@ accounts). This guide is the end-to-end runbook.
 ## 0. What's already done in the repo
 
 - `capacitor.config.json` — app id `net.promisechain.fidelquest`, name
-  **Fidel Quest**, splash + status-bar config.
+  **eGeez**, splash + status-bar config.
 - Plugins installed: `@capacitor/android`, `@capacitor/ios`, `splash-screen`,
   `status-bar`, `share`, `app`, `filesystem`.
 - `src/platform/native.js` — native bridge (status bar, splash hide, Android
@@ -122,7 +122,7 @@ You have two store options:
   - **iOS** — `ios/App/App/Info.plist`:
     ```xml
     <key>NSMicrophoneUsageDescription</key>
-    <string>Fidel Quest lets a grown-up record the letters in their own voice on this device to share with a child. Audio stays on the device and is only sent in a file you choose to share.</string>
+    <string>eGeez lets a grown-up record the letters in their own voice on this device to share with a child. Audio stays on the device and is only sent in a file you choose to share.</string>
     ```
   - **Android** — `android/app/src/main/AndroidManifest.xml`:
     ```xml
@@ -202,7 +202,7 @@ kids/families programs — plan for it.
 **Apple — Kids Category:**
 - Choose the **Kids** category + age band (e.g. 5 and under / 6–8).
 - Kids apps **may not** send personal data, show third-party ads, or link out
-  of the app without a **parental gate**. Fidel Quest's "For grown-ups" hold-
+  of the app without a **parental gate**. eGeez's "For grown-ups" hold-
   and-answer gate qualifies; keep external links (shop) behind it or unset.
 - **App Privacy** ("nutrition label"): declare **Data Not Collected** for the
   §5 build.
@@ -227,7 +227,7 @@ grown-up through Apple's own **Gift App** flow and opens the App Store page.
   VITE_APPLE_APP_ID=1234567890 npm run build && npx cap sync
   ```
   Until it's set, the gift guide still shows but the button is disabled
-  ("Available once Fidel Quest is on the App Store") — no dead link.
+  ("Available once eGeez is on the App Store") — no dead link.
 
 **Google Play — no per-app gifting.** Play has no equivalent button, so the
 Gift entry is hidden on Android. The two options there are Play **gift-card
@@ -244,7 +244,7 @@ listing link — no gifting mechanics needed.
 
 Host something like this at a public URL and link it in both stores:
 
-> **Fidel Quest — Privacy Policy.** Fidel Quest is an offline alphabet-learning
+> **eGeez — Privacy Policy.** eGeez is an offline alphabet-learning
 > game for children. It does **not** collect, store, or share any personal
 > information. All progress and settings stay on the device. There are no
 > accounts, no ads, and no third-party trackers. If this build includes the

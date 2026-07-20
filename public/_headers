@@ -1,4 +1,4 @@
-# Hosting headers for Fidel Quest (Netlify + Cloudflare Pages both read this
+# Hosting headers for eGeez (Netlify + Cloudflare Pages both read this
 # file from the published dist/). Unlike the wallet UI, the game MUST allow the
 # microphone (the Say-it pronunciation check) and needs no strict CSP.
 /*

@@ -1,4 +1,4 @@
-# Render blueprint for the Fidel Quest server (analytics + share landing).
+# Render blueprint for the eGeez server (analytics + share landing).
 # In Render: New > Blueprint > point at this repo. It builds server/Dockerfile.
 # OWNER_TOKEN is generated for you; set APP_URL and OG_IMAGE in the dashboard.
 services:

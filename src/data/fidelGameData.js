@@ -1,5 +1,5 @@
 /* ============================================================================
-   Static content for Fidel Quest (pages/AmharicFidelGame.jsx).
+   Static content for eGeez (pages/AmharicFidelGame.jsx).
 
    All 33 consonant families of the Ge'ez script in traditional abugida
    order, each with seven vocalized orders, plus:
@@ -233,7 +233,7 @@ export const WORDS = FIDEL_FAMILIES.flatMap((f) => {
 
 export const UI_STRINGS = {
   en: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Learn the Amharic alphabet with Kokeb the Star',
     level: 'Level {n}',
     best: 'Best {n}',
@@ -487,7 +487,7 @@ export const UI_STRINGS = {
     },
   },
   de: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Lerne das amharische Alphabet mit Kokeb dem Stern',
     level: 'Level {n}',
     best: 'Bestwert {n}',
@@ -592,7 +592,7 @@ export const UI_STRINGS = {
     },
   },
   it: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Impara l\'alfabeto amarico con Kokeb la Stella',
     level: 'Livello {n}',
     best: 'Record {n}',
@@ -697,7 +697,7 @@ export const UI_STRINGS = {
     },
   },
   sv: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Lär dig amhariska alfabetet med stjärnan Kokeb',
     level: 'Nivå {n}',
     best: 'Bäst {n}',
@@ -802,7 +802,7 @@ export const UI_STRINGS = {
     },
   },
   nl: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Leer het Amhaarse alfabet met Kokeb de Ster',
     level: 'Level {n}',
     best: 'Beste {n}',
@@ -907,7 +907,7 @@ export const UI_STRINGS = {
     },
   },
   no: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Lær det amhariske alfabetet med stjernen Kokeb',
     level: 'Nivå {n}',
     best: 'Best {n}',
@@ -1012,7 +1012,7 @@ export const UI_STRINGS = {
     },
   },
   fr: {
-    title: 'Fidel Quest',
+    title: 'eGeez',
     tagline: 'Apprends l\'alphabet amharique avec Kokeb l\'étoile',
     level: 'Niveau {n}',
     best: 'Record {n}',

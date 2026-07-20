@@ -1,4 +1,4 @@
-# Deploying Fidel Quest
+# Deploying eGeez
 
 Two independent pieces:
 

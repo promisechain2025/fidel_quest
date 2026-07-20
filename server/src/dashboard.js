@@ -11,7 +11,7 @@ export function dashboardHtml() {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>Fidel Quest - funnel</title>
+<title>eGeez - funnel</title>
 <style>
   :root{
     --bg:#fdfaf3; --card:#fff; --ink:#2b2016; --muted:#8a7663; --line:#ecdfc9;
@@ -54,7 +54,7 @@ export function dashboardHtml() {
 </head>
 <body>
 <div class="wrap">
-  <h1>Fidel Quest &middot; funnel</h1>
+  <h1>eGeez &middot; funnel</h1>
   <p class="sub">Anonymous aggregate counts. No child data. Enter the owner token to read.</p>
   <div class="row">
     <input id="tok" type="password" placeholder="owner token" autocomplete="off" />

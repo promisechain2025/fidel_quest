@@ -5,7 +5,7 @@
 
 ## The idea
 
-Your church / weekend school / community group brings families to Fidel Quest,
+Your church / weekend school / community group brings families to eGeez,
 and gets **credit toward free family licenses** (or a simple manual payout) for
 the families who join through you. Families keep everything private — this is
 just an attribution tag, no child data leaves any device.
@@ -51,7 +51,7 @@ in a hall or print on a flyer. Pick something memorable: `DEBRE`, `SELAM`,
   comes out of our net after the 15–30% store fee — which is why **free seats**
   is the friction-free starting point.
 
-## Run your class with Fidel Quest (Teacher Mode — free, no accounts)
+## Run your class with eGeez (Teacher Mode — free, no accounts)
 
 This is live today, entirely on your phone. Nothing about any child ever
 touches a server — everything travels inside WhatsApp links that people

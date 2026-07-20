@@ -1,4 +1,4 @@
-# Fidel Quest — Six-Pillar UX & Pedagogy Refactor
+# eGeez — Six-Pillar UX & Pedagogy Refactor
 
 Architecture plan, unified state model, and deterministic code for the six
 structural pillars. Written against the *shipped* code (state shapes below

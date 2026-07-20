@@ -10,7 +10,7 @@ function esc(s) {
 export function landingHtml({ appUrl = 'https://fidelquest.app', ogImage } = {}) {
   const app = esc(appUrl)
   const img = esc(ogImage || `${appUrl.replace(/\/$/, '')}/icon-512.png`)
-  const title = 'Fidel Quest - Learn the Amharic alphabet'
+  const title = 'eGeez - Learn the Amharic alphabet'
   const desc = "I'm learning the Amharic alphabet with Anbessa the lion cub! Free, offline, and made for kids."
   return `<!doctype html>
 <html lang="en">
@@ -38,10 +38,10 @@ export function landingHtml({ appUrl = 'https://fidelquest.app', ogImage } = {})
 </style>
 </head>
 <body>
-  <img src="${img}" alt="Fidel Quest" onerror="this.style.display='none'" />
-  <h1>Fidel Quest</h1>
+  <img src="${img}" alt="eGeez" onerror="this.style.display='none'" />
+  <h1>eGeez</h1>
   <p>${esc(desc)}</p>
-  <a class="cta" href="${app}">Open Fidel Quest</a>
+  <a class="cta" href="${app}">Open eGeez</a>
   <noscript><p>Continue to <a href="${app}">${app}</a></p></noscript>
 </body>
 </html>`

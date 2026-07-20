@@ -101,7 +101,7 @@ export async function shareProgressSnapshot() {
       const b64 = btoa(unescape(encodeURIComponent(text)))
       await Filesystem.writeFile({ path: filename, data: b64, directory: Directory.Cache })
       const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache })
-      await Share.share({ title: 'Fidel Quest progress', files: [uri] })
+      await Share.share({ title: 'eGeez progress', files: [uri] })
       return 'shared'
     } catch { /* fall through to web share / download */ }
   }
@@ -109,7 +109,7 @@ export async function shareProgressSnapshot() {
   const file = typeof File !== 'undefined' ? new File([blob], filename, { type: 'application/json' }) : null
   try {
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: 'Fidel Quest progress', files: [file] })
+      await navigator.share({ title: 'eGeez progress', files: [file] })
       return 'shared'
     }
   } catch { /* cancelled or unsupported; fall through */ }
@@ -126,7 +126,7 @@ export async function shareProgressSnapshot() {
 }
 
 /** Parse a picked progress file and restore it. Resolves to the number of
-    keys restored (0 = not a Fidel Quest progress file). */
+    keys restored (0 = not a eGeez progress file). */
 export async function importProgressFile(file) {
   try {
     const snap = JSON.parse(await file.text())

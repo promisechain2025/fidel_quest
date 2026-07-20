@@ -1,4 +1,4 @@
-# Netlify build config for the Fidel Quest PWA. (Cloudflare Pages uses the same
+# Netlify build config for the eGeez PWA. (Cloudflare Pages uses the same
 # build command / output dir set in its dashboard; both hosts read public/_headers.)
 # The game has NO client router, so there is intentionally no SPA rewrite — every
 # screen is one URL, and missing files should 404 rather than mask as index.html.

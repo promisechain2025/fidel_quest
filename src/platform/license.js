@@ -1,7 +1,7 @@
 /* ============================================================================
    LICENSE — the honest free-trial engine
    ----------------------------------------------------------------------------
-   Fidel Quest is a paid app, but anyone may download it free and use ALL of
+   eGeez is a paid app, but anyone may download it free and use ALL of
    it for a trial period. There is no server and no account, so nothing here
    is enforcement - it is an honest daily ask, designed around three truths:
 

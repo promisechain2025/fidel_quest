@@ -20,7 +20,7 @@ export default class ErrorBoundary extends Component {
   componentDidCatch(error, info) {
     // Surface in the console for debugging; never throw from here.
     try {
-      console.error('Fidel Quest caught:', error)
+      console.error('eGeez caught:', error)
     } catch {
       /* ignore */
     }

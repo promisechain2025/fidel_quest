@@ -1,4 +1,4 @@
-# Fidel Quest — Architecture
+# eGeez — Architecture
 
 A mobile-first Amharic alphabet (Fidel) learning game for kids. Fully
 client-side: no backend, no accounts, offline-capable PWA. One home screen,

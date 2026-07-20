@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Fidel Quest</string>
+        <string>eGeez</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -48,6 +48,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Fidel Quest uses the microphone only when a grown-up chooses to record letters or a short voice message for the child (Family Voice and Voice Postcards). Recordings stay on this device and are never uploaded.</string>
+	<string>eGeez uses the microphone only when a grown-up chooses to record letters or a short voice message for the child (Family Voice and Voice Postcards). Recordings stay on this device and are never uploaded.</string>
 </dict>
 </plist>

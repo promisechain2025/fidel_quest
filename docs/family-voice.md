@@ -6,7 +6,7 @@
 
 ## Why
 
-Fidel Quest's real advantage is not that it teaches an alphabet — it is that it
+eGeez's real advantage is not that it teaches an alphabet — it is that it
 teaches a **heritage** alphabet to **diaspora families**. The single most
 powerful, un-copyable hook is letting a child hear the letters in the voice of
 someone they love: a parent in the US recording for kids in Ethiopia, a

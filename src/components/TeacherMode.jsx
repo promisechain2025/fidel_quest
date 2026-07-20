@@ -70,11 +70,11 @@ export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }
 async function shareUrl(url, text, onCopied) {
   const body = text ? `${text} ${url}` : url
   if (isNativePlatform()) {
-    try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'Fidel Quest', text: body, url }) } catch { /* dismissed */ }
+    try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text: body, url }) } catch { /* dismissed */ }
     return
   }
   try {
-    if (navigator.share) { await navigator.share({ title: 'Fidel Quest', text: body, url }); return }
+    if (navigator.share) { await navigator.share({ title: 'eGeez', text: body, url }); return }
   } catch { return /* user dismissed */ }
   try {
     await navigator.clipboard.writeText(body)
@@ -253,7 +253,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
       track('teacher_assignment')
       refresh()
     }
-    shareUrl(assignmentUrl(a, appShareUrl()), t('asShareText', 'Fidel Quest homework from your teacher:'))
+    shareUrl(assignmentUrl(a, appShareUrl()), t('asShareText', 'eGeez homework from your teacher:'))
   }
 
   if (!plan) {
@@ -429,7 +429,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
       </div>
       <div className="mt-4 flex flex-col gap-2">
         {made ? (
-          <ShareLinkButton url={made.url} text={t('asShareText', 'Fidel Quest homework from your teacher:')} label={t('tmMakeLink', 'Share assignment link')} />
+          <ShareLinkButton url={made.url} text={t('asShareText', 'eGeez homework from your teacher:')} label={t('tmMakeLink', 'Share assignment link')} />
         ) : (
           <button type="button" onClick={make} disabled={!picked.length} className={`chunk w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', opacity: picked.length ? 1 : 0.5, outlineColor: 'var(--accent)' }}>
             {t('tmBuildLink', 'Build the link')}
@@ -455,7 +455,7 @@ function SentAssignments({ code }) {
                 <span className="geez ml-2 text-base">{a.familyIds.map(glyphOf).join(' ')}</span>
                 <span className="mono ml-2 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{a.count}q · {t('tmDueShort', 'due {date}', { date: ethioDay(a.due) })}</span>
               </p>
-              <ShareLinkButton small tone="sky" url={assignmentUrl(a, appShareUrl())} text={t('asShareText', 'Fidel Quest homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
+              <ShareLinkButton small tone="sky" url={assignmentUrl(a, appShareUrl())} text={t('asShareText', 'eGeez homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
             </div>
             <div className="mt-2"><TurnIns code={code} seed={a.seed} /></div>
           </div>
@@ -609,7 +609,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               </p>
               <div className="mt-3 flex flex-col items-center gap-3">
                 {inviteUrl && <QrPanel url={inviteUrl} size={180} />}
-                {inviteUrl && <ShareLinkButton url={inviteUrl} text={t('jcShareText', 'Join my Fidel Quest class:')} label={t('tmShareInvite', 'Share invite link')} tone="sky" />}
+                {inviteUrl && <ShareLinkButton url={inviteUrl} text={t('jcShareText', 'Join my eGeez class:')} label={t('tmShareInvite', 'Share invite link')} tone="sky" />}
               </div>
             </SectionCard>
 

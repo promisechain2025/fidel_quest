@@ -547,11 +547,11 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
             return (
               <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
                 <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support Fidel Quest')}
+                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support eGeez')}
                 </h2>
                 <p className="mt-2 text-sm font-bold" style={{ color: lic.phase === 'ended' ? 'var(--bad-ink)' : 'var(--go-ink)' }}>
                   {lic.phase === 'licensed'
-                    ? t('payThanks', 'Thank you for supporting Fidel Quest!')
+                    ? t('payThanks', 'Thank you for supporting eGeez!')
                     : lic.phase === 'trial'
                       ? t('payLeft', 'Free try-out: {n} days left', { n: lic.daysLeft })
                       : t('payEnded', 'Your free try-out has ended.')}

@@ -12,7 +12,7 @@ import { track } from '../platform/analytics'
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
 const STEPS = [
-  'Tap "Open App Store" below to go to the Fidel Quest page.',
+  'Tap "Open App Store" below to go to the eGeez page.',
   'On that page, tap the share button (the box with an arrow, or the ...).',
   'Choose "Gift App".',
   "Enter the child's (or their parent's) email, add a note, and send.",
@@ -36,7 +36,7 @@ export default function GiftModal({ onClose }) {
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-label="Send Fidel Quest as a gift"
+        aria-label="Send eGeez as a gift"
         className="flex w-full max-w-md flex-col rounded-3xl p-5"
         style={{ background: 'var(--paper)' }}
         initial={{ y: 40 }}
@@ -52,7 +52,7 @@ export default function GiftModal({ onClose }) {
             <div>
               <h2 className="text-lg font-black leading-tight">Send this app as a gift</h2>
               <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-                Give Fidel Quest to a child on their iPhone or iPad
+                Give eGeez to a child on their iPhone or iPad
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function GiftModal({ onClose }) {
         </button>
         {!ready && (
           <p className="mt-2 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-            Available once Fidel Quest is published on the App Store.
+            Available once eGeez is published on the App Store.
           </p>
         )}
         {ready && (

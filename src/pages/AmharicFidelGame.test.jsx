@@ -265,7 +265,7 @@ describe('directional tracing (P6)', () => {
 describe('<AmharicFidelGame />', () => {
   it('renders one current-level card and a level strip with the rest locked', () => {
     render(<AmharicFidelGame />)
-    expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument()
     // Only the CURRENT level gets a full card; the others live as chips.
     expect(screen.getByText('First Letters').closest('button')).toBeEnabled()
     expect(screen.queryByText('More Letters')).not.toBeInTheDocument()
@@ -382,11 +382,11 @@ describe('<AmharicFidelGame />', () => {
     // Tigrinya are learn languages only — a legacy stored 'am' falls back to
     // the English UI.
     render(<AmharicFidelGame />)
-    expect(screen.getByText('Fidel Quest')).toBeInTheDocument() // English default
+    expect(screen.getByText('eGeez')).toBeInTheDocument() // English default
     cleanup()
     localStorage.setItem('fq.lang', 'am')
     render(<AmharicFidelGame />)
-    expect(screen.getByText('Fidel Quest')).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument()
   })
 
   it('opens trace mode and falls back gracefully without canvas support', () => {

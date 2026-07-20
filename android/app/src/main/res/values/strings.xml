@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Fidel Quest</string>
-    <string name="title_activity_main">Fidel Quest</string>
+    <string name="app_name">eGeez</string>
+    <string name="title_activity_main">eGeez</string>
     <string name="package_name">net.promisechain.fidelquest</string>
     <string name="custom_url_scheme">net.promisechain.fidelquest</string>
 </resources>

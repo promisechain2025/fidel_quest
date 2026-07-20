@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Eraser, Check, ArrowDown, ArrowRight } from 'lucide-react'
 
-/* Letter-tracing pad for Fidel Quest. The child draws over a faint guide
+/* Letter-tracing pad for eGeez. The child draws over a faint guide
    glyph; scoring compares the drawn points against a pixel mask of the
    glyph. There is no public stroke-order dataset for Ge'ez, so coverage +
    stray-ink scoring is the honest, robust approach: it rewards tracing the

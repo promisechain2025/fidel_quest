@@ -1,4 +1,4 @@
-# Fidel Quest
+# eGeez
 
 An Amharic alphabet (Fidel) learning game for kids. Fully client-side: no
 backend, no accounts — progress lives in `localStorage`. Installable as a
@@ -17,7 +17,7 @@ PWA and works offline.
   drawn cumulatively from all unlocked sessions. Clearing an island grows a
   bridge to the next; Jibby ends each quiz by stealing review letters you
   must win back.
-- **Classic Game** — the original Fidel Quest: chant the seven orders, trace
+- **Classic Game** — the original eGeez: chant the seven orders, trace
   letters on a canvas pad, learn first words.
 - **Letter Explorer** — tap-to-hear reference for all 231 vocalized forms.
 

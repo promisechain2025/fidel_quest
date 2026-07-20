@@ -4,7 +4,7 @@ Project context for Claude Code agent sessions in `fidel_quest`.
 
 ## What this app is
 
-**Fidel Quest** is an Amharic alphabet (Fidel) learning game for kids. It is
+**eGeez** is an Amharic alphabet (Fidel) learning game for kids. It is
 a standalone mobile-first product — fully client-side, no backend, no
 accounts. All progress and settings live in `localStorage`.
 

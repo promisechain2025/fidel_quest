@@ -1,7 +1,7 @@
 /* ============================================================================
    AGGREGATE FUNNEL STORE (pure, privacy-safe)
    ----------------------------------------------------------------------------
-   Counts anonymous funnel events for Fidel Quest. There is deliberately NO
+   Counts anonymous funnel events for eGeez. There is deliberately NO
    personal data here: no accounts, no device ids, no IP storage, no per-child
    progress - only how many times each funnel stage happened, per day. That is
    enough to see the viral loop turning (opens -> lessons -> shares -> installs)

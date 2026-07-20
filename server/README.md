@@ -1,4 +1,4 @@
-# Fidel Quest — server
+# eGeez — server
 
 A tiny, **privacy-first** backend for the growth loop. Two jobs:
 

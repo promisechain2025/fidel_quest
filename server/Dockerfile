@@ -1,4 +1,4 @@
-# Fidel Quest server - zero runtime dependencies, so this image is tiny and
+# eGeez server - zero runtime dependencies, so this image is tiny and
 # needs no `npm install`. Just copy the source and run it.
 FROM node:20-alpine
 WORKDIR /app

@@ -15,7 +15,7 @@ export function buyUrl() {
 
 export function feedbackMailto() {
   const to = (import.meta.env?.VITE_FEEDBACK_EMAIL || 'promisechain.net@gmail.com').trim()
-  const subject = encodeURIComponent('Fidel Quest feedback')
+  const subject = encodeURIComponent('eGeez feedback')
   const body = encodeURIComponent(t('payFeedbackBody', 'What we liked:\n\nWhat should be better:\n\nWhy we did not buy it:\n'))
   return `mailto:${to}?subject=${subject}&body=${body}`
 }
@@ -24,8 +24,8 @@ export function feedbackMailto() {
     can PAY - the store page when we have one - falling back to the app URL. */
 export function shareWithFamily() {
   return nativeShare({
-    title: 'Fidel Quest',
-    text: t('payShareText', 'Our kids are learning the Ethiopian alphabet with Fidel Quest. Could you gift us the app?'),
+    title: 'eGeez',
+    text: t('payShareText', 'Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app?'),
     url: buyUrl() || appShareUrl(),
   })
 }

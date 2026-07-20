@@ -84,8 +84,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Fidel Quest',
-        short_name: 'Fidel Quest',
+        name: 'eGeez: Easy Geez',
+        short_name: 'eGeez',
         description: 'An Amharic alphabet (Fidel) learning game for kids.',
         lang: 'am',
         display: 'standalone',

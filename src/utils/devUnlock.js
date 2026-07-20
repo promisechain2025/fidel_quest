@@ -54,8 +54,8 @@ export function applyUrlUnlock() {
   const doUnlock = q.has('unlock')
   if (!doReset && !doUnlock) return
   const ok = (msg) => typeof window.confirm !== 'function' || window.confirm(msg)
-  if (doReset) { if (ok('Fidel Quest: erase ALL progress on this device?')) resetEverything() }
-  else if (ok('Fidel Quest QA: unlock ALL content on this device?')) unlockEverything()
+  if (doReset) { if (ok('eGeez: erase ALL progress on this device?')) resetEverything() }
+  else if (ok('eGeez QA: unlock ALL content on this device?')) unlockEverything()
   try {
     q.delete('unlock'); q.delete('reset')
     const url = window.location.pathname + (q.toString() ? `?${q}` : '') + window.location.hash
