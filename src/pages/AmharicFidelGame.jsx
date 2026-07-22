@@ -1885,7 +1885,7 @@ export default function AmharicFidelGame() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:py-12" style={{ background: 'var(--paper)' }}>
+    <div className="min-h-[calc(100vh-4rem)] px-7 py-8 sm:py-12" style={{ background: 'var(--paper)' }}>
       <style>{GAME_KEYFRAMES}</style>
       {confettiKey > 0 && <ConfettiBurst key={confettiKey} />}
 

@@ -147,7 +147,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-8 pt-4">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-8 pt-4">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

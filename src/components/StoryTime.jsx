@@ -166,7 +166,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── celebration ── */
   if (story && finished) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-6 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
         <Sprite2D draw={drawAnbessa} size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
@@ -188,7 +188,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── comprehension question ── */
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-6 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center">
         <Sprite2D draw={drawAnbessa} size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
         <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
         {story.q.g && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
@@ -209,7 +209,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── reader ── */
   if (story) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
         <header className="flex items-center gap-2">
           <button type="button" onClick={prevPage} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <ChevronLeft className="h-6 w-6" />
@@ -263,7 +263,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   /* ── library ── */
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
       <header className="flex items-center gap-2">
         <button type="button" onClick={onBack} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />

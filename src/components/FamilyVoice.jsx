@@ -49,7 +49,7 @@ export default function FamilyVoice({ onBack }) {
 
   if (mode === 'gate') {
     return (
-      <div className="mx-auto min-h-screen max-w-xl px-5 pt-5">
+      <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
         <button type="button" onClick={() => setMode('home')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
@@ -63,7 +63,7 @@ export default function FamilyVoice({ onBack }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -196,7 +196,7 @@ function RecordVoice({ onDone, onCancel }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-5 pb-28 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl px-7 pb-28 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onCancel} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

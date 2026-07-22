@@ -1079,7 +1079,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE, LearnPhase.TRACE].indexOf(ctx.phase)
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-10 pt-5">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />
@@ -1230,7 +1230,7 @@ export default function LearnLetters({ soundOn, onBack }) {
   const groups = [1, 2, 3, 4]
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
