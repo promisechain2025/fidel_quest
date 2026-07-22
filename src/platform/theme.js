@@ -29,6 +29,8 @@ export function applyTheme(theme) {
   if (typeof document === 'undefined') return t
   document.documentElement.setAttribute('data-theme', t)
   document.documentElement.classList.toggle('dark', t === 'dark')
+  // Let canvas-drawn chrome (the manuscript TibebFrame) repaint for the theme.
+  try { window.dispatchEvent(new CustomEvent('fq-theme', { detail: t })) } catch { /* SSR/old */ }
   return t
 }
 
