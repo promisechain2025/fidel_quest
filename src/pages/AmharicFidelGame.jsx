@@ -1132,17 +1132,17 @@ export default function AmharicFidelGame() {
       <div className="flex w-full max-w-md flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <Mascot mood="idle" size="sm" />
-          <h1 className="text-2xl font-extrabold tracking-tight text-amber-900 dark:text-amber-100">
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--ink)' }}>
             {t('title')}
           </h1>
         </div>
-        <div className="flex items-center gap-3 rounded-full bg-white/70 px-4 py-1.5 shadow-md backdrop-blur dark:bg-gray-800/70">
-          <span className="flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300">
-            <Star className="h-4 w-4 fill-amber-400 text-amber-500" /> {totalStars}/{LEVELS.length * 3}
+        <div className="flex items-center gap-3 rounded-full px-4 py-1.5 shadow-md backdrop-blur" style={{ background: 'var(--card)', border: '1.5px solid var(--line)' }}>
+          <span className="flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+            <Star className="h-4 w-4" style={{ color: 'var(--star)', fill: 'var(--star)' }} /> {totalStars}/{LEVELS.length * 3}
           </span>
-          <span className="h-4 w-px bg-amber-300/60" aria-hidden="true" />
-          <span className="flex items-center gap-1 text-sm font-bold text-amber-700 dark:text-amber-300">
-            <Trophy className="h-4 w-4 text-orange-500" /> {t('best', { n: progress.bestScore })}
+          <span className="h-4 w-px" style={{ background: 'var(--line)' }} aria-hidden="true" />
+          <span className="flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+            <Trophy className="h-4 w-4" style={{ color: 'var(--accent)' }} /> {t('best', { n: progress.bestScore })}
           </span>
         </div>
       </div>
