@@ -2177,8 +2177,8 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-28 pt-3">
-      <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-28 pt-3">
+      <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-0 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
             <Hero size={48} worn={worn} />
@@ -2200,7 +2200,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="max-w-28 truncate align-middle">{PACKS[getActivePackId()].label}</span>
+                <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
           </div>
@@ -2428,7 +2428,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             className="fixed inset-x-0 bottom-0 z-30"
             style={{ background: 'var(--paper)', borderTop: '2px solid var(--accent)', boxShadow: '0 -6px 20px var(--overlay)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="mx-auto flex w-full max-w-md items-center gap-2 px-5 py-2.5">
+            <div className="mx-auto flex w-full max-w-md items-center gap-2 px-7 py-2.5">
               {/* Kokeb power = the streak; tap it for the streak detail. */}
               <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
                 <Sprite2D draw={drawKokeb} size={30} />

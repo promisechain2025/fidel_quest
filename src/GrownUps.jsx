@@ -573,7 +573,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                 className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
                 style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
               >
-                {PACKS[getActivePackId()].label}
+                <span className="geez">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
             {onToggleSound && (
