@@ -2884,7 +2884,11 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
 
 // Cheerful, colour-blind-safe tile colours for the Explorer grid (vivid bases
 // dark enough for white glyphs to clear contrast), cycled across the families.
-const EXPLORE_TILES = ['#e6304f', '#f0700f', '#7d43d8', '#1f83db', '#e6459a', '#1aa15a', '#0c988f', '#c2570b', '#4a63e0']
+// Aged manuscript-pigment jewels (madder/terracotta/plum/lapis/rose/malachite/
+// teal/bronze/indigo) - each family keeps a distinct hue for recognition, but
+// in gospel-codex tones rather than primary rainbow. All deep enough for the
+// white glyph to pass large-text AA, and rimmed in champagne gold below.
+const EXPLORE_TILES = ['#a83a3a', '#9c5a24', '#6e4380', '#3a5a96', '#9c4670', '#3f7a3e', '#2c6f6a', '#8a5a1e', '#3a4585']
 // Minimum gap between chant steps; the step also yields to the clip itself
 // (~1-1.5s), so FAST means "next letter the moment this one finishes" and
 // the slower tiers add real breathing room on top of the voice.
@@ -3002,8 +3006,8 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
                   className={`chunk flex flex-col items-center gap-1 rounded-2xl px-2 py-3 ${FOCUS}`}
                   style={{
                     background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%), ${color}`,
-                    border: `3px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.85)'}`,
-                    boxShadow: isActive ? `0 0 0 3px ${color}, 0 8px 18px ${color}80` : '0 4px 0 rgba(0,0,0,0.16)',
+                    border: `2.5px solid ${isActive ? '#fff' : 'rgba(226,192,105,0.75)'}`,
+                    boxShadow: isActive ? `0 0 0 3px ${color}, 0 8px 18px ${color}80` : '0 4px 0 rgba(0,0,0,0.28)',
                     color: '#fff',
                     outlineColor: 'var(--sky)',
                   }}
@@ -3370,10 +3374,12 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 transition={{ duration: 0.4 }}
                 className={`chunk geez fq-land-tile flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
                 style={{
-                  background: showAsCorrect ? 'var(--go-soft)' : showAsWrong ? 'var(--bad-soft)' : 'var(--card)',
-                  borderColor: showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--line)',
-                  color: showAsCorrect ? 'var(--go-ink)' : showAsWrong ? 'var(--bad-ink)' : 'var(--ink)',
-                  boxShadow: `0 5px 0 ${showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--line)'}`,
+                  // Resting = the shared gold letter-tile (matches Home); only
+                  // the answer FEEDBACK flips to green (correct) / red (wrong).
+                  background: showAsCorrect ? 'var(--go-soft)' : showAsWrong ? 'var(--bad-soft)' : 'var(--tile)',
+                  borderColor: showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--tile-deep)',
+                  color: showAsCorrect ? 'var(--go-ink)' : showAsWrong ? 'var(--bad-ink)' : 'var(--glyph)',
+                  boxShadow: `0 5px 0 ${showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--tile-deep)'}`,
                   '--chunk-depth': '5px',
                   opacity: isWrongPick && !showAsWrong ? 0.35 : presenting ? 0.6 : 1,
                   outlineColor: 'var(--sky)',
@@ -4555,9 +4561,12 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
                 transition={{ duration: 0.4 }}
                 className={`chunk flex h-28 items-center justify-center rounded-3xl border-2 ${isGlyph ? 'geez text-7xl font-black' : 'text-6xl'} ${FOCUS}`}
                 style={{
-                  background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'var(--card)',
-                  borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
-                  boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)'}`,
+                  // Letter options use the shared gold tile; picture options
+                  // stay neutral cards. Feedback flips green/red on both.
+                  background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : isGlyph ? 'var(--tile)' : 'var(--card)',
+                  borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : isGlyph ? 'var(--tile-deep)' : 'var(--line)',
+                  color: showGood ? 'var(--go-ink)' : showBad ? 'var(--bad-ink)' : isGlyph ? 'var(--glyph)' : 'var(--ink)',
+                  boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : isGlyph ? 'var(--tile-deep)' : 'var(--line)'}`,
                   '--chunk-depth': '5px',
                   opacity: dead && !showBad ? 0.35 : 1,
                   outlineColor: 'var(--sky)',
