@@ -2170,7 +2170,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-20 pt-3">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-5 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-5 flex items-center justify-between gap-2 px-5 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-0 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
@@ -2420,21 +2420,42 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </div>
         )}
       </div>
+      {/* Kokeb power bar: the persistent primary action, docked at the bottom
+         like a game HUD. Kokeb IS the power indicator (streak = charge); the
+         green Warm-up "charges" it; Continue drives the journey (scroll to the
+         pulsing step if it is off-screen, else start it). Hidden once every
+         node is done (the champion card takes over). */}
       <AnimatePresence>
-        {current && !stepInView && (
-          <motion.button
-            type="button"
-            onClick={jumpToStep}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            className={`chunk fixed bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white ${FOCUS}`}
-            style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
-            aria-label={t('jumpToStep', 'Go to my next step')}
+        {current && (
+          <motion.div
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 24, opacity: 0 }}
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-5"
+            style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}
           >
-            <ArrowDown className="h-4 w-4" aria-hidden="true" />
-            {t('myStep', 'My step')}
-          </motion.button>
+            <div className="pointer-events-auto flex w-full max-w-md items-center gap-2 rounded-3xl px-3 py-2.5" style={{ background: 'var(--card)', border: '2px solid var(--accent)', boxShadow: '0 10px 26px var(--overlay)' }}>
+              <div className="flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5" style={{ background: 'var(--paper-2)' }} aria-label={`Kokeb power ${streak}`}>
+                <Sprite2D draw={drawKokeb} size={30} />
+                <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
+              </div>
+              {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
+                <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => (stepInView ? onOpen(current) : jumpToStep())}
+                className={`chunk flex flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 font-black text-white ${FOCUS}`}
+                style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                aria-label={stepInView ? t('myStep', 'My step') : t('jumpToStep', 'Go to my next step')}
+              >
+                {stepInView ? <Play className="h-5 w-5" fill="currentColor" aria-hidden="true" /> : <ArrowDown className="h-5 w-5" aria-hidden="true" />}
+                {t('myStep', 'My step')}
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
       <InstallBanner />
