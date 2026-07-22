@@ -23,6 +23,7 @@ import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import { Harag } from './components/Manuscript'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
@@ -510,6 +511,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           </p>
         </div>
       </header>
+      <div className="mt-2 flex justify-center"><Harag /></div>
 
       {!open ? (
         <ParentalGate onOpen={() => setOpen(true)} />
