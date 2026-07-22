@@ -23,7 +23,9 @@ import { getTheme } from '../platform/theme'
 // The tibeb ribbon pigments are constant across both themes (an aged textile
 // band reads the same on dark vellum or warm parchment). The band base swaps
 // so the weave sits on the right ground.
-const PIG = ['#c0453a', '#d5a53a', '#3f63a0', '#5a9150']
+// Aged gospel-manuscript pigments (madder, ochre, lapis, malachite), a touch
+// desaturated so the woven band reads as old textile rather than primary.
+const PIG = ['#a8463d', '#c0983f', '#40608c', '#57854e']
 // 14px keeps the diamond weave legible while clearing the tightest screen
 // gutter (px-4 = 16px), so the band never clips edge content on a phone.
 const BAND_W = 14
@@ -209,6 +211,43 @@ export function TibebFrame() {
       <div aria-hidden="true" style={band('left')} />
       <div aria-hidden="true" style={band('right')} />
     </>
+  )
+}
+
+/** Harag - the illuminated interlace ornament that heads a Ge'ez manuscript
+    chapter. A centered, symmetric motif (woven pigment strands through a gold
+    medallion) to sit under a screen title. Decorative; pigments are constant
+    so it reads on either ground. `w` sets the drawn width. */
+export function Harag({ w = 210, className = '', style = {} }) {
+  const GOLD = '#e2c069'
+  const [mad, och, lap, mal] = PIG // madder, ochre, lapis, malachite
+  const cx = w / 2
+  const half = (side) => {
+    // three woven humps marching out from the medallion toward an end finial
+    const dir = side // +1 right, -1 left
+    const x0 = cx + dir * 16
+    const seg = 22
+    const up = `M ${x0} 13 q ${dir * seg * 0.5} -11 ${dir * seg} 0 t ${dir * seg} 0 t ${dir * seg} 0`
+    const dn = `M ${x0} 13 q ${dir * seg * 0.5} 11 ${dir * seg} 0 t ${dir * seg} 0 t ${dir * seg} 0`
+    const endX = x0 + dir * seg * 3
+    return (
+      <g key={side}>
+        <path d={up} fill="none" stroke={lap} strokeWidth="2.4" strokeLinecap="round" />
+        <path d={dn} fill="none" stroke={mal} strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx={endX} cy="13" r="3.4" fill={och} />
+        <circle cx={endX} cy="13" r="3.4" fill="none" stroke={GOLD} strokeWidth="1.2" />
+      </g>
+    )
+  }
+  return (
+    <svg viewBox={`0 0 ${w} 26`} width={w} height={26} className={className} style={{ maxWidth: '100%', ...style }} aria-hidden="true">
+      {half(-1)}
+      {half(1)}
+      {/* central gold medallion with a madder jewel */}
+      <circle cx={cx} cy="13" r="8" fill={GOLD} />
+      <circle cx={cx} cy="13" r="8" fill="none" stroke="#a9832f" strokeWidth="1.3" />
+      <circle cx={cx} cy="13" r="3.6" fill={mad} />
+    </svg>
   )
 }
 

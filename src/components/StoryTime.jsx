@@ -21,6 +21,7 @@ import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
 import WordPicture from './Pictures'
+import { Harag, LetterTile } from './Manuscript'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
 
@@ -275,6 +276,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       <p className="mt-1 text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>
         {t('storySub', 'Little books you can already read - every letter is one you learned.')}
       </p>
+      <div className="mt-2 flex justify-center"><Harag /></div>
       {library.length === 0 && (
         <div className="mt-8 flex flex-col items-center gap-3 text-center">
           <Sprite2D draw={drawAnbessa} size={90} />
@@ -288,7 +290,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           <li key={s.id}>
             {s.unlocked ? (
               <button type="button" onClick={() => openStory(s)} className={`chunk flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }}>
-                <span className="text-3xl" aria-hidden="true">{s.pages[0].pic}</span>
+                <LetterTile glyph={Array.from(s.title.g)[0]} size={44} className="shrink-0" />
                 <span className="min-w-0 flex-1">
                   <span className="geez block truncate text-lg font-black">{s.title.g}</span>
                   <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>

@@ -42,6 +42,7 @@ import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
 import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
+import { Harag } from './components/Manuscript'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
@@ -2942,6 +2943,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           </p>
         </div>
       </header>
+      <div className="mt-2 flex justify-center"><Harag /></div>
 
       {/* Vowel-order selector: see and practise one vowel across all families.
          Shown as the አ family's glyphs - its seven forms ARE the pure vowels -
