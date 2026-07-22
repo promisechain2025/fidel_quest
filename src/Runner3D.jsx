@@ -44,19 +44,15 @@ import { INDEXES } from './platform/ethiopic'
 import { t } from './platform/i18n'
 import { LOW_END } from './platform/quality'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
+import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
 
-export const PLACES = [
-  { id: 'lalibela', name: 'Lalibela', country: 'Ethiopia', sky: 0x9cc9e8, ground: 0x96653f, fog: [45, 170] },
-  { id: 'aksum', name: 'Aksum', country: 'Ethiopia', sky: 0xaed4ea, ground: 0xb99b62, fog: [45, 170] },
-  { id: 'simien', name: 'Simien Mountains', country: 'Ethiopia', sky: 0x9fc6e0, ground: 0x5e8f4e, fog: [40, 150] },
-  { id: 'gondar', name: 'Gondar', country: 'Ethiopia', sky: 0xa9cfe6, ground: 0x7c8a56, fog: [45, 170] },
-  { id: 'asmara', name: 'Asmara', country: 'Eritrea', sky: 0xb7d8ea, ground: 0x9aa0a8, fog: [45, 170] },
-  { id: 'massawa', name: 'Massawa', country: 'Eritrea', sky: 0xa5d8ee, ground: 0xe2d3b3, fog: [50, 180] },
-]
+/* The run's geography follows the language being learned: Ethiopian places
+   for Amharic, Eritrea + Axum for Tigrinya (platform/places.js). */
+export const PLACES = runnerPlaces()
 export const placeForLevel = (level) => PLACES[(level - 1) % PLACES.length]
 
 /* ── canvas-drawn textures (glyph signs, Kokeb, the Muncher) ── */
@@ -501,7 +497,7 @@ class RunnerWorld {
     this.ground.material = mat(place.ground)
     for (const c of this.chunks) this.scene.remove(c)
     this.chunks = []
-    const build = CHUNK_BUILDERS[place.id]
+    const build = CHUNK_BUILDERS[place.builder] || CHUNK_BUILDERS[place.id]
     for (let k = 0; k < CHUNK_COUNT; k++) {
       const g = new THREE.Group()
       build(g, k)

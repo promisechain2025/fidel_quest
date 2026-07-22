@@ -8,6 +8,7 @@ import { applyUrlUnlock } from './utils/devUnlock'
 import { initVoice } from './platform/voicePack'
 import { initReminder } from './platform/notify'
 import { t } from './platform/i18n'
+import { initTheme } from './platform/theme'
 
 // Kick the bundled Ethiopic font loading immediately. The 3D games and the
 // share cards bake Ge'ez glyphs into canvas textures; if that happens before
@@ -19,17 +20,12 @@ if (typeof document !== 'undefined' && document.fonts?.load) {
   document.fonts.load("700 48px 'Noto Sans Ethiopic'").catch(() => {})
 }
 
-// Keep the `.dark` class in lockstep with the OS theme. The token system
-// (index.css) themes via the media query on its own, but Classic mode's
-// dark: styles use Tailwind's class-based variant - without this sync those
-// styles never activate and Classic renders as a light island (with the
-// dark body showing as a black band) on a dark-mode phone.
-if (typeof window !== 'undefined' && window.matchMedia) {
-  const mq = window.matchMedia('(prefers-color-scheme: dark)')
-  const syncDark = () => document.documentElement.classList.toggle('dark', mq.matches)
-  syncDark()
-  mq.addEventListener?.('change', syncDark)
-}
+// Resolve the eGeez theme before first paint: dark manuscript by default, or
+// the stored warm-daylight choice. This stamps data-theme on <html> (the
+// index.css token system resolves off it) AND keeps Tailwind's class-based
+// `.dark` in lockstep so Classic mode's dark: styles match the resolved theme
+// rather than the OS. Doing it here, ahead of render, avoids a theme flash.
+initTheme()
 
 // Testing: ?unlock opens all content, ?reset wipes it. No-op without the param.
 applyUrlUnlock()
@@ -38,6 +34,9 @@ initVoice()
 // Native store builds: sync an already-owned Family Pack (reinstall case).
 // Dormant no-op on web or until the RevenueCat keys are configured.
 import('./platform/iap').then((m) => m.initIap()).catch(() => {})
+// Native: silently back the household's progress up to the OS-backed
+// Documents folder, at most once a day. Web keeps manual export.
+import('./platform/backup').then((m) => m.autoBackup()).catch(() => {})
 // Re-arm the daily reminder if a grown-up opted in (native only).
 initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
 

@@ -370,10 +370,10 @@ describe('<AmharicFidelGame />', () => {
     }
   })
 
-  it('persists the sound preference', () => {
+  it('persists the sound preference in the unified app-wide key', () => {
     render(<AmharicFidelGame />)
     fireEvent.click(screen.getByRole('button', { name: 'Turn sound off' }))
-    expect(localStorage.getItem('fidel-quest-sound')).toBe('off')
+    expect(localStorage.getItem('fq.sound.v1')).toBe('0')
   })
 
   it('renders the Classic UI in the global app language', () => {

@@ -11,8 +11,8 @@
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel } from './platform/childModel'
@@ -23,10 +23,15 @@ import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import { Harag } from './components/Manuscript'
+import { LanguageSheet } from './FidelQuestApp'
+import { getTheme, toggleTheme } from './platform/theme'
+import { PACKS, getActivePackId } from './platform/ethiopic'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
+import { loadStoriesRead } from './platform/stories'
 import { loadProfiles, addProfile, switchProfile, deleteProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
@@ -338,6 +343,76 @@ function ProfilesCard() {
   )
 }
 
+/* The reading signal: stories finished, comprehension accuracy, and how
+   often the child asked for word help - the surface where the whole
+   curriculum pays off finally reports to the parent. */
+function ReadingCard({ events }) {
+  const read = Object.values(loadStoriesRead().read).reduce((a, b) => a + b, 0)
+  const compRight = events.filter((e) => e.m === 'story' && e.k.startsWith('storyq:') && e.p === e.k).length
+  const compMiss = events.filter((e) => e.m === 'story' && e.k.startsWith('storyq:') && e.p !== e.k).length
+  const helpTaps = events.filter((e) => e.m === 'story' && e.k.startsWith('sword:')).length
+  if (read === 0 && helpTaps === 0) return null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpReadingTitle', 'Reading')}
+      </h2>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{read}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingReads', 'Stories read')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{compRight + compMiss > 0 ? `${Math.round((compRight / (compRight + compMiss)) * 100)}%` : '—'}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingComp', 'Understood')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>{helpTaps}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpReadingHelp', 'Word helps')}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpReadingHint', 'Fewer word helps on a re-read means growing fluency. Re-reading favorites is exactly right at this age.')}
+      </p>
+    </section>
+  )
+}
+
+/* Native only: appears when the daily on-device backup file exists, so a
+   family recovering from storage eviction or a reinstall has one tap back. */
+function BackupCard() {
+  const [info, setInfo] = useState(null)
+  const [state, setState] = useState('') // '' | 'done' | 'none'
+  useEffect(() => {
+    import('./platform/backup').then((m) => m.backupInfo().then(setInfo)).catch(() => {})
+  }, [])
+  if (!info) return null
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpBackupTitle', 'Device backup')}
+      </h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpBackupBody', `Progress is saved to this device daily (last: ${info.day}, ${info.children} child${info.children > 1 ? 'ren' : ''}) and travels with your phone backup. If the app ever loses its memory, restore here.`, { day: info.day, n: info.children })}
+      </p>
+      <button
+        type="button"
+        onClick={async () => {
+          const m = await import('./platform/backup')
+          const n = await m.restoreBackup()
+          if (n > 0) window.location.reload()
+          else setState('none')
+        }}
+        className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`}
+        style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
+      >
+        {t('gpBackupRestore', 'Restore from backup')}
+      </button>
+      {state === 'none' && <p className="mt-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpBackupNone', 'Nothing restorable was found.')}</p>}
+    </section>
+  )
+}
+
 /* Shown only when the boundary has caught something on this device: the
    crash notes a grown-up can screenshot into a support mail. Local only. */
 function CrashCard() {
@@ -410,10 +485,14 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  // Theme + language moved here (behind the gate) so a child cannot flip them
+  // mid-task; the grown-up sets them where they set everything else.
+  const [theme, setThemeState] = useState(() => getTheme())
   // Re-renders whenever any child state is written; every read below is
   // a fresh pure-selector pass, so no manual refresh bumps are needed.
   useChildModel()
@@ -439,6 +518,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           </p>
         </div>
       </header>
+      <div className="mt-2 flex justify-center"><Harag /></div>
 
       {!open ? (
         <ParentalGate onOpen={() => setOpen(true)} />
@@ -463,7 +543,58 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
             ))}
           </div>
 
+          {/* Settings: theme + language, deliberately behind the gate. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('gpSettings', 'Settings')}
+            </h2>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-black">
+                {theme === 'dark' ? <Moon className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" /> : <Sun className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />}
+                {t('gpTheme', 'Theme')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setThemeState(toggleTheme())}
+                className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+              >
+                {theme === 'dark' ? t('gpThemeNight', 'Night') : t('gpThemeDay', 'Daylight')}
+              </button>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-black">
+                <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
+                {t('langTitle', 'Language')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setLangOpen(true)}
+                className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+              >
+                <span className="geez">{PACKS[getActivePackId()].nativeName}</span>
+              </button>
+            </div>
+          </section>
+
           <ProfilesCard />
+
+          {/* Skip-ahead: shown while the journey is young enough that a
+             heritage child might be grinding letters they already read. */}
+          {onPlacement && learnedFamilyIds(loadJourney()).length < FIDEL_FAMILIES.length && (
+            <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+              <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+                {t('gpPlaceTitle', 'Already knows some letters?')}
+              </h2>
+              <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+                {t('gpPlaceBody', 'A short listening check places the child on the path: each passed group of letters is credited, and the first miss ends the check. Hand the device to the child for this.')}
+              </p>
+              <button type="button" onClick={onPlacement} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                {t('gpPlaceCta', 'Start the skip-ahead check')}
+              </button>
+            </section>
+          )}
 
           <NicknameField />
 
@@ -471,6 +602,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           <PlanCard />
 
           <CommunityCard />
+
+          <ReadingCard events={events} />
+
+          <BackupCard />
 
           <CrashCard />
 
@@ -692,6 +827,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel }) {
           </section>
         </div>
       )}
+      <AnimatePresence>
+        {langOpen && <LanguageSheet key="gp-lang" onClose={() => setLangOpen(false)} />}
+      </AnimatePresence>
     </div>
   )
 }

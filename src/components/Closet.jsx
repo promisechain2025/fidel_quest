@@ -6,6 +6,7 @@ import { WEARABLE_SLOTS, ownedInSlot, wornLayers } from '../journey'
 import { t } from '../platform/i18n'
 import { shareCtaLabel } from '../platform/experiments'
 import { shareAnbessa } from './ShareCard'
+import { Harag } from './Manuscript'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const SLOT_LABEL = { hat: 'Hats', scarf: 'Scarves', cape: 'Capes' }
@@ -36,13 +37,14 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
         </button>
         <h1 className="text-xl font-black leading-tight">{t('closetTitle', "Anbessa's Closet")}</h1>
       </header>
+      <div className="mt-2 flex justify-center"><Harag /></div>
 
       {/* Big live preview + progress + share. */}
       <div className="mt-4 flex flex-col items-center gap-3 rounded-3xl p-5" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
         <motion.div key={worn.map((w) => w.id).join(',')} initial={{ scale: 0.9 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 15 }}>
           <Hero size={148} worn={worn} />
         </motion.div>
-        <p className="mono text-lg font-black" style={{ color: 'var(--go-ink)' }}>
+        <p className="text-lg font-black tabular-nums" style={{ color: 'var(--go-ink)' }}>
           {t('lettersLearned', `${stats.forms} / ${stats.totalForms} letters learned`, { n: stats.forms, total: stats.totalForms })}
         </p>
         <button

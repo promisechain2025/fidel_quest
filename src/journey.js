@@ -13,14 +13,21 @@
    authored collectible - determinism, no loot RNG.
    ========================================================================== */
 
-import { FIDEL_FAMILIES } from './platform/ethiopic'
+import { FIDEL_FAMILIES, getActivePackId } from './platform/ethiopic'
 import { progressChanged } from './platform/childModel'
+import { STORIES } from './platform/stories'
+
+/* Story nodes exist only when the active pack ships stories (module-level
+   like the family table itself; pack switching reloads the app). */
+const PACK_HAS_STORIES = STORIES.some((s) => s.pack === getActivePackId())
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson
   MIX: 'mix', // shuffle challenge over families mastered so far in the chapter
   QUIZ: 'quiz', // BOSS node -> the audio matching Lesson (a level)
   ARCADE: 'arcade', // GATEWAY  -> a 3D Runner leg / Skylands island
+  STORY: 'story', // read a decodable story - real reading ON the spine
+  REVIEW: 'review', // service the spaced-repetition backlog ON the spine
 })
 
 // One earned 3D gateway per chapter (P1 decision: no free-play menu; a child
@@ -48,6 +55,14 @@ export const REWARD_TABLE = [
   { id: 'hat-crown', slot: 'hat', name: 'Gold Crown' },
   { id: 'scarf-blue', slot: 'scarf', name: 'Sky Scarf' },
   { id: 'cape-royal', slot: 'cape', name: 'Royal Cape' },
+  // Second lap of the table (the 9 originals saturated against ~80 nodes,
+  // leaving chapters 3-4 a reward drought of silent duplicates).
+  { id: 'scarf-green', slot: 'scarf', name: 'Meadow Scarf' },
+  { id: 'cape-sunset', slot: 'cape', name: 'Sunset Cape' },
+  { id: 'scarf-plum', slot: 'scarf', name: 'Plum Scarf' },
+  { id: 'cape-sky', slot: 'cape', name: 'Sky Cape' },
+  { id: 'scarf-rose', slot: 'scarf', name: 'Rose Scarf' },
+  { id: 'cape-night', slot: 'cape', name: 'Night Cape' },
 ]
 export const REWARD_BY_ID = new Map(REWARD_TABLE.map((r) => [r.id, r]))
 export const WEARABLE_SLOTS = Object.freeze(['hat', 'scarf', 'cape'])
@@ -88,7 +103,16 @@ export function buildJourney() {
       if (i > 0) push({ id: `mix:${fid}`, kind: NodeKind.MIX, chapter, families: fams.slice(0, i + 1) })
     })
     push({ id: `quiz:${chapter}`, kind: NodeKind.QUIZ, chapter, levelId: `level-${chapter}` })
+    // Reading sits ON the motivational spine, not in a side pocket: after
+    // each boss the child reads a real story before earning the arcade.
+    // Only for packs that ship stories (Tigrinya's path must never block
+    // on an empty library).
+    if (PACK_HAS_STORIES) push({ id: `story:${chapter}`, kind: NodeKind.STORY, chapter })
     push({ id: `arcade:${chapter}`, kind: NodeKind.ARCADE, chapter, gateway: ARCADE_GATEWAYS[c] })
+    // The chapter closes with a review leg: the memory schedule's due
+    // forms get a guaranteed traffic lane on the path itself, not just
+    // the optional daily warm-up (the SRS was scheduled but starved).
+    push({ id: `review:${chapter}`, kind: NodeKind.REVIEW, chapter })
   }
   for (let c = 0; c < 4; c++) {
     push({ id: `vowel:${c + 1}`, kind: NodeKind.QUIZ, chapter: 5, levelId: `level-${c + 5}`, vowel: true })
