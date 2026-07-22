@@ -33,15 +33,17 @@ describe('pack-specific geography', () => {
     expect(p.skylandsPlaces().map((s) => s.place)).toContain('Axum')
   })
 
-  it('the two journeys are actually different, and an unknown pack falls back to Amharic', async () => {
+  it('the two journeys are actually different, and an unknown pack falls back to the default (Tigrinya)', async () => {
     const am = await load('am')
     const amChapters = am.chapterPlaces()
     vi.resetModules()
     const ti = await load('ti')
-    expect(ti.chapterPlaces()).not.toEqual(amChapters)
+    const tiChapters = ti.chapterPlaces()
+    expect(tiChapters).not.toEqual(amChapters)
     vi.resetModules()
     const fallback = await load('xx')
-    expect(fallback.chapterPlaces()).toEqual(amChapters)
+    // First-run default is now Tigrinya, so an unknown pack resolves to it.
+    expect(fallback.chapterPlaces()).toEqual(tiChapters)
   })
 
   it('every place carries what its renderers need', async () => {

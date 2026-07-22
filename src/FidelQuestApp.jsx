@@ -1279,8 +1279,6 @@ export default function FidelQuestApp() {
             <Screen key="home">
               <JourneyPath
                 journey={journey}
-                soundOn={soundOn}
-                onToggleSound={toggleSound}
                 onOpen={openNode}
                 onPlacement={startPlacement}
                 onBackpack={() => setBackpackOpen(true)}
@@ -1350,6 +1348,8 @@ export default function FidelQuestApp() {
                 onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
                 onReplayLevel={(levelId) => startLesson(levelId)}
                 onPlacement={startPlacement}
+                soundOn={soundOn}
+                onToggleSound={toggleSound}
               />
             </Screen>
           )}
@@ -2139,7 +2139,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2150,8 +2150,8 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
     markOnboarded('placeoffer')
     setPlaceOfferOpen(false)
   }
-  const [streakOpen, setStreakOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
+  const [streakOpen, setStreakOpen] = useState(false)
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -2200,18 +2200,14 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="geez hidden max-w-24 truncate align-middle min-[420px]:inline-block">{PACKS[getActivePackId()].nativeName}</span>
+                <span className="max-w-28 truncate align-middle">{PACKS[getActivePackId()].label}</span>
               </button>
             </div>
           </div>
         </div>
+        {/* Header stays minimal: the streak lives in the bottom power bar and
+            sound is a device-level control, so neither clutters the header. */}
         <div className="flex items-center gap-2">
-          {streak > 0 && (
-            <button type="button" onClick={() => setStreakOpen(true)} className={`chunk flex h-11 items-center gap-1 rounded-2xl px-2.5 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
-              <Flame className="h-5 w-5" fill="currentColor" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-              <span className="mono text-sm" style={{ color: 'var(--ink)' }}>{streak}</span>
-            </button>
-          )}
           {giftReady && (
             <motion.button
               type="button"
@@ -2234,16 +2230,6 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--accent)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
-            onClick={onToggleSound}
-            aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
-            aria-pressed={soundOn}
-            className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
-            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
-          >
-            {soundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
           </button>
           <button
             type="button"
@@ -2443,10 +2429,11 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
             style={{ background: 'var(--paper)', borderTop: '2px solid var(--accent)', boxShadow: '0 -6px 20px var(--overlay)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <div className="mx-auto flex w-full max-w-md items-center gap-2 px-5 py-2.5">
-              <div className="flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5" style={{ background: 'var(--paper-2)' }} aria-label={`Kokeb power ${streak}`}>
+              {/* Kokeb power = the streak; tap it for the streak detail. */}
+              <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
                 <Sprite2D draw={drawKokeb} size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
-              </div>
+              </button>
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
                 <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                   <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}

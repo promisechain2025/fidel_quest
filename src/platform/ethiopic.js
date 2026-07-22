@@ -24,18 +24,21 @@ export const PACKS = Object.freeze({ am: AM_PACK, ti: TI_PACK })
 const PACK_KEY = 'fq.pack'
 
 /**
- * First-visit default: honor the device language when it is Tigrinya, else
+ * First-visit default: Tigrinya, unless the device language is explicitly
  * Amharic. A soft default only — never persisted here, so an explicit choice
  * (setActivePack) always wins and a locale change can still be reflected.
  */
 export function detectPreferredPack() {
   try {
     const langs = navigator.languages?.length ? navigator.languages : [navigator.language || '']
-    for (const l of langs) if (/^ti(\b|[-_])/i.test(l)) return 'ti'
+    for (const l of langs) {
+      if (/^ti(\b|[-_])/i.test(l)) return 'ti'
+      if (/^am(\b|[-_])/i.test(l)) return 'am'
+    }
   } catch {
     /* no navigator (SSR/tests) */
   }
-  return 'am'
+  return 'ti'
 }
 
 export function getActivePackId() {
