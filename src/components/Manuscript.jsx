@@ -26,10 +26,11 @@ import { getTheme } from '../platform/theme'
 // Aged gospel-manuscript pigments (madder, ochre, lapis, malachite), a touch
 // desaturated so the woven band reads as old textile rather than primary.
 const PIG = ['#a8463d', '#c0983f', '#40608c', '#57854e']
-// 14px keeps the diamond weave legible while clearing the tightest screen
-// gutter (px-4 = 16px), so the band never clips edge content on a phone.
-const BAND_W = 14
-const BAND_U = 24 // one weave cell; four cells (the pigment cycle) = one tile
+// A slim 10px band: the diamond weave still reads but the border no longer
+// feels heavy (esp. on the wider Classic layout), and it clears the tightest
+// screen gutter (px-4 = 16px) so it never clips edge content.
+const BAND_W = 10
+const BAND_U = 20 // one weave cell; four cells (the pigment cycle) = one tile
 
 // A vertical tibeb band as a tiled SVG: four cells high (one full pigment
 // cycle), each a diamond + four interlocking corner triangles, framed by dark
@@ -37,17 +38,18 @@ const BAND_U = 24 // one weave cell; four cells (the pigment cycle) = one tile
 function bandDataUri() {
   const w = BAND_W
   const th = BAND_U * 4
+  const c = Math.max(3, Math.round(w * 0.4)) // corner-triangle size, scales with band
   let cells = ''
   for (let k = 0; k < 4; k++) {
     const y = k * BAND_U
     const dia = PIG[k % 4]
     const cor = PIG[(k + 2) % 4]
     cells +=
-      `<polygon points="${w / 2},${y + 3} ${w - 3},${y + BAND_U / 2} ${w / 2},${y + BAND_U - 3} 3,${y + BAND_U / 2}" fill="${dia}"/>` +
-      `<polygon points="0,${y} 6,${y} 0,${y + 6}" fill="${cor}"/>` +
-      `<polygon points="${w},${y} ${w - 6},${y} ${w},${y + 6}" fill="${cor}"/>` +
-      `<polygon points="0,${y + BAND_U} 6,${y + BAND_U} 0,${y + BAND_U - 6}" fill="${cor}"/>` +
-      `<polygon points="${w},${y + BAND_U} ${w - 6},${y + BAND_U} ${w},${y + BAND_U - 6}" fill="${cor}"/>`
+      `<polygon points="${w / 2},${y + 2} ${w - 2},${y + BAND_U / 2} ${w / 2},${y + BAND_U - 2} 2,${y + BAND_U / 2}" fill="${dia}"/>` +
+      `<polygon points="0,${y} ${c},${y} 0,${y + c}" fill="${cor}"/>` +
+      `<polygon points="${w},${y} ${w - c},${y} ${w},${y + c}" fill="${cor}"/>` +
+      `<polygon points="0,${y + BAND_U} ${c},${y + BAND_U} 0,${y + BAND_U - c}" fill="${cor}"/>` +
+      `<polygon points="${w},${y + BAND_U} ${w - c},${y + BAND_U} ${w},${y + BAND_U - c}" fill="${cor}"/>`
   }
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${th}" viewBox="0 0 ${w} ${th}">` +

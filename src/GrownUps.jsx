@@ -148,7 +148,7 @@ function PlanCard() {
       </div>
       {plan && eta && (
         <p className="mt-2 text-xs font-bold" style={{ color: 'var(--go-ink)' }}>
-          {t('planEta', 'On this pace you finish the whole Fidel by {date}!', { date: eta })}
+          {t('planEta', 'Whole Fidel by {date}', { date: eta })}
           {' · '}
           {t('gpWarmups', `${loadCoach().days || 0} warm-ups done`, { n: loadCoach().days || 0 })}
         </p>
