@@ -2599,7 +2599,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.45)' }}
+      style={{ background: 'var(--overlay)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -3301,7 +3301,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
          decorative - zero pointer events, behind everything. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ zIndex: 0 }} aria-hidden="true">
         <div className="relative">
-          <div style={{ height: 110, background: 'var(--go-soft)', borderRadius: '55% 45% 0 0 / 100% 80% 0 0', opacity: 0.55, transform: 'scaleX(1.35)' }} />
+          <div style={{ height: 110, background: 'var(--paper-2)', borderRadius: '55% 45% 0 0 / 100% 80% 0 0', opacity: 0.7, transform: 'scaleX(1.35)' }} />
           <div className="absolute bottom-0 left-1" style={{ opacity: 0.95 }}>
             <Sprite2D draw={drawAnbessa} size={54} mood={ctx.status === GameState.ERROR_RECOVERY ? 'worried' : 'happy'} />
           </div>
@@ -3374,7 +3374,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: key } })}
                 animate={showAsWrong ? { x: [0, -9, 9, -6, 6, 0] } : showAsCorrect ? { scale: [1, 1.08, 1] } : {}}
                 transition={{ duration: 0.4 }}
-                className={`chunk geez fq-land-tile flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
+                className={`chunk geez fq-land-tile relative flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
                 style={{
                   // Resting = the shared gold letter-tile (matches Home); only
                   // the answer FEEDBACK flips to green (correct) / red (wrong).
@@ -3390,6 +3390,10 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 data-tut={`opt-${key}`}
               >
                 {form.char}
+                {/* Shape + color, not color alone: a check/cross so a
+                   colorblind child gets the same right/wrong signal. */}
+                {showAsCorrect && <Check className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+                {showAsWrong && <X className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--bad)' }} aria-hidden="true" />}
               </motion.button>
             )
           })}
@@ -4561,7 +4565,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
                 onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: opt } })}
                 animate={showBad ? { x: [0, -8, 8, -5, 5, 0] } : showGood ? { scale: [1, 1.12, 1] } : {}}
                 transition={{ duration: 0.4 }}
-                className={`chunk flex h-28 items-center justify-center rounded-3xl border-2 ${isGlyph ? 'geez text-7xl font-black' : 'text-6xl'} ${FOCUS}`}
+                className={`chunk relative flex h-28 items-center justify-center rounded-3xl border-2 ${isGlyph ? 'geez text-7xl font-black' : 'text-6xl'} ${FOCUS}`}
                 style={{
                   // Letter options use the shared gold tile; picture options
                   // stay neutral cards. Feedback flips green/red on both.
@@ -4576,6 +4580,8 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
                 aria-label={isGlyph ? `Letter ${opt}` : `Picture of ${option?.meaning}`}
               >
                 <span aria-hidden="true" className="flex items-center justify-center">{isGlyph ? opt : <WordPicture emoji={option?.picture} size={64} />}</span>
+                {showGood && <Check className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+                {showBad && <X className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--bad)' }} aria-hidden="true" />}
               </motion.button>
             )
           })}

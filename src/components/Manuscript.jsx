@@ -64,20 +64,20 @@ const PALETTE = {
   dark: {
     parch: ['#242b40', '#1b2233', '#151a27'],
     glow: 'rgba(226,192,105,0.16)',
-    lat: 'rgba(226,192,105,0.11)',
-    lat2: 'rgba(226,192,105,0.17)',
+    lat: 'rgba(226,192,105,0.12)',
+    lat2: 'rgba(226,192,105,0.19)',
     grain: 'rgba(150,110,60,0.05)',
     mark: '#e2c069',
-    markAlpha: 0.13,
+    markAlpha: 0.17,
   },
   light: {
     parch: ['#f7edcf', '#eddfb6', '#e5d2a4'],
     glow: 'rgba(255,238,196,0.5)',
-    lat: 'rgba(120,96,54,0.09)',
-    lat2: 'rgba(120,96,54,0.14)',
+    lat: 'rgba(120,96,54,0.10)',
+    lat2: 'rgba(120,96,54,0.15)',
     grain: 'rgba(150,110,60,0.05)',
     mark: '#8a5a1e',
-    markAlpha: 0.08,
+    markAlpha: 0.11,
   },
 }
 // The heritage watermark glyph — the brand letter of eGeez ("E", sixth order).
@@ -166,20 +166,20 @@ export function TibebFrame() {
     let alive = true
     let timer = 0
     let lastW = -1
-    const draw = () => { if (alive) paintGround(canvas, theme) }
+    let lastH = -1
+    const draw = () => { if (alive) { paintGround(canvas, theme); lastW = window.innerWidth; lastH = window.innerHeight } }
     draw()
-    lastW = window.innerWidth
     // Repaint once the Ethiopic font is ready so the watermark glyph is real -
     // guarded by `alive` so a late resolve never paints a detached canvas.
     if (document.fonts?.ready) document.fonts.ready.then(() => { if (alive) draw() }).catch(() => {})
     // Trailing debounce: mobile URL-bar show/hide fires a resize STORM (each a
     // full-viewport realloc + gradient/lattice/glyph repaint). Coalesce to one
-    // paint after motion settles, and skip width-unchanged (height-only) events
-    // - the ground reads the same when only the address bar collapses.
+    // paint after motion settles. Skip pure address-bar SHRINK (width same,
+    // viewport not taller than what we painted), but DO repaint when the
+    // viewport grows taller than the last paint so the revealed bottom keeps
+    // the gradient instead of falling back to the flat body colour.
     const onResize = () => {
-      const w = window.innerWidth
-      if (w === lastW) return
-      lastW = w
+      if (window.innerWidth === lastW && window.innerHeight <= lastH) return
       clearTimeout(timer)
       timer = setTimeout(draw, 150)
     }
