@@ -1738,7 +1738,7 @@ function Screen({ children }) {
 
 const CHUNK_STYLES = {
   go: { bg: 'var(--go)', edge: 'var(--go-deep)', fg: '#fff' },
-  accent: { bg: 'var(--accent)', edge: 'var(--accent-deep)', fg: '#fff' },
+  accent: { bg: 'var(--accent)', edge: 'var(--accent-deep)', fg: 'var(--glyph)' },
   sky: { bg: 'var(--sky)', edge: 'var(--sky-deep)', fg: '#fff' },
   bad: { bg: 'var(--bad)', edge: 'var(--bad-deep)', fg: '#fff' },
   card: { bg: 'var(--card)', edge: 'var(--line)', fg: 'var(--ink)' },
@@ -1921,7 +1921,9 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX
   const goldTile = done || (unlocked && (isLetter || isReview))
   const bg = goldTile ? 'var(--tile)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
-  const fg = goldTile ? 'var(--glyph)' : unlocked ? (big || isStory ? 'var(--cream)' : 'var(--ink)') : 'var(--muted)'
+  // Boss sits on champagne gold, so its glyph must be the dark glyph ink (a
+  // cream star on gold is ~1.3:1); arcade(green)/story(lapis) keep cream.
+  const fg = goldTile ? 'var(--glyph)' : unlocked ? (isBoss ? 'var(--glyph)' : (isArcade || isStory) ? 'var(--cream)' : 'var(--ink)') : 'var(--muted)'
   const shadowColor = !unlocked ? 'none' : goldTile ? 'var(--tile-deep)' : big ? 'rgba(0,0,0,0.28)' : 'var(--line)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
@@ -2002,12 +2004,16 @@ const PATH_COLS = 3
    instead of being one long amber wall. Tints are translucent over
    var(--paper), so they hold in both themes. */
 const CHAPTER_PLACE_NAMES = chapterPlaces()
+// Each chapter's place-name label needs a jewel ink that passes AA on BOTH
+// grounds: a hardcoded dark ink is ~2.5:1 on the dark vellum. So ink is
+// per-theme - a bright jewel on dark, a deep jewel on parchment (large bold
+// uppercase, so AA-large 3:1 is the bar and both clear it comfortably).
 const CHAPTER_TINT = {
-  1: { name: CHAPTER_PLACE_NAMES[0], band: 'rgba(217,127,0,0.08)', line: 'rgba(217,127,0,0.35)', ink: '#8a5200' },
-  2: { name: CHAPTER_PLACE_NAMES[1], band: 'rgba(73,169,2,0.08)', line: 'rgba(73,169,2,0.35)', ink: '#2f6b01' },
-  3: { name: CHAPTER_PLACE_NAMES[2], band: 'rgba(25,158,222,0.08)', line: 'rgba(25,158,222,0.35)', ink: '#0f628b' },
-  4: { name: CHAPTER_PLACE_NAMES[3], band: 'rgba(199,86,151,0.09)', line: 'rgba(199,86,151,0.35)', ink: '#8d3467' },
-  5: { name: CHAPTER_PLACE_NAMES[4], band: 'rgba(122,90,248,0.08)', line: 'rgba(122,90,248,0.35)', ink: '#5638c9' },
+  1: { name: CHAPTER_PLACE_NAMES[0], band: 'rgba(217,127,0,0.10)', line: 'rgba(226,192,105,0.35)', ink: { dark: '#e6b85e', light: '#8a5200' } },
+  2: { name: CHAPTER_PLACE_NAMES[1], band: 'rgba(90,154,82,0.12)', line: 'rgba(90,154,82,0.40)', ink: { dark: '#7fca66', light: '#3f7a1e' } },
+  3: { name: CHAPTER_PLACE_NAMES[2], band: 'rgba(63,99,160,0.14)', line: 'rgba(63,99,160,0.45)', ink: { dark: '#82a2e0', light: '#2f4d80' } },
+  4: { name: CHAPTER_PLACE_NAMES[3], band: 'rgba(199,86,151,0.12)', line: 'rgba(199,86,151,0.40)', ink: { dark: '#e59cc8', light: '#8d3467' } },
+  5: { name: CHAPTER_PLACE_NAMES[4], band: 'rgba(140,120,210,0.12)', line: 'rgba(140,120,210,0.40)', ink: { dark: '#c3aef5', light: '#5638c9' } },
 }
 function serpentineRows(nodes, cols) {
   const rows = []
@@ -2371,7 +2377,7 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
                   <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
                   {/* Place names are proper nouns from the active pack's
                      geography - never translated. */}
-                  <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink }}>
+                  <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
                     {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
                   </span>
                   <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
@@ -3316,7 +3322,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0 }}
               className="flex items-center gap-1 rounded-xl px-2.5 py-1 font-black"
-              style={{ background: 'var(--accent)', color: '#fff' }}
+              style={{ background: 'var(--accent)', color: 'var(--glyph)' }}
               aria-label={`Streak: ${ctx.streak}`}
             >
               <Flame className="h-4 w-4" fill="currentColor" aria-hidden="true" />

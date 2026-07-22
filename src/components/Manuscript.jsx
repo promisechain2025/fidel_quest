@@ -61,21 +61,21 @@ const BAND_URI = bandDataUri()
 const PALETTE = {
   dark: {
     parch: ['#242b40', '#1b2233', '#151a27'],
-    glow: 'rgba(226,192,105,0.15)',
-    lat: 'rgba(226,192,105,0.07)',
-    lat2: 'rgba(226,192,105,0.11)',
+    glow: 'rgba(226,192,105,0.16)',
+    lat: 'rgba(226,192,105,0.11)',
+    lat2: 'rgba(226,192,105,0.17)',
     grain: 'rgba(150,110,60,0.05)',
     mark: '#e2c069',
-    markAlpha: 0.08,
+    markAlpha: 0.13,
   },
   light: {
     parch: ['#f7edcf', '#eddfb6', '#e5d2a4'],
     glow: 'rgba(255,238,196,0.5)',
-    lat: 'rgba(120,96,54,0.06)',
-    lat2: 'rgba(120,96,54,0.10)',
+    lat: 'rgba(120,96,54,0.09)',
+    lat2: 'rgba(120,96,54,0.14)',
     grain: 'rgba(150,110,60,0.05)',
     mark: '#8a5a1e',
-    markAlpha: 0.05,
+    markAlpha: 0.08,
   },
 }
 // The heritage watermark glyph — the brand letter of eGeez ("E", sixth order).
@@ -161,14 +161,28 @@ export function TibebFrame() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return undefined
-    let raf = 0
-    const draw = () => paintGround(canvas, theme)
+    let alive = true
+    let timer = 0
+    let lastW = -1
+    const draw = () => { if (alive) paintGround(canvas, theme) }
     draw()
-    // Repaint once the Ethiopic font is ready so the watermark glyph is real.
-    if (document.fonts?.ready) document.fonts.ready.then(draw).catch(() => {})
-    const onResize = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw) }
+    lastW = window.innerWidth
+    // Repaint once the Ethiopic font is ready so the watermark glyph is real -
+    // guarded by `alive` so a late resolve never paints a detached canvas.
+    if (document.fonts?.ready) document.fonts.ready.then(() => { if (alive) draw() }).catch(() => {})
+    // Trailing debounce: mobile URL-bar show/hide fires a resize STORM (each a
+    // full-viewport realloc + gradient/lattice/glyph repaint). Coalesce to one
+    // paint after motion settles, and skip width-unchanged (height-only) events
+    // - the ground reads the same when only the address bar collapses.
+    const onResize = () => {
+      const w = window.innerWidth
+      if (w === lastW) return
+      lastW = w
+      clearTimeout(timer)
+      timer = setTimeout(draw, 150)
+    }
     window.addEventListener('resize', onResize)
-    return () => { window.removeEventListener('resize', onResize); cancelAnimationFrame(raf) }
+    return () => { alive = false; window.removeEventListener('resize', onResize); clearTimeout(timer) }
   }, [theme])
 
   const band = (side) => ({

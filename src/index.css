@@ -47,7 +47,7 @@
   --paper: #f7edcf;   /* warm parchment */
   --paper-2: #e5d2a4;
   --ink: #3c3529;
-  --muted: #8a7a58;
+  --muted: #6f6040;   /* ~5:1 on parchment (was #8a7a58 at ~3.6:1, AA-fail) */
   --card: #fffaf0;
   --line: #e7dab2;
   --accent: #c99a33;
