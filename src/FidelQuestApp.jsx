@@ -122,7 +122,10 @@ import {
   ArrowDown,
   Send,
   Search,
+  Sun,
+  Moon,
 } from 'lucide-react'
+import { getTheme, toggleTheme } from './platform/theme'
 
 /* ============================================================================
    §1 DATA LAYER
@@ -1908,8 +1911,14 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   // Locked nodes keep the original muted tile colour, but now show WHAT they
   // are (the letter, or the game icon) with a small lock badge instead of only
   // a lock, so kids can preview what is coming.
-  const bg = done ? 'var(--star)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
-  const fg = done ? '#7c5200' : unlocked ? (big || isStory ? '#fff' : 'var(--ink)') : 'var(--muted)'
+  // A LEARN/MIX/REVIEW step reads as the shared gold letter-tile (done or
+  // active); the special nodes keep their emblem tones (green arcade, gold
+  // boss, lapis story) in the manuscript palette.
+  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX
+  const goldTile = done || (unlocked && (isLetter || isReview))
+  const bg = goldTile ? 'var(--tile)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
+  const fg = goldTile ? 'var(--glyph)' : unlocked ? (big || isStory ? 'var(--cream)' : 'var(--ink)') : 'var(--muted)'
+  const shadowColor = !unlocked ? 'none' : goldTile ? 'var(--tile-deep)' : big ? 'rgba(0,0,0,0.28)' : 'var(--line)'
   const radius = isBoss ? '30% 70% 70% 30% / 30% 30% 70% 70%' : isArcade ? '50%' : '1.1rem'
 
   return (
@@ -1941,8 +1950,8 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             fontSize: big ? 22 : node.kind === NodeKind.MIX ? 17 : 26,
             background: bg,
             color: fg,
-            borderColor: done ? 'var(--accent)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
-            boxShadow: unlocked ? `0 5px 0 ${done ? 'var(--accent)' : big ? 'rgba(0,0,0,0.18)' : 'var(--line)'}` : 'none',
+            borderColor: goldTile ? 'var(--tile-deep)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
+            boxShadow: unlocked ? `0 5px 0 ${shadowColor}` : 'none',
             outlineColor: 'var(--sky)',
           }}
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
@@ -2132,6 +2141,8 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
   }
   const [langOpen, setLangOpen] = useState(false)
   const [streakOpen, setStreakOpen] = useState(false)
+  const [theme, setThemeState] = useState(() => getTheme())
+  const flipTheme = () => setThemeState(toggleTheme())
   const worn = wornLayers(journey.collection)
   const [stepInView, setStepInView] = useState(true)
   const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
@@ -2199,6 +2210,15 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full" style={{ background: 'var(--bad)', border: '2px solid var(--paper)' }} aria-hidden="true" />
             </motion.button>
           )}
+          <button
+            type="button"
+            onClick={flipTheme}
+            aria-label={theme === 'dark' ? t('themeToLight', 'Switch to daylight') : t('themeToDark', 'Switch to night')}
+            className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
+            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--accent)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+          >
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
           <button
             type="button"
             onClick={onToggleSound}
