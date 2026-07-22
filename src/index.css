@@ -40,7 +40,6 @@
   --tile-deep: #c68d12; /* tile 3D edge */
   --glyph: #7c4f00;   /* Ge'ez glyph on the gold tile */
   --cream: #f8f2e2;   /* glyph-on-jewel / button text */
-  --pad: 40px;        /* content inset that clears the tibeb borders */
   --overlay: rgba(8, 12, 22, 0.62);
 }
 :root[data-theme="light"] {
@@ -67,7 +66,6 @@
   --tile-deep: #d99e12;
   --glyph: #7c4f00;
   --cream: #f8f2e2;
-  --pad: 40px;
   --overlay: rgba(60, 53, 41, 0.4);
 }
 

@@ -68,7 +68,7 @@ const PALETTE = {
     lat2: 'rgba(226,192,105,0.19)',
     grain: 'rgba(150,110,60,0.05)',
     mark: '#e2c069',
-    markAlpha: 0.17,
+    markAlpha: 0.22,
   },
   light: {
     parch: ['#f7edcf', '#eddfb6', '#e5d2a4'],

@@ -2320,7 +2320,10 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
               done={false}
               label={t('planNewShort', 'New step')}
               onClick={() => onOpen(current)}
-              pulse={coach?.warmupState !== 'todo' && !coach?.assignment}
+              /* The docked power bar now owns the primary "start my step"
+                 action, so this plan chip stays quiet (no pulse) to avoid two
+                 primaries pointing at the same place. */
+              pulse={false}
             />
           )}
           <PlanChip
@@ -3297,7 +3300,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   const presenting = ctx.status === GameState.PRESENTATION
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col overflow-hidden px-5 pb-44 pt-5">
+    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col overflow-hidden px-5 pb-32 pt-5">
       {/* Scene framing: a soft ground swell with Anbessa watching from the
          corner, so the quiz floats in a place instead of empty paper. Purely
          decorative - zero pointer events, behind everything. */}
@@ -4417,7 +4420,7 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool, a
 /* Shown for the moment the lazy 3D chunk (three.js) is being fetched. */
 function ArcadeLoading() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-4" style={{ background: 'var(--bg)' }}>
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4" style={{ background: 'var(--paper)' }}>
       <Sprite2D draw={drawAnbessa} size={110} />
       <div className="text-lg font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('arcadeLoading', 'Getting the game ready...')}

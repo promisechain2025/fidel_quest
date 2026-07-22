@@ -23,11 +23,14 @@ rather than generic edtech. The look:
   closet previews.
 - Champagne-gold typography for numbers/headings; cream/ivory body on dark.
 
-## Non-negotiable layout rule
+## Layout rule
 
-**`--pad` content inset** (≈40px) clears the tibeb borders on all four sides of
-every screen. Nothing — header, card, label, tile, button — touches the border.
-Section labels keep a ≥14px gap above their content.
+Content clears the tibeb side borders on every screen. In practice the borders
+are a narrow 14px woven band and screen roots already inset with `px-4`/`px-5`
+(16–20px), so nothing — header, card, label, tile, button — touches the border.
+(An earlier `--pad` token was dropped: at 40px it over-indented the real,
+narrower band, and the screen padding already provides the clearance.) Section
+labels keep a ≥14px gap above their content.
 
 ## Tokens (remap of the existing centralized tokens in `src/index.css`)
 
@@ -51,7 +54,6 @@ Default theme = **dark manuscript**. The existing semantic token *names* stay
 | `--bad` (madder) | `#c0453a` | `#c0453a` | wrong / boss |
 | `--sky` (lapis) | `#3f63a0` | `#3f63a0` | story / info |
 | `--cream` | `#f8f2e2` | — | glyph-on-jewel, button text |
-| `--pad` | `40px` | `40px` | border-clearing inset |
 | tibeb band | `['#c0453a','#d5a53a','#3f63a0','#5a9150', base]` | same | side borders |
 
 Chapter jewel tones (for reward beads / accents), dark: madder `#c85446`,
