@@ -3,95 +3,71 @@
 /* Class-based dark variant kept for the Classic game's dark: styles. */
 @variant dark (&:where(.dark, .dark *));
 
-/* ── Design tokens ─────────────────────────────────────────────────────────
-   Duolingo-inspired system: saturated feedback colors on warm paper, every
-   primary action a chunky "3D" button. Accent (amber) is the brand; the
-   green/red/blue are semantic and never used decoratively.
-   Theme resolution: OS via media query; viewer toggle via data-theme wins. */
-:root {
-  --paper: #fdf9f2;
-  --ink: #3c3529;
-  --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
-  --card: #ffffff;
-  --line: #e5dcc9;
-  --accent: #d97f00;
-  --accent-deep: #bf6f00;
-  --star: #ffc800;
-  --go: #49a902;
-  --go-deep: #3a8702;
-  --go-soft: #d7ffb8;
-  --go-ink: #58a700;
-  --bad: #ff4b4b;
-  --bad-deep: #ea2b2b;
-  --bad-soft: #ffdfe0;
-  --bad-ink: #ea2b2b;
-  --sky: #199ede;
-  --sky-deep: #1689c0;
-  --overlay: rgba(60, 53, 41, 0.4);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #131f24;
-    --ink: #f1f7fb;
-    --muted: #8c9da6;
-    --card: #1b2b33;
-    --line: #37464f;
-    --accent: #d97f00;
-    --accent-deep: #bf6f00;
-    --star: #ffc800;
-    --go: #49a902;
-    --go-deep: #3a8702;
-    --go-soft: #17301a;
-    --go-ink: #79d631;
-    --bad: #ff5252;
-    --bad-deep: #d13c3c;
-    --bad-soft: #3a1c1f;
-    --bad-ink: #ff7b7b;
-    --sky: #199ede;
-    --sky-deep: #1689c0;
-    --overlay: rgba(0, 0, 0, 0.55);
-  }
-}
+/* ── Design tokens: eGeez dark-manuscript system ───────────────────────────
+   Rooted in Ethiopian illuminated manuscripts + tibeb textile art. A dark
+   vellum indigo ground is the DEFAULT (owner decision: "dark as default,
+   users switch at the top"); a warm parchment daylight theme is the
+   selectable alternative. The header sun/moon toggle persists to
+   fq.theme.v1 and stamps data-theme on <html>; no data-theme => dark.
+   Aged-pigment accents (champagne gold brand, madder/lapis/malachite/ochre)
+   read as semantic feedback, never decorative.
+   The semantic token NAMES are unchanged, so the 1300+ existing var(--token)
+   usages inherit the reskin with no per-component churn; only the values
+   change, plus manuscript additions (--paper-2, --tile, --tile-deep,
+   --glyph, --cream, --pad). */
+:root,
 :root[data-theme="dark"] {
-  --paper: #131f24;
-  --ink: #f1f7fb;
-  --muted: #8c9da6;
-  --card: #1b2b33;
-  --line: #37464f;
-  --accent: #d97f00;
-  --accent-deep: #bf6f00;
-  --star: #ffc800;
-  --go: #49a902;
-  --go-deep: #3a8702;
-  --go-soft: #17301a;
-  --go-ink: #79d631;
-  --bad: #ff5252;
-  --bad-deep: #d13c3c;
-  --bad-soft: #3a1c1f;
-  --bad-ink: #ff7b7b;
-  --sky: #199ede;
-  --sky-deep: #1689c0;
-  --overlay: rgba(0, 0, 0, 0.55);
+  --paper: #1b2233;   /* dark vellum indigo — screen ground */
+  --paper-2: #141a28; /* ground gradient bottom */
+  --ink: #eae3d2;     /* cream body text */
+  --muted: #9aa2ba;   /* secondary text (AA on --paper) */
+  --card: #2a3248;    /* panels / cards */
+  --line: #3a4560;    /* hairlines */
+  --accent: #e2c069;  /* champagne gold — brand / primary / rims */
+  --accent-deep: #a9832f; /* gold button 3D edge */
+  --star: #ffcb33;
+  --go: #59a52a;      /* malachite — correct / share */
+  --go-deep: #3f7a1e;
+  --go-soft: #1d3320;
+  --go-ink: #8fd15a;
+  --bad: #c0453a;     /* madder — wrong / boss */
+  --bad-deep: #9c322a;
+  --bad-soft: #3a1f1c;
+  --bad-ink: #e88379;
+  --sky: #3f63a0;     /* lapis — story / info */
+  --sky-deep: #2f4d80;
+  --tile: #ffcb33;    /* done letter-tile face (gold chunky tile) */
+  --tile-deep: #c68d12; /* tile 3D edge */
+  --glyph: #7c4f00;   /* Ge'ez glyph on the gold tile */
+  --cream: #f8f2e2;   /* glyph-on-jewel / button text */
+  --pad: 40px;        /* content inset that clears the tibeb borders */
+  --overlay: rgba(8, 12, 22, 0.62);
 }
 :root[data-theme="light"] {
-  --paper: #fdf9f2;
+  --paper: #f7edcf;   /* warm parchment */
+  --paper-2: #e5d2a4;
   --ink: #3c3529;
-  --muted: #7d6f5c; /* AA: 4.9:1 on white (was #9b8b76 at 3.3:1) */
-  --card: #ffffff;
-  --line: #e5dcc9;
-  --accent: #d97f00;
-  --accent-deep: #bf6f00;
-  --star: #ffc800;
-  --go: #49a902;
-  --go-deep: #3a8702;
+  --muted: #8a7a58;
+  --card: #fffaf0;
+  --line: #e7dab2;
+  --accent: #c99a33;
+  --accent-deep: #9c7420;
+  --star: #f0b400;
+  --go: #59a52a;
+  --go-deep: #3f7a1e;
   --go-soft: #d7ffb8;
-  --go-ink: #58a700;
-  --bad: #ff4b4b;
-  --bad-deep: #ea2b2b;
+  --go-ink: #4e9020;
+  --bad: #c0453a;
+  --bad-deep: #9c322a;
   --bad-soft: #ffdfe0;
-  --bad-ink: #ea2b2b;
-  --sky: #199ede;
-  --sky-deep: #1689c0;
+  --bad-ink: #b23a30;
+  --sky: #3f63a0;
+  --sky-deep: #2f4d80;
+  --tile: #ffc61f;
+  --tile-deep: #d99e12;
+  --glyph: #7c4f00;
+  --cream: #f8f2e2;
+  --pad: 40px;
   --overlay: rgba(60, 53, 41, 0.4);
 }
 
