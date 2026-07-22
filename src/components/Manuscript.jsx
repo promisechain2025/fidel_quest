@@ -24,8 +24,10 @@ import { getTheme } from '../platform/theme'
 // band reads the same on dark vellum or warm parchment). The band base swaps
 // so the weave sits on the right ground.
 const PIG = ['#c0453a', '#d5a53a', '#3f63a0', '#5a9150']
-const BAND_W = 18
-const BAND_U = 26 // one weave cell; four cells (the pigment cycle) = one tile
+// 14px keeps the diamond weave legible while clearing the tightest screen
+// gutter (px-4 = 16px), so the band never clips edge content on a phone.
+const BAND_W = 14
+const BAND_U = 24 // one weave cell; four cells (the pigment cycle) = one tile
 
 // A vertical tibeb band as a tiled SVG: four cells high (one full pigment
 // cycle), each a diamond + four interlocking corner triangles, framed by dark
