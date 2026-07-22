@@ -1267,7 +1267,11 @@ export default function FidelQuestApp() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-screen" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
+      {/* Transparent so the fixed TibebFrame canvas (z-index:-1) shows through:
+          the manuscript ground gradient, glow, lattice and watermark live on
+          that canvas, and body already paints var(--paper) behind it as the
+          fallback. An opaque background here would occlude the whole ground. */}
+      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }}>
         <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
