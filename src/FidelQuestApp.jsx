@@ -123,10 +123,8 @@ import {
   ArrowDown,
   Send,
   Search,
-  Sun,
-  Moon,
 } from 'lucide-react'
-import { getTheme, toggleTheme } from './platform/theme'
+import { getTheme } from './platform/theme'
 
 /* ============================================================================
    §1 DATA LAYER
@@ -2150,10 +2148,16 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
     markOnboarded('placeoffer')
     setPlaceOfferOpen(false)
   }
-  const [langOpen, setLangOpen] = useState(false)
   const [streakOpen, setStreakOpen] = useState(false)
+  // Theme is now changed from the grown-ups settings (behind the gate); the
+  // home just reflects it - chapter-label ink is theme-aware - so listen for
+  // the change event and re-read.
   const [theme, setThemeState] = useState(() => getTheme())
-  const flipTheme = () => setThemeState(toggleTheme())
+  useEffect(() => {
+    const h = (e) => setThemeState(e.detail || getTheme())
+    window.addEventListener('fq-theme', h)
+    return () => window.removeEventListener('fq-theme', h)
+  }, [])
   const worn = wornLayers(journey.collection)
   const [stepInView, setStepInView] = useState(true)
   const jumpToStep = () => currentRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
@@ -2178,25 +2182,12 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           </button>
           <div className="min-w-0 text-left">
             <h1 className="text-base font-black leading-none">eGeez</h1>
+            {/* Language + theme now live in grown-ups settings (behind the
+                hold-gate), so a child can't flip them mid-task. */}
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
               <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
                 {doneCount}/{JOURNEY.length}
               </span>
-              {/* One quiet pill for BOTH language axes - the alphabet the
-                  child learns and the language the app speaks - so the
-                  choice lives on the home screen without another header
-                  icon. On a narrow phone (four chips on the right) it
-                  collapses to the globe alone. */}
-              <button
-                type="button"
-                onClick={() => setLangOpen(true)}
-                aria-label={t('langTitle', 'Language')}
-                className={`flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
-              >
-                <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="geez hidden max-w-24 truncate align-middle min-[420px]:inline-block">{PACKS[getActivePackId()].nativeName}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -2223,15 +2214,6 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
           )}
           <button
             type="button"
-            onClick={flipTheme}
-            aria-label={theme === 'dark' ? t('themeToLight', 'Switch to daylight') : t('themeToDark', 'Switch to night')}
-            className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
-            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--accent)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
             onClick={onToggleSound}
             aria-label={soundOn ? 'Turn sound off' : 'Turn sound on'}
             aria-pressed={soundOn}
@@ -2253,7 +2235,6 @@ function JourneyPath({ journey, soundOn, onToggleSound, onOpen, onBackpack, onCl
       </header>
 
       <AnimatePresence>
-        {langOpen && <LanguageSheet key="lang-sheet" onClose={() => setLangOpen(false)} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
       </AnimatePresence>
 
@@ -2572,7 +2553,7 @@ function StreakSheet({ streak, onClose }) {
    carries, reachable from the header pill so a family can switch what the
    child LEARNS (Amharic/Tigrinya letters + voice) and what the app SPEAKS
    without hunting through utilities. Both axes reload on change by design. */
-function LanguageSheet({ onClose }) {
+export function LanguageSheet({ onClose }) {
   useEscapeKey(onClose)
   return (
     <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>

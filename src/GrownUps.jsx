@@ -11,8 +11,8 @@
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
-import { ChevronLeft, Star, Flame, Sparkles, Trash2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel } from './platform/childModel'
@@ -24,6 +24,9 @@ import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import { Harag } from './components/Manuscript'
+import { LanguageSheet } from './FidelQuestApp'
+import { getTheme, toggleTheme } from './platform/theme'
+import { PACKS, getActivePackId } from './platform/ethiopic'
 import { isNativePlatform } from './platform/native'
 import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
@@ -486,6 +489,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
+  const [langOpen, setLangOpen] = useState(false)
+  // Theme + language moved here (behind the gate) so a child cannot flip them
+  // mid-task; the grown-up sets them where they set everything else.
+  const [theme, setThemeState] = useState(() => getTheme())
   // Re-renders whenever any child state is written; every read below is
   // a fresh pure-selector pass, so no manual refresh bumps are needed.
   useChildModel()
@@ -535,6 +542,41 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             ))}
           </div>
+
+          {/* Settings: theme + language, deliberately behind the gate. */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+            <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('gpSettings', 'Settings')}
+            </h2>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-black">
+                {theme === 'dark' ? <Moon className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" /> : <Sun className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />}
+                {t('gpTheme', 'Theme')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setThemeState(toggleTheme())}
+                className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+              >
+                {theme === 'dark' ? t('gpThemeNight', 'Night') : t('gpThemeDay', 'Daylight')}
+              </button>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-black">
+                <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
+                {t('langTitle', 'Language')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setLangOpen(true)}
+                className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+              >
+                <span className="geez">{PACKS[getActivePackId()].nativeName}</span>
+              </button>
+            </div>
+          </section>
 
           <ProfilesCard />
 
@@ -785,6 +827,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           </section>
         </div>
       )}
+      <AnimatePresence>
+        {langOpen && <LanguageSheet key="gp-lang" onClose={() => setLangOpen(false)} />}
+      </AnimatePresence>
     </div>
   )
 }
