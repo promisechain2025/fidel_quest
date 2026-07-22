@@ -124,9 +124,22 @@
   unicode-range: U+1200-137F, U+1380-139F, U+2D80-2DDF, U+AB00-AB2F;
 }
 
+/* Self-hosted rounded Latin face. ui-rounded/SF Pro Rounded only exist on
+   Apple devices, so without this the whole Android audience fell back to
+   stock Roboto and the friendly brand typography evaporated. One variable
+   woff2 (latin subset, wght 200-1000) covers every weight in use. */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('/fonts/nunito-var.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 html, body { background: var(--paper); color: var(--ink); }
 body {
-  font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Quicksand',
+  font-family: 'Nunito', ui-rounded, 'SF Pro Rounded', 'Quicksand',
     system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
@@ -230,3 +243,9 @@ input, textarea, [contenteditable='true'] {
   .fq-land-card { height: 2.75rem !important; }
   .fq-land-pad { width: min(100%, 58vh) !important; }
 }
+
+/* Classic mode chrome, re-skinned onto the app tokens: the page ground and
+   generic buttons follow the one design system, while the per-level accent
+   gradients stay as playful CONTENT color-coding inside cards. */
+.fq-token-accent { background: var(--accent); }
+.fq-token-go { background: var(--go); }

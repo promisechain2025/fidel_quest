@@ -1133,6 +1133,12 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                     // Celebration-grade acceptance: covering the letter always
                     // wins (never blocks). A miss soft-cues origin/direction via
                     // the pad's overlays and lets the child try again.
+                    // Honesty lives in the LEDGER, not the gate: the trace
+                    // quality is recorded as an answer (a sloppy trace counts
+                    // as a miss for mastery/warm-up targeting) while the child
+                    // still advances - assessment without a wall.
+                    const key = traceForms[ctx.traceIdx ?? 0]
+                    if (key) recordAnswer(key, r.pass ? key : `trace:${key}`, 'trace')
                     if (r.pass || r.coverage >= 0.5) touch('__traced__')
                     else playEffect('bad', soundOn)
                   }}
