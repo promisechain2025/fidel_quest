@@ -6,12 +6,13 @@
    purchases are not ready - the app is free for everyone, on web AND in the
    stores, and carries no in-app-purchase / RevenueCat surface for review.
 
-   Set VITE_MONETIZE=true to turn on the FREEMIUM flow: the app stays a FREE
-   download, but after a free trial the grown-up is asked to unlock it with an
-   in-app purchase. The trial then runs the SAME on web and native (so the
-   store app is free-first, not paid-only). There is no server and no account,
-   so nothing here is enforcement - it is an honest daily ask around three
-   truths:
+   Set VITE_MONETIZE=true to turn on the PAID-APP flow: the store app is a PAID
+   download (price set in the consoles) and unlocks the moment it is installed,
+   while the WEB/PWA gives everyone a free TRIAL (VITE_TRIAL_DAYS, default 3) so
+   they can fall in love before day 3, then are asked to buy the paid app. No
+   in-app purchase is required - Apple/Google take the payment at download.
+   There is no server and no account, so nothing here is enforcement - it is an
+   honest daily ask around three truths:
      1. A parent who can pay gets a one-tap in-app purchase.
      2. A parent who will not pay is still valuable: ask for honest feedback,
         thanked with more free days.
@@ -27,6 +28,7 @@
    ========================================================================== */
 import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
+import { isNativePlatform } from './native'
 
 const KEY = 'fq.license.v1'
 
@@ -34,7 +36,7 @@ const envInt = (v, fallback) => {
   const n = Math.round(Number(v))
   return Number.isFinite(n) && n > 0 ? n : fallback
 }
-export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 7)
+export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 3)
 export const FEEDBACK_GRACE_DAYS = 4
 
 /** Master switch. Purchases (trial, buy, Family Pack, gift) are OFF unless
@@ -67,10 +69,11 @@ function addDaysStamp(day, n) {
 }
 
 /** The current license picture. Starts the trial clock on first call.
-    When monetization is off (default) the app is simply free/licensed - no
-    trial, no asks. When on, the SAME trial runs on web and native. */
-export function licenseState(today = dayStamp(), monetize = MONETIZE) {
-  if (!monetize) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
+    - monetization OFF (default): the app is simply free/licensed everywhere.
+    - monetization ON, NATIVE: paid at download -> licensed (no trial, no ask).
+    - monetization ON, WEB/PWA: the free trial runs, then the once-a-day ask. */
+export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform()) {
+  if (!monetize || native) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const s = load()
   if (!s.startDay) {
     s.startDay = today

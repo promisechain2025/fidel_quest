@@ -1,14 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { licenseState, markAsked, grantFeedbackGrace, markSupported, daysSince, TRIAL_DAYS, FEEDBACK_GRACE_DAYS } from './license'
 
-// The trial only exists when monetization is ON; pass monetize=true here.
-const web = (today) => licenseState(today, true)
+// The trial only exists when monetization is ON, on WEB; monetize=true native=false.
+const web = (today) => licenseState(today, true, false)
 
 describe('license (honest free trial)', () => {
   beforeEach(() => localStorage.clear())
 
   it('monetization OFF makes the whole app free (licensed, no asks)', () => {
-    const s = licenseState('2026-07-10', false)
+    const s = licenseState('2026-07-10', false, false)
+    expect(s.phase).toBe('licensed')
+    expect(s.shouldAsk).toBe(false)
+  })
+
+  it('paid-app model: the native store build is licensed (bought at download)', () => {
+    const s = licenseState('2026-07-10', true, true)
     expect(s.phase).toBe('licensed')
     expect(s.shouldAsk).toBe(false)
   })
@@ -22,9 +28,9 @@ describe('license (honest free trial)', () => {
 
   it('the trial counts down day by day and then ends', () => {
     web('2026-07-01')
-    const mid = web('2026-07-05')
+    const mid = web('2026-07-02')
     expect(mid.phase).toBe('trial')
-    expect(mid.daysLeft).toBe(TRIAL_DAYS - 4)
+    expect(mid.daysLeft).toBe(TRIAL_DAYS - 1)
     const after = web(`2026-07-${String(1 + TRIAL_DAYS).padStart(2, '0')}`)
     expect(after.phase).toBe('ended')
     expect(after.shouldAsk).toBe(true)
