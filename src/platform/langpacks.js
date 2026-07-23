@@ -14,7 +14,6 @@
    languages but are right-to-left and need layout work first — tracked for
    a later pass.)
    ========================================================================== */
-
 // Order shown in the picker. `label` is the language's own endonym.
 export const LANG_META = [
   { id: 'en', label: 'English' },
@@ -26,7 +25,6 @@ export const LANG_META = [
   { id: 'fr', label: 'Français' },
 ]
 export const LANG_IDS = LANG_META.map((l) => l.id)
-
 /* Reinforcement words spoken/shown on right (praise) and wrong (encourage)
    answers, per language. English lives here too so one helper serves both the
    main app and the Classic game. */
@@ -60,14 +58,13 @@ export const REINFORCE = {
     encourage: ['Essaie encore !', 'Presque !', 'Tu peux le faire !', 'Continue !', 'Écoute encore !', 'Tu y es presque !'],
   },
 }
-
 /* Core UI strings per new language. English (inline fallbacks in t() calls)
    fills every gap, so this is the frequently-seen surface, not every key. */
 export const LANGPACKS = {
   de: {
         backpack: 'Rucksack', home: 'Start', continue: 'Weiter', gotIt: 'Verstanden',
     nice: 'Toll!', amazing: 'Fantastisch! {n} in Folge!', notQuite: 'Nicht ganz!', tryAgain: '— hör zu und versuch es nochmal',
-    yourTurn: 'Jetzt sagst du es!', levelUp: 'Level geschafft!', islandCleared: 'Level geschafft!', levelComplete: 'Level geschafft!', playAgain: 'Nochmal spielen', listen: 'Hör zu…',
+    yourTurn: 'Jetzt sagst du es!', levelUp: 'Level geschafft!', levelComplete: 'Level geschafft!', playAgain: 'Nochmal spielen', listen: 'Hör zu…',
             grownups: 'Für Erwachsene: Fortschritt und Tipps',     wordsTitle: 'Erste Wörter', whichStart: 'Mit welchem Buchstaben beginnt es?', readAndMatch: 'Lies das Wort, dann tippe auf sein Bild', stoneFwd: 'Hör zu! Tippe den Buchstaben und hüpf hinüber!', stoneBack: 'Hör zu! Hüpf zurück nach Hause!', stoneTeach: 'Das ist der Buchstabe! Tippe ihn unten an, um Anbessa herauszuziehen', stoneTray: 'Buchstabenkarten', fixTitle: 'Fast!', fixBody: '{n} Buchstaben brauchen noch etwas Uebung. Meistere sie, dann versuch es nochmal!', fixCta: 'Die kniffligen ueben', fixReady: 'Gut geuebt!', fixReadyBody: 'Du bist bereit. Zeig den Buchstaben, wer der Chef ist!', fixRetry: 'Quiz nochmal versuchen', fixCapTitle: 'Super geuebt heute!', fixCapBody: 'Diese Buchstaben werden staerker. Naechstes Mal waermen wir uns mit ihnen auf und schaffen das Quiz!',
     popHint: 'Zerplatze die Blase!', familyDone: 'Familie gemeistert!', traceHint: 'Hör zu und fahre den Buchstaben mit dem Finger nach',
     hearIt: 'Nochmal hören', traceClear: 'Löschen', traceCheck: 'Prüfen', start: 'Start', langText: 'App-Sprache', langLearn: 'Lernsprache', langTitle: 'Sprache', langSheetBody: 'Wähle das Alphabet zum Lernen und die Sprache der App-Texte.', streakBody: 'Spiel jeden Tag ein bisschen, dann wächst die Flamme. Ein verpasster Tag startet sie neu - halte sie am Leben!', streakBest: 'Rekord: {n} Tage', keepGoing: 'Weiter so!', buildWord: 'Tippe die Buchstaben der Reihe nach', rebuildWord: 'Baue das Wort zum Bild', wordsDoneTitle: 'Du kannst neue Wörter lesen!', wordsDoneBody: '{n} neue Wörter - Anbessa ist stolz!',
@@ -103,9 +100,8 @@ export const LANGPACKS = {
     tmShort: 'Lehrer', parentsShort: 'Eltern', tmLockTitle: 'Lehrerbereich', tmLockBody: 'Gib deinen Klassencode ein, um deine Klasse zu öffnen.', tmLockOpen: 'Öffnen', tmLockWrong: 'Das ist nicht der Klassencode.', tmPlanTitle: 'Semesterplan', tmPlanIntro: 'Wähle, wie viele Buchstabenfamilien pro Woche - das ganze Semester legt sich von selbst an; jede Woche bekommt ihre TV-Stunde, ihren Hausaufgabenlink und ihre Abgabeliste.', tmPerWeek: '{n} Familien pro Woche', tmPerWeekAny: 'Dein eigenes Tempo (1-10)', tmPerWeekUnit: 'Familien pro Woche', tmPerWeekSet: 'Festlegen', tmWeek: 'Woche {n}', tmThisWeek: 'diese Woche', tmDueShort: 'bis {date}', tmTeach: 'TV-Stunde', tmHomework: 'Hausaufgabe senden', tmShareAgain: 'Link erneut teilen', tmTurnedIn: '{n} von {total} abgegeben', tmMissing: 'fehlt: {names}', tmNoneKnown: 'Warte auf den ersten Ergebnislink', tmChangePace: 'Tempo ändern', tmTroubleTitle: 'Problembuchstaben der Klasse', tmTroubleEmpty: 'Noch nichts - verfehlte Buchstaben kommen in den Ergebnislinks an und sammeln sich hier.', tmTroubleWho: '{n} Fehler · {names}', tmForms: 'Buchstabenformen', tmOrdersBase: 'Grundbuchstaben', tmOrdersAll: 'Alle 7 Formen', tmSent: 'Gesendete Aufgaben', tmExtra: 'Extra', tvChant: 'Gesang', tvQuiz: 'Quiz', tvSay: 'Wer ist das?', tvSayAfter: 'Sprecht mir nach', tvYourTurn: 'Ihr seid dran - sagt ihn!', tvChoose: 'Buchstaben wählen', tvDone: 'Fertig', tvAll: 'Alle', tvNone: 'Keine', tvSayAfter: 'Sprecht mir nach', tvYourTurn: 'Ihr seid dran - sagt ihn!', tvChoose: 'Buchstaben wählen', tvDone: 'Fertig', tvAll: 'Alle',     tmHowTitle: 'So funktioniert es', tmHow1: 'Erstelle deine Klasse einmal - sie lebt auf diesem Telefon, ohne Konto.', tmHow2: 'Lade Schüler ein: sie öffnen einen Link oder scannen den QR-Code.', tmHow3: 'Im Unterricht: die Buchstaben auf den Fernseher - gemeinsam singen oder quizzen.', tmHow4: 'Schicke den Hausaufgabenlink der Woche in die Familien-WhatsApp-Gruppe.', tmHow5: 'Ergebnisse kommen als Links zurück - öffne sie hier und die Liste füllt sich von selbst.',
     challengeFrom: '{who} fordert dich heraus!', challengeScored: '{who} hat {score}% bei {level} erreicht. Schaffst du mehr?',
     giftGot: 'Neu: {item}!', gpMastery: 'Buchstabenbeherrschung · {n} Antworten erfasst', gpReplayLevel: 'Level {n} wiederholen', gpTapNumber: 'Tippe die Zahl {word}',
-    lettersLearned: '{n} / {total} Buchstaben gelernt', skyBridge: 'die Brücke nach {place} ist gewachsen!', skyClearedSub: '{n} Buchstaben + 3 von Jibby gerettet ·',
-    skyLearnBtn: 'Session {n} lernen', skyLearnPrompt: 'lerne die Buchstaben von Session {n}, um den Baum zu wecken.', skyPlayBtn: 'Level {n} spielen',
-    skyReady: 'bereit für Level {n}: es prüft die Sessions 1–{n}!', skyStartQuest: 'Level-{n}-Quest starten', skyStole: 'Jibby hat {n} Buchstaben gestohlen!',
+    lettersLearned: '{n} / {total} Buchstaben gelernt', 
+    
     teeLockedAt: 'Lerne {n} Buchstaben', teeNext: 'Lerne noch {n} Familien, um das nächste Shirt freizuschalten!',
     aFriend: 'Ein Freund',
     bestStreak: 'Beste Serie',
@@ -218,21 +214,13 @@ export const LANGPACKS = {
     shareSaved: 'Gespeichert! Teil es überall.',
     shareShowOff: 'Zeig es allen!',
     shareThanks: 'Danke fürs Teilen!',
-    skyAllCleared: 'Alle vier Himmelsinseln befreit – Anbessa ist ein Fidel-Meister!',
-    skyAllFree: 'jede Himmelsinsel ist frei!',
-    skyCleared: 'Insel befreit!',
-    skyHold: 'Jibby hält fest – hör noch einmal hin nach',
-    skyLearnTap: 'Tippe jede Frucht an, um ihren Buchstaben zu hören –',
-    skyListenFirst: 'Hör dir zuerst alle an',
-    skyMap: 'Karte',
-    skyPluck: 'Pflücke die Frucht, die sagt',
-    skyReplay: 'Wiederholen:',
-    skyRescued: 'Gerettet!',
-    skyRight: 'Ja!',
-    skySession: 'Sitzung',
-    skyWinBack: 'Hol den zurück, der sagt',
-    skyWrong: 'Jibby kichert – hör noch einmal hin nach',
-    skylandsTitle: 'Fidel Skylands',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Lenke Anbessa in',
     teeGrownup: 'Bestellen öffnet einen Shop – frag einen Erwachsenen.',
     teeIntro: 'Verdiene in jedem Kapitel ein neues T-Shirt-Design – Anbessa trägt dein Alphabet! Speichere das Bild oder bitte einen Erwachsenen, ein echtes Shirt zu bestellen.',
@@ -246,7 +234,7 @@ export const LANGPACKS = {
   it: {
         backpack: 'Zaino', home: 'Home', continue: 'Continua', gotIt: 'Capito',
     nice: 'Bravo!', amazing: 'Fantastico! {n} di fila!', notQuite: 'Non proprio!', tryAgain: '— ascolta e riprova',
-    yourTurn: 'Ora tocca a te!', levelUp: 'Livello completato!', islandCleared: 'Livello completato!', levelComplete: 'Livello completato!', playAgain: 'Gioca ancora', listen: 'Ascolta…',
+    yourTurn: 'Ora tocca a te!', levelUp: 'Livello completato!', levelComplete: 'Livello completato!', playAgain: 'Gioca ancora', listen: 'Ascolta…',
             grownups: 'Per i grandi: progressi e consigli',     wordsTitle: 'Prime Parole', whichStart: 'Con quale lettera inizia?', readAndMatch: 'Leggi la parola, poi tocca la sua figura', stoneFwd: 'Ascolta! Tocca la lettera per saltare!', stoneBack: 'Ascolta! Salta di nuovo a casa!', stoneTeach: 'Ecco la lettera! Toccala qui sotto per tirare su Anbessa', stoneTray: 'Carte delle lettere', fixTitle: 'Quasi!', fixBody: '{n} lettere vogliono ancora un po’ di pratica. Imparale bene, poi riprova!', fixCta: 'Allena quelle difficili', fixReady: 'Ottima pratica!', fixReadyBody: 'Sei pronto. Fai vedere a quelle lettere chi comanda!', fixRetry: 'Riprova il quiz', fixCapTitle: 'Ottimo allenamento oggi!', fixCapBody: 'Queste lettere stanno diventando piu’ forti. La prossima volta ci riscaldiamo con loro e superiamo il quiz!',
     popHint: 'Fai scoppiare la bolla!', familyDone: 'Famiglia imparata!', traceHint: 'Ascolta, poi traccia la lettera con il dito',
     hearIt: 'Ascolta ancora', traceClear: 'Cancella', traceCheck: 'Controlla', start: 'Inizia', langText: 'Lingua app', langLearn: 'Lingua da imparare', langTitle: 'Lingua', langSheetBody: 'Scegli l’alfabeto da imparare e la lingua dei testi dell’app.', streakBody: 'Gioca un po’ ogni giorno e la fiamma cresce. Salta un giorno e riparte da zero - tienila accesa!', streakBest: 'Record: {n} giorni', keepGoing: 'Continua così!', buildWord: 'Tocca le lettere in ordine', rebuildWord: 'Costruisci la parola per la figura', wordsDoneTitle: 'Sai leggere parole nuove!', wordsDoneBody: '{n} parole nuove - Anbessa è fiero!',
@@ -282,9 +270,8 @@ export const LANGPACKS = {
     tmShort: 'Maestro', parentsShort: 'Genitori', tmLockTitle: 'Area insegnante', tmLockBody: 'Inserisci il codice della tua classe per aprirla.', tmLockOpen: 'Apri', tmLockWrong: 'Questo non è il codice della classe.', tmPlanTitle: 'Piano del trimestre', tmPlanIntro: 'Scegli quante famiglie di lettere a settimana - tutto il trimestre si dispone da solo; ogni settimana ha la sua lezione in TV, il suo link dei compiti e la lista delle consegne.', tmPerWeek: '{n} famiglie a settimana', tmPerWeekAny: 'Il tuo ritmo (1-10)', tmPerWeekUnit: 'famiglie a settimana', tmPerWeekSet: 'Imposta', tmWeek: 'Settimana {n}', tmThisWeek: 'questa settimana', tmDueShort: 'entro il {date}', tmTeach: 'Lezione in TV', tmHomework: 'Manda i compiti', tmShareAgain: 'Condividi di nuovo il link', tmTurnedIn: '{n} su {total} consegnati', tmMissing: 'mancano: {names}', tmNoneKnown: 'In attesa del primo link con i risultati', tmChangePace: 'Cambia ritmo', tmTroubleTitle: 'Lettere difficili della classe', tmTroubleEmpty: 'Ancora niente - le lettere sbagliate arrivano nei link dei risultati e si raccolgono qui.', tmTroubleWho: '{n} errori · {names}', tmForms: 'Forme delle lettere', tmOrdersBase: 'Lettere base', tmOrdersAll: 'Tutte e 7 le forme', tmSent: 'Compiti inviati', tmExtra: 'Extra', tvChant: 'Canto', tvQuiz: 'Quiz', tvSay: 'Chi è questo?', tvSayAfter: 'Ripetete dopo di me', tvYourTurn: 'Tocca a voi - ditelo!', tvChoose: 'Scegli le lettere', tvDone: 'Fatto', tvAll: 'Tutte', tvNone: 'Nessuna', tvSayAfter: 'Ripetete dopo di me', tvYourTurn: 'Tocca a voi - ditelo!', tvChoose: 'Scegli le lettere', tvDone: 'Fatto', tvAll: 'Tutte',     tmHowTitle: 'Come funziona', tmHow1: 'Crea la tua classe una volta - vive su questo telefono, senza account.', tmHow2: 'Invita gli alunni: aprono un link o scansionano il codice QR.', tmHow3: 'In classe metti le lettere sulla TV - cantate o fate il quiz insieme.', tmHow4: 'Manda il link dei compiti della settimana nel gruppo WhatsApp delle famiglie.', tmHow5: 'I risultati tornano come link - aprili qui e il registro si riempie da solo.',
     challengeFrom: '{who} ti sfida!', challengeScored: '{who} ha fatto {score}% in {level}. Riesci a batterlo?',
     giftGot: 'Novità: {item}!', gpMastery: 'Padronanza delle lettere · {n} risposte registrate', gpReplayLevel: 'Rigioca il livello {n}', gpTapNumber: 'Tocca il numero {word}',
-    lettersLearned: '{n} / {total} lettere imparate', skyBridge: 'il ponte verso {place} è cresciuto!', skyClearedSub: '{n} lettere + 3 salvate da Jibby ·',
-    skyLearnBtn: 'Impara la sessione {n}', skyLearnPrompt: 'impara le lettere della sessione {n} per svegliare l’albero.', skyPlayBtn: 'Gioca il livello {n}',
-    skyReady: 'pronto per il livello {n}: mette alla prova le sessioni 1–{n}!', skyStartQuest: 'Inizia la missione del livello {n}', skyStole: 'Jibby ha rubato {n} lettere!',
+    lettersLearned: '{n} / {total} lettere imparate', 
+    
     teeLockedAt: 'Impara {n} lettere', teeNext: 'Impara altre {n} famiglie per sbloccare la prossima maglietta!',
     aFriend: 'Un amico',
     bestStreak: 'Serie migliore',
@@ -397,21 +384,13 @@ export const LANGPACKS = {
     shareSaved: 'Salvato! Condividilo ovunque.',
     shareShowOff: 'Mostralo a tutti!',
     shareThanks: 'Grazie per aver condiviso!',
-    skyAllCleared: 'Tutte e quattro le isole del cielo liberate — Anbessa è un Campione del Fidel!',
-    skyAllFree: 'ogni isola del cielo è libera!',
-    skyCleared: 'Isola liberata!',
-    skyHold: 'Jibby tiene stretto — riascolta per',
-    skyLearnTap: 'Tocca ogni frutto per sentire la sua lettera —',
-    skyListenFirst: 'Ascoltale tutte prima',
-    skyMap: 'Mappa',
-    skyPluck: 'Cogli il frutto che dice',
-    skyReplay: 'Rigioca:',
-    skyRescued: 'Salvata!',
-    skyRight: 'Sì!',
-    skySession: 'Sessione',
-    skyWinBack: 'Riconquista quella che dice',
-    skyWrong: 'Jibby ridacchia — riascolta per',
-    skylandsTitle: 'Isole del Cielo del Fidel',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Guida Anbessa verso',
     teeGrownup: 'Ordinare apre un negozio — chiedi a un grande.',
     teeIntro: 'Guadagna un nuovo disegno di maglietta a ogni capitolo — Anbessa indossa il tuo alfabeto! Salva l\'immagine o chiedi a un grande di ordinare una maglietta vera.',
@@ -425,7 +404,7 @@ export const LANGPACKS = {
   sv: {
         backpack: 'Ryggsäck', home: 'Hem', continue: 'Fortsätt', gotIt: 'Klart',
     nice: 'Bra!', amazing: 'Fantastiskt! {n} i rad!', notQuite: 'Inte riktigt!', tryAgain: '— lyssna och försök igen',
-    yourTurn: 'Nu säger du det!', levelUp: 'Nivå klar!', islandCleared: 'Nivå klar!', levelComplete: 'Nivå klar!', playAgain: 'Spela igen', listen: 'Lyssna…',
+    yourTurn: 'Nu säger du det!', levelUp: 'Nivå klar!', levelComplete: 'Nivå klar!', playAgain: 'Spela igen', listen: 'Lyssna…',
             grownups: 'För vuxna: framsteg och tips',     wordsTitle: 'Första orden', whichStart: 'Vilken bokstav börjar det med?', readAndMatch: 'Läs ordet och tryck sedan på bilden', stoneFwd: 'Lyssna! Tryck på bokstaven och hoppa över!', stoneBack: 'Lyssna! Hoppa hem igen!', stoneTeach: 'Här är bokstaven! Tryck på den nedan för att dra upp Anbessa', stoneTray: 'Bokstavskort', fixTitle: 'Nästan!', fixBody: '{n} bokstäver behöver lite mer övning. Bemästra dem och försök igen!', fixCta: 'Öva de kluriga', fixReady: 'Bra övat!', fixReadyBody: 'Du är redo. Visa bokstäverna vem som bestämmer!', fixRetry: 'Prova quizet igen', fixCapTitle: 'Bra övat i dag!', fixCapBody: 'Bokstäverna blir starkare. Nästa gång värmer vi upp med dem och klarar quizet!',
     popHint: 'Poppa bubblan!', familyDone: 'Familjen klar!', traceHint: 'Lyssna och spåra bokstaven med fingret',
     hearIt: 'Hör igen', traceClear: 'Rensa', traceCheck: 'Kolla', start: 'Start', langText: 'Appspråk', langLearn: 'Språk att lära', langTitle: 'Språk', langSheetBody: 'Välj alfabetet att lära dig och språket för appens text.', streakBody: 'Spela lite varje dag så växer lågan. Missar du en dag börjar den om - håll den vid liv!', streakBest: 'Bästa: {n} dagar', keepGoing: 'Fortsätt!', buildWord: 'Tryck på bokstäverna i ordning', rebuildWord: 'Bygg ordet till bilden', wordsDoneTitle: 'Du kan läsa nya ord!', wordsDoneBody: '{n} nya ord - Anbessa är stolt!',
@@ -461,9 +440,8 @@ export const LANGPACKS = {
     tmShort: 'Lärare', parentsShort: 'Föräldrar', tmLockTitle: 'Lärarområde', tmLockBody: 'Ange din klasskod för att öppna din klass.', tmLockOpen: 'Öppna', tmLockWrong: 'Det är inte klasskoden.', tmPlanTitle: 'Terminsplan', tmPlanIntro: 'Välj hur många bokstavsfamiljer per vecka - hela terminen lägger sig själv; varje vecka får sin TV-lektion, sin läxlänk och sin inlämningslista.', tmPerWeek: '{n} familjer per vecka', tmPerWeekAny: 'Din egen takt (1-10)', tmPerWeekUnit: 'familjer per vecka', tmPerWeekSet: 'Välj', tmWeek: 'Vecka {n}', tmThisWeek: 'denna vecka', tmDueShort: 'senast {date}', tmTeach: 'TV-lektion', tmHomework: 'Skicka läxa', tmShareAgain: 'Dela länken igen', tmTurnedIn: '{n} av {total} inlämnade', tmMissing: 'saknas: {names}', tmNoneKnown: 'Väntar på den första resultatlänken', tmChangePace: 'Ändra takt', tmTroubleTitle: 'Klassens svåra bokstäver', tmTroubleEmpty: 'Inget än - missade bokstäver kommer i resultatlänkarna och samlas här.', tmTroubleWho: '{n} missar · {names}', tmForms: 'Bokstavsformer', tmOrdersBase: 'Grundbokstäver', tmOrdersAll: 'Alla 7 formerna', tmSent: 'Skickade uppgifter', tmExtra: 'Extra', tvChant: 'Ramsa', tvQuiz: 'Quiz', tvSay: 'Vem är detta?', tvSayAfter: 'Säg efter mig', tvYourTurn: 'Er tur - säg den!', tvChoose: 'Välj bokstäver', tvDone: 'Klar', tvAll: 'Alla', tvNone: 'Inga', tvSayAfter: 'Säg efter mig', tvYourTurn: 'Er tur - säg den!', tvChoose: 'Välj bokstäver', tvDone: 'Klar', tvAll: 'Alla',     tmHowTitle: 'Så funkar det', tmHow1: 'Skapa din klass en gång - den bor på den här telefonen, utan konto.', tmHow2: 'Bjud in elever: de öppnar en länk eller skannar QR-koden.', tmHow3: 'På lektionen: bokstäverna på TV:n - ramsa eller quizza tillsammans.', tmHow4: 'Skicka veckans läxlänk till familjernas WhatsApp-grupp.', tmHow5: 'Resultaten kommer tillbaka som länkar - öppna dem här så fylls listan av sig själv.',
     challengeFrom: '{who} utmanar dig!', challengeScored: '{who} fick {score}% på {level}. Kan du slå det?',
     giftGot: 'Nytt: {item}!', gpMastery: 'Bokstavskoll · {n} svar registrerade', gpReplayLevel: 'Spela nivå {n} igen', gpTapNumber: 'Tryck på talet {word}',
-    lettersLearned: '{n} / {total} bokstäver lärda', skyBridge: 'bron till {place} har vuxit fram!', skyClearedSub: '{n} bokstäver + 3 räddade från Jibby ·',
-    skyLearnBtn: 'Lär dig session {n}', skyLearnPrompt: 'lär dig bokstäverna i session {n} för att väcka trädet.', skyPlayBtn: 'Spela nivå {n}',
-    skyReady: 'redo för nivå {n}: den testar session 1–{n}!', skyStartQuest: 'Starta nivå {n}-uppdraget', skyStole: 'Jibby stal {n} bokstäver!',
+    lettersLearned: '{n} / {total} bokstäver lärda', 
+    
     teeLockedAt: 'Lär dig {n} bokstäver', teeNext: 'Lär dig {n} familjer till för att låsa upp nästa tröja!',
     aFriend: 'En kompis',
     bestStreak: 'Bästa svit',
@@ -576,21 +554,13 @@ export const LANGPACKS = {
     shareSaved: 'Sparat! Dela var du vill.',
     shareShowOff: 'Visa alla!',
     shareThanks: 'Tack för att du delar!',
-    skyAllCleared: 'Alla fyra skyöar klarade — Anbessa är en Fidel-mästare!',
-    skyAllFree: 'varje skyö är fri!',
-    skyCleared: 'Ön klarad!',
-    skyHold: 'Jibby håller hårt — lyssna igen efter',
-    skyLearnTap: 'Tryck på varje frukt för att höra dess bokstav —',
-    skyListenFirst: 'Lyssna på alla först',
-    skyMap: 'Karta',
-    skyPluck: 'Plocka frukten som säger',
-    skyReplay: 'Spela igen:',
-    skyRescued: 'Räddad!',
-    skyRight: 'Ja!',
-    skySession: 'Pass',
-    skyWinBack: 'Vinn tillbaka den som säger',
-    skyWrong: 'Jibby fnissar — lyssna igen efter',
-    skylandsTitle: 'Fidel Skylands',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Styr Anbessa in i',
     teeGrownup: 'Beställning öppnar en butik — fråga en vuxen.',
     teeIntro: 'Vinn en ny tröjdesign varje kapitel — Anbessa bär ditt alfabet! Spara bilden eller be en vuxen beställa en riktig tröja.',
@@ -604,7 +574,7 @@ export const LANGPACKS = {
   nl: {
         backpack: 'Rugzak', home: 'Home', continue: 'Verder', gotIt: 'Begrepen',
     nice: 'Goed zo!', amazing: 'Geweldig! {n} op een rij!', notQuite: 'Net niet!', tryAgain: '— luister en probeer opnieuw',
-    yourTurn: 'Nu zeg jij het!', levelUp: 'Level voltooid!', islandCleared: 'Level voltooid!', levelComplete: 'Level voltooid!', playAgain: 'Opnieuw spelen', listen: 'Luister…',
+    yourTurn: 'Nu zeg jij het!', levelUp: 'Level voltooid!', levelComplete: 'Level voltooid!', playAgain: 'Opnieuw spelen', listen: 'Luister…',
             grownups: 'Voor volwassenen: voortgang en tips',     wordsTitle: 'Eerste woorden', whichStart: 'Met welke letter begint het?', readAndMatch: 'Lees het woord en tik dan op het plaatje', stoneFwd: 'Luister! Tik op de letter en spring over!', stoneBack: 'Luister! Spring terug naar huis!', stoneTeach: 'Dit is de letter! Tik erop hieronder om Anbessa omhoog te trekken', stoneTray: 'Letterkaarten', fixTitle: 'Bijna!', fixBody: '{n} letters willen nog wat oefening. Beheers ze en probeer het opnieuw!', fixCta: 'Oefen de lastige', fixReady: 'Goed geoefend!', fixReadyBody: 'Je bent er klaar voor. Laat die letters zien wie de baas is!', fixRetry: 'Probeer de quiz opnieuw', fixCapTitle: 'Goed geoefend vandaag!', fixCapBody: 'Deze letters worden sterker. Volgende keer warmen we ermee op en halen we de quiz!',
     popHint: 'Prik de bel!', familyDone: 'Familie geleerd!', traceHint: 'Luister en trek de letter na met je vinger',
     hearIt: 'Nog eens horen', traceClear: 'Wissen', traceCheck: 'Check', start: 'Start', langText: 'App-taal', langLearn: 'Leertaal', langTitle: 'Taal', langSheetBody: 'Kies het alfabet om te leren en de taal van de app-tekst.', streakBody: 'Speel elke dag een beetje en de vlam groeit. Sla je een dag over, dan begint hij opnieuw - houd hem brandend!', streakBest: 'Beste: {n} dagen', keepGoing: 'Ga zo door!', buildWord: 'Tik de letters op volgorde aan', rebuildWord: 'Bouw het woord bij het plaatje', wordsDoneTitle: 'Je kunt nieuwe woorden lezen!', wordsDoneBody: '{n} nieuwe woorden - Anbessa is trots!',
@@ -640,9 +610,8 @@ export const LANGPACKS = {
     tmShort: 'Leraar', parentsShort: 'Ouders', tmLockTitle: 'Leraargedeelte', tmLockBody: 'Voer je klascode in om je klas te openen.', tmLockOpen: 'Openen', tmLockWrong: 'Dat is niet de klascode.', tmPlanTitle: 'Trimesterplan', tmPlanIntro: 'Kies hoeveel letterfamilies per week - het hele trimester legt zichzelf uit; elke week krijgt zijn tv-les, zijn huiswerklink en zijn inleverlijst.', tmPerWeek: '{n} families per week', tmPerWeekAny: 'Je eigen tempo (1-10)', tmPerWeekUnit: 'families per week', tmPerWeekSet: 'Instellen', tmWeek: 'Week {n}', tmThisWeek: 'deze week', tmDueShort: 'uiterlijk {date}', tmTeach: 'Tv-les', tmHomework: 'Huiswerk sturen', tmShareAgain: 'Link opnieuw delen', tmTurnedIn: '{n} van {total} ingeleverd', tmMissing: 'ontbreekt: {names}', tmNoneKnown: 'Wacht op de eerste resultaatlink', tmChangePace: 'Tempo wijzigen', tmTroubleTitle: 'Moeilijke letters van de klas', tmTroubleEmpty: 'Nog niets - gemiste letters komen mee in de resultaatlinks en verzamelen zich hier.', tmTroubleWho: '{n} missers · {names}', tmForms: 'Lettervormen', tmOrdersBase: 'Basisletters', tmOrdersAll: 'Alle 7 vormen', tmSent: 'Verstuurde opdrachten', tmExtra: 'Extra', tvChant: 'Gezang', tvQuiz: 'Quiz', tvSay: 'Wie is dit?', tvSayAfter: 'Zeg mij na', tvYourTurn: 'Jullie beurt - zeg het!', tvChoose: 'Kies letters', tvDone: 'Klaar', tvAll: 'Alle', tvNone: 'Geen', tvSayAfter: 'Zeg mij na', tvYourTurn: 'Jullie beurt - zeg het!', tvChoose: 'Kies letters', tvDone: 'Klaar', tvAll: 'Alle',     tmHowTitle: 'Zo werkt het', tmHow1: 'Maak je klas één keer aan - hij leeft op deze telefoon, zonder account.', tmHow2: 'Nodig leerlingen uit: ze openen één link of scannen de QR-code.', tmHow3: 'In de les: de letters op de tv - samen zingen of quizzen.', tmHow4: 'Stuur de huiswerklink van de week naar de WhatsApp-groep van de families.', tmHow5: 'Resultaten komen terug als links - open ze hier en de lijst vult zichzelf.',
     challengeFrom: '{who} daagt je uit!', challengeScored: '{who} haalde {score}% op {level}. Kun jij dat verslaan?',
     giftGot: 'Nieuw: {item}!', gpMastery: 'Letterbeheersing · {n} antwoorden vastgelegd', gpReplayLevel: 'Level {n} opnieuw spelen', gpTapNumber: 'Tik op het getal {word}',
-    lettersLearned: '{n} / {total} letters geleerd', skyBridge: 'de brug naar {place} is gegroeid!', skyClearedSub: '{n} letters + 3 gered van Jibby ·',
-    skyLearnBtn: 'Leer sessie {n}', skyLearnPrompt: 'leer de letters van sessie {n} om de boom te wekken.', skyPlayBtn: 'Speel level {n}',
-    skyReady: 'klaar voor level {n}: het test sessie 1–{n}!', skyStartQuest: 'Start de level {n}-missie', skyStole: 'Jibby heeft {n} letters gestolen!',
+    lettersLearned: '{n} / {total} letters geleerd', 
+    
     teeLockedAt: 'Leer {n} letters', teeNext: 'Leer nog {n} families om het volgende shirt te openen!',
     aFriend: 'Een vriend',
     bestStreak: 'Beste reeks',
@@ -755,21 +724,13 @@ export const LANGPACKS = {
     shareSaved: 'Opgeslagen! Deel het overal.',
     shareShowOff: 'Laat het iedereen zien!',
     shareThanks: 'Bedankt voor het delen!',
-    skyAllCleared: 'Alle vier de skylands vrij — Anbessa is een Fidel Kampioen!',
-    skyAllFree: 'elk skyland is vrij!',
-    skyCleared: 'Eiland vrij!',
-    skyHold: 'Jibby houdt stevig vast — luister nog eens naar',
-    skyLearnTap: 'Tik op elke vrucht om de letter te horen —',
-    skyListenFirst: 'Luister eerst naar ze allemaal',
-    skyMap: 'Kaart',
-    skyPluck: 'Pluk de vrucht die zegt',
-    skyReplay: 'Opnieuw:',
-    skyRescued: 'Gered!',
-    skyRight: 'Ja!',
-    skySession: 'Sessie',
-    skyWinBack: 'Win de letter terug die zegt',
-    skyWrong: 'Jibby giechelt — luister nog eens naar',
-    skylandsTitle: 'Fidel Skylands',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Stuur Anbessa naar',
     teeGrownup: 'Bestellen opent een winkel — vraag een volwassene.',
     teeIntro: 'Verdien elk hoofdstuk een nieuw shirtontwerp — Anbessa draagt jouw alfabet! Bewaar de foto of vraag een volwassene om een echt shirt te bestellen.',
@@ -783,7 +744,7 @@ export const LANGPACKS = {
   no: {
         backpack: 'Ryggsekk', home: 'Hjem', continue: 'Fortsett', gotIt: 'Skjønner',
     nice: 'Bra!', amazing: 'Fantastisk! {n} på rad!', notQuite: 'Ikke helt!', tryAgain: '— lytt og prøv igjen',
-    yourTurn: 'Nå sier du det!', levelUp: 'Nivå fullført!', islandCleared: 'Nivå fullført!', levelComplete: 'Nivå fullført!', playAgain: 'Spill igjen', listen: 'Lytt…',
+    yourTurn: 'Nå sier du det!', levelUp: 'Nivå fullført!', levelComplete: 'Nivå fullført!', playAgain: 'Spill igjen', listen: 'Lytt…',
             grownups: 'For voksne: fremgang og tips',     wordsTitle: 'Første ord', whichStart: 'Hvilken bokstav begynner det med?', readAndMatch: 'Les ordet, og trykk så på bildet', stoneFwd: 'Lytt! Trykk på bokstaven og hopp over!', stoneBack: 'Lytt! Hopp hjem igjen!', stoneTeach: 'Dette er bokstaven! Trykk på den nedenfor for å dra opp Anbessa', stoneTray: 'Bokstavkort', fixTitle: 'Nesten!', fixBody: '{n} bokstaver trenger litt mer øving. Mestre dem og prøv igjen!', fixCta: 'Øv på de vanskelige', fixReady: 'Bra øvd!', fixReadyBody: 'Du er klar. Vis bokstavene hvem som bestemmer!', fixRetry: 'Prøv quizen igjen', fixCapTitle: 'Bra øvd i dag!', fixCapBody: 'Bokstavene blir sterkere. Neste gang varmer vi opp med dem og klarer quizen!',
     popHint: 'Sprett boblen!', familyDone: 'Familien mestret!', traceHint: 'Lytt og tegn bokstaven med fingeren',
     hearIt: 'Hør igjen', traceClear: 'Tøm', traceCheck: 'Sjekk', start: 'Start', langText: 'App-språk', langLearn: 'Språk å lære', langTitle: 'Språk', langSheetBody: 'Velg alfabetet du vil lære og språket for appteksten.', streakBody: 'Spill litt hver dag, så vokser flammen. Hopper du over en dag, starter den på nytt - hold den i live!', streakBest: 'Beste: {n} dager', keepGoing: 'Fortsett!', buildWord: 'Trykk på bokstavene i rekkefølge', rebuildWord: 'Bygg ordet til bildet', wordsDoneTitle: 'Du kan lese nye ord!', wordsDoneBody: '{n} nye ord - Anbessa er stolt!',
@@ -819,9 +780,8 @@ export const LANGPACKS = {
     tmShort: 'Lærer', parentsShort: 'Foreldre', tmLockTitle: 'Lærerområde', tmLockBody: 'Skriv inn klassekoden din for å åpne klassen.', tmLockOpen: 'Åpne', tmLockWrong: 'Det er ikke klassekoden.', tmPlanTitle: 'Semesterplan', tmPlanIntro: 'Velg hvor mange bokstavfamilier per uke - hele semesteret legger seg selv; hver uke får sin TV-time, sin lekselenke og sin innleveringsliste.', tmPerWeek: '{n} familier per uke', tmPerWeekAny: 'Ditt eget tempo (1-10)', tmPerWeekUnit: 'familier per uke', tmPerWeekSet: 'Velg', tmWeek: 'Uke {n}', tmThisWeek: 'denne uken', tmDueShort: 'frist {date}', tmTeach: 'TV-time', tmHomework: 'Send lekse', tmShareAgain: 'Del lenken igjen', tmTurnedIn: '{n} av {total} levert', tmMissing: 'mangler: {names}', tmNoneKnown: 'Venter på den første resultatlenken', tmChangePace: 'Endre tempo', tmTroubleTitle: 'Klassens vanskelige bokstaver', tmTroubleEmpty: 'Ingenting ennå - bokstaver som bommes kommer i resultatlenkene og samles her.', tmTroubleWho: '{n} bom · {names}', tmForms: 'Bokstavformer', tmOrdersBase: 'Grunnbokstaver', tmOrdersAll: 'Alle 7 formene', tmSent: 'Sendte oppgaver', tmExtra: 'Ekstra', tvChant: 'Sang', tvQuiz: 'Quiz', tvSay: 'Hvem er dette?', tvSayAfter: 'Si etter meg', tvYourTurn: 'Deres tur - si den!', tvChoose: 'Velg bokstaver', tvDone: 'Ferdig', tvAll: 'Alle', tvNone: 'Ingen', tvSayAfter: 'Si etter meg', tvYourTurn: 'Deres tur - si den!', tvChoose: 'Velg bokstaver', tvDone: 'Ferdig', tvAll: 'Alle',     tmHowTitle: 'Slik funker det', tmHow1: 'Opprett klassen din én gang - den bor på denne telefonen, uten konto.', tmHow2: 'Inviter elever: de åpner én lenke eller skanner QR-koden.', tmHow3: 'I timen: bokstavene på TV-en - syng eller quiz sammen.', tmHow4: 'Send ukens lekselenke til familienes WhatsApp-gruppe.', tmHow5: 'Resultatene kommer tilbake som lenker - åpne dem her, så fyller listen seg selv.',
     challengeFrom: '{who} utfordrer deg!', challengeScored: '{who} fikk {score}% på {level}. Klarer du bedre?',
     giftGot: 'Nytt: {item}!', gpMastery: 'Bokstavmestring · {n} svar registrert', gpReplayLevel: 'Spill nivå {n} igjen', gpTapNumber: 'Trykk på tallet {word}',
-    lettersLearned: '{n} / {total} bokstaver lært', skyBridge: 'broen til {place} har vokst frem!', skyClearedSub: '{n} bokstaver + 3 reddet fra Jibby ·',
-    skyLearnBtn: 'Lær økt {n}', skyLearnPrompt: 'lær bokstavene i økt {n} for å vekke treet.', skyPlayBtn: 'Spill nivå {n}',
-    skyReady: 'klar for nivå {n}: det tester økt 1–{n}!', skyStartQuest: 'Start nivå {n}-oppdraget', skyStole: 'Jibby stjal {n} bokstaver!',
+    lettersLearned: '{n} / {total} bokstaver lært', 
+    
     teeLockedAt: 'Lær {n} bokstaver', teeNext: 'Lær {n} familier til for å låse opp neste t-skjorte!',
     aFriend: 'En venn',
     bestStreak: 'Beste rekke',
@@ -934,21 +894,13 @@ export const LANGPACKS = {
     shareSaved: 'Lagret! Del den hvor som helst.',
     shareShowOff: 'Vis det til alle!',
     shareThanks: 'Takk for at du delte!',
-    skyAllCleared: 'Alle fire himmelland ryddet — Anbessa er en Fidel-mester!',
-    skyAllFree: 'hvert himmelland er fritt!',
-    skyCleared: 'Øy ryddet!',
-    skyHold: 'Jibby holder hardt fast — hør igjen etter',
-    skyLearnTap: 'Trykk på hver frukt for å høre bokstaven —',
-    skyListenFirst: 'Hør på alle først',
-    skyMap: 'Kart',
-    skyPluck: 'Plukk frukten som sier',
-    skyReplay: 'Spill på nytt:',
-    skyRescued: 'Reddet!',
-    skyRight: 'Ja!',
-    skySession: 'Økt',
-    skyWinBack: 'Vinn tilbake den som sier',
-    skyWrong: 'Jibby fniser — hør igjen etter',
-    skylandsTitle: 'Fidel Skylands',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Styr Anbessa inn i',
     teeGrownup: 'Bestilling åpner en butikk — spør en voksen.',
     teeIntro: 'Tjen et nytt skjortedesign hvert kapittel — Anbessa har på seg alfabetet ditt! Lagre bildet eller be en voksen bestille en ekte skjorte.',
@@ -962,7 +914,7 @@ export const LANGPACKS = {
   fr: {
         backpack: 'Sac à dos', home: 'Accueil', continue: 'Continuer', gotIt: 'Compris',
     nice: 'Bravo !', amazing: 'Fantastique ! {n} d’affilée !', notQuite: 'Pas tout à fait !', tryAgain: '— écoute et réessaie',
-    yourTurn: "À toi de le dire !", levelUp: 'Niveau terminé !', islandCleared: 'Niveau terminé !', levelComplete: 'Niveau terminé !', playAgain: 'Rejouer', listen: 'Écoute…',
+    yourTurn: "À toi de le dire !", levelUp: 'Niveau terminé !', levelComplete: 'Niveau terminé !', playAgain: 'Rejouer', listen: 'Écoute…',
             grownups: 'Pour les grands : progrès et astuces',     wordsTitle: 'Premiers Mots', whichStart: 'Par quelle lettre ça commence ?', readAndMatch: 'Lis le mot, puis touche son image', stoneFwd: 'Écoute ! Touche la lettre pour sauter !', stoneBack: 'Écoute ! Saute pour rentrer !', stoneTeach: 'Voici la lettre ! Touche-la en bas pour remonter Anbessa', stoneTray: 'Cartes de lettres', fixTitle: 'Presque !', fixBody: '{n} lettres veulent encore un peu d’entraînement. Maîtrise-les, puis réessaie !', fixCta: 'Entraîne les difficiles', fixReady: 'Bien joué !', fixReadyBody: 'Tu es prêt. Montre à ces lettres qui commande !', fixRetry: 'Retente le quiz', fixCapTitle: 'Bel entraînement aujourd’hui !', fixCapBody: 'Ces lettres deviennent plus fortes. La prochaine fois, on s’échauffe avec elles et on réussit le quiz !',
     popHint: 'Fais éclater la bulle !', familyDone: 'Famille maîtrisée !', traceHint: 'Écoute, puis trace la lettre avec ton doigt',
     hearIt: 'Réécouter', traceClear: 'Effacer', traceCheck: 'Vérifier', start: 'Départ', langText: "Langue de l'appli", langLearn: 'Langue à apprendre', langTitle: 'Langue', langSheetBody: 'Choisis l’alphabet à apprendre et la langue des textes de l’appli.', streakBody: 'Joue un peu chaque jour et la flamme grandit. Un jour manqué la fait repartir de zéro - garde-la allumée !', streakBest: 'Record : {n} jours', keepGoing: 'Continue !', buildWord: 'Touche les lettres dans l’ordre', rebuildWord: 'Construis le mot de l’image', wordsDoneTitle: 'Tu sais lire de nouveaux mots !', wordsDoneBody: '{n} nouveaux mots - Anbessa est fier !',
@@ -998,9 +950,8 @@ export const LANGPACKS = {
     tmShort: 'Enseignant', parentsShort: 'Parents', tmLockTitle: 'Espace enseignant', tmLockBody: 'Entrez le code de votre classe pour l’ouvrir.', tmLockOpen: 'Ouvrir', tmLockWrong: 'Ce n’est pas le code de la classe.', tmPlanTitle: 'Plan du trimestre', tmPlanIntro: 'Choisissez combien de familles de lettres par semaine - tout le trimestre se met en place tout seul ; chaque semaine a sa leçon TV, son lien de devoir et sa liste de remises.', tmPerWeek: '{n} familles par semaine', tmPerWeekAny: 'Votre propre rythme (1-10)', tmPerWeekUnit: 'familles par semaine', tmPerWeekSet: 'Choisir', tmWeek: 'Semaine {n}', tmThisWeek: 'cette semaine', tmDueShort: 'pour le {date}', tmTeach: 'Leçon TV', tmHomework: 'Envoyer le devoir', tmShareAgain: 'Repartager le lien', tmTurnedIn: '{n} sur {total} rendus', tmMissing: 'manquent : {names}', tmNoneKnown: 'En attente du premier lien de résultat', tmChangePace: 'Changer le rythme', tmTroubleTitle: 'Lettres difficiles de la classe', tmTroubleEmpty: 'Rien pour l’instant - les lettres ratées arrivent dans les liens de résultat et se rassemblent ici.', tmTroubleWho: '{n} ratés · {names}', tmForms: 'Formes des lettres', tmOrdersBase: 'Lettres de base', tmOrdersAll: 'Les 7 formes', tmSent: 'Devoirs envoyés', tmExtra: 'Extra', tvChant: 'Chant', tvQuiz: 'Quiz', tvSay: 'Qui est-ce ?', tvSayAfter: 'Répétez après moi', tvYourTurn: 'À vous - dites-la !', tvChoose: 'Choisir les lettres', tvDone: 'Terminé', tvAll: 'Toutes', tvNone: 'Aucune', tvSayAfter: 'Répétez après moi', tvYourTurn: 'À vous - dites-la !', tvChoose: 'Choisir les lettres', tvDone: 'Terminé', tvAll: 'Toutes',     tmHowTitle: 'Comment ça marche', tmHow1: 'Créez votre classe une fois - elle vit sur ce téléphone, sans compte.', tmHow2: 'Invitez les élèves : ils ouvrent un lien ou scannent le code QR.', tmHow3: 'En classe : les lettres sur la TV - chantez ou faites le quiz ensemble.', tmHow4: 'Envoyez le lien du devoir de la semaine dans le groupe WhatsApp des familles.', tmHow5: 'Les résultats reviennent en liens - ouvrez-les ici et la liste se remplit toute seule.',
     challengeFrom: '{who} te défie !', challengeScored: '{who} a fait {score} % sur {level}. Peux-tu faire mieux ?',
     giftGot: 'Nouveau : {item} !', gpMastery: 'Maîtrise des lettres · {n} réponses enregistrées', gpReplayLevel: 'Rejouer le niveau {n}', gpTapNumber: 'Touche le nombre {word}',
-    lettersLearned: '{n} / {total} lettres apprises', skyBridge: 'le pont vers {place} a poussé !', skyClearedSub: '{n} lettres + 3 sauvées de Jibby ·',
-    skyLearnBtn: 'Apprendre la session {n}', skyLearnPrompt: 'apprends les lettres de la session {n} pour réveiller l’arbre.', skyPlayBtn: 'Jouer le niveau {n}',
-    skyReady: 'prêt pour le niveau {n} : il teste les sessions 1–{n} !', skyStartQuest: 'Lancer la quête du niveau {n}', skyStole: 'Jibby a volé {n} lettres !',
+    lettersLearned: '{n} / {total} lettres apprises', 
+    
     teeLockedAt: 'Apprends {n} lettres', teeNext: 'Apprends encore {n} familles pour débloquer le prochain t-shirt !',
     aFriend: 'Un ami',
     bestStreak: 'Meilleure série',
@@ -1113,21 +1064,13 @@ export const LANGPACKS = {
     shareSaved: 'Enregistré ! Partage-le partout.',
     shareShowOff: 'Montre à tout le monde !',
     shareThanks: 'Merci d\'avoir partagé !',
-    skyAllCleared: 'Les quatre îles célestes libérées — Anbessa est Champion du Fidel !',
-    skyAllFree: 'toutes les îles célestes sont libres !',
-    skyCleared: 'Île libérée !',
-    skyHold: 'Jibby s\'accroche fort — réécoute pour',
-    skyLearnTap: 'Touche chaque fruit pour entendre sa lettre —',
-    skyListenFirst: 'Écoute-les toutes d\'abord',
-    skyMap: 'Carte',
-    skyPluck: 'Cueille le fruit qui dit',
-    skyReplay: 'Rejouer :',
-    skyRescued: 'Sauvée !',
-    skyRight: 'Oui !',
-    skySession: 'Session',
-    skyWinBack: 'Récupère celle qui dit',
-    skyWrong: 'Jibby ricane — réécoute pour',
-    skylandsTitle: 'Fidel Skylands',
+    
+    
+    
+    
+    
+    
+    
         steerInto: 'Dirige Anbessa vers',
     teeGrownup: 'Commander ouvre une boutique — demande à un grand.',
     teeIntro: 'Gagne un nouveau design de t-shirt à chaque chapitre — Anbessa porte ton alphabet ! Enregistre l\'image ou demande à un grand de commander un vrai t-shirt.',

@@ -23,10 +23,14 @@ The content behind the nodes:
    trace-to-carve). Echo/Shuffle capped at 3 rounds, Mix at 4.
 2. **Lesson Levels 1–8** (QUIZ boss nodes) — listen-and-pick quizzes; 1–4
    base letters, 5–8 vowel orders.
-3. **Letter Runner** / **Fidel Skylands** (ARCADE gateway nodes) — the 3D
-   (three.js / R3F) games. On a low-FPS device `ArcadeGateway` routes to the
-   WebGL-free `Runner2D`/`Skylands2D` (`src/components/ArcadeFallback.jsx`)
-   over the same pure machines; the verdict persists in `fq.perf.v1`.
+3. **Letter Runner** / **Fidel Fireworks** (ARCADE gateway nodes) — the two
+   celebratory "earned a real game" nodes. The Runner is the 3D (three.js /
+   R3F) scene; on a low-FPS device `ArcadeGateway` routes to the WebGL-free
+   `Runner2D` (`src/components/ArcadeFallback.jsx`) over the same pure machine
+   (verdict persists in `fq.perf.v1`). **Fidel Fireworks** (`FidelFireworks.jsx`
+   over the pure `fireworksCore.js`) is a 2D-canvas festival game — drag the
+   consonant-family "shell", charge the mortar to the right vowel-order rung,
+   and launch each letter as a firework — so it needs no 3D and no fallback.
 4. **Anbessa's Closet / First Words / Star Practice / Classic / Letter
    Explorer / Grown-Ups** — reached from the Backpack (Closet also opens by
    tapping the header hero). The **Closet** is the viral loop: dress Anbessa
@@ -68,11 +72,12 @@ src/
                                # its header comment. Exports pure logic for
                                # tests; keep that export surface stable.
   FidelQuestApp.test.jsx       # invariant suite + machine + smoke tests
-  FidelSkylands.jsx            # Skylands mode: R3F scene, session
-                               # progression machine, cumulative quiz + boss
-  FidelSkylands.test.jsx
-  skylandsCore.js              # pure Skylands data + quiz factory; imported
-                               # by the 2D fallback WITHOUT touching three.js
+  FidelFireworks.jsx           # Fidel Fireworks: 2D-canvas festival game
+                               # (shell = family, charge height = vowel order)
+  fireworksCore.js             # pure seeded Fireworks machine + wish factory
+  fireworksCore.test.js
+  skylandsCore.js              # pure letter-pool data (cumulative-by-node),
+                               # reused by Fireworks; no three.js imports
   Runner3D.jsx                 # the WebGL Letter Runner scene (three.js);
                                # lazy-loaded with FidelSkylands so the 3D
                                # stack stays off the home path
