@@ -17,7 +17,7 @@ import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFo
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
-import { buyUrl, feedbackMailto, shareWithFamily } from './platform/support'
+import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
 import { shareProgressSnapshot, importProgressFile } from './platform/progress'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
@@ -836,6 +836,18 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
+
+          {/* In-app privacy-policy link (Apple 5.1.1(i)) + contact, in the
+              gated grown-ups area. eGeez collects no data; the policy says so. */}
+          <p className="mt-6 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            {privacyUrl() && (
+              <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--sky)' }}>
+                {t('gpPrivacy', 'Privacy policy')}
+              </a>
+            )}
+            {privacyUrl() && <span aria-hidden="true"> · </span>}
+            {t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}
+          </p>
         </div>
       )}
       <AnimatePresence>

@@ -13,6 +13,15 @@ export function buyUrl() {
   return appStoreUrl()
 }
 
+/** The hosted privacy-policy URL. Apple 5.1.1(i) requires the policy to be
+    reachable INSIDE the app (not only in store metadata). Set VITE_PRIVACY_URL
+    to the hosted page; otherwise fall back to the app's own landing URL. */
+export function privacyUrl() {
+  const env = import.meta.env?.VITE_PRIVACY_URL
+  if (typeof env === 'string' && env.trim()) return env.trim()
+  return appShareUrl()
+}
+
 export function feedbackMailto() {
   const to = (import.meta.env?.VITE_FEEDBACK_EMAIL || 'promisechain.net@gmail.com').trim()
   const subject = encodeURIComponent('eGeez feedback')
