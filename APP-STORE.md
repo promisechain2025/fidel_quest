@@ -23,7 +23,11 @@ accounts). This guide is the end-to-end runbook.
       app. Unset, web builds fall back to their own origin and native builds
       to the App Store page from `VITE_APPLE_APP_ID`.
 - [ ] Bump the version (iOS Build number / Android `versionCode`) — §4.
-- [ ] Host the **privacy policy** and paste its URL into both stores — §8.
+- [ ] Host the **privacy policy** and paste its URL into both stores **and set
+      `VITE_PRIVACY_URL`** to it, so the in-app "Privacy policy" link (in the
+      gated Grown-Ups area) points at the real page — required by Apple 5.1.1(i).
+      Unset, the link falls back to `VITE_APP_URL`. See §8 and
+      `docs/store-review-compliance.md`.
 - [ ] Microphone: the only mic use is the optional **Family Voice** recorder
       (adult flow). For the simplest kids review build with
       **`VITE_FAMILY_VOICE_RECORD=false`** (no mic); or keep it and declare the
@@ -255,6 +259,12 @@ Host something like this at a public URL and link it in both stores:
 > Contact: promisechain.net@gmail.com.
 
 Adjust if you later enable analytics or Family & Friends in a build.
+
+Host it at a public URL, paste that URL into **both store consoles**, and set
+**`VITE_PRIVACY_URL`** at build time so the in-app **Privacy policy** link (in
+the gated Grown-Ups area) opens it — Apple 5.1.1(i) requires the policy to be
+reachable inside the app, not only in store metadata. If unset, the in-app link
+falls back to `VITE_APP_URL`.
 
 ---
 
