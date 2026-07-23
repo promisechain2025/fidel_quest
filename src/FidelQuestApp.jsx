@@ -2899,13 +2899,14 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
 
 /* ── Explore Mode ── */
 
-// Cheerful, colour-blind-safe tile colours for the Explorer grid (vivid bases
-// dark enough for white glyphs to clear contrast), cycled across the families.
-// Aged manuscript-pigment jewels (madder/terracotta/plum/lapis/rose/malachite/
-// teal/bronze/indigo) - each family keeps a distinct hue for recognition, but
-// in gospel-codex tones rather than primary rainbow. All deep enough for the
-// white glyph to pass large-text AA, and rimmed in champagne gold below.
-const EXPLORE_TILES = ['#a83a3a', '#9c5a24', '#6e4380', '#3a5a96', '#9c4670', '#3f7a3e', '#2c6f6a', '#8a5a1e', '#3a4585']
+// Explorer tile colours: an ORDERED manuscript-pigment spectrum walked around
+// the wheel (madder -> terracotta -> gold -> olive -> emerald -> teal -> lapis
+// -> indigo -> violet -> purple -> magenta -> wine), so the grid reads as one
+// cohesive jewel rainbow instead of a scattered set - position now encodes hue.
+// Twelve tones over a 3-column grid keeps every column and row distinct (no
+// muddy repeats). Each is deep enough for the white glyph to clear large-text
+// AA (>=3.8:1), and rimmed in champagne gold below.
+const EXPLORE_TILES = ['#b23a46', '#bf5a2c', '#a67c22', '#6f8a30', '#2f8a55', '#2c8286', '#356aa6', '#3f4ea3', '#6a46a0', '#8f3d94', '#ab3a6e', '#9a3f57']
 // Minimum gap between chant steps; the step also yields to the clip itself
 // (~1-1.5s), so FAST means "next letter the moment this one finishes" and
 // the slower tiers add real breathing room on top of the voice.
