@@ -10,18 +10,14 @@ accounts). This guide is the end-to-end runbook.
 
 ## Before you submit — quick checklist
 
-- [ ] **Monetization.** Default (`VITE_MONETIZE` unset) = the app is **FREE**
-      everywhere (no trial, no purchase UI, no RevenueCat/IAP — the cleanest
-      kids-review build; "Data Not Collected" stays true). For the **paid-app +
-      3-day-trial** model, build the release with **`VITE_MONETIZE=true`** (trial
-      length is **`VITE_TRIAL_DAYS`**, default **3**) and **set a price** on the
-      app in App Store Connect / Play Console. Then:
-      - **Store app = a paid download** → it unlocks the moment it's installed
-        (no in-app purchase needed; Apple/Google take payment at download).
-      - **Web/PWA = the free 3-day trial** → after day 3 it asks the grown-up to
-        buy the paid app (link to the store listing). The child is never blocked
-        mid-lesson — the ask is once a day with a "Not now".
-      No IAP/RevenueCat is required for this model. See §7.
+- [ ] **Monetization — ship it PAID (v1 decision).** Leave **`VITE_MONETIZE`
+      unset** (the default) and **set a price** on the app in App Store Connect /
+      Play Console. That's the whole thing: the store takes payment at download
+      and the installed app then unlocks fully — there is **no in-app trial, no
+      "Not now" bypass, and no purchase/IAP UI** anywhere, so "Data Not
+      Collected" stays true and the kids-category rules are trivially met.
+      *(The 3-day-trial-then-buy flow is kept dormant behind `VITE_MONETIZE`
+      for a future v2 — see §7 — so nothing needs removing now.)*
 - [ ] Build the store release with **no optional server env vars** set
       (`VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`) so the app
       provably collects nothing — see §5.

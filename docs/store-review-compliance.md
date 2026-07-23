@@ -10,19 +10,14 @@ copy in `docs/store-listing.md`.
 **Verdict: the in-code guideline fixes are DONE; what remains is submission-time
 metadata / build-flags / console forms (below).**
 
-> **Monetization is OFF by default (`VITE_MONETIZE` unset) → the app ships FREE.**
-> No trial, no paywall, no "Buy"/Family-Pack/Gift UI, and **no RevenueCat/IAP**,
-> so the IAP rows (2.1(b), 3.1.1 trial) are **N/A** and **"Data Not Collected"
-> is accurate**.
->
-> With **`VITE_MONETIZE=true`** the model is a **PAID APP + 3-day web trial**
-> (`VITE_TRIAL_DAYS`, default 3): the **native** store app is a **paid download**
-> that unlocks at install (so `licenseState` is `licensed` on native → the
-> after-trial ask **never shows a child a Buy/link on the phone**, keeping Apple
-> 1.3 / 5.1.4 satisfied), while the **web/PWA** runs the free trial and funnels
-> to buying. **No IAP/RevenueCat needed** — payment is at download — so
-> "Data Not Collected" stays accurate even in the paid model. (Set the app
-> **price** in both consoles.)
+> **v1 model = a straight PAID app.** Leave `VITE_MONETIZE` unset (default) and
+> set a **price** in both consoles. The store takes payment at download; the
+> installed app unlocks fully, with **no in-app trial, no "Not now" bypass, and
+> no purchase/IAP/RevenueCat UI**. So the IAP rows (2.1(b), 3.1.1 trial) are
+> **N/A** and **"Data Not Collected" is accurate**. *(A 3-day free trial that
+> funnels to buying is kept dormant behind `VITE_MONETIZE=true` for a future v2;
+> even then it needs no IAP — native is paid-at-download and the web/PWA carries
+> the trial.)*
 
 - ✅ **Fixed (Apple 1.3 / 5.1.4 / 3.1.1):** the after-trial **SupportAsk**
   dialog now shows the child only "this is for a grown-up" + the hold-and-answer
