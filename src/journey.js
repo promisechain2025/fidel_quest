@@ -34,9 +34,9 @@ export const NodeKind = Object.freeze({
 // scrolls back up the path to replay an unlocked gateway).
 export const ARCADE_GATEWAYS = [
   { mode: 'runner', theme: 'lalibela', label: 'Lalibela Run' },
-  { mode: 'skylands', island: 1, label: 'Aksum Skyland' },
+  { mode: 'catch', island: 1, label: 'Aksum Harvest' },
   { mode: 'runner', theme: 'simien', label: 'Simien Run' },
-  { mode: 'skylands', island: 4, label: 'Massawa Skyland' },
+  { mode: 'catch', island: 4, label: 'Massawa Harvest' },
 ]
 
 /* Rewards are Anbessa wearables only for now (P3 decision: defer the den).

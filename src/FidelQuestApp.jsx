@@ -72,7 +72,7 @@ import { t, getLang, setLang } from './platform/i18n'
 import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D } from './components/ArcadeFallback'
-import { levelForIsland } from './fireworksCore'
+import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
@@ -93,7 +93,7 @@ const TeacherMode = lazy(() => import('./components/TeacherMode'))
 // only when a capable device actually enters an arcade node; degraded
 // devices route to the 2D fallbacks and never fetch these chunks.
 const Runner = lazy(() => import('./Runner3D'))
-const FidelFireworks = lazy(() => import('./FidelFireworks'))
+const LetterCatch = lazy(() => import('./LetterCatch'))
 const TvClass = lazy(() => import('./components/TvClass'))
 const SupportAsk = lazy(() => import('./components/SupportAsk'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
@@ -1911,7 +1911,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             ? `Quiz level ${node.levelId?.split('-')[1]}`
             : node.gateway.mode === 'runner'
               ? 'Letter Runner'
-              : 'Fidel Fireworks'
+              : 'Letter Catch'
   // Locked nodes keep the original muted tile colour, but now show WHAT they
   // are (the letter, or the game icon) with a small lock badge instead of only
   // a lock, so kids can preview what is coming.
@@ -3604,7 +3604,7 @@ function NextUpTeaser({ levelId }) {
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (
-      t('nextUpSky', 'Fidel Fireworks!')
+      t('nextUpSky', 'Letter Catch!')
     )
   return (
     <motion.div
@@ -4404,20 +4404,20 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool })
   const isRunner = node.gateway.mode === 'runner'
   // Quitting is NOT winning: the games report how far the run actually got
   // when they exit, and only a real achievement completes the Journey node -
-  // the runner must beat at least one boss (reach level 2); Fidel Fireworks
-  // must fill Kokeb's Sky Meter (r.won). Anything less just goes back to the
+  // the runner must beat at least one boss (reach level 2); Letter Catch
+  // must fill the basket (r.won). Anything less just goes back to the
   // path with the node still open.
   const finish = (r = {}) => {
     const won = isRunner ? ((r.level ?? 1) >= 2 || !!r.survivedBoss) : !!r.won
     if (won) onDone()
     else onCancel()
   }
-  // Fidel Fireworks is a pure 2D-canvas game (no three.js), so it runs the same
-  // on every device - no perf-degrade split. Only the Runner has a 3D scene.
+  // Letter Catch is a pure DOM/2D game (no three.js), so it runs the same on
+  // every device - no perf-degrade split. Only the Runner has a 3D scene.
   if (!isRunner) {
     return (
       <Suspense fallback={<ArcadeLoading />}>
-        <FidelFireworks level={levelForIsland(node.gateway.island)} seed={seed} soundOn={soundOn} onExit={finish} />
+        <LetterCatch level={levelForIsland(node.gateway.island)} seed={seed} soundOn={soundOn} onExit={finish} />
       </Suspense>
     )
   }

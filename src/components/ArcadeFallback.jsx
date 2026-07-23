@@ -1,7 +1,7 @@
 /* The 2D arcade fallback (Pillar 4): a functionally-identical, WebGL-free
    version of the Runner, driven by the same pure machine, for devices that
-   cannot sustain the 3D scene. (Fidel Fireworks, the other gateway game, is
-   already a pure 2D-canvas game and needs no separate fallback.) */
+   cannot sustain the 3D scene. (Letter Catch, the other gateway game, is
+   already a pure 2D game and needs no separate fallback.) */
 import { useReducer, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { X, Flame } from 'lucide-react'
