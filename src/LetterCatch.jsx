@@ -22,13 +22,19 @@ import { initCatch, catchTransition, CATCH_Y, Phase, CatchEvent } from './letter
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const reseed = (s) => ((s * 1664525 + 1013904223) >>> 0) | 1
+const SPARK = ['#ffd25a', '#ff8a3d', '#8affc1', '#7db8ff', '#ffffff']
 
-const reducer = (ctx, e) => (e.type === '__reset__' ? initCatch(ctx.level, reseed(ctx.seed)) : catchTransition(ctx, e).next)
+const reducer = (ctx, e) => (e.type === '__reset__' ? initCatch(ctx.level, reseed(ctx.seed), ctx.pool) : catchTransition(ctx, e).next)
 
-export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, onExit }) {
-  const [ctx, dispatch] = useReducer(reducer, { level, seed }, (a) => initCatch(a.level, a.seed))
+export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, pool, onExit }) {
+  const [ctx, dispatch] = useReducer(reducer, { level, seed, pool }, (a) => initCatch(a.level, a.seed, a.pool))
   const areaRef = useRef(null)
+  const canvasRef = useRef(null)
+  const partsRef = useRef([])
   const targetForm = formOf(ctx.target)
+  // Sound-only by design: the child must LISTEN. Only reveal the letter as a
+  // fallback when sound is off, so the game stays playable muted.
+  const revealTarget = !soundOn
 
   /* per-frame game clock: feed real dt into the pure machine */
   useEffect(() => {
@@ -43,6 +49,46 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     return () => cancelAnimationFrame(raf)
   }, [])
 
+  /* a small firework pops at the basket on a correct catch (capped) */
+  const burst = () => {
+    const el = areaRef.current
+    if (!el) return
+    const cx = el.clientWidth * ctx.basketX
+    const cy = el.clientHeight * CATCH_Y
+    const P = partsRef.current
+    for (let i = 0; i < 26; i++) {
+      const a = (Math.PI * 2 * i) / 26 + Math.random() * 0.3
+      const sp = 1.7 * (0.5 + Math.random())
+      P.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 1.1, life: 1, decay: 0.02 + Math.random() * 0.012, color: SPARK[i % SPARK.length], size: 2 + Math.random() * 2 })
+    }
+    if (P.length > 260) P.splice(0, P.length - 260)
+  }
+  useEffect(() => {
+    const c = canvasRef.current, el = areaRef.current
+    if (!c || !el) return undefined
+    const size = () => { const dpr = Math.min(2, window.devicePixelRatio || 1); c.width = el.clientWidth * dpr; c.height = el.clientHeight * dpr; c.style.width = `${el.clientWidth}px`; c.style.height = `${el.clientHeight}px`; const g = c.getContext('2d'); if (g) g.setTransform(dpr, 0, 0, dpr, 0, 0) }
+    size(); window.addEventListener('resize', size)
+    let raf
+    const loop = () => {
+      const g = c.getContext('2d')
+      if (g) {
+        g.clearRect(0, 0, c.clientWidth, c.clientHeight)
+        g.globalCompositeOperation = 'lighter'
+        const P = partsRef.current
+        for (let i = P.length - 1; i >= 0; i--) {
+          const p = P[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.vx *= 0.98; p.life -= p.decay
+          if (p.life <= 0) { P.splice(i, 1); continue }
+          g.globalAlpha = Math.max(0, p.life); g.fillStyle = p.color
+          g.beginPath(); g.arc(p.x | 0, p.y | 0, p.size, 0, 6.283); g.fill()
+        }
+        g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'
+      }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size) }
+  }, [])
+
   /* pointer follows the basket */
   const moveTo = (clientX) => {
     const el = areaRef.current
@@ -54,7 +100,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   /* audio at the seams: announce the called letter, cheer a catch, bonk a miss */
   useEffect(() => { if (ctx.phase === Phase.PLAY) playForm(targetForm, soundOn) }, [ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (ctx.flash?.type === 'good') { playEffect('good', soundOn); playForm(formOf(ctx.flash.key), soundOn); recordAnswer(ctx.flash.key, ctx.flash.key, 'catch') }
+    if (ctx.flash?.type === 'good') { playEffect('good', soundOn); playForm(formOf(ctx.flash.key), soundOn); recordAnswer(ctx.flash.key, ctx.flash.key, 'catch'); burst() }
   }, [ctx.caught]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ctx.flash?.type === 'bad') { playEffect('bad', soundOn); recordAnswer(ctx.target, ctx.flash.key, 'catch') }
@@ -98,15 +144,16 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
         </div>
       </header>
 
-      {/* called-letter prompt */}
+      {/* called-letter prompt - SOUND ONLY: tap the ear to hear it again */}
       <div className="flex items-center justify-center gap-2 px-6 pt-2 pb-1">
         <Sprite2D draw={drawKokeb} size={34} />
-        <p className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('catchPrompt', 'Catch the letter!')}</p>
-        <button type="button" onClick={() => playForm(targetForm, soundOn)} aria-label={t('hearAgain', 'Hear it again')}
-          className={`flex items-center gap-2 rounded-2xl px-3 py-1.5 ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,210,90,0.5)', outlineColor: '#ffd25a' }}>
-          <motion.span key={ctx.target} initial={{ scale: 0.6 }} animate={{ scale: 1 }} className="geez text-3xl font-black" style={{ color: '#fff' }}>{targetForm?.char}</motion.span>
-          <Volume2 className="h-5 w-5" style={{ color: '#ffd25a' }} aria-hidden="true" />
-        </button>
+        <p className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('catchPrompt', 'Listen, then catch it!')}</p>
+        <motion.button key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }} type="button" onClick={() => playForm(targetForm, soundOn)} aria-label={t('hearAgain', 'Hear it again')}
+          className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,210,90,0.5)', outlineColor: '#ffd25a' }}>
+          {revealTarget && <span className="geez text-2xl font-black" style={{ color: '#fff' }}>{targetForm?.char}</span>}
+          <Volume2 className="h-6 w-6" style={{ color: '#ffd25a' }} aria-hidden="true" />
+          <span className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('lcListen', 'Listen')}</span>
+        </motion.button>
       </div>
 
       {/* play field */}
@@ -119,6 +166,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
         onPointerMove={(e) => { if (e.buttons || e.pointerType === 'touch') moveTo(e.clientX) }}
       >
         <StarField />
+        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
         {/* falling letters */}
         {ctx.items.map((it) => {
           const f = formOf(it.key)
@@ -132,7 +180,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
         {/* catch flash */}
         <AnimatePresence>
           {ctx.flash && (
-            <motion.div key={`${ctx.caught}-${ctx.lives}`} initial={{ scale: 0.5, opacity: 0.9 }} animate={{ scale: 1.6, opacity: 0 }} transition={{ duration: 0.5 }}
+            <motion.div key={`${ctx.caught}-${ctx.lives}`} initial={{ scale: 0.5, opacity: 1, y: 0 }} animate={{ scale: 1.5, opacity: 0, y: ctx.flash.type === 'good' ? -70 : 10 }} transition={{ duration: 0.6 }}
               className="pointer-events-none absolute" style={{ left: `${basketPct}%`, top: `${CATCH_Y * 100}%`, transform: 'translate(-50%,-50%)' }}>
               <span className="geez text-4xl font-black" style={{ color: ctx.flash.type === 'good' ? '#8affc1' : '#ff5d73' }}>{formOf(ctx.flash.key)?.char}</span>
             </motion.div>

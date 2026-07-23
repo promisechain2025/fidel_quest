@@ -28,12 +28,14 @@ export const MAX_DT = 0.05
 export const Phase = Object.freeze({ PLAY: 'PLAY', WIN: 'WIN', LOSE: 'LOSE' })
 export const CatchEvent = Object.freeze({ TICK: 'TICK', MOVE: 'MOVE', RESET: 'RESET' })
 
-/* Two nodes, sized off the cumulative learned pool. easy = early gateway (first
-   ~8 families, slow rain, few letters); hard = later gateway (all families,
-   faster, busier). */
+/* Two nodes. The pool is the letters the CHILD HAS LEARNED (all vowel orders),
+   passed in by the renderer; the islandForPool floor only matters if none is
+   given. Tuned for TEACHING, not twitch: few letters on screen, the called
+   letter appears often, a gentle fall - so it is calm and focused, not busy.
+   easy = early gateway; hard = later gateway (a touch faster/denser). */
 export const CATCH_CONFIGS = Object.freeze({
-  easy: { islandForPool: 1, need: 8, lives: 3, fallSpeed: 0.26, spawnEvery: 0.9, catchHalf: 0.14, pTarget: 0.5, rotateEvery: 3, maxItems: 4 },
-  hard: { islandForPool: 4, need: 12, lives: 3, fallSpeed: 0.4, spawnEvery: 0.72, catchHalf: 0.12, pTarget: 0.42, rotateEvery: 3, maxItems: 6 },
+  easy: { islandForPool: 1, need: 8, lives: 3, fallSpeed: 0.22, spawnEvery: 1.05, catchHalf: 0.15, pTarget: 0.55, rotateEvery: 3, maxItems: 3 },
+  hard: { islandForPool: 4, need: 10, lives: 3, fallSpeed: 0.3, spawnEvery: 0.92, catchHalf: 0.13, pTarget: 0.5, rotateEvery: 3, maxItems: 4 },
 })
 export const levelForIsland = (island) => (island >= 4 ? 'hard' : 'easy')
 export const poolKeys = (cfg) => cumulativePool(cfg.islandForPool)
@@ -43,9 +45,11 @@ const pickFrom = (state, arr) => {
   return [arr[Math.floor(r * arr.length) % arr.length], s]
 }
 
-export function initCatch(level, seed) {
+export function initCatch(level, seed, poolOverride) {
   const cfg = CATCH_CONFIGS[level] || CATCH_CONFIGS.easy
-  const pool = poolKeys(cfg)
+  // Prefer the learned-letters pool the renderer supplies (all vowel orders of
+  // the families the child has met); fall back to the node's base-form pool.
+  const pool = Array.isArray(poolOverride) && poolOverride.length >= 2 ? poolOverride : poolKeys(cfg)
   let s = (seed >>> 0) | 1
   let target
   ;[target, s] = pickFrom(s, pool)
@@ -67,7 +71,7 @@ const ok = (next) => ({ next, accepted: true })
 /** Pure stepped transition. */
 export function catchTransition(ctx, event) {
   const { type, payload = {} } = event
-  if (type === CatchEvent.RESET) return ok(initCatch(ctx.level, (ctx.seed * 1664525 + 1013904223) >>> 0))
+  if (type === CatchEvent.RESET) return ok(initCatch(ctx.level, (ctx.seed * 1664525 + 1013904223) >>> 0, ctx.pool))
   if (ctx.phase !== Phase.PLAY) return rej(ctx)
 
   if (type === CatchEvent.MOVE) {

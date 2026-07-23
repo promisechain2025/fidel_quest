@@ -4414,10 +4414,15 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool })
   }
   // Letter Catch is a pure DOM/2D game (no three.js), so it runs the same on
   // every device - no perf-degrade split. Only the Runner has a 3D scene.
+  // Pool = ALL vowel orders of the families the child has already LEARNED
+  // (pool arrives as base forms of the scoped/learned families; expand it).
   if (!isRunner) {
+    const catchPool = [...new Set((pool || []).map((k) => k.split('-')[0]))]
+      .flatMap((id) => ORDERS.map((o) => `${id}-${o.index}`))
+      .filter((k) => INDEXES.byAudioKey.has(k))
     return (
       <Suspense fallback={<ArcadeLoading />}>
-        <LetterCatch level={levelForIsland(node.gateway.island)} seed={seed} soundOn={soundOn} onExit={finish} />
+        <LetterCatch level={levelForIsland(node.gateway.island)} seed={seed} soundOn={soundOn} pool={catchPool} onExit={finish} />
       </Suspense>
     )
   }
