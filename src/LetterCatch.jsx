@@ -102,7 +102,9 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     recordAnswer(ctx.target, item.key, 'catch')
     dispatch({ type: CatchEvent.SHOOT, payload: { id: item.id } })
     if (good) { playEffect('good', soundOn); playForm(formOf(item.key), soundOn); shootFireworkTo(item.x, item.y) }
-    else { playEffect('bad', soundOn) }
+    // A wrong shot re-plays the CALLED letter so the miss becomes a listen-again
+    // teaching moment, not just a buzzer.
+    else { playEffect('bad', soundOn); setTimeout(() => playForm(targetForm, soundOn), 420) }
   }
 
   /* announce the called letter (sound only) */

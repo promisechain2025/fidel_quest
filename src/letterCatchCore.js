@@ -115,8 +115,19 @@ export function catchTransition(ctx, event) {
     if (r < cfg.pTarget) {
       key = ctx.target
     } else {
-      const distract = ctx.pool.filter((k) => k !== ctx.target && soundOf(k) !== soundOf(ctx.target))
-      ;[key, s] = pickFrom(s, distract.length ? distract : ctx.pool)
+      // Distractors are twin-safe (never a same-sound letter) and BIASED toward
+      // confusable near-misses of the target - the same family (a different
+      // vowel order) or the same order (a different consonant) - so the child
+      // must truly discriminate the vowel/consonant the sound asked for, not
+      // just spot a coarse shape. Falls back to any letter when none exist.
+      const [tf, to] = ctx.target.split('-')
+      const tSound = soundOf(ctx.target)
+      const any = ctx.pool.filter((k) => k !== ctx.target && soundOf(k) !== tSound)
+      const near = any.filter((k) => { const [f, o] = k.split('-'); return f === tf || o === to })
+      let rb
+      ;[rb, s] = rngNext(s)
+      const bag = near.length && rb < 0.7 ? near : any
+      ;[key, s] = pickFrom(s, bag.length ? bag : ctx.pool)
     }
     let rx
     ;[rx, s] = rngNext(s)
