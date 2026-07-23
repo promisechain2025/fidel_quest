@@ -2898,15 +2898,22 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
 
 /* ── Explore Mode ── */
 
-// Explorer tiles: GOLD-LEAF glyphs on dark ink - each letter reads like gold
-// leaf on a gospel-codex page, unified across the grid and at home in the dark
-// manuscript theme (a warm gold rim + a faint top wash give it dimension). The
-// glyph carries a soft gold glow; the picture-word emoji rides beneath in a
-// muted gold. Deliberately one calm treatment for every family, not a palette.
-const EXPLORE_FACE = {
-  bg: '#241a12', fg: '#e7c46b', sub: '#c9a765', subOp: 0.9,
-  rim: 'rgba(226,192,105,0.68)', shadow: 'rgba(0,0,0,0.5)',
-  wash: 'rgba(255,220,140,0.08)', glyphShadow: '0 1px 7px rgba(226,192,105,0.45)',
+// Explorer tiles: CLOISONNE ENAMEL jewels rimmed in fine gold. Eight deep
+// enamels (garnet, copper-rust, bronze-olive, emerald, peacock, lapis,
+// amethyst, wine) all pinned to one dark luminance band, cycled per family so
+// the grid reads as a single enamelled set - like the cells of an Ethiopian
+// hand cross - never a scattered rainbow. A light-top / dark-bottom sheen mimics
+// light rolling across curved enamel; the warm cream glyph clears 6.5-8:1 on
+// every ground, and a 2.5px gold rim is the cloisonne partition.
+const EXPLORE_JEWELS = ['#5E1D2E', '#7A3520', '#5C4718', '#14503E', '#0E4A56', '#1C3568', '#3E2560', '#63263C']
+function exploreFace(i) {
+  const c = EXPLORE_JEWELS[i % EXPLORE_JEWELS.length]
+  return {
+    bg: `linear-gradient(180deg, rgba(255,255,255,0.07), rgba(0,0,0,0.16)), ${c}`,
+    fg: '#F5E6C4', sub: '#D9C79A', subOp: 0.9,
+    rim: '#C9A24B', shadow: '#0D0A18',
+    wash: 'rgba(255,235,190,0.06)', glyphShadow: 'none',
+  }
 }
 // Minimum gap between chant steps; the step also yields to the clip itself
 // (~1-1.5s), so FAST means "next letter the moment this one finishes" and
@@ -3009,7 +3016,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {FIDEL_FAMILIES.map((f, i) => {
               const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
-              const face = EXPLORE_FACE
+              const face = exploreFace(i)
               const isActive = playing && playIdx === i
               return (
                 <motion.button
