@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { licenseState, markAsked, grantFeedbackGrace, markSupported, daysSince, TRIAL_DAYS, FEEDBACK_GRACE_DAYS } from './license'
 
-const web = (today) => licenseState(today, false)
+// The trial only exists when monetization is ON; pass monetize=true here.
+const web = (today) => licenseState(today, true)
 
 describe('license (honest free trial)', () => {
   beforeEach(() => localStorage.clear())
 
-  it('native store builds are licensed - no trial, no asks', () => {
-    const s = licenseState('2026-07-10', true)
+  it('monetization OFF makes the whole app free (licensed, no asks)', () => {
+    const s = licenseState('2026-07-10', false)
     expect(s.phase).toBe('licensed')
     expect(s.shouldAsk).toBe(false)
   })

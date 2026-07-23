@@ -1,23 +1,25 @@
 /* ============================================================================
    LICENSE — the honest free-trial engine
    ----------------------------------------------------------------------------
-   eGeez is a paid app, but anyone may download it free and use ALL of
-   it for a trial period. There is no server and no account, so nothing here
-   is enforcement - it is an honest daily ask, designed around three truths:
+   MONETIZATION SWITCH. By default eGeez is FULLY FREE: no trial, no asks, no
+   purchase UI anywhere (VITE_MONETIZE unset). This is the mode to ship while
+   purchases are not ready - the app is free for everyone, on web AND in the
+   stores, and carries no in-app-purchase / RevenueCat surface for review.
 
-     1. A parent who can pay should get a one-tap way to buy.
+   Set VITE_MONETIZE=true to turn on the FREEMIUM flow: the app stays a FREE
+   download, but after a free trial the grown-up is asked to unlock it with an
+   in-app purchase. The trial then runs the SAME on web and native (so the
+   store app is free-first, not paid-only). There is no server and no account,
+   so nothing here is enforcement - it is an honest daily ask around three
+   truths:
+     1. A parent who can pay gets a one-tap in-app purchase.
      2. A parent who will not pay is still valuable: ask for honest feedback,
-        and thank them with more free days.
-     3. A family in Ethiopia/Eritrea may have NO way to pay - but a relative
-        abroad does. Give them a ready-made message asking that relative to
-        gift the app (this is the diaspora gift loop, same as the Backpack
-        Gift flow).
+        thanked with more free days.
+     3. A family with no way to pay locally can ask a relative abroad to gift
+        it (the diaspora gift loop).
 
    The child is never blocked mid-lesson: the ask appears at most once per
    calendar day, on the home screen, and always has a "Not now".
-
-   Native store builds (Capacitor) were paid for at download - no trial, no
-   asks. Web/PWA is the free-trial vehicle.
 
    fq.license.v1: { startDay, graceUntil, supported, askedDay }
    Deliberately NOT part of the progress keys: "Reset all progress" gives a
@@ -25,7 +27,6 @@
    ========================================================================== */
 import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
-import { isNativePlatform } from './native'
 
 const KEY = 'fq.license.v1'
 
@@ -35,6 +36,10 @@ const envInt = (v, fallback) => {
 }
 export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 7)
 export const FEEDBACK_GRACE_DAYS = 4
+
+/** Master switch. Purchases (trial, buy, Family Pack, gift) are OFF unless
+    VITE_MONETIZE is explicitly enabled - so the default build is free. */
+export const MONETIZE = /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_MONETIZE ?? ''))
 
 function load() {
   try {
@@ -61,15 +66,17 @@ function addDaysStamp(day, n) {
   return d.toISOString().slice(0, 10)
 }
 
-/** The current license picture. Starts the trial clock on first call. */
-export function licenseState(today = dayStamp(), native = isNativePlatform()) {
-  if (native) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false }
+/** The current license picture. Starts the trial clock on first call.
+    When monetization is off (default) the app is simply free/licensed - no
+    trial, no asks. When on, the SAME trial runs on web and native. */
+export function licenseState(today = dayStamp(), monetize = MONETIZE) {
+  if (!monetize) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const s = load()
   if (!s.startDay) {
     s.startDay = today
     save(s)
   }
-  if (s.supported) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false }
+  if (s.supported) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const trialEnd = addDaysStamp(s.startDay, TRIAL_DAYS)
   const until = s.graceUntil && s.graceUntil > trialEnd ? s.graceUntil : trialEnd
   const daysLeft = Math.max(0, daysSince(today, until))

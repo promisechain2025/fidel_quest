@@ -10,6 +10,14 @@ copy in `docs/store-listing.md`.
 **Verdict: the in-code guideline fixes are DONE; what remains is submission-time
 metadata / build-flags / console forms (below).**
 
+> **Monetization is OFF by default (`VITE_MONETIZE` unset) → the app ships FREE.**
+> No trial, no paywall, no "Buy"/Family-Pack/Gift UI, and **no RevenueCat/IAP**,
+> so for the initial free submission the IAP rows (2.1(b), 3.1.1 trial) are
+> **N/A** and **"Data Not Collected" is accurate**. The trial → in-app-purchase
+> flow (and its IAP/data-safety obligations) only apply once you set
+> `VITE_MONETIZE=true` — then the free trial runs on web **and** native (free
+> download → trial → IAP, not paid-only).
+
 - ✅ **Fixed (Apple 1.3 / 5.1.4 / 3.1.1):** the after-trial **SupportAsk**
   dialog now shows the child only "this is for a grown-up" + the hold-and-answer
   **parental gate**; the **Buy / Gift / Feedback** actions appear only after the

@@ -16,7 +16,7 @@ import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe, Volume2, 
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel } from './platform/childModel'
-import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS } from './platform/license'
+import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
 import { shareProgressSnapshot, importProgressFile } from './platform/progress'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
@@ -261,7 +261,7 @@ function ProfilesCard() {
       </ul>
 
       {reg.list.length < MAX_PROFILES &&
-        (unlocked ? (
+        (unlocked || !MONETIZE ? (
           adding ? (
             <div className="mt-3 space-y-2">
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
@@ -686,8 +686,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
 
           {/* support / license: the paid-app picture and every way to help -
              buy, ask a relative abroad to gift it, or honest feedback for
-             more free days. Mirrors the once-a-day SupportAsk dialog. */}
-          {(() => {
+             more free days. Mirrors the once-a-day SupportAsk dialog. Hidden
+             entirely while monetization is off (the app is simply free). */}
+          {MONETIZE && (() => {
             const lic = licenseState()
             const buy = buyUrl()
             return (

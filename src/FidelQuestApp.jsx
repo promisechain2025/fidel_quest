@@ -61,7 +61,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
-import { licenseState, markAsked } from './platform/license'
+import { licenseState, markAsked, MONETIZE } from './platform/license'
 import { loadProfiles, switchProfile, profileLabel } from './platform/profiles'
 import { useChildModel, useAppDay } from './platform/childModel'
 import { progressChanged } from './platform/childModel'
@@ -2682,8 +2682,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--muted)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
             <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--muted)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
             {/* Gift entry: Apple only, since App Store "Gift App" is the one
-               store path for gifting a paid app. Hidden on Android/Play. */}
-            {isApplePlatform() && (
+               store path for gifting a paid app. Hidden on Android/Play, and
+               while monetization is off (the app is free - nothing to gift). */}
+            {MONETIZE && isApplePlatform() && (
               <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--muted)" title={t('giftShort', 'Gift')} onClick={onGift} />
             )}
             {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-

@@ -10,6 +10,13 @@ accounts). This guide is the end-to-end runbook.
 
 ## Before you submit — quick checklist
 
+- [ ] **Monetization:** leave **`VITE_MONETIZE` unset** to ship the app **FREE**
+      (no trial, no paywall, no Buy/Family-Pack/Gift UI, no RevenueCat/IAP — the
+      cleanest kids-review build, and "Data Not Collected" stays true). Set
+      `VITE_MONETIZE=true` **only** when the purchase is ready — that turns on
+      the free-download → trial → in-app-purchase flow (on web **and** native)
+      and then you must configure the IAP + declare purchase data. See §7 and
+      `docs/store-review-compliance.md`.
 - [ ] Build the store release with **no optional server env vars** set
       (`VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`) so the app
       provably collects nothing — see §5.
