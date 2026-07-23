@@ -2898,14 +2898,16 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
 
 /* ── Explore Mode ── */
 
-// Explorer tile colours: an ORDERED manuscript-pigment spectrum walked around
-// the wheel (madder -> terracotta -> gold -> olive -> emerald -> teal -> lapis
-// -> indigo -> violet -> purple -> magenta -> wine), so the grid reads as one
-// cohesive jewel rainbow instead of a scattered set - position now encodes hue.
-// Twelve tones over a 3-column grid keeps every column and row distinct (no
-// muddy repeats). Each is deep enough for the white glyph to clear large-text
-// AA (>=3.8:1), and rimmed in champagne gold below.
-const EXPLORE_TILES = ['#b23a46', '#bf5a2c', '#a67c22', '#6f8a30', '#2f8a55', '#2c8286', '#356aa6', '#3f4ea3', '#6a46a0', '#8f3d94', '#ab3a6e', '#9a3f57']
+// Explorer tiles: GOLD-LEAF glyphs on dark ink - each letter reads like gold
+// leaf on a gospel-codex page, unified across the grid and at home in the dark
+// manuscript theme (a warm gold rim + a faint top wash give it dimension). The
+// glyph carries a soft gold glow; the picture-word emoji rides beneath in a
+// muted gold. Deliberately one calm treatment for every family, not a palette.
+const EXPLORE_FACE = {
+  bg: '#241a12', fg: '#e7c46b', sub: '#c9a765', subOp: 0.9,
+  rim: 'rgba(226,192,105,0.68)', shadow: 'rgba(0,0,0,0.5)',
+  wash: 'rgba(255,220,140,0.08)', glyphShadow: '0 1px 7px rgba(226,192,105,0.45)',
+}
 // Minimum gap between chant steps; the step also yields to the clip itself
 // (~1-1.5s), so FAST means "next letter the moment this one finishes" and
 // the slower tiers add real breathing room on top of the voice.
@@ -3007,7 +3009,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {FIDEL_FAMILIES.map((f, i) => {
               const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
-              const color = EXPLORE_TILES[i % EXPLORE_TILES.length]
+              const face = EXPLORE_FACE
               const isActive = playing && playIdx === i
               return (
                 <motion.button
@@ -3021,17 +3023,17 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
                   }}
                   animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
                   transition={{ duration: 0.4 }}
-                  className={`chunk flex flex-col items-center gap-1 rounded-2xl px-2 py-3 ${FOCUS}`}
+                  className={`chunk relative flex flex-col items-center gap-1 rounded-2xl px-2 py-3 ${FOCUS}`}
                   style={{
-                    background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.28), rgba(255,255,255,0) 55%), ${color}`,
-                    border: `2.5px solid ${isActive ? '#fff' : 'rgba(226,192,105,0.75)'}`,
-                    boxShadow: isActive ? `0 0 0 3px ${color}, 0 8px 18px ${color}80` : '0 4px 0 rgba(0,0,0,0.28)',
-                    color: '#fff',
+                    background: `radial-gradient(circle at 30% 22%, ${face.wash}, rgba(255,255,255,0) 55%), ${face.bg}`,
+                    border: `2.5px solid ${isActive ? '#fff' : face.rim}`,
+                    boxShadow: isActive ? `0 0 0 3px ${face.rim}, 0 8px 18px rgba(0,0,0,0.35)` : `0 4px 0 ${face.shadow}`,
+                    color: face.fg,
                     outlineColor: 'var(--sky)',
                   }}
                 >
-                  <span className="geez text-4xl font-black" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.35)' }}>{cell.char}</span>
-                  <span className="text-xs font-extrabold" style={{ color: 'rgba(255,255,255,0.92)' }}>
+                  <span className="geez text-4xl font-black" style={{ color: face.fg, textShadow: face.glyphShadow }}>{cell.char}</span>
+                  <span className="text-xs font-extrabold" style={{ color: face.sub, opacity: face.subOp }}>
                     {cell.sound}
                     {f.word?.picture && <span className="ml-1" aria-hidden="true">{f.word.picture}</span>}
                   </span>
