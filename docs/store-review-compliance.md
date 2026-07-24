@@ -7,8 +7,26 @@ Guidelines** and **Google Play Families** policy against what's actually in the
 code. Pair this with the submission runbook in `APP-STORE.md` and the listing
 copy in `docs/store-listing.md`.
 
-**Verdict: the in-code guideline fixes are DONE; what remains is submission-time
-metadata / build-flags / console forms (below).**
+**Verdict: most in-code guideline fixes are DONE; a July-2026 agent review
+surfaced two items that still need a decision (below) plus submission-time
+metadata / build-flags / console forms.**
+
+## Open items from the review (decide before submitting)
+
+1. **Share sheet not behind the parental gate (Apple 1.3 / Google Families).**
+   The "Share Anbessa" viral loop opens the OS Web Share sheet directly from
+   child-facing surfaces (`Closet.jsx`, the Daily-Gift reveal, the
+   chapter-complete Celebration, `ChallengeShareButton`) with **no**
+   `ParentalGate`, unlike the already-gated VoicePostcard / SupportAsk /
+   TeacherMode / GrownUps. A kids-category app should gate any link-out /
+   share. **Decision needed:** gate every share behind `ParentalGate`, or
+   remove share from the auto-presented reward moments and keep it (gated) in
+   the Closet. Until done, the 1.3 row below is **not** fully satisfied.
+2. **Religious content is undisclosed (Apple 2.3.1 / IARC).** All 10 Story
+   Time stories are gentle Bible stories. The IARC questionnaire asks about
+   religious references, and the listing markets only "games, stories and
+   rewards". **Decision needed:** add a line to the description ("gentle Bible
+   stories") and answer the IARC religion question truthfully. No code change.
 
 > **v1 model = a straight PAID app.** Leave `VITE_MONETIZE` unset (default) and
 > set a **price** in both consoles. The store takes payment at download; the
