@@ -9,7 +9,7 @@
    are user actions (cut the voice, act); "Read to me" chains word audio
    through afterVoice so it always plays out.
    ========================================================================== */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
@@ -18,7 +18,7 @@ import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead 
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
-import { t } from '../platform/i18n'
+import { t, getLang } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
 import WordPicture from './Pictures'
 import StoryScene from './StoryScene'
@@ -77,10 +77,13 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [quiz, setQuiz] = useState(null) // null | 'asking' | 'missed' | 'done'
   const [spokenWord, setSpokenWord] = useState(-1)
   const cancelRef = useRef(() => {})
+  const narrGen = useRef(0) // bumps on every nav; late narration for an old page bails
+  const finishedOnceRef = useRef(false) // did this open reach the celebration?
   const reduceMotion = useReducedMotion()
 
   useEffect(() => () => cancelRef.current(), [])
   const stopSpeech = () => {
+    narrGen.current++
     cancelRef.current()
     audio.stopVoice()
     setSpokenWord(-1)
@@ -88,6 +91,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   const openStory = (s) => {
     stopSpeech()
+    finishedOnceRef.current = false
     setDir(1)
     setStory(s)
     setPageIdx(0)
@@ -99,9 +103,16 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     setStory(null)
     setFinished(false)
   }
+  /** Leave the reader for good: on the Journey-node path this completes the
+      node (which navigates away); from the Backpack it returns to the library. */
+  const leaveReader = () => {
+    if (finishedOnceRef.current && onStoryComplete) onStoryComplete()
+    else closeReader()
+  }
 
   const page = story?.pages[pageIdx]
-  const words = page ? storyWords(page.g) : []
+  const words = useMemo(() => (page ? storyWords(page.g) : []), [page])
+  const showGloss = getLang() === 'en' // English meaning captions only for an English UI
 
   const tapWord = (w, i) => {
     stopSpeech()
@@ -121,12 +132,16 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       whether it played, so callers can fall back to word-by-word reading. */
   const playNarration = async (idx = pageIdx) => {
     if (!story) return false
+    const gen = narrGen.current
     const key = narrationKey(idx)
     const ok = await audio.covered(key)
-    if (!ok) return false
-    stopSpeech()
+    // Superseded by a page turn while covered() was resolving, or nothing recorded.
+    if (!ok || gen !== narrGen.current) return false
+    audio.stopVoice()
     setSpokenWord(-1)
-    audio.play(key, { enabled: soundOn })
+    // chimeOnMiss:false -> if the clip fails to load, stay silent (never a
+    // letter-chime mid-story); word-by-word is the explicit fallback.
+    audio.play(key, { enabled: soundOn, chimeOnMiss: false })
     return true
   }
 
@@ -193,8 +208,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     // A completed read is a correct 'story' event - together with the
     // sword: help taps this gives Grown-Ups a real reading signal.
     recordAnswer(`story:${story.id}`, `story:${story.id}`, 'story')
-    // Opened from a Journey story node: finishing ANY story completes it.
-    onStoryComplete?.()
+    // Show the celebration first; node completion (which navigates away) is
+    // deferred to leaveReader so the child sees "Read it again" / "More".
+    finishedOnceRef.current = true
     setQuiz(null)
     setFinished(true)
     playEffect('win', soundOn)
@@ -213,7 +229,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   }
   const prevPage = () => {
     stopSpeech()
-    if (pageIdx === 0) closeReader()
+    if (pageIdx === 0) leaveReader()
     else {
       setDir(-1)
       setPageIdx(pageIdx - 1)
@@ -234,7 +250,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           <button type="button" onClick={() => openStory(story)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {t('storyAgain', 'Read it again')}
           </button>
-          <button type="button" onClick={closeReader} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
+          <button type="button" onClick={leaveReader} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
             {t('storyMore', 'More stories')}
           </button>
         </div>
@@ -245,13 +261,15 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── comprehension question ── */
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
         <Sprite2D draw={drawAnbessa} size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
-        <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
-        {story.q.g && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
+        {(story.q.g || showGloss) && (
+          <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
+        )}
+        {story.q.g && showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
         <div className="flex gap-4">
           {story.q.a.map((opt, i) => (
-            <button key={i} type="button" onClick={() => answerQuiz(opt)} className={`chunk flex h-32 w-32 items-center justify-center rounded-3xl border-2 ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px' }}>
+            <button key={i} type="button" onClick={() => answerQuiz(opt)} aria-label={opt.alt || opt.pic} className={`chunk flex h-32 w-32 items-center justify-center rounded-3xl border-2 ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px' }}>
               <WordPicture emoji={opt.pic} size={84} />
             </button>
           ))}
@@ -268,15 +286,15 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
         <header className="flex items-center gap-2">
-          <button type="button" onClick={prevPage} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={prevPage} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={t('storyProgress', `Page ${pageIdx + 1} of ${story.pages.length}`, { n: pageIdx + 1, total: story.pages.length })}>
+          <div role="img" className="flex flex-1 items-center justify-center gap-1.5" aria-label={t('storyProgress', `Page ${pageIdx + 1} of ${story.pages.length}`, { n: pageIdx + 1, total: story.pages.length })}>
             {story.pages.map((_, i) => (
               <span key={i} className="h-2.5 rounded-full transition-all" style={{ width: i === pageIdx ? 22 : 10, background: i <= pageIdx ? 'var(--go)' : 'var(--line)' }} />
             ))}
           </div>
-          <div className="w-10" />
+          <div className="w-11" />
         </header>
 
         <main className="relative flex-1" style={{ perspective: 1600 }}>
@@ -327,7 +345,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                 ))}
                 <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
               </div>
-              <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>
+              {showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>}
             </motion.div>
           </AnimatePresence>
         </main>
@@ -349,13 +367,13 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />
         </button>
         <h1 className="flex flex-1 items-center justify-center gap-2 text-lg font-black">
           <BookOpen className="h-5 w-5" aria-hidden="true" /> {t('storyTitle', 'Story Time')}
         </h1>
-        <div className="w-10" />
+        <div className="w-11" />
       </header>
       <p className="mt-1 text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>
         {t('storySub', 'Little books you can already read - every letter is one you learned.')}
@@ -377,7 +395,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                 <LetterTile glyph={Array.from(s.title.g)[0]} size={44} className="shrink-0" />
                 <span className="min-w-0 flex-1">
                   <span className="geez block truncate text-lg font-black">{s.title.g}</span>
-                  <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>
+                  {showGloss && <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>}
                 </span>
                 {readCounts[s.id] > 0 && (
                   <span className="rounded-lg px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--star)' }}>

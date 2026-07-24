@@ -53,6 +53,12 @@ export default defineConfig({
         // then goes offline must still speak every letter. Runtime caching
         // below stays as a safety net for anything outside the precache.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2,mp3,json}'],
+        // ...but NOT the optional per-page story narration: those are long
+        // full-sentence clips for many stories x pages x packs, which would
+        // bloat the up-front install on the slow devices this app targets.
+        // The runtime CacheFirst rule below still caches them after first play,
+        // and offline reading degrades to word-by-word audio.
+        globIgnores: ['**/audio/fidel/stories/**'],
         // The generated SW registers an SPA navigation fallback (every
         // navigation resolves to index.html). The /review page is a SEPARATE
         // static document, not part of the SPA, so it must be exempt — without

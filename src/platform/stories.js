@@ -25,8 +25,8 @@
 
 import { FIDEL_FAMILIES } from './ethiopic'
 
-/* Ethiopic punctuation + whitespace a page may carry around its words. */
-const STRIP = /[፡-፨!?,.\s]+/g
+/* Ethiopic punctuation, quotes + whitespace a page may carry around its words. */
+const STRIP = /[፡-፨!?,.\s"'«»“”‘’]+/g
 
 /** Families per chapter (groups of 8; the last chapter takes the remainder),
     matching journey.js chapterFamilies. */

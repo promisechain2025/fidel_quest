@@ -9,6 +9,7 @@ describe('story engine', () => {
   it('tokenizes around Ethiopic punctuation and Latin marks', () => {
     expect(storyWords('ሰላም ሳራ።')).toEqual(['ሰላም', 'ሳራ'])
     expect(storyWords('ሎሚ! ማር፣ ውሃ?')).toEqual(['ሎሚ', 'ማር', 'ውሃ'])
+    expect(storyWords('"ልጆች ይምጡ" አለ።')).toEqual(['ልጆች', 'ይምጡ', 'አለ']) // quotes stripped
     expect(storyWords('')).toEqual([])
   })
 

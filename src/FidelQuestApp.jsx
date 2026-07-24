@@ -53,7 +53,6 @@ import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
-import StoryTime from './components/StoryTime'
 import WordPicture from './components/Pictures'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
@@ -95,6 +94,9 @@ const TeacherMode = lazy(() => import('./components/TeacherMode'))
 const Runner = lazy(() => import('./Runner3D'))
 const LetterCatch = lazy(() => import('./LetterCatch'))
 const TvClass = lazy(() => import('./components/TvClass'))
+// The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
+// most sessions never open it, so keep it out of the boot chunk like the rest.
+const StoryTime = lazy(() => import('./components/StoryTime'))
 const SupportAsk = lazy(() => import('./components/SupportAsk'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
@@ -1451,11 +1453,13 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'stories' && (
             <Screen key="stories">
-              <StoryTime
-                soundOn={soundOn}
-                onBack={goBack}
-                onStoryComplete={screen.nodeId ? () => markNodeDone(screen.nodeId, 3) : null}
-              />
+              <Suspense fallback={null}>
+                <StoryTime
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  onStoryComplete={screen.nodeId ? () => markNodeDone(screen.nodeId, 3) : null}
+                />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'twins' && (

@@ -13,13 +13,15 @@ export function buyUrl() {
   return appStoreUrl()
 }
 
-/** The hosted privacy-policy URL. Apple 5.1.1(i) requires the policy to be
-    reachable INSIDE the app (not only in store metadata). Set VITE_PRIVACY_URL
-    to the hosted page; otherwise fall back to the app's own landing URL. */
+/** The hosted privacy-policy URL, or '' when none is configured. Apple
+    5.1.1(i) requires the policy to be reachable INSIDE the app. Set
+    VITE_PRIVACY_URL to the hosted page. We deliberately do NOT fall back to
+    the marketing/landing URL: a link labelled "Privacy policy" that opens a
+    non-policy page (or nothing on Android) is worse than hiding the link, so
+    callers should render it only when this returns a non-empty string. */
 export function privacyUrl() {
   const env = import.meta.env?.VITE_PRIVACY_URL
-  if (typeof env === 'string' && env.trim()) return env.trim()
-  return appShareUrl()
+  return typeof env === 'string' && env.trim() ? env.trim() : ''
 }
 
 export function feedbackMailto() {

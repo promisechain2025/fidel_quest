@@ -1061,11 +1061,15 @@ function drawItem(g, W, H, it) {
   }
 }
 
+// Stamps that already consume it.flip internally (they mirror themselves), so
+// the generic outer mirror below must skip them or the two flips cancel out.
+const SELF_FLIP = new Set(['leopard', 'bigFish', 'sheep', 'donkey'])
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function paintScene(g, W, H, scene) {
   ;(BG[scene?.bg] || BG.day)(g, W, H)
   for (const it of scene?.items || []) {
-    if (it.flip && it.k !== 'leopard') {
+    if (it.flip && !SELF_FLIP.has(it.k)) {
       g.save()
       g.translate(it.x * W * 2, 0)
       g.scale(-1, 1)
@@ -1097,7 +1101,11 @@ export default function StoryScene({ scene, width = 320, height = 208, className
   useEffect(() => {
     const c = ref.current
     if (!c) return
-    const W = 800, Hh = 520
+    // Size the backing store from the display size at a capped DPR, so a cheap
+    // phone paints ~display pixels, not a fixed 800x520 over-sample.
+    const dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1)
+    const W = Math.round(width * dpr)
+    const Hh = Math.round(height * dpr)
     c.width = W
     c.height = Hh
     const g = c.getContext('2d')
@@ -1116,6 +1124,6 @@ export default function StoryScene({ scene, width = 320, height = 208, className
     g.clip()
     paintScene(g, W, Hh, scene)
     g.restore()
-  }, [scene, width, rounded])
+  }, [scene, width, height, rounded])
   return <canvas ref={ref} className={className} style={{ width, height, borderRadius: rounded }} aria-hidden="true" />
 }

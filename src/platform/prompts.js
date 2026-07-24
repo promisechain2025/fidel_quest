@@ -28,11 +28,13 @@ const said = new Set()
 export function sayPrompt(key, enabled) {
   if (!PROMPT_LINES[key] || said.has(key)) return
   said.add(key)
-  try {
-    audio.play(`prompts/${key}`, { enabled })
-  } catch {
-    /* never block on narration */
-  }
+  // Only play when the clip actually exists; otherwise stay SILENT (the
+  // contract). Without this gate a present manifest routes the missing key
+  // to a generic two-note chime on every screen entry.
+  audio
+    .covered(`prompts/${key}`)
+    .then((ok) => { if (ok) audio.play(`prompts/${key}`, { enabled }) })
+    .catch(() => {})
 }
 
 /** Test/reset hook. */
