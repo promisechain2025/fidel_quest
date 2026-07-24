@@ -416,6 +416,18 @@ function person(g, cx, footY, h, o = {}) {
     g.ellipse(cx, headY - headR * 0.92, headR * 0.72, headR * 0.24, 0, 0, 7)
     g.stroke()
   }
+  // flowing hair behind the head (long style: draped to the shoulders)
+  if (!covered && o.hairStyle === 'long') {
+    g.fillStyle = hair
+    g.beginPath()
+    g.moveTo(cx - headR * 1.08, headY - headR * 0.1)
+    g.quadraticCurveTo(cx - headR * 1.26, headY + headR * 1.7, cx - headR * 0.52, headY + headR * 2.05)
+    g.quadraticCurveTo(cx, headY + headR * 2.2, cx + headR * 0.52, headY + headR * 2.05)
+    g.quadraticCurveTo(cx + headR * 1.26, headY + headR * 1.7, cx + headR * 1.08, headY - headR * 0.1)
+    g.quadraticCurveTo(cx, headY - headR * 1.55, cx - headR * 1.08, headY - headR * 0.1)
+    g.closePath()
+    g.fill()
+  }
   // head skin
   circle(g, cx, headY, headR, skin)
   // hair (only when uncovered)
@@ -424,6 +436,10 @@ function person(g, cx, footY, h, o = {}) {
     if (o.hairStyle === 'short') {
       g.beginPath()
       g.arc(cx, headY, headR * 1.04, Math.PI * 1.02, Math.PI * 2 - 0.02)
+      g.fill()
+    } else if (o.hairStyle === 'long') {
+      g.beginPath() // a soft fringe over the brow; the face stays open
+      g.arc(cx, headY, headR * 1.03, Math.PI * 1.06, Math.PI * 1.94)
       g.fill()
     } else {
       g.beginPath()
