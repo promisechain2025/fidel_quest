@@ -1,32 +1,36 @@
 /* ============================================================================
-   DECODABLE STORIES — the reading on-ramp after the alphabet
+   STORIES — the reading on-ramp after the alphabet
    ----------------------------------------------------------------------------
    The app taught decoding and then stranded it at single words; stories are
-   where the child SPENDS the letters. The engine is strict about the one
-   rule that makes a "decodable" real: a story unlocks only when EVERY word
-   of EVERY page is writable with the families the child has learned
-   (words.js isDecodable, labialized forms included). No exceptions, no
-   sight words - a locked story always tells the child which letters will
-   open it, turning the library into motivation for the path.
+   where the child SPENDS the letters. Each story carries a `band` (1-4) tied
+   to a chapter of the Journey and unlocks when that chapter is finished, so
+   the library grows as a motivating ramp (a locked story tells the child
+   which letters still stand between them and it).
+
+   Why banded, not strict per-letter decodable: Ge'ez gates one family at a
+   time, so "only letters already learned" boxes the earliest stories into
+   near-nonsense (halo, ho-ho-ho, mulu-mulu-mulu). A STORY is narration the
+   child reads WITH help (Read-to-me voices every word), not a cold decoding
+   drill - so we trade strict decodability for real, correct Amharic that
+   still arrives in a sensible order. Vocabulary stays simple and concrete;
+   the band, not the exact spelling, sets when a story appears.
 
    Pure module: tokenizing, gating, and ordering are all selectors; the
    reader UI and read-count persistence live elsewhere (fq.stories.v1 is in
    the progress registry).
 
-   CONTENT NOTE: the starter stories are DRAFT Amharic composed for strict
-   early-band decodability (only ha/le/hha/me rows in band 1, etc.), in the
-   naming/exclamation style of pre-reader decodables. Like the UI
-   translations, they are flagged for native-speaker review before a
-   marketing push - grammar simplifications are deliberate, wrong Amharic
-   is not. Tigrinya stories are a TODO gated on a native speaker; the
-   engine is pack-aware and gates them off the ti family table when added.
+   CONTENT NOTE: the starter library is Amharic. Tigrinya stories are a TODO
+   gated on a native speaker; the engine is pack-aware (filters by s.pack).
    ========================================================================== */
 
 import { FIDEL_FAMILIES } from './ethiopic'
-import { isDecodable, unlockStage } from './words'
 
 /* Ethiopic punctuation + whitespace a page may carry around its words. */
 const STRIP = /[፡-፨!?,.\s]+/g
+
+/** Families per chapter (groups of 8; the last chapter takes the remainder),
+    matching journey.js chapterFamilies. */
+const CHAPTER_SIZE = 8
 
 /** The Ge'ez words of a sentence, punctuation stripped. */
 export function storyWords(text) {
@@ -35,34 +39,32 @@ export function storyWords(text) {
     .filter(Boolean)
 }
 
-/** A story is readable when every word of every page is decodable. */
-export function storyDecodable(story, learnedIds) {
-  const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds)
-  return story.pages.every((p) => storyWords(p.g).every((w) => isDecodable(w, learned)))
+/** 0-based family index at which a band's chapter completes (its gate). */
+export function bandUnlockIndex(band, families = FIDEL_FAMILIES) {
+  const last = families.length - 1
+  if (band >= 4) return last
+  return Math.min(Math.max(1, band) * CHAPTER_SIZE - 1, last)
 }
 
-/** 0-based family index at which the story unlocks (max over its words). */
-export function storyStage(story) {
-  let stage = 0
-  for (const p of story.pages) {
-    for (const w of storyWords(p.g)) stage = Math.max(stage, unlockStage(w))
-  }
-  return stage
+/** The family index that gates this story (its band's last family). */
+export function storyStage(story, families = FIDEL_FAMILIES) {
+  return bandUnlockIndex(story.band || 1, families)
 }
 
-/** Families still missing for a locked story, in journey order. */
-export function storyMissingFamilies(story, learnedIds) {
+/** A story is unlocked once the child has learned its gate family - i.e.
+    finished the chapter the story's band belongs to. */
+export function storyUnlocked(story, learnedIds, families = FIDEL_FAMILIES) {
   const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds)
-  const missing = new Set()
-  for (const p of story.pages) {
-    for (const w of storyWords(p.g)) {
-      for (const ch of Array.from(w)) {
-        const fam = FIDEL_FAMILIES.find((f) => Array.from(f.chars).includes(ch) || f.labial === ch)
-        if (fam && !learned.has(fam.id)) missing.add(fam.id)
-      }
-    }
-  }
-  return FIDEL_FAMILIES.filter((f) => missing.has(f.id)).map((f) => f.id)
+  const gate = families[storyStage(story, families)]?.id
+  return gate ? learned.has(gate) : true
+}
+
+/** Families the child still needs to reach a locked story's band, in
+    journey order (the "learn these to open" hint). */
+export function storyMissingFamilies(story, learnedIds, families = FIDEL_FAMILIES) {
+  const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds)
+  const idx = storyStage(story, families)
+  return families.slice(0, idx + 1).filter((f) => !learned.has(f.id)).map((f) => f.id)
 }
 
 /** Library view: every story tagged { unlocked, stage, missing } and sorted
@@ -73,7 +75,7 @@ export function storyLibrary(learnedIds, stories = STORIES, packId = null) {
   const inPack = packId ? stories.filter((s) => s.pack === packId) : stories
   return inPack
     .map((s) => {
-      const unlocked = storyDecodable(s, learnedIds)
+      const unlocked = storyUnlocked(s, learnedIds)
       return { ...s, unlocked, stage: storyStage(s), missing: unlocked ? [] : storyMissingFamilies(s, learnedIds) }
     })
     .sort((a, b) => a.stage - b.stage || a.id.localeCompare(b.id))
@@ -119,130 +121,139 @@ export function markStoryRead(id) {
   return s.read[id]
 }
 
-/* ── the starter library (Amharic; DRAFT, see header) ─────────────────── */
+/* ── the starter library (Amharic) ────────────────────────────────────── */
 /* Page shape: g (Ge'ez), lt (latin), en (meaning), pic (emoji stand-in
-   until the owned-illustration pass). Pages are 1-5 words on purpose. */
+   until the owned-illustration pass). band (1-4) gates the story to a
+   chapter. Pages stay 1-5 words: pre-reader sentences, real Amharic. */
 
 export const STORIES = [
   {
     id: 'lomi',
     pack: 'am',
-    title: { g: 'ሎሚ ለሚሚ', lt: 'lomi le-Mimi', en: 'A Lime for Mimi' },
+    band: 1,
+    title: { g: 'ሚሚና ሎሚ', lt: 'Mimina Lomi', en: 'Mimi and the Lemon' },
     pages: [
-      { g: 'ሃሎ ሚሚ።', lt: 'halo Mimi.', en: 'Hello, Mimi.', pic: '🐱' },
-      { g: 'ሎሚ!', lt: 'lomi!', en: 'A lime!', pic: '🍋' },
-      { g: 'ለሚሚ ሎሚ።', lt: 'le-Mimi lomi.', en: 'A lime for Mimi.', pic: '🍋' },
-      { g: 'ሙሉ ሎሚ ለሚሚ።', lt: 'mulu lomi le-Mimi.', en: 'A whole lime for Mimi.', pic: '😻' },
-      { g: 'ሆ ሆ ሆ!', lt: 'ho ho ho!', en: 'Ho ho ho!', pic: '🎉' },
+      { g: 'ሚሚ ትንሽ ድመት ናት።', lt: 'Mimi tinish dimet nat.', en: 'Mimi is a little cat.', pic: '🐱' },
+      { g: 'አንድ ቀን ሎሚ አገኘች።', lt: 'and qen lomi agegnech.', en: 'One day she found a lemon.', pic: '🍋' },
+      { g: 'ላሰችው፣ በጣም መራራ ነበር!', lt: 'lasechiw, betam merara neber!', en: 'She licked it - so sour!', pic: '😝' },
+      { g: 'ሚሚ ደንግጣ ሸሸች።', lt: 'Mimi dengita sheshech.', en: 'Mimi got startled and ran.', pic: '🙀' },
     ],
-    /* Comprehension check (DRAFT, en-first; native review adds the Amharic
-       question). One tap, picture answers, gentle retry - see StoryTime. */
-    q: { en: 'Who got the lime?', a: [{ pic: '🐱', ok: true }, { pic: '🐄', ok: false }, { pic: '🐶', ok: false }] },
+    /* Comprehension check: one tap, picture answers, gentle retry (StoryTime). */
+    q: { en: 'What did Mimi taste?', a: [{ pic: '🍋', ok: true }, { pic: '🍯', ok: false }, { pic: '🥛', ok: false }] },
   },
   {
     id: 'lemlem',
     pack: 'am',
-    title: { g: 'ለምለም', lt: 'Lemlem', en: 'Lemlem' },
+    band: 1,
+    title: { g: 'ለምለምና ማር', lt: 'Lemlemna Mar', en: "Lemlem's Honey" },
     pages: [
-      { g: 'ሃሎ ለምለም።', lt: 'halo Lemlem.', en: 'Hello, Lemlem.', pic: '👧🏾' },
-      { g: 'ለምለም ሎሚ ለማማ።', lt: 'Lemlem lomi le-mama.', en: 'Lemlem has a lime for Mama.', pic: '🍋' },
-      { g: 'ማማ ሞላ ሙሉ።', lt: 'mama mola mulu.', en: 'Mama filled it full.', pic: '🫙' },
-      { g: 'ሙሉ ሙሉ ሙሉ!', lt: 'mulu mulu mulu!', en: 'Full, full, full!', pic: '🎉' },
+      { g: 'ለምለም እናቷን ትወዳለች።', lt: 'Lemlem inatwan tiwedalech.', en: 'Lemlem loves her mother.', pic: '👧🏾' },
+      { g: 'እናቷ ማር ገዛች።', lt: 'inatwa mar gezach.', en: 'Her mother bought honey.', pic: '🍯' },
+      { g: 'ለምለም ማሩን ቀመሰች።', lt: 'Lemlem marun qemesech.', en: 'Lemlem tasted the honey.', pic: '😋' },
+      { g: 'በጣም ጣፋጭ ነው!', lt: 'betam tafach new!', en: 'It is so sweet!', pic: '🫙' },
     ],
+    q: { en: 'What did Lemlem taste?', a: [{ pic: '🍯', ok: true }, { pic: '🍋', ok: false }, { pic: '🌿', ok: false }] },
   },
   {
     id: 'selam-sara',
     pack: 'am',
-    title: { g: 'ሰላም ሳራ', lt: 'selam Sara', en: 'Hello, Sara' },
+    band: 1,
+    title: { g: 'ሰላም ሳራ', lt: 'Selam Sara', en: 'Hello, Sara' },
     pages: [
-      { g: 'ሰላም ሳራ።', lt: 'selam Sara.', en: 'Hello, Sara.', pic: '👧🏾' },
-      { g: 'ሰላም ሙሴ።', lt: 'selam Musse.', en: 'Hello, Musse.', pic: '👦🏾' },
-      { g: 'ማር ለሳራ።', lt: 'mar le-Sara.', en: 'Honey for Sara.', pic: '🍯' },
-      { g: 'ሙሴ ማር ሰራ።', lt: 'Musse mar sera.', en: 'Musse made honey.', pic: '🐝' },
-      { g: 'ማር ማር ማር!', lt: 'mar mar mar!', en: 'Honey, honey, honey!', pic: '😋' },
+      { g: 'ሰላም ሳራ!', lt: 'selam Sara!', en: 'Hello, Sara!', pic: '👧🏾' },
+      { g: 'ሰላም ሙሴ!', lt: 'selam Musse!', en: 'Hello, Musse!', pic: '👦🏾' },
+      { g: 'አብረው ተጫወቱ።', lt: 'abrew techawetu.', en: 'They played together.', pic: '🤸' },
+      { g: 'ሳራና ሙሴ ጓደኛሞች ናቸው።', lt: 'Sarana Musse gwadegnamoch nachew.', en: 'Sara and Musse are friends.', pic: '🤝' },
     ],
   },
   {
     id: 'shiro',
     pack: 'am',
-    title: { g: 'ሽሮ ለሌሊት', lt: 'shiro le-lelit', en: 'Shiro for the Night' },
+    band: 2,
+    title: { g: 'ሽሮ ወጥ', lt: 'Shiro Wet', en: 'Shiro Stew' },
     pages: [
-      { g: 'ሽሮ ሽሮ ሽሮ።', lt: 'shiro shiro shiro.', en: 'Shiro, shiro, shiro.', pic: '🍲' },
-      { g: 'ማማ ሽሮ ሰራ።', lt: 'mama shiro sera.', en: 'Mama made shiro.', pic: '👩🏾‍🍳' },
-      { g: 'ሚሚ ሽሮ ሻለ?', lt: 'Mimi shiro shale?', en: 'Is shiro better, Mimi?', pic: '🐱' },
-      { g: 'ሽሮ ለሌሊት ሞላ።', lt: 'shiro le-lelit mola.', en: 'Shiro filled the night.', pic: '🌙' },
-      { g: 'ሰላም ሰላም ሌሊት።', lt: 'selam selam lelit.', en: 'Good night, good night.', pic: '😴' },
+      { g: 'እናት ምሳ ሰራች።', lt: 'inat misa serach.', en: 'Mother made lunch.', pic: '👩🏾‍🍳' },
+      { g: 'ጣፋጭ ሽሮ ወጥ ነው።', lt: 'tafach shiro wet new.', en: 'It is tasty shiro stew.', pic: '🍲' },
+      { g: 'ሁሉም አብረው በሉ።', lt: 'hulum abrew belu.', en: 'Everyone ate together.', pic: '🍽️' },
+      { g: 'ሆዳችን ሞላ!', lt: 'hodachin mola!', en: 'Our tummies are full!', pic: '😊' },
     ],
+    q: { en: 'What did they eat?', a: [{ pic: '🍲', ok: true }, { pic: '🍋', ok: false }, { pic: '🍯', ok: false }] },
   },
   {
     id: 'anbesa-lam',
     pack: 'am',
-    title: { g: 'አንበሳ እና ላም', lt: 'anbesa ina lam', en: 'The Lion and the Cow' },
+    band: 2,
+    title: { g: 'አንበሳና ላም', lt: 'Anbesana Lam', en: 'The Lion and the Cow' },
     pages: [
-      { g: 'አንበሳ አለ።', lt: 'anbesa ale.', en: 'There is a lion.', pic: '🦁' },
-      { g: 'ላም አለች።', lt: 'lam alech.', en: 'There is a cow.', pic: '🐄' },
-      { g: 'አንበሳ ሎሚ በላ።', lt: 'anbesa lomi bela.', en: 'The lion ate a lime.', pic: '🍋' },
-      { g: 'ላም ቆሎ በላች።', lt: 'lam qolo belach.', en: 'The cow ate qolo.', pic: '🌰' },
-      { g: 'አንበሳ እና ላም ተኙ።', lt: 'anbesa ina lam tegnu.', en: 'The lion and the cow slept.', pic: '😴' },
+      { g: 'አንበሳ ላምን አገኘ።', lt: 'anbesa lamin agegne.', en: 'The lion met a cow.', pic: '🦁' },
+      { g: 'ላም በጣም ፈራች።', lt: 'lam betam ferach.', en: 'The cow was very scared.', pic: '🐄' },
+      { g: 'አንበሳ ግን ደግ ነው።', lt: 'anbesa gin deg new.', en: 'But the lion is kind.', pic: '😊' },
+      { g: 'አብረው ጓደኛ ሆኑ።', lt: 'abrew gwadegna honu.', en: 'They became friends.', pic: '🤝' },
     ],
-    q: { en: 'What did the lion eat?', a: [{ pic: '🍋', ok: true }, { pic: '💧', ok: false }, { pic: '🥛', ok: false }] },
+    q: { en: 'How did the lion treat the cow?', a: [{ pic: '😊', ok: true }, { pic: '😠', ok: false }, { pic: '😢', ok: false }] },
   },
   {
     id: 'inat-abat',
     pack: 'am',
-    title: { g: 'እናት እና አባት', lt: 'inat ina abat', en: 'Mother and Father' },
+    band: 2,
+    title: { g: 'እናትና አባት', lt: 'Inatna Abat', en: 'Mother and Father' },
     pages: [
-      { g: 'እናት አለች።', lt: 'inat alech.', en: 'There is Mother.', pic: '👩🏾' },
-      { g: 'አባት አለ።', lt: 'abat ale.', en: 'There is Father.', pic: '👨🏾' },
-      { g: 'እናት አነበበች።', lt: 'inat anebebech.', en: 'Mother read.', pic: '📖' },
-      { g: 'አባት ሰማ።', lt: 'abat sema.', en: 'Father listened.', pic: '👂🏾' },
-      { g: 'ቤት ሰላም ሞላ።', lt: 'bet selam mola.', en: 'The house filled with peace.', pic: '🏠' },
+      { g: 'እናት መጽሐፍ አነበበች።', lt: 'inat metsihaf anebebech.', en: 'Mother read a book.', pic: '📖' },
+      { g: 'አባት በጥሞና አዳመጠ።', lt: 'abat betmona adamete.', en: 'Father listened closely.', pic: '👂🏾' },
+      { g: 'ልጆች ተሰበሰቡ።', lt: 'lijoch tesebesebu.', en: 'The children gathered.', pic: '🧒🏾' },
+      { g: 'ቤታችን በፍቅር ሞላ።', lt: 'betachin befiqir mola.', en: 'Our home filled with love.', pic: '❤️' },
     ],
   },
   {
     id: 'abebe-anbebe',
     pack: 'am',
-    title: { g: 'አበበ አነበበ', lt: 'Abebe anebebe', en: 'Abebe Reads' },
+    band: 3,
+    title: { g: 'አበበ አነበበ', lt: 'Abebe Anebebe', en: 'Abebe Reads' },
     pages: [
-      { g: 'አበበ ተነሳ።', lt: 'Abebe tenesa.', en: 'Abebe got up.', pic: '🌅' },
-      { g: 'አበበ ቃል አነበበ።', lt: 'Abebe qal anebebe.', en: 'Abebe read a word.', pic: '📖' },
-      { g: 'እሺ አበበ!', lt: 'ishi Abebe!', en: 'Well done, Abebe!', pic: '⭐' },
-      { g: 'አበበ እና እናት ሳቁ።', lt: 'Abebe ina inat saqu.', en: 'Abebe and Mother laughed.', pic: '😄' },
+      { g: 'አበበ ማለዳ ተነሳ።', lt: 'Abebe maleda tenesa.', en: 'Abebe woke up early.', pic: '🌅' },
+      { g: 'ፊደሎቹን አጠና።', lt: 'fidelochun atena.', en: 'He studied his letters.', pic: '🔤' },
+      { g: 'መጽሐፉን አነበበ።', lt: 'metsihafun anebebe.', en: 'He read his book.', pic: '📖' },
+      { g: 'እናቱ በጣም ኮራች።', lt: 'inatu betam korach.', en: 'His mother was so proud.', pic: '🥰' },
     ],
+    q: { en: 'What did Abebe do?', a: [{ pic: '📖', ok: true }, { pic: '⚽', ok: false }, { pic: '😴', ok: false }] },
   },
   {
     id: 'wisha',
     pack: 'am',
-    title: { g: 'የሉሉ ውሻ', lt: 'ye-Lulu wisha', en: "Lulu's Dog" },
+    band: 3,
+    title: { g: 'የሉሉ ውሻ', lt: 'Ye-Lulu Wisha', en: "Lulu's Dog" },
     pages: [
-      { g: 'ሉሉ ውሻ አላት።', lt: 'Lulu wisha alat.', en: 'Lulu has a dog.', pic: '🐶' },
-      { g: 'ውሻው ውሃ ወደደ።', lt: 'wishaw wiha wedede.', en: 'The dog loved water.', pic: '💧' },
-      { g: 'ውሻው ዘለለ።', lt: 'wishaw zelele.', en: 'The dog jumped.', pic: '🐕' },
-      { g: 'ሉሉ ሳቀች።', lt: 'Lulu saqech.', en: 'Lulu laughed.', pic: '😄' },
-      { g: 'የሉሉ ውሻ ደስ አለው።', lt: 'ye-Lulu wisha des alew.', en: "Lulu's dog was happy.", pic: '❤️' },
+      { g: 'ሉሉ ትንሽ ውሻ አላት።', lt: 'Lulu tinish wisha alat.', en: 'Lulu has a little dog.', pic: '🐶' },
+      { g: 'ውሻው ውሃ ይወዳል።', lt: 'wishaw wiha yiwedal.', en: 'The dog loves water.', pic: '💧' },
+      { g: 'በኩሬ ውስጥ ዘለለ።', lt: 'bekure wist zelele.', en: 'He jumped into the pond.', pic: '🐕' },
+      { g: 'ሉሉና ውሻው ተደሰቱ።', lt: 'Luluna wishaw tedesetu.', en: 'Lulu and the dog were happy.', pic: '❤️' },
     ],
+    q: { en: 'What does the dog love?', a: [{ pic: '💧', ok: true }, { pic: '🔥', ok: false }, { pic: '🌙', ok: false }] },
   },
   {
     id: 'wetet',
     pack: 'am',
-    title: { g: 'ወተት ለነብር', lt: 'wetet le-nebir', en: 'Milk for the Leopard' },
+    band: 3,
+    title: { g: 'ወተትና ነብር', lt: 'Wetetna Nebir', en: 'Milk and the Leopard' },
     pages: [
-      { g: 'ነብር አለ።', lt: 'nebir ale.', en: 'There is a leopard.', pic: '🐆' },
-      { g: 'ወተት ወደደ።', lt: 'wetet wedede.', en: 'He loved milk.', pic: '🥛' },
-      { g: 'ላም ወተት አለች።', lt: 'lam wetet alech.', en: 'The cow had milk.', pic: '🐄' },
-      { g: 'ነብር እና ላም ሰላም ሆኑ።', lt: 'nebir ina lam selam honu.', en: 'The leopard and the cow made peace.', pic: '🤝' },
+      { g: 'ነብሩ ተራበ።', lt: 'nebru terabe.', en: 'The leopard was hungry.', pic: '🐆' },
+      { g: 'ላም ወተት ሰጠችው።', lt: 'lam wetet setechiw.', en: 'The cow gave him milk.', pic: '🥛' },
+      { g: 'ነብሩ አመሰገነ።', lt: 'nebru amesegene.', en: 'The leopard said thank you.', pic: '🙏🏾' },
+      { g: 'ጓደኛሞች ሆኑ።', lt: 'gwadegnamoch honu.', en: 'They became friends.', pic: '🤝' },
     ],
   },
   {
     id: 'tsehay',
     pack: 'am',
-    title: { g: 'ፀሐይ ወጣች', lt: 'tsehay wetach', en: 'The Sun Rose' },
+    band: 4,
+    title: { g: 'ፀሐይ ወጣች', lt: 'Tsehay Wetach', en: 'The Sun Rose' },
     pages: [
-      { g: 'ፀሐይ ወጣች።', lt: 'tsehay wetach.', en: 'The sun rose.', pic: '☀️' },
-      { g: 'ጨረቃ ገባች።', lt: 'chereqa gebach.', en: 'The moon set.', pic: '🌙' },
-      { g: 'አበበ ፊደል ጻፈ።', lt: 'Abebe fidel tsafe.', en: 'Abebe wrote fidel.', pic: '✍🏾' },
-      { g: 'ጤና ለአበበ!', lt: 'tena le-Abebe!', en: 'Health to Abebe!', pic: '💪🏾' },
-      { g: 'ፀሐይ እና ጨረቃ ሰላም።', lt: 'tsehay ina chereqa selam.', en: 'Peace to sun and moon.', pic: '🌗' },
+      { g: 'ጠዋት ፀሐይ ወጣች።', lt: 'tewat tsehay wetach.', en: 'In the morning the sun rose.', pic: '☀️' },
+      { g: 'ወፎች ዘመሩ።', lt: 'wefoch zemeru.', en: 'The birds sang.', pic: '🐦' },
+      { g: 'አበበ ፊደል ጻፈ።', lt: 'Abebe fidel tsafe.', en: 'Abebe wrote a letter.', pic: '✍🏾' },
+      { g: 'ማታ ጨረቃ መጣች።', lt: 'mata chereqa metach.', en: 'At night the moon came.', pic: '🌙' },
+      { g: 'መልካም ሌሊት!', lt: 'melkam lelit!', en: 'Good night!', pic: '😴' },
     ],
+    q: { en: 'What rose in the morning?', a: [{ pic: '☀️', ok: true }, { pic: '🌙', ok: false }, { pic: '⭐', ok: false }] },
   },
 ]

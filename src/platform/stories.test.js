@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { STORIES, storyWords, storyDecodable, storyStage, storyMissingFamilies, storyLibrary } from './stories'
+import { STORIES, storyWords, storyUnlocked, storyStage, storyMissingFamilies, storyLibrary, bandUnlockIndex } from './stories'
 import { FIDEL_FAMILIES } from './ethiopic'
 
 const familyIds = FIDEL_FAMILIES.map((f) => f.id)
@@ -12,17 +12,24 @@ describe('story engine', () => {
     expect(storyWords('')).toEqual([])
   })
 
-  it('a story unlocks exactly at its stage, not one family sooner', () => {
+  it('a story unlocks exactly at its band gate, not one family sooner', () => {
     for (const s of STORIES) {
       const stage = storyStage(s)
-      expect(Number.isFinite(stage), `${s.id} contains a non-script character`).toBe(true)
-      expect(storyDecodable(s, learnedUpTo(stage)), `${s.id} at its own stage`).toBe(true)
-      if (stage > 0) expect(storyDecodable(s, learnedUpTo(stage - 1)), `${s.id} one family early`).toBe(false)
+      expect(Number.isFinite(stage), `${s.id} stage is a real index`).toBe(true)
+      expect(storyUnlocked(s, learnedUpTo(stage)), `${s.id} at its own gate`).toBe(true)
+      if (stage > 0) expect(storyUnlocked(s, learnedUpTo(stage - 1)), `${s.id} one family early`).toBe(false)
     }
   })
 
+  it('bands map to chapter gates (1->7, 2->15, 3->23, 4->last)', () => {
+    expect(bandUnlockIndex(1)).toBe(7)
+    expect(bandUnlockIndex(2)).toBe(15)
+    expect(bandUnlockIndex(3)).toBe(23)
+    expect(bandUnlockIndex(4)).toBe(FIDEL_FAMILIES.length - 1)
+  })
+
   it('missing families are reported in journey order and empty when unlocked', () => {
-    const s = STORIES.find((x) => x.id === 'selam-sara')
+    const s = STORIES.find((x) => x.id === 'shiro') // band 2
     const missing = storyMissingFamilies(s, ['ha', 'le', 'hha', 'me'])
     expect(missing.length).toBeGreaterThan(0)
     const idx = missing.map((id) => familyIds.indexOf(id))
@@ -31,9 +38,10 @@ describe('story engine', () => {
   })
 
   it('the library sorts unlocked-first by stage and tags missing letters', () => {
-    const lib = storyLibrary(['ha', 'le', 'hha', 'me'])
-    expect(['lomi', 'lemlem']).toContain(lib[0].id) // both are stage-3 band-1 stories
+    // After chapter 1 (through she, index 7) the band-1 stories are open.
+    const lib = storyLibrary(familyIds.slice(0, 8))
     expect(lib[0].unlocked).toBe(true)
+    expect(lib[0].stage).toBe(7) // a band-1 story
     const lockedIdx = lib.findIndex((s) => !s.unlocked)
     expect(lockedIdx).toBeGreaterThan(0)
     expect(lib[lockedIdx].missing.length).toBeGreaterThan(0)
@@ -41,16 +49,24 @@ describe('story engine', () => {
 })
 
 describe('starter library content contract', () => {
-  it('has at least 10 stories with a real difficulty ramp', () => {
+  it('has at least 10 stories with a real band ramp', () => {
     expect(STORIES.length).toBeGreaterThanOrEqual(10)
-    const stages = STORIES.map(storyStage).sort((a, b) => a - b)
-    expect(stages[0]).toBeLessThanOrEqual(3) // readable after four families
-    expect(stages[stages.length - 1]).toBeGreaterThanOrEqual(25) // stretches to the late alphabet
+    const bands = STORIES.map((s) => s.band).sort((a, b) => a - b)
+    expect(bands[0]).toBe(1) // at least one opens after chapter 1
+    expect(bands[bands.length - 1]).toBe(4) // and one stretches to the last chapter
   })
 
-  it('every story: unique ids, 4+ pages, every page carries latin + meaning + picture', () => {
+  it('band-1 stories exist so the first story node is never empty', () => {
+    const band1 = STORIES.filter((s) => (s.band || 1) === 1)
+    expect(band1.length).toBeGreaterThanOrEqual(1)
+    // A band-1 story is unlocked the moment chapter 1 is finished.
+    for (const s of band1) expect(storyUnlocked(s, familyIds.slice(0, 8))).toBe(true)
+  })
+
+  it('every story: unique ids, band 1-4, 4+ pages, every page carries latin + meaning + picture', () => {
     expect(new Set(STORIES.map((s) => s.id)).size).toBe(STORIES.length)
     for (const s of STORIES) {
+      expect([1, 2, 3, 4], `${s.id} band`).toContain(s.band || 1)
       expect(s.pages.length, s.id).toBeGreaterThanOrEqual(4)
       expect(s.title?.g && s.title?.en, s.id).toBeTruthy()
       for (const p of s.pages) {
@@ -61,11 +77,5 @@ describe('starter library content contract', () => {
         expect(p.pic, `${s.id} picture`).toBeTruthy()
       }
     }
-  })
-
-  it('band-1 stories use ONLY the first four families', () => {
-    const early = STORIES.filter((s) => storyStage(s) <= 3)
-    expect(early.map((s) => s.id).sort()).toEqual(['lemlem', 'lomi'])
-    for (const s of early) expect(storyDecodable(s, ['ha', 'le', 'hha', 'me'])).toBe(true)
   })
 })
