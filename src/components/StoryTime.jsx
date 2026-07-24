@@ -21,6 +21,7 @@ import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
 import WordPicture from './Pictures'
+import StoryScene from './StoryScene'
 import { Harag, LetterTile } from './Manuscript'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
@@ -266,10 +267,15 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
             >
               {/* book spine shadow down the left edge */}
               <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[26px]" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.16), rgba(0,0,0,0.04) 55%, transparent)' }} />
-              {/* cartoon scene panel */}
-              <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
-                <WordPicture emoji={page.pic} size={120} />
-              </div>
+              {/* illustrated picture-book scene (falls back to the plain
+                  picture on a page/pack without a scene) */}
+              {page.scene ? (
+                <StoryScene scene={page.scene} width={338} height={220} className="shadow-sm" rounded={22} />
+              ) : (
+                <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
+                  <WordPicture emoji={page.pic} size={120} />
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-center gap-2 px-1">
                 {words.map((w, i) => (
                   <button

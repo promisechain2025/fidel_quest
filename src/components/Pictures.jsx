@@ -572,6 +572,20 @@ DRAWERS['🍵'] = DRAWERS['☕']
 /** Which emoji have an owned drawing (exported for tests). */
 export const DRAWN_PICTURES = Object.freeze(Object.keys(DRAWERS))
 
+/** Stamp an owned picture centered at (cx,cy) in a box of `size` onto an
+    existing context, so story SCENES can compose the same drawings as props.
+    Returns false (draws nothing) when the emoji has no owned drawing. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function stampPicture(g, emoji, cx, cy, size) {
+  const draw = DRAWERS[emoji]
+  if (!draw) return false
+  g.save()
+  g.translate(cx - size / 2, cy - size / 2)
+  draw(g, size)
+  g.restore()
+  return true
+}
+
 /**
  * A word/story picture: the owned drawn version when the library has one,
  * the emoji otherwise. Same box either way, so swapping in a new drawing
