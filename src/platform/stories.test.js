@@ -29,7 +29,7 @@ describe('story engine', () => {
   })
 
   it('missing families are reported in journey order and empty when unlocked', () => {
-    const s = STORIES.find((x) => x.id === 'shiro') // band 2
+    const s = STORIES.find((x) => x.id === 'good-shepherd') // band 2
     const missing = storyMissingFamilies(s, ['ha', 'le', 'hha', 'me'])
     expect(missing.length).toBeGreaterThan(0)
     const idx = missing.map((id) => familyIds.indexOf(id))
