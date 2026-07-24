@@ -99,6 +99,9 @@ const TvClass = lazy(() => import('./components/TvClass'))
 // most sessions never open it, so keep it out of the boot chunk like the rest.
 const StoryTime = lazy(() => import('./components/StoryTime'))
 const SupportAsk = lazy(() => import('./components/SupportAsk'))
+const VowelLadder = lazy(() => import('./components/VowelLadder'))
+const FidelMatch = lazy(() => import('./components/FidelMatch'))
+const FidelLineup = lazy(() => import('./components/FidelLineup'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -128,6 +131,9 @@ import {
   Search,
   Sun,
   Moon,
+  ListOrdered,
+  Grid2x2,
+  Layers,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -1468,6 +1474,35 @@ export default function FidelQuestApp() {
               <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
             </Screen>
           )}
+          {screen.name === 'ladder' && (
+            <Screen key="ladder">
+              <Suspense fallback={null}>
+                <VowelLadder
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'match' && (
+            <Screen key="match">
+              <Suspense fallback={null}>
+                <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'lineup' && (
+            <Screen key="lineup">
+              <Suspense fallback={null}>
+                <FidelLineup
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'review-node' && (
             <Screen key={`review-node-${runSeed}`}>
               <Lesson
@@ -1692,6 +1727,9 @@ export default function FidelQuestApp() {
               onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
               onStories={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startStories() }}
               onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
+              onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
+              onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
+              onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
               onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
@@ -2605,7 +2643,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2655,6 +2693,9 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
+            <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
+            <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
