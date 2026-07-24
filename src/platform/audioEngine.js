@@ -206,6 +206,16 @@ export class AudioEngine {
     })
   }
 
+  /** Whether a key has a real recorded clip (memory pack or manifest
+     coverage). Lets callers prefer a recording and gracefully fall back when
+     none exists yet (e.g. story narration before it is recorded). */
+  async covered(key) {
+    await this.ensureManifest()
+    const mem = this.getMemory?.()
+    if (mem && mem[key]) return true
+    return !!(this.manifest && this.manifest.has(key))
+  }
+
   /** Load the coverage manifest once; absence is a supported state. */
   async ensureManifest() {
     if (this.manifest !== undefined) return

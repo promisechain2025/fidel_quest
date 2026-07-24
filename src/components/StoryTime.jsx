@@ -88,7 +88,6 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   const openStory = (s) => {
     stopSpeech()
-    sayPrompt('tapWords', soundOn)
     setDir(1)
     setStory(s)
     setPageIdx(0)
@@ -114,8 +113,26 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     cancelRef.current = speakWord(w, soundOn)
   }
 
-  /** Read the whole page: each word in order, waiting for the voice. */
-  const readToMe = () => {
+  /** The page's recorded-narration key, pack-aware (Amharic under stories/,
+      Tigrinya under stories/ti/). */
+  const narrationKey = (idx) => `stories/${getActivePackId() === 'ti' ? 'ti/' : ''}${story.id}-${idx + 1}`
+
+  /** Play the page's human narration when one is recorded; resolves to
+      whether it played, so callers can fall back to word-by-word reading. */
+  const playNarration = async (idx = pageIdx) => {
+    if (!story) return false
+    const key = narrationKey(idx)
+    const ok = await audio.covered(key)
+    if (!ok) return false
+    stopSpeech()
+    setSpokenWord(-1)
+    audio.play(key, { enabled: soundOn })
+    return true
+  }
+
+  /** Read the whole page: prefer the recorded narration, else chain each
+      word (real clip where one exists, else spell it out). */
+  const readWordsAloud = () => {
     stopSpeech()
     let cancelled = false
     let cancelStep = () => {}
@@ -139,6 +156,21 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       cancelStep()
     }
   }
+  const readToMe = () => {
+    playNarration().then((played) => { if (!played) readWordsAloud() })
+  }
+
+  // Auto-read each page: play the recorded narration when there is one; on the
+  // first page with no recording yet, fall back to the spoken tap-hint.
+  useEffect(() => {
+    if (!story || finished || quiz) return
+    let alive = true
+    playNarration(pageIdx).then((played) => {
+      if (alive && !played && pageIdx === 0) sayPrompt('tapWords', soundOn)
+    })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIdx, story, finished, quiz])
 
   const nextPage = () => {
     stopSpeech()
