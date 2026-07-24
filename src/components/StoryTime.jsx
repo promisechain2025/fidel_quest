@@ -10,7 +10,7 @@
    through afterVoice so it always plays out.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
@@ -24,6 +24,23 @@ import WordPicture from './Pictures'
 import { Harag, LetterTile } from './Manuscript'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
+
+/* Page-turn like a book leaf: the outgoing page folds away over the spine
+   while the next swings in from the opposite edge (3D rotateY + a slide, so
+   it reads as paper turning, not a card spinning). `dir` is +1 forward,
+   -1 back. Reduced-motion swaps in a plain crossfade below. */
+const BOOK_TURN = {
+  enter: (dir) => ({ rotateY: dir >= 0 ? -78 : 78, x: dir >= 0 ? '38%' : '-38%', opacity: 0 }),
+  center: { rotateY: 0, x: 0, opacity: 1 },
+  exit: (dir) => ({ rotateY: dir >= 0 ? 78 : -78, x: dir >= 0 ? '-38%' : '38%', opacity: 0 }),
+}
+const FADE_TURN = { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
+
+/* A soft cartoon scene behind the page's picture: a sky glow up top and a
+   ground tint below, layered over the card so it works in light and dark. */
+const SCENE_BG =
+  'radial-gradient(120% 82% at 50% 16%, rgba(120,190,255,0.22), rgba(120,190,255,0.06) 46%, transparent 62%),' +
+  'linear-gradient(180deg, transparent 58%, rgba(122,182,96,0.20))'
 
 /** Speak one Ge'ez word: recorded clip when the pack has one, else spell
     it letter-by-letter. Returns a cancel fn for the spelling chain. */
@@ -54,10 +71,12 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [readCounts, setReadCounts] = useState(() => loadStoriesRead().read)
   const [story, setStory] = useState(null)
   const [pageIdx, setPageIdx] = useState(0)
+  const [dir, setDir] = useState(1) // page-turn direction: +1 forward, -1 back
   const [finished, setFinished] = useState(false)
   const [quiz, setQuiz] = useState(null) // null | 'asking' | 'missed' | 'done'
   const [spokenWord, setSpokenWord] = useState(-1)
   const cancelRef = useRef(() => {})
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => () => cancelRef.current(), [])
   const stopSpeech = () => {
@@ -69,6 +88,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const openStory = (s) => {
     stopSpeech()
     sayPrompt('tapWords', soundOn)
+    setDir(1)
     setStory(s)
     setPageIdx(0)
     setQuiz(null)
@@ -122,6 +142,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const nextPage = () => {
     stopSpeech()
     if (pageIdx + 1 < story.pages.length) {
+      setDir(1)
       setPageIdx(pageIdx + 1)
       return
     }
@@ -160,7 +181,10 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const prevPage = () => {
     stopSpeech()
     if (pageIdx === 0) closeReader()
-    else setPageIdx(pageIdx - 1)
+    else {
+      setDir(-1)
+      setPageIdx(pageIdx - 1)
+    }
   }
 
   /* ── celebration ── */
@@ -222,30 +246,52 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           <div className="w-10" />
         </header>
 
-        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <div className="flex justify-center" aria-hidden="true"><WordPicture emoji={page.pic} size={110} /></div>
-          <AnimatePresence mode="wait">
-            <motion.div key={pageIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-wrap items-center justify-center gap-2 px-2">
-              {words.map((w, i) => (
-                <button
-                  key={`${pageIdx}-${i}`}
-                  type="button"
-                  onClick={() => tapWord(w, i)}
-                  className={`geez chunk rounded-2xl border-2 px-3 py-2 text-4xl font-black ${FOCUS}`}
-                  style={{
-                    background: spokenWord === i ? 'var(--go-soft)' : 'var(--card)',
-                    borderColor: spokenWord === i ? 'var(--go)' : 'var(--line)',
-                    boxShadow: '0 3px 0 var(--line)',
-                    '--chunk-depth': '3px',
-                  }}
-                >
-                  {w}
-                </button>
-              ))}
-              <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
+        <main className="relative flex-1" style={{ perspective: 1600 }}>
+          <AnimatePresence custom={dir} initial={false}>
+            <motion.div
+              key={pageIdx}
+              custom={dir}
+              variants={reduceMotion ? FADE_TURN : BOOK_TURN}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: reduceMotion ? 0.18 : 0.52, ease: [0.33, 0.66, 0.4, 1] }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-[26px] px-6 py-6 text-center"
+              style={{
+                transformStyle: 'preserve-3d',
+                background: 'var(--card)',
+                border: '2px solid var(--line)',
+                boxShadow: '0 10px 26px rgba(0,0,0,0.16)',
+              }}
+            >
+              {/* book spine shadow down the left edge */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[26px]" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.16), rgba(0,0,0,0.04) 55%, transparent)' }} />
+              {/* cartoon scene panel */}
+              <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
+                <WordPicture emoji={page.pic} size={120} />
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 px-1">
+                {words.map((w, i) => (
+                  <button
+                    key={`${pageIdx}-${i}`}
+                    type="button"
+                    onClick={() => tapWord(w, i)}
+                    className={`geez chunk rounded-2xl border-2 px-3 py-2 text-4xl font-black ${FOCUS}`}
+                    style={{
+                      background: spokenWord === i ? 'var(--go-soft)' : 'var(--paper)',
+                      borderColor: spokenWord === i ? 'var(--go)' : 'var(--line)',
+                      boxShadow: '0 3px 0 var(--line)',
+                      '--chunk-depth': '3px',
+                    }}
+                  >
+                    {w}
+                  </button>
+                ))}
+                <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
+              </div>
+              <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>
             </motion.div>
           </AnimatePresence>
-          <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>
         </main>
 
         <div className="flex items-center gap-3">
