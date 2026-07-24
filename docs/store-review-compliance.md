@@ -13,16 +13,21 @@ metadata / build-flags / console forms.**
 
 ## Open items from the review (decide before submitting)
 
-1. **Share sheet not behind the parental gate (Apple 1.3 / Google Families).**
-   The "Share Anbessa" viral loop opens the OS Web Share sheet directly from
-   child-facing surfaces (`Closet.jsx`, the Daily-Gift reveal, the
-   chapter-complete Celebration, `ChallengeShareButton`) with **no**
-   `ParentalGate`, unlike the already-gated VoicePostcard / SupportAsk /
-   TeacherMode / GrownUps. A kids-category app should gate any link-out /
-   share. **Decision needed:** gate every share behind `ParentalGate`, or
-   remove share from the auto-presented reward moments and keep it (gated) in
-   the Closet. Until done, the 1.3 row below is **not** fully satisfied.
-2. **Religious content is undisclosed (Apple 2.3.1 / IARC).** All 10 Story
+1. ✅ **Fixed — share sheet now parental-gated (Apple 1.3 / Google Families).**
+   Every child-reachable "Share Anbessa" surface (`Closet.jsx`, the Daily-Gift
+   reveal, the chapter-complete Celebration, `ChallengeShareButton`) now routes
+   through `useShareGate` (`components/ShareGate.jsx`), which shows the same
+   hold-and-answer `ParentalGate` before opening the OS share sheet. The
+   student→teacher assignment receipt (`AssignmentDone`) is left ungated on
+   purpose: it is a directed submission inside the adult-initiated Teacher
+   flow, not a child-facing social share.
+2. 🟠 **Default pack vs. stories.** `detectPreferredPack()` returns Tigrinya on
+   non-Amharic locales, but the 10 stories are Amharic-only, so Story Time is
+   empty on those devices until Tigrinya stories ship. **Decision (owner):**
+   waiting for the Tigrinya story translations rather than flipping the default.
+   Make sure the reviewer/test device locale is Amharic so the feature is
+   exercised.
+3. **Religious content is undisclosed (Apple 2.3.1 / IARC).** All 10 Story
    Time stories are gentle Bible stories. The IARC questionnaire asks about
    religious references, and the listing markets only "games, stories and
    rewards". **Decision needed:** add a line to the description ("gentle Bible

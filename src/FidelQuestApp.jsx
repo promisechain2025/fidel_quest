@@ -54,6 +54,7 @@ import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
 import WordPicture from './components/Pictures'
+import { useShareGate } from './components/ShareGate'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -2815,6 +2816,7 @@ function InstallBanner() {
    once everything is collected -> a warm come-back-anytime moment. */
 function GiftModal({ reward, worn, forms, onClose }) {
   const [busy, setBusy] = useState(false)
+  const { requestShare, gate } = useShareGate()
   useEscapeKey(onClose)
   const share = async () => {
     setBusy(true)
@@ -2835,7 +2837,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
         </p>
         <div className="mt-5 flex flex-col gap-3">
           {reward && (
-            <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
               <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
             </button>
           )}
@@ -2843,6 +2845,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
             {reward ? t('keepGoing', 'Keep going!') : t('gotIt', 'Got it')}
           </button>
         </div>
+        {gate}
       </motion.div>
     </motion.div>
   )
@@ -2852,6 +2855,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
    in wearing the freshly-earned item; the primary action is Share. */
 function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) {
   const [busy, setBusy] = useState(false)
+  const { requestShare, gate } = useShareGate()
   useEscapeKey(onClose)
   // Personalize the share card with the child's name + this milestone, so what
   // lands in the WhatsApp thread says "Selam learned 56 letters!" not a generic
@@ -2882,7 +2886,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
           </p>
         )}
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
           {/* Pride peaks right here - offer to send the child's own voice to
@@ -2896,6 +2900,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
             {t('keepGoing', 'Keep going!')}
           </button>
         </div>
+        {gate}
       </motion.div>
     </motion.div>
   )
@@ -3497,6 +3502,7 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
    challenge is in the link. See utils/challenge.js. */
 function ChallengeShareButton({ payload, label }) {
   const [copied, setCopied] = useState(false)
+  const { requestShare, gate } = useShareGate()
   const share = async () => {
     const by = loadFromStorage('fq.nickname', '')
     // Native shells have a capacitor://localhost origin - a shared link
@@ -3525,12 +3531,15 @@ function ChallengeShareButton({ payload, label }) {
     }
   }
   return (
-    <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={share}>
-      <span className="flex items-center justify-center gap-2">
-        <Share2 className="h-5 w-5" aria-hidden="true" />
-        {copied ? t('linkCopied', 'Link copied!') : label}
-      </span>
-    </Chunky>
+    <>
+      <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={() => requestShare(share)}>
+        <span className="flex items-center justify-center gap-2">
+          <Share2 className="h-5 w-5" aria-hidden="true" />
+          {copied ? t('linkCopied', 'Link copied!') : label}
+        </span>
+      </Chunky>
+      {gate}
+    </>
   )
 }
 
