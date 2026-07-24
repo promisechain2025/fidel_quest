@@ -448,20 +448,27 @@ function person(g, cx, footY, h, o = {}) {
       for (const side of [-1, 1]) circle(g, cx + side * headR * 1.0, headY + headR * 0.15, headR * 0.42, hair)
     }
   }
-  // neat rounded beard hugging the jaw
+  // groomed beard: follows the jaw to a soft chin, leaving the mouth open
   if (o.beard) {
-    g.fillStyle = o.beardColor || '#3a2b1d'
+    g.fillStyle = o.beardColor || '#4a3526'
     g.beginPath()
-    g.moveTo(cx - headR * 0.7, headY + headR * 0.02)
-    g.quadraticCurveTo(cx - headR * 0.74, headY + headR * 0.95, cx, headY + headR * 1.12)
-    g.quadraticCurveTo(cx + headR * 0.74, headY + headR * 0.95, cx + headR * 0.7, headY + headR * 0.02)
-    g.quadraticCurveTo(cx + headR * 0.36, headY + headR * 0.4, cx, headY + headR * 0.44)
-    g.quadraticCurveTo(cx - headR * 0.36, headY + headR * 0.4, cx - headR * 0.7, headY + headR * 0.02)
+    g.moveTo(cx - headR * 0.6, headY + headR * 0.12)
+    g.quadraticCurveTo(cx - headR * 0.64, headY + headR * 0.72, cx - headR * 0.26, headY + headR * 0.98)
+    g.quadraticCurveTo(cx, headY + headR * 1.08, cx + headR * 0.26, headY + headR * 0.98)
+    g.quadraticCurveTo(cx + headR * 0.64, headY + headR * 0.72, cx + headR * 0.6, headY + headR * 0.12)
+    g.quadraticCurveTo(cx + headR * 0.4, headY + headR * 0.5, cx + headR * 0.24, headY + headR * 0.54)
+    g.quadraticCurveTo(cx, headY + headR * 0.66, cx - headR * 0.24, headY + headR * 0.54)
+    g.quadraticCurveTo(cx - headR * 0.4, headY + headR * 0.5, cx - headR * 0.6, headY + headR * 0.12)
     g.closePath()
     g.fill()
-    g.beginPath() // moustache
-    g.ellipse(cx, headY + headR * 0.26, headR * 0.32, headR * 0.11, 0, 0, 7)
-    g.fill()
+    for (const side of [-1, 1]) { // moustache wings with a gap for the mouth
+      g.beginPath()
+      g.moveTo(cx + side * headR * 0.04, headY + headR * 0.31)
+      g.quadraticCurveTo(cx + side * headR * 0.32, headY + headR * 0.27, cx + side * headR * 0.4, headY + headR * 0.44)
+      g.quadraticCurveTo(cx + side * headR * 0.26, headY + headR * 0.35, cx + side * headR * 0.04, headY + headR * 0.41)
+      g.closePath()
+      g.fill()
+    }
   }
   if (covered) {
     // front hood rim: a band over crown + temples, face open at the chin
@@ -514,14 +521,13 @@ function person(g, cx, footY, h, o = {}) {
   g.moveTo(cx, headY + headR * 0.06)
   g.lineTo(cx - headR * 0.05, headY + headR * 0.16)
   g.stroke()
-  // gentle smile (skipped under a beard, where the moustache reads as the mouth)
-  if (!o.beard) {
-    g.strokeStyle = C.ink
-    g.lineWidth = headR * 0.1
-    g.beginPath()
-    g.arc(cx, headY + headR * 0.24, headR * 0.28, 0.22 * Math.PI, 0.78 * Math.PI)
-    g.stroke()
-  }
+  // gentle smile (a small warm mouth tucked in the beard gap when bearded)
+  g.strokeStyle = o.beard ? '#9a5346' : C.ink
+  g.lineWidth = headR * (o.beard ? 0.08 : 0.1)
+  g.lineCap = 'round'
+  g.beginPath()
+  g.arc(cx, headY + headR * (o.beard ? 0.46 : 0.24), headR * (o.beard ? 0.15 : 0.28), 0.2 * Math.PI, 0.8 * Math.PI)
+  g.stroke()
   if (o.blush) {
     g.fillStyle = 'rgba(230,120,90,0.4)'
     for (const side of [-1, 1]) circle(g, cx + side * headR * 0.6, headY + headR * 0.36, headR * 0.16, 'rgba(230,120,90,0.4)')
