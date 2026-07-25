@@ -1,0 +1,28 @@
+/* Express app factory (no listen) so tests run it via supertest. */
+import express from 'express'
+import helmet from 'helmet'
+import cors from 'cors'
+import config from './config.js'
+import authRoutes from './routes/auth.js'
+import formRoutes from './routes/forms.js'
+import { store } from './store.js'
+
+export function createApp() {
+  const app = express()
+  app.set('trust proxy', 1)
+  app.use(helmet())
+  app.use(cors({ origin: config.corsOrigin.includes('*') ? true : config.corsOrigin }))
+  app.use(express.json({ limit: '32kb' }))
+
+  app.get('/healthz', (_req, res) => res.json({ ok: true, backend: store.backend }))
+  app.use('/api/auth', authRoutes)
+  app.use('/api', formRoutes)
+
+  app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, _req, res, _next) => {
+    console.error('[api:error]', err.message)
+    res.status(500).json({ error: 'Something went wrong' })
+  })
+  return app
+}
