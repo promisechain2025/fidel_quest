@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>eGeez — Learn Amharic and Tigrinya, guided from anywhere</title>
+    <meta name="description" content="A learning home for Ethiopian and Eritrean languages: the eGeez app for kids, tools for remote teachers, and resources for homeschooling families. Amharic today, Tigrinya next." />
+    <script>
+      // Set theme before paint: saved choice wins, else system preference.
+      try {
+        var s = localStorage.getItem('egz.site.theme')
+        var dark = s ? s === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      } catch (e) { /* default light */ }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

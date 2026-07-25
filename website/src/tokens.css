@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* eGeez brand tokens - copied from the app's src/index.css (kept in sync by
+   hand; the site deliberately imports nothing from ../src). Dark manuscript
+   is the brand default; light parchment for readers who prefer it.        */
+:root, :root[data-theme="dark"] {
+  --paper: #1b2233;
+  --paper-2: #141a28;
+  --ink: #eae3d2;
+  --muted: #9aa2ba;
+  --card: #2a3248;
+  --line: #3a4560;
+  --accent: #e2c069;
+  --accent-deep: #a9832f;
+  --star: #ffcb33;
+  --go: #59a52a;
+  --go-deep: #3f7a1e;
+  --go-soft: #1d3320;
+  --go-ink: #8fd15a;
+  --sky: #3f63a0;
+  --tile: #ffcb33;
+  --tile-deep: #c68d12;
+  --glyph: #7c4f00;
+}
+:root[data-theme="light"] {
+  --paper: #f7edcf;
+  --paper-2: #e5d2a4;
+  --ink: #3c3529;
+  --muted: #6f6040;
+  --card: #fffaf0;
+  --line: #e7dab2;
+  --accent: #c99a33;
+  --accent-deep: #9c7420;
+  --star: #f0b400;
+  --go: #59a52a;
+  --go-deep: #3f7a1e;
+  --go-soft: #d7ffb8;
+  --go-ink: #4e9020;
+  --sky: #3f63a0;
+  --tile: #ffc61f;
+  --tile-deep: #d99e12;
+  --glyph: #7c4f00;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #6f6040;
+    --card: #fffaf0; --line: #e7dab2; --accent: #c99a33; --accent-deep: #9c7420;
+    --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #4e9020; --tile: #ffc61f;
+    --tile-deep: #d99e12;
+  }
+}
+
+html { scroll-behavior: smooth; background: var(--paper-2); }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  color: var(--ink);
+  /* no `fixed` attachment: it leaves white below the first viewport on long
+     pages (and is janky on mobile Safari) - stretch the gradient instead */
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.geez { font-family: "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", "Kefa", serif; }
+
+/* the woven tibeb ribbon used as the brand divider */
+.tibeb {
+  height: 8px;
+  background: repeating-linear-gradient(90deg,
+    #2f7d46 0 10px, var(--accent) 10px 20px, #b23b2e 20px 30px, #2f6fb0 30px 40px);
+  opacity: .8;
+}
+
+/* chunky gold letter tile (site version of the app's LetterTile) */
+.lt {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tile); color: var(--glyph);
+  border: 2px solid var(--tile-deep); border-radius: 26%;
+  box-shadow: 0 5px 0 var(--tile-deep);
+  font-weight: 900;
+}
+
+/* 3D "chunk" button matching the app's feel */
+.chunk {
+  border-radius: 16px; font-weight: 800;
+  transition: transform .06s ease;
+}
+.chunk:active { transform: translateY(2px); }
+
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
