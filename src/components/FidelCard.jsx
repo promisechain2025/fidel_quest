@@ -16,10 +16,10 @@ const INK = '#6d4501'        // deep amber manuscript ink for the glyph
 const GOLD = '#c99a33'       // frame gold
 const GOLD_SOFT = '#e2c069'  // brand champagne gold
 
-// Ge'ez numerals 1..7, shown small beside the Arabic digit on numbered slots
-// so a child picks up the Ethiopian numbers as a passive bonus (U+1369..).
+// Ge'ez numerals 1..9, shown beside the Arabic digit (slots use 1..7, the
+// market uses up to 9) so a child picks up the Ethiopian numbers (U+1369..).
 // eslint-disable-next-line react-refresh/only-export-components
-export const GEEZ_DIGITS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯']
+export const GEEZ_DIGITS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱']
 
 export function FidelCard({ glyph, size = 60, variant = 'face', done = false, className = '', style = {} }) {
   const w = size
