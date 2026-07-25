@@ -102,6 +102,9 @@ const SupportAsk = lazy(() => import('./components/SupportAsk'))
 const VowelLadder = lazy(() => import('./components/VowelLadder'))
 const FidelMatch = lazy(() => import('./components/FidelMatch'))
 const FidelLineup = lazy(() => import('./components/FidelLineup'))
+const WordWorkshop = lazy(() => import('./components/WordWorkshop'))
+const MerkatoMarket = lazy(() => import('./components/MerkatoMarket'))
+const BingoCard = lazy(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -133,7 +136,10 @@ import {
   Moon,
   ListOrdered,
   Grid2x2,
+  Grid3x3,
   Layers,
+  Blocks,
+  Store,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -970,6 +976,10 @@ export default function FidelQuestApp() {
         const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
         if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
       }
+      // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
+      // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
+      const bingoCode = new URLSearchParams(window.location.search).get('bingo')
+      if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
       const ch = readChallengeFromHash(window.location.hash)
       if (ch) return [{ name: 'challenge', challenge: ch }]
       // Classroom deep links (platform/classroom.js): a class invite, a
@@ -1503,6 +1513,36 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
+          {screen.name === 'workshop' && (
+            <Screen key="workshop">
+              <Suspense fallback={null}>
+                <WordWorkshop
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'market' && (
+            <Screen key="market">
+              <Suspense fallback={null}>
+                <MerkatoMarket soundOn={soundOn} onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'bingo' && (
+            <Screen key="bingo">
+              <Suspense fallback={null}>
+                <BingoCard
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  code={screen.code || null}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'review-node' && (
             <Screen key={`review-node-${runSeed}`}>
               <Lesson
@@ -1730,6 +1770,9 @@ export default function FidelQuestApp() {
               onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
               onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
               onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
+              onWorkshop={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'workshop' }) }}
+              onMarket={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'market' }) }}
+              onBingo={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'bingo' }) }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
               onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
@@ -2643,7 +2686,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2693,9 +2736,12 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
             <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
             <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
             <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
+            <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
+            <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
