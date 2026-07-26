@@ -4,6 +4,7 @@ import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { API_URL } from '../config.js'
+import { SUBJECTS, SUBJECT_LABEL } from '../subjects.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
 
@@ -92,6 +93,16 @@ function TeacherCard({ te }) {
           </p>
         </div>
       </div>
+      {(te.subjectTags || []).length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {te.subjectTags.map((s) => (
+            <span key={s} className="rounded-full px-2.5 py-0.5 text-xs font-bold"
+              style={{ background: 'var(--paper)', border: '1px solid var(--line)', color: 'var(--muted)' }}>
+              {SUBJECT_LABEL[s] || s}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="mt-3"><Stars avg={te.rating?.avg} count={te.rating?.count} /></div>
       {te.progress?.show && (
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
@@ -152,6 +163,7 @@ function TeacherCard({ te }) {
    reported by families, not independently audited). Renders once approved. */
 function Directory() {
   const [teachers, setTeachers] = useState([])
+  const [subject, setSubject] = useState('') // '' = all subjects
   useEffect(() => {
     if (!API_URL) return
     fetch(`${API_URL}/api/teachers`)
@@ -160,11 +172,32 @@ function Directory() {
       .catch(() => {})
   }, [])
   if (teachers.length === 0) return null
+  // Only offer filters for subjects that actually appear on the board.
+  const present = SUBJECTS.filter((s) => teachers.some((te) => (te.subjectTags || []).includes(s.id)))
+  const shown = subject ? teachers.filter((te) => (te.subjectTags || []).includes(subject)) : teachers
   return (
     <Section mark="ት" eyebrow={t('teDirEyebrow', 'The teacher board')} title={t('teDirTitle', 'Vetted, rated, and progress-tracked')} center>
+      {present.length > 0 && (
+        <div className="mb-6 flex flex-wrap justify-center gap-2" role="group" aria-label={t('teFilterLabel', 'Filter teachers by subject')}>
+          {[['', t('teFilterAll', 'All subjects')], ...present.map((s) => [s.id, s.label])].map(([id, label]) => (
+            <button key={id || 'all'} type="button" onClick={() => setSubject(id)} aria-pressed={subject === id}
+              className="rounded-full px-4 py-1.5 text-sm font-bold"
+              style={subject === id
+                ? { background: 'var(--accent)', color: '#241a05' }
+                : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {teachers.map((te) => <Reveal key={te.id}><TeacherCard te={te} /></Reveal>)}
+        {shown.map((te) => <Reveal key={te.id}><TeacherCard te={te} /></Reveal>)}
       </div>
+      {shown.length === 0 && (
+        <p className="mt-4 text-center text-sm" style={{ color: 'var(--muted)' }}>
+          {t('teNoneForSubject', 'No teachers listed for this subject yet.')}
+        </p>
+      )}
       <Card className="mx-auto mt-8 max-w-2xl">
         <h3 className="flex items-center gap-2 font-black">
           <ShieldCheck className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
@@ -191,11 +224,14 @@ const LANGS = [
 ]
 
 export default function Teachers() {
-  const [form, setForm] = useState({ name: '', email: '', languages: [], subjects: '', location: '', experience: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', languages: [], subjectTags: [], subjects: '', location: '', experience: '', message: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
 
   const toggleLang = (id) => setForm((f) => ({
     ...f, languages: f.languages.includes(id) ? f.languages.filter((l) => l !== id) : [...f.languages, id],
+  }))
+  const toggleSubject = (id) => setForm((f) => ({
+    ...f, subjectTags: f.subjectTags.includes(id) ? f.subjectTags.filter((s) => s !== id) : [...f.subjectTags, id],
   }))
 
   const submit = async (e) => {
@@ -284,7 +320,21 @@ export default function Teachers() {
                   ))}
                 </div>
               </fieldset>
-              <Field label={t('fSubjects', 'Subjects / focus (e.g. reading, conversation, culture)')}>
+              <fieldset>
+                <legend className="mb-1.5 text-sm font-bold">{t('fSubjectsL', 'Subjects you teach')}</legend>
+                <div className="flex flex-wrap gap-2">
+                  {SUBJECTS.map((s) => (
+                    <button key={s.id} type="button" onClick={() => toggleSubject(s.id)} aria-pressed={form.subjectTags.includes(s.id)}
+                      className="rounded-full px-4 py-1.5 text-sm font-bold"
+                      style={form.subjectTags.includes(s.id)
+                        ? { background: 'var(--go-soft)', border: '2px solid var(--go)', color: 'var(--go-ink)' }
+                        : { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <Field label={t('fSubjects', 'Focus / details (e.g. conversational, grades 3-6, exam prep)')}>
                 <input className={inputCls} style={inputStyle} value={form.subjects} onChange={(e) => setForm({ ...form, subjects: e.target.value })} />
               </Field>
               <Field label={t('fLocation', 'Where are you based? (city, timezone)')}>

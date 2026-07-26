@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { store } from '../store.js'
 import { notifyOwner } from '../mailer.js'
 import { requireAdminToken, rateLimit, isEmail, str } from '../middleware.js'
+import { cleanSubjectTags, isSubject } from '../subjects.js'
 
 const router = Router()
 const formLimit = rateLimit({ max: 20, key: 'forms' })
@@ -17,6 +18,7 @@ router.post('/teachers/apply', formLimit, async (req, res, next) => {
       name: str(req.body?.name, 120),
       email: str(req.body?.email, 254).toLowerCase(),
       languages: Array.isArray(req.body?.languages) ? req.body.languages.map((l) => str(l, 24)).filter(Boolean).slice(0, 8) : [],
+      subjectTags: cleanSubjectTags(req.body?.subjectTags),
       subjects: str(req.body?.subjects, 300),
       experience: str(req.body?.experience, 2000),
       location: str(req.body?.location, 120),
@@ -27,7 +29,7 @@ router.post('/teachers/apply', formLimit, async (req, res, next) => {
     const saved = await store.addTeacherApplication(app_)
     notifyOwner('New teacher application - eGeez', [
       `Name: ${app_.name}`, `Email: ${app_.email}`, `Languages: ${app_.languages.join(', ') || '-'}`,
-      `Subjects: ${app_.subjects || '-'}`, `Location: ${app_.location || '-'}`,
+      `Subjects: ${app_.subjectTags.join(', ') || '-'}`, `Focus: ${app_.subjects || '-'}`, `Location: ${app_.location || '-'}`,
       app_.experience && `Experience: ${app_.experience}`, app_.message && `Message: ${app_.message}`,
     ])
     res.status(201).json({ ok: true, id: String(saved._id) })
@@ -65,8 +67,16 @@ router.post('/contact', formLimit, async (req, res, next) => {
    Each entry carries the trust signals: family rating (stars) and
    progress-verified performance computed from linked children's saved
    snapshots - evidence, not claims. */
-router.get('/teachers', boardLimit, async (_req, res, next) => {
-  try { res.json({ teachers: await store.listApprovedTeachers() }) } catch (err) { next(err) }
+router.get('/teachers', boardLimit, async (req, res, next) => {
+  try {
+    let teachers = await store.listApprovedTeachers()
+    // Optional facet: ?subject=math narrows to teachers offering it. An
+    // unknown subject is ignored (returns the full board) rather than 400 -
+    // the directory is a browse surface, not a strict query.
+    const subject = str(req.query?.subject, 24)
+    if (subject && isSubject(subject)) teachers = teachers.filter((t) => (t.subjectTags || []).includes(subject))
+    res.json({ teachers })
+  } catch (err) { next(err) }
 })
 
 /* Approved review comments for one teacher (public). */

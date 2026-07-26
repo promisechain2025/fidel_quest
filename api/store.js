@@ -38,7 +38,10 @@ function buildModels() {
     verifyToken: { type: String, default: '', index: true },
   }, { timestamps: true })
   const teacherApplication = new mongoose.Schema({
-    name: String, email: String, languages: [String], subjects: String,
+    name: String, email: String, languages: [String],
+    // `subjectTags`: structured taxonomy ids (filterable board facet).
+    // `subjects`: optional free-text focus/details (e.g. "grades 3-6").
+    subjectTags: [String], subjects: String,
     experience: String, location: String, message: String,
     status: { type: String, default: 'new' },
   }, { timestamps: true })
@@ -187,7 +190,7 @@ export const store = {
     return clone(doc)
   },
   async listApprovedTeachers() {
-    const pick = ({ _id, name, languages, subjects, location }) => ({ id: String(_id), name, languages, subjects, location })
+    const pick = ({ _id, name, languages, subjectTags, subjects, location }) => ({ id: String(_id), name, languages, subjectTags: subjectTags || [], subjects, location })
     const base = useMongo
       ? (await M.TeacherApplication.find({ status: 'approved' }).sort({ updatedAt: -1 }).limit(200).lean()).map(pick)
       : [...mem.teacherApplications].filter((t) => t.status === 'approved').reverse().map(pick)

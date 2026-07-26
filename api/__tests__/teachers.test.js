@@ -58,3 +58,28 @@ test('the owner panel page serves without a token (data calls still gated)', asy
   assert.match(res.headers['content-type'], /html/)
   assert.match(res.text, /owner panel/)
 })
+
+test('multi-subject board: structured tags are stored, filterable, and sanitized', async () => {
+  // Apply with a mix of valid + junk subject tags; junk is dropped.
+  const res = await request(app).post('/api/teachers/apply').send({
+    name: 'Meron', email: 'meron@x.com', languages: ['am'],
+    subjectTags: ['math', 'science', 'not-a-subject', 'math'], subjects: 'grades 3-6',
+  })
+  assert.equal(res.status, 201)
+  await request(app).patch(`/api/admin/teachers/${res.body.id}`).set(admin).send({ status: 'approved' })
+
+  const only = await apply('Abel', 'abel@x.com') // amharic-only teacher
+  await request(app).patch(`/api/admin/teachers/${only}`).set(admin).send({ status: 'approved' })
+  await request(app).post('/api/teachers/apply').send({ name: 'Sara', email: 'sara@x.com', subjectTags: ['amharic'] })
+
+  const dir = (await request(app).get('/api/teachers')).body.teachers
+  const meron = dir.find((t) => t.name === 'Meron')
+  assert.deepEqual(meron.subjectTags, ['math', 'science'], 'dedup + drop unknown ids')
+  assert.equal(meron.email, undefined, 'still no email leak')
+
+  // ?subject=math returns only math teachers; unknown subject ignores the filter.
+  const mathOnly = (await request(app).get('/api/teachers?subject=math')).body.teachers
+  assert.deepEqual(mathOnly.map((t) => t.name), ['Meron'])
+  const bogus = (await request(app).get('/api/teachers?subject=wizardry')).body.teachers
+  assert.equal(bogus.length, dir.length, 'unknown subject is not a filter')
+})
