@@ -317,11 +317,38 @@ const BUBBLE_COLORS = [
   { hi: '#48d3ca', base: '#0c988f', lo: '#086862' }, // turquoise
 ]
 
+/* The burst a bubble makes when a child pops it: an expanding ring plus a
+   spray of droplets in the bubble's own colour. Presentation only; dropped
+   under reduced motion. */
+function BubblePop({ left, top, color }) {
+  const bits = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]
+  return (
+    <div className="pointer-events-none absolute z-20" style={{ left: `${left}%`, top: `${top}%` }} aria-hidden="true">
+      <motion.span className="absolute rounded-full" style={{ left: -24, top: -24, width: 48, height: 48, border: `3px solid ${color.hi}` }}
+        initial={{ opacity: 0.9, scale: 0.3 }} animate={{ opacity: 0, scale: 1.9 }} transition={{ duration: 0.5, ease: 'easeOut' }} />
+      {bits.map((deg, i) => {
+        const r = 36 + (i % 3) * 9
+        return (
+          <motion.span key={i} className="absolute rounded-full"
+            style={{ left: -4, top: -4, width: 8 - (i % 3), height: 8 - (i % 3), background: i % 2 ? color.hi : color.base }}
+            initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            animate={{ opacity: [1, 1, 0], x: Math.cos((deg * Math.PI) / 180) * r, y: Math.sin((deg * Math.PI) / 180) * r, scale: [1, 1.1, 0.3] }}
+            transition={{ duration: 0.55, ease: 'easeOut' }} />
+        )
+      })}
+    </div>
+  )
+}
+
 /** MEET: pop the drifting bubble to hear the letter. */
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const met = ctx.forms.slice(0, ctx.idx)
   const [popped, setPopped] = useState(false)
+  const [popAt, setPopAt] = useState(null)
+  const reduce = useReducedMotion()
+  const stageRef = useRef(null)
+  const btnRef = useRef(null)
   if (!form) return null
   const c = BUBBLE_COLORS[ctx.idx % BUBBLE_COLORS.length]
   // On pop: freeze the wandering, voice the letter, and let the bubble swell and
@@ -330,6 +357,13 @@ function BubbleMeet({ ctx, onTouch }) {
   const pop = () => {
     if (popped) return
     setPopped(true)
+    // Fire the burst at the bubble's live position (it wanders), read from the
+    // button rect relative to the stage so the droplets spray from the pop.
+    const s = stageRef.current?.getBoundingClientRect()
+    const b = btnRef.current?.getBoundingClientRect()
+    if (!reduce && s && b && s.width && s.height) {
+      setPopAt({ left: ((b.left + b.width / 2 - s.left) / s.width) * 100, top: ((b.top + b.height / 2 - s.top) / s.height) * 100 })
+    }
     onTouch(form.audioKey)
   }
   return (
@@ -337,7 +371,7 @@ function BubbleMeet({ ctx, onTouch }) {
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
-      <div className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
+      <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
         {/* floating sparkles for a lively stage. Sky-tinted and faint, never
             solid white: the glyph on the bubble is white, so any bright white
             shape on this stage reads as part of a letter. */}
@@ -352,6 +386,7 @@ function BubbleMeet({ ctx, onTouch }) {
           />
         ))}
         <motion.button
+          ref={btnRef}
           type="button"
           onPointerDown={pop}
           disabled={popped}
@@ -401,6 +436,7 @@ function BubbleMeet({ ctx, onTouch }) {
             {form.char}
           </motion.span>
         </motion.button>
+        {popAt && <BubblePop left={popAt.left} top={popAt.top} color={c} />}
       </div>
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
         {form.sound}
