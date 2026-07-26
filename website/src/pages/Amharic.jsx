@@ -14,7 +14,7 @@ export default function Amharic() {
         </div>
         <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('amTitle', 'The Amharic journey')}</h1>
         <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-          {t('amLede', 'From first sound to first story: every one of the 231 fidel, taught the way kids actually stay - through play. Fully offline, no ads, made for ages 3-9.')}
+          {t('amLede', 'From first sound to first story: every one of the 231 fidel, taught the way kids actually stay - through play. Built with love for Ethiopian families, at home and across the diaspora. Fully offline, no ads, made for ages 3-9.')}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <CtaButton href={APP_URL} tone="green">{t('amOpen', 'Open the app free')}</CtaButton>

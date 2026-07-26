@@ -32,7 +32,7 @@ export default function About() {
 
       <Section>
         <div className="mx-auto max-w-2xl space-y-5 text-lg leading-relaxed" style={{ color: 'var(--muted)' }}>
-          <p>{t('abP1', 'Millions of Ethiopian and Eritrean families live far from home. Their children grow up brilliant in the language of school - and quiet in the language of their grandparents. The fidel, one of the world’s oldest writing systems, deserves better than to fade a generation at a time.')}</p>
+          <p>{t('abP1', 'Millions of families who grew up with the fidel now live far from home. Their children grow up brilliant in the language of school - and quiet in the language of their grandparents. The fidel, one of the world’s oldest writing systems, deserves better than to fade a generation at a time.')}</p>
           <p>{t('abP2', 'We started with the hardest, most important piece: a way for a small child to fall in love with the alphabet. That is eGeez - a journey through all 231 letters that feels like play, works offline on any phone, and treats a child’s attention and privacy as sacred.')}</p>
           <p>{t('abP3', 'But an app alone is not a school. Families need rhythm, resources, and real teachers. So we are building the facilitator around the app: classroom tools that already work today, remote teachers joining through this site, Tigrinya next, and then - subject by subject - everything a homeschooling family needs to learn together, guided from anywhere.')}</p>
           <p className="font-bold" style={{ color: 'var(--ink)' }}>{t('abP4', 'Language first. School next. Family always.')}</p>

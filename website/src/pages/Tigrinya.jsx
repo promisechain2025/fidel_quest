@@ -23,18 +23,18 @@ export default function Tigrinya() {
 
   return (
     <>
-      <Seo title="Tigrinya at eGeez - foundations now, full course coming" description="Tigrinya shares the Ge'ez script: start the letter foundations today and join the waitlist for the full Tigrinya course." path="/tigrinya" />
+      <Seo title="Tigrinya at eGeez - foundations now, full course coming" description="Tigrinya learning for Eritrean families: the Ge'ez-script letter foundations are ready today - join the waitlist for the full Tigrinya course." path="/tigrinya" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['ት', 'ግ', 'ር', 'ኛ'].map((ch, i) => <LetterTile key={i} ch={ch} size={48} />)}
         </div>
         <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('tiTitle', 'Tigrinya at eGeez')}</h1>
         <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-          {t('tiLede', 'Tigrinya is written in the same Ge’ez script as Amharic - so a Tigrinya-speaking family can start today, and the full Tigrinya course is on its way.')}
+          {t('tiLede', 'Built with respect for Eritrean families, at home and across the diaspora. Tigrinya is written in the Ge’ez script - so the letter foundations are ready for your child today, and the full Tigrinya course is on its way.')}
         </p>
       </div>
 
-      <Section mark="ት" eyebrow={t('tiNowEyebrow', 'Available today')} title={t('tiNowTitle', 'What already carries over')}>
+      <Section mark="ት" eyebrow={t('tiNowEyebrow', 'Available today')} title={t('tiNowTitle', 'Ready for your child today')}>
         <div className="grid gap-5 md:grid-cols-3">
           {[
             [t('tiN1t', 'The script itself'), t('tiN1b', 'Letter shapes, the seven vowel orders, tracing, and sound-to-symbol play - the foundations of reading any Ge’ez-script language.')],
@@ -55,7 +55,7 @@ export default function Tigrinya() {
 
       <Section mark="ወ" eyebrow={t('tiSoonEyebrow', 'Coming')} title={t('tiSoonTitle', 'The full Tigrinya course')} center>
         <p className="mx-auto max-w-2xl text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and decodable stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
+          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and decodable stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools - built with Eritrean educators, for Eritrean children. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
         </p>
 
         <Card className="mx-auto mt-8 max-w-md">

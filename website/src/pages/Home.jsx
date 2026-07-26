@@ -49,7 +49,7 @@ function NameWidget() {
 export default function Home() {
   return (
     <>
-      <Seo title="eGeez - Learn Amharic and Tigrinya, guided from anywhere" description="A joyful app that teaches kids the fidel, tools for remote teachers, and homeschool guidance for Ethiopian and Eritrean families worldwide." path="/" />
+      <Seo title="eGeez - Learn Amharic and Tigrinya, guided from anywhere" description="A joyful app that teaches kids the fidel, tools for remote teachers, and homeschool guidance for families around the world." path="/" />
       {/* hero: message left, the real app right */}
       <div className="mx-auto grid max-w-5xl items-center gap-10 px-5 pb-6 pt-10 sm:px-6 md:grid-cols-[1.15fr_0.85fr] md:pt-16 lg:gap-14">
         <div className="text-center md:text-left">
@@ -62,7 +62,7 @@ export default function Home() {
               <span style={{ color: 'var(--accent)' }}>{t('heroTitle2', 'Learned at home.')}</span>
             </h1>
             <p className="lede mx-auto mt-5 max-w-xl md:mx-0" style={{ color: 'var(--muted)' }}>
-              {t('heroLede', 'eGeez is a learning home for Ethiopian and Eritrean families anywhere in the world: a joyful app that teaches kids to read Amharic and Tigrinya, tools for remote teachers, and guidance for homeschooling - the first step toward learning every subject, together.')}
+              {t('heroLede', 'eGeez is a learning home for every family that wants its children to read Amharic or Tigrinya - wherever in the world they live: a joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling. The first step toward learning every subject, together.')}
             </p>
             <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center md:justify-start">
               <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start the free try-out')}</CtaButton>
@@ -115,7 +115,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-                {t('tiBlurb', 'Tigrinya shares the Ge’ez script - the letter foundations kids learn today carry straight over. The full Tigrinya course (names, words, stories, audio) is in the works.')}
+                {t('tiBlurb', 'Tigrinya is written in the Ge’ez script - the letter foundations are ready for kids today. The full Tigrinya course (names, words, stories, audio) is in the works.')}
               </p>
               <div className="mt-5"><CtaButton to="/tigrinya" tone="gold">{t('tiCta', 'Tigrinya plans + waitlist')}</CtaButton></div>
             </Card>

@@ -298,7 +298,7 @@ export function Footer() {
               <BrandMark size={26} /> eGeez
             </div>
             <p className="mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('footerLine', 'A learning home for Ethiopian and Eritrean languages - built for families, guided by teachers, made with love for the fidel.')}
+              {t('footerLine', 'A learning home for Amharic and Tigrinya - built for families, guided by teachers, made with love for the fidel.')}
             </p>
             <div className="mt-4"><NewsletterRow /></div>
           </div>

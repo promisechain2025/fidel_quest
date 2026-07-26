@@ -35,7 +35,15 @@ const AM = {
   prTitle: 'አንዴ ይክፈሉ። በሁሉም ቦታ ይማሩ።',
 }
 
-const STRINGS = { am: AM }
+/* PARITY NOTE: the site must offer Tigrinya UI the moment it offers
+   Amharic UI - shipping one without the other is exactly the imbalance
+   the separate-audiences policy exists to avoid. TI below is a ready
+   slot; it needs strings from a Tigrinya speaker (do NOT machine-draft
+   them). Until both maps are reviewed, consider keeping the language
+   toggle hidden at launch. */
+const TI = {}
+
+const STRINGS = { am: AM, ti: TI }
 
 let lang = 'en'
 try { lang = localStorage.getItem('egz.site.lang') || 'en' } catch { /* default en */ }
