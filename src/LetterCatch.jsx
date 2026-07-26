@@ -9,7 +9,7 @@
    shell: a per-frame rAF that feeds TICK dt into the machine, DOM falling
    letters you tap to shoot, and a capped 2D-canvas firework layer.
    ========================================================================== */
-import { useReducer, useEffect, useRef, useState } from 'react'
+import { useReducer, useEffect, useRef, useState, memo } from 'react'
 import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion'
 import { X, Volume2, Heart, Star } from 'lucide-react'
 import AnbessaSvg from './components/AnbessaSvg'
@@ -258,11 +258,17 @@ const SKY_CSS = `
   16% { transform: translate(120%, 120%) rotate(18deg) scaleX(1); opacity: 0; }
   100% { opacity: 0; }
 }`
-function SkyScape({ reduce = false }) {
-  const stars = useRef(Array.from({ length: 66 }, (_, i) => ({
-    left: `${(i * 71 + 7) % 100}%`, top: `${(i * 37 + 3) % 82}%`,
-    s: 1 + (i % 4) * 0.9, o: 0.32 + (i % 5) * 0.13, dur: 2.2 + (i % 5) * 0.6, delay: (i % 7) * 0.5,
-  })))
+// Star positions are a pure function of the index (no RNG), so they are built
+// once at module load - never per render. SkyScape lives inside LetterCatch's
+// ~60fps TICK re-render, so rebuilding this each frame would be pure waste on
+// the low-end devices this game targets.
+const SKY_STARS = Array.from({ length: 66 }, (_, i) => ({
+  left: `${(i * 71 + 7) % 100}%`, top: `${(i * 37 + 3) % 82}%`,
+  s: 1 + (i % 4) * 0.9, o: 0.32 + (i % 5) * 0.13, dur: 2.2 + (i % 5) * 0.6, delay: (i % 7) * 0.5,
+}))
+// memo: the sky only depends on `reduce`, so it stays out of the per-frame
+// TICK re-render loop entirely.
+const SkyScape = memo(function SkyScape({ reduce = false }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <style>{SKY_CSS}</style>
@@ -276,7 +282,7 @@ function SkyScape({ reduce = false }) {
         <span className="absolute rounded-full" style={{ left: 20, top: 38, width: 6, height: 6, background: 'rgba(198,160,90,0.3)' }} />
       </div>
       {/* stars */}
-      {stars.current.map((st, i) => (
+      {SKY_STARS.map((st, i) => (
         <span key={i} className="absolute rounded-full" style={{
           left: st.left, top: st.top, width: st.s, height: st.s, background: '#fff', '--o': st.o, opacity: st.o,
           boxShadow: st.s > 2.6 ? '0 0 5px 1px rgba(255,255,255,0.7)' : 'none',
@@ -295,4 +301,4 @@ function SkyScape({ reduce = false }) {
       <div className="absolute inset-x-0 bottom-0" style={{ height: '22%', background: 'radial-gradient(120% 90% at 50% 118%, rgba(120,86,190,0.55), rgba(120,86,190,0) 70%)' }} />
     </div>
   )
-}
+})
