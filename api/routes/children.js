@@ -37,6 +37,39 @@ router.delete('/children/:id', requireAuth, limit, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+/** Link (or unlink with teacherId:'') the approved teacher this child
+    learns with. The link day anchors progress-verified teacher stats:
+    only snapshots from that day on count toward the teacher's record. */
+router.put('/children/:id/teacher', requireAuth, limit, async (req, res, next) => {
+  try {
+    const teacherId = str(req.body?.teacherId, 64)
+    if (teacherId) {
+      const approved = await store.listApprovedTeachers()
+      if (!approved.some((t) => t.id === teacherId)) return res.status(400).json({ error: 'Not an approved teacher' })
+    }
+    const today = new Date().toISOString().slice(0, 10)
+    const child = await store.setChildTeacher(req.user.id, req.params.id, teacherId, today)
+    if (!child) return res.status(404).json({ error: 'Child not found' })
+    res.json({ child })
+  } catch (err) { next(err) }
+})
+
+/** Rate the teacher this child learns with: stars 1-5 now, optional
+    comment held for moderation. One review per parent per teacher. */
+router.post('/teachers/:id/reviews', requireAuth, limit, async (req, res, next) => {
+  try {
+    const stars = Math.round(Number(req.body?.stars))
+    if (!Number.isFinite(stars) || stars < 1 || stars > 5) return res.status(400).json({ error: 'stars must be 1-5' })
+    // only parents whose child actually learns with this teacher may rate
+    const children = await store.listChildren(req.user.id)
+    if (!children.some((c) => c.teacherId === req.params.id)) {
+      return res.status(403).json({ error: 'Link this teacher to one of your children first' })
+    }
+    await store.upsertReview(req.user.id, req.params.id, { stars, comment: str(req.body?.comment, 600) })
+    res.status(201).json({ ok: true })
+  } catch (err) { next(err) }
+})
+
 /** Save a decoded Progress Card. One per child per day (idempotent). */
 router.post('/children/:id/snapshots', requireAuth, limit, async (req, res, next) => {
   try {

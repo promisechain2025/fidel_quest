@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin } from 'lucide-react'
+import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck } from 'lucide-react'
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { API_URL } from '../config.js'
@@ -8,9 +8,84 @@ import Seo from '../Seo.jsx'
 
 const LANG_LABEL = { am: 'Amharic', ti: 'Tigrinya', other: 'Other' }
 
-/* The founding-teachers directory: fed by owner-approved applications
-   (GET /api/teachers - names/languages/subjects/location only, never
-   emails). Renders nothing until the first teacher is approved. */
+export function Stars({ avg, count }) {
+  if (!count) return <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('teNewTeacher', 'New on the board')}</span>
+  return (
+    <span className="inline-flex items-center gap-1 text-sm font-black" aria-label={`${avg} out of 5 stars from ${count} families`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} className="h-4 w-4" aria-hidden="true"
+          style={{ color: 'var(--star)', fill: i <= Math.round(avg) ? 'var(--star)' : 'transparent' }} />
+      ))}
+      <span className="ml-1">{avg}</span>
+      <span className="font-bold" style={{ color: 'var(--muted)' }}>({count})</span>
+    </span>
+  )
+}
+
+function TeacherCard({ te }) {
+  const [reviews, setReviews] = useState(null)
+  const loadReviews = () => {
+    if (reviews !== null) { setReviews(null); return }
+    fetch(`${API_URL}/api/teachers/${te.id}/reviews`)
+      .then((r) => (r.ok ? r.json() : { reviews: [] }))
+      .then((j) => setReviews(j.reviews || []))
+      .catch(() => setReviews([]))
+  }
+  return (
+    <Card className="h-full">
+      <div className="flex items-center gap-3">
+        <span className="lt flex-none" style={{ width: 44, height: 44, fontSize: 20, fontFamily: 'inherit' }} aria-hidden="true">
+          {te.name.trim()[0]?.toUpperCase() || '?'}
+        </span>
+        <div className="min-w-0">
+          <h3 className="font-black">{te.name}</h3>
+          <p className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
+            {(te.languages || []).map((l) => LANG_LABEL[l] || l).join(' · ')}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3"><Stars avg={te.rating?.avg} count={te.rating?.count} /></div>
+      {te.progress?.verified > 0 && (
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
+          style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
+          <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('teVerified', '+{n} letters avg - verified progress').replace('{n}', te.progress.avgLettersGained)}
+        </p>
+      )}
+      {te.subjects && (
+        <p className="mt-3 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
+          <GraduationCap className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.subjects}
+        </p>
+      )}
+      {te.location && (
+        <p className="mt-1.5 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.location}
+        </p>
+      )}
+      {te.rating?.count > 0 && (
+        <button type="button" onClick={loadReviews} className="mt-3 text-xs font-bold underline" style={{ color: 'var(--muted)' }}>
+          {reviews === null ? t('teShowReviews', 'What families say') : t('teHideReviews', 'Hide')}
+        </button>
+      )}
+      {reviews && reviews.length > 0 && (
+        <ul className="mt-2 space-y-2">
+          {reviews.map((r, i) => (
+            <li key={i} className="rounded-xl p-2.5 text-xs leading-relaxed" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
+              <Stars avg={r.stars} count={1} /> <span style={{ color: 'var(--muted)' }}>{r.comment}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {reviews && reviews.length === 0 && (
+        <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>{t('teNoComments', 'No written reviews yet.')}</p>
+      )}
+    </Card>
+  )
+}
+
+/* The trust board: owner-vetted teachers with family ratings and
+   progress-verified performance (computed from linked children's saved
+   snapshots - evidence, not claims). Renders once a teacher is approved. */
 function Directory() {
   const [teachers, setTeachers] = useState([])
   useEffect(() => {
@@ -22,38 +97,23 @@ function Directory() {
   }, [])
   if (teachers.length === 0) return null
   return (
-    <Section mark="ት" eyebrow={t('teDirEyebrow', 'Founding teachers')} title={t('teDirTitle', 'Teaching with eGeez today')} center>
+    <Section mark="ት" eyebrow={t('teDirEyebrow', 'The teacher board')} title={t('teDirTitle', 'Vetted, rated, and progress-verified')} center>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {teachers.map((te) => (
-          <Reveal key={te.id}>
-            <Card className="h-full">
-              <div className="flex items-center gap-3">
-                <span className="lt flex-none" style={{ width: 44, height: 44, fontSize: 20, fontFamily: 'inherit' }} aria-hidden="true">
-                  {te.name.trim()[0]?.toUpperCase() || '?'}
-                </span>
-                <div>
-                  <h3 className="font-black">{te.name}</h3>
-                  <p className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
-                    {(te.languages || []).map((l) => LANG_LABEL[l] || l).join(' · ')}
-                  </p>
-                </div>
-              </div>
-              {te.subjects && (
-                <p className="mt-3 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-                  <GraduationCap className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.subjects}
-                </p>
-              )}
-              {te.location && (
-                <p className="mt-1.5 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.location}
-                </p>
-              )}
-            </Card>
-          </Reveal>
-        ))}
+        {teachers.map((te) => <Reveal key={te.id}><TeacherCard te={te} /></Reveal>)}
       </div>
+      <Card className="mx-auto mt-8 max-w-2xl">
+        <h3 className="flex items-center gap-2 font-black">
+          <ShieldCheck className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
+          {t('teHowT', 'How this board earns your trust')}
+        </h3>
+        <ul className="mt-2 space-y-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+          <li>{t('teHow1', 'Vetted: every teacher is reviewed by us before appearing here.')}</li>
+          <li>{t('teHow2', 'Rated: stars come only from families whose child actually learns with the teacher.')}</li>
+          <li>{t('teHow3', 'Verified: the green badge is computed from real saved progress - letters a teacher’s students gained since starting with them. It cannot be bought or self-reported.')}</li>
+        </ul>
+      </Card>
       <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
-        {t('teDirNote', 'Family matching and booking are coming - for now, mention a teacher when you contact us.')}
+        {t('teDirNote2', 'Pick a teacher in your Family dashboard to link them with your child - rating unlocks after that.')}
       </p>
     </Section>
   )

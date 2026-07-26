@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { LogOut, Plus, Trash2, TrendingUp, Star, GraduationCap } from 'lucide-react'
 import { Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import ProgressReport from '../components/ProgressReport.jsx'
 import { signedIn, login, register, signOut, apiFetch } from '../auth.js'
@@ -7,6 +7,87 @@ import { API_URL } from '../config.js'
 import { TOTAL_LETTERS } from '../progressCard.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
+
+/* Link the approved teacher a child learns with, then rate them. Ratings
+   feed the public trust board; the link day anchors the teacher's
+   progress-verified stats. */
+function TeacherPanel({ child, onChanged }) {
+  const [teachers, setTeachers] = useState([])
+  const [stars, setStars] = useState(0)
+  const [comment, setComment] = useState('')
+  const [state, setState] = useState({ msg: '', error: '' })
+
+  useEffect(() => {
+    apiFetch('/api/teachers').then((j) => setTeachers(j.teachers || [])).catch(() => {})
+  }, [])
+
+  const link = async (teacherId) => {
+    setState({ msg: '', error: '' })
+    try {
+      await apiFetch(`/api/children/${child.id}/teacher`, { method: 'PUT', body: { teacherId } })
+      onChanged()
+    } catch (err) { setState({ msg: '', error: err.message }) }
+  }
+  const rate = async () => {
+    if (!stars) return
+    setState({ msg: '', error: '' })
+    try {
+      await apiFetch(`/api/teachers/${child.teacherId}/reviews`, { method: 'POST', body: { stars, comment } })
+      setState({ msg: comment ? t('faRatedMod', 'Thank you! Your stars are live; the written review appears after a quick check.') : t('faRated', 'Thank you! Your rating is live.'), error: '' })
+      setComment('')
+    } catch (err) { setState({ msg: '', error: err.message }) }
+  }
+
+  if (teachers.length === 0) return null
+  const current = teachers.find((te) => te.id === child.teacherId)
+
+  return (
+    <Card className="mt-5">
+      <h3 className="flex items-center gap-2 font-black">
+        <GraduationCap className="h-4 w-4" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+        {t('faTeacherT', 'Teacher')}
+      </h3>
+      {current ? (
+        <>
+          <p className="mt-1.5 text-sm" style={{ color: 'var(--muted)' }}>
+            {t('faLearnsWith', '{c} learns with {t2}.').replace('{c}', child.name).replace('{t2}', current.name)}{' '}
+            <button type="button" onClick={() => link('')} className="font-bold underline">{t('faUnlink', 'Unlink')}</button>
+          </p>
+          <div className="mt-3 flex items-center gap-1" role="group" aria-label={t('faRateLabel', 'Rate this teacher')}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <button key={i} type="button" onClick={() => setStars(i)} aria-label={`${i} stars`} className="p-1">
+                <Star className="h-7 w-7" aria-hidden="true"
+                  style={{ color: 'var(--star)', fill: i <= stars ? 'var(--star)' : 'transparent' }} />
+              </button>
+            ))}
+          </div>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value.slice(0, 600))}
+            placeholder={t('faCommentPh', 'A few words for other families (optional - reviewed before publishing)')}
+            rows={2} className={`${inputCls} mt-2`} style={inputStyle} />
+          <div className="mt-2">
+            <CtaButton onClick={rate} tone="gold" disabled={!stars} className="!px-4 !py-2 text-sm">{t('faRateBtn', 'Submit rating')}</CtaButton>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="mt-1.5 text-sm" style={{ color: 'var(--muted)' }}>
+            {t('faPickTeacher', 'Does {c} learn with one of our teachers? Linking them lets you rate the teacher and counts {c}’s progress toward their verified record.').replaceAll('{c}', child.name)}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {teachers.map((te) => (
+              <button key={te.id} type="button" onClick={() => link(te.id)} className="chunk px-3.5 py-2 text-sm"
+                style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)' }}>
+                {te.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {state.msg && <p className="mt-2 text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{state.msg}</p>}
+      {state.error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+    </Card>
+  )
+}
 
 /* The family dashboard: parent account + child profiles + saved progress
    snapshots over time. The app itself stays account-free; snapshots arrive
@@ -94,7 +175,15 @@ function Dashboard({ onSignOut }) {
     try { await apiFetch('/api/children', { method: 'POST', body: { name: newName.trim() } }); setNewName(''); refresh() } catch (err) { setError(err.message) }
   }
   const open = async (c) => {
-    try { setSelected(await apiFetch(`/api/children/${c.id}/snapshots`)) } catch (err) { setError(err.message) }
+    try {
+      const data = await apiFetch(`/api/children/${c.id}/snapshots`)
+      setSelected(data)
+    } catch (err) { setError(err.message) }
+  }
+  const reopen = async () => {
+    if (!selected) return
+    await refresh()
+    try { setSelected(await apiFetch(`/api/children/${selected.child.id}/snapshots`)) } catch { /* keep view */ }
   }
   const remove = async (c) => {
     if (!window.confirm(t('faDeleteConfirm', `Delete ${c.name}'s profile and all saved snapshots?`))) return
@@ -162,6 +251,7 @@ function Dashboard({ onSignOut }) {
               </p>
             </Card>
           )}
+          <TeacherPanel child={selected.child} onChanged={reopen} />
           <p className="mt-4 text-right">
             <button type="button" onClick={() => remove(selected.child)} className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> {t('faDelete', 'Delete this profile')}

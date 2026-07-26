@@ -23,6 +23,7 @@ export const ADMIN_HTML = `<!doctype html>
 <p class="muted">Paste the ADMIN_TOKEN, then Load. Approving a teacher publishes name, languages, subjects, and location (never email) to the public directory.</p>
 <p><input id="tok" type="password" placeholder="ADMIN_TOKEN"> <button onclick="loadAll()">Load</button> <span id="msg" class="muted"></span></p>
 <h2>Teacher applications</h2><div id="teachers"></div>
+<h2>Review comments awaiting approval</h2><div id="pending"></div>
 <h2>Waitlist</h2><div id="waitlist"></div>
 <h2>Contact messages</h2><div id="contact"></div>
 <script>
@@ -39,6 +40,10 @@ async function setStatus(id, status) {
   await fetch('/api/admin/teachers/' + id, { method: 'PATCH', headers: H(), body: JSON.stringify({ status }) })
   loadAll()
 }
+async function setComment(id, status) {
+  await fetch('/api/admin/reviews/' + id, { method: 'PATCH', headers: H(), body: JSON.stringify({ status }) })
+  loadAll()
+}
 function table(rows, cols, actions) {
   if (!rows.length) return '<p class="muted">none yet</p>'
   return '<table><tr>' + cols.map((c) => '<th>' + c + '</th>').join('') + (actions ? '<th></th>' : '') + '</tr>'
@@ -50,13 +55,17 @@ async function loadAll() {
   msg.textContent = 'loading...'
   try {
     sessionStorage.setItem('egz.admin', tokEl.value)
-    const [teachers, waitlist, contact] = await Promise.all([get('teachers'), get('waitlist'), get('contact')])
+    const [teachers, waitlist, contact, pending] = await Promise.all([get('teachers'), get('waitlist'), get('contact'), get('pending-comments')])
     document.getElementById('teachers').innerHTML = table(teachers,
       ['name', 'email', 'languages', 'subjects', 'location', 'status'],
       (r) => r.status === 'approved'
         ? '<button class="ghost" onclick="setStatus(\\'' + r._id + '\\',\\'new\\')">unpublish</button>'
         : '<button onclick="setStatus(\\'' + r._id + '\\',\\'approved\\')">approve</button> '
           + '<button class="ghost" onclick="setStatus(\\'' + r._id + '\\',\\'archived\\')">archive</button>')
+    document.getElementById('pending').innerHTML = table(pending,
+      ['stars', 'comment'],
+      (r) => '<button onclick="setComment(\\'' + r.id + '\\',\\'approved\\')">approve</button> '
+        + '<button class="ghost" onclick="setComment(\\'' + r.id + '\\',\\'rejected\\')">reject</button>')
     document.getElementById('waitlist').innerHTML = table(waitlist, ['email', 'name', 'language', 'createdAt'])
     document.getElementById('contact').innerHTML = table(contact, ['name', 'email', 'message', 'createdAt'])
     msg.innerHTML = '<span class="ok">loaded</span>'

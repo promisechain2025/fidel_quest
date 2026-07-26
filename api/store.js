@@ -31,6 +31,8 @@ function buildModels() {
   const child = new mongoose.Schema({
     parentId: { type: String, required: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 40 },
+    teacherId: { type: String, default: '' }, // approved teacher this child learns with
+    teacherSince: { type: String, default: '' }, // YYYY-MM-DD of the link
   }, { timestamps: true })
   const snapshot = new mongoose.Schema({
     childId: { type: String, required: true, index: true },
@@ -39,6 +41,14 @@ function buildModels() {
     letters: Number, streak: Number, mask: String, nodesDone: Number, nodesTotal: Number,
   }, { timestamps: true })
   snapshot.index({ childId: 1, day: 1 }, { unique: true })
+  const review = new mongoose.Schema({
+    teacherId: { type: String, required: true, index: true },
+    parentId: { type: String, required: true },
+    stars: { type: Number, required: true, min: 1, max: 5 },
+    comment: String,
+    commentStatus: { type: String, default: 'pending' }, // pending | approved | rejected
+  }, { timestamps: true })
+  review.index({ teacherId: 1, parentId: 1 }, { unique: true })
   const order = new mongoose.Schema({
     sessionId: { type: String, required: true, unique: true },
     code: { type: String, required: true, unique: true },
@@ -54,11 +64,12 @@ function buildModels() {
     Order: mongoose.models.Order || mongoose.model('Order', order),
     Child: mongoose.models.Child || mongoose.model('Child', child),
     Snapshot: mongoose.models.Snapshot || mongoose.model('Snapshot', snapshot),
+    Review: mongoose.models.Review || mongoose.model('Review', review),
   }
 }
 
 /* ---- in-memory backend ---- */
-const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], children: [], snapshots: [], seq: 0 }
+const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], children: [], snapshots: [], reviews: [], seq: 0 }
 const clone = (o) => JSON.parse(JSON.stringify(o))
 const memDoc = (data) => ({ ...data, _id: String(++mem.seq), createdAt: new Date().toISOString() })
 
@@ -126,8 +137,101 @@ export const store = {
   },
   async listApprovedTeachers() {
     const pick = ({ _id, name, languages, subjects, location }) => ({ id: String(_id), name, languages, subjects, location })
-    if (useMongo) return (await M.TeacherApplication.find({ status: 'approved' }).sort({ updatedAt: -1 }).limit(200).lean()).map(pick)
-    return mem.teacherApplications.filter((t) => t.status === 'approved').map(pick)
+    const base = useMongo
+      ? (await M.TeacherApplication.find({ status: 'approved' }).sort({ updatedAt: -1 }).limit(200).lean()).map(pick)
+      : mem.teacherApplications.filter((t) => t.status === 'approved').map(pick)
+    // The trust board: attach rating + progress-verified performance.
+    const enriched = await Promise.all(base.map(async (te) => ({
+      ...te,
+      rating: await this.teacherRating(te.id),
+      progress: await this.teacherProgressStats(te.id),
+    })))
+    // Best-evidenced teachers first: rating, then verified progress.
+    return enriched.sort((a, b) =>
+      (b.rating.avg - a.rating.avg) || (b.rating.count - a.rating.count) || (b.progress.students - a.progress.students))
+  },
+
+  /* ---- reviews (one per parent per teacher; stars aggregate instantly,
+          comments appear only after owner approval) -------------------- */
+  async upsertReview(parentId, teacherId, { stars, comment }) {
+    const doc = {
+      teacherId: String(teacherId), parentId, stars,
+      comment: comment || '',
+      commentStatus: comment ? 'pending' : 'approved',
+    }
+    if (useMongo) {
+      await M.Review.findOneAndUpdate({ teacherId: String(teacherId), parentId }, doc, { upsert: true })
+      return doc
+    }
+    const i = mem.reviews.findIndex((r) => r.teacherId === String(teacherId) && r.parentId === parentId)
+    if (i >= 0) mem.reviews[i] = { ...mem.reviews[i], ...doc }
+    else mem.reviews.push(memDoc(doc))
+    return doc
+  },
+  async teacherRating(teacherId) {
+    const rows = useMongo
+      ? await M.Review.find({ teacherId: String(teacherId) }).lean()
+      : mem.reviews.filter((r) => r.teacherId === String(teacherId))
+    if (!rows.length) return { avg: 0, count: 0 }
+    const avg = rows.reduce((s, r) => s + r.stars, 0) / rows.length
+    return { avg: Math.round(avg * 10) / 10, count: rows.length }
+  },
+  async listApprovedComments(teacherId, limit = 6) {
+    const rows = useMongo
+      ? await M.Review.find({ teacherId: String(teacherId), commentStatus: 'approved', comment: { $ne: '' } }).sort({ updatedAt: -1 }).limit(limit).lean()
+      : mem.reviews.filter((r) => r.teacherId === String(teacherId) && r.commentStatus === 'approved' && r.comment).slice(-limit).reverse()
+    return rows.map((r) => ({ stars: r.stars, comment: r.comment }))
+  },
+  async listPendingComments() {
+    const rows = useMongo
+      ? await M.Review.find({ commentStatus: 'pending', comment: { $ne: '' } }).limit(200).lean()
+      : mem.reviews.filter((r) => r.commentStatus === 'pending' && r.comment)
+    return rows.map((r) => ({ id: String(r._id), teacherId: r.teacherId, stars: r.stars, comment: r.comment }))
+  },
+  async setCommentStatus(reviewId, status) {
+    if (useMongo) return !!(await M.Review.findByIdAndUpdate(reviewId, { commentStatus: status }).catch(() => null))
+    const r = mem.reviews.find((x) => x._id === String(reviewId))
+    if (!r) return false
+    r.commentStatus = status
+    return true
+  },
+
+  /* ---- child <-> teacher link + progress-verified performance --------- */
+  async setChildTeacher(parentId, childId, teacherId, sinceDay) {
+    const owned = await this.findChild(parentId, childId)
+    if (!owned) return null
+    if (useMongo) {
+      await M.Child.findByIdAndUpdate(childId, { teacherId: teacherId || '', teacherSince: teacherId ? sinceDay : '' })
+      return this.findChild(parentId, childId)
+    }
+    const c = mem.children.find((x) => x._id === String(childId))
+    c.teacherId = teacherId || ''
+    c.teacherSince = teacherId ? sinceDay : ''
+    return this.findChild(parentId, childId)
+  },
+  /** Verified performance: for every child linked to this teacher, the
+      letters gained between their first and latest snapshot AFTER the link
+      day. Children need at least 2 post-link snapshots to contribute a
+      gain; all linked children count as students. */
+  async teacherProgressStats(teacherId) {
+    const kids = useMongo
+      ? await M.Child.find({ teacherId: String(teacherId) }).lean()
+      : mem.children.filter((c) => c.teacherId === String(teacherId))
+    let students = 0
+    const gains = []
+    for (const kid of kids) {
+      students += 1
+      const snaps = (useMongo
+        ? await M.Snapshot.find({ childId: String(kid._id) }).sort({ day: 1 }).lean()
+        : mem.snapshots.filter((s) => s.childId === String(kid._id)).sort((a, b) => (a.day < b.day ? -1 : 1)))
+        .filter((s) => !kid.teacherSince || s.day >= kid.teacherSince)
+      if (snaps.length >= 2) gains.push(snaps[snaps.length - 1].letters - snaps[0].letters)
+    }
+    return {
+      students,
+      verified: gains.length,
+      avgLettersGained: gains.length ? Math.round(gains.reduce((a, b) => a + b, 0) / gains.length) : 0,
+    }
   },
 
   async findOrderBySessionId(sessionId) {
@@ -165,8 +269,9 @@ export const store = {
 
   /* ---- child profiles + progress snapshots (parent-owned) ------------- */
   async listChildren(parentId) {
-    if (useMongo) return (await M.Child.find({ parentId }).sort({ createdAt: 1 }).lean()).map((c) => ({ id: String(c._id), name: c.name }))
-    return mem.children.filter((c) => c.parentId === parentId).map((c) => ({ id: c._id, name: c.name }))
+    const pick = (c) => ({ id: String(c._id), name: c.name, teacherId: c.teacherId || '', teacherSince: c.teacherSince || '' })
+    if (useMongo) return (await M.Child.find({ parentId }).sort({ createdAt: 1 }).lean()).map(pick)
+    return mem.children.filter((c) => c.parentId === parentId).map(pick)
   },
   async createChild(parentId, name) {
     if (useMongo) { const c = await M.Child.create({ parentId, name }); return { id: String(c._id), name: c.name } }
@@ -175,10 +280,10 @@ export const store = {
   async findChild(parentId, childId) {
     if (useMongo) {
       const c = await M.Child.findById(childId).lean().catch(() => null)
-      return c && c.parentId === parentId ? { id: String(c._id), name: c.name } : null
+      return c && c.parentId === parentId ? { id: String(c._id), name: c.name, teacherId: c.teacherId || '', teacherSince: c.teacherSince || '' } : null
     }
     const c = mem.children.find((x) => x._id === String(childId) && x.parentId === parentId)
-    return c ? { id: c._id, name: c.name } : null
+    return c ? { id: c._id, name: c.name, teacherId: c.teacherId || '', teacherSince: c.teacherSince || '' } : null
   },
   async deleteChild(parentId, childId) {
     const owned = await this.findChild(parentId, childId)
@@ -212,5 +317,5 @@ export const store = {
   },
 
   /* test helper - memory backend only */
-  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.seq = 0 },
+  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.reviews = []; mem.seq = 0 },
 }
