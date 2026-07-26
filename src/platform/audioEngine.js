@@ -486,6 +486,34 @@ export class AudioEngine {
     osc.stop(at + dur + 0.05)
   }
 
+  /** A soft, gentle piano-like note: a triangle fundamental with a quiet
+      sine octave shimmer, a fast-but-soft attack and a natural decay - warm
+      and unobtrusive, never a beep or buzzer. A gentle low-pass rounds off any
+      edge so it sits kindly under a child's ear. Used for all the game cues. */
+  pianoNote(freq, at, dur = 0.6, peak = 0.11) {
+    const ctx = this.getCtx()
+    if (!ctx) return
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 2600
+    filter.Q.value = 0.2
+    filter.connect(ctx.destination)
+    const voice = (f, p, type) => {
+      const osc = ctx.createOscillator()
+      const g = ctx.createGain()
+      osc.type = type
+      osc.frequency.value = f
+      g.gain.setValueAtTime(0.0001, at)
+      g.gain.exponentialRampToValueAtTime(p, at + 0.01)
+      g.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+      osc.connect(g).connect(filter)
+      osc.start(at)
+      osc.stop(at + dur + 0.05)
+    }
+    voice(freq, peak, 'triangle')          // fundamental
+    voice(freq * 2, peak * 0.24, 'sine')   // soft octave shimmer
+  }
+
   playChime(chime) {
     const ctx = this.getCtx()
     if (!ctx) return
@@ -538,18 +566,22 @@ export class AudioEngine {
     const ctx = this.getCtx()
     if (!ctx) return
     const t = ctx.currentTime
-    // 'good' is the frequent per-answer / per-tap cue: keep it the clean,
-    // pleasant chime with NO noise burst layered on.
+    // Gentle, piano-like cues throughout - warm and classical, never a beep
+    // or buzzer. 'good' is the frequent per-answer / per-tap cue, so it is the
+    // softest: a light rising major third (C5 -> E5).
     if (kind === 'good') {
-      this.note(523, t, 0.15, 0.14, 'triangle')
-      this.note(784, t + 0.1, 0.25, 0.14, 'triangle')
+      this.pianoNote(523.25, t, 0.5, 0.085)        // C5
+      this.pianoNote(659.25, t + 0.09, 0.55, 0.085) // E5
     } else if (kind === 'bad') {
-      this.note(220, t, 0.25, 0.12, 'sawtooth')
-      this.note(180, t + 0.12, 0.3, 0.1, 'sawtooth')
+      // Never a punishing buzzer: a soft, low, kindly "not quite" - two warm
+      // notes stepping gently down (D4 -> C4). Quiet and brief.
+      this.pianoNote(293.66, t, 0.4, 0.075)        // D4
+      this.pianoNote(261.63, t + 0.11, 0.45, 0.075) // C4
     } else if (kind === 'win') {
-      // A win is a rare moment — a warm fanfare with a soft round of applause.
-      ;[523, 659, 784, 1047].forEach((f, i) => this.note(f, t + i * 0.12, 0.3, 0.16, 'triangle'))
-      this.applause(true, { claps: 8, spread: 0.7 })
+      // A win is a rare moment - a gentle rising piano arpeggio (C-E-G-C)
+      // resolving into a soft major chord. No applause / noise.
+      ;[523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.pianoNote(f, t + i * 0.13, 0.55, 0.1))
+      ;[523.25, 659.25, 783.99].forEach((f) => this.pianoNote(f, t + 0.62, 0.9, 0.06)) // soft cadence chord
     }
   }
 }

@@ -379,7 +379,7 @@ function playTones(steps, type = 'sine') {
   const ctx = getAudioContext()
   if (!ctx) return
   const now = ctx.currentTime
-  steps.forEach(({ freq, at, dur, vol = 0.12 }) => {
+  steps.forEach(({ freq, at, dur, vol = 0.1 }) => {
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = type
@@ -865,8 +865,7 @@ export default function AmharicFidelGame() {
         )
         if (isStreakMilestone) {
           setConfettiKey((k) => k + 1)
-          playSfx('streak')
-          platformAudio.applause(soundOnRef.current, { claps: 8, spread: 0.7 }) // a cheer only on a streak
+          playSfx('streak') // a gentle rising piano arpeggio - no clapping noise
         } else {
           playSfx('correct') // clean chime per answer — no noise burst
         }
