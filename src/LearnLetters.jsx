@@ -27,7 +27,7 @@
    ========================================================================== */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
@@ -746,6 +746,26 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
 /** ECHO/SHUFFLE: drag the spoken letter into Anbessa's mouth. Correct letters
     are eaten (open mouth, then removed from the tray); wrong ones make him
     refuse with a paw swat. Jibby creeps in during SHUFFLE for gentle tension. */
+/* A quick crumb burst at Anbessa's mouth when he swallows a letter. Remounted
+   (via key) on each swallow so it replays; pure decoration. */
+function ChompCrumbs() {
+  return (
+    <div className="pointer-events-none absolute left-1/2 z-30" style={{ top: '58%' }} aria-hidden="true">
+      {Array.from({ length: 6 }, (_, i) => {
+        const a = (-0.4 + (i / 5) * 0.8) * Math.PI // spread down-and-out
+        const dx = Math.cos(a) * 24
+        const dy = 16 + Math.abs(Math.sin(a)) * 14
+        return (
+          <motion.span key={i} className="absolute h-1.5 w-1.5 rounded-sm" style={{ background: i % 2 ? '#e0a856' : '#ffd25a' }}
+            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            animate={{ x: dx, y: dy, scale: 0.3, opacity: 0, rotate: 140 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }} />
+        )
+      })}
+    </div>
+  )
+}
+
 function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
   const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
@@ -756,6 +776,8 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
   const flyerId = useRef(0)
   const [dragging, setDragging] = useState(false)
   const [flyers, setFlyers] = useState([]) // letters mid-flight into the mouth
+  const reduce = useReducedMotion()
+  const [chomp, setChomp] = useState(0) // bumps a crumb burst each swallow
   // Only letters still on the tray; always keep the current target so a wrong
   // drag on a removed letter can never strand the round.
   const eaten = ctx.eaten || []
@@ -838,7 +860,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
                 rotate: 16,
                 transition: { duration: 0.9, ease: 'easeInOut' },
               }}
-              onAnimationComplete={() => setFlyers((f) => f.filter((x) => x.id !== fl.id))}
+              onAnimationComplete={() => { setFlyers((f) => f.filter((x) => x.id !== fl.id)); if (!reduce) setChomp((c) => c + 1) }}
               aria-hidden="true"
             >
               {fl.char}
@@ -882,6 +904,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
             }
           >
             <AnbessaSvg mood={mood} size={88} />
+            {!reduce && <ChompCrumbs key={chomp} />}
             {/* the swatting paw on a refusal */}
             <AnimatePresence>
               {mood === 'refuse' && (
