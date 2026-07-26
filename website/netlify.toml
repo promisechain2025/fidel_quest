@@ -1,0 +1,16 @@
+# Deploy the website to Netlify: set the site's base directory to website/.
+# SPA routing fallback lives in public/_redirects. Set env vars in the
+# Netlify UI: VITE_API_URL (the deployed hub API), optionally VITE_APP_URL.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

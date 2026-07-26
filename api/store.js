@@ -102,6 +102,21 @@ export const store = {
     return clone([...arr].reverse())
   },
 
+  /** Owner moderation: approve/archive a teacher application. Approved ones
+      appear in the PUBLIC directory (listApprovedTeachers - no emails). */
+  async setTeacherStatus(id, status) {
+    if (useMongo) return M.TeacherApplication.findByIdAndUpdate(id, { status }, { new: true }).lean().catch(() => null)
+    const doc = mem.teacherApplications.find((t) => t._id === String(id))
+    if (!doc) return null
+    doc.status = status
+    return clone(doc)
+  },
+  async listApprovedTeachers() {
+    const pick = ({ _id, name, languages, subjects, location }) => ({ id: String(_id), name, languages, subjects, location })
+    if (useMongo) return (await M.TeacherApplication.find({ status: 'approved' }).sort({ updatedAt: -1 }).limit(200).lean()).map(pick)
+    return mem.teacherApplications.filter((t) => t.status === 'approved').map(pick)
+  },
+
   async findOrderBySessionId(sessionId) {
     if (useMongo) return M.Order.findOne({ sessionId }).lean()
     return clone(mem.orders.find((o) => o.sessionId === sessionId) || null)

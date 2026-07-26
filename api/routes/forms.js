@@ -57,9 +57,25 @@ router.post('/contact', formLimit, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+/* PUBLIC teacher directory: approved applications only, never emails. */
+router.get('/teachers', async (_req, res, next) => {
+  try { res.json({ teachers: await store.listApprovedTeachers() }) } catch (err) { next(err) }
+})
+
 /* Owner-only lists (same shared-secret pattern as server/'s OWNER_TOKEN). */
 router.get('/admin/:kind(teachers|waitlist|contact)', requireAdminToken, async (req, res, next) => {
   try { res.json({ items: await store.list(req.params.kind) }) } catch (err) { next(err) }
+})
+
+/* Owner moderation: approve (-> public directory), un-approve, or archive. */
+router.patch('/admin/teachers/:id', requireAdminToken, async (req, res, next) => {
+  try {
+    const status = ['approved', 'new', 'archived'].includes(req.body?.status) ? req.body.status : null
+    if (!status) return res.status(400).json({ error: 'status must be approved, new, or archived' })
+    const updated = await store.setTeacherStatus(req.params.id, status)
+    if (!updated) return res.status(404).json({ error: 'Application not found' })
+    res.json({ ok: true, status: updated.status })
+  } catch (err) { next(err) }
 })
 
 export default router

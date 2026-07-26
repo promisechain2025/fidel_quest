@@ -53,12 +53,22 @@ export default function Homeschool() {
         </div>
       </Section>
 
-      <Section eyebrow={t('hsMoreEyebrow', 'Coming to this page')} title={t('hsMoreTitle', 'Growing resource shelf')} center>
-        <p className="mx-auto max-w-2xl text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {t('hsMoreBody', 'Printable fidel charts, week-plan templates, read-aloud guides for parents who do not read Ge’ez script themselves, and - as remote teachers join - guided term programs you can simply follow. Tell us what you need first via the contact form.')}
-        </p>
-        <div className="mt-6 text-center">
-          <CtaButton to="/about" tone="ghost">{t('hsContact', 'Request a resource')}</CtaButton>
+      <Section eyebrow={t('hsShelfEyebrow', 'The resource shelf')} title={t('hsMoreTitle', 'Growing resource shelf')} center>
+        <div className="mx-auto grid max-w-3xl gap-5 md:grid-cols-2">
+          <Card wash>
+            <h3 className="font-black" style={{ color: 'var(--go-ink)' }}>{t('hsReadyT', 'Ready now')}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+              {t('hsReadyB', 'The full fidel chart - all 231 letters, searchable, and print-ready for the fridge or the classroom wall.')}
+            </p>
+            <div className="mt-4"><CtaButton to="/alphabet" tone="gold">{t('hsChartCta', 'Open the printable chart')}</CtaButton></div>
+          </Card>
+          <Card>
+            <h3 className="font-black">{t('hsComingT', 'Coming next')}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+              {t('hsComingB', 'Week-plan templates, read-aloud guides for parents who do not read Ge’ez script themselves, and - as remote teachers join - guided term programs you can simply follow. Tell us what you need first.')}
+            </p>
+            <div className="mt-4"><CtaButton to="/about" tone="ghost">{t('hsContact', 'Request a resource')}</CtaButton></div>
+          </Card>
         </div>
       </Section>
     </>

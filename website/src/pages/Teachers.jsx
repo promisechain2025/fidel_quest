@@ -1,9 +1,63 @@
-import { useState } from 'react'
-import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2 } from 'lucide-react'
-import { Section, Card, CtaButton, Field, inputCls, inputStyle } from '../components.jsx'
+import { useEffect, useState } from 'react'
+import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin } from 'lucide-react'
+import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
+import { API_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
+
+const LANG_LABEL = { am: 'Amharic', ti: 'Tigrinya', other: 'Other' }
+
+/* The founding-teachers directory: fed by owner-approved applications
+   (GET /api/teachers - names/languages/subjects/location only, never
+   emails). Renders nothing until the first teacher is approved. */
+function Directory() {
+  const [teachers, setTeachers] = useState([])
+  useEffect(() => {
+    if (!API_URL) return
+    fetch(`${API_URL}/api/teachers`)
+      .then((r) => (r.ok ? r.json() : { teachers: [] }))
+      .then((j) => setTeachers(j.teachers || []))
+      .catch(() => {})
+  }, [])
+  if (teachers.length === 0) return null
+  return (
+    <Section mark="ት" eyebrow={t('teDirEyebrow', 'Founding teachers')} title={t('teDirTitle', 'Teaching with eGeez today')} center>
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {teachers.map((te) => (
+          <Reveal key={te.id}>
+            <Card className="h-full">
+              <div className="flex items-center gap-3">
+                <span className="lt flex-none" style={{ width: 44, height: 44, fontSize: 20, fontFamily: 'inherit' }} aria-hidden="true">
+                  {te.name.trim()[0]?.toUpperCase() || '?'}
+                </span>
+                <div>
+                  <h3 className="font-black">{te.name}</h3>
+                  <p className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
+                    {(te.languages || []).map((l) => LANG_LABEL[l] || l).join(' · ')}
+                  </p>
+                </div>
+              </div>
+              {te.subjects && (
+                <p className="mt-3 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
+                  <GraduationCap className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.subjects}
+                </p>
+              )}
+              {te.location && (
+                <p className="mt-1.5 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.location}
+                </p>
+              )}
+            </Card>
+          </Reveal>
+        ))}
+      </div>
+      <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
+        {t('teDirNote', 'Family matching and booking are coming - for now, mention a teacher when you contact us.')}
+      </p>
+    </Section>
+  )
+}
 
 const LANGS = [
   ['am', 'Amharic'],
@@ -72,6 +126,8 @@ export default function Teachers() {
           </Card>
         </div>
       </Section>
+
+      <Directory />
 
       <Section mark="ም" eyebrow={t('teApplyEyebrow', 'Apply')} title={t('teApplyTitle', 'Tell us about your teaching')} center>
         <Card className="mx-auto max-w-xl">

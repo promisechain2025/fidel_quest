@@ -12,6 +12,13 @@ export function createApp({ stripeClient } = {}) {
   if (stripeClient) setStripeClient(stripeClient)
   const app = express()
   app.set('trust proxy', 1)
+  // The owner panel is a single inline-scripted page; it registers BEFORE
+  // helmet so the default CSP (script-src 'self') does not blank it. The
+  // page holds no data - every fetch inside it still needs the admin token.
+  app.get('/admin', async (_req, res) => {
+    const { ADMIN_HTML } = await import('./adminPage.js')
+    res.type('html').send(ADMIN_HTML)
+  })
   app.use(helmet())
   app.use(cors({ origin: config.corsOrigin.includes('*') ? true : config.corsOrigin }))
   // Stripe webhook MUST see the raw body for signature verification, so it
