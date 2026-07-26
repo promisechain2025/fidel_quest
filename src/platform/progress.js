@@ -93,8 +93,7 @@ export function wipeProgress() {
 
 /* ── moving between phones (no server: a small .json over WhatsApp) ──── */
 
-export async function shareProgressSnapshot() {
-  const snap = snapshotProgress()
+export async function shareProgressSnapshot(snap = snapshotProgress()) {
   const text = JSON.stringify(snap)
   const filename = `fidel-quest-progress-${snap.day}.json`
   if (isNativePlatform()) {
