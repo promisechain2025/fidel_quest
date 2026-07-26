@@ -9,9 +9,16 @@ import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
 import { APP_URL } from './config.js'
 import { t, currentLang, setLang } from './i18n.js'
 
+/* HIDDEN AT LAUNCH (owner decision): the toggle must not offer Amharic UI
+   without Tigrinya UI - both communities get served together or neither.
+   Flip to true once BOTH translation maps in i18n.js are reviewed by
+   native speakers. The i18n layer keeps working underneath. */
+const SHOW_LANG_TOGGLE = false
+
 /** en <-> am toggle; reloads so every t() call re-evaluates (static site,
     simplest correct reactivity). */
 function LangToggle({ className = '' }) {
+  if (!SHOW_LANG_TOGGLE) return null
   const next = currentLang() === 'am' ? 'en' : 'am'
   return (
     <button type="button" className={`rounded-lg px-2 py-1.5 text-sm font-black ${className}`}
