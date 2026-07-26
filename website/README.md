@@ -38,6 +38,29 @@ src/
 Light + dark themes follow the visitor's system preference; the header toggle
 persists a choice in `egz.site.theme` (set before paint in `index.html`).
 
+## Family Pack payments
+
+`/family-pack` sells the app's Family Pack via Stripe Checkout on the hub API
+(`../api` - see its README for `STRIPE_*` env). The flow: buy button ->
+`POST /api/pay/checkout` -> Stripe hosted page -> `/family-pack/success` polls
+`GET /api/pay/order/:sessionId` and shows the FAM unlock code the buyer enters
+in the app's Grown-ups corner. With no `VITE_API_URL` or while the API has no
+Stripe keys, the page shows a coming-soon state instead of a buy button.
+Point the app's `VITE_FAMILY_PACK_URL` at this page when it goes live.
+
+## Brand assets
+
+- `public/icon*.png|svg` + `apple-touch-icon.png` - the canonical app icon
+  (Anbessa over the sixth-order letter tile), hand-copied from the app's
+  `../public`. Regenerate there, then re-copy.
+- `public/art/*.png` - character sprites rendered FROM the app's own
+  `drawAnbessa`/`drawKokeb` canvas code (load the app dev server in
+  Playwright, call the exported draw functions, save the canvas). Re-render
+  after any art change rather than editing these files.
+- `public/fonts/` - Nunito variable + Noto Sans Ethiopic, same files the app
+  ships, so type renders identically.
+- `public/shots/*.png` - real app screenshots used in the phone frames.
+
 ## Deploy
 
 Any static host. For SPA routing, add a history fallback (all paths ->

@@ -1,26 +1,56 @@
-import { Routes, Route } from 'react-router-dom'
-import { Header, Footer } from './components.jsx'
+import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Header, Footer, CtaButton } from './components.jsx'
 import Home from './pages/Home.jsx'
 import Amharic from './pages/Amharic.jsx'
 import Tigrinya from './pages/Tigrinya.jsx'
 import Teachers from './pages/Teachers.jsx'
 import Homeschool from './pages/Homeschool.jsx'
 import About from './pages/About.jsx'
+import FamilyPack from './pages/FamilyPack.jsx'
+import FamilyPackSuccess from './pages/FamilyPackSuccess.jsx'
+
+function NotFound() {
+  return (
+    <div className="mx-auto max-w-xl px-6 pt-16 text-center">
+      <img src="/art/anbessa-think.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
+      <h1 className="display-2 mt-4">Hmm, this path is not on the journey.</h1>
+      <p className="lede mt-3" style={{ color: 'var(--muted)' }}>The page you are looking for does not exist.</p>
+      <div className="mt-6"><CtaButton to="/">Back to the start</CtaButton></div>
+      <p className="mt-3 text-sm"><Link to="/amharic" className="underline" style={{ color: 'var(--muted)' }}>or see the Amharic journey</Link></p>
+    </div>
+  )
+}
 
 export default function App() {
+  const location = useLocation()
+  const reduce = useReducedMotion()
+  const routes = (
+    <Routes location={location}>
+      <Route path="/" element={<Home />} />
+      <Route path="/amharic" element={<Amharic />} />
+      <Route path="/tigrinya" element={<Tigrinya />} />
+      <Route path="/teachers" element={<Teachers />} />
+      <Route path="/homeschool" element={<Homeschool />} />
+      <Route path="/family-pack" element={<FamilyPack />} />
+      <Route path="/family-pack/success" element={<FamilyPackSuccess />} />
+      <Route path="/about" element={<About />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  )
   return (
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/amharic" element={<Amharic />} />
-          <Route path="/tigrinya" element={<Tigrinya />} />
-          <Route path="/teachers" element={<Teachers />} />
-          <Route path="/homeschool" element={<Homeschool />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<Home />} />
-        </Routes>
+        {reduce ? routes : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={location.pathname}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}>
+              {routes}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </main>
       <Footer />
     </div>

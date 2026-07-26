@@ -7,13 +7,13 @@ export default function Homeschool() {
   return (
     <>
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
-        <h1 className="text-4xl font-black md:text-5xl" style={{ textWrap: 'balance' }}>{t('hsTitle', 'Run a real language class at your kitchen table')}</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed" style={{ color: 'var(--muted)' }}>
+        <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('hsTitle', 'Run a real language class at your kitchen table')}</h1>
+        <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
           {t('hsLede', 'You do not need to be a teacher. The app carries the lessons; this page gives you the rhythm, the tools, and the printables to wrap a family school-week around it.')}
         </p>
       </div>
 
-      <Section eyebrow={t('hsWeekEyebrow', 'The rhythm')} title={t('hsWeekTitle', 'A simple week that works')}>
+      <Section mark="ቤ" eyebrow={t('hsWeekEyebrow', 'The rhythm')} title={t('hsWeekTitle', 'A simple week that works')}>
         <div className="grid gap-5 md:grid-cols-2">
           {[
             [t('hsW1t', 'Daily · 10 minutes'), t('hsW1b', 'One journey step plus the built-in Warm-up (it automatically reviews whatever is fading). The streak chip keeps kids coming back on their own.')],
@@ -29,7 +29,7 @@ export default function Homeschool() {
         </div>
       </Section>
 
-      <Section eyebrow={t('hsToolsEyebrow', 'In the app')} title={t('hsToolsTitle', 'Homeschool features you already have')}>
+      <Section mark="ጊ" eyebrow={t('hsToolsEyebrow', 'In the app')} title={t('hsToolsTitle', 'Homeschool features you already have')}>
         <div className="grid gap-5 md:grid-cols-3">
           {[
             [CalendarDays, t('hsT1t', 'Daily Letter Hunt'), t('hsT1b', 'A 2-minute daily ritual (Akukulu!) that keeps practice alive on busy days.')],

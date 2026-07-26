@@ -21,6 +21,7 @@
   --tile: #ffcb33;
   --tile-deep: #c68d12;
   --glyph: #7c4f00;
+  --wash: rgba(226, 192, 105, 0.05);
 }
 :root[data-theme="light"] {
   --paper: #f7edcf;
@@ -40,14 +41,35 @@
   --tile: #ffc61f;
   --tile-deep: #d99e12;
   --glyph: #7c4f00;
+  --wash: rgba(124, 79, 0, 0.05);
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #6f6040;
     --card: #fffaf0; --line: #e7dab2; --accent: #c99a33; --accent-deep: #9c7420;
     --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #4e9020; --tile: #ffc61f;
-    --tile-deep: #d99e12;
+    --tile-deep: #d99e12; --wash: rgba(124, 79, 0, 0.05);
   }
+}
+
+/* Brand faces - the same files the app ships. */
+@font-face {
+  font-family: "Nunito";
+  src: url("/fonts/nunito-var.woff2") format("woff2-variations");
+  font-weight: 200 1000;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/noto-sans-ethiopic-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans Ethiopic";
+  src: url("/fonts/noto-sans-ethiopic-900.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
 }
 
 html { scroll-behavior: smooth; background: var(--paper-2); }
@@ -58,10 +80,17 @@ body {
   /* no `fixed` attachment: it leaves white below the first viewport on long
      pages (and is janky on mobile Safari) - stretch the gradient instead */
   background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
-  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  font-size: 16px;
 }
 .geez { font-family: "Noto Sans Ethiopic", "Nyala", "Abyssinica SIL", "Kefa", serif; }
+
+/* Fluid display type - monumental on desktop, tight on mobile. */
+.display-1 { font-size: clamp(2.3rem, 6.5vw + 0.8rem, 4.4rem); line-height: 1.04; font-weight: 1000; letter-spacing: -0.02em; text-wrap: balance; }
+.display-2 { font-size: clamp(1.7rem, 3.6vw + 0.6rem, 2.8rem); line-height: 1.1; font-weight: 900; letter-spacing: -0.015em; text-wrap: balance; }
+.display-3 { font-size: clamp(1.2rem, 1.6vw + 0.7rem, 1.5rem); line-height: 1.25; font-weight: 900; }
+.lede { font-size: clamp(1.05rem, 0.8vw + 0.85rem, 1.25rem); line-height: 1.65; }
 
 /* the woven tibeb ribbon used as the brand divider */
 .tibeb {
@@ -82,12 +111,36 @@ body {
 
 /* 3D "chunk" button matching the app's feel */
 .chunk {
-  border-radius: 16px; font-weight: 800;
-  transition: transform .06s ease;
+  border-radius: 16px; font-weight: 900;
+  transition: transform .06s ease, filter .12s ease;
+  min-height: 48px;
 }
-.chunk:active { transform: translateY(2px); }
+.chunk:hover { filter: brightness(1.05); }
+.chunk:active { transform: translateY(3px); }
 
-:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+/* oversized fidel watermark behind section headings */
+.watermark { position: relative; overflow: hidden; }
+.watermark::before {
+  content: attr(data-mark);
+  position: absolute; right: -0.08em; top: 50%; transform: translateY(-52%);
+  font-family: "Noto Sans Ethiopic", serif; font-weight: 900;
+  font-size: clamp(9rem, 24vw, 17rem); line-height: 1;
+  color: var(--ink); opacity: 0.045; pointer-events: none; user-select: none;
+}
+
+/* CSS phone frame for real app screenshots */
+.phone {
+  border-radius: 42px; padding: 10px;
+  background: #10141f;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+.phone > img { display: block; border-radius: 32px; width: 100%; height: auto; }
+
+/* soft branded card wash */
+.wash { background: linear-gradient(160deg, var(--wash), transparent 55%); }
+
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; border-radius: 6px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

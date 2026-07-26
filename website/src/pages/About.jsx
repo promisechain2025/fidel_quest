@@ -25,7 +25,7 @@ export default function About() {
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['ፊ', 'ደ', 'ል'].map((ch, i) => <LetterTile key={i} ch={ch} size={46} />)}
         </div>
-        <h1 className="text-4xl font-black md:text-5xl" style={{ textWrap: 'balance' }}>{t('abTitle', 'Why we are building this')}</h1>
+        <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('abTitle', 'Why we are building this')}</h1>
       </div>
 
       <Section>
@@ -37,7 +37,7 @@ export default function About() {
         </div>
       </Section>
 
-      <Section eyebrow={t('abContactEyebrow', 'Contact')} title={t('abContactTitle', 'Talk to us')} center>
+      <Section mark="ል" eyebrow={t('abContactEyebrow', 'Contact')} title={t('abContactTitle', 'Talk to us')} center>
         <Card className="mx-auto max-w-xl">
           {state.status === 'done' ? (
             <div className="text-center">

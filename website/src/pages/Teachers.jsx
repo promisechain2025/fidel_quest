@@ -32,13 +32,22 @@ export default function Teachers() {
   return (
     <>
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
-        <h1 className="text-4xl font-black md:text-5xl" style={{ textWrap: 'balance' }}>{t('teTitle', 'Teach the next generation - from anywhere')}</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed" style={{ color: 'var(--muted)' }}>
+        <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('teTitle', 'Teach the next generation - from anywhere')}</h1>
+        <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
           {t('teLede', 'eGeez gives remote teachers a real classroom: your students play a curriculum that runs itself, and you guide, assign, and celebrate. Diaspora families are looking for you.')}
         </p>
       </div>
 
-      <Section eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
+      <Section mark="መ" eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
+        <div className="mb-8 grid items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
+          <div className="phone mx-auto w-full max-w-[260px]">
+            <img src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
+              alt={t('teShotAlt', 'Kokeb’s Bingo in the app: play solo, host for a class, or join a game')} />
+          </div>
+          <p className="lede text-center md:text-left" style={{ color: 'var(--muted)' }}>
+            {t('teToolsLede', 'This is not a promise of future tools - it is a screenshot. Class Bingo, invite links, assignments with receipts, the term planner, and the TV display are in the app your students already have.')}
+          </p>
+        </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {[
             [Link2, t('teT1t', 'Class links'), t('teT1b', 'Invite a whole class with one link or QR - no student accounts, no passwords, works on any phone.')],
@@ -62,7 +71,7 @@ export default function Teachers() {
         </div>
       </Section>
 
-      <Section eyebrow={t('teApplyEyebrow', 'Apply')} title={t('teApplyTitle', 'Tell us about your teaching')} center>
+      <Section mark="ም" eyebrow={t('teApplyEyebrow', 'Apply')} title={t('teApplyTitle', 'Tell us about your teaching')} center>
         <Card className="mx-auto max-w-xl">
           {state.status === 'done' ? (
             <div className="text-center">

@@ -10,8 +10,8 @@ export default function Amharic() {
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['አ', 'ማ', 'ር', 'ኛ'].map((ch, i) => <LetterTile key={i} ch={ch} size={48} />)}
         </div>
-        <h1 className="text-4xl font-black md:text-5xl" style={{ textWrap: 'balance' }}>{t('amTitle', 'The Amharic journey')}</h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed" style={{ color: 'var(--muted)' }}>
+        <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('amTitle', 'The Amharic journey')}</h1>
+        <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
           {t('amLede', 'From first sound to first story: every one of the 231 fidel, taught the way kids actually stay - through play. Fully offline, no ads, made for ages 3-9.')}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -19,7 +19,7 @@ export default function Amharic() {
         </div>
       </div>
 
-      <Section eyebrow={t('amWhatEyebrow', 'What is inside')} title={t('amWhatTitle', 'A whole curriculum, disguised as a game')}>
+      <Section mark="ጨ" eyebrow={t('amWhatEyebrow', 'What is inside')} title={t('amWhatTitle', 'A whole curriculum, disguised as a game')}>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {[
             [Map, t('amF1t', 'The Journey'), t('amF1b', 'One winding path with exactly one next step: letter lessons, mixed practice, boss quizzes, and earned arcade games. No menus to get lost in.')],
@@ -38,7 +38,7 @@ export default function Amharic() {
         </div>
       </Section>
 
-      <Section eyebrow={t('amForEyebrow', 'For families')} title={t('amForTitle', 'Free to learn, fair to families')}>
+      <Section mark="ነ" eyebrow={t('amForEyebrow', 'For families')} title={t('amForTitle', 'Free to learn, fair to families')}>
         <div className="grid gap-5 md:grid-cols-2">
           <Card>
             <h3 className="font-black">{t('amFree', 'Free')}</h3>
