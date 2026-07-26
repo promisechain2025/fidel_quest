@@ -81,7 +81,11 @@ Architecture reuse (the structure is generic; the content is not):
 First math track (smallest shippable slice), mirroring the fidel arc:
 1. Ge'ez / Arabic numerals recognition (LEARN nodes) - a validated numeral
    table in `src/data/`, the single source of truth, test-verified exactly
-   like `fidelGameData.js`.
+   like `fidelGameData.js`. **STARTED:** `src/data/numerals.js` is that table
+   (glyphs 1..100, `toGeez`/`fromGeez`, exhaustively round-trip tested); the
+   existing `MerkatoMarket` counting game already teaches 1..9 recognition.
+   Remaining: spoken number names (native-speaker review) and the journey
+   nodes that string counting -> number sense -> arithmetic together.
 2. Counting and number sense (MIX nodes).
 3. Addition / subtraction boss quizzes (QUIZ nodes).
 4. A celebratory arcade node reusing the Runner/Catch engines with numerals.
