@@ -41,6 +41,18 @@ export default function Terms() {
         guarantee any teacher's conduct, quality, or results.
       </P>
 
+      <H2>Teacher-run classes (bring your own students)</H2>
+      <P>
+        A teacher may use the app's built-in classroom tools to teach their
+        own students - a class they already run, such as a community or
+        weekend school. In that case eGeez provides software only: we do not
+        introduce, vet, or supervise those students, and the class stays on
+        the teacher's device. The teacher is solely responsible for that
+        class - including obtaining any parental consent required to enroll a
+        child, safeguarding, conduct, and compliance with local law. eGeez is
+        not a party to, and not responsible for, teacher-run classes.
+      </P>
+
       <H2>Accounts</H2>
       <P>
         Keep your login details accurate and secure; you are responsible for

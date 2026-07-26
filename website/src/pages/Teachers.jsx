@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users } from 'lucide-react'
+import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users, School, Search } from 'lucide-react'
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
-import { API_URL } from '../config.js'
+import { API_URL, APP_URL } from '../config.js'
 import { SUBJECTS, SUBJECT_LABEL } from '../subjects.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -231,6 +231,45 @@ const LANGS = [
   ['other', 'Other'],
 ]
 
+/* The two teacher paths, stated up front so nobody has to guess which one
+   they want - and so the "board has no responsibility" line for own-class
+   teaching is clear before anyone applies. */
+function TwoWays() {
+  return (
+    <Section mark="ሁ" eyebrow={t('teWaysEyebrow', 'Two ways to teach')} title={t('teWaysTitle', 'Bring your own class, or let families find you')} center>
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card className="flex h-full flex-col">
+          <School className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+          <h3 className="mt-3 text-lg font-black">{t('teWayOwnT', 'Run your own class')}</h3>
+          <p className="mt-2 flex-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {t('teWayOwnB', 'Already have students - a weekend school, a church group, your own tutoring? Use the classroom built into the app: register your students, send homework with due dates, and watch each child’s progress. It works offline, needs no accounts, and stays entirely on your device. No application, no waiting - you are in charge, and eGeez is just your tool.')}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <CtaButton href={APP_URL} tone="green" className="!py-2.5 text-sm">{t('teWayOwnCta', 'Open the app')}</CtaButton>
+            <a href="#toolkit" className="self-center text-sm font-bold underline" style={{ color: 'var(--accent)' }}>{t('teWayOwnLink', 'See the classroom tools')}</a>
+          </div>
+        </Card>
+        <Card className="flex h-full flex-col">
+          <Search className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+          <h3 className="mt-3 text-lg font-black">{t('teWayBoardT', 'Get found by families')}</h3>
+          <p className="mt-2 flex-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {t('teWayBoardB', 'Want new students? Join the teacher board. Families looking for face-to-face help find you, request an introduction, and eGeez brokers the first contact. You keep your rating and your track record here as families work with you.')}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a href="#apply" className="chunk inline-flex items-center rounded-2xl px-4 py-2.5 text-sm font-black"
+              style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)' }}>
+              {t('teWayBoardCta', 'Apply to the board')}
+            </a>
+          </div>
+        </Card>
+      </div>
+      <p className="mt-5 text-center text-sm" style={{ color: 'var(--muted)' }}>
+        {t('teWaysBoth', 'You can do both - run your own class and take new families from the board.')}
+      </p>
+    </Section>
+  )
+}
+
 export default function Teachers() {
   const [form, setForm] = useState({ name: '', email: '', languages: [], subjectTags: [], subjects: '', location: '', experience: '', message: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
@@ -263,6 +302,9 @@ export default function Teachers() {
         </p>
       </div>
 
+      <TwoWays />
+
+      <span id="toolkit" className="block" aria-hidden="true" />
       <Section mark="መ" eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
         <div className="mb-8 grid items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
           <div className="phone mx-auto w-full max-w-[260px]">
@@ -298,6 +340,7 @@ export default function Teachers() {
 
       <Directory />
 
+      <span id="apply" className="block" aria-hidden="true" />
       <Section mark="ም" eyebrow={t('teApplyEyebrow', 'Apply')} title={t('teApplyTitle', 'Tell us about your teaching')} center>
         <Card className="mx-auto max-w-xl">
           {state.status === 'done' ? (
