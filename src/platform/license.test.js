@@ -81,6 +81,18 @@ describe('license (honest free trial)', () => {
     expect(web('2026-09-01').phase).toBe('ended')
   })
 
+  it('feedback grace redeemed mid-trial ADDS the full grace, not just today+N', () => {
+    web('2026-07-01') // trial: 2026-07-01 .. 2026-07-04
+    const before = web('2026-07-02')
+    expect(before.phase).toBe('trial')
+    expect(before.daysLeft).toBe(TRIAL_DAYS - 1)
+    grantFeedbackGrace('2026-07-02') // still inside the trial
+    const after = web('2026-07-02')
+    // the grace is added to the END of the remaining window, so the child
+    // genuinely gains FEEDBACK_GRACE_DAYS on top of the days still left.
+    expect(after.daysLeft).toBe(TRIAL_DAYS - 1 + FEEDBACK_GRACE_DAYS)
+  })
+
   it('the feedback extension works exactly once', () => {
     web('2026-07-01')
     expect(grantFeedbackGrace('2026-08-01')).toBe(FEEDBACK_GRACE_DAYS)

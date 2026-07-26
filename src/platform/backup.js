@@ -17,9 +17,15 @@ import { SWAP_KEYS } from './profiles'
 const FILE = 'fidel-quest-backup.json'
 const STAMP_KEY = 'fq.backup.day'
 
+// Household keys that hold RAW strings (not JSON), so they must NOT be run
+// through JSON.parse on restore - they are copied through verbatim.
+const RAW_STRING_EXTRA = new Set(['fq.nickname', 'fq.scope.v1', 'fq.runnerSpeed'])
+
 /* The backup carries the full household: registry keys, profile registry,
-   and every parked profile slot. */
-function fullSnapshot() {
+   and every parked profile slot. Exported so the web export/import path
+   (Grown-Ups "Move to another phone") carries the whole family too, not just
+   the active child. */
+export function fullSnapshot() {
   const snap = snapshotProgress()
   const extra = {}
   try {
@@ -85,26 +91,44 @@ export async function backupInfo() {
 
 /** Restore the whole household from the device backup. Returns keys written
     (0 = nothing restored). The caller reloads the app. */
+/** Restore a full-household snapshot: canonical progress keys (validated by
+    restoreProgress) plus the extra household keys (profile registry, every
+    parked slot, and the raw-string child keys). Same known-key trust rule as
+    restoreProgress, so a forged or foreign key can never write outside the
+    household set. Returns the number of keys written. */
+export function restoreFull(snap) {
+  let n = restoreProgress(snap)
+  for (const [k, v] of Object.entries(snap?.extra || {})) {
+    if (typeof v !== 'string') continue
+    if (!(SWAP_KEYS.includes(k) || k === 'fq.profiles.v1' || /^fq\.profile\.p\d+$/.test(k))) continue
+    try {
+      if (!RAW_STRING_EXTRA.has(k)) JSON.parse(v) // JSON keys must parse; raw strings pass through
+      localStorage.setItem(k, v)
+      n++
+    } catch {
+      /* skip malformed */
+    }
+  }
+  return n
+}
+
 export async function restoreBackup() {
   if (!isNativePlatform()) return 0
   try {
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
     const { data } = await Filesystem.readFile({ path: FILE, directory: Directory.Documents, encoding: Encoding.UTF8 })
-    const snap = JSON.parse(typeof data === 'string' ? data : '')
-    let n = restoreProgress(snap)
-    for (const [k, v] of Object.entries(snap?.extra || {})) {
-      // Same trust rule as restoreProgress: known key shapes only.
-      if (typeof v !== 'string') continue
-      if (!(SWAP_KEYS.includes(k) || k === 'fq.profiles.v1' || /^fq\.profile\.p\d+$/.test(k))) continue
-      try {
-        if (k !== 'fq.nickname' && k !== 'fq.scope.v1') JSON.parse(v)
-        localStorage.setItem(k, v)
-        n++
-      } catch {
-        /* skip malformed */
-      }
-    }
-    return n
+    return restoreFull(JSON.parse(typeof data === 'string' ? data : ''))
+  } catch {
+    return 0
+  }
+}
+
+/** Parse a picked household progress file (the web "Move to another phone"
+    export) and restore it - profiles, slots, nickname, scope and all.
+    Resolves to the number of keys written (0 = not an eGeez progress file). */
+export async function importHouseholdFile(file) {
+  try {
+    return restoreFull(JSON.parse(await file.text()))
   } catch {
     return 0
   }

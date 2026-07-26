@@ -15,10 +15,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe, Volume2, VolumeX } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
-import { useChildModel } from './platform/childModel'
+import { useChildModel, progressChanged } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
-import { shareProgressSnapshot, importProgressFile } from './platform/progress'
+import { shareProgressSnapshot } from './platform/progress'
+import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
 import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
@@ -34,7 +35,7 @@ import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadStoriesRead } from './platform/stories'
-import { loadProfiles, addProfile, switchProfile, deleteProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
+import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
@@ -67,7 +68,13 @@ function NicknameField() {
   const save = (v) => {
     const clean = v.replace(/[<>]/g, '').slice(0, 16)
     setName(clean)
-    try { localStorage.setItem('fq.nickname', clean) } catch { /* storage blocked */ }
+    // Route through the active profile so the name shown in the child-picker
+    // updates too, and CLEARING the field actually clears the stored name
+    // (renameProfile removes fq.nickname on empty; a bare setItem never did).
+    const p = activeProfile()
+    if (p) renameProfile(p.id, clean)
+    else { try { localStorage.setItem('fq.nickname', clean) } catch { /* storage blocked */ } }
+    progressChanged()
   }
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -523,6 +530,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
+  const [importErr, setImportErr] = useState(false)
   // Theme + language moved here (behind the gate) so a child cannot flip them
   // mid-task; the grown-up sets them where they set everything else.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -532,8 +540,14 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
 
   const events = useMemo(() => (open ? loadLedger() : []), [open])
   const stats = useMemo(() => letterStats(events), [events])
-  const trouble = useMemo(() => troubleLetters(events), [events])
-  const pairs = useMemo(() => confusions(events), [events])
+  // The ledger also carries non-letter events (words, stories, market prices,
+  // bingo indices). Trouble Letters / confusions are about FIDEL forms only, so
+  // rank over just the events whose heard key is a real letter - otherwise a
+  // non-letter pseudo-key can take a top-3 slot and blank the card (tipFor
+  // returns null for a key that has no form).
+  const letterEvents = useMemo(() => events.filter((e) => INDEXES.byAudioKey.has(e.k)), [events])
+  const trouble = useMemo(() => troubleLetters(letterEvents), [letterEvents])
+  const pairs = useMemo(() => confusions(letterEvents), [letterEvents])
   const progress = loadProgress()
   const runnerBest = loadRunnerBest()
   const stars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
@@ -787,7 +801,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => shareProgressSnapshot()} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                 {t('gpExport', 'Save progress file')}
               </button>
               <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
@@ -799,13 +813,20 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   onChange={async (e) => {
                     const f = e.target.files?.[0]
                     e.target.value = ''
+                    setImportErr(false)
                     if (!f) return
-                    const n = await importProgressFile(f)
+                    const n = await importHouseholdFile(f)
                     if (n > 0) window.location.reload()
+                    else setImportErr(true) // wrong / corrupt file: say so instead of a silent no-op
                   }}
                 />
               </label>
             </div>
+            {importErr && (
+              <p className="mt-2 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>
+                {t('gpImportBad', 'That was not a valid eGeez progress file.')}
+              </p>
+            )}
           </section>
 
           {/* QA unlock: open every level, island and letter without playing

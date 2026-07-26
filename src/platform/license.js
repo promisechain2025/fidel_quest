@@ -115,7 +115,14 @@ export function grantFeedbackGrace(today = dayStamp()) {
   const s = load()
   if (s.feedbackUsed) return 0
   s.feedbackUsed = true
-  s.graceUntil = addDaysStamp(today, FEEDBACK_GRACE_DAYS)
+  // Add the grace to the END of the current free window, not an absolute
+  // today+N. Redeeming mid-trial must genuinely add FEEDBACK_GRACE_DAYS (the
+  // "N more free days" promise) instead of only stretching the window to
+  // today+N - which, during an active trial, could be a gain of one day.
+  const trialEnd = s.startDay ? addDaysStamp(s.startDay, TRIAL_DAYS) : today
+  const currentEnd = s.graceUntil && s.graceUntil > trialEnd ? s.graceUntil : trialEnd
+  const base = currentEnd > today ? currentEnd : today
+  s.graceUntil = addDaysStamp(base, FEEDBACK_GRACE_DAYS)
   save(s)
   return FEEDBACK_GRACE_DAYS
 }
