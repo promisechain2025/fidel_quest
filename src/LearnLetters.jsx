@@ -33,7 +33,9 @@ import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
-import { rngNext, rngShuffle, Hero, Sprite2D, drawAnbessa, drawHyena } from './FidelQuestApp'
+import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
+import AnbessaSvg from './components/AnbessaSvg'
+import JibbySvg from './components/JibbySvg'
 import FidelTracePad from './components/FidelTracePad'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -853,7 +855,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
             transition={{ duration: 6.5, ease: 'linear' }}
             aria-hidden="true"
           >
-            <Sprite2D draw={drawHyena} size={56} />
+            <JibbySvg size={56} />
           </motion.div>
         )}
         {/* Anbessa waits below — alive: he breathes and sways, leans in when a
@@ -879,7 +881,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
                     : { scale: 1, y: [0, -2.5, 0], rotate: [0, -1.5, 0, 1.5, 0], transition: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }
             }
           >
-            <Sprite2D draw={drawAnbessa} mood={mood} size={88} />
+            <AnbessaSvg mood={mood} size={88} />
             {/* the swatting paw on a refusal */}
             <AnimatePresence>
               {mood === 'refuse' && (

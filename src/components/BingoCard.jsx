@@ -25,7 +25,9 @@ import { rngShuffle } from '../platform/rng'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawKokeb, drawAnbessa, formOf, ALL_FORMS, FOCUS } from '../FidelQuestApp'
+import { formOf, ALL_FORMS, FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { LetterTile } from './Manuscript'
 import { initBingo, bingoTransition, currentCall, dealCard, toggleMark, initCaller, callNext, lastCalled, encodeBingoConfig, decodeBingoConfig, PATTERNS, Phase, BingoEvent } from '../bingoCore'
 
@@ -136,7 +138,7 @@ function SoloBingo({ soundOn, onBack, families, reduce }) {
   return (
     <Shell title={t('bingoTitle', "Kokeb's Bingo")} onBack={onBack}>
       <div className="flex flex-1 flex-col items-center justify-center gap-5">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 92 : 64} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={92} mood="happy" pose="cheer" /> : <KokebSvg size={64} />}
         {won ? (
           <div className="flex flex-col items-center gap-4"><p className="text-2xl font-black" style={{ color: 'var(--go)' }}>{t('bingoWin', 'BINGO!')}</p><WinButtons onAgain={() => setRound((r) => r + 1)} onBack={onBack} /></div>
         ) : (
@@ -285,7 +287,7 @@ function PlayBingo({ soundOn, onBack, code, reduce }) {
   return (
     <Shell title={t('bingoTitle', "Kokeb's Bingo")} onBack={onBack}>
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 88 : 56} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={88} mood="happy" pose="cheer" /> : <KokebSvg size={56} />}
         {won ? (
           <div className="flex flex-col items-center gap-3">
             <p className="text-3xl font-black" style={{ color: 'var(--go)' }}>{t('bingoWin', 'BINGO!')}</p>
@@ -329,7 +331,7 @@ export default function BingoCard({ soundOn, onBack, families = [], code = null 
   return (
     <Shell title={t('bingoTitle', "Kokeb's Bingo")} onBack={onBack}>
       <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <Sprite2D draw={drawKokeb} size={72} mood="happy" pose="stand" />
+        <KokebSvg size={72} />
         {mode === 'join' ? (
           <div className="flex w-full flex-col items-center gap-3">
             <p className="text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('bingoEnterCode', 'Enter the code from your teacher')}</p>

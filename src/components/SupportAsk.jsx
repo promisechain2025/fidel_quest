@@ -17,7 +17,7 @@ import { grantFeedbackGrace, licenseState, redeemAppCode, APP_PRICE, FEEDBACK_GR
 import { buyUrl, feedbackMailto, shareWithFamily } from '../platform/support'
 import { iapAvailable, buyFullApp, restorePurchasesAll } from '../platform/iap'
 import ParentalGate from './ParentalGate'
-import { Sprite2D, drawAnbessa } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -67,7 +67,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
   return (
     <motion.div className="fixed inset-0 z-[70] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-label={t('payTitle', 'Keep learning with eGeez')} className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
-        <Sprite2D draw={drawAnbessa} size={96} mood="happy" />
+        <AnbessaSvg size={96} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('payTitle', 'Keep learning with eGeez')}</h2>
         <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
           {t('payBody', 'Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing.', { n: TRIAL_DAYS })}

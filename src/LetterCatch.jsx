@@ -12,7 +12,9 @@
 import { useReducer, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Volume2, Heart, Star } from 'lucide-react'
-import { Sprite2D, drawAnbessa, drawKokeb, drawHyena } from './FidelQuestApp'
+import AnbessaSvg from './components/AnbessaSvg'
+import KokebSvg from './components/KokebSvg'
+import JibbySvg from './components/JibbySvg'
 import { INDEXES } from './platform/ethiopic'
 import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
@@ -114,7 +116,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   if (ctx.phase === Phase.LOSE) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#171334,#3a2352)', color: '#fdf4e2' }}>
-        <Sprite2D draw={drawHyena} size={120} />
+        <JibbySvg size={120} />
         <h2 className="text-2xl font-black">{t('catchLose', 'Out of hearts!')}</h2>
         <p className="font-bold" style={{ color: '#c9bfe6' }}>{t('caughtCount', `Shot ${ctx.caught}`, { n: ctx.caught })}</p>
         <div className="flex gap-3">
@@ -149,7 +151,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
       {/* sound-only prompt: tap the ear to hear the called letter again */}
       <div className="flex items-center justify-center gap-2 px-6 pt-2 pb-1">
-        <Sprite2D draw={drawKokeb} size={34} />
+        <KokebSvg size={34} />
         <p className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('catchPrompt', 'Listen, then shoot it!')}</p>
         <motion.button key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }} type="button" onClick={() => playForm(targetForm, soundOn)} aria-label={t('hearAgain', 'Hear it again')}
           className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,210,90,0.5)', outlineColor: '#ffd25a' }}>
@@ -186,13 +188,13 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
         </AnimatePresence>
         {/* Anbessa the launcher, at the bottom */}
         <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2">
-          <Sprite2D draw={drawAnbessa} size={84} mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={ctx.phase === Phase.WIN ? 'cheer' : 'stand'} />
+          <AnbessaSvg size={84} mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={ctx.phase === Phase.WIN ? 'cheer' : 'stand'} />
         </div>
         {/* win banner */}
         <AnimatePresence>
           {ctx.phase === Phase.WIN && (
             <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-              <Sprite2D draw={drawAnbessa} size={130} mood="happy" pose="cheer" />
+              <AnbessaSvg size={130} mood="happy" pose="cheer" />
               <h2 className="text-3xl font-black" style={{ color: '#ffd25a', textShadow: '0 2px 16px rgba(255,150,60,0.7)' }}>{t('catchWin', 'Great shooting!')}</h2>
             </motion.div>
           )}

@@ -10,7 +10,8 @@ import { t, randomPraise, randomEncourage } from '../platform/i18n'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { buildHunt, huntTransition, huntTarget } from '../platform/hunt'
-import { drawAnbessa, drawHyena, Sprite2D } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import JibbySvg from './JibbySvg'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -169,7 +170,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         <Dressing kind={dress} />
         {/* Jibby peeks from the corner, cheekier while a letter is ducking */}
         <motion.div className="absolute -right-2 bottom-1" animate={feedback === 'bad' ? { y: [8, -4, 8] } : { y: 8 }} transition={{ duration: 0.7 }} aria-hidden="true">
-          <Sprite2D draw={drawHyena} size={72} mood={feedback === 'bad' ? 'agitated' : 'grin'} />
+          <JibbySvg size={72} expression={feedback === 'bad' ? 'agitated' : 'grin'} />
         </motion.div>
 
         {ctx.hidden.map((f, i) => {
@@ -225,7 +226,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-center gap-3 text-center">
-          <Sprite2D draw={drawAnbessa} size={96} mood="happy" />
+          <AnbessaSvg size={96} expression="happy" />
           <h2 className="text-2xl font-black">{t('huntDoneTitle', 'You found them all!')}</h2>
           {treasureReady ? (
             <motion.button

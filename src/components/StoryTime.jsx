@@ -19,7 +19,8 @@ import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
 import { t, getLang } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
 import WordPicture from './Pictures'
 import StoryScene from './StoryScene'
 import { Harag, LetterTile } from './Manuscript'
@@ -240,7 +241,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   if (story && finished) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
-        <Sprite2D draw={drawAnbessa} size={120} mood="happy" />
+        <AnbessaSvg size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
         <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
@@ -262,7 +263,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
-        <Sprite2D draw={drawAnbessa} size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
+        <AnbessaSvg size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
         {(story.q.g || showGloss) && (
           <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
         )}
@@ -381,7 +382,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       <div className="mt-2 flex justify-center"><Harag /></div>
       {library.length === 0 && (
         <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <Sprite2D draw={drawAnbessa} size={90} />
+          <AnbessaSvg size={90} />
           <p className="max-w-xs text-sm font-bold" style={{ color: 'var(--muted)' }}>
             {t('storyNonePack', 'Story books in this language are on their way! Every letter you learn now will be ready to read them.')}
           </p>

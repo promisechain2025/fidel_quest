@@ -1,11 +1,13 @@
 /* Anbessa - authored SVG art (the first "drawn, not procedural" character).
    A higher-fidelity vector Anbessa than the code-drawn canvas sprite, for
-   DOM surfaces where wearable compositing is not needed (greetings,
-   celebrations, empty states, the website). On-model with the canvas palette
-   (golden fur, orange mane, chest star). See docs/art-pipeline.md for how to
-   adopt it and why the Closet/WebGL paths stay canvas for now.
+   DOM surfaces where wearable compositing is not needed. On-model with the
+   canvas palette (golden fur, orange mane, chest star). See
+   docs/art-pipeline.md.
 
-   Scales cleanly at any size; expression is 'happy' (default) or 'cheer'. */
+   Drop-in for the canvas sprite: accepts the same `mood`/`pose` names, so a
+   `<Sprite2D draw={drawAnbessa} mood pose>` becomes `<AnbessaSvg mood pose>`.
+   Expressions: happy (default), cheer (open smile + raised paws), sad
+   (frown + tear), worried, eat (open mouth for Feed Anbessa). */
 import { useId } from 'react'
 
 const CX = 100
@@ -17,20 +19,35 @@ const petalRing = (r, radius) => Array.from({ length: N }, (_, i) => {
   return { x: +(CX + Math.cos(a) * r).toFixed(1), y: +(HEAD_Y + Math.sin(a) * r).toFixed(1), radius }
 })
 
-export function AnbessaSvg({ size = 160, expression = 'happy', title = 'Anbessa', className = '', style = {} }) {
+// Map the canvas sprite's mood/pose vocabulary onto our expression set.
+function toExpression({ expression, mood, pose }) {
+  if (pose === 'cheer') return 'cheer'
+  const e = expression || mood || 'happy'
+  if (e === 'cheer') return 'cheer'
+  if (e === 'eating' || e === 'hungry' || e === 'eat') return 'eat'
+  if (e === 'sad') return 'sad'
+  if (e === 'worried') return 'worried'
+  return 'happy'
+}
+
+export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbessa', className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
-  const cheer = expression === 'cheer'
+  const exp = toExpression({ expression, mood, pose })
+  const cheer = exp === 'cheer'
+  const droop = exp === 'sad' || exp === 'worried'
   const outer = petalRing(MANE_R, 17)
   const inner = petalRing(MANE_R - 6, 12)
-  const eye = (sx) => (
-    <g key={sx}>
-      <ellipse cx={CX + sx * 20} cy={HEAD_Y - 4} rx="11" ry="13" fill="#fff" />
-      <circle cx={CX + sx * 20 + sx} cy={HEAD_Y - 1} r="8.5" fill="#3a2a14" />
-      <circle cx={CX + sx * 20 - 2.5} cy={HEAD_Y - 5} r="3.2" fill="#fff" />
-      <circle cx={CX + sx * 20 + 3} cy={HEAD_Y + 3} r="1.6" fill="#fff" opacity="0.85" />
-    </g>
-  )
+  const eye = (sx) => {
+    const ey = HEAD_Y - 4 + (droop ? 2 : 0)
+    return (
+      <g key={sx}>
+        <ellipse cx={CX + sx * 20} cy={ey} rx="11" ry={droop ? 11 : 13} fill="#fff" />
+        <circle cx={CX + sx * 20 + sx} cy={ey + 3} r={droop ? 7.5 : 8.5} fill="#3a2a14" />
+        <circle cx={CX + sx * 20 - 2.5} cy={ey - 1} r="3.2" fill="#fff" />
+      </g>
+    )
+  }
   return (
     <svg width={size} height={size} viewBox="0 0 200 210" className={className} style={style}
       role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
@@ -94,15 +111,31 @@ export function AnbessaSvg({ size = 160, expression = 'happy', title = 'Anbessa'
       <ellipse cx={CX + 30} cy={HEAD_Y + 16} rx="8" ry="5.5" fill="#ff8a6a" opacity="0.4" />
       {/* nose */}
       <path d={`M${CX - 6},${HEAD_Y + 8} q6,-4 12,0 q-2,7 -6,9 q-4,-2 -6,-9 z`} fill="#6e4520" />
-      {/* mouth */}
-      {cheer ? (
+
+      {/* mouth (per expression) */}
+      {exp === 'cheer' && (
         <>
           <path d={`M${CX - 11},${HEAD_Y + 14} q11,14 22,0 q-11,5 -22,0 z`} fill="#7a3b2e" />
           <ellipse cx={CX} cy={HEAD_Y + 19} rx="6" ry="3.4" fill="#ef8fa0" />
         </>
-      ) : (
+      )}
+      {exp === 'eat' && (
+        <>
+          <ellipse cx={CX} cy={HEAD_Y + 18} rx="13" ry="12" fill="#7a3b2e" />
+          <ellipse cx={CX} cy={HEAD_Y + 24} rx="8" ry="4.5" fill="#ef8fa0" />
+          <path d={`M${CX - 9},${HEAD_Y + 7} l3,4 3,-4 z M${CX + 3},${HEAD_Y + 7} l3,4 3,-4 z`} fill="#fff" />
+        </>
+      )}
+      {exp === 'sad' && (
+        <path d={`M${CX - 11},${HEAD_Y + 22} Q${CX},${HEAD_Y + 15} ${CX + 11},${HEAD_Y + 22}`} stroke="#6e4520" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      )}
+      {exp === 'worried' && (
+        <ellipse cx={CX} cy={HEAD_Y + 19} rx="4.5" ry="5.5" fill="#6e4520" />
+      )}
+      {exp === 'happy' && (
         <path d={`M${CX},${HEAD_Y + 17} q-7,8 -13,3 M${CX},${HEAD_Y + 17} q7,8 13,3`} stroke="#6e4520" strokeWidth="2.4" fill="none" strokeLinecap="round" />
       )}
+
       {/* whiskers */}
       {[-1, 1].map((s) => (
         <g key={s} opacity="0.7">
@@ -110,10 +143,29 @@ export function AnbessaSvg({ size = 160, expression = 'happy', title = 'Anbessa'
           <path d={`M${CX + s * 20},${HEAD_Y + 22} q${s * 22},1 ${s * 34},2`} stroke="#c98a3a" strokeWidth="1.6" fill="none" strokeLinecap="round" />
         </g>
       ))}
-      {/* eyes + brows */}
+      {/* eyes */}
       {[-1, 1].map(eye)}
-      <path d={`M${CX - 28},${HEAD_Y - 20} q8,-6 16,-2`} stroke="#c06a14" strokeWidth="2.6" fill="none" strokeLinecap="round" />
-      <path d={`M${CX + 28},${HEAD_Y - 20} q-8,-6 -16,-2`} stroke="#c06a14" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      {/* tear (sad only) */}
+      {exp === 'sad' && <path d={`M${CX + 24},${HEAD_Y + 2} q-3.5,6 0,10 q3.5,-4 0,-10 z`} fill="#8fd0f0" />}
+      {/* brows (per expression) */}
+      {droop ? (
+        exp === 'sad' ? (
+          <>
+            <path d={`M${CX - 27},${HEAD_Y - 13} L${CX - 9},${HEAD_Y - 20}`} stroke="#c06a14" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+            <path d={`M${CX + 27},${HEAD_Y - 13} L${CX + 9},${HEAD_Y - 20}`} stroke="#c06a14" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          </>
+        ) : (
+          <>
+            <path d={`M${CX - 27},${HEAD_Y - 14} Q${CX - 18},${HEAD_Y - 21} ${CX - 8},${HEAD_Y - 18}`} stroke="#c06a14" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+            <path d={`M${CX + 27},${HEAD_Y - 14} Q${CX + 18},${HEAD_Y - 21} ${CX + 8},${HEAD_Y - 18}`} stroke="#c06a14" strokeWidth="2.8" fill="none" strokeLinecap="round" />
+          </>
+        )
+      ) : (
+        <>
+          <path d={`M${CX - 28},${HEAD_Y - 20} q8,-6 16,-2`} stroke="#c06a14" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <path d={`M${CX + 28},${HEAD_Y - 20} q-8,-6 -16,-2`} stroke="#c06a14" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        </>
+      )}
     </svg>
   )
 }
