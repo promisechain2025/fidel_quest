@@ -35,6 +35,8 @@ import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
+import AnbessaSvg from './components/AnbessaSvg'
+import KokebSvg from './components/KokebSvg'
 import NameInFidel from './components/NameInFidel'
 import DailyHunt from './components/DailyHunt'
 import VoicePostcard from './components/VoicePostcard'
@@ -1601,7 +1603,7 @@ export default function FidelQuestApp() {
           {screen.name === 'placement-done' && (
             <Screen key="placement-done">
               <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
-                <Sprite2D draw={drawAnbessa} size={110} mood="happy" />
+                <AnbessaSvg size={110} mood="happy" />
                 <h1 className="text-2xl font-black">
                   {screen.families > 0 ? t('placeDoneTitle', 'Placed!') : t('placeFreshTitle', 'Starting fresh!')}
                 </h1>
@@ -2038,7 +2040,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           >
-            <Sprite2D draw={drawAnbessa} size={40} />
+            <AnbessaSvg size={40} />
           </motion.div>
         )}
         <motion.button
@@ -2159,7 +2161,7 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
   return (
     <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
-        <Sprite2D draw={drawAnbessa} size={104} mood="happy" />
+        <AnbessaSvg size={104} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
         <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
           {enforced
@@ -2446,7 +2448,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
 
       {placeOfferOpen && onPlacement && (
         <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
-          <Sprite2D draw={drawKokeb} size={36} />
+          <KokebSvg size={36} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black">{t('placeOfferTitle', 'Already knows some letters?')}</p>
             <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('placeOfferBody', 'A quick listening check skips what you already know.')}</p>
@@ -2529,7 +2531,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             <div className="mx-auto flex w-full max-w-md items-center gap-2 px-7 py-2.5">
               {/* Kokeb power = the streak; tap it for the streak detail. */}
               <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
-                <Sprite2D draw={drawKokeb} size={30} />
+                <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
@@ -3438,7 +3440,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         <div className="relative">
           <div style={{ height: 110, background: 'var(--paper-2)', borderRadius: '55% 45% 0 0 / 100% 80% 0 0', opacity: 0.7, transform: 'scaleX(1.35)' }} />
           <div className="absolute bottom-0 left-1" style={{ opacity: 0.95 }}>
-            <Sprite2D draw={drawAnbessa} size={54} mood={ctx.status === GameState.ERROR_RECOVERY ? 'worried' : 'happy'} />
+            <AnbessaSvg size={54} mood={ctx.status === GameState.ERROR_RECOVERY ? 'worried' : 'happy'} />
           </div>
         </div>
       </div>
@@ -3478,7 +3480,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
           <p className="flex items-center justify-center gap-2 text-lg font-extrabold">
             {/* Kokeb ASKS the question - the caller finally has a face. */}
             <motion.span animate={{ rotate: [0, -8, 0, 8, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} aria-hidden="true">
-              <Sprite2D draw={drawKokeb} size={34} />
+              <KokebSvg size={34} />
             </motion.span>
             {t('whichLetter', 'Which letter says')}{' '}
             <button
@@ -3735,7 +3737,7 @@ function NextUpTeaser({ levelId }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.0 }}
     >
-      <Sprite2D draw={drawKokeb} size={40} />
+      <KokebSvg size={40} />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-black">
           {t('nextUp', 'Next on the path:')} {what}
@@ -4564,7 +4566,7 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool })
 function ArcadeLoading() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-4" style={{ background: 'var(--paper)' }}>
-      <Sprite2D draw={drawAnbessa} size={110} />
+      <AnbessaSvg size={110} />
       <div className="text-lg font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('arcadeLoading', 'Getting the game ready...')}
       </div>
