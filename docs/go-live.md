@@ -17,8 +17,11 @@ Legend: **[blocker]** = onboarding silently breaks without it.
   while looking healthy. Configure a real sender and send one test message.
 - **Stripe** account (only if selling on the web at launch), test + live keys,
   and a webhook endpoint (step 3).
-- **Hosting**: API on Render (`render.yaml`) or any Node host; website on
-  Netlify (`netlify.toml`). DNS for `egeez.app` pointed at both.
+- **Hosting**: API on Render (`render.yaml` now defines the `egeez-hub-api`
+  service alongside the analytics `fidel-quest-server` - `JWT_SECRET` and
+  `ADMIN_TOKEN` are generated for you, the rest are set in the dashboard) or
+  any Node host; website on Netlify (`netlify.toml`). DNS for `egeez.app`
+  pointed at both.
 
 ## 2. Environment variables
 
@@ -90,6 +93,21 @@ Both app stores also **require a public privacy-policy URL** for submission -
   by design). Approve via the `/admin` panel with `ADMIN_TOKEN`.
 - Confirm the "we vet applications, not backgrounds" language on `/teachers`
   matches your actual process. If you add real checks later, upgrade the copy.
+
+## 6b. Optional: seed a demo board
+
+To populate the board with a demo teacher + three linked families (ratings,
+progress badge, family count) for screenshots or a quick sanity check:
+
+```
+cd api
+MONGO_URI="mongodb://.../egeez_staging" npm run seed
+```
+
+Idempotent (keyed on the demo teacher's email); demo accounts use
+`*.demo@egeez.app` and a shared demo password printed on completion. This is
+a convenience, NOT a substitute for the real rehearsal below - the rehearsal
+is what proves email and the live DB actually work.
 
 ## 7. One real end-to-end rehearsal (do not skip)
 

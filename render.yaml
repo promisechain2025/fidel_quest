@@ -1,6 +1,9 @@
-# Render blueprint for the eGeez server (analytics + share landing).
-# In Render: New > Blueprint > point at this repo. It builds server/Dockerfile.
-# OWNER_TOKEN is generated for you; set APP_URL and OG_IMAGE in the dashboard.
+# Render blueprint for eGeez. In Render: New > Blueprint > point at this repo.
+# Two independent services:
+#   1. fidel-quest-server - the zero-dep analytics + share-landing service.
+#   2. egeez-hub-api      - the marketplace/accounts hub (see docs/go-live.md).
+# Secrets marked generateValue are created for you; sync:false ones you set in
+# the dashboard. See docs/go-live.md for what each variable is for.
 services:
   - type: web
     name: fidel-quest-server
@@ -15,4 +18,35 @@ services:
       - key: APP_URL
         sync: false
       - key: OG_IMAGE
+        sync: false
+
+  - type: web
+    name: egeez-hub-api
+    runtime: docker
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET       # session signing; server refuses to boot without it
+        generateValue: true
+      - key: ADMIN_TOKEN      # owner panel + moderation
+        generateValue: true
+      - key: MONGO_URI        # persistent store (unset = in-memory, data lost on restart)
+        sync: false
+      - key: SITE_URL         # public site origin, e.g. https://egeez.app (emailed links, Stripe redirects)
+        sync: false
+      - key: CORS_ORIGIN      # the website origin(s), comma-separated
+        sync: false
+      - key: EMAIL_USER       # SMTP sender - without email, verification + intros silently fail
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: NOTIFY_EMAIL     # where owner notifications go
+        sync: false
+      - key: STRIPE_SECRET_KEY      # optional: payments (absent = pay endpoints 503, dormant)
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
         sync: false

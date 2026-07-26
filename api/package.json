@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "seed": "node scripts/seed.js",
     "test": "node --test \"__tests__/*.test.js\""
   },
   "engines": { "node": ">=18" },
