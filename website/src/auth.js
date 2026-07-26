@@ -31,8 +31,8 @@ export async function login(email, password) {
   const { token } = await apiFetch('/api/auth/login', { method: 'POST', body: { email, password } })
   setToken(token)
 }
-export async function register(name, email, password) {
-  const { token } = await apiFetch('/api/auth/register', { method: 'POST', body: { name, email, password, role: 'parent' } })
+export async function register(name, email, password, role = 'parent') {
+  const { token } = await apiFetch('/api/auth/register', { method: 'POST', body: { name, email, password, role } })
   setToken(token)
 }
 export const signOut = () => setToken('')

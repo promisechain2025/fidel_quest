@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck } from 'lucide-react'
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
@@ -22,8 +23,55 @@ export function Stars({ avg, count }) {
   )
 }
 
+/* Ask the platform to broker an introduction. Contacts are exchanged only
+   if the teacher accepts - the form says so. */
+function IntroForm({ te, onClose }) {
+  const [childName, setChildName] = useState('')
+  const [message, setMessage] = useState('')
+  const [state, setState] = useState({ status: 'idle', error: '' })
+  const send = async (e) => {
+    e.preventDefault()
+    setState({ status: 'busy', error: '' })
+    try {
+      const { apiFetch } = await import('../auth.js')
+      await apiFetch(`/api/teachers/${te.id}/intros`, { method: 'POST', body: { childName, message } })
+      setState({ status: 'done', error: '' })
+    } catch (err) { setState({ status: 'idle', error: err.message }) }
+  }
+  if (state.status === 'done') {
+    return (
+      <div className="mt-3 rounded-xl p-3 text-sm font-bold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
+        {t('inSent', 'Request sent! {n} will answer in their dashboard - you will get an email either way. Track it in your Family page.').replace('{n}', te.name)}
+      </div>
+    )
+  }
+  return (
+    <form onSubmit={send} className="mt-3 flex flex-col gap-2">
+      <input value={childName} onChange={(e) => setChildName(e.target.value.slice(0, 40))}
+        placeholder={t('inChild', 'Child first name (optional)')} aria-label={t('inChildL', 'Child first name')}
+        className="rounded-xl px-3 py-2.5 text-[16px]" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
+      <textarea required value={message} onChange={(e) => setMessage(e.target.value.slice(0, 1000))} rows={3}
+        placeholder={t('inMsg', 'What are you looking for? Age, level, days that work…')} aria-label={t('inMsgL', 'Message to the teacher')}
+        className="rounded-xl px-3 py-2.5 text-[16px]" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
+      {state.error && <p className="text-xs font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+      <div className="flex gap-2">
+        <CtaButton type="submit" tone="green" className="flex-1 !py-2.5 text-sm" disabled={state.status === 'busy'}>
+          {state.status === 'busy' ? t('fSending', 'Sending…') : t('inSend', 'Send request')}
+        </CtaButton>
+        <button type="button" onClick={onClose} className="px-3 text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('inCancel', 'Cancel')}</button>
+      </div>
+      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>
+        {t('inPrivacy', 'Your contact is shared with the teacher only if they accept.')}
+      </p>
+    </form>
+  )
+}
+
 function TeacherCard({ te }) {
   const [reviews, setReviews] = useState(null)
+  const [asking, setAsking] = useState(false)
+  const [authed, setAuthed] = useState(false)
+  useEffect(() => { import('../auth.js').then((m) => setAuthed(m.signedIn())) }, [])
   const loadReviews = () => {
     if (reviews !== null) { setReviews(null); return }
     fetch(`${API_URL}/api/teachers/${te.id}/reviews`)
@@ -79,6 +127,19 @@ function TeacherCard({ te }) {
       {reviews && reviews.length === 0 && (
         <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>{t('teNoComments', 'No written reviews yet.')}</p>
       )}
+      <div className="mt-4">
+        {asking ? (
+          <IntroForm te={te} onClose={() => setAsking(false)} />
+        ) : authed ? (
+          <CtaButton onClick={() => setAsking(true)} tone="gold" className="w-full !py-2.5 text-sm">
+            {t('inAsk', 'Request an introduction')}
+          </CtaButton>
+        ) : (
+          <CtaButton to="/family" tone="ghost" className="w-full !py-2.5 text-sm">
+            {t('inSignIn', 'Sign in to request an introduction')}
+          </CtaButton>
+        )}
+      </div>
     </Card>
   )
 }
@@ -114,6 +175,7 @@ function Directory() {
       </Card>
       <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
         {t('teDirNote2', 'Pick a teacher in your Family dashboard to link them with your child - rating unlocks after that.')}
+        {' '}<Link to="/teach" className="font-bold underline">{t('teDash', 'On the board? Open your teacher dashboard')}</Link>
       </p>
     </Section>
   )

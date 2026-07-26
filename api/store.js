@@ -49,6 +49,13 @@ function buildModels() {
     commentStatus: { type: String, default: 'pending' }, // pending | approved | rejected
   }, { timestamps: true })
   review.index({ teacherId: 1, parentId: 1 }, { unique: true })
+  const introRequest = new mongoose.Schema({
+    teacherId: { type: String, required: true, index: true },
+    parentId: { type: String, required: true, index: true },
+    childName: String,
+    message: String,
+    status: { type: String, default: 'new' }, // new | accepted | declined
+  }, { timestamps: true })
   const order = new mongoose.Schema({
     sessionId: { type: String, required: true, unique: true },
     code: { type: String, required: true, unique: true },
@@ -65,11 +72,12 @@ function buildModels() {
     Child: mongoose.models.Child || mongoose.model('Child', child),
     Snapshot: mongoose.models.Snapshot || mongoose.model('Snapshot', snapshot),
     Review: mongoose.models.Review || mongoose.model('Review', review),
+    IntroRequest: mongoose.models.IntroRequest || mongoose.model('IntroRequest', introRequest),
   }
 }
 
 /* ---- in-memory backend ---- */
-const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], children: [], snapshots: [], reviews: [], seq: 0 }
+const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], children: [], snapshots: [], reviews: [], intros: [], seq: 0 }
 const clone = (o) => JSON.parse(JSON.stringify(o))
 const memDoc = (data) => ({ ...data, _id: String(++mem.seq), createdAt: new Date().toISOString() })
 
@@ -316,6 +324,66 @@ export const store = {
       .sort((a, b) => (a.day < b.day ? -1 : 1)).map(pick)
   },
 
+  /* ---- introduction requests (the match broker) ----------------------- */
+  /** The application row IS the teacher's board identity; a signed-in user
+      whose account email equals the application email owns it. */
+  async findApplicationByEmail(email) {
+    const e = String(email).toLowerCase().trim()
+    if (useMongo) {
+      const a = await M.TeacherApplication.findOne({ email: e, status: 'approved' }).lean()
+      return a ? { id: String(a._id), name: a.name, email: a.email } : null
+    }
+    const a = mem.teacherApplications.find((t) => t.email === e && t.status === 'approved')
+    return a ? { id: a._id, name: a.name, email: a.email } : null
+  },
+  async findApplicationById(id) {
+    if (useMongo) {
+      const a = await M.TeacherApplication.findById(id).lean().catch(() => null)
+      return a ? { id: String(a._id), name: a.name, email: a.email, status: a.status } : null
+    }
+    const a = mem.teacherApplications.find((t) => t._id === String(id))
+    return a ? { id: a._id, name: a.name, email: a.email, status: a.status } : null
+  },
+  async createIntro({ teacherId, parentId, childName, message }) {
+    const doc = { teacherId: String(teacherId), parentId, childName: childName || '', message: message || '', status: 'new' }
+    if (useMongo) { const d = await M.IntroRequest.create(doc); return { ...doc, id: String(d._id) } }
+    const d = memDoc(doc); mem.intros.push(d); return { ...doc, id: d._id }
+  },
+  async hasOpenIntro(parentId, teacherId) {
+    if (useMongo) return !!(await M.IntroRequest.exists({ parentId, teacherId: String(teacherId), status: 'new' }))
+    return mem.intros.some((i) => i.parentId === parentId && i.teacherId === String(teacherId) && i.status === 'new')
+  },
+  async findIntro(id) {
+    if (useMongo) {
+      const i = await M.IntroRequest.findById(id).lean().catch(() => null)
+      return i ? { id: String(i._id), teacherId: i.teacherId, parentId: i.parentId, childName: i.childName, message: i.message, status: i.status } : null
+    }
+    const i = mem.intros.find((x) => x._id === String(id))
+    return i ? { id: i._id, teacherId: i.teacherId, parentId: i.parentId, childName: i.childName, message: i.message, status: i.status } : null
+  },
+  async setIntroStatus(id, status) {
+    if (useMongo) { await M.IntroRequest.findByIdAndUpdate(id, { status }); return true }
+    const i = mem.intros.find((x) => x._id === String(id))
+    if (!i) return false
+    i.status = status
+    return true
+  },
+  async listIntrosForParent(parentId) {
+    const rows = useMongo
+      ? await M.IntroRequest.find({ parentId }).sort({ createdAt: -1 }).limit(100).lean()
+      : [...mem.intros].filter((i) => i.parentId === parentId).reverse()
+    return Promise.all(rows.map(async (i) => {
+      const app = await this.findApplicationById(i.teacherId)
+      return { id: String(i._id), teacherName: app?.name || 'Teacher', childName: i.childName, status: i.status }
+    }))
+  },
+  async listIntrosForTeacher(teacherId) {
+    const rows = useMongo
+      ? await M.IntroRequest.find({ teacherId: String(teacherId) }).sort({ createdAt: -1 }).limit(200).lean()
+      : [...mem.intros].filter((i) => i.teacherId === String(teacherId)).reverse()
+    return rows.map((i) => ({ id: String(i._id), childName: i.childName, message: i.message, status: i.status }))
+  },
+
   /* test helper - memory backend only */
-  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.reviews = []; mem.seq = 0 },
+  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.reviews = []; mem.intros = []; mem.seq = 0 },
 }

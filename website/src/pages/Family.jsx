@@ -160,6 +160,34 @@ function Sparkline({ snapshots }) {
   )
 }
 
+const INTRO_STATUS_STYLE = {
+  new: { color: 'var(--accent)', border: '1px solid var(--accent)' },
+  accepted: { background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' },
+  declined: { color: 'var(--muted)', border: '1px solid var(--line)' },
+}
+
+/* The parent's view of brokered introductions (created on /teachers). */
+function MyIntros() {
+  const [intros, setIntros] = useState([])
+  useEffect(() => { apiFetch('/api/my/intros').then((j) => setIntros(j.intros)).catch(() => {}) }, [])
+  if (intros.length === 0) return null
+  return (
+    <Card className="mt-7">
+      <h2 className="font-black">{t('faIntrosT', 'Your introduction requests')}</h2>
+      <ul className="mt-3 space-y-2">
+        {intros.map((i) => (
+          <li key={i.id} className="flex items-center justify-between rounded-xl p-2.5 text-sm" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
+            <span>{i.teacherName}{i.childName ? ` · ${i.childName}` : ''}</span>
+            <span className="rounded-full px-2.5 py-0.5 text-xs font-black" style={INTRO_STATUS_STYLE[i.status] || {}}>
+              {i.status === 'accepted' ? t('faInAccepted', 'accepted - check your email') : i.status}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  )
+}
+
 function Dashboard({ onSignOut }) {
   const [children, setChildren] = useState([])
   const [selected, setSelected] = useState(null) // { child, snapshots }
@@ -259,6 +287,9 @@ function Dashboard({ onSignOut }) {
           </p>
         </div>
       )}
+      {/* brokered introductions live at dashboard level - visible with or
+          without child profiles */}
+      <MyIntros />
     </div>
   )
 }
