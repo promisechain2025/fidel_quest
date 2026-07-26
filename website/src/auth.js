@@ -22,8 +22,16 @@ export async function apiFetch(path, { method = 'GET', body } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   })
   const json = await res.json().catch(() => ({}))
-  if (res.status === 401 || res.status === 403) setToken('')
-  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`)
+  // Only 401 means "your token is bad, sign in again". A 403 is a valid
+  // session doing something not permitted (e.g. "link a teacher first") and
+  // must NOT wipe the login.
+  if (res.status === 401) setToken('')
+  if (!res.ok) {
+    const err = new Error(json.error || `Request failed (${res.status})`)
+    err.status = res.status
+    err.code = json.code || ''
+    throw err
+  }
   return json
 }
 

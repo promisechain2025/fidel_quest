@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { LogOut, Plus, Trash2, TrendingUp, Star, GraduationCap } from 'lucide-react'
 import { Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import ProgressReport from '../components/ProgressReport.jsx'
@@ -8,17 +9,22 @@ import { TOTAL_LETTERS } from '../progressCard.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
 
-/* Link the approved teacher a child learns with, then rate them. Ratings
-   feed the public trust board; the link day anchors the teacher's
-   progress-verified stats. */
+/* Link a teacher the child learns with, then rate them. A child can only be
+   linked to a teacher the family has an ACCEPTED introduction with - the
+   same gate the API enforces - so the link reflects a real relationship and
+   the rating/progress it unlocks is trustworthy. */
 function TeacherPanel({ child, onChanged }) {
   const [teachers, setTeachers] = useState([])
+  const [accepted, setAccepted] = useState(null) // teacherIds with an accepted intro; null = loading
   const [stars, setStars] = useState(0)
   const [comment, setComment] = useState('')
   const [state, setState] = useState({ msg: '', error: '' })
 
   useEffect(() => {
     apiFetch('/api/teachers').then((j) => setTeachers(j.teachers || [])).catch(() => {})
+    apiFetch('/api/my/intros')
+      .then((j) => setAccepted(new Set((j.intros || []).filter((i) => i.status === 'accepted').map((i) => i.teacherId))))
+      .catch(() => setAccepted(new Set()))
   }, [])
 
   const link = async (teacherId) => {
@@ -53,9 +59,9 @@ function TeacherPanel({ child, onChanged }) {
             {t('faLearnsWith', '{c} learns with {t2}.').replace('{c}', child.name).replace('{t2}', current.name)}{' '}
             <button type="button" onClick={() => link('')} className="font-bold underline">{t('faUnlink', 'Unlink')}</button>
           </p>
-          <div className="mt-3 flex items-center gap-1" role="group" aria-label={t('faRateLabel', 'Rate this teacher')}>
+          <div className="mt-3 flex items-center gap-1" role="radiogroup" aria-label={t('faRateLabel', 'Rate this teacher')}>
             {[1, 2, 3, 4, 5].map((i) => (
-              <button key={i} type="button" onClick={() => setStars(i)} aria-label={`${i} stars`} className="p-1">
+              <button key={i} type="button" onClick={() => setStars(i)} role="radio" aria-checked={stars === i} aria-label={`${i} stars`} className="p-1">
                 <Star className="h-7 w-7" aria-hidden="true"
                   style={{ color: 'var(--star)', fill: i <= stars ? 'var(--star)' : 'transparent' }} />
               </button>
@@ -63,6 +69,7 @@ function TeacherPanel({ child, onChanged }) {
           </div>
           <textarea value={comment} onChange={(e) => setComment(e.target.value.slice(0, 600))}
             placeholder={t('faCommentPh', 'A few words for other families (optional - reviewed before publishing)')}
+            aria-label={t('faCommentL', 'A few words about this teacher (optional)')}
             rows={2} className={`${inputCls} mt-2`} style={inputStyle} />
           <div className="mt-2">
             <CtaButton onClick={rate} tone="gold" disabled={!stars} className="!px-4 !py-2 text-sm">{t('faRateBtn', 'Submit rating')}</CtaButton>
@@ -71,20 +78,34 @@ function TeacherPanel({ child, onChanged }) {
       ) : (
         <>
           <p className="mt-1.5 text-sm" style={{ color: 'var(--muted)' }}>
-            {t('faPickTeacher', 'Does {c} learn with one of our teachers? Linking them lets you rate the teacher and counts {c}’s progress toward their verified record.').replaceAll('{c}', child.name)}
+            {t('faPickTeacher', 'Does {c} learn with one of our teachers? Linking them lets you rate the teacher and counts {c}’s progress toward their family-reported record.').replaceAll('{c}', child.name)}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {teachers.map((te) => (
-              <button key={te.id} type="button" onClick={() => link(te.id)} className="chunk px-3.5 py-2 text-sm"
-                style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)' }}>
-                {te.name}
-              </button>
-            ))}
-          </div>
+          {(() => {
+            const linkable = teachers.filter((te) => accepted?.has(te.id))
+            if (accepted === null) return null // still loading intros
+            if (linkable.length === 0) {
+              return (
+                <p className="mt-3 rounded-xl p-3 text-sm" style={{ background: 'var(--paper)', border: '1px solid var(--line)', color: 'var(--muted)' }}>
+                  {t('faNeedIntro', 'To link a teacher, first request an introduction and wait for them to accept.')}{' '}
+                  <Link to="/teachers" className="font-bold underline" style={{ color: 'var(--accent)' }}>{t('faBrowseTeachers', 'Browse teachers')}</Link>
+                </p>
+              )
+            }
+            return (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {linkable.map((te) => (
+                  <button key={te.id} type="button" onClick={() => link(te.id)} className="chunk px-3.5 py-2 text-sm"
+                    style={{ background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)' }}>
+                    {te.name}
+                  </button>
+                ))}
+              </div>
+            )
+          })()}
         </>
       )}
       {state.msg && <p className="mt-2 text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{state.msg}</p>}
-      {state.error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+      {state.error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
     </Card>
   )
 }
@@ -133,7 +154,7 @@ function AuthForm({ onDone }) {
         <Field label={t('faPassword', 'Password (8+ characters)')}>
           <input className={inputCls} style={inputStyle} type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
         </Field>
-        {state.error && <p className="text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+        {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
         <CtaButton type="submit" tone="green" className="justify-center" disabled={state.busy}>
           {state.busy ? t('fSending', 'Sending…') : mode === 'signup' ? t('faSignUp', 'Create account') : t('faSignIn', 'Sign in')}
         </CtaButton>
@@ -169,7 +190,7 @@ const INTRO_STATUS_STYLE = {
 /* The parent's view of brokered introductions (created on /teachers). */
 function MyIntros() {
   const [intros, setIntros] = useState([])
-  useEffect(() => { apiFetch('/api/my/intros').then((j) => setIntros(j.intros)).catch(() => {}) }, [])
+  useEffect(() => { apiFetch('/api/my/intros').then((j) => setIntros(j.intros || [])).catch(() => {}) }, [])
   if (intros.length === 0) return null
   return (
     <Card className="mt-7">
@@ -228,7 +249,7 @@ function Dashboard({ onSignOut }) {
           <LogOut className="h-4 w-4" aria-hidden="true" /> {t('faSignOut', 'Sign out')}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{error}</p>}
+      {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         {children.map((c) => (

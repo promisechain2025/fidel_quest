@@ -8,7 +8,7 @@
 import { Router } from 'express'
 import { store } from '../store.js'
 import { sendTo, notifyOwner } from '../mailer.js'
-import { requireAuth, rateLimit, str } from '../middleware.js'
+import { requireAuth, requireVerified, rateLimit, str } from '../middleware.js'
 
 const router = Router()
 const limit = rateLimit({ max: 60, key: 'intros' })
@@ -46,7 +46,7 @@ router.get('/my/intros', requireAuth, limit, async (req, res, next) => {
 
 /** Teacher dashboard: board standing + the request inbox. Ownership =
     signed-in email matches an APPROVED application's email. */
-router.get('/teacher/me', requireAuth, limit, async (req, res, next) => {
+router.get('/teacher/me', requireAuth, requireVerified, limit, async (req, res, next) => {
   try {
     const app_ = await store.findApplicationByEmail(req.user.email)
     if (!app_) return res.status(404).json({ error: 'No approved teacher profile for this account email', notTeacher: true })
@@ -61,7 +61,7 @@ router.get('/teacher/me', requireAuth, limit, async (req, res, next) => {
 })
 
 /** Teacher accepts or declines. Accept = the ONLY moment contacts cross. */
-router.post('/teacher/intros/:id', requireAuth, limit, async (req, res, next) => {
+router.post('/teacher/intros/:id', requireAuth, requireVerified, limit, async (req, res, next) => {
   try {
     const app_ = await store.findApplicationByEmail(req.user.email)
     if (!app_) return res.status(403).json({ error: 'No approved teacher profile for this account email' })

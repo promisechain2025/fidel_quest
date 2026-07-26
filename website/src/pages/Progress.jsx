@@ -72,8 +72,17 @@ export default function Progress() {
                   </button>
                 ))}
               </div>
-              {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{error}</p>}
+              {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
               {saved && <p className="mt-3 text-sm"><Link to="/family" className="underline font-bold">{t('prgGoFamily', 'Open the family dashboard')}</Link></p>}
+            </Card>
+          )}
+          {snap && API_URL && signedIn() && children && children.length === 0 && (
+            <Card className="mt-5 text-center">
+              <h3 className="font-black">{t('prgNoKidsT', 'Add a child to save this')}</h3>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
+                {t('prgNoKidsB', 'You are signed in but have no child profiles yet. Add one in your family dashboard, then come back to this link to save the report.')}
+              </p>
+              <div className="mt-4"><CtaButton to="/family" tone="green">{t('prgAddChild', 'Go to the family dashboard')}</CtaButton></div>
             </Card>
           )}
           {snap && API_URL && !signedIn() && (

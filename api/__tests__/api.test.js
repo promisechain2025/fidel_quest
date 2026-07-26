@@ -5,11 +5,12 @@ import assert from 'node:assert/strict'
 import request from 'supertest'
 import { createApp } from '../app.js'
 import { store } from '../store.js'
+import { _resetRateLimits } from '../middleware.js'
 
 process.env.ADMIN_TOKEN ||= 'test-admin'
 const app = createApp()
 
-beforeEach(() => store._reset())
+beforeEach(() => { store._reset(); _resetRateLimits() })
 
 test('healthz reports the memory backend', async () => {
   const res = await request(app).get('/healthz')

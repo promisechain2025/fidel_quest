@@ -7,6 +7,7 @@ import request from 'supertest'
 import Stripe from 'stripe'
 import { createApp } from '../app.js'
 import { store } from '../store.js'
+import { _resetRateLimits } from '../middleware.js'
 import { setStripeClient } from '../routes/pay.js'
 import { mintFamilyCode, mintRandomCode, isValidFamilyCode, isValidAppCode, ALPHABET, CODE_PREFIX, APP_CODE_PREFIX } from '../familyCode.js'
 // The anti-drift tripwires: the APP's own validators must accept our codes.
@@ -44,7 +45,7 @@ function fakeStripe(sessions = {}) {
   }
 }
 
-beforeEach(() => store._reset())
+beforeEach(() => { store._reset(); _resetRateLimits() })
 
 test('FAM and EGZ codes: mint matches the app algorithms exactly', () => {
   assert.equal(mintFamilyCode('ABCD'), 'FAMABCD' + ALPHABET[(0 * 3 + 1 * 4 + 2 * 5 + 3 * 6) % 31])

@@ -313,6 +313,7 @@ export function Footer() {
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
           {NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
+          <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
         </nav>
       </div>
       <p className="pb-6 text-center text-xs opacity-60" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>

@@ -4,12 +4,13 @@ import assert from 'node:assert/strict'
 import request from 'supertest'
 import { createApp } from '../app.js'
 import { store } from '../store.js'
+import { _resetRateLimits } from '../middleware.js'
 
 process.env.ADMIN_TOKEN ||= 'test-admin'
 const app = createApp()
 const admin = { 'x-admin-token': 'test-admin' }
 
-beforeEach(() => store._reset())
+beforeEach(() => { store._reset(); _resetRateLimits() })
 
 async function apply(name, email) {
   const res = await request(app).post('/api/teachers/apply')

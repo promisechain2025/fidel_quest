@@ -4,6 +4,12 @@ import { connect } from './store.js'
 import { createApp } from './app.js'
 
 const { backend } = await connect()
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  // Without a fixed secret, config.js mints a random one per boot, so every
+  // restart/instance silently invalidates all sessions. Refuse to start.
+  console.error('FATAL: JWT_SECRET must be set in production (a per-boot random secret logs everyone out on restart).')
+  process.exit(1)
+}
 if (process.env.STRIPE_SECRET_KEY && backend === 'memory') {
   // A restart would forget fulfilled orders and re-mint different codes for
   // the same payment. Real money requires a real database.

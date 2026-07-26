@@ -73,7 +73,7 @@ export default function Tigrinya() {
               <Field label={t('fEmail', 'Email')}>
                 <input className={inputCls} style={inputStyle} type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" />
               </Field>
-              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
               <CtaButton type="submit" tone="green" className="justify-center">
                 {state.status === 'busy' ? t('fSending', 'Sending…') : t('tiJoin', 'Join the Tigrinya waitlist')}
               </CtaButton>

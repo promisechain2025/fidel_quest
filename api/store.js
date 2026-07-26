@@ -8,6 +8,24 @@ import config from './config.js'
 
 const useMongo = Boolean(config.mongoURI)
 
+/* Bayesian-shrunk rating score for ranking: pulls small samples toward a
+   neutral prior (PRIOR_MEAN with weight PRIOR_WEIGHT) so one 5-star cannot
+   outrank an established track record. The prior is the 1-5 midpoint (3.0):
+   an unproven teacher sits at neutral, and it takes PRIOR_WEIGHT reviews'
+   worth of evidence to move halfway to the true average. This is what lets
+   four honest 4-star reviews outrank a single (possibly self-dealt) 5-star.
+   Returns 0 for unrated teachers. */
+const PRIOR_MEAN = 3.0
+const PRIOR_WEIGHT = 5
+export function rankScore({ avg = 0, count = 0 } = {}) {
+  if (!count) return 0
+  return (avg * count + PRIOR_MEAN * PRIOR_WEIGHT) / (count + PRIOR_WEIGHT)
+}
+
+/* A teacher's verified badge is only shown once at least this many linked
+   students have a measurable post-link gain - one data point is noise. */
+export const MIN_VERIFIED_STUDENTS = 2
+
 /* ---- mongoose schemas (only compiled when Mongo is in play) ---- */
 let M = null
 function buildModels() {
@@ -16,12 +34,16 @@ function buildModels() {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['parent', 'teacher'], default: 'parent' },
+    emailVerified: { type: Boolean, default: false },
+    verifyToken: { type: String, default: '', index: true },
   }, { timestamps: true })
   const teacherApplication = new mongoose.Schema({
     name: String, email: String, languages: [String], subjects: String,
     experience: String, location: String, message: String,
     status: { type: String, default: 'new' },
   }, { timestamps: true })
+  teacherApplication.index({ status: 1 })          // listApprovedTeachers
+  teacherApplication.index({ email: 1, status: 1 }) // findApplicationByEmail
   const waitlistEntry = new mongoose.Schema({
     email: String, language: { type: String, default: 'ti' }, name: String,
   }, { timestamps: true })
@@ -49,6 +71,7 @@ function buildModels() {
     commentStatus: { type: String, default: 'pending' }, // pending | approved | rejected
   }, { timestamps: true })
   review.index({ teacherId: 1, parentId: 1 }, { unique: true })
+  review.index({ commentStatus: 1 }) // listPendingComments
   const introRequest = new mongoose.Schema({
     teacherId: { type: String, required: true, index: true },
     parentId: { type: String, required: true, index: true },
@@ -104,12 +127,32 @@ export const store = {
     if (useMongo) return M.User.findById(id).lean().catch(() => null)
     return clone(mem.users.find((u) => u._id === String(id)) || null)
   },
-  async createUser({ name, email, passwordHash, role }) {
+  async createUser({ name, email, passwordHash, role, verifyToken }) {
     const e = String(email).toLowerCase().trim()
-    if (useMongo) return (await M.User.create({ name, email: e, passwordHash, role })).toObject()
-    const doc = memDoc({ name, email: e, passwordHash, role })
+    const fields = { name, email: e, passwordHash, role, emailVerified: false, verifyToken }
+    if (useMongo) return (await M.User.create(fields)).toObject()
+    const doc = memDoc(fields)
     mem.users.push(doc)
     return clone(doc)
+  },
+  async setVerifyToken(id, token) {
+    if (useMongo) { await M.User.findByIdAndUpdate(id, { verifyToken: token }); return }
+    const u = mem.users.find((x) => x._id === String(id))
+    if (u) u.verifyToken = token
+  },
+  /** Consume a verification token: marks the account verified. Returns the
+      user (or null for an unknown/spent token). */
+  async verifyEmailToken(token) {
+    if (!token) return null
+    if (useMongo) {
+      const u = await M.User.findOneAndUpdate({ verifyToken: token }, { emailVerified: true, verifyToken: '' }, { new: true }).lean()
+      return u || null
+    }
+    const u = mem.users.find((x) => x.verifyToken === token)
+    if (!u) return null
+    u.emailVerified = true
+    u.verifyToken = ''
+    return clone(u)
   },
 
   async addTeacherApplication(data) {
@@ -147,33 +190,36 @@ export const store = {
     const pick = ({ _id, name, languages, subjects, location }) => ({ id: String(_id), name, languages, subjects, location })
     const base = useMongo
       ? (await M.TeacherApplication.find({ status: 'approved' }).sort({ updatedAt: -1 }).limit(200).lean()).map(pick)
-      : mem.teacherApplications.filter((t) => t.status === 'approved').map(pick)
+      : [...mem.teacherApplications].filter((t) => t.status === 'approved').reverse().map(pick)
     // The trust board: attach rating + progress-verified performance.
     const enriched = await Promise.all(base.map(async (te) => ({
       ...te,
       rating: await this.teacherRating(te.id),
       progress: await this.teacherProgressStats(te.id),
     })))
-    // Best-evidenced teachers first: rating, then verified progress.
-    return enriched.sort((a, b) =>
-      (b.rating.avg - a.rating.avg) || (b.rating.count - a.rating.count) || (b.progress.students - a.progress.students))
+    // Rank by a shrunk score, not raw average: a single 5-star must not
+    // outrank a large honest sample (Bayesian pull toward a neutral prior).
+    // Verified-progress students never rank a teacher (they are gameable);
+    // a stable name tiebreak keeps both backends deterministic.
+    const rank = (t) => rankScore(t.rating)
+    return enriched.sort((a, b) => (rank(b) - rank(a)) || a.name.localeCompare(b.name))
   },
 
   /* ---- reviews (one per parent per teacher; stars aggregate instantly,
           comments appear only after owner approval) -------------------- */
   async upsertReview(parentId, teacherId, { stars, comment }) {
-    const doc = {
-      teacherId: String(teacherId), parentId, stars,
-      comment: comment || '',
-      commentStatus: comment ? 'pending' : 'approved',
-    }
+    // Only overwrite the comment when one is actually supplied, so a
+    // stars-only re-rate never erases a previously written (or approved)
+    // review.
+    const doc = { teacherId: String(teacherId), parentId, stars }
+    if (comment) { doc.comment = comment; doc.commentStatus = 'pending' }
     if (useMongo) {
-      await M.Review.findOneAndUpdate({ teacherId: String(teacherId), parentId }, doc, { upsert: true })
+      await M.Review.findOneAndUpdate({ teacherId: String(teacherId), parentId }, doc, { upsert: true, setDefaultsOnInsert: true })
       return doc
     }
     const i = mem.reviews.findIndex((r) => r.teacherId === String(teacherId) && r.parentId === parentId)
     if (i >= 0) mem.reviews[i] = { ...mem.reviews[i], ...doc }
-    else mem.reviews.push(memDoc(doc))
+    else mem.reviews.push(memDoc({ comment: '', commentStatus: 'approved', ...doc }))
     return doc
   },
   async teacherRating(teacherId) {
@@ -217,29 +263,41 @@ export const store = {
     c.teacherSince = teacherId ? sinceDay : ''
     return this.findChild(parentId, childId)
   },
-  /** Verified performance: for every child linked to this teacher, the
-      letters gained between their first and latest snapshot AFTER the link
-      day. Children need at least 2 post-link snapshots to contribute a
-      gain; all linked children count as students. */
+  /** Family-reported performance: for every child linked to this teacher,
+      the letters gained between their first and latest snapshot AFTER the
+      link day. A child contributes a gain only with >= 2 post-link
+      snapshots. `verified` is the number of contributing children; the
+      average is over THOSE children (not all linked), and `show` gates the
+      public badge until enough children contribute (one point is noise).
+      Note: linking now requires an accepted introduction (see the route),
+      so these numbers reflect real teacher-family relationships - but the
+      counts themselves are family-reported, not independently attested. */
   async teacherProgressStats(teacherId) {
     const kids = useMongo
       ? await M.Child.find({ teacherId: String(teacherId) }).lean()
       : mem.children.filter((c) => c.teacherId === String(teacherId))
-    let students = 0
     const gains = []
     for (const kid of kids) {
-      students += 1
       const snaps = (useMongo
         ? await M.Snapshot.find({ childId: String(kid._id) }).sort({ day: 1 }).lean()
-        : mem.snapshots.filter((s) => s.childId === String(kid._id)).sort((a, b) => (a.day < b.day ? -1 : 1)))
+        : mem.snapshots.filter((s) => s.childId === String(kid._id)).sort((a, b) => a.day.localeCompare(b.day)))
         .filter((s) => !kid.teacherSince || s.day >= kid.teacherSince)
       if (snaps.length >= 2) gains.push(snaps[snaps.length - 1].letters - snaps[0].letters)
     }
+    const verified = gains.length
     return {
-      students,
-      verified: gains.length,
-      avgLettersGained: gains.length ? Math.round(gains.reduce((a, b) => a + b, 0) / gains.length) : 0,
+      students: kids.length,
+      verified,
+      avgLettersGained: verified ? Math.round(gains.reduce((a, b) => a + b, 0) / verified) : 0,
+      show: verified >= MIN_VERIFIED_STUDENTS,
     }
+  },
+
+  /* ---- intro-gated linking: a parent may only link a teacher their child
+          actually works with, i.e. an introduction the teacher accepted. -- */
+  async hasAcceptedIntro(parentId, teacherId) {
+    if (useMongo) return !!(await M.IntroRequest.exists({ parentId, teacherId: String(teacherId), status: 'accepted' }))
+    return mem.intros.some((i) => i.parentId === parentId && i.teacherId === String(teacherId) && i.status === 'accepted')
   },
 
   async findOrderBySessionId(sessionId) {
@@ -260,10 +318,13 @@ export const store = {
       atomic on Node's single-threaded event loop. */
   async createOrderIfAbsent({ sessionId, email, code, product = 'app' }) {
     if (useMongo) {
+      // Mongoose 8 dropped `rawResult`; `includeResultMetadata` returns the
+      // ModifyResult ({ value, lastErrorObject }). Without this the money
+      // path returns undefined and the exactly-once email guard inverts.
       const res = await M.Order.findOneAndUpdate(
         { sessionId },
         { $setOnInsert: { sessionId, email, code, product, status: 'paid' } },
-        { upsert: true, new: true, rawResult: true },
+        { upsert: true, new: true, includeResultMetadata: true },
       )
       const order = res.value?.toObject ? res.value.toObject() : res.value
       return { order, created: !res.lastErrorObject?.updatedExisting }
@@ -374,7 +435,7 @@ export const store = {
       : [...mem.intros].filter((i) => i.parentId === parentId).reverse()
     return Promise.all(rows.map(async (i) => {
       const app = await this.findApplicationById(i.teacherId)
-      return { id: String(i._id), teacherName: app?.name || 'Teacher', childName: i.childName, status: i.status }
+      return { id: String(i._id), teacherId: String(i.teacherId), teacherName: app?.name || 'Teacher', childName: i.childName, status: i.status }
     }))
   },
   async listIntrosForTeacher(teacherId) {
@@ -384,6 +445,10 @@ export const store = {
     return rows.map((i) => ({ id: String(i._id), childName: i.childName, message: i.message, status: i.status }))
   },
 
-  /* test helper - memory backend only */
+  /* test helpers - memory backend only */
+  _peekVerifyToken(email) {
+    const e = String(email).toLowerCase().trim()
+    return mem.users.find((u) => u.email === e)?.verifyToken || ''
+  },
   _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.reviews = []; mem.intros = []; mem.seq = 0 },
 }

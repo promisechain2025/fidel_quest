@@ -5,6 +5,10 @@ import { requireAdminToken, rateLimit, isEmail, str } from '../middleware.js'
 
 const router = Router()
 const formLimit = rateLimit({ max: 20, key: 'forms' })
+// The public board is unauthenticated and each call fans out per-teacher, so
+// it gets its own generous-but-present limiter (was unthrottled).
+const boardLimit = rateLimit({ max: 120, key: 'board' })
+const adminLimit = rateLimit({ max: 60, key: 'admin' })
 
 /* A remote teacher raises their hand. */
 router.post('/teachers/apply', formLimit, async (req, res, next) => {
@@ -61,26 +65,26 @@ router.post('/contact', formLimit, async (req, res, next) => {
    Each entry carries the trust signals: family rating (stars) and
    progress-verified performance computed from linked children's saved
    snapshots - evidence, not claims. */
-router.get('/teachers', async (_req, res, next) => {
+router.get('/teachers', boardLimit, async (_req, res, next) => {
   try { res.json({ teachers: await store.listApprovedTeachers() }) } catch (err) { next(err) }
 })
 
 /* Approved review comments for one teacher (public). */
-router.get('/teachers/:id/reviews', async (req, res, next) => {
+router.get('/teachers/:id/reviews', boardLimit, async (req, res, next) => {
   try { res.json({ reviews: await store.listApprovedComments(req.params.id) }) } catch (err) { next(err) }
 })
 
 /* Owner-only lists (same shared-secret pattern as server/'s OWNER_TOKEN). */
-router.get('/admin/:kind(teachers|waitlist|contact)', requireAdminToken, async (req, res, next) => {
+router.get('/admin/:kind(teachers|waitlist|contact)', adminLimit, requireAdminToken, async (req, res, next) => {
   try { res.json({ items: await store.list(req.params.kind) }) } catch (err) { next(err) }
 })
 
 /* Review-comment moderation (stars count instantly; comments only appear
    in public after approval here or in the /admin panel). */
-router.get('/admin/pending-comments', requireAdminToken, async (_req, res, next) => {
+router.get('/admin/pending-comments', adminLimit, requireAdminToken, async (_req, res, next) => {
   try { res.json({ items: await store.listPendingComments() }) } catch (err) { next(err) }
 })
-router.patch('/admin/reviews/:id', requireAdminToken, async (req, res, next) => {
+router.patch('/admin/reviews/:id', adminLimit, requireAdminToken, async (req, res, next) => {
   try {
     const status = ['approved', 'rejected'].includes(req.body?.status) ? req.body.status : null
     if (!status) return res.status(400).json({ error: 'status must be approved or rejected' })
@@ -91,7 +95,7 @@ router.patch('/admin/reviews/:id', requireAdminToken, async (req, res, next) => 
 })
 
 /* Owner moderation: approve (-> public directory), un-approve, or archive. */
-router.patch('/admin/teachers/:id', requireAdminToken, async (req, res, next) => {
+router.patch('/admin/teachers/:id', adminLimit, requireAdminToken, async (req, res, next) => {
   try {
     const status = ['approved', 'new', 'archived'].includes(req.body?.status) ? req.body.status : null
     if (!status) return res.status(400).json({ error: 'status must be approved, new, or archived' })

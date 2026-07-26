@@ -50,7 +50,7 @@ function TeacherAuth({ onDone }) {
         <Field label={t('faPassword', 'Password (8+ characters)')}>
           <input className={inputCls} style={inputStyle} type="password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
         </Field>
-        {state.error && <p className="text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+        {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
         <CtaButton type="submit" tone="green" className="justify-center" disabled={state.busy}>
           {state.busy ? t('fSending', 'Sending…') : mode === 'signup' ? t('faSignUp', 'Create account') : t('faSignIn', 'Sign in')}
         </CtaButton>
@@ -68,16 +68,43 @@ const STATUS_STYLE = {
 function TeacherDashboard({ onSignOut }) {
   const [me, setMe] = useState(null)
   const [notTeacher, setNotTeacher] = useState(false)
+  const [unverified, setUnverified] = useState(false)
+  const [resent, setResent] = useState('')
   const [error, setError] = useState('')
 
   const refresh = () => apiFetch('/api/teacher/me')
-    .then(setMe)
-    .catch((e) => { if (String(e.message).includes('No approved teacher')) setNotTeacher(true); else setError(e.message) })
+    .then((d) => { setMe(d); setUnverified(false) })
+    .catch((e) => {
+      if (e.code === 'EMAIL_UNVERIFIED') setUnverified(true)
+      else if (String(e.message).includes('No approved teacher')) setNotTeacher(true)
+      else setError(e.message)
+    })
   useEffect(() => { refresh() }, [])
+
+  const resend = async () => {
+    setResent(''); setError('')
+    try { await apiFetch('/api/auth/resend-verification', { method: 'POST' }); setResent(t('thResent', 'Sent! Check your inbox for the confirmation link.')) }
+    catch (e) { setError(e.message) }
+  }
 
   const answer = async (id, action) => {
     setError('')
     try { await apiFetch(`/api/teacher/intros/${id}`, { method: 'POST', body: { action } }); refresh() } catch (e) { setError(e.message) }
+  }
+
+  if (unverified) {
+    return (
+      <Card className="mx-auto max-w-md text-center">
+        <h2 className="font-black">{t('thVerifyT', 'Confirm your email to continue')}</h2>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+          {t('thVerifyB', 'We sent a confirmation link when you registered. Click it to unlock your teacher dashboard - this proves you own the email your board profile uses.')}
+        </p>
+        <div className="mt-4"><CtaButton onClick={resend} tone="gold">{t('thResend', 'Resend confirmation email')}</CtaButton></div>
+        {resent && <p className="mt-3 text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{resent}</p>}
+        {error && <p className="mt-3 text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
+        <p className="mt-4"><button type="button" onClick={onSignOut} className="text-sm font-bold underline" style={{ color: 'var(--muted)' }}>{t('faSignOut', 'Sign out')}</button></p>
+      </Card>
+    )
   }
 
   if (notTeacher) {
@@ -109,15 +136,23 @@ function TeacherDashboard({ onSignOut }) {
       <Card className="mt-5">
         <h2 className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--muted)' }}>{t('thStanding', 'Your board standing')}</h2>
         <div className="mt-2"><Stars avg={me.board?.rating?.avg} count={me.board?.rating?.count} /></div>
-        {me.board?.progress?.verified > 0 ? (
-          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
-            style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
-            <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-            {t('thVerified', '+{n} letters avg across {s} student(s)').replace('{n}', me.board.progress.avgLettersGained).replace('{s}', me.board.progress.students)}
+        {me.board?.progress?.show ? (
+          <>
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
+              style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
+              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+              {t('thVerified', '+{n} letters/child, reported by {s} families')
+                .replace('{n}', me.board.progress.avgLettersGained).replace('{s}', me.board.progress.verified)}
+            </p>
+            <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>{t('thVerifiedNote', 'This badge is public on your board card.')}</p>
+          </>
+        ) : me.board?.progress?.verified > 0 ? (
+          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+            {t('thAlmost', 'So far {s} family has recorded gains for a linked child. Your public progress badge appears once at least two families have measurable gains.').replace('{s}', me.board.progress.verified)}
           </p>
         ) : (
           <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
-            {t('thNoVerified', 'Your verified-progress badge appears when linked families save two or more progress reports. Encourage them to share reports from the app.')}
+            {t('thNoVerified', 'Your progress badge appears when two or more linked families save progress reports. Encourage them to share reports from the app.')}
           </p>
         )}
         {me.reviews.length > 0 && (
@@ -162,7 +197,7 @@ function TeacherDashboard({ onSignOut }) {
             </li>
           ))}
         </ul>
-        {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{error}</p>}
+        {error && <p className="mt-2 text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{error}</p>}
         <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
           {t('thPrivacy', 'Accepting shares your email with the family and theirs with you - both by email. Declining shares nothing.')}
         </p>

@@ -46,7 +46,7 @@ function BuyButton({ product, label, dormantSetter, dormant }) {
       <CtaButton onClick={buy} tone="green" className="w-full" disabled={state.status === 'busy'}>
         {state.status === 'busy' ? t('prStarting', 'Opening secure checkout…') : label}
       </CtaButton>
-      {state.error && <p className="mt-2 text-center text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+      {state.error && <p className="mt-2 text-center text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
     </>
   )
 }

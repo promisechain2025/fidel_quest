@@ -44,8 +44,13 @@ router.put('/children/:id/teacher', requireAuth, limit, async (req, res, next) =
   try {
     const teacherId = str(req.body?.teacherId, 64)
     if (teacherId) {
-      const approved = await store.listApprovedTeachers()
-      if (!approved.some((t) => t.id === teacherId)) return res.status(400).json({ error: 'Not an approved teacher' })
+      // A parent may only link a teacher they actually work with - i.e. one
+      // who ACCEPTED their introduction. This is the gate that makes ratings
+      // and family-reported progress reflect real relationships (an approved
+      // teacher alone is not enough - that let anyone self-link and farm).
+      if (!(await store.hasAcceptedIntro(req.user.id, teacherId))) {
+        return res.status(403).json({ error: 'Request an introduction and have the teacher accept before linking them' })
+      }
     }
     const today = new Date().toISOString().slice(0, 10)
     const child = await store.setChildTeacher(req.user.id, req.params.id, teacherId, today)
@@ -78,9 +83,16 @@ router.post('/children/:id/snapshots', requireAuth, limit, async (req, res, next
     const b = req.body || {}
     if (!DAY_RE.test(String(b.day))) return res.status(400).json({ error: 'Bad day' })
     if (!MASK_RE.test(String(b.mask))) return res.status(400).json({ error: 'Bad mask' })
+    // Realism guards so a snapshot cannot be crudely forged: no future dates,
+    // and letters must equal 7 x (learned families in the mask). These keep
+    // the rendered report and the family-reported progress honest.
+    if (b.day > new Date().toISOString().slice(0, 10)) return res.status(400).json({ error: 'Day cannot be in the future' })
+    const letters = clampInt(b.letters, 0, 231)
+    const learned = (String(b.mask).match(/1/g) || []).length
+    if (letters !== learned * 7) return res.status(400).json({ error: 'letters must equal 7 x learned families' })
     const snap = {
       day: b.day,
-      letters: clampInt(b.letters, 0, 231),
+      letters,
       streak: clampInt(b.streak, 0, 9999),
       mask: b.mask,
       nodesDone: clampInt(b.nodesDone, 0, 9999),

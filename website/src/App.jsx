@@ -17,6 +17,7 @@ const Family = lazy(() => import('./pages/Family.jsx'))
 const Teach = lazy(() => import('./pages/Teach.jsx'))
 const Pricing = lazy(() => import('./pages/Pricing.jsx'))
 const PricingSuccess = lazy(() => import('./pages/PricingSuccess.jsx'))
+const Verify = lazy(() => import('./pages/Verify.jsx'))
 
 function NotFound() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/progress" element={<Progress />} />
       <Route path="/family" element={<Family />} />
       <Route path="/teach" element={<Teach />} />
+      <Route path="/verify" element={<Verify />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/pricing/success" element={<PricingSuccess />} />
       {/* legacy aliases from the first launch */}

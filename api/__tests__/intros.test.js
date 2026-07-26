@@ -1,15 +1,16 @@
-/* Introduction requests: parent asks, teacher (claimed by application
-   email) answers, contacts cross only on accept. */
+/* Introduction requests: parent asks, verified teacher (claimed by
+   application email) answers, contacts cross only on accept. */
 import { test, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
 import { createApp } from '../app.js'
 import { store } from '../store.js'
+import { _resetRateLimits } from '../middleware.js'
 
 process.env.ADMIN_TOKEN ||= 'test-admin'
 const app = createApp()
 const admin = { 'x-admin-token': 'test-admin' }
-beforeEach(() => store._reset())
+beforeEach(() => { store._reset(); _resetRateLimits() })
 
 async function approvedTeacher(email = 'teacher@x.com', name = 'Abel') {
   const res = await request(app).post('/api/teachers/apply')
@@ -17,38 +18,34 @@ async function approvedTeacher(email = 'teacher@x.com', name = 'Abel') {
   await request(app).patch(`/api/admin/teachers/${res.body.id}`).set(admin).send({ status: 'approved' })
   return res.body.id
 }
-async function account(email, role = 'parent') {
+async function account(email, { role = 'parent', verify = true } = {}) {
   const reg = await request(app).post('/api/auth/register').send({ name: 'U', email, password: 'longenough1', role })
+  if (verify) await request(app).post('/api/auth/verify').send({ token: store._peekVerifyToken(email) })
   return { auth: { Authorization: `Bearer ${reg.body.token}` } }
 }
 
 test('full lifecycle: request -> teacher inbox -> accept', async () => {
   const teacherId = await approvedTeacher('abel@x.com')
   const parent = await account('mom@x.com')
-  const teacher = await account('abel@x.com', 'teacher')
+  const teacher = await account('abel@x.com', { role: 'teacher' })
 
-  // request requires a message and auth
   assert.equal((await request(app).post(`/api/teachers/${teacherId}/intros`).send({ message: 'hi' })).status, 401)
   assert.equal((await request(app).post(`/api/teachers/${teacherId}/intros`).set(parent.auth).send({})).status, 400)
   const created = await request(app).post(`/api/teachers/${teacherId}/intros`).set(parent.auth)
     .send({ childName: 'Selam', message: 'Two lessons a week, beginner level.' })
   assert.equal(created.status, 201)
-  // no duplicate open requests
   assert.equal((await request(app).post(`/api/teachers/${teacherId}/intros`).set(parent.auth).send({ message: 'again' })).status, 409)
 
-  // parent sees status
   const mine = await request(app).get('/api/my/intros').set(parent.auth)
   assert.equal(mine.body.intros[0].status, 'new')
   assert.equal(mine.body.intros[0].teacherName, 'Abel')
 
-  // teacher dashboard: claimed by matching email; parent contact NOT present
   const me = await request(app).get('/api/teacher/me').set(teacher.auth)
   assert.equal(me.status, 200)
   assert.equal(me.body.teacher.name, 'Abel')
   assert.equal(me.body.intros.length, 1)
   assert.ok(!JSON.stringify(me.body).includes('mom@x.com'), 'parent email must not leak before accept')
 
-  // accept -> status flips; second answer blocked
   const act = await request(app).post(`/api/teacher/intros/${me.body.intros[0].id}`).set(teacher.auth).send({ action: 'accept' })
   assert.equal(act.status, 200)
   assert.equal(act.body.status, 'accepted')
@@ -56,11 +53,21 @@ test('full lifecycle: request -> teacher inbox -> accept', async () => {
   assert.equal((await request(app).get('/api/my/intros').set(parent.auth)).body.intros[0].status, 'accepted')
 })
 
+test('teacher actions require a verified email (anti-takeover)', async () => {
+  await approvedTeacher('abel@x.com')
+  const unverified = await account('abel@x.com', { role: 'teacher', verify: false })
+  // an account on the teacher email that has NOT confirmed it cannot act
+  assert.equal((await request(app).get('/api/teacher/me').set(unverified.auth)).status, 403)
+  // confirming the email unlocks the dashboard
+  await request(app).post('/api/auth/verify').send({ token: store._peekVerifyToken('abel@x.com') })
+  assert.equal((await request(app).get('/api/teacher/me').set(unverified.auth)).status, 200)
+})
+
 test('ownership: only the addressed teacher can answer; non-teachers get 404 dashboards', async () => {
   const teacherId = await approvedTeacher('abel@x.com')
-  const otherId = await approvedTeacher('hana@x.com', 'Hana')
+  await approvedTeacher('hana@x.com', 'Hana')
   const parent = await account('mom2@x.com')
-  const other = await account('hana@x.com', 'teacher')
+  const other = await account('hana@x.com', { role: 'teacher' })
   const rando = await account('rando@x.com')
 
   await request(app).post(`/api/teachers/${teacherId}/intros`).set(parent.auth).send({ message: 'Please teach us' })
@@ -68,11 +75,9 @@ test('ownership: only the addressed teacher can answer; non-teachers get 404 das
   assert.equal(me.body.teacher.name, 'Hana')
   assert.equal(me.body.intros.length, 0, 'requests are scoped to the addressed teacher')
 
-  // Hana cannot answer Abel's request even by guessing ids
   const abelIntro = (await store.listIntrosForTeacher(teacherId))[0]
   assert.equal((await request(app).post(`/api/teacher/intros/${abelIntro.id}`).set(other.auth).send({ action: 'accept' })).status, 404)
   assert.equal((await request(app).get('/api/teacher/me').set(rando.auth)).status, 404)
-  assert.equal(otherId !== teacherId, true)
 })
 
 test('requests to unapproved teachers are rejected', async () => {

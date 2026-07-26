@@ -12,7 +12,7 @@ const LANG_LABEL = { am: 'Amharic', ti: 'Tigrinya', other: 'Other' }
 export function Stars({ avg, count }) {
   if (!count) return <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('teNewTeacher', 'New on the board')}</span>
   return (
-    <span className="inline-flex items-center gap-1 text-sm font-black" aria-label={`${avg} out of 5 stars from ${count} families`}>
+    <span className="inline-flex items-center gap-1 text-sm font-black" role="img" aria-label={`${avg} out of 5 stars from ${count} families`}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Star key={i} className="h-4 w-4" aria-hidden="true"
           style={{ color: 'var(--star)', fill: i <= Math.round(avg) ? 'var(--star)' : 'transparent' }} />
@@ -53,7 +53,7 @@ function IntroForm({ te, onClose }) {
       <textarea required value={message} onChange={(e) => setMessage(e.target.value.slice(0, 1000))} rows={3}
         placeholder={t('inMsg', 'What are you looking for? Age, level, days that work…')} aria-label={t('inMsgL', 'Message to the teacher')}
         className="rounded-xl px-3 py-2.5 text-[16px]" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
-      {state.error && <p className="text-xs font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+      {state.error && <p className="text-xs font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
       <div className="flex gap-2">
         <CtaButton type="submit" tone="green" className="flex-1 !py-2.5 text-sm" disabled={state.status === 'busy'}>
           {state.status === 'busy' ? t('fSending', 'Sending…') : t('inSend', 'Send request')}
@@ -93,11 +93,13 @@ function TeacherCard({ te }) {
         </div>
       </div>
       <div className="mt-3"><Stars avg={te.rating?.avg} count={te.rating?.count} /></div>
-      {te.progress?.verified > 0 && (
+      {te.progress?.show && (
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
-          style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
+          style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}
+          title={t('teVerifiedTip', 'Average new letters that families recorded for their children after linking this teacher.')}>
           <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-          {t('teVerified', '+{n} letters avg - verified progress').replace('{n}', te.progress.avgLettersGained)}
+          {t('teVerified', '+{n} letters/child, reported by {k} families')
+            .replace('{n}', te.progress.avgLettersGained).replace('{k}', te.progress.verified)}
         </p>
       )}
       {te.subjects && (
@@ -145,8 +147,9 @@ function TeacherCard({ te }) {
 }
 
 /* The trust board: owner-vetted teachers with family ratings and
-   progress-verified performance (computed from linked children's saved
-   snapshots - evidence, not claims). Renders once a teacher is approved. */
+   family-reported progress (computed from linked children's own saved
+   gameplay snapshots - real usage, gated on an accepted relationship, but
+   reported by families, not independently audited). Renders once approved. */
 function Directory() {
   const [teachers, setTeachers] = useState([])
   useEffect(() => {
@@ -158,7 +161,7 @@ function Directory() {
   }, [])
   if (teachers.length === 0) return null
   return (
-    <Section mark="ት" eyebrow={t('teDirEyebrow', 'The teacher board')} title={t('teDirTitle', 'Vetted, rated, and progress-verified')} center>
+    <Section mark="ት" eyebrow={t('teDirEyebrow', 'The teacher board')} title={t('teDirTitle', 'Vetted, rated, and progress-tracked')} center>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {teachers.map((te) => <Reveal key={te.id}><TeacherCard te={te} /></Reveal>)}
       </div>
@@ -168,9 +171,9 @@ function Directory() {
           {t('teHowT', 'How this board earns your trust')}
         </h3>
         <ul className="mt-2 space-y-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-          <li>{t('teHow1', 'Vetted: every teacher is reviewed by us before appearing here.')}</li>
-          <li>{t('teHow2', 'Rated: stars come only from families whose child actually learns with the teacher.')}</li>
-          <li>{t('teHow3', 'Verified: the green badge is computed from real saved progress - letters a teacher’s students gained since starting with them. It cannot be bought or self-reported.')}</li>
+          <li>{t('teHow1', 'Vetted: we review every teacher’s application before they appear here. We check their stated background - we do not run formal background checks, so meet and judge for yourself before hiring.')}</li>
+          <li>{t('teHow2', 'Rated: stars come only from families who requested an introduction, had it accepted, and linked their child to the teacher - not from anonymous strangers.')}</li>
+          <li>{t('teHow3', 'Progress-tracked: the green badge shows the average new letters that linked families recorded for their own children through normal app play after starting with this teacher. It only appears once at least two families have measurable gains. It is real usage - stronger than a testimonial - but it is reported by families through the app, not independently audited.')}</li>
         </ul>
       </Card>
       <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
@@ -293,7 +296,7 @@ export default function Teachers() {
               <Field label={t('fMessage', 'Anything else? (optional)')}>
                 <textarea className={inputCls} style={inputStyle} rows={2} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               </Field>
-              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
               <CtaButton type="submit" tone="green" className="justify-center">
                 {state.status === 'busy' ? t('fSending', 'Sending…') : t('teSubmit', 'Send application')}
               </CtaButton>

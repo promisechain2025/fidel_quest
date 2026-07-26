@@ -1,102 +1,128 @@
-/* The trust board: ratings gated on real links, comment moderation, and
-   progress-verified teacher stats computed from linked children's
-   snapshots. */
+/* The trust board: ratings gated on a real (accepted-intro) relationship,
+   comment moderation, and family-reported progress stats. */
 import { test, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import request from 'supertest'
 import { createApp } from '../app.js'
 import { store } from '../store.js'
+import { _resetRateLimits } from '../middleware.js'
 
 process.env.ADMIN_TOKEN ||= 'test-admin'
 const app = createApp()
 const admin = { 'x-admin-token': 'test-admin' }
-beforeEach(() => store._reset())
+beforeEach(() => { store._reset(); _resetRateLimits() })
 
 const MASK = (n) => '1'.repeat(n) + '0'.repeat(33 - n)
-const snap = (day, letters, fams) => ({ day, letters, streak: 1, mask: MASK(fams), nodesDone: fams, nodesTotal: 80 })
+const snap = (day, fams) => ({ day, letters: fams * 7, streak: 1, mask: MASK(fams), nodesDone: fams, nodesTotal: 80 })
+const today = () => new Date().toISOString().slice(0, 10)
+const future = (d) => new Date(Date.now() + 86400000 * d).toISOString().slice(0, 10)
 
-async function approvedTeacher(name = 'Abel') {
+async function verifiedAccount(email, role = 'parent') {
+  const reg = await request(app).post('/api/auth/register').send({ name: 'U', email, password: 'longenough1', role })
+  await request(app).post('/api/auth/verify').send({ token: store._peekVerifyToken(email) })
+  return { auth: { Authorization: `Bearer ${reg.body.token}` } }
+}
+async function approvedTeacher(name, email) {
   const res = await request(app).post('/api/teachers/apply')
-    .send({ name, email: `${name.toLowerCase()}@x.com`, languages: ['am'], subjects: 'Reading', location: 'Addis' })
+    .send({ name, email, languages: ['am'], subjects: 'Reading', location: 'Addis' })
   await request(app).patch(`/api/admin/teachers/${res.body.id}`).set(admin).send({ status: 'approved' })
   return res.body.id
 }
-async function parentWithChild(email, childName) {
-  const reg = await request(app).post('/api/auth/register').send({ name: 'P', email, password: 'longenough1' })
-  const tok = reg.body.token
-  const kid = await request(app).post('/api/children').set({ Authorization: `Bearer ${tok}` }).send({ name: childName })
-  return { tok, childId: kid.body.child.id, auth: { Authorization: `Bearer ${tok}` } }
+/** Establish a real relationship: parent requests, teacher accepts, parent links. */
+async function linkedRelationship({ teacherId, teacherAuth, parentAuth, childId }) {
+  await request(app).post(`/api/teachers/${teacherId}/intros`).set(parentAuth).send({ message: 'Please teach us' })
+  const inbox = await request(app).get('/api/teacher/me').set(teacherAuth)
+  await request(app).post(`/api/teacher/intros/${inbox.body.intros[0].id}`).set(teacherAuth).send({ action: 'accept' })
+  const r = await request(app).put(`/api/children/${childId}/teacher`).set(parentAuth).send({ teacherId })
+  assert.equal(r.status, 200)
 }
 
-test('rating requires a real child-teacher link; one review per parent', async () => {
-  const teacherId = await approvedTeacher()
-  const { auth, childId } = await parentWithChild('p1@x.com', 'Selam')
+test('rating requires an ACCEPTED-intro relationship, not a self-link', async () => {
+  const teacherId = await approvedTeacher('Abel', 'abel@x.com')
+  const teacher = await verifiedAccount('abel@x.com', 'teacher')
+  const parent = await verifiedAccount('p1@x.com')
+  const kid = await request(app).post('/api/children').set(parent.auth).send({ name: 'Selam' })
+  const childId = kid.body.child.id
 
-  // not linked yet -> cannot rate
-  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(auth).send({ stars: 5 })).status, 403)
+  // self-link without an accepted intro is refused
+  assert.equal((await request(app).put(`/api/children/${childId}/teacher`).set(parent.auth).send({ teacherId })).status, 403)
+  // and rating is refused because no link exists
+  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 5 })).status, 403)
 
-  // linking requires an APPROVED teacher
-  assert.equal((await request(app).put(`/api/children/${childId}/teacher`).set(auth).send({ teacherId: 'bogus' })).status, 400)
-  assert.equal((await request(app).put(`/api/children/${childId}/teacher`).set(auth).send({ teacherId })).status, 200)
+  await linkedRelationship({ teacherId, teacherAuth: teacher.auth, parentAuth: parent.auth, childId })
+  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 9 })).status, 400)
+  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 5, comment: 'Wonderful with kids' })).status, 201)
+  // re-rate stars only: replaces the star, keeps the (pending) comment
+  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 4 })).status, 201)
 
-  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(auth).send({ stars: 9 })).status, 400)
-  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(auth).send({ stars: 5, comment: 'Wonderful with kids' })).status, 201)
-  // re-rating replaces, never duplicates
-  assert.equal((await request(app).post(`/api/teachers/${teacherId}/reviews`).set(auth).send({ stars: 4 })).status, 201)
-
-  const dir = await request(app).get('/api/teachers')
-  const te = dir.body.teachers.find((x) => x.id === teacherId)
+  const te = (await request(app).get('/api/teachers')).body.teachers.find((x) => x.id === teacherId)
   assert.deepEqual(te.rating, { avg: 4, count: 1 })
 })
 
-test('comments appear publicly only after owner approval', async () => {
-  const teacherId = await approvedTeacher()
-  const { auth, childId } = await parentWithChild('p2@x.com', 'Nahom')
-  await request(app).put(`/api/children/${childId}/teacher`).set(auth).send({ teacherId })
-  await request(app).post(`/api/teachers/${teacherId}/reviews`).set(auth).send({ stars: 5, comment: 'Patient and joyful' })
+test('comments appear publicly only after owner approval; stars-only re-rate keeps the comment', async () => {
+  const teacherId = await approvedTeacher('Abel', 'abel@x.com')
+  const teacher = await verifiedAccount('abel@x.com', 'teacher')
+  const parent = await verifiedAccount('p2@x.com')
+  const kid = await request(app).post('/api/children').set(parent.auth).send({ name: 'Nahom' })
+  await linkedRelationship({ teacherId, teacherAuth: teacher.auth, parentAuth: parent.auth, childId: kid.body.child.id })
 
+  await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 5, comment: 'Patient and joyful' })
   assert.equal((await request(app).get(`/api/teachers/${teacherId}/reviews`)).body.reviews.length, 0)
   const pending = await request(app).get('/api/admin/pending-comments').set(admin)
   assert.equal(pending.body.items.length, 1)
   await request(app).patch(`/api/admin/reviews/${pending.body.items[0].id}`).set(admin).send({ status: 'approved' })
-  const pub = await request(app).get(`/api/teachers/${teacherId}/reviews`)
-  assert.deepEqual(pub.body.reviews, [{ stars: 5, comment: 'Patient and joyful' }])
+  assert.deepEqual((await request(app).get(`/api/teachers/${teacherId}/reviews`)).body.reviews, [{ stars: 5, comment: 'Patient and joyful' }])
+
+  // stars-only re-rate must not erase the approved comment
+  await request(app).post(`/api/teachers/${teacherId}/reviews`).set(parent.auth).send({ stars: 3 })
+  assert.deepEqual((await request(app).get(`/api/teachers/${teacherId}/reviews`)).body.reviews, [{ stars: 3, comment: 'Patient and joyful' }])
 })
 
-test('progress-verified stats: only post-link snapshot gains count', async () => {
-  const teacherId = await approvedTeacher()
-  const { auth, childId } = await parentWithChild('p3@x.com', 'Ruth')
+test('progress stats: only post-link gains count; badge hidden below the threshold', async () => {
+  const teacherId = await approvedTeacher('Abel', 'abel@x.com')
+  const teacher = await verifiedAccount('abel@x.com', 'teacher')
+  const parent = await verifiedAccount('p3@x.com')
+  const kid = await request(app).post('/api/children').set(parent.auth).send({ name: 'Ruth' })
+  const childId = kid.body.child.id
+  await linkedRelationship({ teacherId, teacherAuth: teacher.auth, parentAuth: parent.auth, childId })
 
-  // history BEFORE the teacher: must not credit the teacher
-  await request(app).post(`/api/children/${childId}/snapshots`).set(auth).send(snap('2020-01-01', 7, 1))
-  await request(app).put(`/api/children/${childId}/teacher`).set(auth).send({ teacherId })
-  // link day is today, so post-link snapshots must be >= today
-  const today = new Date().toISOString().slice(0, 10)
-  const later = new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10)
-  await request(app).post(`/api/children/${childId}/snapshots`).set(auth).send(snap(today, 21, 3))
-  await request(app).post(`/api/children/${childId}/snapshots`).set(auth).send(snap(later, 56, 8))
+  // Multi-day post-link history can't be simulated through the route (the
+  // no-future guard means real gains accrue over real calendar days), so
+  // seed dated snapshots + a past link day directly on the store. The
+  // 2020 snapshot predates the link and must be ignored.
+  const parentUser = await store.findUserByEmail('p3@x.com')
+  const pid = String(parentUser._id)
+  await store.setChildTeacher(pid, childId, teacherId, '2026-06-01')
+  await store.saveSnapshot(pid, childId, snap('2020-01-01', 1))
+  await store.saveSnapshot(pid, childId, snap('2026-06-01', 3))
+  await store.saveSnapshot(pid, childId, snap('2026-06-20', 8))
 
-  const dir = await request(app).get('/api/teachers')
-  const te = dir.body.teachers.find((x) => x.id === teacherId)
+  const te = (await request(app).get('/api/teachers')).body.teachers.find((x) => x.id === teacherId)
   assert.equal(te.progress.students, 1)
   assert.equal(te.progress.verified, 1)
-  assert.equal(te.progress.avgLettersGained, 35, 'gain = 56-21 post-link, ignoring the 2020 snapshot')
-
-  // unlink clears the stats
-  await request(app).put(`/api/children/${childId}/teacher`).set(auth).send({ teacherId: '' })
-  const dir2 = await request(app).get('/api/teachers')
-  assert.equal(dir2.body.teachers.find((x) => x.id === teacherId).progress.students, 0)
+  assert.equal(te.progress.avgLettersGained, 35, 'gain = 56-21 post-link, ignoring 2020')
+  assert.equal(te.progress.show, false, 'one student is below the badge threshold')
 })
 
-test('directory sorts best-evidenced teachers first', async () => {
-  const low = await approvedTeacher('Lulit')
-  const high = await approvedTeacher('Hana')
-  const a = await parentWithChild('p4@x.com', 'A')
-  const b = await parentWithChild('p5@x.com', 'B')
-  await request(app).put(`/api/children/${a.childId}/teacher`).set(a.auth).send({ teacherId: low })
-  await request(app).put(`/api/children/${b.childId}/teacher`).set(b.auth).send({ teacherId: high })
-  await request(app).post(`/api/teachers/${low}/reviews`).set(a.auth).send({ stars: 3 })
-  await request(app).post(`/api/teachers/${high}/reviews`).set(b.auth).send({ stars: 5 })
-  const dir = await request(app).get('/api/teachers')
-  assert.deepEqual(dir.body.teachers.map((t) => t.name), ['Hana', 'Lulit'])
+test('directory ranks by shrunk score: a large 4-star sample beats a single 5-star', async () => {
+  const many = await approvedTeacher('Hana', 'hana@x.com')
+  const one = await approvedTeacher('Lulit', 'lulit@x.com')
+  const manyTeacher = await verifiedAccount('hana@x.com', 'teacher')
+  const oneTeacher = await verifiedAccount('lulit@x.com', 'teacher')
+
+  // Hana: four honest 4-star reviews from four linked families
+  for (let i = 0; i < 4; i++) {
+    const p = await verifiedAccount(`fam${i}@x.com`)
+    const kid = await request(app).post('/api/children').set(p.auth).send({ name: `K${i}` })
+    await linkedRelationship({ teacherId: many, teacherAuth: manyTeacher.auth, parentAuth: p.auth, childId: kid.body.child.id })
+    await request(app).post(`/api/teachers/${many}/reviews`).set(p.auth).send({ stars: 4 })
+  }
+  // Lulit: a single 5-star
+  const solo = await verifiedAccount('solo@x.com')
+  const soloKid = await request(app).post('/api/children').set(solo.auth).send({ name: 'S' })
+  await linkedRelationship({ teacherId: one, teacherAuth: oneTeacher.auth, parentAuth: solo.auth, childId: soloKid.body.child.id })
+  await request(app).post(`/api/teachers/${one}/reviews`).set(solo.auth).send({ stars: 5 })
+
+  const names = (await request(app).get('/api/teachers')).body.teachers.map((t) => t.name)
+  assert.deepEqual(names, ['Hana', 'Lulit'], 'shrunk score ranks the larger honest sample first')
 })

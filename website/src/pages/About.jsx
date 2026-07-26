@@ -58,7 +58,7 @@ export default function About() {
               <Field label={t('fMessage2', 'Message')}>
                 <textarea className={inputCls} style={inputStyle} rows={4} required value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               </Field>
-              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: '#e06c4f' }}>{state.error}</p>}
+              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
               <CtaButton type="submit" tone="green" className="justify-center">
                 {state.status === 'busy' ? t('fSending', 'Sending…') : t('abSend', 'Send message')}
               </CtaButton>

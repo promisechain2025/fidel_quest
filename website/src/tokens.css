@@ -21,6 +21,7 @@
   --tile: #ffcb33;
   --tile-deep: #c68d12;
   --glyph: #7c4f00;
+  --danger: #f2846a;
   --wash: rgba(226, 192, 105, 0.05);
 }
 :root[data-theme="light"] {
@@ -41,6 +42,7 @@
   --tile: #ffc61f;
   --tile-deep: #d99e12;
   --glyph: #7c4f00;
+  --danger: #b23b2e;
   --wash: rgba(124, 79, 0, 0.05);
 }
 @media (prefers-color-scheme: light) {
@@ -48,7 +50,7 @@
     --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #6f6040;
     --card: #fffaf0; --line: #e7dab2; --accent: #c99a33; --accent-deep: #9c7420;
     --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #4e9020; --tile: #ffc61f;
-    --tile-deep: #d99e12; --wash: rgba(124, 79, 0, 0.05);
+    --tile-deep: #d99e12; --danger: #b23b2e; --wash: rgba(124, 79, 0, 0.05);
   }
 }
 
