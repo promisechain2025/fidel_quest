@@ -42,10 +42,12 @@ export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', cla
           <stop offset="0%" stopColor="#eaddbe" /><stop offset="100%" stopColor="#d3c096" />
         </radialGradient>
       </defs>
-      {/* sloped-shoulder body + paws */}
-      <path d="M58,200 Q52,152 86,143 Q118,137 136,152 Q147,166 144,200 Z" fill={`url(#${id('jb')})`} />
-      <ellipse cx={CX - 20} cy="202" rx="12.5" ry="8" fill="#8a7752" />
-      <ellipse cx={CX + 22} cy="202" rx="12.5" ry="8" fill="#8a7752" />
+      {/* body: its top tucks BEHIND the head (drawn first, head over it) so the
+          head sits on the shoulders with no floating gap */}
+      <path d={`M${CX - 47},196 Q${CX - 54},150 ${CX - 32},124 Q${CX},112 ${CX + 32},124 Q${CX + 54},150 ${CX + 47},196 Q${CX},214 ${CX - 47},196 Z`} fill={`url(#${id('jb')})`} />
+      <ellipse cx={CX - 22} cy="202" rx="14" ry="9" fill="#8a7752" />
+      <ellipse cx={CX + 22} cy="202" rx="14" ry="9" fill="#8a7752" />
+      <ellipse cx={CX} cy="165" rx="26" ry="30" fill="#d8c69a" opacity="0.45" />
       {[-1, 1].map(ear)}
       {/* bristly mohawk */}
       {CREST.map((i) => {
