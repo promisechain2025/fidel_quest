@@ -1,27 +1,30 @@
 /* Jibby - authored SVG art. The mischievous (not scary) hyena, the Letter
-   Muncher, drawn on-model with the canvas palette (greige fur, dark crest,
-   spots). Vector; gradient ids namespaced with useId. `expression` is 'grin'
-   (default) or 'agitated' (caught mid-chomp). See docs/art-pipeline.md. */
+   Muncher. Redrawn for character: a projecting spotted snout, tall bristly
+   mohawk, sly side-glance eyes with a cocked brow, and a fanged smirk.
+   On-model sandy-tan palette. Vector; gradient ids namespaced with useId.
+   `expression` is 'grin' (default) or 'agitated' (caught mid-chomp). */
 import { useId } from 'react'
 
 const CX = 100
-const SPOTS = [[62, 68, 6], [136, 58, 5], [146, 86, 4.4], [54, 96, 5]]
+const SPOTS = [[62, 60, 5], [134, 54, 4.5], [144, 80, 3.6], [58, 86, 4], [126, 150, 4.6], [76, 158, 4.2]]
+const CREST = [-3, -2, -1, 0, 1, 2, 3]
 
 export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
   const agit = expression === 'agitated'
   const ear = (s) => (
-    <g key={s} transform={`rotate(${s * 14} ${CX + s * 40} 44)`}>
-      <ellipse cx={CX + s * 40} cy="44" rx="17" ry="24" fill="#8a7d6a" />
-      <ellipse cx={CX + s * 40} cy="48" rx="9.5" ry="15" fill="#57493a" />
+    <g key={s} transform={`rotate(${s * 18} ${CX + s * 43} 48)`}>
+      <ellipse cx={CX + s * 43} cy="48" rx="18" ry="22" fill="#b09668" />
+      <ellipse cx={CX + s * 43} cy="52" rx="10" ry="13.5" fill="#5a4b34" />
     </g>
   )
   const eye = (s) => (
     <g key={s}>
-      <ellipse cx={CX + s * 22} cy="80" rx="11" ry="9.5" fill="#fff" />
-      <circle cx={CX + s * 18} cy="82" r="4.6" fill="#241c12" />
-      <circle cx={CX + s * 16.5} cy="80" r="1.5" fill="#fff" />
+      <ellipse cx={CX + s * 21} cy="80" rx="11" ry="7.5" fill="#fff" transform={`rotate(${s * -8} ${CX + s * 21} 80)`} />
+      <circle cx={CX + s * 21 + 4} cy="82" r="4.6" fill="#241c12" />
+      <circle cx={CX + s * 21 + 2.5} cy="80.5" r="1.5" fill="#fff" />
+      <path d={`M${CX + s * 10},78 Q${CX + s * 21},72 ${CX + s * 32},80`} stroke="#4a3c28" strokeWidth="2.6" fill="none" strokeLinecap="round" />
     </g>
   )
   return (
@@ -29,43 +32,50 @@ export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', cla
       role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
       <title>{title}</title>
       <defs>
-        <radialGradient id={id('jh')} cx="42%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#b0a189" /><stop offset="100%" stopColor="#8f8069" />
+        <radialGradient id={id('jh')} cx="42%" cy="28%" r="78%">
+          <stop offset="0%" stopColor="#cbb789" /><stop offset="100%" stopColor="#a8946a" />
         </radialGradient>
-        <radialGradient id={id('jb')} cx="45%" cy="25%" r="80%">
-          <stop offset="0%" stopColor="#a89a83" /><stop offset="100%" stopColor="#83745f" />
+        <radialGradient id={id('jb')} cx="45%" cy="22%" r="82%">
+          <stop offset="0%" stopColor="#c2ad7d" /><stop offset="100%" stopColor="#9a875f" />
+        </radialGradient>
+        <radialGradient id={id('jm')} cx="50%" cy="34%" r="72%">
+          <stop offset="0%" stopColor="#eaddbe" /><stop offset="100%" stopColor="#d3c096" />
         </radialGradient>
       </defs>
-      {/* body + paws */}
-      <ellipse cx={CX} cy="176" rx="42" ry="30" fill={`url(#${id('jb')})`} />
-      <ellipse cx={CX - 22} cy="198" rx="13" ry="9" fill="#7a6c58" />
-      <ellipse cx={CX + 22} cy="198" rx="13" ry="9" fill="#7a6c58" />
+      {/* sloped-shoulder body + paws */}
+      <path d="M58,200 Q52,152 86,143 Q118,137 136,152 Q147,166 144,200 Z" fill={`url(#${id('jb')})`} />
+      <ellipse cx={CX - 20} cy="202" rx="12.5" ry="8" fill="#8a7752" />
+      <ellipse cx={CX + 22} cy="202" rx="12.5" ry="8" fill="#8a7752" />
       {[-1, 1].map(ear)}
-      {/* scruffy crest */}
-      {[-2, -1, 0, 1, 2].map((i) => (
-        <path key={i} d={`M${CX + i * 12 - 7},40 L${CX + i * 12},14 L${CX + i * 12 + 7},40 Z`} fill="#57493a" />
-      ))}
-      {/* head + spots */}
-      <circle cx={CX} cy="86" r="56" fill={`url(#${id('jh')})`} />
-      {SPOTS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#6e614f" opacity="0.8" />)}
-      {/* heavy brow */}
-      <path d={`M${CX - 32},60 Q${CX},50 ${CX + 32},60`} stroke="#57493a" strokeWidth="6" fill="none" strokeLinecap="round" />
+      {/* bristly mohawk */}
+      {CREST.map((i) => {
+        const h = 24 - Math.abs(i) * 3
+        return <path key={i} d={`M${CX + i * 10 - 6},46 L${CX + i * 10 - 1},${46 - h} L${CX + i * 10 + 6},46 Z`} fill="#5a4b34" />
+      })}
+      {/* cranium + spots */}
+      <circle cx={CX} cy="82" r="50" fill={`url(#${id('jh')})`} />
+      {SPOTS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#7c6a4a" opacity="0.7" />)}
+      {/* rounded projecting snout + bridge */}
+      <ellipse cx={CX} cy="112" rx="27" ry="23" fill={`url(#${id('jm')})`} />
+      <path d={`M${CX - 6},72 Q${CX},68 ${CX + 6},72 L${CX + 7},100 Q${CX},104 ${CX - 7},100 Z`} fill="#dccaa0" opacity="0.6" />
+      {/* nose */}
+      <ellipse cx={CX} cy="103" rx="9.5" ry="6.5" fill="#2f2415" />
+      <ellipse cx={CX - 3} cy="101" rx="2.4" ry="1.5" fill="#5a4a30" />
+      {/* sly cocked brows */}
+      <path d={`M${CX - 31},63 Q${CX - 19},58 ${CX - 7},64`} stroke="#5a4b34" strokeWidth="4.5" fill="none" strokeLinecap="round" />
+      <path d={`M${CX + 9},58 Q${CX + 21},54 ${CX + 31},62`} stroke="#5a4b34" strokeWidth="4.5" fill="none" strokeLinecap="round" />
       {[-1, 1].map(eye)}
-      {/* muzzle + nose */}
-      <ellipse cx={CX} cy="116" rx="33" ry="25" fill="#c9b99d" />
-      <ellipse cx={CX} cy="102" rx="9" ry="6" fill="#3a2d1c" />
       {/* mouth */}
       {agit ? (
         <>
-          <ellipse cx={CX} cy="132" rx="24" ry="16" fill="#3a2216" />
-          {[0, 1, 2].map((i) => (
-            <path key={i} d={`M${CX - 16 + i * 16},118 L${CX - 8 + i * 16},132 L${CX + i * 16},118 Z`} fill="#fff" />
-          ))}
+          <path d={`M${CX - 20},124 Q${CX},116 ${CX + 20},124 Q${CX + 14},150 ${CX},152 Q${CX - 14},150 ${CX - 20},124 Z`} fill="#3a2216" />
+          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 13},124 L${CX + s * 8},134 L${CX + s * 4},124 Z`} fill="#fff" />)}
+          <ellipse cx={CX} cy="146" rx="8" ry="5" fill="#e58aa0" />
         </>
       ) : (
         <>
-          <path d={`M${CX - 22},120 q22,20 44,0`} stroke="#3a2d1c" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-          <path d={`M${CX - 14},124 l5,8 5,-8 z M${CX + 4},124 l5,8 5,-8 z`} fill="#fff" />
+          <path d={`M${CX - 17},121 Q${CX - 2},127 ${CX + 18},118`} stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <path d={`M${CX + 7},121 L${CX + 11},130 L${CX + 15},120 Z`} fill="#fff" />
         </>
       )}
     </svg>

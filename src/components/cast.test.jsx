@@ -9,12 +9,13 @@ describe('authored cast SVGs', () => {
     expect(container.querySelector('svg')).toBeTruthy()
     expect(getByLabelText('Kokeb')).toBeTruthy()
   })
-  it('Jibby renders and switches teeth between grin and agitated', () => {
+  it('Jibby switches between a fanged smirk and an open, tongue-out maw', () => {
     const grin = render(<JibbySvg expression="grin" />).container.innerHTML
     const agit = render(<JibbySvg expression="agitated" />).container.innerHTML
-    // agitated draws the wide dark maw ellipse the grin lacks
-    expect(grin).not.toContain('rx="24" ry="16"')
-    expect(agit).toContain('rx="24" ry="16"')
+    // only the agitated maw draws the pink tongue; only the grin draws the smirk stroke
+    expect(grin).not.toContain('#e58aa0')
+    expect(agit).toContain('#e58aa0')
+    expect(grin).toContain('stroke-width="3.2"')
   })
   it('two Jibby instances get distinct gradient ids', () => {
     const { container } = render(<div><JibbySvg /><JibbySvg /></div>)
