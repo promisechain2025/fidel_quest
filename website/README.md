@@ -38,15 +38,18 @@ src/
 Light + dark themes follow the visitor's system preference; the header toggle
 persists a choice in `egz.site.theme` (set before paint in `index.html`).
 
-## Family Pack payments
+## Payments (/pricing)
 
-`/family-pack` sells the app's Family Pack via Stripe Checkout on the hub API
-(`../api` - see its README for `STRIPE_*` env). The flow: buy button ->
-`POST /api/pay/checkout` -> Stripe hosted page -> `/family-pack/success` polls
-`GET /api/pay/order/:sessionId` and shows the FAM unlock code the buyer enters
-in the app's Grown-ups corner. With no `VITE_API_URL` or while the API has no
-Stripe keys, the page shows a coming-soon state instead of a buy button.
-Point the app's `VITE_FAMILY_PACK_URL` at this page when it goes live.
+`/pricing` sells two one-time products via Stripe Checkout on the hub API
+(`../api` - see its README for `STRIPE_*` env): the app itself ($12.99,
+delivered as an EGZ code redeemable on every platform - never pay twice) and
+the Family Pack add-on ($4.99, FAM code). Buy button ->
+`POST /api/pay/checkout {product}` -> Stripe hosted page -> `/pricing/success`
+polls `GET /api/pay/order/:sessionId` and shows the code with product-specific
+redeem steps. With no `VITE_API_URL` or while the API has no Stripe keys, the
+page shows a coming-soon state. Point the app's `VITE_BUY_URL` and
+`VITE_FAMILY_PACK_URL` at this page when it goes live. Legacy `/family-pack`
+URLs alias to `/pricing`.
 
 ## Brand assets
 

@@ -5,20 +5,33 @@ import { Card, CtaButton, Reveal } from '../components.jsx'
 import { API_URL, APP_URL, CONTACT_EMAIL } from '../config.js'
 import { t } from '../i18n.js'
 
+const STEPS = {
+  app: [
+    ['fpsA1', 'Open eGeez - when it asks about buying, tap for a grown-up.'],
+    ['fpsA2', 'Choose "Have a code?" and enter it.'],
+    ['fpsA3', 'That is it - the whole journey is unlocked. The same code works in the store apps too.'],
+  ],
+  family_pack: [
+    ['fpsS1', 'Open eGeez and tap the Grown-ups corner.'],
+    ['fpsS2', 'Choose Family Pack and enter the code.'],
+    ['fpsS3', 'Add a profile for each child - up to six.'],
+  ],
+}
+
 /* Polls the order endpoint with backoff until the webhook (or the inline
    fallback) has minted the code. */
-export default function FamilyPackSuccess() {
+export default function PricingSuccess() {
   const [params] = useSearchParams()
   const sessionId = params.get('session_id') || ''
-  const [state, setState] = useState({ status: 'loading', code: '', error: '' })
+  const [state, setState] = useState({ status: 'loading', code: '', product: 'app', error: '' })
   const [copied, setCopied] = useState(false)
   const tries = useRef(0)
 
-  useEffect(() => { document.title = 'Your Family Pack code - eGeez' }, [])
+  useEffect(() => { document.title = 'Your unlock code - eGeez' }, [])
 
   useEffect(() => {
     if (!sessionId || !API_URL) {
-      setState({ status: 'error', code: '', error: t('fpsNoSession', 'Missing order reference. Check the email receipt for your code.') })
+      setState((s) => ({ ...s, status: 'error', error: t('fpsNoSession', 'Missing order reference. Check the email receipt for your code.') }))
       return undefined
     }
     let stop = false
@@ -29,15 +42,15 @@ export default function FamilyPackSuccess() {
         const res = await fetch(`${API_URL}/api/pay/order/${encodeURIComponent(sessionId)}`)
         const json = await res.json().catch(() => ({}))
         if (res.ok && json.status === 'paid' && json.code) {
-          setState({ status: 'done', code: json.code, error: '' })
+          setState({ status: 'done', code: json.code, product: json.product || 'app', error: '' })
           return
         }
         if (res.status === 404 || res.status === 400) throw new Error(t('fpsNotFound', 'We could not find this order.'))
       } catch (err) {
-        if (tries.current > 8) { setState({ status: 'error', code: '', error: err.message }); return }
+        if (tries.current > 8) { setState((s) => ({ ...s, status: 'error', error: err.message })); return }
       }
       if (tries.current > 12) {
-        setState({ status: 'error', code: '', error: t('fpsSlow', 'This is taking longer than usual. Your code will arrive by email - or contact us.') })
+        setState((s) => ({ ...s, status: 'error', error: t('fpsSlow', 'This is taking longer than usual. Your code will arrive by email - or contact us.') }))
         return
       }
       setTimeout(poll, Math.min(1000 * 2 ** Math.floor(tries.current / 3), 8000))
@@ -49,6 +62,7 @@ export default function FamilyPackSuccess() {
   const copy = async () => {
     try { await navigator.clipboard.writeText(state.code); setCopied(true); setTimeout(() => setCopied(false), 1600) } catch { /* older browsers */ }
   }
+  const steps = STEPS[state.product] || STEPS.app
 
   return (
     <div className="mx-auto max-w-xl px-5 pb-10 pt-12 text-center sm:px-6 md:pt-16">
@@ -67,7 +81,9 @@ export default function FamilyPackSuccess() {
           )}
           {state.status === 'done' && (
             <>
-              <p className="text-center text-xs font-black uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>{t('fpsCodeLabel', 'Your Family Pack code')}</p>
+              <p className="text-center text-xs font-black uppercase tracking-[0.2em]" style={{ color: 'var(--accent)' }}>
+                {state.product === 'family_pack' ? t('fpsCodeLabelPack', 'Your Family Pack code') : t('fpsCodeLabelApp', 'Your eGeez unlock code')}
+              </p>
               <div className="mt-3 flex items-center justify-center gap-3">
                 <span className="rounded-2xl px-5 py-3 text-3xl font-black tracking-[0.14em]"
                   style={{ background: 'var(--paper)', border: '2px solid var(--accent)', color: 'var(--ink)' }}>
@@ -82,14 +98,10 @@ export default function FamilyPackSuccess() {
                 <Mail className="h-3.5 w-3.5" aria-hidden="true" /> {t('fpsEmailed', 'Also sent to your email - keep it for reinstalls.')}
               </p>
               <ol className="mt-6 space-y-3 text-sm leading-relaxed">
-                {[
-                  t('fpsS1', 'Open eGeez and tap the Grown-ups corner.'),
-                  t('fpsS2', 'Choose Family Pack and enter the code.'),
-                  t('fpsS3', 'Add a profile for each child - up to six.'),
-                ].map((s, i) => (
-                  <li key={i} className="flex gap-3">
+                {steps.map(([key, fallback], i) => (
+                  <li key={key} className="flex gap-3">
                     <span className="lt flex-none" style={{ width: 26, height: 26, fontSize: 13, fontFamily: 'inherit' }}>{i + 1}</span>
-                    <span>{s}</span>
+                    <span>{t(key, fallback)}</span>
                   </li>
                 ))}
               </ol>
@@ -103,7 +115,7 @@ export default function FamilyPackSuccess() {
               <p className="font-black" role="alert">{state.error}</p>
               <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
                 {t('fpsHelp', 'Need a hand?')}{' '}
-                <a className="underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Family Pack order help')}&body=${encodeURIComponent(`Order reference: ${sessionId}`)}`}>{CONTACT_EMAIL}</a>
+                <a className="underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('eGeez order help')}&body=${encodeURIComponent(`Order reference: ${sessionId}`)}`}>{CONTACT_EMAIL}</a>
               </p>
             </div>
           )}
@@ -111,7 +123,7 @@ export default function FamilyPackSuccess() {
       </Reveal>
 
       <p className="mt-6 text-sm" style={{ color: 'var(--muted)' }}>
-        <Link to="/family-pack" className="underline">{t('fpsBack', 'Back to Family Pack')}</Link>
+        <Link to="/pricing" className="underline">{t('fpsBackPr', 'Back to pricing')}</Link>
       </p>
     </div>
   )

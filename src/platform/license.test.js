@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { licenseState, markAsked, grantFeedbackGrace, markSupported, daysSince, TRIAL_DAYS, FEEDBACK_GRACE_DAYS } from './license'
+import { licenseState, markAsked, grantFeedbackGrace, markSupported, redeemAppCode, daysSince, TRIAL_DAYS, FEEDBACK_GRACE_DAYS, APP_PRICE } from './license'
+import { mintAppCode, isValidAppCode } from './appCodes'
 
-// The trial only exists when monetization is ON, on WEB; monetize=true native=false.
+// The trial exists when monetization is ON and the platform can sell:
+// web always; native only once RevenueCat is live (storeSellable).
 const web = (today) => licenseState(today, true, false)
 
 describe('license (honest free trial)', () => {
@@ -13,10 +15,34 @@ describe('license (honest free trial)', () => {
     expect(s.shouldAsk).toBe(false)
   })
 
-  it('paid-app model: the native store build is licensed (bought at download)', () => {
-    const s = licenseState('2026-07-10', true, true)
+  it('native build without live IAP stays licensed (nothing to sell yet)', () => {
+    const s = licenseState('2026-07-10', true, true, false)
     expect(s.phase).toBe('licensed')
     expect(s.shouldAsk).toBe(false)
+  })
+
+  it('native build WITH live IAP runs the same trial as the web', () => {
+    const s = licenseState('2026-07-10', true, true, true)
+    expect(s.phase).toBe('trial')
+    expect(s.daysLeft).toBe(TRIAL_DAYS)
+    expect(licenseState('2026-09-01', true, true, true).phase).toBe('ended')
+  })
+
+  it('EGZ codes: mint validates, tampering fails, redeeming licenses forever', () => {
+    const code = mintAppCode('ABCD')
+    expect(isValidAppCode(code)).toBe(true)
+    expect(isValidAppCode('egz abcd' + code.slice(-1))).toBe(isValidAppCode(code)) // normalization
+    expect(isValidAppCode(code.slice(0, -1) + (code.endsWith('A') ? 'B' : 'A'))).toBe(false)
+    expect(isValidAppCode('FAMABCD')).toBe(false) // a Family Pack code is not an app code
+    web('2026-07-01')
+    expect(redeemAppCode('nonsense')).toBe(false)
+    expect(web('2026-08-01').phase).toBe('ended')
+    expect(redeemAppCode(code)).toBe(true)
+    expect(web('2027-01-01').phase).toBe('licensed')
+  })
+
+  it('exposes a display price', () => {
+    expect(APP_PRICE).toMatch(/\d/)
   })
 
   it('first open starts a full trial', () => {

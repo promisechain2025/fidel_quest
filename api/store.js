@@ -32,7 +32,7 @@ function buildModels() {
     sessionId: { type: String, required: true, unique: true },
     code: { type: String, required: true, unique: true },
     email: String,
-    product: { type: String, default: 'family_pack' },
+    product: { type: String, default: 'app' },
     status: { type: String, default: 'paid' },
   }, { timestamps: true })
   return {
@@ -118,7 +118,7 @@ export const store = {
       Mongo: $setOnInsert upsert against the unique sessionId index.
       Memory: synchronous check-and-push (no await between find and push),
       atomic on Node's single-threaded event loop. */
-  async createOrderIfAbsent({ sessionId, email, code, product = 'family_pack' }) {
+  async createOrderIfAbsent({ sessionId, email, code, product = 'app' }) {
     if (useMongo) {
       const res = await M.Order.findOneAndUpdate(
         { sessionId },

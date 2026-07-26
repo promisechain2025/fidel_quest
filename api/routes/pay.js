@@ -17,7 +17,7 @@ import config from '../config.js'
 import { store } from '../store.js'
 import { sendTo, notifyOwner } from '../mailer.js'
 import { rateLimit } from '../middleware.js'
-import { mintRandomFamilyCode } from '../familyCode.js'
+import { mintRandomCode, CODE_PREFIX, APP_CODE_PREFIX } from '../familyCode.js'
 
 const checkoutLimit = rateLimit({ max: 10, key: 'pay-checkout' })
 // The success page polls this - generous on purpose (the forms bucket would
@@ -27,7 +27,38 @@ const orderLimit = rateLimit({ max: 300, key: 'pay-order' })
 const secretKey = () => process.env.STRIPE_SECRET_KEY || ''
 const webhookSecret = () => process.env.STRIPE_WEBHOOK_SECRET || ''
 const siteUrl = () => (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
-const priceCents = () => Number(process.env.FAMILY_PACK_PRICE_CENTS || 499)
+
+/* Two one-time products: the app itself, and the Family Pack add-on.
+   Prices/dashboard Price ids are env-driven; codes redeem in the app
+   (EGZ: SupportAsk "Have a code?"; FAM: Grown-ups Family Pack input) on
+   any platform - buy once, never twice. */
+const PRODUCTS = {
+  app: {
+    prefix: APP_CODE_PREFIX,
+    name: 'eGeez - the full app',
+    description: 'One-time unlock of the whole eGeez journey, on web and in the mobile apps. Delivered as an EGZ unlock code.',
+    cents: () => Number(process.env.APP_PRICE_CENTS || 1299),
+    priceId: () => process.env.STRIPE_PRICE_ID_APP || '',
+    redeemHint: [
+      'To activate: open eGeez, and when it asks, choose "Have a code?"',
+      'and enter it. One code unlocks the app on web and in the store',
+      'builds - you never pay twice.',
+    ],
+  },
+  family_pack: {
+    prefix: CODE_PREFIX,
+    name: 'eGeez Family Pack',
+    description: 'One-time add-on: a separate learning path for every child in the family (up to 6) on one device. Delivered as a FAM unlock code.',
+    cents: () => Number(process.env.FAMILY_PACK_PRICE_CENTS || 499),
+    priceId: () => process.env.STRIPE_PRICE_ID_FAMILY || process.env.STRIPE_PRICE_ID || '',
+    redeemHint: [
+      'To activate: open eGeez, go to the Grown-ups corner, choose',
+      'Family Pack, and enter the code. One code unlocks profiles for',
+      'every child in your family on that device.',
+    ],
+  },
+}
+const productOf = (key) => PRODUCTS[key] || PRODUCTS.app
 
 /* Lazy + injectable client: read env at request time (requireAdminToken
    pattern) and let tests pass a fake via createApp({ stripeClient }). */
@@ -41,9 +72,9 @@ function stripeClient() {
   return cached
 }
 
-async function mintUniqueCode() {
+async function mintUniqueCode(prefix) {
   for (let i = 0; i < 20; i++) {
-    const code = mintRandomFamilyCode()
+    const code = mintRandomCode(prefix)
     if (!(await store.orderCodeExists(code))) return code
   }
   // 31^4 payloads; 20 straight collisions means the space is nearly spent.
@@ -52,24 +83,24 @@ async function mintUniqueCode() {
 
 /** The one fulfillment path. Returns the order; emails only on first claim. */
 async function fulfill(session) {
+  const productKey = PRODUCTS[session.metadata?.product] ? session.metadata.product : 'app'
+  const product = productOf(productKey)
   const email = session.customer_details?.email || session.customer_email || ''
-  const code = await mintUniqueCode()
+  const code = await mintUniqueCode(product.prefix)
   const { order, created } = await store.createOrderIfAbsent({
-    sessionId: session.id, email, code,
+    sessionId: session.id, email, code, product: productKey,
   })
   if (created) {
-    sendTo(email, 'Your eGeez Family Pack code', [
+    sendTo(email, `Your ${product.name} unlock code`, [
       'Thank you for supporting eGeez!',
       '',
-      `Your Family Pack unlock code: ${order.code}`,
+      `Your unlock code: ${order.code}`,
       '',
-      'To activate: open eGeez, go to the Grown-ups corner, choose',
-      `Family Pack, and enter the code. One code unlocks profiles for`,
-      'every child in your family on that device.',
+      ...product.redeemHint,
       '',
       'Keep this email - the code also works after a reinstall.',
     ])
-    notifyOwner('Family Pack sold - eGeez', [`Order: ${order.sessionId}`, `Buyer: ${email || '-'}`, `Code: ${order.code}`])
+    notifyOwner(`${product.name} sold`, [`Order: ${order.sessionId}`, `Buyer: ${email || '-'}`, `Code: ${order.code}`])
   }
   return order
 }
@@ -103,11 +134,13 @@ export function webhookHandler() {
 /* --- JSON routes (mounted with the normal /api router) ------------------ */
 const router = Router()
 
-router.post('/pay/checkout', checkoutLimit, async (_req, res, next) => {
+router.post('/pay/checkout', checkoutLimit, async (req, res, next) => {
   try {
     const stripe = stripeClient()
     if (!stripe) return res.status(503).json({ error: 'Payments are not live yet', dormant: true })
-    const priceId = process.env.STRIPE_PRICE_ID || ''
+    const productKey = PRODUCTS[req.body?.product] ? req.body.product : 'app'
+    const product = productOf(productKey)
+    const priceId = product.priceId()
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [priceId
@@ -116,17 +149,14 @@ router.post('/pay/checkout', checkoutLimit, async (_req, res, next) => {
             quantity: 1,
             price_data: {
               currency: 'usd',
-              unit_amount: priceCents(),
-              product_data: {
-                name: 'eGeez Family Pack',
-                description: 'One-time unlock: a separate learning path for every child in the family (up to 6) on one device.',
-              },
+              unit_amount: product.cents(),
+              product_data: { name: product.name, description: product.description },
             },
           }],
-      metadata: { product: 'family_pack' },
+      metadata: { product: productKey },
       // {CHECKOUT_SESSION_ID} must stay literal - Stripe substitutes it.
-      success_url: `${siteUrl()}/family-pack/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl()}/family-pack`,
+      success_url: `${siteUrl()}/pricing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl()}/pricing`,
     })
     res.json({ url: session.url })
   } catch (err) { next(err) }
@@ -137,7 +167,7 @@ router.get('/pay/order/:sessionId', orderLimit, async (req, res, next) => {
     const { sessionId } = req.params
     if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return res.status(400).json({ error: 'Bad session id' })
     const existing = await store.findOrderBySessionId(sessionId)
-    if (existing) return res.json({ status: 'paid', code: existing.code })
+    if (existing) return res.json({ status: 'paid', code: existing.code, product: existing.product || 'app' })
     // Inline fallback for delayed/missed webhooks: ask Stripe directly and
     // fulfill through the same atomic claim.
     const stripe = stripeClient()
@@ -146,7 +176,7 @@ router.get('/pay/order/:sessionId', orderLimit, async (req, res, next) => {
     if (!session) return res.status(404).json({ error: 'Order not found' })
     if (!paidStatus(session)) return res.json({ status: session.payment_status || 'pending' })
     const order = await fulfill(session)
-    res.json({ status: 'paid', code: order.code })
+    res.json({ status: 'paid', code: order.code, product: order.product || 'app' })
   } catch (err) { next(err) }
 })
 

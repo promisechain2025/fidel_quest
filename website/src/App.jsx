@@ -7,8 +7,8 @@ import Tigrinya from './pages/Tigrinya.jsx'
 import Teachers from './pages/Teachers.jsx'
 import Homeschool from './pages/Homeschool.jsx'
 import About from './pages/About.jsx'
-import FamilyPack from './pages/FamilyPack.jsx'
-import FamilyPackSuccess from './pages/FamilyPackSuccess.jsx'
+import Pricing from './pages/Pricing.jsx'
+import PricingSuccess from './pages/PricingSuccess.jsx'
 
 function NotFound() {
   return (
@@ -32,8 +32,11 @@ export default function App() {
       <Route path="/tigrinya" element={<Tigrinya />} />
       <Route path="/teachers" element={<Teachers />} />
       <Route path="/homeschool" element={<Homeschool />} />
-      <Route path="/family-pack" element={<FamilyPack />} />
-      <Route path="/family-pack/success" element={<FamilyPackSuccess />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/pricing/success" element={<PricingSuccess />} />
+      {/* legacy aliases from the first launch */}
+      <Route path="/family-pack" element={<Pricing />} />
+      <Route path="/family-pack/success" element={<PricingSuccess />} />
       <Route path="/about" element={<About />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

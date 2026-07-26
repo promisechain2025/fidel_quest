@@ -23,10 +23,10 @@ export default function Home() {
               {t('heroLede', 'eGeez is a learning home for Ethiopian and Eritrean families anywhere in the world: a joyful app that teaches kids to read Amharic and Tigrinya, tools for remote teachers, and guidance for homeschooling - the first step toward learning every subject, together.')}
             </p>
             <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center md:justify-start">
-              <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start learning free')}</CtaButton>
+              <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start the free try-out')}</CtaButton>
               <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
             </div>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed to start. Made for ages 3-9.')}</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Try free, then $12.99 once - on every platform. Ages 3-9.')}</p>
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
@@ -53,7 +53,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-                {t('amBlurb', 'A complete journey: all 231 letters, first words, decodable stories, tracing, songs, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends.')}
+                {t('amBlurb', 'A complete journey: all 231 letters, first words, decodable stories, tracing, songs, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
               </p>
               <div className="mt-5"><CtaButton to="/amharic" tone="gold">{t('amCta', 'See the Amharic journey')}</CtaButton></div>
             </Card>

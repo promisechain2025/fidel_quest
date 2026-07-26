@@ -1,23 +1,27 @@
 /* ============================================================================
-   LICENSE — the honest free-trial engine
+   LICENSE — the honest paid-app engine
    ----------------------------------------------------------------------------
    MONETIZATION SWITCH. By default eGeez is FULLY FREE: no trial, no asks, no
    purchase UI anywhere (VITE_MONETIZE unset). This is the mode to ship while
-   purchases are not ready - the app is free for everyone, on web AND in the
-   stores, and carries no in-app-purchase / RevenueCat surface for review.
+   purchases are not ready.
 
-   Set VITE_MONETIZE=true to turn on the PAID-APP flow: the store app is a PAID
-   download (price set in the consoles) and unlocks the moment it is installed,
-   while the WEB/PWA gives everyone a free TRIAL (VITE_TRIAL_DAYS, default 3) so
-   they can fall in love before day 3, then are asked to buy the paid app. No
-   in-app purchase is required - Apple/Google take the payment at download.
-   There is no server and no account, so nothing here is enforcement - it is an
-   honest daily ask around three truths:
-     1. A parent who can pay gets a one-tap in-app purchase.
+   Set VITE_MONETIZE=true to turn on the PAID-APP flow: eGeez costs APP_PRICE
+   (default $12.99) ONCE, on every platform, and add-on packs (Family Pack,
+   future language packs) sit on top. The store apps are FREE downloads with a
+   full_app in-app unlock (RevenueCat, platform/iap.js); the web sells through
+   the website (Stripe) which delivers an EGZ unlock code (appCodes.js).
+   BUY ONCE, NEVER TWICE: an EGZ code redeems on web AND in the store builds,
+   and a store purchase restores through the store - the same family never
+   pays for the app twice. Everyone gets a free TRIAL first (VITE_TRIAL_DAYS,
+   default 3) so they can fall in love before paying.
+
+   There is no server and no account, so nothing here is enforcement - it is
+   an honest daily ask around three truths:
+     1. A parent who can pay gets a one-tap purchase (store IAP or web).
      2. A parent who will not pay is still valuable: ask for honest feedback,
         thanked with more free days.
      3. A family with no way to pay locally can ask a relative abroad to gift
-        it (the diaspora gift loop).
+        it (the diaspora gift loop / a code bought on the website).
 
    The child is never blocked mid-lesson: the ask appears at most once per
    calendar day, on the home screen, and always has a "Not now".
@@ -29,6 +33,8 @@
 import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
+import { iapAvailable } from './storeEnv'
+import { isValidAppCode } from './appCodes'
 
 const KEY = 'fq.license.v1'
 
@@ -38,6 +44,9 @@ const envInt = (v, fallback) => {
 }
 export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 3)
 export const FEEDBACK_GRACE_DAYS = 4
+
+/** Display price of the app - one-time, every platform. */
+export const APP_PRICE = (import.meta.env?.VITE_APP_PRICE || '$12.99').trim()
 
 /** Master switch. Purchases (trial, buy, Family Pack, gift) are OFF unless
     VITE_MONETIZE is explicitly enabled - so the default build is free. */
@@ -70,10 +79,14 @@ function addDaysStamp(day, n) {
 
 /** The current license picture. Starts the trial clock on first call.
     - monetization OFF (default): the app is simply free/licensed everywhere.
-    - monetization ON, NATIVE: paid at download -> licensed (no trial, no ask).
-    - monetization ON, WEB/PWA: the free trial runs, then the once-a-day ask. */
-export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform()) {
-  if (!monetize || native) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
+    - monetization ON, NATIVE without live IAP (no RevenueCat key): licensed -
+      the free-download build cannot sell yet, so it must not nag (dormant
+      convention).
+    - monetization ON, everywhere else (web, or native with IAP live): the
+      free trial runs, then the once-a-day ask - until `supported` is set by
+      a purchase, a restore, or an EGZ code. */
+export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform(), storeSellable = iapAvailable()) {
+  if (!monetize || (native && !storeSellable)) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const s = load()
   if (!s.startDay) {
     s.startDay = today
@@ -113,4 +126,12 @@ export function markSupported(source = 'unknown') {
   const s = load()
   s.supported = source || true
   save(s)
+}
+
+/** Redeem an EGZ unlock code (bought on the website, or gifted). Works on
+    every platform - this is the "never pay twice" bridge. */
+export function redeemAppCode(raw) {
+  if (!isValidAppCode(raw)) return false
+  markSupported('code')
+  return true
 }

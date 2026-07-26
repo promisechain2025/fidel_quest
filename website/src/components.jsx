@@ -114,7 +114,7 @@ const NAV = [
   ['/tigrinya', 'Tigrinya'],
   ['/teachers', 'For teachers'],
   ['/homeschool', 'Homeschool'],
-  ['/family-pack', 'Family Pack'],
+  ['/pricing', 'Pricing'],
   ['/about', 'About'],
 ]
 

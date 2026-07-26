@@ -38,23 +38,24 @@ export default function Amharic() {
         </div>
       </Section>
 
-      <Section mark="ነ" eyebrow={t('amForEyebrow', 'For families')} title={t('amForTitle', 'Free to learn, fair to families')}>
+      <Section mark="ነ" eyebrow={t('amForEyebrow', 'For families')} title={t('amForTitle', 'Try it free, own it forever')}>
         <div className="grid gap-5 md:grid-cols-2">
-          <Card>
-            <h3 className="font-black">{t('amFree', 'Free')}</h3>
+          <Card wash>
+            <h3 className="font-black">{t('amOwn', 'The app - $12.99 once')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('amFreeB', 'The learning journey is free to play: letters, games, daily practice. It works offline and never shows ads or collects a child’s data.')}
+              {t('amOwnB', 'Start with a free try-out, no account needed. Then one purchase owns the entire journey - every letter, game, and story. No ads, no subscription, no child data, works offline. Buy on the web or in the store: one payment counts everywhere.')}
             </p>
           </Card>
           <Card>
-            <h3 className="font-black">{t('amPack', 'Family Pack')}</h3>
+            <h3 className="font-black">{t('amPack', 'Add-on packs')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('amPackB', 'One purchase for the whole household: separate profiles and progress for each child. That is it - no subscriptions for the basics.')}
+              {t('amPackB2', 'Extras sit on top the same way, one-time: the Family Pack ($4.99) gives each sibling their own profile and progress, and future language packs - Tigrinya first - will join as add-ons.')}
             </p>
           </Card>
         </div>
-        <div className="mt-8 text-center">
-          <CtaButton href={APP_URL} tone="gold">{t('amOpen2', 'Start the journey')}</CtaButton>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <CtaButton href={APP_URL} tone="gold">{t('amOpen2', 'Start the free try-out')}</CtaButton>
+          <CtaButton to="/pricing" tone="ghost">{t('amSeePricing', 'See pricing')}</CtaButton>
         </div>
       </Section>
     </>

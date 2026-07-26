@@ -30,6 +30,17 @@ Copy `.env.example` to `.env` for production: MongoDB Atlas URI, a real
 `JWT_SECRET`, gmail app password for notifications, an `ADMIN_TOKEN`, and the
 website origin in `CORS_ORIGIN`.
 
+## Payments
+
+Stripe Checkout sells two one-time products (`POST /api/pay/checkout` with
+`{product: 'app' | 'family_pack'}`, $12.99 / $4.99 via `APP_PRICE_CENTS` /
+`FAMILY_PACK_PRICE_CENTS` or dashboard Price ids). Fulfillment mints an
+unlock code with the app's own algorithms (EGZ for the app, FAM for the
+pack), stores an Order, and emails the buyer - idempotently across webhook
+retries and the success-page poll. Dormant until `STRIPE_SECRET_KEY` +
+`STRIPE_WEBHOOK_SECRET` are set; production refuses to sell from the
+in-memory store.
+
 ## Design notes
 
 - `store.js` is the only file that knows about persistence: Mongo (mongoose)
