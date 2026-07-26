@@ -859,7 +859,12 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     // (?unlock) data - it must not leave anything behind.
                     clearLedger()
                     resetEverything()
-                    setConfirmReset(false)
+                    // Reload so every screen rebuilds from the now-empty
+                    // storage. The running app holds canonical progress in
+                    // React state (the same reason profile switch and progress
+                    // import reload) - without this the live Journey re-persists
+                    // itself and the reset appears to do nothing.
+                    try { window.location.reload() } catch { setConfirmReset(false) }
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
