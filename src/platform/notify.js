@@ -11,6 +11,7 @@ import { isNativePlatform } from './native'
 
 const FLAG = 'fq.reminder.v1'
 const REMINDER_ID = 4201
+const ASSIGN_REMINDER_ID = 4202
 
 export function reminderOn() {
   try { return localStorage.getItem(FLAG) === '1' } catch { return false }
@@ -59,4 +60,42 @@ export async function setReminder(on, texts) {
 export async function initReminder(texts) {
   if (!isNativePlatform() || !reminderOn()) return
   await schedule(texts)
+}
+
+/* ── homework due reminder (one-off, tied to an assignment's due date) ──
+   When a student opens a class assignment, nudge them on the due day so
+   homework does not slip. Piggybacks the SAME opt-in as the daily reminder
+   (reminderOn) so it never prompts a child on its own, and uses a separate
+   id so it does not disturb the daily nudge. Native-only; no-op on web. */
+export async function scheduleAssignmentDue({ due, title, body, hour = 16 } = {}) {
+  if (!isNativePlatform() || !reminderOn()) return false
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(due || ''))) return false
+  const [y, m, d] = due.split('-').map(Number)
+  const at = new Date(y, m - 1, d, hour, 0, 0)
+  if (at.getTime() <= Date.now()) return false // due date already past
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    const perm = await LocalNotifications.requestPermissions()
+    if (perm.display !== 'granted') return false
+    await LocalNotifications.cancel({ notifications: [{ id: ASSIGN_REMINDER_ID }] })
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: ASSIGN_REMINDER_ID,
+        title: title || 'Homework due today',
+        body: body || 'Finish your eGeez class assignment.',
+        schedule: { at, allowWhileIdle: true },
+      }],
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function cancelAssignmentDue() {
+  if (!isNativePlatform()) return
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    await LocalNotifications.cancel({ notifications: [{ id: ASSIGN_REMINDER_ID }] })
+  } catch { /* ignore */ }
 }

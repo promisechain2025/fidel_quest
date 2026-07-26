@@ -41,6 +41,7 @@ import {
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
   saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
   termWeeks, saveTermPlan, currentWeekIndex, weekDue,
+  enrollStudent, unenrollStudent,
 } from '../platform/classroom'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -466,12 +467,35 @@ function SentAssignments({ code }) {
 }
 
 function RosterCard({ code }) {
-  const roster = rosterByStudent(code)
+  const [nonce, setNonce] = useState(0)
+  const [name, setName] = useState('')
+  const roster = useMemo(() => rosterByStudent(code), [code, nonce])
+  const add = () => {
+    const b = sanitizeName(name)
+    if (!b) return
+    enrollStudent(code, b)
+    setName('')
+    setNonce((n) => n + 1)
+  }
+  const drop = (student) => { unenrollStudent(code, student); setNonce((n) => n + 1) }
   return (
     <SectionCard collapsible defaultOpen={false} icon={<Users className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Students')}>
+      {/* Register your class up front - names stay on this device. */}
+      <div className="mt-2 flex gap-2">
+        <input value={name} onChange={(e) => setName(e.target.value.slice(0, 40))}
+          onKeyDown={(e) => { if (e.key === 'Enter') add() }}
+          placeholder={t('tmAddStudent', 'Add a student name')} aria-label={t('tmAddStudent', 'Add a student name')}
+          className={`flex-1 rounded-xl border-2 px-3 py-2 text-[16px] font-bold ${FOCUS}`}
+          style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)' }} />
+        <button type="button" onClick={add} disabled={!sanitizeName(name)}
+          className={`rounded-xl px-4 py-2 text-sm font-black ${FOCUS}`}
+          style={{ background: 'var(--go)', color: '#fff', opacity: sanitizeName(name) ? 1 : 0.5 }}>
+          {t('tmAdd', 'Add')}
+        </button>
+      </div>
       {roster.length === 0 ? (
-        <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-          {t('tmRosterEmpty', 'No results yet. When a student finishes, they send you a result link - open it on this device and it files itself here.')}
+        <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+          {t('tmRosterEmpty', 'Add your students above, or wait for their first result link - either way they show up here.')}
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-2">
@@ -479,13 +503,27 @@ function RosterCard({ code }) {
             <div key={row.student} className="rounded-2xl border-2 p-3" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
               <div className="flex items-center justify-between gap-2">
                 <p className="font-black">{row.student}</p>
-                <p className="mono text-sm font-black" style={{ color: row.best >= 0.85 ? 'var(--go-ink)' : row.best >= 0.6 ? 'var(--star)' : 'var(--bad-ink)' }}>
-                  {Math.round(row.best * 100)}% {t('tmBest', 'best')}
-                </p>
+                {row.started ? (
+                  <p className="mono text-sm font-black" style={{ color: row.best >= 0.85 ? 'var(--go-ink)' : row.best >= 0.6 ? 'var(--star)' : 'var(--bad-ink)' }}>
+                    {Math.round(row.best * 100)}% {t('tmBest', 'best')}
+                  </p>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>{t('tmNotStarted', 'not started')}</span>
+                    {row.enrolled && (
+                      <button type="button" onClick={() => drop(row.student)} aria-label={t('tmRemoveStudent', 'Remove {name}').replace('{name}', row.student)}
+                        className={`rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)' }}>
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
+                  </span>
+                )}
               </div>
-              <p className="mono mt-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                {row.receipts.map((r) => `${r.day}: ${r.score}/${r.total}${r.missed?.length ? ` (${r.missed.map(glyphOf).join(' ')})` : ''}`).join(' · ')}
-              </p>
+              {row.started && (
+                <p className="mono mt-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                  {row.receipts.map((r) => `${r.day}: ${r.score}/${r.total}${r.missed?.length ? ` (${r.missed.map(glyphOf).join(' ')})` : ''}`).join(' · ')}
+                </p>
+              )}
             </div>
           ))}
         </div>

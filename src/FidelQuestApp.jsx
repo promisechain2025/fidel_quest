@@ -76,6 +76,19 @@ import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
+import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
+
+/* An opened assignment schedules a local "due today" nudge on native (no-op
+   on web, and only if the grown-up already enabled reminders). */
+function armAssignmentReminder(assignment) {
+  if (assignment?.due) {
+    scheduleAssignmentDue({
+      due: assignment.due,
+      title: t('hwDueTitle', 'Homework due today'),
+      body: t('hwDueBody', 'Finish your eGeez class assignment.'),
+    })
+  }
+}
 import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
@@ -1018,7 +1031,7 @@ export default function FidelQuestApp() {
       // assignment also becomes the pending one (surfaces in Today's plan).
       if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
         const cr = readClassroomFromHash(window.location.hash)
-        if (cr?.kind === 'assign') storePendingAssignment(cr.data)
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data) }
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       }
     } catch {
@@ -1036,7 +1049,7 @@ export default function FidelQuestApp() {
         if (ch) setStack([{ name: 'challenge', challenge: ch }])
         const cr = readClassroomFromHash(hash)
         if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
-        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
         if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       } catch { /* malformed link */ }
@@ -3993,6 +4006,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
         onFinish={(levelId, res) => {
           if (!res) { onHome(); return }
           markAssignmentDone()
+          cancelAssignmentDue()
           onDone?.()
           setResult(res)
           setStage('done')
