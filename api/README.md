@@ -15,7 +15,13 @@ database and secrets.
 - **Contact** — `POST /api/contact`
 - Each submission is stored and (when SMTP is configured) emailed to you.
 - **Owner lists** — `GET /api/admin/{teachers|waitlist|contact}` with
-  `x-admin-token: $ADMIN_TOKEN`.
+  `x-admin-token: $ADMIN_TOKEN`; `GET /admin` is a single-file owner panel
+  (approve teachers into the public `GET /api/teachers` directory).
+- **Child profiles + progress snapshots** — parent-scoped, JWT-gated:
+  `GET/POST /api/children`, `DELETE /api/children/:id`,
+  `POST/GET /api/children/:id/snapshots` (one per child per day; stores
+  only dated learning counts + the 33-family mask a parent explicitly
+  saves from a Progress Card - the app itself never uploads).
 
 ## Run
 

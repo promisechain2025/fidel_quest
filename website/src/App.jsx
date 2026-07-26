@@ -12,6 +12,8 @@ const Teachers = lazy(() => import('./pages/Teachers.jsx'))
 const Homeschool = lazy(() => import('./pages/Homeschool.jsx'))
 const About = lazy(() => import('./pages/About.jsx'))
 const Alphabet = lazy(() => import('./pages/Alphabet.jsx'))
+const Progress = lazy(() => import('./pages/Progress.jsx'))
+const Family = lazy(() => import('./pages/Family.jsx'))
 const Pricing = lazy(() => import('./pages/Pricing.jsx'))
 const PricingSuccess = lazy(() => import('./pages/PricingSuccess.jsx'))
 
@@ -39,6 +41,8 @@ export default function App() {
       <Route path="/teachers" element={<Teachers />} />
       <Route path="/homeschool" element={<Homeschool />} />
       <Route path="/alphabet" element={<Alphabet />} />
+      <Route path="/progress" element={<Progress />} />
+      <Route path="/family" element={<Family />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/pricing/success" element={<PricingSuccess />} />
       {/* legacy aliases from the first launch */}

@@ -28,6 +28,17 @@ function buildModels() {
   const contactMessage = new mongoose.Schema({
     name: String, email: String, message: String,
   }, { timestamps: true })
+  const child = new mongoose.Schema({
+    parentId: { type: String, required: true, index: true },
+    name: { type: String, required: true, trim: true, maxlength: 40 },
+  }, { timestamps: true })
+  const snapshot = new mongoose.Schema({
+    childId: { type: String, required: true, index: true },
+    parentId: { type: String, required: true, index: true },
+    day: { type: String, required: true },
+    letters: Number, streak: Number, mask: String, nodesDone: Number, nodesTotal: Number,
+  }, { timestamps: true })
+  snapshot.index({ childId: 1, day: 1 }, { unique: true })
   const order = new mongoose.Schema({
     sessionId: { type: String, required: true, unique: true },
     code: { type: String, required: true, unique: true },
@@ -41,11 +52,13 @@ function buildModels() {
     WaitlistEntry: mongoose.models.WaitlistEntry || mongoose.model('WaitlistEntry', waitlistEntry),
     ContactMessage: mongoose.models.ContactMessage || mongoose.model('ContactMessage', contactMessage),
     Order: mongoose.models.Order || mongoose.model('Order', order),
+    Child: mongoose.models.Child || mongoose.model('Child', child),
+    Snapshot: mongoose.models.Snapshot || mongoose.model('Snapshot', snapshot),
   }
 }
 
 /* ---- in-memory backend ---- */
-const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], seq: 0 }
+const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], children: [], snapshots: [], seq: 0 }
 const clone = (o) => JSON.parse(JSON.stringify(o))
 const memDoc = (data) => ({ ...data, _id: String(++mem.seq), createdAt: new Date().toISOString() })
 
@@ -150,6 +163,54 @@ export const store = {
     return { order: clone(doc), created: true }
   },
 
+  /* ---- child profiles + progress snapshots (parent-owned) ------------- */
+  async listChildren(parentId) {
+    if (useMongo) return (await M.Child.find({ parentId }).sort({ createdAt: 1 }).lean()).map((c) => ({ id: String(c._id), name: c.name }))
+    return mem.children.filter((c) => c.parentId === parentId).map((c) => ({ id: c._id, name: c.name }))
+  },
+  async createChild(parentId, name) {
+    if (useMongo) { const c = await M.Child.create({ parentId, name }); return { id: String(c._id), name: c.name } }
+    const doc = memDoc({ parentId, name }); mem.children.push(doc); return { id: doc._id, name: doc.name }
+  },
+  async findChild(parentId, childId) {
+    if (useMongo) {
+      const c = await M.Child.findById(childId).lean().catch(() => null)
+      return c && c.parentId === parentId ? { id: String(c._id), name: c.name } : null
+    }
+    const c = mem.children.find((x) => x._id === String(childId) && x.parentId === parentId)
+    return c ? { id: c._id, name: c.name } : null
+  },
+  async deleteChild(parentId, childId) {
+    const owned = await this.findChild(parentId, childId)
+    if (!owned) return false
+    if (useMongo) {
+      await M.Snapshot.deleteMany({ childId: String(childId), parentId })
+      await M.Child.deleteOne({ _id: childId })
+      return true
+    }
+    mem.snapshots = mem.snapshots.filter((s) => s.childId !== String(childId))
+    mem.children = mem.children.filter((c) => c._id !== String(childId))
+    return true
+  },
+  /** One snapshot per child per day - re-saving the same day overwrites. */
+  async saveSnapshot(parentId, childId, snap) {
+    const doc = { childId: String(childId), parentId, ...snap }
+    if (useMongo) {
+      await M.Snapshot.findOneAndUpdate({ childId: String(childId), day: snap.day }, doc, { upsert: true })
+      return doc
+    }
+    const i = mem.snapshots.findIndex((s) => s.childId === String(childId) && s.day === snap.day)
+    if (i >= 0) mem.snapshots[i] = { ...mem.snapshots[i], ...doc }
+    else mem.snapshots.push(memDoc(doc))
+    return doc
+  },
+  async listSnapshots(parentId, childId) {
+    const pick = ({ day, letters, streak, mask, nodesDone, nodesTotal }) => ({ day, letters, streak, mask, nodesDone, nodesTotal })
+    if (useMongo) return (await M.Snapshot.find({ childId: String(childId), parentId }).sort({ day: 1 }).limit(400).lean()).map(pick)
+    return mem.snapshots.filter((s) => s.childId === String(childId) && s.parentId === parentId)
+      .sort((a, b) => (a.day < b.day ? -1 : 1)).map(pick)
+  },
+
   /* test helper - memory backend only */
-  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.seq = 0 },
+  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.children = []; mem.snapshots = []; mem.seq = 0 },
 }

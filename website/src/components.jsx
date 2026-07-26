@@ -137,6 +137,7 @@ const NAV = [
   ['/teachers', 'For teachers'],
   ['/homeschool', 'Homeschool'],
   ['/pricing', 'Pricing'],
+  ['/family', 'Family'],
   ['/about', 'About'],
 ]
 

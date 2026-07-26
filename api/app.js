@@ -5,6 +5,7 @@ import cors from 'cors'
 import config from './config.js'
 import authRoutes from './routes/auth.js'
 import formRoutes from './routes/forms.js'
+import childrenRoutes from './routes/children.js'
 import payRoutes, { webhookHandler, setStripeClient } from './routes/pay.js'
 import { store } from './store.js'
 
@@ -28,6 +29,7 @@ export function createApp({ stripeClient } = {}) {
 
   app.get('/healthz', (_req, res) => res.json({ ok: true, backend: store.backend }))
   app.use('/api/auth', authRoutes)
+  app.use('/api', childrenRoutes)
   app.use('/api', payRoutes)
   app.use('/api', formRoutes)
 
