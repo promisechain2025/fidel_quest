@@ -825,7 +825,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   type="button"
                   onClick={() => {
                     unlockEverything()
-                    setConfirmUnlock(false)
+                    // Reload for the same reason reset does: the app holds the
+                    // Journey in React state, so without a reload the stale live
+                    // state hides (and then re-persists over) the unlock.
+                    try { window.location.reload() } catch { setConfirmUnlock(false) }
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
