@@ -190,7 +190,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
       {/* play field */}
       <motion.div ref={areaRef} animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'manipulation' }}>
-        <StarField />
+        <SkyScape reduce={reduce} />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
         {/* falling letters - tap to shoot */}
         {ctx.items.map((it) => {
@@ -246,12 +246,53 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   )
 }
 
-/* Cheap static star field for the night sky (no logic). */
-function StarField() {
-  const stars = useRef(Array.from({ length: 42 }, (_, i) => ({ left: `${(i * 97) % 100}%`, top: `${(i * 41) % 70}%`, s: 1 + (i % 3), o: 0.3 + (i % 5) * 0.12 })))
+/* A living night sky (no game logic): a glowing moon, soft nebula haze, layered
+   twinkling stars, two slow shooting stars, and a horizon glow that grounds
+   Anbessa. Deterministic positions (stable across renders); all motion is
+   dropped when the player prefers reduced motion. */
+const SKY_CSS = `
+@keyframes lc-twk { 0%,100% { opacity: var(--o); } 50% { opacity: calc(var(--o) * 0.3); } }
+@keyframes lc-shoot {
+  0% { transform: translate(-10%, -10%) rotate(18deg) scaleX(0.2); opacity: 0; }
+  6% { opacity: 1; }
+  16% { transform: translate(120%, 120%) rotate(18deg) scaleX(1); opacity: 0; }
+  100% { opacity: 0; }
+}`
+function SkyScape({ reduce = false }) {
+  const stars = useRef(Array.from({ length: 66 }, (_, i) => ({
+    left: `${(i * 71 + 7) % 100}%`, top: `${(i * 37 + 3) % 82}%`,
+    s: 1 + (i % 4) * 0.9, o: 0.32 + (i % 5) * 0.13, dur: 2.2 + (i % 5) * 0.6, delay: (i % 7) * 0.5,
+  })))
   return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      {stars.current.map((st, i) => <span key={i} className="absolute rounded-full" style={{ left: st.left, top: st.top, width: st.s, height: st.s, background: '#fff', opacity: st.o }} />)}
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <style>{SKY_CSS}</style>
+      {/* nebula haze */}
+      <div className="absolute" style={{ left: '-12%', top: '4%', width: '58%', height: '46%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(120,90,220,0.30), rgba(120,90,220,0) 68%)', filter: 'blur(8px)' }} />
+      <div className="absolute" style={{ right: '-16%', top: '30%', width: '62%', height: '52%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(60,120,220,0.22), rgba(60,120,220,0) 70%)', filter: 'blur(10px)' }} />
+      {/* moon */}
+      <div className="absolute" style={{ right: '11%', top: '7%', width: 58, height: 58, borderRadius: '50%', background: 'radial-gradient(circle at 36% 32%, #fff7e0, #f3d998 62%, #e6c273)', boxShadow: '0 0 34px 10px rgba(255,230,160,0.4), 0 0 90px 30px rgba(255,220,150,0.16)' }}>
+        <span className="absolute rounded-full" style={{ left: 14, top: 12, width: 10, height: 10, background: 'rgba(198,160,90,0.35)' }} />
+        <span className="absolute rounded-full" style={{ left: 30, top: 30, width: 14, height: 14, background: 'rgba(198,160,90,0.28)' }} />
+        <span className="absolute rounded-full" style={{ left: 20, top: 38, width: 6, height: 6, background: 'rgba(198,160,90,0.3)' }} />
+      </div>
+      {/* stars */}
+      {stars.current.map((st, i) => (
+        <span key={i} className="absolute rounded-full" style={{
+          left: st.left, top: st.top, width: st.s, height: st.s, background: '#fff', '--o': st.o, opacity: st.o,
+          boxShadow: st.s > 2.6 ? '0 0 5px 1px rgba(255,255,255,0.7)' : 'none',
+          animation: reduce ? 'none' : `lc-twk ${st.dur}s ease-in-out ${st.delay}s infinite`,
+        }} />
+      ))}
+      {/* shooting stars */}
+      {!reduce && [0, 1].map((k) => (
+        <span key={k} className="absolute" style={{
+          left: `${18 + k * 34}%`, top: `${6 + k * 10}%`, width: 90, height: 2, borderRadius: 2,
+          background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 90%, #fff 100%)',
+          animation: `lc-shoot ${7 + k * 4}s ease-in ${2 + k * 5}s infinite`,
+        }} />
+      ))}
+      {/* horizon glow grounding Anbessa */}
+      <div className="absolute inset-x-0 bottom-0" style={{ height: '22%', background: 'radial-gradient(120% 90% at 50% 118%, rgba(120,86,190,0.55), rgba(120,86,190,0) 70%)' }} />
     </div>
   )
 }
