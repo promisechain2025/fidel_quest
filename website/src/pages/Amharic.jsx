@@ -2,10 +2,12 @@ import { Map, Gamepad2, BookOpenText, Mic, CalendarDays, Trophy } from 'lucide-r
 import { Section, Card, CtaButton, LetterTile } from '../components.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 export default function Amharic() {
   return (
     <>
+      <Seo title="The Amharic journey - eGeez" description="All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. Try free, own it for $12.99." path="/amharic" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['አ', 'ማ', 'ር', 'ኛ'].map((ch, i) => <LetterTile key={i} ch={ch} size={48} />)}

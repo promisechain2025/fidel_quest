@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, LetterTile } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 export default function About() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -21,6 +22,7 @@ export default function About() {
 
   return (
     <>
+      <Seo title="Why we are building eGeez" description="Language first. School next. Family always. The story behind the eGeez learning home." path="/about" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['ፊ', 'ደ', 'ል'].map((ch, i) => <LetterTile key={i} ch={ch} size={46} />)}

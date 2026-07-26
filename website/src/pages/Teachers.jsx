@@ -3,6 +3,7 @@ import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2
 import { Section, Card, CtaButton, Field, inputCls, inputStyle } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 const LANGS = [
   ['am', 'Amharic'],
@@ -31,6 +32,7 @@ export default function Teachers() {
 
   return (
     <>
+      <Seo title="Teach Amharic or Tigrinya remotely - eGeez" description="Class links, assignments with receipts, a term planner, TV display, and Class Bingo - a real classroom for remote teachers. Apply now." path="/teachers" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('teTitle', 'Teach the next generation - from anywhere')}</h1>
         <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>

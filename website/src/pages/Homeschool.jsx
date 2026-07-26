@@ -2,10 +2,12 @@ import { CalendarDays, Repeat2, Search, Printer, Share2, ShieldCheck } from 'luc
 import { Section, Card, CtaButton } from '../components.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 export default function Homeschool() {
   return (
     <>
+      <Seo title="Homeschool the fidel - eGeez" description="A simple weekly rhythm, smart review, printables, and family sharing: run a real language class at your kitchen table." path="/homeschool" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('hsTitle', 'Run a real language class at your kitchen table')}</h1>
         <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>

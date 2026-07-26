@@ -7,7 +7,21 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
 import { APP_URL } from './config.js'
-import { t } from './i18n.js'
+import { t, currentLang, setLang } from './i18n.js'
+
+/** en <-> am toggle; reloads so every t() call re-evaluates (static site,
+    simplest correct reactivity). */
+function LangToggle({ className = '' }) {
+  const next = currentLang() === 'am' ? 'en' : 'am'
+  return (
+    <button type="button" className={`rounded-lg px-2 py-1.5 text-sm font-black ${className}`}
+      style={{ color: 'var(--muted)' }}
+      aria-label={next === 'am' ? 'ወደ አማርኛ ቀይር' : 'Switch to English'}
+      onClick={() => { setLang(next); window.location.reload() }}>
+      {next === 'am' ? 'አማ' : 'EN'}
+    </button>
+  )
+}
 
 export function Tibeb({ className = '' }) {
   return <div className={`tibeb ${className}`} aria-hidden="true" />
@@ -112,6 +126,7 @@ const NAV = [
   ['/', 'Home'],
   ['/amharic', 'Amharic'],
   ['/tigrinya', 'Tigrinya'],
+  ['/alphabet', 'Alphabet'],
   ['/teachers', 'For teachers'],
   ['/homeschool', 'Homeschool'],
   ['/pricing', 'Pricing'],
@@ -148,7 +163,7 @@ function MobileMenu({ open, onClose, dark, setDark }) {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex flex-col md:hidden"
+          className="fixed inset-0 z-50 flex flex-col lg:hidden"
           style={{ background: 'var(--paper)' }}
           role="dialog" aria-modal="true" aria-label="Menu"
         >
@@ -180,6 +195,7 @@ function MobileMenu({ open, onClose, dark, setDark }) {
               style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
               {t('openApp', 'Open the app')}
             </a>
+            <LangToggle className="border-2 p-3" />
             <button type="button" onClick={() => setDark(!dark)}
               aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
               className="rounded-xl p-3.5" style={{ border: '2px solid var(--line)', color: 'var(--muted)' }}>
@@ -223,15 +239,16 @@ export function Header() {
           <BrandMark size={scrolled ? 32 : 38} />
           <span className="text-lg tracking-tight">eGeez</span>
         </Link>
-        <nav className="ml-auto hidden items-center gap-0.5 md:flex" aria-label="Main">
+        <nav className="ml-auto hidden items-center gap-0.5 lg:flex" aria-label="Main">
           {NAV.map(([to, label]) => <NavLink key={to} to={to} end={to === '/'} className={linkCls} style={linkStyle}>{t(to, label)}</NavLink>)}
+          <LangToggle />
           <button type="button" onClick={() => setDark(!dark)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} className="rounded-lg p-2" style={{ color: 'var(--muted)' }}>
             {dark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
           </button>
           <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
         </nav>
         <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
-          className="ml-auto rounded-xl p-2.5 md:hidden" style={{ color: 'var(--ink)' }}>
+          className="ml-auto rounded-xl p-2.5 lg:hidden" style={{ color: 'var(--ink)' }}>
           <Menu className="h-6 w-6" aria-hidden="true" />
         </button>
       </div>
@@ -240,19 +257,50 @@ export function Header() {
   )
 }
 
+function NewsletterRow() {
+  const [email, setEmail] = useState('')
+  const [done, setDone] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const submit = async (e) => {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      const { submitForm } = await import('./api.js')
+      await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
+      setDone(true)
+    } catch { /* keep the row usable */ } finally { setBusy(false) }
+  }
+  if (done) {
+    return <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{t('nlThanks', 'You are in - we write rarely and only when it matters.')}</p>
+  }
+  return (
+    <form onSubmit={submit} className="flex w-full max-w-sm items-stretch gap-2">
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+        placeholder={t('nlPlaceholder', 'Email for launch news')} aria-label={t('nlLabel', 'Email for launch news')}
+        className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[16px]"
+        style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
+      <button type="submit" disabled={busy} className="chunk px-4 text-sm"
+        style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)', minHeight: 44 }}>
+        {busy ? '…' : t('nlJoin', 'Join')}
+      </button>
+    </form>
+  )
+}
+
 export function Footer() {
   return (
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="flex items-start gap-4">
+        <div className="flex min-w-0 items-start gap-4">
           <img src="/art/anbessa-happy.png" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-lg font-black">
               <BrandMark size={26} /> eGeez
             </div>
             <p className="mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
               {t('footerLine', 'A learning home for Ethiopian and Eritrean languages - built for families, guided by teachers, made with love for the fidel.')}
             </p>
+            <div className="mt-4"><NewsletterRow /></div>
           </div>
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>

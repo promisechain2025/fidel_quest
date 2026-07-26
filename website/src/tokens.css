@@ -141,6 +141,18 @@ body {
 .wash { background: linear-gradient(160deg, var(--wash), transparent 55%); }
 
 :focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; border-radius: 6px; }
+
+/* Printable fidel chart (/alphabet): hide the site chrome, keep the table. */
+@media print {
+  header, footer, .print\:hidden { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .print-chart { padding: 0 !important; max-width: none !important; }
+  .print-tile {
+    background: #fff !important; color: #000 !important;
+    border: 1px solid #999 !important; box-shadow: none !important;
+  }
+  .print-chart th, .print-chart th div { color: #000 !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

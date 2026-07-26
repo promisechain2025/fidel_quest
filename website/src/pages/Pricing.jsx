@@ -1,11 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Users, KeyRound, WifiOff, RefreshCcw, Check, Sparkles } from 'lucide-react'
 import { Section, Card, CtaButton, Reveal } from '../components.jsx'
 import { API_URL, CONTACT_EMAIL, APP_URL } from '../config.js'
+import Seo from '../Seo.jsx'
 import { t } from '../i18n.js'
 
 export const APP_PRICE = '$12.99'
 export const PACK_PRICE = '$4.99'
+
+const PRICING_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'Product', name: 'eGeez - the whole journey', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD' } },
+    { '@type': 'Product', name: 'eGeez Family Pack', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD' } },
+  ],
+}
 
 function BuyButton({ product, label, dormantSetter, dormant }) {
   const [state, setState] = useState({ status: 'idle', error: '' })
@@ -44,10 +53,10 @@ function BuyButton({ product, label, dormantSetter, dormant }) {
 
 export default function Pricing() {
   const [dormant, setDormant] = useState(!API_URL)
-  useEffect(() => { document.title = 'Pricing - eGeez' }, [])
 
   return (
     <>
+      <Seo title="Pricing - eGeez" description="Try free, then $12.99 once for the whole journey - on web and in the stores, never pay twice. Family Pack add-on $4.99." path="/pricing" jsonLd={PRICING_LD} />
       <div className="mx-auto max-w-5xl px-5 pt-12 text-center sm:px-6 md:pt-16">
         <Reveal>
           <img src="/art/anbessa-cheer.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />

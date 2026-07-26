@@ -4,6 +4,7 @@ import { Section, Card, CtaButton, LetterTile, Field, inputCls, inputStyle } fro
 import { APP_URL } from '../config.js'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 export default function Tigrinya() {
   const [form, setForm] = useState({ name: '', email: '' })
@@ -22,6 +23,7 @@ export default function Tigrinya() {
 
   return (
     <>
+      <Seo title="Tigrinya at eGeez - foundations now, full course coming" description="Tigrinya shares the Ge'ez script: start the letter foundations today and join the waitlist for the full Tigrinya course." path="/tigrinya" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['ት', 'ግ', 'ር', 'ኛ'].map((ch, i) => <LetterTile key={i} ch={ch} size={48} />)}

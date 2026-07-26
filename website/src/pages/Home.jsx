@@ -1,13 +1,55 @@
-import { Sparkles, Users, BookOpen, Radio } from 'lucide-react'
+import { useState } from 'react'
+import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
 import { Section, Card, CtaButton, LetterTile, Tibeb, Reveal } from '../components.jsx'
 import { APP_URL } from '../config.js'
+import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 const HERO_TILES = ['ሀ', 'ለ', 'መ', 'ሠ', 'ረ', 'ሰ', 'በ', 'ተ']
+
+/* The viral teaser: type a name, see it in Ge'ez letters. */
+function NameWidget() {
+  const [name, setName] = useState('')
+  const { geez, ok } = nameToFidel(name)
+  return (
+    <Card wash className="mx-auto max-w-xl text-center">
+      <PenLine className="mx-auto h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+      <h2 className="display-3 mt-2">{t('nwTitle', 'See your child’s name in Fidel')}</h2>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value.slice(0, 20))}
+        placeholder={t('nwPlaceholder', 'Type a name - Sara, Daniel, Tsion…')}
+        aria-label={t('nwLabel', 'Name to write in Fidel')}
+        className="mt-4 w-full max-w-sm rounded-xl px-4 py-3 text-center text-[16px] font-bold"
+        style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }}
+      />
+      <div className="mt-4 flex min-h-[72px] items-center justify-center" aria-live="polite">
+        {ok ? (
+          <span className="geez rounded-2xl px-6 py-3 text-4xl font-black sm:text-5xl"
+            style={{ background: 'var(--tile)', color: 'var(--glyph)', border: '2px solid var(--tile-deep)', boxShadow: '0 5px 0 var(--tile-deep)' }}>
+            {geez}
+          </span>
+        ) : (
+          <span className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('nwEmpty', 'Their name will appear here, letter by letter.')}</span>
+        )}
+      </div>
+      <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>
+        {t('nwNote', 'A friendly approximation - real spelling has rules. In the app, kids learn to write it themselves, stroke by stroke.')}
+      </p>
+      {ok && (
+        <div className="mt-4">
+          <CtaButton href={APP_URL} tone="green">{t('nwCta', 'Let them write it for real')}</CtaButton>
+        </div>
+      )}
+    </Card>
+  )
+}
 
 export default function Home() {
   return (
     <>
+      <Seo title="eGeez - Learn Amharic and Tigrinya, guided from anywhere" description="A joyful app that teaches kids the fidel, tools for remote teachers, and homeschool guidance for Ethiopian and Eritrean families worldwide." path="/" />
       {/* hero: message left, the real app right */}
       <div className="mx-auto grid max-w-5xl items-center gap-10 px-5 pb-6 pt-10 sm:px-6 md:grid-cols-[1.15fr_0.85fr] md:pt-16 lg:gap-14">
         <div className="text-center md:text-left">
@@ -39,6 +81,11 @@ export default function Home() {
       </div>
 
       <Tibeb className="mt-8" />
+
+      {/* name-in-fidel teaser */}
+      <div className="mx-auto max-w-5xl px-5 pt-14 sm:px-6">
+        <Reveal><NameWidget /></Reveal>
+      </div>
 
       {/* the two languages */}
       <Section eyebrow={t('langsEyebrow', 'Two languages, one script')} title={t('langsTitle', 'Start with the fidel your family speaks')} center mark="ፊ">
@@ -109,6 +156,25 @@ export default function Home() {
           <CtaButton to="/about" tone="ghost">{t('visionCta', 'Read the full vision')}</CtaButton>
         </div>
       </Section>
+
+      {/* honest trust band - facts, not testimonials */}
+      <div className="mx-auto max-w-5xl px-5 pb-2 sm:px-6">
+        <Reveal>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[
+              ['231', t('tb1', 'letters taught, all voiced')],
+              ['100%', t('tb2', 'works offline - any phone')],
+              ['0', t('tb3', 'ads. Zero child data collected')],
+              ['1x', t('tb4', 'pay once - web and stores')],
+            ].map(([big, small], i) => (
+              <div key={i} className="rounded-2xl px-4 py-5 text-center" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+                <div className="text-3xl font-black" style={{ color: 'var(--accent)' }}>{big}</div>
+                <div className="mt-1 text-xs font-bold leading-snug" style={{ color: 'var(--muted)' }}>{small}</div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </div>
 
       {/* teacher band */}
       <div className="mx-auto max-w-5xl px-5 pb-6 sm:px-6">

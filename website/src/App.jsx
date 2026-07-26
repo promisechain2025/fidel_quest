@@ -1,14 +1,19 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Header, Footer, CtaButton } from './components.jsx'
 import Home from './pages/Home.jsx'
-import Amharic from './pages/Amharic.jsx'
-import Tigrinya from './pages/Tigrinya.jsx'
-import Teachers from './pages/Teachers.jsx'
-import Homeschool from './pages/Homeschool.jsx'
-import About from './pages/About.jsx'
-import Pricing from './pages/Pricing.jsx'
-import PricingSuccess from './pages/PricingSuccess.jsx'
+
+// Home stays eager (the landing must paint instantly); every other page
+// loads on navigation - keeps the first bundle lean.
+const Amharic = lazy(() => import('./pages/Amharic.jsx'))
+const Tigrinya = lazy(() => import('./pages/Tigrinya.jsx'))
+const Teachers = lazy(() => import('./pages/Teachers.jsx'))
+const Homeschool = lazy(() => import('./pages/Homeschool.jsx'))
+const About = lazy(() => import('./pages/About.jsx'))
+const Alphabet = lazy(() => import('./pages/Alphabet.jsx'))
+const Pricing = lazy(() => import('./pages/Pricing.jsx'))
+const PricingSuccess = lazy(() => import('./pages/PricingSuccess.jsx'))
 
 function NotFound() {
   return (
@@ -26,12 +31,14 @@ export default function App() {
   const location = useLocation()
   const reduce = useReducedMotion()
   const routes = (
+    <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
     <Routes location={location}>
       <Route path="/" element={<Home />} />
       <Route path="/amharic" element={<Amharic />} />
       <Route path="/tigrinya" element={<Tigrinya />} />
       <Route path="/teachers" element={<Teachers />} />
       <Route path="/homeschool" element={<Homeschool />} />
+      <Route path="/alphabet" element={<Alphabet />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/pricing/success" element={<PricingSuccess />} />
       {/* legacy aliases from the first launch */}
@@ -40,6 +47,7 @@ export default function App() {
       <Route path="/about" element={<About />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   )
   return (
     <div className="flex min-h-dvh flex-col">
