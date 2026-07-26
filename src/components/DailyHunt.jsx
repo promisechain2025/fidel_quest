@@ -192,7 +192,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       </header>
 
       {/* The meadow */}
-      <motion.div animate={meadowCtl} className="relative mt-4 w-full overflow-hidden rounded-3xl border-2" style={{ aspectRatio: '4 / 5', borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 46%, #8fc86a 46%, #7ab857 100%)' }}>
+      <motion.div animate={meadowCtl} className="relative mt-4 w-full flex-1 overflow-hidden rounded-3xl border-2" style={{ minHeight: 380, borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 44%, #8fc86a 44%, #7ab857 100%)' }}>
         {/* sun */}
         <span className="absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: '#ffd34d', boxShadow: '0 0 24px 6px rgba(255,211,77,0.55)' }} aria-hidden="true" />
         <Dressing kind={dress} />
