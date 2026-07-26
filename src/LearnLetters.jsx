@@ -469,8 +469,26 @@ function useRootRem() {
   return rem
 }
 
+/* A quick splash where Anbessa lands a hop: an expanding ring + a few water
+   droplets arcing up off the stone. Presentation only; keyed to remount so it
+   replays on each landing, and never rendered under reduced motion. */
+function HopSplash({ left, top }) {
+  const drops = [-26, -15, -6, 6, 15, 26]
+  return (
+    <div className="pointer-events-none absolute z-20" style={{ left: `${left}%`, top: `${top}%` }} aria-hidden="true">
+      <motion.span className="absolute rounded-full" style={{ left: -20, top: -6, width: 40, height: 14, border: '3px solid rgba(255,255,255,0.85)' }}
+        initial={{ opacity: 0, scale: 0.3 }} animate={{ opacity: [0.9, 0], scale: [0.3, 1.5] }} transition={{ duration: 0.55, ease: 'easeOut' }} />
+      {drops.map((dx, i) => (
+        <motion.span key={i} className="absolute rounded-full" style={{ left: -2, top: -4, width: 6 - (i % 2), height: 6 - (i % 2), background: i % 2 ? '#eaf6ff' : '#bfe6ff' }}
+          initial={{ opacity: 1, x: 0, y: 0 }} animate={{ opacity: [1, 1, 0], x: dx, y: [0, -18 - Math.abs(dx) * 0.3, 10] }} transition={{ duration: 0.6, ease: 'easeOut' }} />
+      ))}
+    </div>
+  )
+}
+
 function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const forward = ctx.phase === LearnPhase.FORWARD
+  const reduce = useReducedMotion()
   const activeKey = ctx.forms[ctx.idx]
   const activeForm = formOf(activeKey)
   const rem = useRootRem()
@@ -595,6 +613,10 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
             <Hero size={Math.round(rem * 3.375)} />
           </motion.div>
         </motion.div>
+        {/* landing splash: replays each time Anbessa hops onto a new stone */}
+        {!reduce && !sunk && standIdx >= 0 && standIdx < ctx.forms.length && (
+          <HopSplash key={`hop-${ctx.phase}-${ctx.idx}`} left={stand.left} top={stand.top} />
+        )}
         <AnimatePresence>
           {sunk && (
             <motion.div

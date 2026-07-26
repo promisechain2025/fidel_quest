@@ -3,7 +3,7 @@
    cannot sustain the 3D scene. (Letter Catch, the other gateway game, is
    already a pure 2D game and needs no separate fallback.) */
 import { useReducer, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { X, Flame } from 'lucide-react'
 import {
   runnerInitial,
@@ -19,12 +19,30 @@ import {
 } from '../FidelQuestApp'
 import AnbessaSvg from './AnbessaSvg'
 import JibbySvg from './JibbySvg'
+import KokebSvg from './KokebSvg'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
+
+/* A small ring of stars bursting off Anbessa when he is fed correctly. Cheap
+   (a handful of framer nodes, replayed by key) and dropped under reduced
+   motion - safe for the low-FPS devices this fallback exists for. */
+function FeedSparkle() {
+  const rays = [0, 60, 120, 180, 240, 300]
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center" aria-hidden="true">
+      {rays.map((deg, i) => (
+        <motion.span key={i} className="absolute rounded-full" style={{ width: 8, height: 8, background: i % 2 ? '#ffd25a' : '#8affc1' }}
+          initial={{ opacity: 1, x: 0, y: 0, scale: 0.6 }}
+          animate={{ opacity: [1, 1, 0], x: Math.cos((deg * Math.PI) / 180) * 52, y: Math.sin((deg * Math.PI) / 180) * 52, scale: [0.6, 1.1, 0.4] }}
+          transition={{ duration: 0.6, ease: 'easeOut' }} />
+      ))}
+    </div>
+  )
+}
 
 /* ============================================================================
    RUNNER 2D  -  the same runner machine (feed / boss / muncher / destroyed)
@@ -42,6 +60,8 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   const feeding = ctx.status === RunnerState.FEEDING
   const boss = ctx.status === RunnerState.BOSS
   const destroyed = ctx.status === RunnerState.DESTROYED
+  const reduce = useReducedMotion()
+  const goodFeed = feeding && ctx.lastFeed?.good
 
   useEffect(() => {
     if (running && targetForm) {
@@ -111,10 +131,21 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
         <Flame className="h-6 w-6" style={{ color: 'var(--accent)' }} aria-hidden="true" />
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-        <div className="flex items-end justify-center gap-6">
-          <AnbessaSvg size={96} mood={feeding && !ctx.lastFeed?.good ? 'sad' : 'happy'} />
-          {(boss || (feeding && !ctx.lastFeed?.good)) && <JibbySvg size={80} />}
+      <main className="relative flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        {/* soft ambient spotlight behind the cast (theme-safe, static) */}
+        <div className="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,180,60,0.16), rgba(255,180,60,0) 68%)' }} aria-hidden="true" />
+        <div className="flex items-end justify-center gap-4">
+          {/* Kokeb, the caller - pulses each time she voices a new letter */}
+          {!boss && (
+            <motion.div key={ctx.qIndex} animate={running && !reduce ? { scale: [1, 1.22, 1], rotate: [0, -6, 0] } : {}} transition={{ duration: 0.6, ease: 'easeOut' }}>
+              <KokebSvg size={52} />
+            </motion.div>
+          )}
+          <div className="relative">
+            <AnbessaSvg size={96} mood={goodFeed ? 'eating' : feeding ? 'sad' : 'happy'} pose={boss ? 'stand' : goodFeed ? 'cheer' : 'stand'} />
+            {goodFeed && !reduce && <FeedSparkle key={ctx.fed} />}
+          </div>
+          {(boss || (feeding && !ctx.lastFeed?.good)) && <JibbySvg size={80} expression={feeding ? 'agitated' : 'grin'} />}
         </div>
 
         {boss ? (
