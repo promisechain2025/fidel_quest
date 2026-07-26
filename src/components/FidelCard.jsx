@@ -17,9 +17,11 @@ const GOLD = '#c99a33'       // frame gold
 const GOLD_SOFT = '#e2c069'  // brand champagne gold
 
 // Ge'ez numerals 1..9, shown beside the Arabic digit (slots use 1..7, the
-// market uses up to 9) so a child picks up the Ethiopian numbers (U+1369..).
+// market uses up to 9) so a child picks up the Ethiopian numbers. The glyphs
+// now live in one validated place - data/numerals.js - re-exported here so
+// existing importers are unchanged.
 // eslint-disable-next-line react-refresh/only-export-components
-export const GEEZ_DIGITS = ['፩', '፪', '፫', '፬', '፭', '፮', '፯', '፰', '፱']
+export { GEEZ_DIGITS } from '../data/numerals'
 
 export function FidelCard({ glyph, size = 60, variant = 'face', done = false, className = '', style = {} }) {
   const w = size
