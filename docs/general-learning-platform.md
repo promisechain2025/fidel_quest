@@ -33,26 +33,35 @@ Treat "add math" as two projects, not one. Only the board part is cheap.
   and science travel without that baggage, which is why math is the safe
   first expansion.
 
-## Phase 1 - generalize the progress signal  (NEXT, medium)
+## Phase 1 - make the progress signal subject-aware  (DONE)
 
-Today "family-reported progress" = fidel letters gained, computed from the
-literacy-shaped snapshot (`letters`, `mask`). A math tutor has no mask, so
-the green badge simply does not show for non-fidel subjects - an honest
-fallback, but math tutors start with rating + track record only.
+The instinct here was to let families type a per-subject score (grade level,
+mastery %) that would feed a math tutor's badge. We deliberately did NOT do
+that: a family-typed number is exactly the gameable, self-reported signal the
+trust review just removed. Re-introducing it - even relabeled - would repeat
+the mistake. Credible per-subject *learning* progress must come from real
+activity (in-app gameplay, Phase 2), not a self-entered figure.
 
-Generalize the snapshot to subject-tagged metrics:
+What Phase 1 shipped instead - honest and non-gameable:
 
-```
-{ subject: 'math', metric: 'grade_level', value: 4.2, day: '2026-09-01' }
-```
+1. **Correct subject scoping of the fidel-letters badge.** The app-derived
+   letters gain now only credits a teacher who actually teaches literacy
+   (amharic/tigrinya, or a legacy no-tags teacher). A math tutor linked to a
+   child was previously credited with that child's fidel gameplay - a
+   misattribution. `teacherProgressStats(teacherId, subjectTags)` now returns
+   `teachesLiteracy` and gates `show` on it.
+2. **An all-subject relationship signal:** `families` - the count of distinct
+   families with a child linked to this teacher. Shown on the board card and
+   the teacher dashboard from the first link. Non-gameable (families vote
+   with their feet) and works for math, science, anything - no app content
+   required.
 
-Then `teacherProgressStats` can read "+2 grade levels in math, reported by 4
-families" the same way it reads letters. This gives math tutors credible,
-relationship-gated evidence **without any in-app math content**. Keep the
-fidel snapshot working unchanged (it is one subject among several); the
-Progress Card encoder/decoder contract (`src/platform/progressCard.js` <->
-`website/src/progressCard.js`) grows a subject field, cross-checked by the
-existing anti-drift test.
+Still open for a *future* Phase 1.5, only if a trustworthy source appears:
+subject-tagged snapshots `{ subject, metric, value, day }` fed by in-app
+gameplay (Phase 2) or a teacher-administered assessment - never a raw
+family-typed score. The Progress Card contract (`src/platform/progressCard.js`
+<-> `website/src/progressCard.js`) would grow a subject field, cross-checked
+by the existing anti-drift test.
 
 ## Phase 2 - math content inside the app  (BIG, deliberate bet)
 

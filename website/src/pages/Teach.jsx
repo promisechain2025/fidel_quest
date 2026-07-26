@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, Inbox, Check, X, TrendingUp } from 'lucide-react'
+import { LogOut, Inbox, Check, X, TrendingUp, Users } from 'lucide-react'
 import { Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { Stars } from './Teachers.jsx'
 import { signedIn, login, register, signOut, apiFetch } from '../auth.js'
@@ -136,24 +136,34 @@ function TeacherDashboard({ onSignOut }) {
       <Card className="mt-5">
         <h2 className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--muted)' }}>{t('thStanding', 'Your board standing')}</h2>
         <div className="mt-2"><Stars avg={me.board?.rating?.avg} count={me.board?.rating?.count} /></div>
-        {me.board?.progress?.show ? (
-          <>
-            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
-              style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
-              <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-              {t('thVerified', '+{n} letters/child, reported by {s} families')
-                .replace('{n}', me.board.progress.avgLettersGained).replace('{s}', me.board.progress.verified)}
+        {me.board?.progress?.families > 0 && (
+          <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+            <Users className="h-4 w-4" aria-hidden="true" />
+            {(me.board.progress.families === 1
+              ? t('thFamilies1', 'Working with {k} family')
+              : t('thFamiliesN', 'Working with {k} families')).replace('{k}', me.board.progress.families)}
+          </p>
+        )}
+        {me.board?.progress?.teachesLiteracy && (
+          me.board?.progress?.show ? (
+            <>
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
+                style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
+                <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('thVerified', '+{n} letters/child, reported by {s} families')
+                  .replace('{n}', me.board.progress.avgLettersGained).replace('{s}', me.board.progress.verified)}
+              </p>
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>{t('thVerifiedNote', 'This badge is public on your board card.')}</p>
+            </>
+          ) : me.board?.progress?.verified > 0 ? (
+            <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+              {t('thAlmost', 'So far {s} family has recorded gains for a linked child. Your public letters badge appears once at least two families have measurable gains.').replace('{s}', me.board.progress.verified)}
             </p>
-            <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>{t('thVerifiedNote', 'This badge is public on your board card.')}</p>
-          </>
-        ) : me.board?.progress?.verified > 0 ? (
-          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
-            {t('thAlmost', 'So far {s} family has recorded gains for a linked child. Your public progress badge appears once at least two families have measurable gains.').replace('{s}', me.board.progress.verified)}
-          </p>
-        ) : (
-          <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
-            {t('thNoVerified', 'Your progress badge appears when two or more linked families save progress reports. Encourage them to share reports from the app.')}
-          </p>
+          ) : (
+            <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
+              {t('thNoVerified', 'Your fidel-letters badge appears when two or more linked families save progress reports. Encourage them to share reports from the app.')}
+            </p>
+          )
         )}
         {me.reviews.length > 0 && (
           <ul className="mt-3 space-y-2">

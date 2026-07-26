@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck } from 'lucide-react'
+import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users } from 'lucide-react'
 import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { API_URL } from '../config.js'
@@ -111,6 +111,14 @@ function TeacherCard({ te }) {
           <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
           {t('teVerified', '+{n} letters/child, reported by {k} families')
             .replace('{n}', te.progress.avgLettersGained).replace('{k}', te.progress.verified)}
+        </p>
+      )}
+      {te.progress?.families > 0 && (
+        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }}>
+          <Users className="h-3.5 w-3.5" aria-hidden="true" />
+          {(te.progress.families === 1
+            ? t('teFamilies1', 'Working with {k} family')
+            : t('teFamiliesN', 'Working with {k} families')).replace('{k}', te.progress.families)}
         </p>
       )}
       {te.subjects && (

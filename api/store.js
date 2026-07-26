@@ -198,7 +198,7 @@ export const store = {
     const enriched = await Promise.all(base.map(async (te) => ({
       ...te,
       rating: await this.teacherRating(te.id),
-      progress: await this.teacherProgressStats(te.id),
+      progress: await this.teacherProgressStats(te.id, te.subjectTags),
     })))
     // Rank by a shrunk score, not raw average: a single 5-star must not
     // outrank a large honest sample (Bayesian pull toward a neutral prior).
@@ -266,19 +266,36 @@ export const store = {
     c.teacherSince = teacherId ? sinceDay : ''
     return this.findChild(parentId, childId)
   },
-  /** Family-reported performance: for every child linked to this teacher,
-      the letters gained between their first and latest snapshot AFTER the
-      link day. A child contributes a gain only with >= 2 post-link
-      snapshots. `verified` is the number of contributing children; the
-      average is over THOSE children (not all linked), and `show` gates the
-      public badge until enough children contribute (one point is noise).
-      Note: linking now requires an accepted introduction (see the route),
-      so these numbers reflect real teacher-family relationships - but the
-      counts themselves are family-reported, not independently attested. */
-  async teacherProgressStats(teacherId) {
+  /** Family-reported performance, now subject-aware.
+
+      Two signals, both gated on a real (accepted-intro) relationship:
+
+      1. `families` - the number of distinct families with a child linked to
+         this teacher. An honest, non-gameable breadth signal for ANY subject
+         (families vote with their feet), shown from the first link.
+
+      2. The fidel LETTERS gain (the app-derived progress badge) - only
+         meaningful for a teacher who actually teaches literacy. A child's
+         fidel gameplay is the app's doing, so crediting a pure math tutor
+         with "+letters" would be misattribution. We therefore scope the
+         letters badge to literacy teachers (amharic/tigrinya, or legacy
+         teachers with no tags, who predate the taxonomy and are assumed
+         fidel). Per contributing child: letters gained between their first
+         and latest snapshot AFTER the link day, with >= 2 post-link
+         snapshots. `verified` counts contributing children; `show` gates the
+         public letters badge until enough contribute (one point is noise).
+
+      Credible per-subject gameplay progress for non-fidel subjects arrives
+      with the in-app content tracks (see docs/general-learning-platform.md);
+      we deliberately do NOT accept a family-typed score, which would be the
+      exact gameable signal the trust review removed. */
+  async teacherProgressStats(teacherId, subjectTags) {
     const kids = useMongo
       ? await M.Child.find({ teacherId: String(teacherId) }).lean()
       : mem.children.filter((c) => c.teacherId === String(teacherId))
+    const families = new Set(kids.map((k) => String(k.parentId))).size
+    const tags = Array.isArray(subjectTags) ? subjectTags : []
+    const teachesLiteracy = tags.length === 0 || tags.includes('amharic') || tags.includes('tigrinya')
     const gains = []
     for (const kid of kids) {
       const snaps = (useMongo
@@ -290,9 +307,11 @@ export const store = {
     const verified = gains.length
     return {
       students: kids.length,
+      families,
       verified,
+      teachesLiteracy,
       avgLettersGained: verified ? Math.round(gains.reduce((a, b) => a + b, 0) / verified) : 0,
-      show: verified >= MIN_VERIFIED_STUDENTS,
+      show: teachesLiteracy && verified >= MIN_VERIFIED_STUDENTS,
     }
   },
 

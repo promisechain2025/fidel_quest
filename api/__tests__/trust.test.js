@@ -22,9 +22,9 @@ async function verifiedAccount(email, role = 'parent') {
   await request(app).post('/api/auth/verify').send({ token: store._peekVerifyToken(email) })
   return { auth: { Authorization: `Bearer ${reg.body.token}` } }
 }
-async function approvedTeacher(name, email) {
+async function approvedTeacher(name, email, subjectTags) {
   const res = await request(app).post('/api/teachers/apply')
-    .send({ name, email, languages: ['am'], subjects: 'Reading', location: 'Addis' })
+    .send({ name, email, languages: ['am'], subjects: 'Reading', location: 'Addis', ...(subjectTags ? { subjectTags } : {}) })
   await request(app).patch(`/api/admin/teachers/${res.body.id}`).set(admin).send({ status: 'approved' })
   return res.body.id
 }
@@ -99,9 +99,36 @@ test('progress stats: only post-link gains count; badge hidden below the thresho
 
   const te = (await request(app).get('/api/teachers')).body.teachers.find((x) => x.id === teacherId)
   assert.equal(te.progress.students, 1)
+  assert.equal(te.progress.families, 1, 'one distinct family')
   assert.equal(te.progress.verified, 1)
   assert.equal(te.progress.avgLettersGained, 35, 'gain = 56-21 post-link, ignoring 2020')
   assert.equal(te.progress.show, false, 'one student is below the badge threshold')
+})
+
+test('subject scoping: a math tutor is not credited with a child\'s fidel letters', async () => {
+  const teacherId = await approvedTeacher('Dawit', 'dawit@x.com', ['math'])
+  const teacher = await verifiedAccount('dawit@x.com', 'teacher')
+  const parent = await verifiedAccount('pm@x.com')
+  const kid = await request(app).post('/api/children').set(parent.auth).send({ name: 'Yon' })
+  const childId = kid.body.child.id
+  await linkedRelationship({ teacherId, teacherAuth: teacher.auth, parentAuth: parent.auth, childId })
+
+  // Two post-link fidel snapshots would clear the letters threshold for a
+  // literacy teacher - but Dawit teaches math, so the child's app play is
+  // not his doing and must not surface as a letters badge.
+  const pu = await store.findUserByEmail('pm@x.com')
+  const pid = String(pu._id)
+  await store.setChildTeacher(pid, childId, teacherId, '2026-06-01')
+  await store.saveSnapshot(pid, childId, snap('2026-06-01', 2))
+  await store.saveSnapshot(pid, childId, snap('2026-06-20', 9))
+
+  const te = (await request(app).get('/api/teachers')).body.teachers.find((x) => x.id === teacherId)
+  assert.equal(te.progress.teachesLiteracy, false)
+  assert.equal(te.progress.show, false, 'no fidel-letters badge for a math tutor')
+  assert.equal(te.progress.families, 1, 'but the honest all-subject family count still shows')
+  // and the math tutor is filterable on the board
+  const mathBoard = (await request(app).get('/api/teachers?subject=math')).body.teachers
+  assert.deepEqual(mathBoard.map((t) => t.name), ['Dawit'])
 })
 
 test('directory ranks by shrunk score: a large 4-star sample beats a single 5-star', async () => {
