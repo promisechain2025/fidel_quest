@@ -4,6 +4,31 @@ import { Section, Card, CtaButton, Field, inputCls, inputStyle, LetterTile } fro
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
+import AnbessaSvg from '../components/AnbessaSvg.jsx'
+import KokebSvg from '../components/KokebSvg.jsx'
+import JibbySvg from '../components/JibbySvg.jsx'
+
+const CAST = [
+  { Art: AnbessaSvg, name: 'Anbessa', props: { expression: 'happy' }, blurb: 'The lion cub who learns alongside your child - brave, warm, and always cheering the next letter.' },
+  { Art: KokebSvg, name: 'Kokeb', props: {}, blurb: 'The little star who calls out the sounds and lights up when your child gets one right.' },
+  { Art: JibbySvg, name: 'Jibby', props: { expression: 'grin' }, blurb: 'The mischievous hyena who tries to munch the letters - playful trouble, never scary.' },
+]
+
+function Characters() {
+  return (
+    <Section mark="ገ" eyebrow={t('abCastEyebrow', 'The cast')} title={t('abCastTitle', 'Meet the friends on the journey')} center>
+      <div className="grid gap-5 sm:grid-cols-3">
+        {CAST.map(({ Art, name, props, blurb }) => (
+          <Card key={name} className="flex flex-col items-center text-center">
+            <Art size={132} {...props} title={name} />
+            <h3 className="mt-2 text-lg font-black">{name}</h3>
+            <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{blurb}</p>
+          </Card>
+        ))}
+      </div>
+    </Section>
+  )
+}
 
 export default function About() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -38,6 +63,8 @@ export default function About() {
           <p className="font-bold" style={{ color: 'var(--ink)' }}>{t('abP4', 'Language first. School next. Family always.')}</p>
         </div>
       </Section>
+
+      <Characters />
 
       <Section mark="ል" eyebrow={t('abContactEyebrow', 'Contact')} title={t('abContactTitle', 'Talk to us')} center>
         <Card className="mx-auto max-w-xl">
