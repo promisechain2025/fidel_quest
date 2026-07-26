@@ -28,16 +28,24 @@ function buildModels() {
   const contactMessage = new mongoose.Schema({
     name: String, email: String, message: String,
   }, { timestamps: true })
+  const order = new mongoose.Schema({
+    sessionId: { type: String, required: true, unique: true },
+    code: { type: String, required: true, unique: true },
+    email: String,
+    product: { type: String, default: 'family_pack' },
+    status: { type: String, default: 'paid' },
+  }, { timestamps: true })
   return {
     User: mongoose.models.User || mongoose.model('User', user),
     TeacherApplication: mongoose.models.TeacherApplication || mongoose.model('TeacherApplication', teacherApplication),
     WaitlistEntry: mongoose.models.WaitlistEntry || mongoose.model('WaitlistEntry', waitlistEntry),
     ContactMessage: mongoose.models.ContactMessage || mongoose.model('ContactMessage', contactMessage),
+    Order: mongoose.models.Order || mongoose.model('Order', order),
   }
 }
 
 /* ---- in-memory backend ---- */
-const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], seq: 0 }
+const mem = { users: [], teacherApplications: [], waitlistEntries: [], contactMessages: [], orders: [], seq: 0 }
 const clone = (o) => JSON.parse(JSON.stringify(o))
 const memDoc = (data) => ({ ...data, _id: String(++mem.seq), createdAt: new Date().toISOString() })
 
@@ -94,6 +102,39 @@ export const store = {
     return clone([...arr].reverse())
   },
 
+  async findOrderBySessionId(sessionId) {
+    if (useMongo) return M.Order.findOne({ sessionId }).lean()
+    return clone(mem.orders.find((o) => o.sessionId === sessionId) || null)
+  },
+  async orderCodeExists(code) {
+    if (useMongo) return !!(await M.Order.exists({ code }))
+    return mem.orders.some((o) => o.code === code)
+  },
+
+  /** Atomic claim shared by the webhook and the success-page poll: create the
+      order only if this sessionId has never been fulfilled. Returns
+      { order, created } - the caller must email the buyer ONLY when
+      created === true (exactly-once across webhook, retries, and polling).
+      Mongo: $setOnInsert upsert against the unique sessionId index.
+      Memory: synchronous check-and-push (no await between find and push),
+      atomic on Node's single-threaded event loop. */
+  async createOrderIfAbsent({ sessionId, email, code, product = 'family_pack' }) {
+    if (useMongo) {
+      const res = await M.Order.findOneAndUpdate(
+        { sessionId },
+        { $setOnInsert: { sessionId, email, code, product, status: 'paid' } },
+        { upsert: true, new: true, rawResult: true },
+      )
+      const order = res.value?.toObject ? res.value.toObject() : res.value
+      return { order, created: !res.lastErrorObject?.updatedExisting }
+    }
+    const existing = mem.orders.find((o) => o.sessionId === sessionId)
+    if (existing) return { order: clone(existing), created: false }
+    const doc = memDoc({ sessionId, email, code, product, status: 'paid' })
+    mem.orders.push(doc)
+    return { order: clone(doc), created: true }
+  },
+
   /* test helper - memory backend only */
-  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.seq = 0 },
+  _reset() { mem.users = []; mem.teacherApplications = []; mem.waitlistEntries = []; mem.contactMessages = []; mem.orders = []; mem.seq = 0 },
 }

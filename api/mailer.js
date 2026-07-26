@@ -9,17 +9,19 @@ const transporter = enabled
   ? nodemailer.createTransport({ service: 'gmail', auth: { user: config.email.user, pass: config.email.pass } })
   : null
 
-export async function notifyOwner(subject, lines) {
+export async function sendTo(to, subject, lines) {
   const text = lines.filter(Boolean).join('\n')
-  if (!enabled || !config.email.notifyTo) {
-    console.log(`[mail:skipped] ${subject}\n${text}`)
+  if (!enabled || !to) {
+    console.log(`[mail:skipped] to=${to || '-'} ${subject}\n${text}`)
     return { skipped: true }
   }
   try {
-    await transporter.sendMail({ from: config.email.user, to: config.email.notifyTo, subject, text })
+    await transporter.sendMail({ from: config.email.user, to, subject, text })
     return { sent: true }
   } catch (err) {
     console.error('[mail:error]', err.message)
     return { error: true } // never fail the request because email failed
   }
 }
+
+export const notifyOwner = (subject, lines) => sendTo(config.email.notifyTo, subject, lines)
