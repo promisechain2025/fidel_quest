@@ -5,7 +5,9 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'dev-dist', 'coverage', 'android', 'ios', 'server'] },
+  // website/ and api/ are independent deliverables with their own tooling;
+  // the root lint covers the app only.
+  { ignores: ['dist', 'dev-dist', 'coverage', 'android', 'ios', 'server', 'website', 'api'] },
   {
     files: ['**/*.{js,jsx}'],
     ...js.configs.recommended,

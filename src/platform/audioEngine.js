@@ -206,6 +206,16 @@ export class AudioEngine {
     })
   }
 
+  /** Whether a key has a real recorded clip (memory pack or manifest
+     coverage). Lets callers prefer a recording and gracefully fall back when
+     none exists yet (e.g. story narration before it is recorded). */
+  async covered(key) {
+    await this.ensureManifest()
+    const mem = this.getMemory?.()
+    if (mem && mem[key]) return true
+    return !!(this.manifest && this.manifest.has(key))
+  }
+
   /** Load the coverage manifest once; absence is a supported state. */
   async ensureManifest() {
     if (this.manifest !== undefined) return
@@ -349,7 +359,7 @@ export class AudioEngine {
     })
   }
 
-  async play(key, { enabled = true, chime = null } = {}) {
+  async play(key, { enabled = true, chime = null, chimeOnMiss = true } = {}) {
     if (!enabled) return
     // ONE VOICE AT A TIME, app-wide. A request that arrives while a clip is
     // still sounding WAITS for it to finish - and newer requests replace the
@@ -427,7 +437,7 @@ export class AudioEngine {
             if (blocked && this.lastBlocked === blocked) this.lastBlocked = null
             free()
           }, { once: true })
-          a.addEventListener('error', () => { this.playChime(chime); free() }, { once: true })
+          a.addEventListener('error', () => { if (chimeOnMiss) this.playChime(chime); free() }, { once: true })
           this.currentEl = a // stopVoice() can cut this fallback too
           await a.play()
           if (this._playGen !== gen) { try { a.pause() } catch { /* detached */ } }
@@ -440,7 +450,7 @@ export class AudioEngine {
         this.missing.add(key)
         this.emit('missing', { key, src: source.src })
       }
-      this.playChime(chime)
+      if (chimeOnMiss) this.playChime(chime)
       free()
     }
   }

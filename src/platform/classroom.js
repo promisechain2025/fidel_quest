@@ -33,6 +33,7 @@ const TEACHER_KEY = 'fq.teacher.v1'
 
 export const ASSIGN_MIN = 3
 export const ASSIGN_MAX = 20
+export const MAX_ENROLLED = 60
 
 const FAMILY_IDS = new Set(FIDEL_FAMILIES.map((f) => f.id))
 
@@ -284,8 +285,44 @@ export function createClass(code, teacher, today = dayStamp()) {
   const name = sanitizeName(teacher)
   if (!validClassCode(c) || !name) return null
   const t = loadTeacher()
-  t.classes = { ...t.classes, [c]: t.classes[c] || { teacher: name, createdDay: today } }
+  t.classes = { ...t.classes, [c]: t.classes[c] || { teacher: name, createdDay: today, enrolled: [] } }
   return writeJson(TEACHER_KEY, t)
+}
+
+/* ── proactive roster: register students up front (offline, on-device) ──
+   The teacher can enroll named students before anyone turns in a receipt,
+   so the roster reads as a real class list from day one and "who is missing"
+   is meaningful immediately. Names never leave the device - this is the same
+   local fq.teacher.v1 store as receipts, so it adds no children's data to any
+   server. Receipts still auto-file against these names (or add new ones). */
+export function enrollStudent(code, name) {
+  const c = sanitizeClassCode(code)
+  const b = sanitizeName(name)
+  const t = loadTeacher()
+  if (!validClassCode(c) || !b || !t.classes[c]) return null
+  const cur = t.classes[c].enrolled || []
+  if (cur.includes(b) || cur.length >= MAX_ENROLLED) return t // dedupe / cap: no-op
+  t.classes = { ...t.classes, [c]: { ...t.classes[c], enrolled: [...cur, b] } }
+  return writeJson(TEACHER_KEY, t)
+}
+
+/** Remove a name from the pre-registered list. Any receipts that student
+    already sent stay (a submitted result is a fact); this only unlists a
+    name added by hand. */
+export function unenrollStudent(code, name) {
+  const c = sanitizeClassCode(code)
+  const b = sanitizeName(name)
+  const t = loadTeacher()
+  if (!t.classes[c]) return null
+  const cur = t.classes[c].enrolled || []
+  t.classes = { ...t.classes, [c]: { ...t.classes[c], enrolled: cur.filter((n) => n !== b) } }
+  return writeJson(TEACHER_KEY, t)
+}
+
+/** The pre-registered names for a class (sorted). */
+export function enrolledStudents(code) {
+  const c = sanitizeClassCode(code)
+  return [...((loadTeacher().classes[c] || {}).enrolled || [])].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 }
 
 export function removeClass(code) {
@@ -312,11 +349,17 @@ export function addReceipt(receipt) {
   return writeJson(TEACHER_KEY, { ...t, receipts })
 }
 
-/** Roster grouped by student for one class: [{student, receipts, best}] */
+/** Roster grouped by student for one class, merging pre-registered names with
+    everyone who has sent a receipt: [{student, receipts, best, enrolled,
+    started}]. A pre-registered student with no receipt yet shows as
+    started:false so the teacher can see who has not begun. */
 export function rosterByStudent(code) {
   const c = sanitizeClassCode(code)
+  const t = loadTeacher()
+  const enrolled = new Set((t.classes[c] || {}).enrolled || [])
   const byName = new Map()
-  for (const r of loadTeacher().receipts || []) {
+  for (const name of enrolled) byName.set(name, [])
+  for (const r of t.receipts || []) {
     if (r.code !== c) continue
     if (!byName.has(r.student)) byName.set(r.student, [])
     byName.get(r.student).push(r)
@@ -325,7 +368,9 @@ export function rosterByStudent(code) {
     .map(([student, receipts]) => ({
       student,
       receipts: [...receipts].sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0)),
-      best: Math.max(...receipts.map((r) => (r.total ? r.score / r.total : 0))),
+      best: receipts.length ? Math.max(...receipts.map((r) => (r.total ? r.score / r.total : 0))) : 0,
+      enrolled: enrolled.has(student),
+      started: receipts.length > 0,
     }))
     .sort((a, b) => (a.student < b.student ? -1 : 1))
 }
@@ -358,9 +403,13 @@ export function assignmentsFor(code) {
  */
 export function submissionStats(code, seed) {
   const c = sanitizeClassCode(code)
-  const receipts = (loadTeacher().receipts || []).filter((r) => r.code === c)
+  const t = loadTeacher()
+  const receipts = (t.receipts || []).filter((r) => r.code === c)
   const submitted = receipts.filter((r) => r.assignmentSeed === seed)
-  const known = [...new Set(receipts.map((r) => r.student))].sort()
+  // "known" = the whole class: pre-registered names plus anyone who has ever
+  // sent a receipt, so "missing" flags enrolled students who have not begun.
+  const enrolled = (t.classes[c] || {}).enrolled || []
+  const known = [...new Set([...enrolled, ...receipts.map((r) => r.student)])].sort()
   const names = new Set(submitted.map((r) => r.student))
   return {
     submitted: [...submitted].sort((a, b) => (a.student < b.student ? -1 : 1)),

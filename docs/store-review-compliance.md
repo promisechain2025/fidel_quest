@@ -7,8 +7,31 @@ Guidelines** and **Google Play Families** policy against what's actually in the
 code. Pair this with the submission runbook in `APP-STORE.md` and the listing
 copy in `docs/store-listing.md`.
 
-**Verdict: the in-code guideline fixes are DONE; what remains is submission-time
-metadata / build-flags / console forms (below).**
+**Verdict: most in-code guideline fixes are DONE; a July-2026 agent review
+surfaced two items that still need a decision (below) plus submission-time
+metadata / build-flags / console forms.**
+
+## Open items from the review (decide before submitting)
+
+1. ✅ **Fixed — share sheet now parental-gated (Apple 1.3 / Google Families).**
+   Every child-reachable "Share Anbessa" surface (`Closet.jsx`, the Daily-Gift
+   reveal, the chapter-complete Celebration, `ChallengeShareButton`) now routes
+   through `useShareGate` (`components/ShareGate.jsx`), which shows the same
+   hold-and-answer `ParentalGate` before opening the OS share sheet. The
+   student→teacher assignment receipt (`AssignmentDone`) is left ungated on
+   purpose: it is a directed submission inside the adult-initiated Teacher
+   flow, not a child-facing social share.
+2. 🟠 **Default pack vs. stories.** `detectPreferredPack()` returns Tigrinya on
+   non-Amharic locales, but the 10 stories are Amharic-only, so Story Time is
+   empty on those devices until Tigrinya stories ship. **Decision (owner):**
+   waiting for the Tigrinya story translations rather than flipping the default.
+   Make sure the reviewer/test device locale is Amharic so the feature is
+   exercised.
+3. **Religious content is undisclosed (Apple 2.3.1 / IARC).** All 10 Story
+   Time stories are gentle Bible stories. The IARC questionnaire asks about
+   religious references, and the listing markets only "games, stories and
+   rewards". **Decision needed:** add a line to the description ("gentle Bible
+   stories") and answer the IARC religion question truthfully. No code change.
 
 > **v1 model = a straight PAID app.** Leave `VITE_MONETIZE` unset (default) and
 > set a **price** in both consoles. The store takes payment at download; the

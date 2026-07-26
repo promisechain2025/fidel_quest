@@ -9,10 +9,12 @@
    shell: a per-frame rAF that feeds TICK dt into the machine, DOM falling
    letters you tap to shoot, and a capped 2D-canvas firework layer.
    ========================================================================== */
-import { useReducer, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useReducer, useEffect, useRef, useState } from 'react'
+import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion'
 import { X, Volume2, Heart, Star } from 'lucide-react'
-import { Sprite2D, drawAnbessa, drawKokeb, drawHyena } from './FidelQuestApp'
+import AnbessaSvg from './components/AnbessaSvg'
+import KokebSvg from './components/KokebSvg'
+import JibbySvg from './components/JibbySvg'
 import { INDEXES } from './platform/ethiopic'
 import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
@@ -31,9 +33,16 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   const areaRef = useRef(null)
   const canvasRef = useRef(null)
   const partsRef = useRef([])
-  const rocketRef = useRef(null) // { x0,y0,tx,ty,born } a spark in flight
+  const rocketRef = useRef(null) // { x0,y0,tx,ty,born,combo } a spark in flight
   const targetForm = formOf(ctx.target)
   const revealTarget = !soundOn // sound-only; only show the letter when muted
+  // Game-feel layer (presentation only - never touches the pure machine):
+  // Anbessa recoils when firing, the field shakes on a miss, and a running
+  // combo makes the burst bigger and pops a "xN!".
+  const reduce = useReducedMotion()
+  const anbessaCtl = useAnimationControls()
+  const fieldCtl = useAnimationControls()
+  const [comboPop, setComboPop] = useState(null)
 
   /* per-frame game clock */
   useEffect(() => {
@@ -44,19 +53,23 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   }, [])
 
   /* firework layer: a spark rises from Anbessa to the shot letter, then bursts */
-  const disperse = (cx, cy) => {
+  const disperse = (cx, cy, combo = 1) => {
     const P = partsRef.current
-    for (let i = 0; i < 60; i++) {
-      const a = (Math.PI * 2 * i) / 60 + Math.random() * 0.25
-      const sp = 3.2 * (0.35 + Math.random())
-      P.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.012 + Math.random() * 0.009, color: SPARK[i % SPARK.length], size: 1.8 + Math.random() * 2.2 })
+    // A bigger, more golden burst as the combo climbs - the reward for a streak.
+    const n = 60 + Math.min(combo, 8) * 12
+    const boost = 1 + Math.min(combo, 8) * 0.06
+    for (let i = 0; i < n; i++) {
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.25
+      const sp = 3.2 * boost * (0.35 + Math.random())
+      const gold = combo >= 3 && i % 2 === 0
+      P.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.012 + Math.random() * 0.009, color: gold ? '#ffd25a' : SPARK[i % SPARK.length], size: (1.8 + Math.random() * 2.2) * (combo >= 5 ? 1.25 : 1) })
     }
-    if (P.length > 340) P.splice(0, P.length - 340)
+    if (P.length > 420) P.splice(0, P.length - 420)
   }
-  const shootFireworkTo = (nx, ny) => {
+  const shootFireworkTo = (nx, ny, combo = 1) => {
     const el = areaRef.current
     if (!el) return
-    rocketRef.current = { x0: el.clientWidth * 0.5, y0: el.clientHeight * 0.9, tx: el.clientWidth * nx, ty: el.clientHeight * ny, born: performance.now() }
+    rocketRef.current = { x0: el.clientWidth * 0.5, y0: el.clientHeight * 0.9, tx: el.clientWidth * nx, ty: el.clientHeight * ny, born: performance.now(), combo }
   }
   useEffect(() => {
     const c = canvasRef.current, el = areaRef.current
@@ -78,7 +91,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
           g.beginPath(); g.arc(x | 0, y | 0, 4, 0, 6.283); g.fill()
           g.globalAlpha = 0.5; g.fillStyle = '#ff9a4d'
           g.beginPath(); g.arc(x | 0, (y + 10) | 0, 2.6, 0, 6.283); g.fill()
-          if (p >= 1) { disperse(rk.tx, rk.ty); rocketRef.current = null }
+          if (p >= 1) { disperse(rk.tx, rk.ty, rk.combo || 1); rocketRef.current = null }
         }
         const P = partsRef.current
         for (let i = P.length - 1; i >= 0; i--) {
@@ -101,20 +114,36 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     const good = item.key === ctx.target
     recordAnswer(ctx.target, item.key, 'catch')
     dispatch({ type: CatchEvent.SHOOT, payload: { id: item.id } })
-    if (good) { playEffect('good', soundOn); playForm(formOf(item.key), soundOn); shootFireworkTo(item.x, item.y) }
-    // A wrong shot re-plays the CALLED letter so the miss becomes a listen-again
-    // teaching moment, not just a buzzer.
-    else { playEffect('bad', soundOn); setTimeout(() => playForm(targetForm, soundOn), 420) }
+    if (good) {
+      playEffect('good', soundOn); playForm(formOf(item.key), soundOn)
+      shootFireworkTo(item.x, item.y, ctx.combo + 1)
+      if (!reduce) anbessaCtl.start({ y: [0, -9, 0], scale: [1, 1.12, 1] }, { duration: 0.3, ease: 'easeOut' })
+    } else {
+      // A wrong shot re-plays the CALLED letter so the miss is a listen-again
+      // teaching moment, not just a buzzer - now with a little shake.
+      playEffect('bad', soundOn); setTimeout(() => playForm(targetForm, soundOn), 420)
+      if (!reduce) {
+        fieldCtl.start({ x: [0, -9, 8, -6, 4, 0] }, { duration: 0.34 })
+        anbessaCtl.start({ y: [0, 5, 0] }, { duration: 0.24 })
+      }
+    }
   }
 
   /* announce the called letter (sound only) */
   useEffect(() => { if (ctx.phase === Phase.PLAY) playForm(targetForm, soundOn) }, [ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (ctx.phase === Phase.WIN) { playEffect('win', soundOn); const id = setTimeout(() => onExit({ won: true }), 1700); return () => clearTimeout(id) } }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  /* streak celebration: pop "xN!" at each combo milestone */
+  useEffect(() => {
+    if (ctx.combo < 3) return undefined
+    setComboPop(ctx.combo)
+    const id = setTimeout(() => setComboPop(null), 850)
+    return () => clearTimeout(id)
+  }, [ctx.combo])
 
   if (ctx.phase === Phase.LOSE) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#171334,#3a2352)', color: '#fdf4e2' }}>
-        <Sprite2D draw={drawHyena} size={120} />
+        <JibbySvg size={120} />
         <h2 className="text-2xl font-black">{t('catchLose', 'Out of hearts!')}</h2>
         <p className="font-bold" style={{ color: '#c9bfe6' }}>{t('caughtCount', `Shot ${ctx.caught}`, { n: ctx.caught })}</p>
         <div className="flex gap-3">
@@ -149,7 +178,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
       {/* sound-only prompt: tap the ear to hear the called letter again */}
       <div className="flex items-center justify-center gap-2 px-6 pt-2 pb-1">
-        <Sprite2D draw={drawKokeb} size={34} />
+        <KokebSvg size={34} />
         <p className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('catchPrompt', 'Listen, then shoot it!')}</p>
         <motion.button key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }} type="button" onClick={() => playForm(targetForm, soundOn)} aria-label={t('hearAgain', 'Hear it again')}
           className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,210,90,0.5)', outlineColor: '#ffd25a' }}>
@@ -160,7 +189,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
       </div>
 
       {/* play field */}
-      <div ref={areaRef} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'manipulation' }}>
+      <motion.div ref={areaRef} animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'manipulation' }}>
         <StarField />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
         {/* falling letters - tap to shoot */}
@@ -184,20 +213,31 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Anbessa the launcher, at the bottom */}
+        {/* combo pop */}
+        <AnimatePresence>
+          {comboPop && (
+            <motion.div key={comboPop} initial={{ scale: 0.4, opacity: 0, y: 12 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.5 }} transition={{ type: 'spring', stiffness: 420, damping: 15 }}
+              className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 text-center">
+              <span className="text-4xl font-black" style={{ color: '#ffd25a', textShadow: '0 2px 16px rgba(255,150,60,0.85)' }}>x{comboPop}!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Anbessa the launcher, at the bottom (recoils when firing) */}
         <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2">
-          <Sprite2D draw={drawAnbessa} size={84} mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={ctx.phase === Phase.WIN ? 'cheer' : 'stand'} />
+          <motion.div animate={anbessaCtl}>
+            <AnbessaSvg size={84} mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={ctx.phase === Phase.WIN ? 'cheer' : 'stand'} />
+          </motion.div>
         </div>
         {/* win banner */}
         <AnimatePresence>
           {ctx.phase === Phase.WIN && (
             <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-              <Sprite2D draw={drawAnbessa} size={130} mood="happy" pose="cheer" />
+              <AnbessaSvg size={130} mood="happy" pose="cheer" />
               <h2 className="text-3xl font-black" style={{ color: '#ffd25a', textShadow: '0 2px 16px rgba(255,150,60,0.7)' }}>{t('catchWin', 'Great shooting!')}</h2>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       <p className="px-4 pb-5 pt-2 text-center text-sm font-black" style={{ color: '#c9bfe6' }}>
         {t('lcTapHint', 'Tap the letter you hear')}

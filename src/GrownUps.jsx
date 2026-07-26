@@ -19,6 +19,8 @@ import { useChildModel } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
 import { shareProgressSnapshot, importProgressFile } from './platform/progress'
+import { progressCardUrl } from './platform/progressCard'
+import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
@@ -380,6 +382,37 @@ function ReadingCard({ events }) {
 
 /* Native only: appears when the daily on-device backup file exists, so a
    family recovering from storage eviction or a reinstall has one tap back. */
+/* Share a reviewable progress report: a link (URL fragment only - nothing
+   sent to any server) that the eGeez site's /progress page renders for the
+   other parent, a grandparent, or the teacher. Sharing is the grown-up's
+   explicit choice; see platform/progressCard.js. */
+function ProgressReportCard() {
+  const [copied, setCopied] = useState(false)
+  const share = async () => {
+    const url = progressCardUrl()
+    if (!url) return
+    const shared = await nativeShare({ title: 'eGeez progress', text: t('gpReportShareText', 'Our eGeez progress report:'), url })
+    if (!shared) {
+      try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* no clipboard */ }
+    }
+  }
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpReportTitle', 'Progress report')}
+      </h2>
+      <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+        {t('gpReportBody', 'Send a reviewable report - letters learned, streak, and the family-by-family picture - to the other parent, a grandparent, or the teacher. The report lives inside the link itself; nothing is uploaded.')}
+      </p>
+      <button type="button" onClick={share}
+        className="chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
+        style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        {copied ? t('gpReportCopied', 'Link copied!') : t('gpReportShare', 'Share progress report')}
+      </button>
+    </section>
+  )
+}
+
 function BackupCard() {
   const [info, setInfo] = useState(null)
   const [state, setState] = useState('') // '' | 'done' | 'none'
@@ -615,6 +648,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           <CommunityCard />
 
           <ReadingCard events={events} />
+
+          <ProgressReportCard />
 
           <BackupCard />
 

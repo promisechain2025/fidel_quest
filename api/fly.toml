@@ -1,0 +1,22 @@
+# Deploy the hub API to Fly.io (same pattern as ../server/fly.toml):
+#   cd api && fly launch --copy-config --name egeez-api
+#   fly secrets set MONGO_URI=... JWT_SECRET=... ADMIN_TOKEN=... \
+#     EMAIL_USER=... EMAIL_PASS=... NOTIFY_EMAIL=... \
+#     STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=... SITE_URL=https://egeez.app \
+#     CORS_ORIGIN=https://egeez.app
+# Production REQUIRES MONGO_URI when Stripe keys are set (index.js enforces).
+app = "egeez-api"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8788
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

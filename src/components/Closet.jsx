@@ -6,6 +6,7 @@ import { WEARABLE_SLOTS, ownedInSlot, wornLayers } from '../journey'
 import { t } from '../platform/i18n'
 import { shareCtaLabel } from '../platform/experiments'
 import { shareAnbessa } from './ShareCard'
+import { useShareGate } from './ShareGate'
 import { Harag } from './Manuscript'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -18,6 +19,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
   const worn = wornLayers(collection)
   const [sharing, setSharing] = useState(false)
   const [toast, setToast] = useState(null)
+  const { requestShare, gate } = useShareGate()
   const anyOwned = WEARABLE_SLOTS.some((s) => ownedInSlot(collection, s).length > 0)
 
   const share = async () => {
@@ -49,7 +51,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
         </p>
         <button
           type="button"
-          onClick={share}
+          onClick={() => requestShare(share)}
           disabled={sharing}
           className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`}
           style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
@@ -57,6 +59,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
           <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
         </button>
       </div>
+      {gate}
 
       {/* Wardrobe by slot. */}
       {anyOwned ? (

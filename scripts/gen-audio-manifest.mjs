@@ -9,7 +9,7 @@ const coverage = []
 // letters/ and words/ hold the base (Amharic) clips; letters/ti/ holds the
 // Tigrinya-distinct overrides. Recurse one level so the ti/ redirects are
 // covered too — an uncovered key is gated straight to the chime.
-for (const dir of ['letters', 'letters/ti', 'words']) {
+for (const dir of ['letters', 'letters/ti', 'words', 'prompts', 'stories', 'stories/ti']) {
   let entries
   try {
     entries = readdirSync(base + dir)

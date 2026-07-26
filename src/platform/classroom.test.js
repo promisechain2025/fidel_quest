@@ -8,6 +8,7 @@ import {
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
   saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
   termWeeks, saveTermPlan, currentWeekIndex, weekDue,
+  enrollStudent, unenrollStudent, enrolledStudents, MAX_ENROLLED,
   ASSIGN_MIN, ASSIGN_MAX,
 } from './classroom'
 import { INDEXES, FIDEL_FAMILIES } from './ethiopic'
@@ -205,6 +206,59 @@ describe('teacher memory: assignments, turn-ins, trouble, term plan', () => {
   })
   it('rejects a term plan for a class this device does not own', () => {
     expect(saveTermPlan('NOPE99', 2, '2026-07-06')).toBeNull()
+  })
+})
+
+describe('proactive roster: register students up front', () => {
+  it('enrolls named students (deduped, class-scoped) and lists them', () => {
+    expect(enrollStudent('ABEBA1', 'Lulit')).toBeNull() // no class yet
+    createClass('ABEBA1', 'Mekdes')
+    enrollStudent('ABEBA1', 'Lulit')
+    enrollStudent('ABEBA1', 'Lulit') // duplicate is a no-op
+    enrollStudent('ABEBA1', 'Biruk')
+    expect(enrolledStudents('ABEBA1')).toEqual(['Biruk', 'Lulit'])
+  })
+  it('shows an enrolled student in the roster as not-started until a receipt lands', () => {
+    createClass('ABEBA1', 'Mekdes')
+    enrollStudent('ABEBA1', 'Lulit')
+    enrollStudent('ABEBA1', 'Biruk')
+    let roster = rosterByStudent('ABEBA1')
+    expect(roster.map((r) => r.student)).toEqual(['Biruk', 'Lulit'])
+    expect(roster.every((r) => r.enrolled && !r.started)).toBe(true)
+    expect(roster[0].best).toBe(0)
+    // Lulit turns in -> started flips, best fills; Biruk still waiting
+    addReceipt(RECEIPT)
+    roster = rosterByStudent('ABEBA1')
+    const lulit = roster.find((r) => r.student === 'Lulit')
+    expect(lulit.started).toBe(true)
+    expect(lulit.best).toBe(0.8)
+    expect(roster.find((r) => r.student === 'Biruk').started).toBe(false)
+  })
+  it('a receipt from an unenrolled student still appears (auto-added)', () => {
+    createClass('ABEBA1', 'Mekdes')
+    addReceipt(RECEIPT) // Lulit never enrolled
+    const lulit = rosterByStudent('ABEBA1').find((r) => r.student === 'Lulit')
+    expect(lulit.started).toBe(true)
+    expect(lulit.enrolled).toBe(false)
+  })
+  it('counts enrolled students as missing until they turn an assignment in', () => {
+    createClass('ABEBA1', 'Mekdes')
+    enrollStudent('ABEBA1', 'Lulit')
+    enrollStudent('ABEBA1', 'Biruk')
+    saveAssignment({ code: 'ABEBA1', teacher: 'Mekdes', familyIds: ['ha'], count: 5, due: '2026-07-20', seed: 42 })
+    addReceipt(RECEIPT) // Lulit, seed 42
+    const s = submissionStats('ABEBA1', 42)
+    expect(s.known).toEqual(['Biruk', 'Lulit'])
+    expect(s.submitted.map((r) => r.student)).toEqual(['Lulit'])
+    expect(s.missing).toEqual(['Biruk'])
+  })
+  it('unenrolls a hand-added name and caps the roster', () => {
+    createClass('ABEBA1', 'Mekdes')
+    enrollStudent('ABEBA1', 'Lulit')
+    unenrollStudent('ABEBA1', 'Lulit')
+    expect(enrolledStudents('ABEBA1')).toEqual([])
+    for (let i = 0; i < MAX_ENROLLED + 5; i++) enrollStudent('ABEBA1', `Student${i}`)
+    expect(enrolledStudents('ABEBA1').length).toBe(MAX_ENROLLED)
   })
 })
 

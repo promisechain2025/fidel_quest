@@ -2,6 +2,23 @@
 
 Project context for Claude Code agent sessions in `fidel_quest`.
 
+## Repo layout: three independent deliverables
+
+- **`/` (root `src/`)** — the eGeez **app** (this file's main subject): fully
+  client-side PWA, no backend, no accounts. Nothing below may be imported
+  into it; it stays offline.
+- **`website/`** — the public **learning-hub site** (Vite + React + Tailwind,
+  own package.json): vision/landing, Amharic + Tigrinya pages, teacher
+  application, homeschool guidance. Brand tokens hand-copied into
+  `website/src/tokens.css`; forms post to `api/` (`VITE_API_URL`) with a
+  mailto fallback. See `website/README.md`.
+- **`api/`** — the **hub API** (Express, own package.json): JWT accounts base
+  (parent/teacher) + teacher-application/waitlist/contact forms with owner
+  email notifications. Mongo when `MONGO_URI` is set, in-memory otherwise;
+  `npm test` runs node:test + supertest with zero services. Patterns come
+  from PROMISECHAIN_BE. Distinct from `server/` (zero-dep, no-PII
+  analytics/OG service) — do not merge the two. See `api/README.md`.
+
 ## What this app is
 
 **eGeez** is an Amharic alphabet (Fidel) learning game for kids. It is

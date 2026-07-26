@@ -13,13 +13,12 @@ import {
   RunnerEvent,
   RUNNER_QPL,
   INDEXES,
-  Sprite2D,
-  drawAnbessa,
-  drawHyena,
   loadRunnerBest,
   saveRunnerBest,
   rngNext,
 } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import JibbySvg from './JibbySvg'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
@@ -77,7 +76,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   if (destroyed) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
-        <Sprite2D draw={drawHyena} size={120} />
+        <JibbySvg size={120} />
         <h2 className="text-2xl font-black">{t('munched', 'Munched!')}</h2>
         <p className="font-bold" style={{ color: 'var(--muted)' }}>
           {t('bestStreak', 'Best streak')}: {ctx.fed}
@@ -114,8 +113,8 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         <div className="flex items-end justify-center gap-6">
-          <Sprite2D draw={drawAnbessa} size={96} mood={feeding && !ctx.lastFeed?.good ? 'sad' : 'happy'} />
-          {(boss || (feeding && !ctx.lastFeed?.good)) && <Sprite2D draw={drawHyena} size={80} />}
+          <AnbessaSvg size={96} mood={feeding && !ctx.lastFeed?.good ? 'sad' : 'happy'} />
+          {(boss || (feeding && !ctx.lastFeed?.good)) && <JibbySvg size={80} />}
         </div>
 
         {boss ? (

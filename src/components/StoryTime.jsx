@@ -9,8 +9,8 @@
    are user actions (cut the voice, act); "Read to me" chains word audio
    through afterVoice so it always plays out.
    ========================================================================== */
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
@@ -18,12 +18,31 @@ import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead 
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
-import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, FOCUS } from '../FidelQuestApp'
+import { t, getLang } from '../platform/i18n'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
 import WordPicture from './Pictures'
+import StoryScene from './StoryScene'
 import { Harag, LetterTile } from './Manuscript'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
+
+/* Page-turn like a book leaf: the outgoing page folds away over the spine
+   while the next swings in from the opposite edge (3D rotateY + a slide, so
+   it reads as paper turning, not a card spinning). `dir` is +1 forward,
+   -1 back. Reduced-motion swaps in a plain crossfade below. */
+const BOOK_TURN = {
+  enter: (dir) => ({ rotateY: dir >= 0 ? -78 : 78, x: dir >= 0 ? '38%' : '-38%', opacity: 0 }),
+  center: { rotateY: 0, x: 0, opacity: 1 },
+  exit: (dir) => ({ rotateY: dir >= 0 ? 78 : -78, x: dir >= 0 ? '-38%' : '38%', opacity: 0 }),
+}
+const FADE_TURN = { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opacity: 0 } }
+
+/* A soft cartoon scene behind the page's picture: a sky glow up top and a
+   ground tint below, layered over the card so it works in light and dark. */
+const SCENE_BG =
+  'radial-gradient(120% 82% at 50% 16%, rgba(120,190,255,0.22), rgba(120,190,255,0.06) 46%, transparent 62%),' +
+  'linear-gradient(180deg, transparent 58%, rgba(122,182,96,0.20))'
 
 /** Speak one Ge'ez word: recorded clip when the pack has one, else spell
     it letter-by-letter. Returns a cancel fn for the spelling chain. */
@@ -54,13 +73,18 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [readCounts, setReadCounts] = useState(() => loadStoriesRead().read)
   const [story, setStory] = useState(null)
   const [pageIdx, setPageIdx] = useState(0)
+  const [dir, setDir] = useState(1) // page-turn direction: +1 forward, -1 back
   const [finished, setFinished] = useState(false)
   const [quiz, setQuiz] = useState(null) // null | 'asking' | 'missed' | 'done'
   const [spokenWord, setSpokenWord] = useState(-1)
   const cancelRef = useRef(() => {})
+  const narrGen = useRef(0) // bumps on every nav; late narration for an old page bails
+  const finishedOnceRef = useRef(false) // did this open reach the celebration?
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => () => cancelRef.current(), [])
   const stopSpeech = () => {
+    narrGen.current++
     cancelRef.current()
     audio.stopVoice()
     setSpokenWord(-1)
@@ -68,7 +92,8 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   const openStory = (s) => {
     stopSpeech()
-    sayPrompt('tapWords', soundOn)
+    finishedOnceRef.current = false
+    setDir(1)
     setStory(s)
     setPageIdx(0)
     setQuiz(null)
@@ -79,9 +104,16 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     setStory(null)
     setFinished(false)
   }
+  /** Leave the reader for good: on the Journey-node path this completes the
+      node (which navigates away); from the Backpack it returns to the library. */
+  const leaveReader = () => {
+    if (finishedOnceRef.current && onStoryComplete) onStoryComplete()
+    else closeReader()
+  }
 
   const page = story?.pages[pageIdx]
-  const words = page ? storyWords(page.g) : []
+  const words = useMemo(() => (page ? storyWords(page.g) : []), [page])
+  const showGloss = getLang() === 'en' // English meaning captions only for an English UI
 
   const tapWord = (w, i) => {
     stopSpeech()
@@ -93,8 +125,30 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     cancelRef.current = speakWord(w, soundOn)
   }
 
-  /** Read the whole page: each word in order, waiting for the voice. */
-  const readToMe = () => {
+  /** The page's recorded-narration key, pack-aware (Amharic under stories/,
+      Tigrinya under stories/ti/). */
+  const narrationKey = (idx) => `stories/${getActivePackId() === 'ti' ? 'ti/' : ''}${story.id}-${idx + 1}`
+
+  /** Play the page's human narration when one is recorded; resolves to
+      whether it played, so callers can fall back to word-by-word reading. */
+  const playNarration = async (idx = pageIdx) => {
+    if (!story) return false
+    const gen = narrGen.current
+    const key = narrationKey(idx)
+    const ok = await audio.covered(key)
+    // Superseded by a page turn while covered() was resolving, or nothing recorded.
+    if (!ok || gen !== narrGen.current) return false
+    audio.stopVoice()
+    setSpokenWord(-1)
+    // chimeOnMiss:false -> if the clip fails to load, stay silent (never a
+    // letter-chime mid-story); word-by-word is the explicit fallback.
+    audio.play(key, { enabled: soundOn, chimeOnMiss: false })
+    return true
+  }
+
+  /** Read the whole page: prefer the recorded narration, else chain each
+      word (real clip where one exists, else spell it out). */
+  const readWordsAloud = () => {
     stopSpeech()
     let cancelled = false
     let cancelStep = () => {}
@@ -118,10 +172,26 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       cancelStep()
     }
   }
+  const readToMe = () => {
+    playNarration().then((played) => { if (!played) readWordsAloud() })
+  }
+
+  // Auto-read each page: play the recorded narration when there is one; on the
+  // first page with no recording yet, fall back to the spoken tap-hint.
+  useEffect(() => {
+    if (!story || finished || quiz) return
+    let alive = true
+    playNarration(pageIdx).then((played) => {
+      if (alive && !played && pageIdx === 0) sayPrompt('tapWords', soundOn)
+    })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIdx, story, finished, quiz])
 
   const nextPage = () => {
     stopSpeech()
     if (pageIdx + 1 < story.pages.length) {
+      setDir(1)
       setPageIdx(pageIdx + 1)
       return
     }
@@ -139,8 +209,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     // A completed read is a correct 'story' event - together with the
     // sword: help taps this gives Grown-Ups a real reading signal.
     recordAnswer(`story:${story.id}`, `story:${story.id}`, 'story')
-    // Opened from a Journey story node: finishing ANY story completes it.
-    onStoryComplete?.()
+    // Show the celebration first; node completion (which navigates away) is
+    // deferred to leaveReader so the child sees "Read it again" / "More".
+    finishedOnceRef.current = true
     setQuiz(null)
     setFinished(true)
     playEffect('win', soundOn)
@@ -159,15 +230,18 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   }
   const prevPage = () => {
     stopSpeech()
-    if (pageIdx === 0) closeReader()
-    else setPageIdx(pageIdx - 1)
+    if (pageIdx === 0) leaveReader()
+    else {
+      setDir(-1)
+      setPageIdx(pageIdx - 1)
+    }
   }
 
   /* ── celebration ── */
   if (story && finished) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
-        <Sprite2D draw={drawAnbessa} size={120} mood="happy" />
+        <AnbessaSvg size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
         <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
@@ -177,7 +251,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           <button type="button" onClick={() => openStory(story)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {t('storyAgain', 'Read it again')}
           </button>
-          <button type="button" onClick={closeReader} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
+          <button type="button" onClick={leaveReader} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
             {t('storyMore', 'More stories')}
           </button>
         </div>
@@ -188,13 +262,15 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── comprehension question ── */
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center">
-        <Sprite2D draw={drawAnbessa} size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
-        <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
-        {story.q.g && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
+        <AnbessaSvg size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
+        {(story.q.g || showGloss) && (
+          <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
+        )}
+        {story.q.g && showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
         <div className="flex gap-4">
           {story.q.a.map((opt, i) => (
-            <button key={i} type="button" onClick={() => answerQuiz(opt)} className={`chunk flex h-32 w-32 items-center justify-center rounded-3xl border-2 ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px' }}>
+            <button key={i} type="button" onClick={() => answerQuiz(opt)} aria-label={opt.alt || opt.pic} className={`chunk flex h-32 w-32 items-center justify-center rounded-3xl border-2 ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px' }}>
               <WordPicture emoji={opt.pic} size={84} />
             </button>
           ))}
@@ -211,41 +287,68 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
         <header className="flex items-center gap-2">
-          <button type="button" onClick={prevPage} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={prevPage} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={t('storyProgress', `Page ${pageIdx + 1} of ${story.pages.length}`, { n: pageIdx + 1, total: story.pages.length })}>
+          <div role="img" className="flex flex-1 items-center justify-center gap-1.5" aria-label={t('storyProgress', `Page ${pageIdx + 1} of ${story.pages.length}`, { n: pageIdx + 1, total: story.pages.length })}>
             {story.pages.map((_, i) => (
               <span key={i} className="h-2.5 rounded-full transition-all" style={{ width: i === pageIdx ? 22 : 10, background: i <= pageIdx ? 'var(--go)' : 'var(--line)' }} />
             ))}
           </div>
-          <div className="w-10" />
+          <div className="w-11" />
         </header>
 
-        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <div className="flex justify-center" aria-hidden="true"><WordPicture emoji={page.pic} size={110} /></div>
-          <AnimatePresence mode="wait">
-            <motion.div key={pageIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex flex-wrap items-center justify-center gap-2 px-2">
-              {words.map((w, i) => (
-                <button
-                  key={`${pageIdx}-${i}`}
-                  type="button"
-                  onClick={() => tapWord(w, i)}
-                  className={`geez chunk rounded-2xl border-2 px-3 py-2 text-4xl font-black ${FOCUS}`}
-                  style={{
-                    background: spokenWord === i ? 'var(--go-soft)' : 'var(--card)',
-                    borderColor: spokenWord === i ? 'var(--go)' : 'var(--line)',
-                    boxShadow: '0 3px 0 var(--line)',
-                    '--chunk-depth': '3px',
-                  }}
-                >
-                  {w}
-                </button>
-              ))}
-              <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
+        <main className="relative flex-1" style={{ perspective: 1600 }}>
+          <AnimatePresence custom={dir} initial={false}>
+            <motion.div
+              key={pageIdx}
+              custom={dir}
+              variants={reduceMotion ? FADE_TURN : BOOK_TURN}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: reduceMotion ? 0.18 : 0.52, ease: [0.33, 0.66, 0.4, 1] }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-5 rounded-[26px] px-6 py-6 text-center"
+              style={{
+                transformStyle: 'preserve-3d',
+                background: 'var(--card)',
+                border: '2px solid var(--line)',
+                boxShadow: '0 10px 26px rgba(0,0,0,0.16)',
+              }}
+            >
+              {/* book spine shadow down the left edge */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-10 rounded-l-[26px]" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.16), rgba(0,0,0,0.04) 55%, transparent)' }} />
+              {/* illustrated picture-book scene (falls back to the plain
+                  picture on a page/pack without a scene) */}
+              {page.scene ? (
+                <StoryScene scene={page.scene} width={338} height={220} className="shadow-sm" rounded={22} />
+              ) : (
+                <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
+                  <WordPicture emoji={page.pic} size={120} />
+                </div>
+              )}
+              <div className="flex flex-wrap items-center justify-center gap-2 px-1">
+                {words.map((w, i) => (
+                  <button
+                    key={`${pageIdx}-${i}`}
+                    type="button"
+                    onClick={() => tapWord(w, i)}
+                    className={`geez chunk rounded-2xl border-2 px-3 py-2 text-4xl font-black ${FOCUS}`}
+                    style={{
+                      background: spokenWord === i ? 'var(--go-soft)' : 'var(--paper)',
+                      borderColor: spokenWord === i ? 'var(--go)' : 'var(--line)',
+                      boxShadow: '0 3px 0 var(--line)',
+                      '--chunk-depth': '3px',
+                    }}
+                  >
+                    {w}
+                  </button>
+                ))}
+                <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
+              </div>
+              {showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>}
             </motion.div>
           </AnimatePresence>
-          <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>
         </main>
 
         <div className="flex items-center gap-3">
@@ -265,13 +368,13 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('storyBack', 'Back')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />
         </button>
         <h1 className="flex flex-1 items-center justify-center gap-2 text-lg font-black">
           <BookOpen className="h-5 w-5" aria-hidden="true" /> {t('storyTitle', 'Story Time')}
         </h1>
-        <div className="w-10" />
+        <div className="w-11" />
       </header>
       <p className="mt-1 text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>
         {t('storySub', 'Little books you can already read - every letter is one you learned.')}
@@ -279,7 +382,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
       <div className="mt-2 flex justify-center"><Harag /></div>
       {library.length === 0 && (
         <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <Sprite2D draw={drawAnbessa} size={90} />
+          <AnbessaSvg size={90} />
           <p className="max-w-xs text-sm font-bold" style={{ color: 'var(--muted)' }}>
             {t('storyNonePack', 'Story books in this language are on their way! Every letter you learn now will be ready to read them.')}
           </p>
@@ -293,7 +396,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                 <LetterTile glyph={Array.from(s.title.g)[0]} size={44} className="shrink-0" />
                 <span className="min-w-0 flex-1">
                   <span className="geez block truncate text-lg font-black">{s.title.g}</span>
-                  <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>
+                  {showGloss && <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>}
                 </span>
                 {readCounts[s.id] > 0 && (
                   <span className="rounded-lg px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--star)' }}>

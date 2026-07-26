@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://egeez.app/sitemap.xml

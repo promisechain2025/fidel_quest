@@ -11,13 +11,13 @@
    ========================================================================== */
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, Share2, ShoppingBag } from 'lucide-react'
+import { Heart, KeyRound, MessageCircle, RefreshCcw, Share2, ShoppingBag } from 'lucide-react'
 import { t } from '../platform/i18n'
-import { grantFeedbackGrace, licenseState, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
+import { grantFeedbackGrace, licenseState, redeemAppCode, APP_PRICE, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from '../platform/support'
-import { iapAvailable, buyFamilyPack } from '../platform/iap'
+import { iapAvailable, buyFullApp, restorePurchasesAll } from '../platform/iap'
 import ParentalGate from './ParentalGate'
-import { Sprite2D, drawAnbessa } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -25,6 +25,8 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
   const [unlocked, setUnlocked] = useState(false) // parental gate passed
   const [thanked, setThanked] = useState(false)
   const [iapMsg, setIapMsg] = useState('')
+  const [code, setCode] = useState('')
+  const [codeMsg, setCodeMsg] = useState('')
   const buy = buyUrl()
   // the honest-feedback extension is one-time; afterwards buy/gift only
   const [canFeedback] = useState(() => licenseState().feedbackAvailable)
@@ -35,23 +37,37 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
     onFeedbackGranted?.()
     try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
   }
+  const finishUnlocked = () => { onClose?.(); try { window.location.reload() } catch { /* ignore */ } }
   // Purchases must use in-app purchase where it exists (Apple 3.1.1); the
-  // external store link is the web-only fallback.
+  // external link (the website, which sells an EGZ code) is web-only.
   const doBuy = async () => {
     setIapMsg('')
     if (iapAvailable()) {
-      const r = await buyFamilyPack()
-      if (r === 'purchased') { onClose?.(); try { window.location.reload() } catch { /* ignore */ } }
+      const r = await buyFullApp()
+      if (r === 'purchased') finishUnlocked()
       else if (r === 'error' || r === 'unavailable') setIapMsg('error')
     } else {
       try { window.open(buy, '_blank', 'noopener,noreferrer') } catch { /* no browser */ }
     }
   }
+  const doRestore = async () => {
+    setIapMsg('')
+    const r = await restorePurchasesAll()
+    if (r === 'restored') finishUnlocked()
+    else if (r === 'none') setIapMsg('none')
+    else if (r !== 'unavailable') setIapMsg('error')
+  }
+  // Bought on the website (or gifted a code)? Never pay twice.
+  const doRedeem = () => {
+    setCodeMsg('')
+    if (redeemAppCode(code)) finishUnlocked()
+    else setCodeMsg('bad')
+  }
 
   return (
     <motion.div className="fixed inset-0 z-[70] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-label={t('payTitle', 'Keep learning with eGeez')} className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
-        <Sprite2D draw={drawAnbessa} size={96} mood="happy" />
+        <AnbessaSvg size={96} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('payTitle', 'Keep learning with eGeez')}</h2>
         <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
           {t('payBody', 'Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing.', { n: TRIAL_DAYS })}
@@ -75,11 +91,37 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
               <>
                 {(iapAvailable() || buy) && (
                   <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-                    <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuy', 'Buy the app')}
+                    <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuyPrice', 'Buy the app - {p} once', { p: APP_PRICE })}
+                  </button>
+                )}
+                {iapAvailable() && (
+                  <button type="button" onClick={doRestore} className={`flex items-center justify-center gap-1.5 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                    <RefreshCcw className="h-4 w-4" aria-hidden="true" /> {t('payRestore', 'Restore a previous purchase')}
                   </button>
                 )}
                 {iapMsg === 'error' && (
                   <p className="text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('iapError', 'Purchase is unavailable right now - please try again later.')}</p>
+                )}
+                {iapMsg === 'none' && (
+                  <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('payRestoreNone', 'No previous purchase found on this store account.')}</p>
+                )}
+                {/* Bought on the website or received a gift code - never pay twice. */}
+                <div className="flex items-stretch gap-2">
+                  <input
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value); setCodeMsg('') }}
+                    placeholder={t('payCodePlaceholder', 'Have a code? EGZ...')}
+                    aria-label={t('payCodeLabel', 'Unlock code')}
+                    autoCapitalize="characters" autoCorrect="off" spellCheck="false"
+                    className={`min-w-0 flex-1 rounded-2xl px-4 py-3 text-base font-black tracking-widest ${FOCUS}`}
+                    style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                  />
+                  <button type="button" onClick={doRedeem} className={`chunk flex items-center gap-1.5 rounded-2xl px-4 font-black ${FOCUS}`} style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                    <KeyRound className="h-4 w-4" aria-hidden="true" /> {t('payRedeem', 'Unlock')}
+                  </button>
+                </div>
+                {codeMsg === 'bad' && (
+                  <p className="text-xs font-bold" role="alert" style={{ color: 'var(--bad-ink)' }}>{t('payCodeBad', 'That code does not look right - check it and try again.')}</p>
                 )}
                 <button type="button" onClick={shareWithFamily} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
                   <Share2 className="h-5 w-5" aria-hidden="true" /> {t('payFamily', 'Ask family to gift it')}

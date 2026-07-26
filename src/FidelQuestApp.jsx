@@ -53,8 +53,8 @@ import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
-import StoryTime from './components/StoryTime'
 import WordPicture from './components/Pictures'
+import { useShareGate } from './components/ShareGate'
 import ScopeToggle from './components/ScopeToggle'
 import { newTeeCount } from './tees'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -76,6 +76,19 @@ import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
+import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
+
+/* An opened assignment schedules a local "due today" nudge on native (no-op
+   on web, and only if the grown-up already enabled reminders). */
+function armAssignmentReminder(assignment) {
+  if (assignment?.due) {
+    scheduleAssignmentDue({
+      due: assignment.due,
+      title: t('hwDueTitle', 'Homework due today'),
+      body: t('hwDueBody', 'Finish your eGeez class assignment.'),
+    })
+  }
+}
 import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
@@ -95,7 +108,16 @@ const TeacherMode = lazy(() => import('./components/TeacherMode'))
 const Runner = lazy(() => import('./Runner3D'))
 const LetterCatch = lazy(() => import('./LetterCatch'))
 const TvClass = lazy(() => import('./components/TvClass'))
+// The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
+// most sessions never open it, so keep it out of the boot chunk like the rest.
+const StoryTime = lazy(() => import('./components/StoryTime'))
 const SupportAsk = lazy(() => import('./components/SupportAsk'))
+const VowelLadder = lazy(() => import('./components/VowelLadder'))
+const FidelMatch = lazy(() => import('./components/FidelMatch'))
+const FidelLineup = lazy(() => import('./components/FidelLineup'))
+const WordWorkshop = lazy(() => import('./components/WordWorkshop'))
+const MerkatoMarket = lazy(() => import('./components/MerkatoMarket'))
+const BingoCard = lazy(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,
@@ -125,6 +147,12 @@ import {
   Search,
   Sun,
   Moon,
+  ListOrdered,
+  Grid2x2,
+  Grid3x3,
+  Layers,
+  Blocks,
+  Store,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -961,6 +989,10 @@ export default function FidelQuestApp() {
         const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
         if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
       }
+      // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
+      // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
+      const bingoCode = new URLSearchParams(window.location.search).get('bingo')
+      if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
       const ch = readChallengeFromHash(window.location.hash)
       if (ch) return [{ name: 'challenge', challenge: ch }]
       // Classroom deep links (platform/classroom.js): a class invite, a
@@ -999,7 +1031,7 @@ export default function FidelQuestApp() {
       // assignment also becomes the pending one (surfaces in Today's plan).
       if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
         const cr = readClassroomFromHash(window.location.hash)
-        if (cr?.kind === 'assign') storePendingAssignment(cr.data)
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data) }
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       }
     } catch {
@@ -1017,7 +1049,7 @@ export default function FidelQuestApp() {
         if (ch) setStack([{ name: 'challenge', challenge: ch }])
         const cr = readClassroomFromHash(hash)
         if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
-        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
         if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       } catch { /* malformed link */ }
@@ -1451,16 +1483,77 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'stories' && (
             <Screen key="stories">
-              <StoryTime
-                soundOn={soundOn}
-                onBack={goBack}
-                onStoryComplete={screen.nodeId ? () => markNodeDone(screen.nodeId, 3) : null}
-              />
+              <Suspense fallback={null}>
+                <StoryTime
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  onStoryComplete={screen.nodeId ? () => markNodeDone(screen.nodeId, 3) : null}
+                />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
               <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
+            </Screen>
+          )}
+          {screen.name === 'ladder' && (
+            <Screen key="ladder">
+              <Suspense fallback={null}>
+                <VowelLadder
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'match' && (
+            <Screen key="match">
+              <Suspense fallback={null}>
+                <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'lineup' && (
+            <Screen key="lineup">
+              <Suspense fallback={null}>
+                <FidelLineup
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'workshop' && (
+            <Screen key="workshop">
+              <Suspense fallback={null}>
+                <WordWorkshop
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'market' && (
+            <Screen key="market">
+              <Suspense fallback={null}>
+                <MerkatoMarket soundOn={soundOn} onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'bingo' && (
+            <Screen key="bingo">
+              <Suspense fallback={null}>
+                <BingoCard
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  code={screen.code || null}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'review-node' && (
@@ -1687,6 +1780,12 @@ export default function FidelQuestApp() {
               onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
               onStories={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startStories() }}
               onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
+              onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
+              onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
+              onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
+              onWorkshop={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'workshop' }) }}
+              onMarket={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'market' }) }}
+              onBingo={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'bingo' }) }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
               onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
@@ -2600,7 +2699,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2650,6 +2749,12 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
+            <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
+            <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
+            <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
+            <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
+            <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
@@ -2811,6 +2916,7 @@ function InstallBanner() {
    once everything is collected -> a warm come-back-anytime moment. */
 function GiftModal({ reward, worn, forms, onClose }) {
   const [busy, setBusy] = useState(false)
+  const { requestShare, gate } = useShareGate()
   useEscapeKey(onClose)
   const share = async () => {
     setBusy(true)
@@ -2831,7 +2937,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
         </p>
         <div className="mt-5 flex flex-col gap-3">
           {reward && (
-            <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
               <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
             </button>
           )}
@@ -2839,6 +2945,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
             {reward ? t('keepGoing', 'Keep going!') : t('gotIt', 'Got it')}
           </button>
         </div>
+        {gate}
       </motion.div>
     </motion.div>
   )
@@ -2848,6 +2955,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
    in wearing the freshly-earned item; the primary action is Share. */
 function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) {
   const [busy, setBusy] = useState(false)
+  const { requestShare, gate } = useShareGate()
   useEscapeKey(onClose)
   // Personalize the share card with the child's name + this milestone, so what
   // lands in the WhatsApp thread says "Selam learned 56 letters!" not a generic
@@ -2878,7 +2986,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
           </p>
         )}
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={share} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
           {/* Pride peaks right here - offer to send the child's own voice to
@@ -2892,6 +3000,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
             {t('keepGoing', 'Keep going!')}
           </button>
         </div>
+        {gate}
       </motion.div>
     </motion.div>
   )
@@ -3493,6 +3602,7 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
    challenge is in the link. See utils/challenge.js. */
 function ChallengeShareButton({ payload, label }) {
   const [copied, setCopied] = useState(false)
+  const { requestShare, gate } = useShareGate()
   const share = async () => {
     const by = loadFromStorage('fq.nickname', '')
     // Native shells have a capacitor://localhost origin - a shared link
@@ -3521,12 +3631,15 @@ function ChallengeShareButton({ payload, label }) {
     }
   }
   return (
-    <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={share}>
-      <span className="flex items-center justify-center gap-2">
-        <Share2 className="h-5 w-5" aria-hidden="true" />
-        {copied ? t('linkCopied', 'Link copied!') : label}
-      </span>
-    </Chunky>
+    <>
+      <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={() => requestShare(share)}>
+        <span className="flex items-center justify-center gap-2">
+          <Share2 className="h-5 w-5" aria-hidden="true" />
+          {copied ? t('linkCopied', 'Link copied!') : label}
+        </span>
+      </Chunky>
+      {gate}
+    </>
   )
 }
 
@@ -3893,6 +4006,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
         onFinish={(levelId, res) => {
           if (!res) { onHome(); return }
           markAssignmentDone()
+          cancelAssignmentDue()
           onDone?.()
           setResult(res)
           setStage('done')

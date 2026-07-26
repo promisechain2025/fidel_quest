@@ -1,0 +1,66 @@
+# eGeez — hub API
+
+The backend for the eGeez learning-hub **website** (`../website`): accounts and
+the three public forms. It is separate from `../server` (the zero-dependency,
+no-PII analytics/OG service) on purpose — this one holds accounts, so it has a
+database and secrets.
+
+## What it does
+
+- **Accounts base** — `POST /api/auth/register`, `POST /api/auth/login`,
+  `GET /api/auth/me` (Bearer JWT, bcrypt, roles `parent` | `teacher`). The
+  foundation the teacher directory and booking will build on.
+- **Teacher applications** — `POST /api/teachers/apply`
+- **Language waitlist** — `POST /api/waitlist` (defaults to `ti` Tigrinya)
+- **Contact** — `POST /api/contact`
+- Each submission is stored and (when SMTP is configured) emailed to you.
+- **Owner lists** — `GET /api/admin/{teachers|waitlist|contact}` with
+  `x-admin-token: $ADMIN_TOKEN`; `GET /admin` is a single-file owner panel
+  (approve teachers into the public `GET /api/teachers` directory).
+- **Child profiles + progress snapshots** — parent-scoped, JWT-gated:
+  `GET/POST /api/children`, `DELETE /api/children/:id`,
+  `POST/GET /api/children/:id/snapshots` (one per child per day; stores
+  only dated learning counts + the 33-family mask a parent explicitly
+  saves from a Progress Card - the app itself never uploads).
+
+## Run
+
+```bash
+cd api
+npm install
+npm start        # :8788; in-memory store until MONGO_URI is set
+npm test         # node --test + supertest (no services needed)
+```
+
+Copy `.env.example` to `.env` for production: MongoDB Atlas URI, a real
+`JWT_SECRET`, gmail app password for notifications, an `ADMIN_TOKEN`, and the
+website origin in `CORS_ORIGIN`.
+
+## Payments
+
+Stripe Checkout sells two one-time products (`POST /api/pay/checkout` with
+`{product: 'app' | 'family_pack'}`, $12.99 / $4.99 via `APP_PRICE_CENTS` /
+`FAMILY_PACK_PRICE_CENTS` or dashboard Price ids). Fulfillment mints an
+unlock code with the app's own algorithms (EGZ for the app, FAM for the
+pack), stores an Order, and emails the buyer - idempotently across webhook
+retries and the success-page poll. Dormant until `STRIPE_SECRET_KEY` +
+`STRIPE_WEBHOOK_SECRET` are set; production refuses to sell from the
+in-memory store.
+
+## Design notes
+
+- `store.js` is the only file that knows about persistence: Mongo (mongoose)
+  when `MONGO_URI` is set, in-memory otherwise — dev and CI need zero services.
+- Middleware (`middleware.js`) is trimmed from `PROMISECHAIN_BE`: Bearer-JWT
+  auth, shared-secret admin gate, in-memory sliding-window rate limits
+  (auth 10 / forms 20 per 15 min per IP).
+- Email (`mailer.js`) follows the PROMISECHAIN_BE gmail-service transporter;
+  failures never fail the request.
+- The **app never talks to this API** — it stays fully offline. Only the
+  website does.
+
+## Next phases (designed-for, not built)
+
+Teacher profiles + directory (approve an application → public profile),
+booking/scheduling, parent dashboards. All hang off the existing `User` model
+and admin gate.

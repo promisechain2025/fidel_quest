@@ -4,13 +4,14 @@
    the daily gift treasure (wired by the app shell). Pure machine lives in
    platform/hunt.js; this file is only the scene. */
 import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, Volume2, Gift, Star } from 'lucide-react'
 import { t, randomPraise, randomEncourage } from '../platform/i18n'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { buildHunt, huntTransition, huntTarget } from '../platform/hunt'
-import { drawAnbessa, drawHyena, Sprite2D } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import JibbySvg from './JibbySvg'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -97,6 +98,25 @@ function Dressing({ kind }) {
   )
 }
 
+/* A quick sparkle burst at the spot where a letter is found. Remounted (via
+   key) on each find so it replays; pure decoration. */
+function FoundSparkle({ spot }) {
+  if (!spot) return null
+  return (
+    <div className="pointer-events-none absolute z-20" style={{ left: `${spot.left}%`, top: `${spot.top}%` }} aria-hidden="true">
+      {Array.from({ length: 7 }, (_, i) => {
+        const a = (i / 7) * Math.PI * 2
+        return (
+          <motion.span key={i} className="absolute h-2 w-2 rounded-full" style={{ background: '#ffd34d', boxShadow: '0 0 6px rgba(255,211,77,0.9)' }}
+            initial={{ x: 0, y: 0, scale: 0.5, opacity: 1 }}
+            animate={{ x: Math.cos(a) * 28, y: Math.sin(a) * 28, scale: 0, opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }} />
+        )
+      })}
+    </div>
+  )
+}
+
 export default function DailyHunt({ seed, forms, soundOn = true, treasureReady = false, dress = null, onTreasure, onDone, onBack }) {
   const [ctx, setCtx] = useState(() => buildHunt(seed, forms))
   const [feedback, setFeedback] = useState(null) // 'good' | 'bad'
@@ -104,6 +124,12 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
   const revoiceTimer = useRef(null)
   useEffect(() => () => { clearTimeout(feedbackTimer.current); clearTimeout(revoiceTimer.current) }, [])
   const doneRef = useRef(false)
+  // Game-feel layer (presentation only): a sparkle burst where a letter is
+  // found, and a meadow shake on a wrong tap.
+  const reduce = useReducedMotion()
+  const meadowCtl = useAnimationControls()
+  const [burst, setBurst] = useState(0)
+  const [burstSpot, setBurstSpot] = useState(null)
   const target = huntTarget(ctx)
   const targetForm = ctx.hidden.find((f) => f.audioKey === target) || null
   const done = ctx.status === 'done'
@@ -134,11 +160,14 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       // Just the happy chime - the kid already knows the letter they found,
       // and Kokeb calls the next one right after.
       playEffect('good', soundOn)
+      const f = ctx.hidden.find((x) => x.audioKey === key)
+      if (f && !reduce) { setBurstSpot(SPOTS[f.spot]); setBurst((b) => b + 1) }
     } else {
       // Miss sound first, then Kokeb repeats the letter she is asking for.
       playEffect('bad', soundOn)
       const f = ctx.hidden.find((x) => x.audioKey === heard)
       if (f) revoiceTimer.current = setTimeout(() => playForm(f, soundOn), 650)
+      if (!reduce) meadowCtl.start({ x: [0, -8, 8, -5, 4, 0] }, { duration: 0.32 })
     }
     setFeedback(good ? 'good' : 'bad')
     clearTimeout(feedbackTimer.current)
@@ -163,13 +192,13 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       </header>
 
       {/* The meadow */}
-      <div className="relative mt-4 w-full overflow-hidden rounded-3xl border-2" style={{ aspectRatio: '4 / 5', borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 46%, #8fc86a 46%, #7ab857 100%)' }}>
+      <motion.div animate={meadowCtl} className="relative mt-4 w-full overflow-hidden rounded-3xl border-2" style={{ aspectRatio: '4 / 5', borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 46%, #8fc86a 46%, #7ab857 100%)' }}>
         {/* sun */}
         <span className="absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: '#ffd34d', boxShadow: '0 0 24px 6px rgba(255,211,77,0.55)' }} aria-hidden="true" />
         <Dressing kind={dress} />
         {/* Jibby peeks from the corner, cheekier while a letter is ducking */}
         <motion.div className="absolute -right-2 bottom-1" animate={feedback === 'bad' ? { y: [8, -4, 8] } : { y: 8 }} transition={{ duration: 0.7 }} aria-hidden="true">
-          <Sprite2D draw={drawHyena} size={72} mood={feedback === 'bad' ? 'agitated' : 'grin'} />
+          <JibbySvg size={72} expression={feedback === 'bad' ? 'agitated' : 'grin'} />
         </motion.div>
 
         {ctx.hidden.map((f, i) => {
@@ -206,7 +235,8 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
             </div>
           )
         })}
-      </div>
+        <FoundSparkle key={burst} spot={burstSpot} />
+      </motion.div>
 
       {/* Call bar / completion */}
       {!done ? (
@@ -225,7 +255,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex flex-col items-center gap-3 text-center">
-          <Sprite2D draw={drawAnbessa} size={96} mood="happy" />
+          <AnbessaSvg size={96} expression="happy" />
           <h2 className="text-2xl font-black">{t('huntDoneTitle', 'You found them all!')}</h2>
           {treasureReady ? (
             <motion.button
