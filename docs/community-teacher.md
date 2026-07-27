@@ -114,8 +114,11 @@ untrusted input.
   - `#assign=` assignment tokens: `{class, teacher, familyIds, count, due,
     seed}` — the quiz is `buildReviewQueue` (platform/coach.js) over the
     chosen families, so **every student gets the same questions** and results
-    are comparable. Pending assignment sits in `fq.assign.v1` and surfaces as
-    a "Teacher's assignment" row in the home Today's-plan card.
+    are comparable. Pending assignments sit in `fq.assign.v1` as a keyed
+    collection (identity = code+seed) so a child can carry several unfinished
+    ones at once (two teachers, or a make-up alongside this week's) — a new
+    link never clobbers an open one — and each surfaces as its own row in the
+    home Today's-plan card. The legacy single-object shape migrates on read.
   - `#receipt=` result tokens the student shares BACK (share sheet /
     WhatsApp): `{class, name, score, total, day, assignmentSeed, missed}` —
     `missed` is the family ids the child got wrong, so the teacher sees what

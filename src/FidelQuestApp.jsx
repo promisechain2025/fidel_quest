@@ -77,15 +77,17 @@ import { Runner2D } from './components/ArcadeFallback'
 import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
-import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignment, markAssignmentDone, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
+import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignments, markAssignmentDone, pendingAssignmentKey, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
 import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
 
 /* An opened assignment schedules a local "due today" nudge on native (no-op
-   on web, and only if the grown-up already enabled reminders). */
+   on web, and only if the grown-up already enabled reminders). Keyed per
+   assignment so several open assignments each keep their own reminder. */
 function armAssignmentReminder(assignment) {
   if (assignment?.due) {
     scheduleAssignmentDue({
       due: assignment.due,
+      key: pendingAssignmentKey(assignment),
       title: t('hwDueTitle', 'Homework due today'),
       body: t('hwDueBody', 'Finish your eGeez class assignment.'),
     })
@@ -1116,10 +1118,11 @@ export default function FidelQuestApp() {
     if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
   }, [dayKey, childVer])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
-  // A teacher's assignment opened from a link waits in fq.assign.v1 until done.
-  const [pendingAssign, setPendingAssign] = useState(loadPendingAssignment)
+  // Teacher assignments opened from links wait in fq.assign.v1 until done -
+  // several can be pending at once (two teachers, or a make-up plus this week).
+  const [pendingAssigns, setPendingAssigns] = useState(loadPendingAssignments)
   useEffect(() => {
-    if (screen.name === 'home') { setPlan(loadPlan()); setPendingAssign(loadPendingAssignment()) }
+    if (screen.name === 'home') { setPlan(loadPlan()); setPendingAssigns(loadPendingAssignments()) }
   }, [screen.name])
   // The living Ethiopian calendar: today's Ethiopic date + any holiday.
   const ethioToday = useMemo(
@@ -1342,11 +1345,11 @@ export default function FidelQuestApp() {
                   warmupState: learnedFamilyIds(journey).length === 0 ? 'none' : warmupDone ? 'done' : 'todo',
                   hasPlan: !!plan,
                   eta: plan ? formatDual(etaStamp(dayKey, learnedFamilyIds(journey).length, (PACES.find((p) => p.id === plan.pace) || PACES[1]).perWeek), getLang()) : null,
-                  assignment: pendingAssign,
+                  assignments: pendingAssigns,
                 }}
                 onWarmup={startWarmup}
                 onPlanSetup={() => setScreen({ name: 'plan' })}
-                onAssignment={() => setScreen({ name: 'assignment', assignment: pendingAssign })}
+                onAssignment={(a) => setScreen({ name: 'assignment', assignment: a })}
                 ethioDate={ethioToday}
                 holiday={holiday}
               />
@@ -1715,7 +1718,7 @@ export default function FidelQuestApp() {
                 assignment={screen.assignment}
                 soundOn={soundOn}
                 onHome={goBackOrHome}
-                onDone={() => setPendingAssign(null)}
+                onDone={() => setPendingAssigns(loadPendingAssignments())}
               />
             </Screen>
           )}
@@ -2430,15 +2433,16 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
               pulse={coach?.warmupState === 'todo'}
             />
           )}
-          {coach?.assignment && (
+          {(coach?.assignments || []).map((a, i) => (
             <PlanChip
+              key={pendingAssignmentKey(a)}
               icon={ClipboardCheck}
               done={false}
-              label={t('asTitle', 'Assignment')}
-              onClick={onAssignment}
-              pulse={coach?.warmupState !== 'todo'}
+              label={coach.assignments.length > 1 ? t('asFromShort', '{who}’s HW', { who: a.teacher }) : t('asTitle', 'Assignment')}
+              onClick={() => onAssignment(a)}
+              pulse={i === 0 && coach?.warmupState !== 'todo'}
             />
-          )}
+          ))}
           {current && (
             <PlanChip
               icon={Play}
@@ -4030,8 +4034,8 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
         practiceQueue={queue}
         onFinish={(levelId, res) => {
           if (!res) { onHome(); return }
-          markAssignmentDone()
-          cancelAssignmentDue()
+          markAssignmentDone(assignment.code, assignment.seed)
+          cancelAssignmentDue(pendingAssignmentKey(assignment))
           onDone?.()
           setResult(res)
           setStage('done')

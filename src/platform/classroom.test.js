@@ -3,7 +3,7 @@ import {
   sanitizeClassCode,
   encodeClassInvite, decodeClassInvite, classUrl, joinClass, loadClass, leaveClass,
   encodeAssignment, decodeAssignment, assignmentUrl, buildAssignmentQueue,
-  loadPendingAssignment, storePendingAssignment, markAssignmentDone,
+  loadPendingAssignment, loadPendingAssignments, storePendingAssignment, markAssignmentDone, pendingAssignmentKey,
   encodeReceipt, decodeReceipt, receiptUrl, readClassroomFromHash,
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
   saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
@@ -111,6 +111,38 @@ describe('assignments', () => {
     expect(loadPendingAssignment().code).toBe('ABEBA1')
     markAssignmentDone()
     expect(loadPendingAssignment()).toBeNull()
+  })
+  it('carries several pending assignments at once - a new link never clobbers an open one', () => {
+    const a1 = decodeAssignment(encodeAssignment({ ...ASSIGN, seed: 1, due: '2026-07-25' }))
+    const a2 = decodeAssignment(encodeAssignment({ ...ASSIGN, code: 'GRADE2', seed: 2, due: '2026-07-20' }))
+    storePendingAssignment(a1, '2026-07-10')
+    storePendingAssignment(a2, '2026-07-11')
+    const pending = loadPendingAssignments()
+    expect(pending.length).toBe(2)
+    // soonest due first
+    expect(pending.map((a) => a.code)).toEqual(['GRADE2', 'ABEBA1'])
+    // finishing one leaves the other untouched
+    markAssignmentDone('GRADE2', 2)
+    expect(loadPendingAssignments().map((a) => a.code)).toEqual(['ABEBA1'])
+    markAssignmentDone('ABEBA1', 1)
+    expect(loadPendingAssignments()).toEqual([])
+  })
+  it('re-opening the same (code, seed) revives it, does not duplicate', () => {
+    const a = decodeAssignment(encodeAssignment({ ...ASSIGN, seed: 7 }))
+    storePendingAssignment(a, '2026-07-10')
+    markAssignmentDone('ABEBA1', 7)
+    expect(loadPendingAssignments()).toEqual([])
+    storePendingAssignment(a, '2026-07-12') // tapped the shared link again
+    expect(loadPendingAssignments().length).toBe(1)
+    expect(pendingAssignmentKey(loadPendingAssignment())).toBe('ABEBA1#7')
+  })
+  it('migrates the legacy single-object shape on first read', () => {
+    const legacy = { ...decodeAssignment(encodeAssignment(ASSIGN)), openedDay: '2026-07-01', done: false }
+    localStorage.setItem('fq.assign.v1', JSON.stringify(legacy))
+    expect(loadPendingAssignment().code).toBe('ABEBA1')
+    // a new assignment stored alongside coexists with the migrated one
+    storePendingAssignment(decodeAssignment(encodeAssignment({ ...ASSIGN, code: 'GRADE2', seed: 9 })), '2026-07-12')
+    expect(loadPendingAssignments().length).toBe(2)
   })
 })
 
