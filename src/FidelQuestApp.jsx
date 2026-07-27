@@ -3366,6 +3366,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
             const qseed = ((seed * 7919 + fixit.cycle * 131 + 17) % 1000000) | 1
             dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed } })
           }}
+          onHome={() => (onQuit || onFinish)(level.id, null)}
         />
       )
     }
@@ -3668,7 +3669,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
   )
 }
 
-function FixItReady({ onRetry }) {
+function FixItReady({ onRetry, onHome }) {
   return (
     <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
@@ -3679,6 +3680,13 @@ function FixItReady({ onRetry }) {
       <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
         {t('fixRetry', 'Try the quiz again')}
       </Chunky>
+      {/* Always leave a way back to the path - a tired child must not be forced
+         into another full quiz to escape (same exit the fix-it gate/cap give). */}
+      {onHome && (
+        <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          {t('backToPath', 'Back to the path')}
+        </button>
+      )}
     </div>
   )
 }
