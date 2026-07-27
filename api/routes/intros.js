@@ -15,7 +15,7 @@ const limit = rateLimit({ max: 60, key: 'intros' })
 const siteUrl = () => (process.env.SITE_URL || 'https://egeez.app').replace(/\/$/, '')
 
 /** Parent asks for an introduction to an approved teacher. */
-router.post('/teachers/:id/intros', requireAuth, limit, async (req, res, next) => {
+router.post('/teachers/:id/intros', requireAuth, requireVerified, limit, async (req, res, next) => {
   try {
     const app_ = await store.findApplicationById(req.params.id)
     if (!app_ || app_.status !== 'approved') return res.status(404).json({ error: 'Teacher not found' })

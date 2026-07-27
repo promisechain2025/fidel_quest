@@ -319,6 +319,20 @@ export function unenrollStudent(code, name) {
   return writeJson(TEACHER_KEY, t)
 }
 
+/** Fully remove a student from a class: unlist the name AND delete the
+    receipts they sent for it. Unlike unenrollStudent (which keeps submitted
+    results), this is for cleaning up a wrong/misspelled name that was
+    auto-added from a receipt and otherwise cannot be removed. */
+export function removeStudent(code, name) {
+  const c = sanitizeClassCode(code)
+  const b = sanitizeName(name)
+  const t = loadTeacher()
+  if (!t.classes[c]) return null
+  const cur = (t.classes[c].enrolled || []).filter((n) => n !== b)
+  const receipts = (t.receipts || []).filter((r) => !(r.code === c && r.student === b))
+  return writeJson(TEACHER_KEY, { ...t, classes: { ...t.classes, [c]: { ...t.classes[c], enrolled: cur } }, receipts })
+}
+
 /** The pre-registered names for a class (sorted). */
 export function enrolledStudents(code) {
   const c = sanitizeClassCode(code)
@@ -332,7 +346,11 @@ export function removeClass(code) {
   const classes = { ...t.classes }
   delete classes[c]
   const receipts = (t.receipts || []).filter((r) => r.code !== c)
-  return writeJson(TEACHER_KEY, { ...t, classes, receipts })
+  // Also drop this class's created assignments - otherwise "remove and results"
+  // leaves orphans that resurface (as already-sent weeks) if a class with the
+  // same code is created again for a new term.
+  const assignments = (t.assignments || []).filter((a) => a.code !== c)
+  return writeJson(TEACHER_KEY, { ...t, classes, receipts, assignments })
 }
 
 /**
@@ -345,7 +363,13 @@ export function addReceipt(receipt) {
   const t = loadTeacher()
   if (!t.classes[receipt.code]) return null // not one of this device's classes
   const same = (r) => r.code === receipt.code && r.student === receipt.student && r.assignmentSeed === receipt.assignmentSeed
-  const receipts = [...(t.receipts || []).filter((r) => !same(r)), receipt]
+  // Best-of, not last-of: a WORSE retake of the same assignment must not erase
+  // an earlier better result (the roster's "best" would drop and the good run's
+  // letters would be lost). Keep whichever score ratio is higher.
+  const ratio = (r) => (r && r.total ? r.score / r.total : 0)
+  const prior = (t.receipts || []).find(same)
+  const kept = prior && ratio(prior) >= ratio(receipt) ? prior : receipt
+  const receipts = [...(t.receipts || []).filter((r) => !same(r)), kept]
   return writeJson(TEACHER_KEY, { ...t, receipts })
 }
 
