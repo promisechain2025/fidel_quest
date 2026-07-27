@@ -47,12 +47,19 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       workbox: {
-        // Precache the shell, the self-hosted Ethiopic fonts (woff2) AND the
-        // whole voice set (~3.6MB of mp3s + the coverage manifest). The voice
-        // IS the product for a pre-reader: a device that installs the app and
-        // then goes offline must still speak every letter. Runtime caching
-        // below stays as a safety net for anything outside the precache.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2,mp3,json}'],
+        // Precache the SHELL + the self-hosted Ethiopic fonts + the small JSON
+        // (coverage manifest) only - a light (~1MB) atomic install. The voice
+        // (~4.7MB of mp3s) is deliberately NOT in the atomic precache: on the
+        // flaky 2G/3G networks this app targets, gating offline-shell readiness
+        // behind one uninterrupted 4.7MB download meant the app never became
+        // offline-capable until that whole set landed in a single pass. The
+        // voice still works offline via the runtime CacheFirst rule below
+        // (clips cache as they play), and a background warm (main.jsx ->
+        // warmAudioCache) fills the rest incrementally when online - so the
+        // shell is offline-ready after a short first session, and the voice
+        // follows, instead of all-or-nothing. A not-yet-cached clip falls back
+        // to the Web Audio chime (audio is optional by contract).
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2,json}'],
         // ...but NOT the optional per-page story narration: those are long
         // full-sentence clips for many stories x pages x packs, which would
         // bloat the up-front install on the slow devices this app targets.
@@ -84,7 +91,9 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'fidel-audio-v7',
-              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              // Hold the whole voice set (letters + words, ~400 clips) now that
+              // it caches at runtime rather than via the atomic precache.
+              expiration: { maxEntries: 700, maxAgeSeconds: 60 * 60 * 24 * 60 },
             },
           },
         ],

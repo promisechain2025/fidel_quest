@@ -281,6 +281,25 @@ function sph(g, r, color, x, y, z) {
   return m
 }
 
+const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
+/** Free the GPU resources of a group before dropping it. three.js does NOT
+    reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
+    question) and chunks (rebuilt every level) leak without this. Per-instance
+    geometries always go; the shared MATS colour materials and the shared zebra
+    texture are left intact (reused across gates/chunks/worlds). */
+function disposeGroup(root) {
+  if (!root) return
+  root.traverse((child) => {
+    if (child.geometry) child.geometry.dispose()
+    const mats = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : []
+    for (const m of mats) {
+      if (isSharedMat(m)) continue // never dispose the shared colour cache
+      if (m.map && m.map !== ZEBRA_TEX) m.map.dispose() // shared zebra texture stays
+      m.dispose()
+    }
+  })
+}
+
 /* ── procedural landmarks; i is the chunk index for deterministic variety ── */
 
 function acacia(g, x, z, s = 1) {
@@ -496,7 +515,7 @@ class RunnerWorld {
     this.scene.background = new THREE.Color(place.sky)
     this.scene.fog = new THREE.Fog(place.sky, place.fog[0], place.fog[1])
     this.ground.material = mat(place.ground)
-    for (const c of this.chunks) this.scene.remove(c)
+    for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
     const build = CHUNK_BUILDERS[place.builder] || CHUNK_BUILDERS[place.id]
     for (let k = 0; k < CHUNK_COUNT; k++) {
@@ -538,6 +557,7 @@ class RunnerWorld {
   clearGate() {
     if (this.gate) {
       this.scene.remove(this.gate)
+      disposeGroup(this.gate) // free the 3 glyph textures + geometries this gate built
       this.gate = null
     }
   }
@@ -661,6 +681,10 @@ class RunnerWorld {
 
   dispose() {
     this.disposed = true
+    // renderer.dispose() alone leaves uploaded geometry/texture buffers; walk
+    // the whole scene freeing per-instance resources first (shared MATS + zebra
+    // texture survive for the next world, which reuses them).
+    disposeGroup(this.scene)
     this.renderer.dispose()
   }
 }

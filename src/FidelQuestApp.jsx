@@ -98,28 +98,43 @@ import { isNativePlatform, isApplePlatform } from './platform/native'
 import GiftAppModal from './components/GiftModal'
 import Dropdown from './components/Dropdown'
 
+// Wrap React.lazy so a TRANSIENT chunk-fetch failure (a blip on a flaky
+// first-load network, before the SW has cached the chunk) retries a few times
+// with backoff instead of throwing straight to the ErrorBoundary and leaving
+// that feature unreachable until the app is restarted.
+function lazyRetry(factory, tries = 3) {
+  return lazy(() => {
+    let n = 0
+    const attempt = () => factory().catch((err) => {
+      if (++n <= tries) return new Promise((res) => setTimeout(res, 300 * n)).then(attempt)
+      throw err
+    })
+    return attempt()
+  })
+}
+
 // The original eGeez game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
-const AmharicFidelGame = lazy(() => import('./pages/AmharicFidelGame'))
+const AmharicFidelGame = lazyRetry(() => import('./pages/AmharicFidelGame'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
 // encoder, so they stay out of the child-facing home chunk too.
-const TeacherMode = lazy(() => import('./components/TeacherMode'))
+const TeacherMode = lazyRetry(() => import('./components/TeacherMode'))
 // The 3D arcade games carry the whole three.js / R3F stack, so they load
 // only when a capable device actually enters an arcade node; degraded
 // devices route to the 2D fallbacks and never fetch these chunks.
-const Runner = lazy(() => import('./Runner3D'))
-const LetterCatch = lazy(() => import('./LetterCatch'))
-const TvClass = lazy(() => import('./components/TvClass'))
+const Runner = lazyRetry(() => import('./Runner3D'))
+const LetterCatch = lazyRetry(() => import('./LetterCatch'))
+const TvClass = lazyRetry(() => import('./components/TvClass'))
 // The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
 // most sessions never open it, so keep it out of the boot chunk like the rest.
-const StoryTime = lazy(() => import('./components/StoryTime'))
-const SupportAsk = lazy(() => import('./components/SupportAsk'))
-const VowelLadder = lazy(() => import('./components/VowelLadder'))
-const FidelMatch = lazy(() => import('./components/FidelMatch'))
-const FidelLineup = lazy(() => import('./components/FidelLineup'))
-const WordWorkshop = lazy(() => import('./components/WordWorkshop'))
-const MerkatoMarket = lazy(() => import('./components/MerkatoMarket'))
-const BingoCard = lazy(() => import('./components/BingoCard'))
+const StoryTime = lazyRetry(() => import('./components/StoryTime'))
+const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
+const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
+const FidelMatch = lazyRetry(() => import('./components/FidelMatch'))
+const FidelLineup = lazyRetry(() => import('./components/FidelLineup'))
+const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
+const MerkatoMarket = lazyRetry(() => import('./components/MerkatoMarket'))
+const BingoCard = lazyRetry(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
   Volume2,

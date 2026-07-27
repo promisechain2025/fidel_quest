@@ -469,6 +469,28 @@ export class AudioEngine {
     })
   }
 
+  /**
+   * Background warm of the WHOLE voice set into the SW's runtime cache, so the
+   * app speaks every letter OFFLINE even for clips the child has not played yet
+   * - the offline-voice guarantee the atomic precache used to give, but paid
+   * incrementally instead of gating the app shell behind one 4.7MB download.
+   * A bare fetch is enough: the SW's CacheFirst rule caches the response; we do
+   * NOT decode here, so memory is untouched. Online-only, throttled, and fully
+   * failure-tolerant - a flaky link just leaves some clips to cache on play.
+   */
+  async warmCache({ batch = 6, gapMs = 300 } = {}) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+    if (typeof fetch === 'undefined' || typeof caches === 'undefined') return // no SW cache to warm (or SSR)
+    await this.ensureManifest()
+    if (!this.manifest) return
+    const urls = [...this.manifest].map((k) => `${this.audioBase}${k}.mp3`)
+    for (let i = 0; i < urls.length; i += batch) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+      await Promise.all(urls.slice(i, i + batch).map((u) => this.fetchImpl(u).catch(() => {})))
+      await new Promise((r) => setTimeout(r, gapMs))
+    }
+  }
+
   /* ── synth floor: deterministic per-letter chime + UI effects ── */
 
   note(freq, at, dur, peak = 0.16, type = 'sine') {
@@ -605,6 +627,12 @@ export function afterVoice(cb, minMs = 0, capMs = 6000) {
     audio.whenVoiceDone(capMs).then(() => { if (!cancelled) cb() })
   }, minMs)
   return () => { cancelled = true; clearTimeout(t) }
+}
+
+/** Kick the background voice warm (see AudioEngine.warmCache). Safe to call
+    on every launch: it no-ops offline and is fully failure-tolerant. */
+export function warmAudioCache(opts) {
+  return audio.warmCache(opts).catch(() => {})
 }
 
 /* Compat wrappers matching the historical per-mode call signatures. */
