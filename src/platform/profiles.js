@@ -48,8 +48,11 @@ function readJson(key, fallback) {
 function writeJson(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
+    return true
   } catch {
-    /* storage blocked - profiles degrade to single-child */
+    /* storage blocked / quota exceeded - report it so callers that are about
+       to overwrite canonical progress can abort instead of losing data */
+    return false
   }
 }
 
@@ -103,6 +106,8 @@ export function profileLabel(p, fallback = 'Child') {
 
 /* ── the swap mechanics ─────────────────────────────────────────────── */
 
+// Returns false if the outgoing child's progress could NOT be parked (quota) -
+// callers must then NOT overwrite the canonical keys, or that child is lost.
 function stashCanonical(profileId) {
   const data = {}
   for (const k of SWAP_KEYS) {
@@ -113,7 +118,7 @@ function stashCanonical(profileId) {
       /* skip */
     }
   }
-  writeJson(SLOT_PREFIX + profileId, { data })
+  return writeJson(SLOT_PREFIX + profileId, { data })
 }
 
 function loadSlotToCanonical(profileId) {
@@ -134,7 +139,10 @@ function loadSlotToCanonical(profileId) {
 export function switchProfile(toId) {
   const reg = loadProfiles()
   if (toId === reg.active || !reg.list.some((p) => p.id === toId)) return false
-  stashCanonical(reg.active)
+  // If the outgoing child's progress cannot be parked (storage full), do NOT
+  // load the other child over the canonical keys - that would destroy the
+  // current child's unsaved-elsewhere progress. Abort the switch instead.
+  if (!stashCanonical(reg.active)) return false
   loadSlotToCanonical(toId)
   reg.active = toId
   writeJson(KEY, reg)
@@ -147,7 +155,10 @@ export function switchProfile(toId) {
 export function addProfile(name) {
   const reg = loadProfiles()
   if (reg.list.length >= MAX_PROFILES) return null
-  stashCanonical(reg.active)
+  // Park the current child before wiping the canonical keys for the new one;
+  // if that park fails (storage full) abort so we never erase a child we could
+  // not save first.
+  if (!stashCanonical(reg.active)) return null
   const id = newId(reg.list)
   const clean = String(name || '').trim().slice(0, 24)
   reg.list.push({ id, name: clean, created: Date.now() })

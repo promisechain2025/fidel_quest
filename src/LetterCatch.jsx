@@ -73,7 +73,9 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   }
   useEffect(() => {
     const c = canvasRef.current, el = areaRef.current
-    if (!c || !el) return undefined
+    // Reduced motion: no fireworks at all, so don't run a second 60fps canvas
+    // rAF loop just to clear an empty canvas forever - skip it entirely.
+    if (!c || !el || reduce) return undefined
     const size = () => { const dpr = Math.min(2, window.devicePixelRatio || 1); c.width = el.clientWidth * dpr; c.height = el.clientHeight * dpr; c.style.width = `${el.clientWidth}px`; c.style.height = `${el.clientHeight}px`; const g = c.getContext('2d'); if (g) g.setTransform(dpr, 0, 0, dpr, 0, 0) }
     size(); window.addEventListener('resize', size)
     let raf
@@ -106,7 +108,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     }
     raf = requestAnimationFrame(loop)
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size) }
-  }, [])
+  }, [reduce])
 
   /* SHOOT a falling letter */
   const onShoot = (item) => {
@@ -116,8 +118,10 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     dispatch({ type: CatchEvent.SHOOT, payload: { id: item.id } })
     if (good) {
       playEffect('good', soundOn); playForm(formOf(item.key), soundOn)
-      shootFireworkTo(item.x, item.y, ctx.combo + 1)
-      if (!reduce) anbessaCtl.start({ y: [0, -9, 0], scale: [1, 1.12, 1] }, { duration: 0.3, ease: 'easeOut' })
+      if (!reduce) {
+        shootFireworkTo(item.x, item.y, ctx.combo + 1)
+        anbessaCtl.start({ y: [0, -9, 0], scale: [1, 1.12, 1] }, { duration: 0.3, ease: 'easeOut' })
+      }
     } else {
       // A wrong shot re-plays the CALLED letter so the miss is a listen-again
       // teaching moment, not just a buzzer - now with a little shake.
