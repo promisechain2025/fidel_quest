@@ -188,22 +188,83 @@ export function buildAssignmentQueue(assignment) {
   return queue
 }
 
-/* ── pending assignment on the student device (fq.assign.v1) ── */
+/* ── pending assignments on the student device (fq.assign.v1) ──
+   A student can carry SEVERAL unfinished assignments at once (two teachers,
+   or a make-up alongside this week's), so the pending store is a keyed
+   collection - a fresh link never clobbers an unfinished one. Backward
+   compatible: the old single-object shape { ...assignment, openedDay, done }
+   is migrated into the collection on first read. Identity = (code, seed). */
 
+const PENDING_CAP = 24
+
+/** Stable identity of an assignment on the student device. */
+export const pendingAssignmentKey = (a) => `${a.code}#${a.seed}`
+
+const validPending = (a) =>
+  a && validClassCode(a.code) && Array.isArray(a.familyIds) && a.familyIds.length && Number.isFinite(a.seed)
+
+/** Read the raw collection, migrating the legacy single-object shape. */
+function readPendingItems() {
+  const raw = readJson(ASSIGN_KEY)
+  if (!raw) return []
+  if (Array.isArray(raw.items)) return raw.items.filter(validPending)
+  if (Array.isArray(raw)) return raw.filter(validPending)
+  return validPending(raw) ? [raw] : [] // legacy single object
+}
+
+function writePendingItems(items) {
+  return writeJson(ASSIGN_KEY, { v: 2, items })
+}
+
+/** Every unfinished assignment, soonest due first (most urgent surfaces). */
+export function loadPendingAssignments() {
+  return readPendingItems()
+    .filter((a) => !a.done)
+    .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))
+}
+
+/** The single most-urgent unfinished assignment, or null. Kept for callers
+    that surface just one. */
 export function loadPendingAssignment() {
-  const a = readJson(ASSIGN_KEY)
-  if (!a || a.done) return null
-  return validClassCode(a.code) && Array.isArray(a.familyIds) && a.familyIds.length ? a : null
+  return loadPendingAssignments()[0] || null
 }
 
+/**
+ * Add (or re-open) an assignment. Re-storing the same (code, seed) resets it
+ * to unfinished - re-tapping a shared link revives it - and refreshes
+ * openedDay. The collection is capped, evicting finished items first (oldest
+ * opened), then the oldest overall, so it can never grow without bound.
+ */
 export function storePendingAssignment(assignment, today = dayStamp()) {
-  if (!assignment) return null
-  return writeJson(ASSIGN_KEY, { ...assignment, openedDay: today, done: false })
+  if (!validPending(assignment)) return null
+  const key = pendingAssignmentKey(assignment)
+  const rest = readPendingItems().filter((a) => pendingAssignmentKey(a) !== key)
+  let items = [...rest, { ...assignment, openedDay: today, done: false }]
+  if (items.length > PENDING_CAP) {
+    const byOldest = (a, b) => (a.openedDay < b.openedDay ? -1 : a.openedDay > b.openedDay ? 1 : 0)
+    const drop = new Set()
+    const evict = (pool) => {
+      for (const a of pool) {
+        if (items.length - drop.size <= PENDING_CAP) break
+        drop.add(a)
+      }
+    }
+    evict(items.filter((a) => a.done).sort(byOldest)) // finished first
+    evict([...items].sort(byOldest)) // then oldest overall
+    items = items.filter((a) => !drop.has(a))
+  }
+  return writePendingItems(items)
 }
 
-export function markAssignmentDone() {
-  const a = readJson(ASSIGN_KEY)
-  if (a) writeJson(ASSIGN_KEY, { ...a, done: true })
+/** Mark an assignment finished. With no args, retires the most-urgent one
+    (back-compat with the single-slot caller). */
+export function markAssignmentDone(code, seed) {
+  const items = readPendingItems()
+  const target = code == null
+    ? items.filter((a) => !a.done).sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0))[0]
+    : items.find((a) => a.code === sanitizeClassCode(code) && a.seed === Number(seed))
+  if (!target) return null
+  return writePendingItems(items.map((a) => (a === target ? { ...a, done: true } : a)))
 }
 
 /* ── receipts (#receipt=) ── */
