@@ -262,11 +262,17 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── comprehension question ── */
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
+      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
+        {/* A way out must always exist: without this the child is confined to
+           guessing among the pictures with no back/exit (breaks the #1 rule). */}
+        <button type="button" onClick={leaveReader} aria-label={t('back', 'Back')} className={`absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
         <AnbessaSvg size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
-        {(story.q.g || showGloss) && (
-          <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
-        )}
+        {/* Always show the question - a story without a Ge'ez question string
+           would otherwise render NO prompt on a non-English UI, leaving the
+           child guessing blind. */}
+        <h1 className="text-xl font-black">{story.q.g ? <span className="geez">{story.q.g}</span> : story.q.en}</h1>
         {story.q.g && showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{story.q.en}</p>}
         <div className="flex gap-4">
           {story.q.a.map((opt, i) => (

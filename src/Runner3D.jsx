@@ -42,7 +42,8 @@ import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { INDEXES } from './platform/ethiopic'
 import { t } from './platform/i18n'
-import { LOW_END } from './platform/quality'
+import { LOW_END, savePerf } from './platform/quality'
+import { Runner2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
@@ -725,6 +726,9 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
         if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
       })
     } catch {
+      // Remember 3D is not viable so every future arcade entry routes straight
+      // to the 2D fallback instead of re-failing here.
+      savePerf('low')
       setWebglOk(false)
       return undefined
     }
@@ -736,7 +740,15 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
       const dt = Math.min(0.05, (now - last) / 1000)
       last = now
       const st = ctxRef.current.status
-      world.tick(dt, st === RunnerState.RUNNING)
+      try {
+        world.tick(dt, st === RunnerState.RUNNING)
+      } catch {
+        // A mid-run WebGL context loss makes render throw; drop to the 2D
+        // fallback rather than freezing the loop (and the game) silently.
+        savePerf('low')
+        setWebglOk(false)
+        return
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -835,6 +847,13 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
 
   if (destroyed) {
     return <RunnerDestroyed ctx={ctx} onRetry={onRetry} onExit={onExit} />
+  }
+
+  // WebGL unavailable (context creation failed, or lost mid-run): fall to the
+  // fully-playable WebGL-free 2D runner instead of a dead static screen, so a
+  // required arcade node can still be completed and the child is never stuck.
+  if (!webglOk) {
+    return <Runner2D seed={seed} soundOn={soundOn} onExit={onExit} pool={pool} />
   }
 
   return (
