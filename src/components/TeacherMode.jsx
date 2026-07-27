@@ -41,7 +41,7 @@ import {
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
   saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
   termWeeks, saveTermPlan, currentWeekIndex, weekDue,
-  enrollStudent, unenrollStudent,
+  enrollStudent, unenrollStudent, removeStudent,
 } from '../platform/classroom'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
@@ -466,18 +466,26 @@ function SentAssignments({ code }) {
   )
 }
 
-function RosterCard({ code }) {
+function RosterCard({ code, onChanged }) {
   const [nonce, setNonce] = useState(0)
   const [name, setName] = useState('')
   const roster = useMemo(() => rosterByStudent(code), [code, nonce])
+  const bump = () => { setNonce((n) => n + 1); onChanged?.() } // also refresh sibling cards (term plan / turn-ins)
   const add = () => {
     const b = sanitizeName(name)
     if (!b) return
     enrollStudent(code, b)
     setName('')
-    setNonce((n) => n + 1)
+    bump()
   }
-  const drop = (student) => { unenrollStudent(code, student); setNonce((n) => n + 1) }
+  const drop = (student) => { unenrollStudent(code, student); bump() }
+  // Fully remove a student who was auto-added from a receipt (e.g. a misspelled
+  // name) - deletes their results too, so it asks first.
+  const remove = (student) => {
+    if (window.confirm(t('tmRemoveStudentConfirm', 'Remove {name} and their results?').replace('{name}', student))) {
+      removeStudent(code, student); bump()
+    }
+  }
   return (
     <SectionCard collapsible defaultOpen={false} icon={<Users className="h-4 w-4" aria-hidden="true" />} title={t('tmRoster', 'Students')}>
       {/* Register your class up front - names stay on this device. */}
@@ -504,9 +512,16 @@ function RosterCard({ code }) {
               <div className="flex items-center justify-between gap-2">
                 <p className="font-black">{row.student}</p>
                 {row.started ? (
-                  <p className="mono text-sm font-black" style={{ color: row.best >= 0.85 ? 'var(--go-ink)' : row.best >= 0.6 ? 'var(--star)' : 'var(--bad-ink)' }}>
-                    {Math.round(row.best * 100)}% {t('tmBest', 'best')}
-                  </p>
+                  <span className="flex items-center gap-2">
+                    <p className="mono text-sm font-black" style={{ color: row.best >= 0.85 ? 'var(--go-ink)' : row.best >= 0.6 ? 'var(--star)' : 'var(--bad-ink)' }}>
+                      {Math.round(row.best * 100)}% {t('tmBest', 'best')}
+                    </p>
+                    {/* let a teacher clean up a wrong/misspelled auto-added name */}
+                    <button type="button" onClick={() => remove(row.student)} aria-label={t('tmRemoveStudent', 'Remove {name}').replace('{name}', row.student)}
+                      className={`rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)' }}>
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <span className="text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>{t('tmNotStarted', 'not started')}</span>
@@ -639,7 +654,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
             <TermPlanCard code={code} teacher={cls.teacher} onTv={onTv} onChanged={refresh} />
             <TroubleCard code={code} />
             <SentAssignments code={code} />
-            <RosterCard code={code} />
+            <RosterCard code={code} onChanged={refresh} />
 
             <SectionCard collapsible defaultOpen={false} icon={<Link2 className="h-4 w-4" aria-hidden="true" />} title={`${t('tmInvite', 'Invite students')} · ${code}`}>
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>

@@ -7,7 +7,7 @@
    33-family mastery mask). Deleting a child deletes their snapshots. */
 import { Router } from 'express'
 import { store } from '../store.js'
-import { requireAuth, rateLimit, str } from '../middleware.js'
+import { requireAuth, requireVerified, rateLimit, str } from '../middleware.js'
 
 const router = Router()
 const limit = rateLimit({ max: 120, key: 'children' })
@@ -40,7 +40,7 @@ router.delete('/children/:id', requireAuth, limit, async (req, res, next) => {
 /** Link (or unlink with teacherId:'') the approved teacher this child
     learns with. The link day anchors progress-verified teacher stats:
     only snapshots from that day on count toward the teacher's record. */
-router.put('/children/:id/teacher', requireAuth, limit, async (req, res, next) => {
+router.put('/children/:id/teacher', requireAuth, requireVerified, limit, async (req, res, next) => {
   try {
     const teacherId = str(req.body?.teacherId, 64)
     if (teacherId) {
@@ -61,7 +61,7 @@ router.put('/children/:id/teacher', requireAuth, limit, async (req, res, next) =
 
 /** Rate the teacher this child learns with: stars 1-5 now, optional
     comment held for moderation. One review per parent per teacher. */
-router.post('/teachers/:id/reviews', requireAuth, limit, async (req, res, next) => {
+router.post('/teachers/:id/reviews', requireAuth, requireVerified, limit, async (req, res, next) => {
   try {
     const stars = Math.round(Number(req.body?.stars))
     if (!Number.isFinite(stars) || stars < 1 || stars > 5) return res.status(400).json({ error: 'stars must be 1-5' })

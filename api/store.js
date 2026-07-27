@@ -297,20 +297,29 @@ export const store = {
     const tags = Array.isArray(subjectTags) ? subjectTags : []
     const teachesLiteracy = tags.length === 0 || tags.includes('amharic') || tags.includes('tigrinya')
     const gains = []
+    const gainFamilies = new Set()
     for (const kid of kids) {
       const snaps = (useMongo
         ? await M.Snapshot.find({ childId: String(kid._id) }).sort({ day: 1 }).lean()
         : mem.snapshots.filter((s) => s.childId === String(kid._id)).sort((a, b) => a.day.localeCompare(b.day)))
         .filter((s) => !kid.teacherSince || s.day >= kid.teacherSince)
-      if (snaps.length >= 2) gains.push(snaps[snaps.length - 1].letters - snaps[0].letters)
+      if (snaps.length >= 2) {
+        gains.push(snaps[snaps.length - 1].letters - snaps[0].letters)
+        gainFamilies.add(String(kid.parentId))
+      }
     }
-    const verified = gains.length
+    // The public badge reads "reported by {verified} families" and promises it
+    // only shows once at least two FAMILIES have measurable gains - so verified
+    // and the show gate must count distinct contributing PARENTS, not children.
+    // Otherwise one family with two child profiles (one accepted intro links
+    // both) single-handedly unlocks and mislabels the board's trust signal.
+    const verified = gainFamilies.size
     return {
       students: kids.length,
       families,
       verified,
       teachesLiteracy,
-      avgLettersGained: verified ? Math.round(gains.reduce((a, b) => a + b, 0) / verified) : 0,
+      avgLettersGained: gains.length ? Math.round(gains.reduce((a, b) => a + b, 0) / gains.length) : 0,
       show: teachesLiteracy && verified >= MIN_VERIFIED_STUDENTS,
     }
   },
