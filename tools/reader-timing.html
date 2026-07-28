@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eGeez Reader - Timing Author</title>
+<style>
+  :root{ --paper:#141a28; --card:#2a3248; --line:#3a4560; --ink:#eae3d2; --muted:#9fb3d1;
+         --accent:#e2c069; --accent-deep:#a9832f; --go:#59a52a; --bad:#c0453a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+  .wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+  h1{font-size:22px;margin:0 0 2px} .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+  label{display:block;font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+  textarea{width:100%;min-height:84px;background:var(--paper);color:var(--ink);border:1px solid var(--line);
+           border-radius:10px;padding:10px;font-size:26px;font-family:"Noto Sans Ethiopic",serif}
+  input[type=file]{color:var(--muted);font-size:13px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:12px;
+         padding:10px 14px;font-size:15px;font-weight:800;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button.pri{background:var(--accent);color:#20160a;border-color:var(--accent-deep)}
+  button.go{background:var(--go);color:#08210a;border-color:#2f6b18}
+  button.tap{font-size:20px;padding:18px 24px;width:100%;background:var(--accent);color:#20160a;border-color:var(--accent-deep)}
+  select{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font-weight:700}
+  .tokens{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-family:"Noto Sans Ethiopic",serif}
+  .tok{padding:6px 10px;border-radius:10px;border:1px solid var(--line);font-size:26px;color:var(--muted)}
+  .tok.done{color:var(--ink);border-color:var(--accent-deep);background:rgba(226,192,105,.10)}
+  .tok.cur{color:#20160a;background:var(--accent);border-color:var(--accent-deep);transform:scale(1.06)}
+  .clock{font-variant-numeric:tabular-nums;font-weight:800;font-size:15px;color:var(--muted)}
+  pre{white-space:pre-wrap;word-break:break-word;background:var(--paper);border:1px solid var(--line);
+      border-radius:10px;padding:10px;font-size:12px;max-height:220px;overflow:auto}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:8px}
+  kbd{background:var(--paper);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>eGeez Reader &mdash; Timing Author</h1>
+  <p class="sub">Create the per-word (or per-letter) timing map for a passage recording. Offline, nothing leaves this page.</p>
+
+  <div class="card">
+    <label>1 &middot; Passage text (Ge'ez, words separated by <b>&#4321;</b>, sentences by <b>&#4322;</b>)</label>
+    <textarea id="text" placeholder="&#4661;&#4622;&#4361;&#4757;&#4771;&#4757;&#4772;&#4757;&#4757;&#4661;&#4308;&#4771;&#4757;"></textarea>
+    <div class="row" style="margin-top:8px">
+      <label style="margin:0">Unit</label>
+      <select id="unit"><option value="word">word</option><option value="letter">letter</option></select>
+      <label style="margin:0 0 0 8px">Mode name</label>
+      <select id="mode"><option>spoken</option><option>chanted</option><option value="letter">letter</option></select>
+      <button id="tokBtn" class="pri">Tokenize</button>
+    </div>
+    <div id="tokens" class="tokens"></div>
+  </div>
+
+  <div class="card">
+    <label>2 &middot; Recording</label>
+    <input id="file" type="file" accept="audio/*">
+    <div class="row" style="margin-top:10px">
+      <button id="playBtn" class="go">Play</button>
+      <button id="restartBtn">Restart</button>
+      <label style="margin:0 0 0 8px">Speed</label>
+      <select id="rate"><option value="1">1.0x</option><option value="0.75">0.75x</option><option value="0.5">0.5x</option></select>
+      <span class="clock" id="clock">0.000s</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <label>3 &middot; Tap on each word as it is pronounced</label>
+    <button id="tapBtn" class="tap">TAP (or press Space) &mdash; stamp the next word</button>
+    <div class="row" style="margin-top:10px">
+      <button id="undoBtn">Undo last</button>
+      <button id="nudgeBack">&minus;50ms</button>
+      <button id="nudgeFwd">+50ms</button>
+      <button id="finishBtn" class="pri">Finish (mark end)</button>
+    </div>
+    <p class="hint">Play the recording, then tap once at the <b>onset</b> of each word. The tool sets each word's end to the next word's onset; press <kbd>Finish</kbd> at the last word's end (or it uses the recording's end). A held/chanted syllable is fine &mdash; just tap once when it begins.</p>
+  </div>
+
+  <div class="card">
+    <label>4 &middot; Export</label>
+    <div class="row">
+      <button id="exportBtn" class="go">Build JSON</button>
+      <button id="copyBtn">Copy</button>
+      <button id="dlBtn">Download</button>
+    </div>
+    <pre id="out">// map appears here</pre>
+  </div>
+</div>
+
+<script>
+// --- minimal tokenizer (mirrors src/platform/passageTiming.js; authoring only) ---
+const cp = ch => ch.codePointAt(0);
+const isFidel = ch => { const c=cp(ch); return c>=0x1200 && c<=0x135A; };
+const isNum   = ch => { const c=cp(ch); return c>=0x1369 && c<=0x137C; };
+const isLetter= ch => isFidel(ch) || isNum(ch);
+const isPunct = ch => { const c=cp(ch); return c>=0x1360 && c<=0x1368; };
+const isEnd   = ch => { const c=cp(ch); return (c>=0x1362 && c<=0x1368) || ch==='.'||ch==='!'||ch==='?'; };
+const isSpace = ch => /\s/.test(ch);
+
+function words(text){
+  const out=[]; let cur='';
+  for(const ch of Array.from(text||'')){
+    if(isLetter(ch)) cur+=ch;
+    else { if(cur){out.push(cur);cur='';} }
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+function letters(text){ return Array.from(text||'').filter(isLetter); }
+
+let TOKENS=[];           // display strings
+let onsets=[];           // seconds, one per stamped token (index order)
+let finalEnd=null;       // explicit end for the last token
+let audio=new Audio();
+const $=id=>document.getElementById(id);
+
+function tokenize(){
+  const t=$('text').value;
+  TOKENS = $('unit').value==='letter' ? letters(t) : words(t);
+  onsets=[]; finalEnd=null;
+  renderTokens();
+  $('out').textContent='// map appears here';
+}
+function renderTokens(){
+  const cur=onsets.length;
+  $('tokens').innerHTML = TOKENS.map((w,i)=>{
+    const cls = i<onsets.length ? 'tok done' : (i===cur ? 'tok cur' : 'tok');
+    return '<span class="'+cls+'">'+w+'</span>';
+  }).join('');
+}
+function stamp(){
+  if(onsets.length>=TOKENS.length) return;
+  onsets.push(+audio.currentTime.toFixed(3));
+  renderTokens();
+}
+function undo(){ onsets.pop(); finalEnd=null; renderTokens(); }
+function nudge(d){ if(onsets.length){ onsets[onsets.length-1]=Math.max(0,+(onsets[onsets.length-1]+d).toFixed(3)); } }
+function finish(){ finalEnd=+audio.currentTime.toFixed(3); build(); }
+
+function build(){
+  const dur = isFinite(audio.duration)?audio.duration:(finalEnd||0);
+  const end = finalEnd!=null?finalEnd:+dur.toFixed(3);
+  const map=[];
+  for(let i=0;i<onsets.length;i++){
+    const s=onsets[i];
+    const e=(i+1<onsets.length)? onsets[i+1] : end;
+    if(e>s) map.push({i, s:+s.toFixed(3), e:+e.toFixed(3)});
+  }
+  const obj={ unit: $('unit').value, mode: $('mode').value,
+              tokens: TOKENS.length, stamped: onsets.length, map };
+  $('out').textContent=JSON.stringify(obj,null,1);
+  return obj;
+}
+
+$('tokBtn').onclick=tokenize;
+$('tapBtn').onclick=stamp;
+$('undoBtn').onclick=undo;
+$('nudgeBack').onclick=()=>{nudge(-0.05);renderTokens();};
+$('nudgeFwd').onclick=()=>{nudge(0.05);renderTokens();};
+$('finishBtn').onclick=finish;
+$('exportBtn').onclick=build;
+$('playBtn').onclick=()=>{ if(audio.paused){audio.play();$('playBtn').textContent='Pause';} else {audio.pause();$('playBtn').textContent='Play';} };
+$('restartBtn').onclick=()=>{ audio.currentTime=0; };
+$('rate').onchange=e=>{ audio.playbackRate=+e.target.value; };
+$('file').onchange=e=>{ const f=e.target.files[0]; if(f){ audio.src=URL.createObjectURL(f); } };
+$('copyBtn').onclick=()=>navigator.clipboard.writeText($('out').textContent);
+$('dlBtn').onclick=()=>{ const b=new Blob([$('out').textContent],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='passage-timing.json'; a.click(); };
+
+audio.addEventListener('timeupdate',()=>{ $('clock').textContent=audio.currentTime.toFixed(3)+'s'; });
+audio.addEventListener('ended',()=>{ $('playBtn').textContent='Play'; });
+document.addEventListener('keydown',e=>{ if(e.code==='Space'){ e.preventDefault(); stamp(); } });
+</script>
+</body>
+</html>
