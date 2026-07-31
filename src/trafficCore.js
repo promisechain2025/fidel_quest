@@ -115,14 +115,20 @@ export function tierSupported(tier, caps) {
  * The shift plan: which tier each intersection uses, escalating but never
  * asking for more than the pool can stage. Always returns `count` tiers.
  */
+export const TIER_ORDER = Object.freeze(['street', 'downtown', 'meskel'])
+
 export function planShift(caps, count = INTERSECTIONS_PER_SHIFT) {
   const wanted = ['street', 'street', 'downtown', 'downtown', 'meskel']
-  const usable = ['street', 'downtown', 'meskel'].filter((t) => tierSupported(t, caps))
-  const fallback = usable[0] || 'street'
+  const usable = TIER_ORDER.filter((t) => tierSupported(t, caps))
   const out = []
   for (let i = 0; i < count; i++) {
     const w = wanted[Math.min(i, wanted.length - 1)]
-    out.push(tierSupported(w, caps) ? w : (usable[usable.length - 1] || fallback))
+    if (tierSupported(w, caps)) { out.push(w); continue }
+    // Degrade DOWNWARD: the hardest tier at or below what we wanted. Picking
+    // the hardest *supported* tier instead would hand a child who knows two
+    // families a harder road than one who knows six.
+    const easier = usable.filter((t) => TIER_ORDER.indexOf(t) <= TIER_ORDER.indexOf(w))
+    out.push(easier[easier.length - 1] || usable[0] || 'street')
   }
   return out
 }

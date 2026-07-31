@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, Flame, HelpCircle, Trophy } from 'lucide-react'
 import { playForm, playEffect } from '../platform/audioEngine'
-import { INDEXES, ALL_FORMS } from '../platform/ethiopic'
+import { INDEXES, ALL_FORMS, FIDEL_FAMILIES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
@@ -116,6 +116,8 @@ function Car({ car, angle, glowing, onClick, disabled }) {
         left: 0, top: 0, width: 68, height: 68, marginLeft: -34, marginTop: -34,
         background: 'transparent', border: 'none', padding: 0,
         cursor: disabled ? 'default' : 'pointer', outlineColor: 'var(--sky)',
+        // a queued car must never swallow a tap aimed at the car in front
+        pointerEvents: disabled ? 'none' : 'auto',
         borderRadius: 18,
         boxShadow: glowing ? '0 0 0 4px var(--go), 0 0 22px 6px rgba(89,165,42,.55)' : 'none',
       }}
@@ -169,9 +171,12 @@ const Chunk = ({ children, onClick, tone = 'go', className = '' }) => (
 export default function FidelTraffic({ soundOn, onBack, families = [] }) {
   // The child's learned letters, all orders - the plates come from here.
   const pool = useMemo(() => {
-    const fam = new Set(families)
-    const inScope = fam.size ? ALL_FORMS.filter((f) => fam.has(f.familyId)) : ALL_FORMS
-    return inScope.map((f) => f.audioKey)
+    // A day-one child has learned nothing, and `families` arrives empty. That
+    // must mean the FIRST family (what every sibling game does) - never the
+    // whole 231-letter alphabet, which would ask a beginner to order letters
+    // they have never seen and write every guess to their mastery ledger.
+    const fam = new Set(families.length ? families : [FIDEL_FAMILIES[0].id])
+    return ALL_FORMS.filter((f) => fam.has(f.familyId)).map((f) => f.audioKey)
   }, [families])
   const caps = useMemo(() => poolCaps(pool), [pool])
   const enough = caps.forms >= 3
@@ -184,6 +189,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
   const [buzz, setBuzz] = useState(-1)
   const reduce = useReducedMotion()
   const timers = useRef([])
+  const cueTimer = useRef(null) // the pending 'here is the right car' voice
   const [best, setBest] = useState(() => loadTraffic().best)
 
   const after = (ms, fn) => { const id = setTimeout(fn, ms); timers.current.push(id); return id }
@@ -203,14 +209,22 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
     else startShift(d)
   }
 
+  const cancelCue = () => { if (cueTimer.current) { clearTimeout(cueTimer.current); cueTimer.current = null } }
+
   const release = (laneIndex) => {
     if (!ctx || ctx.phase !== Phase.PLAY || leaving) return
+    cancelCue() // a newer action always wins the voice - never two letters at once
     const want = correctLane(ctx)
     const wantKey = ctx.lanes[want]?.cars[0]?.key
     const gotKey = ctx.lanes[laneIndex]?.cars[0]?.key
     const r = trafficTransition(ctx, { type: TrafficEvent.RELEASE, payload: { lane: laneIndex } })
     if (!r.accepted) return
-    recordAnswer(wantKey, gotKey, 'traffic')
+    // Namespaced so the ORDERING ledger never touches the RECOGNITION
+    // scheduler (srs.js skips colon keys): an order slip must not reset the
+    // memory box of a letter the child reads perfectly. And a road where an
+    // ambulance holds the line tests the exception, not the alphabet.
+    const vipAtLine = ctx.lanes.some((l) => l.cars[0] && l.cars[0].vip)
+    if (!vipAtLine) recordAnswer(`ord:${wantKey}`, `ord:${gotKey}`, 'traffic')
 
     if (r.correct) {
       const car = ctx.lanes[laneIndex].cars[0]
@@ -234,14 +248,15 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       setBuzz(laneIndex)
       after(340, () => setBuzz(-1))
       setHintLane(r.want)
-      after(420, () => playForm(formOf(wantKey), soundOn))
+      cueTimer.current = after(420, () => { cueTimer.current = null; playForm(formOf(wantKey), soundOn) })
       after(1600, () => setHintLane(-1))
       setCtx(r.next)
     }
   }
 
   const askAnbessa = () => {
-    if (!ctx || ctx.phase !== Phase.PLAY) return
+    if (!ctx || ctx.phase !== Phase.PLAY || leaving) return
+    cancelCue()
     const want = correctLane(ctx)
     setHintLane(want)
     playForm(formOf(ctx.lanes[want]?.cars[0]?.key), soundOn)
@@ -419,7 +434,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       </p>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-4">
-        <div className="relative" style={{ width: BOX, height: BOX, maxWidth: '100%' }}>
+        <div className="relative" style={{ width: BOX, height: BOX, maxWidth: '100%', overflow: 'hidden' }}>
           {/* the roads */}
           <div className="absolute rounded-3xl" style={{ inset: 0, background: 'var(--card)', border: '2px solid var(--line)' }} />
           <div className="absolute" style={{ left: MID - JUNCTION, top: 8, width: JUNCTION * 2, bottom: 8, background: 'var(--paper)' }} />

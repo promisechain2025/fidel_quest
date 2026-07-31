@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   Phase, TrafficEvent, TIERS, DIRS, AMBULANCE,
   readingIndex, priorityOf, correctLane, frontCars,
-  poolCaps, tierSupported, planShift, buildIntersection, scoreFor,
+  poolCaps, tierSupported, planShift, buildIntersection, scoreFor, TIER_ORDER,
   initTraffic, trafficTransition,
   initMatchDay, recordShift, standings,
 } from './trafficCore'
@@ -104,6 +104,45 @@ describe('pool capability + shift planning', () => {
     expect(plan).toHaveLength(5)
     for (const t of plan) expect(tierSupported(t, poolCaps(basesOf(4))) || t === 'street').toBe(true)
     expect(plan).not.toContain('meskel')
+  })
+})
+
+/** Every form of the first n families - the shape a real learned pool takes. */
+const formsOf = (n) => FIDEL_FAMILIES.slice(0, n).flatMap((f) => keysOfFamily(f.id))
+
+describe('difficulty never overshoots the child (regression)', () => {
+  it('never plans a tier HARDER than the one it wanted, for any pool size', () => {
+    const wanted = ['street', 'street', 'downtown', 'downtown', 'meskel']
+    for (let n = 1; n <= FIDEL_FAMILIES.length; n++) {
+      const plan = planShift(poolCaps(formsOf(n)))
+      plan.forEach((got, i) => {
+        expect(
+          TIER_ORDER.indexOf(got),
+          `${n} families, intersection ${i}: got ${got}, wanted at most ${wanted[i]}`,
+        ).toBeLessThanOrEqual(TIER_ORDER.indexOf(wanted[i]))
+      })
+    }
+  })
+  it('does not hand a 2-family child a harder shift than a 6-family child', () => {
+    const hardest = (plan) => Math.max(...plan.map((t) => TIER_ORDER.indexOf(t)))
+    expect(hardest(planShift(poolCaps(formsOf(2))))).toBeLessThanOrEqual(hardest(planShift(poolCaps(formsOf(6)))))
+  })
+})
+
+describe('every realistic pool is playable end to end (regression)', () => {
+  it('reaches WIN with a releasable car at every step, from 1 family to all', () => {
+    for (let n = 1; n <= FIDEL_FAMILIES.length; n += 4) {
+      for (const seed of [1, 77, 2026]) {
+        let ctx = initTraffic(seed, formsOf(n))
+        let guard = 0
+        while (ctx.phase === Phase.PLAY && guard++ < 400) {
+          const want = correctLane(ctx)
+          expect(want, `${n} families, seed ${seed}: dead road`).toBeGreaterThanOrEqual(0)
+          ctx = play(ctx, want).next
+        }
+        expect(ctx.phase, `${n} families, seed ${seed}`).toBe(Phase.WIN)
+      }
+    }
   })
 })
 
