@@ -133,6 +133,7 @@ const StoryTime = lazyRetry(() => import('./components/StoryTime'))
 const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const FidelMatch = lazyRetry(() => import('./components/FidelMatch'))
+const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const FidelLineup = lazyRetry(() => import('./components/FidelLineup'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
 const MerkatoMarket = lazyRetry(() => import('./components/MerkatoMarket'))
@@ -168,6 +169,7 @@ import {
   Moon,
   ListOrdered,
   Grid2x2,
+  Car,
   Grid3x3,
   Layers,
   Blocks,
@@ -1535,6 +1537,17 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
+          {screen.name === 'traffic' && (
+            <Screen key="traffic">
+              <Suspense fallback={null}>
+                <FidelTraffic
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'lineup' && (
             <Screen key="lineup">
               <Suspense fallback={null}>
@@ -1802,6 +1815,7 @@ export default function FidelQuestApp() {
               onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
               onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
               onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
+              onTraffic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'traffic' }) }}
               onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
               onWorkshop={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'workshop' }) }}
               onMarket={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'market' }) }}
@@ -2720,7 +2734,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onTraffic, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2774,6 +2788,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
             <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
             <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
+            <BackpackTile icon={<Car className="h-6 w-6" />} tone="var(--sky)" title={t('trShort', 'Traffic')} onClick={onTraffic} />
             <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
             <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
             <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />

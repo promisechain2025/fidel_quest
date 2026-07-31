@@ -93,6 +93,15 @@ src/
                                # (slide the basket to catch the called letter)
   letterCatchCore.js           # pure seeded Letter Catch machine (stepped)
   letterCatchCore.test.js
+  trafficCore.js               # pure seeded Fidel Traffic machine: the
+                               # priority rule (familyIndex*7+order-1),
+                               # intersection builder, shift plan, group-play
+                               # match day. No clock, no Math.random.
+  trafficCore.test.js
+  components/FidelTraffic.jsx  # Fidel Traffic (Meskel Square): cars with
+                               # fidel plates at an all-way stop - wave
+                               # through the letter that comes first.
+                               # 1-4 officers share one phone (pass-and-play).
   skylandsCore.js              # pure letter-pool data (cumulative-by-node),
                                # reused by Letter Catch; no three.js imports
   Runner3D.jsx                 # the WebGL Letter Runner scene (three.js);
