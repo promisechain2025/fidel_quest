@@ -3,6 +3,7 @@ import {
   Phase, TrafficEvent, TIERS, DIRS, AMBULANCE,
   readingIndex, priorityOf, correctLane, frontCars,
   poolCaps, tierSupported, planShift, buildIntersection, scoreFor, TIER_ORDER,
+  canPair, pairLane, starsFor, WHISTLES_PER_SHIFT,
   initTraffic, trafficTransition,
   initMatchDay, recordShift, standings,
 } from './trafficCore'
@@ -272,11 +273,12 @@ describe('the shift (trafficTransition)', () => {
     const end = clearAll(initTraffic(3, basesOf(3)))
     expect(end.phase).toBe(Phase.WIN)
   })
-  it('grows the streak bonus but caps it', () => {
+  it('grows the streak bonus generously, so mastery keeps paying all shift', () => {
     expect(scoreFor(0)).toBe(10)
     expect(scoreFor(3)).toBe(16)
     expect(scoreFor(5)).toBe(20)
-    expect(scoreFor(50)).toBe(20)
+    expect(scoreFor(12)).toBe(34)
+    expect(scoreFor(50)).toBe(34) // bounded, but far beyond a single road
   })
 })
 
@@ -311,5 +313,183 @@ describe('group play: officers share one phone', () => {
     const next = recordShift(day, { score: 10 })
     expect(day.players[0].score).toBe(0)
     expect(next).not.toBe(day)
+  })
+})
+
+
+/* ── the mechanics that make it a game, not a sorted list ─────────────── */
+
+const tick = (ctx, dt) => trafficTransition(ctx, { type: TrafficEvent.TICK, payload: { dt } })
+const whistle = (ctx) => trafficTransition(ctx, { type: TrafficEvent.WHISTLE })
+const meskelCtx = (seed = 4) => {
+  let c = initTraffic(seed, RICH)
+  while (c.tier !== 'meskel' && c.phase === Phase.PLAY) c = play(c, correctLane(c)).next
+  return c
+}
+
+describe('hidden information: only the car at the line shows its plate', () => {
+  it('covers every queued car and leaves the one at the line open', () => {
+    const [lanes] = buildIntersection(3, RICH, 'meskel')
+    for (const l of lanes) {
+      expect(l.cars[0].covered, 'the car at the line is readable').toBe(false)
+      l.cars.slice(1).forEach((c) => expect(c.covered, 'a queued car is covered').toBe(true))
+    }
+  })
+  it('reveals the next plate only when it pulls up to the line', () => {
+    const ctx = meskelCtx()
+    const li = ctx.lanes.findIndex((l) => l.cars.length > 1)
+    if (li < 0) return
+    const behind = ctx.lanes[li].cars[1]
+    expect(behind.covered).toBe(true)
+    let c = ctx
+    let guard = 0
+    while (c.lanes[li] && c.lanes[li].cars[0] !== behind && guard++ < 30) c = play(c, correctLane(c)).next
+    const nowAtLine = c.lanes[li] && c.lanes[li].cars[0]
+    if (nowAtLine && nowAtLine.id === behind.id) expect(nowAtLine.covered).toBe(false)
+  })
+  it('never asks the child to judge a covered plate (correctLane reads the line only)', () => {
+    for (let seed = 1; seed < 30; seed++) {
+      let c = initTraffic(seed, RICH)
+      let guard = 0
+      while (c.phase === Phase.PLAY && guard++ < 200) {
+        const want = correctLane(c)
+        expect(c.lanes[want].cars[0].covered).toBe(false)
+        c = play(c, want).next
+      }
+    }
+  })
+})
+
+describe('the hint costs something', () => {
+  it('starts with three whistles and spends one per hint, breaking the streak', () => {
+    let c = initTraffic(9, RICH)
+    expect(c.whistles).toBe(WHISTLES_PER_SHIFT)
+    c = play(c, correctLane(c)).next
+    expect(c.combo).toBe(1)
+    const r = whistle(c)
+    expect(r.accepted).toBe(true)
+    expect(r.next.whistles).toBe(WHISTLES_PER_SHIFT - 1)
+    expect(r.next.hints).toBe(1)
+    expect(r.next.combo, 'a hint costs the streak').toBe(0)
+    expect(r.next.score, 'but never points').toBe(c.score)
+  })
+  it('refuses a fourth whistle without blocking play', () => {
+    let c = initTraffic(9, RICH)
+    for (let i = 0; i < WHISTLES_PER_SHIFT; i++) c = whistle(c).next
+    const r = whistle(c)
+    expect(r.accepted).toBe(false)
+    expect(r.next).toBe(c)
+    expect(play(c, correctLane(c)).correct, 'the child can still play').toBe(true)
+  })
+})
+
+describe('live traffic: cars arrive, a full city costs flow but never fails', () => {
+  it('a calm street has no arrivals; the busy tiers do', () => {
+    expect(TIERS.street.spawns).toBe(0)
+    expect(TIERS.meskel.spawns).toBeGreaterThan(0)
+  })
+  it('brings a car in once enough time has passed', () => {
+    const c = meskelCtx()
+    const before = c.lanes.reduce((n, l) => n + l.cars.length, 0)
+    const r = tick(c, TIERS.meskel.arriveEvery + 0.1)
+    const after = r.next.lanes.reduce((n, l) => n + l.cars.length, 0)
+    expect(after === before + 1 || r.next.turnedAway > c.turnedAway).toBe(true)
+  })
+  it('turns a car away and drops flow when every lane is full - and does not end the shift', () => {
+    const c = meskelCtx()
+    const cap = TIERS.meskel.cap
+    const full = { ...c, lanes: c.lanes.map((l) => ({ ...l, cars: [l.cars[0], ...Array.from({ length: cap - 1 }, (_, i) => ({ ...l.cars[0], id: 9000 + i, covered: true }))] })) }
+    const r = tick(full, TIERS.meskel.arriveEvery + 0.1)
+    expect(r.next.turnedAway).toBe(1)
+    expect(r.next.flow).toBeLessThan(full.flow)
+    expect(r.next.phase, 'a jam is never a fail state').toBe(Phase.PLAY)
+  })
+  it('flow only ever falls to zero, never below', () => {
+    let c = meskelCtx()
+    c = { ...c, flow: 4, lanes: c.lanes.map((l) => ({ ...l, cars: Array.from({ length: TIERS.meskel.cap }, (_, i) => ({ ...l.cars[0], id: 8000 + i })) })) }
+    for (let i = 0; i < 5; i++) c = tick(c, TIERS.meskel.arriveEvery + 0.1).next
+    expect(c.flow).toBe(0)
+  })
+  it('never leaves the child at an empty junction while cars are still due', () => {
+    for (let seed = 1; seed < 25; seed++) {
+      let c = initTraffic(seed, RICH)
+      let guard = 0
+      while (c.phase === Phase.PLAY && guard++ < 300) {
+        expect(correctLane(c), `seed ${seed}: empty junction`).toBeGreaterThanOrEqual(0)
+        c = play(c, correctLane(c)).next
+      }
+      expect(c.phase).toBe(Phase.WIN)
+    }
+  })
+})
+
+describe('pairs: two cars that do not cross may go together', () => {
+  const car = (dir, turn, extra = {}) => ({ dir, turn, key: 'ha-1', vip: false, ...extra })
+  it('lets opposite approaches both going straight share the junction', () => {
+    expect(canPair(car('N', 'S'), car('S', 'S'))).toBe(true)
+    expect(canPair(car('E', 'S'), car('W', 'S'))).toBe(true)
+  })
+  it('lets two right turns share it', () => {
+    expect(canPair(car('N', 'R'), car('E', 'R'))).toBe(true)
+  })
+  it('refuses crossing paths, the same approach, and any ambulance', () => {
+    expect(canPair(car('N', 'S'), car('E', 'S'))).toBe(false) // crossing
+    expect(canPair(car('N', 'S'), car('S', 'L'))).toBe(false) // one turns across
+    expect(canPair(car('N', 'S'), car('N', 'S'))).toBe(false) // same approach
+    expect(canPair(car('N', 'S', { vip: true }), car('S', 'S'))).toBe(false)
+  })
+  it('pairs only the two LOWEST cars, so the ordering lesson is never bent', () => {
+    const ctx = {
+      lanes: [
+        { cars: [{ id: 0, key: `${FIDEL_FAMILIES[0].id}-1`, dir: 'N', turn: 'S', vip: false }] },
+        { cars: [{ id: 1, key: `${FIDEL_FAMILIES[0].id}-7`, dir: 'E', turn: 'S', vip: false }] },
+        { cars: [{ id: 2, key: `${FIDEL_FAMILIES[0].id}-3`, dir: 'S', turn: 'S', vip: false }] },
+      ],
+    }
+    // lowest is lane 0 (order 1); second lowest is lane 2 (order 3), opposite + straight
+    expect(pairLane(ctx)).toBe(2)
+  })
+  it('pays a bonus for a quick second release that could legally share the road', () => {
+    const a = { id: 0, key: `${FIDEL_FAMILIES[0].id}-1`, dir: 'N', turn: 'S', vip: false, covered: false }
+    const b = { id: 1, key: `${FIDEL_FAMILIES[0].id}-3`, dir: 'S', turn: 'S', vip: false, covered: false }
+    const base = { ...initTraffic(1, RICH), lanes: [{ dir: 'N', cars: [a] }, { dir: 'S', cars: [b] }], spawnsLeft: 0, tier: 'street' }
+    const first = play(base, 0).next
+    const quick = trafficTransition(first, { type: TrafficEvent.RELEASE, payload: { lane: 1, quick: true } })
+    const slow = trafficTransition(first, { type: TrafficEvent.RELEASE, payload: { lane: 1 } })
+    expect(quick.next.pairs).toBe(1)
+    expect(quick.next.score).toBeGreaterThan(slow.next.score)
+  })
+})
+
+describe('the letters are chosen to actually teach', () => {
+  it('puts plates NEAR each other in the fidel order, not scattered', () => {
+    // A uniform draw from ~230 forms would average a spread in the hundreds.
+    let worst = 0
+    for (let seed = 1; seed < 40; seed++) {
+      const [lanes] = buildIntersection(seed, ALL_FORMS.map((f) => f.audioKey), 'meskel')
+      const idx = lanes.flatMap((l) => l.cars.map((c) => readingIndex(c.key)))
+      worst = Math.max(worst, Math.max(...idx) - Math.min(...idx))
+    }
+    expect(worst, 'plates should sit in a tight window of the order').toBeLessThan(60)
+  })
+  it('sometimes stages a look-alike twin pair on purpose', () => {
+    const twins = (FIDEL_FAMILIES.find((f) => f.twinOf) ? true : false)
+    if (!twins) return // pack without declared twins
+    let staged = 0
+    for (let seed = 1; seed < 120; seed++) {
+      const [lanes] = buildIntersection(seed, ALL_FORMS.map((f) => f.audioKey), 'meskel')
+      const fams = lanes.flatMap((l) => l.cars.map((c) => INDEXES.byAudioKey.get(c.key)))
+      const names = fams.map((f) => f.familyName)
+      if (new Set(names).size < names.length) staged++ // two families sharing a sound
+    }
+    expect(staged, 'twins should appear deliberately, not by luck').toBeGreaterThan(5)
+  })
+})
+
+describe('stars reward a smooth city', () => {
+  it('gives three only for a full-flow, mistake-free shift', () => {
+    expect(starsFor({ flow: 100, misses: 0 })).toBe(3)
+    expect(starsFor({ flow: 100, misses: 1 })).toBe(2)
+    expect(starsFor({ flow: 60, misses: 0 })).toBe(1)
   })
 })
