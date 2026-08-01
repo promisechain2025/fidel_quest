@@ -11,9 +11,9 @@
    ========================================================================== */
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, KeyRound, MessageCircle, RefreshCcw, Share2, ShoppingBag } from 'lucide-react'
+import { Heart, KeyRound, MessageCircle, RefreshCcw, Share2, ShoppingBag, Timer } from 'lucide-react'
 import { t } from '../platform/i18n'
-import { grantFeedbackGrace, licenseState, redeemAppCode, APP_PRICE, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
+import { grantFeedbackGrace, licenseState, redeemAppCode, dailyPass, APP_PRICE, DAILY_PASS_MINUTES, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from '../platform/support'
 import { iapAvailable, buyFullApp, restorePurchasesAll } from '../platform/iap'
 import ParentalGate from './ParentalGate'
@@ -21,7 +21,7 @@ import AnbessaSvg from './AnbessaSvg'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-export default function SupportAsk({ onClose, onFeedbackGranted }) {
+export default function SupportAsk({ onClose, onFeedbackGranted, onPass }) {
   const [unlocked, setUnlocked] = useState(false) // parental gate passed
   const [thanked, setThanked] = useState(false)
   const [iapMsg, setIapMsg] = useState('')
@@ -30,6 +30,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
   const buy = buyUrl()
   // the honest-feedback extension is one-time; afterwards buy/gift only
   const [canFeedback] = useState(() => licenseState().feedbackAvailable)
+  const [pass] = useState(() => dailyPass()) // today's free window, if unused
 
   const feedback = () => {
     grantFeedbackGrace()
@@ -76,6 +77,35 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
         {!unlocked ? (
           /* Adult-only actions behind the parental gate. */
           <div className="mt-4 flex flex-col items-center gap-2">
+            {/* The daily window. Deliberately NOT behind the parental gate:
+                it costs nothing, links nowhere, and its whole purpose is to
+                let anyone show the full app to someone else on the spot. */}
+            {onPass && (
+              <div className="mb-2 w-full">
+                <button
+                  type="button"
+                  onClick={pass.available ? onPass : undefined}
+                  disabled={!pass.available}
+                  className={`chunk flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 font-black ${FOCUS}`}
+                  style={{
+                    background: pass.available ? 'var(--go)' : 'var(--card)',
+                    color: pass.available ? '#fff' : 'var(--muted)',
+                    border: pass.available ? 'none' : '2px solid var(--line)',
+                    boxShadow: pass.available ? '0 4px 0 var(--go-deep)' : 'none',
+                    '--chunk-depth': pass.available ? '4px' : '0px',
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  <Timer className="h-5 w-5" aria-hidden="true" />
+                  {pass.available
+                    ? t('passOpen', 'Open everything for {n} minutes', { n: DAILY_PASS_MINUTES })
+                    : t('passUsed', "Today's {n} free minutes are used up", { n: DAILY_PASS_MINUTES })}
+                </button>
+                <p className="mt-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                  {t('passHint', 'Every day, free - enough to play, or to show the whole app to a friend.')}
+                </p>
+              </div>
+            )}
             <ParentalGate onOpen={() => setUnlocked(true)} intro={t('payGateIntro', 'This is for a grown-up: buying, gifting, or sending feedback.')} />
             <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
               {t('dismiss', 'Not now')}

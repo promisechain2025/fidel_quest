@@ -37,10 +37,21 @@ metadata / build-flags / console forms.**
 > set a **price** in both consoles. The store takes payment at download; the
 > installed app unlocks fully, with **no in-app trial, no "Not now" bypass, and
 > no purchase/IAP/RevenueCat UI**. So the IAP rows (2.1(b), 3.1.1 trial) are
-> **N/A** and **"Data Not Collected" is accurate**. *(A 3-day free trial that
-> funnels to buying is kept dormant behind `VITE_MONETIZE=true` for a future v2;
-> even then it needs no IAP — native is paid-at-download and the web/PWA carries
-> the trial.)*
+> **N/A** and **"Data Not Collected" is accurate**.
+>
+> **Changed for 1.2 (August 2026):** `VITE_MONETIZE=true` is now set, so the
+> shipped model is **free download → 3-day trial → buy once ($12.99)**. Native
+> builds still cannot charge until a RevenueCat key is present (`iapAvailable()`
+> is false → `licenseState()` returns `licensed` and no purchase UI renders), so
+> the IAP rows stay N/A for a keyless build and become live the moment a key and
+> a `full_app` product exist.
+>
+> **The daily window.** Once the trial ends, one tap opens the whole app for
+> `DAILY_PASS_MINUTES` (5) per calendar day, forever. It is deliberately the one
+> control **outside** the parental gate in SupportAsk: it is not a purchase, it
+> links nowhere, and it takes no data — so 1.3 / 5.1.4 do not apply to it, while
+> Buy / Gift / Feedback stay gated. It also means a child who taps a locked
+> feature is never left at a dead end.
 
 - ✅ **Fixed (Apple 1.3 / 5.1.4 / 3.1.1):** the after-trial **SupportAsk**
   dialog now shows the child only "this is for a grown-up" + the hold-and-answer

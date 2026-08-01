@@ -26,7 +26,13 @@
    The child is never blocked mid-lesson: the ask appears at most once per
    calendar day, on the home screen, and always has a "Not now".
 
-   fq.license.v1: { startDay, graceUntil, supported, askedDay }
+   And the ask is never a dead end. Every day after the trial, one tap opens
+   the WHOLE app for DAILY_PASS_MINUTES (dailyPass/startDailyPass). A family
+   that cannot pay still gets something real each day, and anyone can show
+   the full app to a friend on the spot - the cheapest marketing there is.
+
+   fq.license.v1: { startDay, graceUntil, supported, askedDay,
+                    passDay, passStart }
    Deliberately NOT part of the progress keys: "Reset all progress" gives a
    fresh player, not a fresh trial.
    ========================================================================== */
@@ -44,6 +50,11 @@ const envInt = (v, fallback) => {
 }
 export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 3)
 export const FEEDBACK_GRACE_DAYS = 4
+/** Minutes of FULL access, once every day, forever, after the trial ends.
+    A family that will not (or cannot) buy still gets a real daily taste, and
+    - the reason this exists - can still SHOW the whole app to a neighbour,
+    a cousin, a teacher. Word of mouth is the only marketing this app has. */
+export const DAILY_PASS_MINUTES = envInt(import.meta.env?.VITE_DAILY_PASS_MINUTES, 5)
 
 /** Display price of the app - one-time, every platform. */
 export const APP_PRICE = (import.meta.env?.VITE_APP_PRICE || '$12.99').trim()
@@ -99,6 +110,41 @@ export function licenseState(today = dayStamp(), monetize = MONETIZE, native = i
   const feedbackAvailable = !s.feedbackUsed
   if (daysLeft > 0) return { phase: 'trial', daysLeft, shouldAsk: false, feedbackAvailable }
   return { phase: 'ended', daysLeft: 0, shouldAsk: s.askedDay !== today, feedbackAvailable }
+}
+
+/* ── the daily 5 minutes ─────────────────────────────────────────────────
+   Once the trial is over, the app is not a wall - it is a shop window that
+   opens for DAILY_PASS_MINUTES every single day. Enough to play, enough to
+   demo the whole thing to someone else, not enough to replace buying it.
+   The window is wall-clock based (passStart), so it survives a reload and
+   cannot be reset by closing the app. */
+
+/** { active, msLeft, available } - `available` means today's pass is unused. */
+export function dailyPass(today = dayStamp(), now = Date.now()) {
+  const s = load()
+  const span = DAILY_PASS_MINUTES * 60000
+  if (s.passDay !== today) return { active: false, msLeft: 0, available: true }
+  // Clamp to the span: a device clock pushed backwards cannot stretch it.
+  const msLeft = Math.max(0, Math.min(span, (s.passStart || 0) + span - now))
+  return { active: msLeft > 0, msLeft, available: false }
+}
+
+/** Open today's window. Idempotent within the day - a second tap does NOT
+    buy more time, it just reports what is left. */
+export function startDailyPass(today = dayStamp(), now = Date.now()) {
+  const s = load()
+  if (s.passDay !== today) {
+    s.passDay = today
+    s.passStart = now
+    save(s)
+  }
+  return dailyPass(today, now)
+}
+
+/** The single question every screen asks before opening paid content:
+    licensed, still in the trial, or inside today's free window. */
+export function fullAccess(today = dayStamp(), now = Date.now(), lic = licenseState(today)) {
+  return lic.phase !== 'ended' || dailyPass(today, now).active
 }
 
 /** Remember that today's ask was shown - at most one per calendar day. */
