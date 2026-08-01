@@ -93,6 +93,7 @@ function armAssignmentReminder(assignment) {
     })
   }
 }
+import { packHasStories } from './platform/stories'
 import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
@@ -2776,7 +2777,10 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
             <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
             <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
-            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            {/* Stories only exist for packs that ship them - no empty room. */}
+            {packHasStories() && (
+              <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            )}
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {

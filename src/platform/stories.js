@@ -23,7 +23,7 @@
    gated on a native speaker; the engine is pack-aware (filters by s.pack).
    ========================================================================== */
 
-import { FIDEL_FAMILIES } from './ethiopic'
+import { FIDEL_FAMILIES, getActivePackId } from './ethiopic'
 
 /* Ethiopic punctuation, quotes + whitespace a page may carry around its words. */
 const STRIP = /[፡-፨!?,.\s"'«»“”‘’]+/g
@@ -33,6 +33,15 @@ const STRIP = /[፡-፨!?,.\s"'«»“”‘’]+/g
 const CHAPTER_SIZE = 8
 
 /** The Ge'ez words of a sentence, punctuation stripped. */
+/**
+ * Does the active pack actually ship stories? Every story surface is hidden
+ * when it does not: a "coming soon" screen is a promise, not a feature, and a
+ * child should never be offered a door that opens on an empty room.
+ */
+export function packHasStories(packId = getActivePackId()) {
+  return STORIES.some((s) => s.pack === packId)
+}
+
 export function storyWords(text) {
   return String(text || '')
     .split(STRIP)
