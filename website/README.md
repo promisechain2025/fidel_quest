@@ -77,3 +77,23 @@ free account, child profiles, saved snapshots with an over-time chart.
 
 Any static host. For SPA routing, add a history fallback (all paths ->
 `index.html`) — on Netlify: `/* /index.html 200` in `_redirects`.
+
+## Build output
+
+`npm run build` runs `vite build` then `scripts/prerender.mjs`, which writes
+a real `dist/<route>/index.html` per route with the title, description,
+canonical and OG/Twitter tags already in the markup. The body is still the
+SPA shell - React hydrates it as before - but a crawler or link-preview
+scraper that never runs JS now sees the right head for the page it asked
+for. Route metadata lives in `src/routeMeta.js`; add a route there, in
+`App.jsx`, and in `public/sitemap.xml`. Descriptions outside 50-160
+characters fail the build on purpose.
+
+Netlify serves the generated file before the `/*` rewrite in
+`public/_redirects`, so deep links keep working. `vite preview` is the
+exception: its own SPA fallback shadows the files unless you request the
+trailing-slash form (`/pricing/`) - a local-preview quirk, not a deploy one.
+
+There is no animation library. Scroll reveals are an IntersectionObserver
+plus the `.reveal` CSS in `tokens.css`; framer-motion was removed because it
+was 42 kB gzip (a third of the landing bundle) for a cross-fade.

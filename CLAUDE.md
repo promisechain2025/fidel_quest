@@ -176,6 +176,88 @@ npm run lint
 See `docs/architecture-review.md` for the full must-do list and the
 current scorecard.
 
+## Standing rules these repos are reviewed against
+
+These came out of the review rounds; a change that breaks one is a
+regression even if nothing fails. Check them before saying a task is done.
+
+### The website may never out-claim the app
+
+`website/` imports nothing from `src/`, so it drifts silently. Every
+user-visible claim on the site must be checkable against app code:
+
+- **Numbers are per-pack.** Amharic is 33 families / 231 forms; Tigrinya is
+  34 / 238 (the extra ቐ). Never print one as "all letters" without saying
+  which language.
+- **Features that are pack-conditional must say so.** Stories are
+  Amharic-only (`platform/stories.js`, every entry `pack: 'am'`), and the
+  Tigrinya journey has no STORY nodes at all.
+- **Prices and trial terms live in the app** (`platform/license.js`
+  `APP_PRICE` / `TRIAL_DAYS` / `DAILY_PASS_MINUTES`,
+  `platform/familyPack.js`). The site, the JSON-LD and `api/routes/pay.js`
+  must agree with them, and JSON-LD `availability` must follow the same
+  signal as the buy button - never advertise a live price on a page that
+  cannot take money.
+- **Never advertise a purchase path that does not exist yet.** Store
+  buying needs a RevenueCat key (`platform/storeEnv.js`); without one the
+  native build is deliberately free and silent.
+- **No invented proof.** No user counts, awards, testimonials or test
+  totals unless they are real and sourced.
+- **A promise on a sales page must match the Terms page**, and no
+  `[bracketed placeholder]` ships next to a live checkout.
+
+### Accessibility is measured, not eyeballed
+
+- Text contrast >= 4.5:1 (>= 3:1 at 18.66px bold / 24px), and focus
+  indicators >= 3:1 against what they sit on - **in both colour schemes**.
+  Sample the rendered pixels; do not trust the palette.
+- Colour tokens split by ROLE: `--accent` is a fill, `--accent-text` is
+  readable text, `--focus` is the ring. A fill colour is not a text colour.
+- `aria-modal` obliges a real focus trap plus an inert background.
+- One `<h1>` per page, no skipped heading levels, every control labelled,
+  every image `alt` (or `alt="" aria-hidden`), a skip link to `#main`.
+
+### A form must never lie about what happened
+
+- Success UI only after the server actually accepted it. `submitForm`
+  returns `{ mailto: true }` when `VITE_API_URL` is unset - that is a mail
+  draft, not a signup, and must read differently.
+- Every failure path renders a `role="alert"`; no `catch {}` that swallows.
+- Transport failures get human copy (`UNREACHABLE`), never the browser's
+  raw "Failed to fetch".
+- A definitive 4xx is terminal - do not retry it behind a spinner.
+
+### API defaults must fail safe
+
+- **Never trust a header for identity.** Rate limiting keys on `req.ip`,
+  which only means anything when `trust proxy` matches the real deploy
+  (`TRUST_PROXY`, empty by default).
+- Auth paths cost the same whether or not the account exists - no timing
+  oracle.
+- Anything an anonymous caller supplies is allow-listed before it reaches
+  an email subject, a query, or the store.
+- Fail fast at boot on config that would silently corrupt production
+  (`JWT_SECRET`, `SITE_URL` when Stripe is live). Do not gate those checks
+  on `NODE_ENV` - hosts often leave it unset.
+- Client-caused body errors are 4xx, not 500.
+- Destructive scripts refuse to run without an explicit confirm env var.
+
+### SEO on a client-rendered SPA
+
+- Every indexable route needs baked head tags. `src/routeMeta.js` is the
+  source of truth and `scripts/prerender.mjs` writes them at build time;
+  add a route to both, plus `public/sitemap.xml`.
+- Descriptions 50-160 chars (the prerender script fails the build
+  otherwise). Unknown URLs, per-buyer and account pages are `noindex`.
+
+### Weight on the landing path
+
+- No animation library on the critical path. Scroll reveals are
+  IntersectionObserver + CSS (`.reveal`), and every motion class is a
+  no-op under `prefers-reduced-motion`.
+- Content is never hidden by a mechanism that JS failure leaves closed -
+  `.reveal` has a `<noscript>` and a no-IntersectionObserver fallback.
+
 ## Branching
 
 - Default branch: `main`, and work lands DIRECTLY on `main` (owner's

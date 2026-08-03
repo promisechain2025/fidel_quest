@@ -9,12 +9,16 @@ import Seo from '../Seo.jsx'
 export default function Tigrinya() {
   const [form, setForm] = useState({ name: '', email: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
+  // No API configured means submitForm only opened a mail draft - saying
+  // "you are on the list" would be a lie.
+  const [mailto, setMailto] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setState({ status: 'busy', error: '' })
     try {
-      await submitForm('/api/waitlist', { ...form, language: 'ti' }, 'Tigrinya waitlist - eGeez')
+      const r = await submitForm('/api/waitlist', { ...form, language: 'ti' }, 'Tigrinya waitlist - eGeez')
+      setMailto(!!r?.mailto)
       setState({ status: 'done', error: '' })
     } catch (err) {
       setState({ status: 'idle', error: err.message })
@@ -63,7 +67,7 @@ export default function Tigrinya() {
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
               <h3 className="mt-2 font-black">{t('tiThanks', 'You are on the list!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{t('tiThanksB', 'We will email you when Tigrinya opens.')}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('tiThanksB', 'We will email you when Tigrinya opens.')}</p>
             </div>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4">

@@ -33,12 +33,14 @@ function Characters() {
 export default function About() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
+  const [mailto, setMailto] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setState({ status: 'busy', error: '' })
     try {
-      await submitForm('/api/contact', form, 'Contact - eGeez website')
+      const r = await submitForm('/api/contact', form, 'Contact - eGeez website')
+      setMailto(!!r?.mailto)
       setState({ status: 'done', error: '' })
     } catch (err) {
       setState({ status: 'idle', error: err.message })
@@ -72,7 +74,7 @@ export default function About() {
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
               <h3 className="mt-2 font-black">{t('abThanks', 'Message sent!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{t('abThanksB', 'We will get back to you by email.')}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('abThanksB', 'We will get back to you by email.')}</p>
             </div>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4 text-left">

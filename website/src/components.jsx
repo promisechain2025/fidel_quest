@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
 import { APP_URL } from './config.js'
 import { t, currentLang, setLang } from './i18n.js'
@@ -43,43 +42,38 @@ export function BrandMark({ size = 36, className = '' }) {
 }
 
 export function LetterTile({ ch, size = 44, className = '', float = false, delay = 0 }) {
-  const reduce = useReducedMotion()
   const tile = (
     <span className={`lt geez ${className}`} style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">
       {ch}
     </span>
   )
-  if (reduce || !float) return tile
-  return (
-    <motion.span
-      initial={{ opacity: 0, y: 18, rotate: -4 }}
-      animate={{ opacity: 1, y: [0, -5, 0], rotate: 0 }}
-      transition={{
-        opacity: { duration: 0.4, delay },
-        rotate: { duration: 0.4, delay },
-        y: { delay: delay + 0.5, duration: 3.2 + delay, repeat: Infinity, ease: 'easeInOut' },
-      }}
-      className="inline-block"
-    >
-      {tile}
-    </motion.span>
-  )
+  if (!float) return tile
+  // .lt-float is CSS (tokens.css); reduced motion is handled there.
+  return <span className="lt-float" style={{ '--lt-delay': `${delay}s` }}>{tile}</span>
 }
 
-/** Scroll-reveal wrapper - once, subtle, honors reduced motion. */
+/** Scroll-reveal wrapper - once, subtle, honors reduced motion (in CSS).
+    Plain IntersectionObserver: this was the only reason framer-motion sat on
+    the landing critical path. If the observer is missing, the content shows
+    immediately - never hidden by a failure. */
 export function Reveal({ children, delay = 0, className = '' }) {
-  const reduce = useReducedMotion()
-  if (reduce) return <div className={className}>{children}</div>
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    if (typeof IntersectionObserver === 'undefined') { el.classList.add('is-in'); return undefined }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) }
+      }
+    }, { rootMargin: '-60px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, delay, ease: [0.21, 0.68, 0.36, 1] }}
-    >
+    <div ref={ref} className={`reveal ${className}`} style={delay ? { '--reveal-delay': `${delay}s` } : undefined}>
       {children}
-    </motion.div>
+    </div>
   )
 }
 
@@ -185,12 +179,10 @@ function MobileMenu({ open, onClose, dark, setDark }) {
   // Portal to <body>: the header's backdrop-filter creates a containing
   // block, which would trap this fixed overlay inside the header's box.
   return createPortal(
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex flex-col lg:hidden"
+        <div
+          className="menu-in fixed inset-0 z-50 flex flex-col lg:hidden"
           style={{ background: 'var(--paper)' }}
           role="dialog" aria-modal="true" aria-label="Menu"
           ref={panelRef}
@@ -207,15 +199,13 @@ function MobileMenu({ open, onClose, dark, setDark }) {
           </div>
           <nav className="flex flex-1 flex-col justify-center gap-1 px-7" aria-label="Main">
             {NAV.map(([to, label], i) => (
-              <motion.div key={to}
-                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 + i * 0.045, duration: 0.3 }}>
+              <div key={to} className="menu-item" style={{ '--i': i }}>
                 <NavLink to={to} end={to === '/'} onClick={onClose}
                   className="block rounded-xl px-3 py-3.5 text-2xl font-black"
                   style={({ isActive }) => ({ color: isActive ? 'var(--accent)' : 'var(--ink)' })}>
                   {t(to, label)}
                 </NavLink>
-              </motion.div>
+              </div>
             ))}
           </nav>
           <div className="flex items-center gap-3 px-7 pb-10">
@@ -231,9 +221,9 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <Tibeb />
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>,
+    </>,
     document.body,
   )
 }
@@ -242,8 +232,21 @@ export function Header() {
   const [dark, setDark] = useTheme()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { pathname } = useLocation()
-  useEffect(() => { setOpen(false); window.scrollTo(0, 0) }, [pathname])
+  const { pathname, hash } = useLocation()
+  // A deep link with a fragment (/teachers#apply) must not be yanked back
+  // to the top; and because routes are lazy the target usually does not
+  // exist yet on a cold load, so retry briefly until it mounts.
+  useEffect(() => {
+    setOpen(false)
+    if (!hash) { window.scrollTo(0, 0); return undefined }
+    let tries = 0
+    const id = setInterval(() => {
+      const el = document.querySelector(hash)
+      if (el) { el.scrollIntoView(); clearInterval(id) }
+      else if (++tries > 20) clearInterval(id)
+    }, 50)
+    return () => clearInterval(id)
+  }, [pathname, hash])
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
@@ -288,21 +291,35 @@ export function Header() {
 function NewsletterRow() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+  const [mailto, setMailto] = useState(false)
   const [busy, setBusy] = useState(false)
   const submit = async (e) => {
     e.preventDefault()
     setBusy(true)
     try {
+      setError('')
       const { submitForm } = await import('./api.js')
-      await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
+      const r = await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
+      setMailto(!!r?.mailto)
       setDone(true)
-    } catch { /* keep the row usable */ } finally { setBusy(false) }
+    } catch (e) {
+      // Silently swallowing this told the visitor they had signed up when
+      // nothing had been recorded.
+      setError(e.message || 'Could not sign you up. Please try again.')
+    } finally { setBusy(false) }
   }
   if (done) {
-    return <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{t('nlThanks', 'You are in - we write rarely and only when it matters.')}</p>
+    return (
+      <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>
+        {mailto
+          ? t('nlMailto', 'Your email app should have opened - send that message and you are in.')
+          : t('nlThanks', 'You are in - we write rarely and only when it matters.')}
+      </p>
+    )
   }
   return (
-    <form onSubmit={submit} className="flex w-full max-w-sm items-stretch gap-2">
+    <form onSubmit={submit} className="flex w-full max-w-sm flex-wrap items-stretch gap-2">
       <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
         placeholder={t('nlPlaceholder', 'Email for launch news')} aria-label={t('nlLabel', 'Email for launch news')}
         className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[16px]"
@@ -311,6 +328,7 @@ function NewsletterRow() {
         style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)', minHeight: 44 }}>
         {busy ? '…' : t('nlJoin', 'Join')}
       </button>
+      {error && <p role="alert" className="w-full text-xs font-bold" style={{ color: 'var(--danger)' }}>{error}</p>}
     </form>
   )
 }

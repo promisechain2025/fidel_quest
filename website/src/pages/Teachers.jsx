@@ -273,6 +273,7 @@ function TwoWays() {
 export default function Teachers() {
   const [form, setForm] = useState({ name: '', email: '', languages: [], subjectTags: [], subjects: '', location: '', experience: '', message: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
+  const [mailto, setMailto] = useState(false)
 
   const toggleLang = (id) => setForm((f) => ({
     ...f, languages: f.languages.includes(id) ? f.languages.filter((l) => l !== id) : [...f.languages, id],
@@ -283,9 +284,17 @@ export default function Teachers() {
 
   const submit = async (e) => {
     e.preventDefault()
+    // The toggles are aria-pressed buttons, so HTML validation cannot see
+    // them - an application with neither language nor subject used to be
+    // accepted and was useless to match on.
+    if (!form.languages?.length) {
+      setState({ status: 'idle', error: t('teNeedLang', 'Please choose at least one language you can teach.') })
+      return
+    }
     setState({ status: 'busy', error: '' })
     try {
-      await submitForm('/api/teachers/apply', form, 'Teacher application - eGeez')
+      const r = await submitForm('/api/teachers/apply', form, 'Teacher application - eGeez')
+      setMailto(!!r?.mailto)
       setState({ status: 'done', error: '' })
     } catch (err) {
       setState({ status: 'idle', error: err.message })
@@ -347,7 +356,7 @@ export default function Teachers() {
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
               <h3 className="mt-2 font-black">{t('teThanks', 'Application received!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{t('teThanksB', 'We read every application and will reply by email.')}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('teThanksB', 'We read every application and will reply by email.')}</p>
             </div>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4 text-left">

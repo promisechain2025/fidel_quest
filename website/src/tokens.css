@@ -160,6 +160,49 @@ body {
 }
 .skip-link:focus { left: 0; }
 
+/* ── Motion, in CSS ──────────────────────────────────────────────────────
+   These four effects were the whole reason framer-motion (42 kB gzip, a
+   third of the landing bundle) sat on the critical path. They are cheap
+   enough in CSS that the library is no longer a dependency. Every one is
+   disabled under prefers-reduced-motion at the bottom of this block. */
+
+/* Scroll reveal. Base state is HIDDEN, so the .is-in class (added by an
+   IntersectionObserver) is what shows it - with two safety nets below:
+   no-JS and no-IntersectionObserver both fall back to visible, because
+   content a crawler cannot see is worse than content that does not
+   animate. */
+.reveal { opacity: 0; transform: translateY(22px); }
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s cubic-bezier(0.21, 0.68, 0.36, 1),
+              transform 0.55s cubic-bezier(0.21, 0.68, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* The drifting letter tiles in the hero. */
+@keyframes lt-in { from { opacity: 0; transform: translateY(18px) rotate(-4deg); } to { opacity: 1; transform: none; } }
+@keyframes lt-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.lt-float {
+  display: inline-block;
+  animation: lt-in 0.4s ease-out both var(--lt-delay, 0s),
+             lt-float 3.2s ease-in-out infinite calc(var(--lt-delay, 0s) + 0.9s);
+}
+
+/* Route change and mobile-menu open. */
+@keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.route-in { animation: route-in 0.22s ease-out both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.menu-in { animation: fade-in 0.18s ease-out both; }
+@keyframes menu-item-in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.menu-item { animation: menu-item-in 0.3s ease-out both; animation-delay: calc(0.05s + var(--i, 0) * 0.045s); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  .reveal.is-in { transition: none; }
+  .lt-float, .route-in, .menu-in, .menu-item { animation: none; }
+}
+
 /* Printable fidel chart (/alphabet): hide the site chrome, keep the table. */
 @media print {
   header, footer, .print\:hidden { display: none !important; }

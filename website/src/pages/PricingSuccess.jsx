@@ -43,11 +43,16 @@ export default function PricingSuccess() {
       try {
         const res = await fetch(`${API_URL}/api/pay/order/${encodeURIComponent(sessionId)}`)
         const json = await res.json().catch(() => ({}))
+        // 400/404 is the API's final answer - retrying it only made the
+        // visitor stare at "Usually a second or two" for 21 seconds.
+        if (res.status === 400 || res.status === 404) {
+          setState((s) => ({ ...s, status: 'error', error: json.error || t('fpsNotFound', 'We could not find this order. Check the email receipt for your code.') }))
+          return
+        }
         if (res.ok && json.status === 'paid' && json.code) {
           setState({ status: 'done', code: json.code, product: json.product || 'app', error: '' })
           return
         }
-        if (res.status === 404 || res.status === 400) throw new Error(t('fpsNotFound', 'We could not find this order.'))
       } catch (err) {
         if (tries.current > 8) { setState((s) => ({ ...s, status: 'error', error: err.message })); return }
       }

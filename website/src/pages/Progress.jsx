@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
 import { Card, CtaButton, Reveal } from '../components.jsx'
 import ProgressReport from '../components/ProgressReport.jsx'
@@ -19,11 +19,14 @@ export default function Progress() {
   const [saved, setSaved] = useState('')
   const [error, setError] = useState('')
 
+  // Keyed on the router's hash, not a one-shot read of window.location:
+  // opening a second card while already on this page must re-render it.
+  const { hash } = useLocation()
   useEffect(() => {
-    const m = window.location.hash.match(/[#&]p=([^&]+)/)
+    const m = (hash || '').match(/[#&]p=([^&]+)/)
     setSnap(m ? decodeProgressCard(m[1]) : null)
     setChecked(true)
-  }, [])
+  }, [hash])
 
   useEffect(() => {
     if (snap && API_URL && signedIn()) {

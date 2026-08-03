@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Header, Footer, CtaButton } from './components.jsx'
 import Seo from './Seo.jsx'
 import Home from './pages/Home.jsx'
@@ -40,7 +39,6 @@ function NotFound() {
 
 export default function App() {
   const location = useLocation()
-  const reduce = useReducedMotion()
   const routes = (
     <Suspense fallback={<div className="py-24" aria-hidden="true" />}>
     <Routes location={location}>
@@ -71,15 +69,9 @@ export default function App() {
       <a href="#main" className="skip-link">Skip to content</a>
       <Header />
       <main id="main" className="flex-1">
-        {reduce ? routes : (
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={location.pathname}
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}>
-              {routes}
-            </motion.div>
-          </AnimatePresence>
-        )}
+        {/* Keyed on the path so React remounts and the CSS enter animation
+            replays; .route-in is a no-op under prefers-reduced-motion. */}
+        <div key={location.pathname} className="route-in">{routes}</div>
       </main>
       <Footer />
     </div>
