@@ -1,4 +1,4 @@
-import { CalendarDays, Repeat2, Search, Printer, Share2, ShieldCheck } from 'lucide-react'
+import { CalendarDays, Repeat2, Search, ClipboardList, Share2, ShieldCheck } from 'lucide-react'
 import { Section, Card, CtaButton } from '../components.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
@@ -19,7 +19,7 @@ export default function Homeschool() {
         <div className="grid gap-5 md:grid-cols-2">
           {[
             [t('hsW1t', 'Daily · 10 minutes'), t('hsW1b', 'One journey step plus the built-in Warm-up (it automatically reviews whatever is fading). The streak chip keeps kids coming back on their own.')],
-            [t('hsW2t', 'Twice a week · together'), t('hsW2b', 'Sit in for First Words or a Story - reading aloud together is where letters become language. The story picks only letters your child already knows.')],
+            [t('hsW2t', 'Twice a week · together'), t('hsW2b', 'Sit in for First Words or a Story - reading aloud together is where letters become language. Stories are read WITH you: every word can be tapped to hear it.')],
             [t('hsW3t', 'Weekly · celebrate'), t('hsW3b', 'Friday is Closet day: dress Anbessa in the week’s earned gear and share the card with grandparents. Motivation, handled.')],
             [t('hsW4t', 'Termly · assess lightly'), t('hsW4b', 'The Grown-Ups corner shows letters learned vs. shaky. If you work with a remote teacher, their assignments and receipts do this for you.')],
           ].map(([title, body], i) => (
@@ -37,7 +37,7 @@ export default function Homeschool() {
             [CalendarDays, t('hsT1t', 'Daily Letter Hunt'), t('hsT1b', 'A 2-minute daily ritual (Akukulu!) that keeps practice alive on busy days.')],
             [Repeat2, t('hsT2t', 'Smart review'), t('hsT2b', 'Spaced repetition schedules each letter’s comeback so nothing silently slips away.')],
             [Search, t('hsT3t', 'Placement test-out'), t('hsT3b', 'Already knows some fidel? A quick placement opens the journey at the right spot.')],
-            [Printer, t('hsT4t', 'Review packs'), t('hsT4b', 'Teacher-style review packs regenerate from real progress - use them as worksheets.')],
+            [ClipboardList, t('hsT4t', 'Assignments'), t('hsT4b', 'Set a letter-range assignment; the app hands back a receipt of exactly what was mastered.')],
             [Share2, t('hsT5t', 'Family sharing'), t('hsT5b', 'Voice postcards and share cards keep far-away family inside the learning loop.')],
             [ShieldCheck, t('hsT6t', 'Safe by design'), t('hsT6b', 'Offline-first, no ads, no child accounts, nothing leaves the device unless you share it.')],
           ].map(([Icon, title, body], i) => (
@@ -58,7 +58,7 @@ export default function Homeschool() {
           <Card wash>
             <h3 className="font-black" style={{ color: 'var(--go-ink)' }}>{t('hsReadyT', 'Ready now')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('hsReadyB', 'The full fidel chart - all 231 letters, searchable, and print-ready for the fridge or the classroom wall.')}
+              {t('hsReadyB', 'The full Amharic fidel chart - all 231 letters, searchable, and print-ready for the fridge or the classroom wall.')}
             </p>
             <div className="mt-4"><CtaButton to="/alphabet" tone="gold">{t('hsChartCta', 'Open the printable chart')}</CtaButton></div>
           </Card>

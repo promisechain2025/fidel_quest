@@ -18,10 +18,22 @@
    password. Do NOT run this against a production database you intend to keep
    clean - it inserts demo records (removable by their .demo@egeez.app
    emails). */
+import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { store, connect, disconnect } from '../store.js'
 
-const PW = 'demo-pass-1234'
+// Never against production: the seed publishes an approved teacher to the
+// public board and creates logged-in accounts. One mistyped MONGO_URI
+// should not be enough.
+if (!process.env.SEED_CONFIRM) {
+  console.error('Refusing to seed: set SEED_CONFIRM=yes (and point MONGO_URI at a staging database).')
+  process.exit(1)
+}
+if (/prod/i.test(process.env.MONGO_URI || '')) {
+  console.error('Refusing to seed: MONGO_URI looks like production.')
+  process.exit(1)
+}
+const PW = process.env.SEED_PASSWORD || `demo-${crypto.randomBytes(6).toString('hex')}`
 const TEACHER_EMAIL = 'hana.demo@egeez.app'
 const snap = (day, fams) => ({
   day, letters: fams * 7, streak: 3,

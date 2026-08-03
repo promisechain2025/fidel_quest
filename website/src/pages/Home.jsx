@@ -59,7 +59,7 @@ export default function Home() {
             </div>
             <h1 className="display-1">
               {t('heroTitle', 'Their language. Their story.')}{' '}
-              <span style={{ color: 'var(--accent)' }}>{t('heroTitle2', 'Learned at home.')}</span>
+              <span style={{ color: 'var(--accent-text)' }}>{t('heroTitle2', 'Learned at home.')}</span>
             </h1>
             <p className="lede mx-auto mt-5 max-w-xl md:mx-0" style={{ color: 'var(--muted)' }}>
               {t('heroLede', 'eGeez is a learning home for every family that wants its children to read Amharic or Tigrinya - wherever in the world they live: a joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling. The first step toward learning every subject, together.')}
@@ -68,14 +68,14 @@ export default function Home() {
               <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start the free try-out')}</CtaButton>
               <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
             </div>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Try free, then $12.99 once - on every platform. Ages 3-9.')}</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Free to download, free for 3 days, then $12.99 once. Ages 3-9.')}</p>
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
           <img src="/art/anbessa-cheer.png" width={150} height={150} alt="" aria-hidden="true"
             className="absolute -left-16 -top-10 z-10 hidden w-[130px] md:block lg:w-[150px]" />
           <div className="phone">
-            <img src="/shots/app-journey.png" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
+            <img src="/shots/app-journey.png" fetchPriority="high" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
           </div>
         </Reveal>
       </div>
@@ -100,7 +100,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-                {t('amBlurb', 'A complete journey: all 231 letters, first words, decodable stories, tracing, songs, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
+                {t('amBlurb', 'A complete journey: all 231 letters, first words, read-along stories, tracing, chants, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
               </p>
               <div className="mt-5"><CtaButton to="/amharic" tone="gold">{t('amCta', 'See the Amharic journey')}</CtaButton></div>
             </Card>
@@ -111,7 +111,7 @@ export default function Home() {
                 <LetterTile ch="ት" size={46} />
                 <div>
                   <h3 className="display-3">{t('tiCard', 'Tigrinya')} · <span className="geez">ትግርኛ</span></h3>
-                  <p className="text-xs font-black" style={{ color: 'var(--accent)' }}>{t('tiStatus', 'Foundations now · full course coming')}</p>
+                  <p className="text-xs font-black" style={{ color: 'var(--accent-text)' }}>{t('tiStatus', 'Foundations now · full course coming')}</p>
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
@@ -165,10 +165,10 @@ export default function Home() {
               ['231', t('tb1', 'letters taught, all voiced')],
               ['100%', t('tb2', 'works offline - any phone')],
               ['0', t('tb3', 'ads. Zero child data collected')],
-              ['1x', t('tb4', 'pay once - web and stores')],
+              ['1x', t('tb4', 'pay once - never twice')],
             ].map(([big, small], i) => (
               <div key={i} className="rounded-2xl px-4 py-5 text-center" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
-                <div className="text-3xl font-black" style={{ color: 'var(--accent)' }}>{big}</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--accent-text)' }}>{big}</div>
                 <div className="mt-1 text-xs font-bold leading-snug" style={{ color: 'var(--muted)' }}>{small}</div>
               </div>
             ))}
@@ -180,7 +180,7 @@ export default function Home() {
       <div className="mx-auto max-w-5xl px-5 pb-6 sm:px-6">
         <Reveal>
           <Card wash className="relative overflow-hidden text-center">
-            <img src="/art/kokeb.png" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
+            <img src="/art/kokeb.png" loading="lazy" decoding="async" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
             <BookOpen className="mx-auto h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />
             <h2 className="display-2 mt-3">{t('teachBandT', 'Do you teach Amharic or Tigrinya?')}</h2>
             <p className="lede mx-auto mt-2 max-w-xl" style={{ color: 'var(--muted)' }}>

@@ -11,8 +11,8 @@ export const PACK_PRICE = '$4.99'
 const PRICING_LD = {
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Product', name: 'eGeez - the whole journey', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD' } },
-    { '@type': 'Product', name: 'eGeez Family Pack', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD' } },
+    { '@type': 'Product', name: 'eGeez - the whole journey', image: 'https://egeez.app/og.png', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD', url: 'https://egeez.app/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
+    { '@type': 'Product', name: 'eGeez Family Pack', image: 'https://egeez.app/og.png', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD', url: 'https://egeez.app/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
   ],
 }
 
@@ -71,7 +71,7 @@ export default function Pricing() {
         <div className="mx-auto grid max-w-4xl items-stretch gap-5 md:grid-cols-2">
           <Reveal>
             <Card wash className="flex h-full flex-col" >
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--accent)' }}>
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--accent-text)' }}>
                 <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('prAppTag', 'The app')}
               </div>
               <h2 className="display-3 mt-2">{t('prAppName', 'eGeez - the whole journey')}</h2>
@@ -82,7 +82,7 @@ export default function Pricing() {
               <ul className="mt-5 space-y-3 text-sm leading-relaxed">
                 {[
                   t('prA1', 'All 231 letters, words, stories, games, streaks, and the daily coach'),
-                  t('prA2', 'Free try-out first - fall in love before you pay'),
+                  t('prA2', 'Free for 3 days, then 5 free minutes of everything every day - forever'),
                   t('prA3', 'One code unlocks web AND the store apps - never pay twice'),
                   t('prA4', '100% offline, no ads, no accounts, no child data'),
                 ].map((s, i) => (
@@ -134,8 +134,8 @@ export default function Pricing() {
       <Section eyebrow={t('prFaqE', 'Questions')} title={t('prFaqT', 'Fair questions, straight answers')} center mark="ጥ">
         <div className="mx-auto grid max-w-3xl gap-4">
           {[
-            [t('prQ0', 'Can we try it before paying?'), t('prA0', `Yes - the journey starts free, no account needed. After the free days the app asks (gently, once a day) to be bought. Kids are never blocked mid-lesson.`)],
-            [t('prQ1', 'Will I ever pay twice - web and app store?'), t('prA1x', 'No. Buying here gives you an EGZ code that unlocks the app on the web AND in the iOS/Android builds. Buying inside the store app restores through your store account. One family, one payment.')],
+            [t('prQ0', 'Can we try it before paying?'), t('prA0', `Yes - the app is a free download and the whole journey is open for 3 days, no account needed. After that the first two letter families and the first arcade game stay free forever, and one tap opens the WHOLE app for 5 more free minutes every single day. The buy prompt appears at most once a day, behind a grown-up gate, and always has a "Not now". Kids are never blocked mid-lesson.`)],
+            [t('prQ1', 'Will I ever pay twice - web and app store?'), t('prA1x', 'No. Buying here gives you an EGZ code that unlocks the app on the web AND in the iOS/Android builds - redeem it in the app, on any device. If you buy inside the mobile app instead, it restores through your store account. One family, one payment, either way.')],
             [t('prQ2', 'What exactly costs extra?'), t('prA2x', `Only add-on packs. ${APP_PRICE} buys the entire Amharic journey for one learner. The Family Pack (${PACK_PRICE}) adds sibling profiles; future language packs will be add-ons too.`)],
             [t('prQ3', 'Does it work offline?'), t('prA3x', 'Completely. Codes are checked on the device; after unlock nothing ever needs a connection.')],
             [t('prQ4', 'Refunds?'), t('prA4x', `If it does not work for your family, email ${CONTACT_EMAIL} within 14 days and we will refund you - no forms, no fuss.`)],

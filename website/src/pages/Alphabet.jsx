@@ -30,12 +30,12 @@ export default function Alphabet() {
 
   return (
     <>
-      <Seo title="The Fidel alphabet chart - all 231 letters - eGeez" description="The full interactive Ge'ez script chart: 33 consonant families in 7 vowel orders, searchable and printable." path="/alphabet" />
+      <Seo title="The Fidel alphabet chart - all 231 letters - eGeez" description="The full interactive Amharic fidel chart: 33 consonant families in 7 vowel orders, searchable and printable." path="/alphabet" />
       <div className="mx-auto max-w-5xl px-5 pt-12 text-center sm:px-6 print:hidden">
         <Reveal>
-          <h1 className="display-1 mx-auto max-w-2xl">{t('alTitle', 'All 231 letters, one page')}</h1>
+          <h1 className="display-1 mx-auto max-w-2xl">{t('alTitle', 'All 231 Amharic letters, one page')}</h1>
           <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-            {t('alLede', 'The fidel is a syllabary: 33 consonant families, each in 7 vowel orders. Read a row left to right and you can hear the vowel change. Tap any letter to see it big.')}
+            {t('alLede', 'The fidel is a syllabary: Amharic uses 33 consonant families, each in 7 vowel orders. Read a row left to right and you can hear the vowel change. Tap any letter to see it big. (Tigrinya adds one more family, ቐ - a Tigrinya chart is coming.)')}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <input
@@ -67,7 +67,7 @@ export default function Alphabet() {
 
       {/* chart */}
       <section className="print-chart mx-auto max-w-5xl px-5 py-10 sm:px-6">
-        <h2 className="hidden text-center text-xl font-black print:block">eGeez - the Fidel chart (33 families x 7 orders)</h2>
+        <h2 className="hidden text-center text-xl font-black print:block">eGeez - the Amharic Fidel chart (33 families x 7 orders)</h2>
         <div className="overflow-x-auto">
           <table className="mx-auto border-separate" style={{ borderSpacing: 4 }}>
             <thead>

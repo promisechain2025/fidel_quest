@@ -319,7 +319,7 @@ export default function Teachers() {
           {[
             [Link2, t('teT1t', 'Class links'), t('teT1b', 'Invite a whole class with one link or QR - no student accounts, no passwords, works on any phone.')],
             [ClipboardList, t('teT2t', 'Assignments + receipts'), t('teT2b', 'Send a letter-range assignment; each child’s app returns a receipt of what they mastered. You see progress without collecting data.')],
-            [CalendarRange, t('teT3t', 'Term Plan'), t('teT3b', 'A syllabus organizer that lays your term out week by week over the journey - review packs included.')],
+            [CalendarRange, t('teT3t', 'Term Plan'), t('teT3b', 'A syllabus organizer that lays your term out week by week over the journey.')],
             [MonitorPlay, t('teT4t', 'TV classroom display'), t('teT4b', 'Project a big, chant-along display for in-person or video classes.')],
             [Grid3x3, t('teT5t', 'Class Bingo + group games'), t('teT5b', 'Host live listening games: you pick the letters and the winning shape, kids scan a QR for unique cards, and you call the letters - show or voice-only.')],
           ].map(([Icon, title, body], i) => (

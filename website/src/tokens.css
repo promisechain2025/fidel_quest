@@ -22,23 +22,30 @@
   --tile-deep: #c68d12;
   --glyph: #7c4f00;
   --danger: #f2846a;
+  /* --accent as TEXT; the fill colour is not always readable as a label. */
+  --accent-text: #e2c069;
+  /* The focus ring must clear 3:1 against whatever it sits on (WCAG 1.4.11).
+     --sky measured 2.13:1 on --card here, i.e. effectively invisible. */
+  --focus: #ffcb33;
   --wash: rgba(226, 192, 105, 0.05);
 }
 :root[data-theme="light"] {
   --paper: #f7edcf;
   --paper-2: #e5d2a4;
   --ink: #3c3529;
-  --muted: #6f6040;
+  --muted: #5c4f34;
   --card: #fffaf0;
   --line: #e7dab2;
   --accent: #c99a33;
   --accent-deep: #9c7420;
+  --accent-text: #6f4f0a;
   --star: #f0b400;
   --go: #59a52a;
   --go-deep: #3f7a1e;
   --go-soft: #d7ffb8;
-  --go-ink: #4e9020;
+  --go-ink: #3f7a1e;
   --sky: #3f63a0;
+  --focus: #3f63a0;
   --tile: #ffc61f;
   --tile-deep: #d99e12;
   --glyph: #7c4f00;
@@ -47,9 +54,10 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #6f6040;
+    --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #5c4f34;
     --card: #fffaf0; --line: #e7dab2; --accent: #c99a33; --accent-deep: #9c7420;
-    --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #4e9020; --tile: #ffc61f;
+    --accent-text: #6f4f0a; --focus: #3f63a0;
+    --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #3f7a1e; --tile: #ffc61f;
     --tile-deep: #d99e12; --danger: #b23b2e; --wash: rgba(124, 79, 0, 0.05);
   }
 }
@@ -142,7 +150,15 @@ body {
 /* soft branded card wash */
 .wash { background: linear-gradient(160deg, var(--wash), transparent 55%); }
 
-:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+
+/* Skip link: off-screen until focused, then a real button at the top left. */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  padding: 0.6rem 1rem; font-weight: 900; border-radius: 0 0 10px 0;
+  background: var(--go-deep); color: #fff;
+}
+.skip-link:focus { left: 0; }
 
 /* Printable fidel chart (/alphabet): hide the site chrome, keep the table. */
 @media print {

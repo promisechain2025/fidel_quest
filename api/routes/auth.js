@@ -8,6 +8,10 @@ import { sendTo } from '../mailer.js'
 import { requireAuth, rateLimit, isEmail, str } from '../middleware.js'
 
 const router = Router()
+
+/* A real hash to compare against when the email is unknown, so the miss
+   path costs the same as the hit path (see /login). */
+const DUMMY_HASH = bcrypt.hashSync('unknown-account-placeholder', 10)
 // Register/login share a tight bucket - that is the credential-guessing
 // surface. Email verification is a separate, low-risk action (token is
 // single-use and unguessable), so it gets its own looser budget rather than
@@ -52,9 +56,13 @@ router.post('/login', authLimit, async (req, res, next) => {
     const email = str(req.body?.email, 254).toLowerCase()
     const password = typeof req.body?.password === 'string' ? req.body.password : ''
     const user = email && (await store.findUserByEmail(email))
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return res.status(401).json({ error: 'Wrong email or password' })
-    }
+    // Always pay the bcrypt cost. Skipping it for an unknown email makes
+    // login a timing oracle: a missing account answers ~60x faster than a
+    // real one, which enumerates the parent/teacher list.
+    const ok = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : (await bcrypt.compare(password, DUMMY_HASH), false)
+    if (!ok) return res.status(401).json({ error: 'Wrong email or password' })
     res.json({ token: signToken(user), user: publicUser(user) })
   } catch (err) { next(err) }
 })

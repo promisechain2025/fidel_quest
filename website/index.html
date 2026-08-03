@@ -19,6 +19,9 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preload" href="/fonts/nunito-var.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- The hero letter tiles are Ethiopic; without this the face is only
+         discovered once the CSS parses, making it the slowest asset. -->
+    <link rel="preload" href="/fonts/noto-sans-ethiopic-900.woff2" as="font" type="font/woff2" crossorigin />
     <script type="application/ld+json">
       {"@context":"https://schema.org","@graph":[
         {"@type":"Organization","name":"eGeez","url":"https://egeez.app","logo":"https://egeez.app/icon-512.png"},

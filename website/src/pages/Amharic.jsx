@@ -25,7 +25,7 @@ export default function Amharic() {
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {[
             [Map, t('amF1t', 'The Journey'), t('amF1b', 'One winding path with exactly one next step: letter lessons, mixed practice, boss quizzes, and earned arcade games. No menus to get lost in.')],
-            [BookOpenText, t('amF2t', 'Words and stories'), t('amF2b', 'First words unlock as letters are learned; decodable stories use only letters a child already knows - real reading, right away.')],
+            [BookOpenText, t('amF2t', 'Words and stories'), t('amF2b', 'First words unlock as letters are learned; stories arrive chapter by chapter and every word can be tapped to hear it - reading along, right away.')],
             [Mic, t('amF3t', 'Listening first'), t('amF3b', 'Every letter is voiced. Games call sounds out loud so kids read by ear and eye together - including tricky twins like ሀ and ሐ.')],
             [Gamepad2, t('amF4t', 'Games that earn'), t('amF4b', 'Letter Runner, Letter Catch, memory match, bingo, a daily letter hunt - celebration games kids unlock by learning.')],
             [CalendarDays, t('amF5t', 'A daily rhythm'), t('amF5b', 'Streaks, a daily warm-up that reviews exactly what is fading, and a session coach that plans tomorrow - habits, not cramming.')],
@@ -45,7 +45,7 @@ export default function Amharic() {
           <Card wash>
             <h3 className="font-black">{t('amOwn', 'The app - $12.99 once')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('amOwnB', 'Start with a free try-out, no account needed. Then one purchase owns the entire journey - every letter, game, and story. No ads, no subscription, no child data, works offline. Buy on the web or in the store: one payment counts everywhere.')}
+              {t('amOwnB', 'Start with a free try-out, no account needed. Then one purchase owns the entire journey - every letter, game, and story. No ads, no subscription, no child data, works offline. One payment counts everywhere: a code bought here unlocks the mobile app too.')}
             </p>
           </Card>
           <Card>

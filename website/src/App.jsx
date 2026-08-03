@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Header, Footer, CtaButton } from './components.jsx'
+import Seo from './Seo.jsx'
 import Home from './pages/Home.jsx'
 
 // Home stays eager (the landing must paint instantly); every other page
@@ -22,8 +23,12 @@ const Privacy = lazy(() => import('./pages/Privacy.jsx'))
 const Terms = lazy(() => import('./pages/Terms.jsx'))
 
 function NotFound() {
+  const { pathname } = useLocation()
   return (
     <div className="mx-auto max-w-xl px-6 pt-16 text-center">
+      {/* Without this an unknown URL served the homepage's title and
+          description with no canonical - a soft 404 search engines index. */}
+      <Seo title="Page not found - eGeez" description="That page is not part of the eGeez journey. Start from the beginning, or see the Amharic course." path={pathname} noindex />
       <img src="/art/anbessa-think.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
       <h1 className="display-2 mt-4">Hmm, this path is not on the journey.</h1>
       <p className="lede mt-3" style={{ color: 'var(--muted)' }}>The page you are looking for does not exist.</p>
@@ -63,8 +68,9 @@ export default function App() {
   )
   return (
     <div className="flex min-h-dvh flex-col">
+      <a href="#main" className="skip-link">Skip to content</a>
       <Header />
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         {reduce ? routes : (
           <AnimatePresence mode="wait" initial={false}>
             <motion.div key={location.pathname}

@@ -85,7 +85,7 @@ export function Reveal({ children, delay = 0, className = '' }) {
 
 export function CtaButton({ href, to, onClick, children, tone = 'gold', external = false, className = '', type, disabled = false }) {
   const styles = tone === 'green'
-    ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
+    ? { background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
     : tone === 'ghost'
       ? { background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }
       : { background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)' }
@@ -100,7 +100,7 @@ export function Section({ eyebrow, title, children, center = false, className = 
   return (
     <section className={`watermark mx-auto w-full max-w-5xl px-5 py-14 sm:px-6 md:py-20 ${className}`} data-mark={mark}>
       <Reveal>
-        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent)' }}>{eyebrow}</div>}
+        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent-text)' }}>{eyebrow}</div>}
         {title && <h2 className={`display-2 mt-2 ${center ? 'text-center' : ''}`}>{title}</h2>}
       </Reveal>
       <div className="mt-7 md:mt-9">{children}</div>
@@ -154,14 +154,33 @@ function useTheme() {
     the close button. */
 function MobileMenu({ open, onClose, dark, setDark }) {
   const closeRef = useRef(null)
+  const panelRef = useRef(null)
   useEffect(() => {
     if (!open) return undefined
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     closeRef.current?.focus()
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    // aria-modal claims the rest of the page is unavailable, so Tab must not
+    // walk out of the overlay into the header and hero behind it.
+    const root = document.getElementById('root')
+    if (root) { root.setAttribute('aria-hidden', 'true'); root.inert = true }
+    const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const onKey = (e) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Tab') return
+      const items = [...(panelRef.current?.querySelectorAll(FOCUSABLE) || [])].filter((el) => el.offsetParent !== null)
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+      if (root) { root.removeAttribute('aria-hidden'); root.inert = false }
+    }
   }, [open, onClose])
   // Portal to <body>: the header's backdrop-filter creates a containing
   // block, which would trap this fixed overlay inside the header's box.
@@ -174,6 +193,7 @@ function MobileMenu({ open, onClose, dark, setDark }) {
           className="fixed inset-0 z-50 flex flex-col lg:hidden"
           style={{ background: 'var(--paper)' }}
           role="dialog" aria-modal="true" aria-label="Menu"
+          ref={panelRef}
         >
           <Tibeb />
           <div className="flex items-center justify-between px-5 py-3">
@@ -200,7 +220,7 @@ function MobileMenu({ open, onClose, dark, setDark }) {
           </nav>
           <div className="flex items-center gap-3 px-7 pb-10">
             <a href={APP_URL} className="chunk flex-1 px-4 py-3.5 text-center text-base"
-              style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
+              style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
               {t('openApp', 'Open the app')}
             </a>
             <LangToggle className="border-2 p-3" />
@@ -253,7 +273,7 @@ export function Header() {
           <button type="button" onClick={() => setDark(!dark)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} className="rounded-lg p-2" style={{ color: 'var(--muted)' }}>
             {dark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
           </button>
-          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
+          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
         </nav>
         <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
           className="ml-auto rounded-xl p-2.5 lg:hidden" style={{ color: 'var(--ink)' }}>
@@ -300,7 +320,7 @@ export function Footer() {
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex min-w-0 items-start gap-4">
-          <img src="/art/anbessa-happy.png" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
+          <img src="/art/anbessa-happy.png" loading="lazy" decoding="async" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-lg font-black">
               <BrandMark size={26} /> eGeez
@@ -318,7 +338,7 @@ export function Footer() {
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
         </nav>
       </div>
-      <p className="pb-6 text-center text-xs opacity-60" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
+      <p className="pb-6 text-center text-xs" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
       <Tibeb />
     </footer>
   )

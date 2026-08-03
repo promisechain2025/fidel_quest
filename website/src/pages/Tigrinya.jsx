@@ -38,8 +38,8 @@ export default function Tigrinya() {
         <div className="grid gap-5 md:grid-cols-3">
           {[
             [t('tiN1t', 'The script itself'), t('tiN1b', 'Letter shapes, the seven vowel orders, tracing, and sound-to-symbol play - the foundations of reading any Ge’ez-script language.')],
-            [t('tiN2t', 'The learning engine'), t('tiN2b', 'The journey, games, streaks, review, and teacher tools all work identically - only the words and voices are language-specific.')],
-            [t('tiN3t', 'Honest labeling'), t('tiN3b', 'Where content is Amharic-specific (letter names, example words, stories) the app says so - no pretending, no confusion.')],
+            [t('tiN2t', 'The learning engine'), t('tiN2b', 'The journey, games, streaks, review, and teacher tools all work in Tigrinya - only the words and voices are language-specific. Story Time is Amharic-only for now, so the Tigrinya path simply skips it.')],
+            [t('tiN3t', 'Honest labeling'), t('tiN3b', 'Amharic-specific content (letter names, example words, stories) is simply not shown in the Tigrinya pack - no half-finished screens, no placeholder text.')],
           ].map(([title, body], i) => (
             <Card key={i}>
               <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
