@@ -203,6 +203,13 @@ body {
   .lt-float, .route-in, .menu-in, .menu-item { animation: none; }
 }
 
+/* Printing must never depend on having scrolled past something first - the
+   /alphabet chart is advertised as print-ready, and a section the observer
+   has not reached yet would otherwise print blank. */
+@media print {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
 /* Printable fidel chart (/alphabet): hide the site chrome, keep the table. */
 @media print {
   header, footer, .print\:hidden { display: none !important; }

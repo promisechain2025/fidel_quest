@@ -64,9 +64,13 @@ export function Reveal({ children, delay = 0, className = '' }) {
     if (typeof IntersectionObserver === 'undefined') { el.classList.add('is-in'); return undefined }
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) {
-        if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) }
+        // Also reveal anything the reader has already scrolled PAST: a fast
+        // flick can coalesce into a single "not intersecting" delivery, and a
+        // section that has been and gone must not stay invisible.
+        const past = e.boundingClientRect.bottom < (e.rootBounds?.top ?? 0)
+        if (e.isIntersecting || past) { e.target.classList.add('is-in'); io.unobserve(e.target) }
       }
-    }, { rootMargin: '-60px' })
+    }, { rootMargin: '200px 0px' })
     io.observe(el)
     return () => io.disconnect()
   }, [])
