@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Users, KeyRound, WifiOff, RefreshCcw, Check, Sparkles } from 'lucide-react'
-import { Section, Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
 import { API_URL, CONTACT_EMAIL, APP_URL } from '../config.js'
 import Seo from '../Seo.jsx'
 import { t } from '../i18n.js'
@@ -59,7 +59,7 @@ export default function Pricing() {
       <Seo title="Pricing - eGeez" description="Try free, then $12.99 once for the whole journey - on web and in the stores, never pay twice. Family Pack add-on $4.99." path="/pricing" jsonLd={PRICING_LD} />
       <div className="mx-auto max-w-5xl px-5 pt-12 text-center sm:px-6 md:pt-16">
         <Reveal>
-          <img src="/art/anbessa-cheer.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />
+          <Picture src="/art/anbessa-cheer.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />
           <h1 className="display-1 mx-auto mt-4 max-w-2xl">{t('prTitle', 'Pay once. Learn everywhere. Never twice.')}</h1>
           <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
             {t('prLede', 'Try eGeez free. Then one purchase unlocks the whole journey - on the web and in the mobile apps, delivered as a code that works on every platform. Add-on packs sit on top, the same way.')}

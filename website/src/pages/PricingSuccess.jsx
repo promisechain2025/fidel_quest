@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { Copy, Check, Mail } from 'lucide-react'
-import { Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal } from '../components.jsx'
 import { API_URL, APP_URL, CONTACT_EMAIL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -75,7 +75,7 @@ export default function PricingSuccess() {
     <div className="mx-auto max-w-xl px-5 pb-10 pt-12 text-center sm:px-6 md:pt-16">
       <Seo title="Your unlock code - eGeez" description="Your eGeez purchase is complete. Copy your unlock code and enter it in the app to open the whole journey." path="/pricing/success" noindex />
       <Reveal>
-        <img src="/art/anbessa-cheer.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
+        <Picture src="/art/anbessa-cheer.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
         <h1 className="display-2 mt-4">{t('fpsTitle', 'Thank you! Anbessa is cheering.')}</h1>
       </Reveal>
 

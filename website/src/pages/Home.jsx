@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
-import { Section, Card, CtaButton, LetterTile, Tibeb, Reveal } from '../components.jsx'
+import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
 import { APP_URL } from '../config.js'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
@@ -72,10 +72,10 @@ export default function Home() {
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
-          <img src="/art/anbessa-cheer.png" width={150} height={150} alt="" aria-hidden="true"
+          <Picture src="/art/anbessa-cheer.png" width={150} height={150} alt="" aria-hidden="true"
             className="absolute -left-16 -top-10 z-10 hidden w-[130px] md:block lg:w-[150px]" />
           <div className="phone">
-            <img src="/shots/app-journey.png" fetchPriority="high" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
+            <Picture src="/shots/app-journey.png" fetchPriority="high" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
           </div>
         </Reveal>
       </div>
@@ -180,7 +180,7 @@ export default function Home() {
       <div className="mx-auto max-w-5xl px-5 pb-6 sm:px-6">
         <Reveal>
           <Card wash className="relative overflow-hidden text-center">
-            <img src="/art/kokeb.png" loading="lazy" decoding="async" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
+            <Picture src="/art/kokeb.png" loading="lazy" decoding="async" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
             <BookOpen className="mx-auto h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />
             <h2 className="display-2 mt-3">{t('teachBandT', 'Do you teach Amharic or Tigrinya?')}</h2>
             <p className="lede mx-auto mt-2 max-w-xl" style={{ color: 'var(--muted)' }}>

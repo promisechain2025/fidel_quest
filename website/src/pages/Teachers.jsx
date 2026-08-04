@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users, School, Search } from 'lucide-react'
-import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
+import { Card, CtaButton, Field, Picture, Reveal, Section, inputCls, inputStyle } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { API_URL, APP_URL } from '../config.js'
 import { SUBJECTS, SUBJECT_LABEL } from '../subjects.js'
@@ -317,7 +317,7 @@ export default function Teachers() {
       <Section mark="መ" eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
         <div className="mb-8 grid items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
           <div className="phone mx-auto w-full max-w-[260px]">
-            <img src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
+            <Picture src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
               alt={t('teShotAlt', 'Kokeb’s Bingo in the app: play solo, host for a class, or join a game')} />
           </div>
           <p className="lede text-center md:text-left" style={{ color: 'var(--muted)' }}>

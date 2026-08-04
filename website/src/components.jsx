@@ -81,6 +81,21 @@ export function Reveal({ children, delay = 0, className = '' }) {
   )
 }
 
+/** <picture> with a WebP source and the original PNG as the fallback.
+    Every raster in public/ has a matching .webp generated at the size it
+    actually renders, which is where the page weight was going: the hero shot
+    alone was a 160 kB PNG painted into a 298px box. `pic` is
+    display:contents so the wrapper never disturbs the layout. */
+export function Picture({ src, alt = '', className = '', ...rest }) {
+  const webp = src.replace(/\.png$/, '.webp')
+  return (
+    <picture className="pic">
+      <source srcSet={webp} type="image/webp" />
+      <img src={src} alt={alt} className={className} {...rest} />
+    </picture>
+  )
+}
+
 export function CtaButton({ href, to, onClick, children, tone = 'gold', external = false, className = '', type, disabled = false }) {
   const styles = tone === 'green'
     ? { background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
@@ -342,7 +357,7 @@ export function Footer() {
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex min-w-0 items-start gap-4">
-          <img src="/art/anbessa-happy.png" loading="lazy" decoding="async" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
+          <Picture src="/art/anbessa-happy.png" loading="lazy" decoding="async" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-lg font-black">
               <BrandMark size={26} /> eGeez

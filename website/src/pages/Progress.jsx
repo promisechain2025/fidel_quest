@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2 } from 'lucide-react'
-import { Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal } from '../components.jsx'
 import ProgressReport from '../components/ProgressReport.jsx'
 import { decodeProgressCard } from '../progressCard.js'
 import { signedIn, apiFetch } from '../auth.js'
@@ -50,7 +50,7 @@ export default function Progress() {
       {!checked ? null : snap ? (
         <Reveal>
           <div className="mb-6 text-center">
-            <img src="/art/anbessa-cheer.png" width={96} height={96} alt="" aria-hidden="true" className="mx-auto" />
+            <Picture src="/art/anbessa-cheer.png" width={96} height={96} alt="" aria-hidden="true" className="mx-auto" />
             <h1 className="display-2 mt-2">{t('prgTitle', 'A progress report from eGeez')}</h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
               {t('prgSub', 'Shared by the family - rendered right here in your browser, stored nowhere.')}
@@ -98,7 +98,7 @@ export default function Progress() {
       ) : (
         <Reveal>
           <div className="text-center">
-            <img src="/art/anbessa-think.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />
+            <Picture src="/art/anbessa-think.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />
             <h1 className="display-2 mt-3">{t('prgEmptyT', 'No report in this link')}</h1>
             <p className="lede mx-auto mt-3 max-w-md" style={{ color: 'var(--muted)' }}>
               {t('prgEmptyB', 'Progress reports are created inside the eGeez app: open the Grown-ups corner and tap "Share progress report" - then open that link here.')}

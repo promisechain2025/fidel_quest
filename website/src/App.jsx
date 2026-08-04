@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
-import { Header, Footer, CtaButton } from './components.jsx'
+import { CtaButton, Footer, Header, Picture } from './components.jsx'
 import Seo from './Seo.jsx'
 import Home from './pages/Home.jsx'
 
@@ -28,7 +28,7 @@ function NotFound() {
       {/* Without this an unknown URL served the homepage's title and
           description with no canonical - a soft 404 search engines index. */}
       <Seo title="Page not found - eGeez" description="That page is not part of the eGeez journey. Start from the beginning, or see the Amharic course." path={pathname} noindex />
-      <img src="/art/anbessa-think.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
+      <Picture src="/art/anbessa-think.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
       <h1 className="display-2 mt-4">Hmm, this path is not on the journey.</h1>
       <p className="lede mt-3" style={{ color: 'var(--muted)' }}>The page you are looking for does not exist.</p>
       <div className="mt-6"><CtaButton to="/">Back to the start</CtaButton></div>

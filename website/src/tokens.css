@@ -160,6 +160,9 @@ body {
 }
 .skip-link:focus { left: 0; }
 
+/* <picture> wrapper must not become a layout box of its own. */
+.pic { display: contents; }
+
 /* ── Motion, in CSS ──────────────────────────────────────────────────────
    These four effects were the whole reason framer-motion (42 kB gzip, a
    third of the landing bundle) sat on the critical path. They are cheap

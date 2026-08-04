@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Printer, X } from 'lucide-react'
-import { Section, Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
 import { FAMILIES, ORDER_NAMES, GEEZ_ORDER_NAMES, ORDER_VOWELS } from '../fidelData.js'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
@@ -138,7 +138,7 @@ export default function Alphabet() {
 
       <Section center className="print:hidden" mark="ፊ">
         <Card wash className="mx-auto max-w-2xl text-center">
-          <img src="/art/anbessa-happy.png" width={84} height={84} alt="" aria-hidden="true" className="mx-auto" />
+          <Picture src="/art/anbessa-happy.png" width={84} height={84} alt="" aria-hidden="true" className="mx-auto" />
           <h2 className="display-3 mt-2">{t('alCtaT', 'A chart shows letters. The app makes them stick.')}</h2>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             {t('alCtaB', 'Every one of these letters is voiced, traced, played, and reviewed inside the eGeez journey - ten joyful minutes a day.')}
