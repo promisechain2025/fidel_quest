@@ -3,7 +3,16 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+/* Where the built app is served from.
+   - '/' (default) for the Capacitor native builds, which load the assets off
+     the local filesystem and would 404 on any prefixed path.
+   - '/app/' for the AWS web deploy, where the marketing site owns the root
+     and the PWA lives at easygeez.com/app.
+   Set VITE_BASE=/app/ for that build only - see docs/deploy-aws.md. */
+const BASE = process.env.VITE_BASE || '/'
+
 export default defineConfig({
+  base: BASE,
   build: {
     // Split the heavy engines so app-code changes don't bust their cache.
     chunkSizeWarningLimit: 900,
@@ -103,6 +112,12 @@ export default defineConfig({
         short_name: 'eGeez',
         description: 'An Amharic alphabet (Fidel) learning game for kids.',
         lang: 'am',
+        // Anchored to BASE so an install from easygeez.com/app opens at /app
+        // instead of the marketing site, and the service worker's scope
+        // matches what it is allowed to control.
+        id: BASE,
+        start_url: BASE,
+        scope: BASE,
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#fffbeb',

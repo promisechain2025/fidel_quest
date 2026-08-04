@@ -15,7 +15,7 @@
    fails the build outside that band rather than shipping a bad snippet.
    ========================================================================== */
 
-export const SITE = 'https://egeez.app'
+export const SITE = 'https://easygeez.com'
 
 /** Routes that get a prerendered HTML file. `noindex` pages are skipped by
     crawlers but still benefit from a correct title in the browser tab. */

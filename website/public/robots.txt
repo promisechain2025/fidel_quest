@@ -6,4 +6,4 @@ Disallow: /pricing/success
 Disallow: /verify
 Disallow: /progress
 Disallow: /teach
-Sitemap: https://egeez.app/sitemap.xml
+Sitemap: https://easygeez.com/sitemap.xml

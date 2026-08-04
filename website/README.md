@@ -18,7 +18,7 @@ npm run build      # static output in dist/
 
 | Var                  | Default                     | Purpose                                   |
 | -------------------- | --------------------------- | ----------------------------------------- |
-| `VITE_APP_URL`       | `https://egeez.app`         | where "Open the app" CTAs point           |
+| `VITE_APP_URL`       | `https://easygeez.com`         | where "Open the app" CTAs point           |
 | `VITE_API_URL`       | *(empty)*                   | the hub API (`../api`); empty = forms fall back to a prefilled mailto |
 | `VITE_CONTACT_EMAIL` | owner address               | mailto fallback + contact                  |
 

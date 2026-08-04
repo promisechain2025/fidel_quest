@@ -2,8 +2,8 @@
 #   cd api && fly launch --copy-config --name egeez-api
 #   fly secrets set MONGO_URI=... JWT_SECRET=... ADMIN_TOKEN=... \
 #     EMAIL_USER=... EMAIL_PASS=... NOTIFY_EMAIL=... \
-#     STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=... SITE_URL=https://egeez.app \
-#     CORS_ORIGIN=https://egeez.app
+#     STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=... SITE_URL=https://easygeez.com \
+#     CORS_ORIGIN=https://easygeez.com
 # Production REQUIRES MONGO_URI when Stripe keys are set (index.js enforces).
 app = "egeez-api"
 primary_region = "iad"

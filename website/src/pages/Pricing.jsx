@@ -11,8 +11,8 @@ export const PACK_PRICE = '$4.99'
 const PRICING_LD = {
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Product', name: 'eGeez - the whole journey', image: 'https://egeez.app/og.png', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD', url: 'https://egeez.app/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
-    { '@type': 'Product', name: 'eGeez Family Pack', image: 'https://egeez.app/og.png', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD', url: 'https://egeez.app/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
+    { '@type': 'Product', name: 'eGeez - the whole journey', image: 'https://easygeez.com/og.png', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD', url: 'https://easygeez.com/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
+    { '@type': 'Product', name: 'eGeez Family Pack', image: 'https://easygeez.com/og.png', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD', url: 'https://easygeez.com/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
   ],
 }
 

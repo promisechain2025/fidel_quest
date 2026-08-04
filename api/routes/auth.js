@@ -18,7 +18,7 @@ const DUMMY_HASH = bcrypt.hashSync('unknown-account-placeholder', 10)
 // eating into the brute-force allowance a shared IP already needs.
 const authLimit = rateLimit({ max: 10, key: 'auth' })
 const verifyLimit = rateLimit({ max: 30, key: 'verify' })
-const siteUrl = () => (process.env.SITE_URL || 'https://egeez.app').replace(/\/$/, '')
+const siteUrl = () => (process.env.SITE_URL || 'https://easygeez.com').replace(/\/$/, '')
 
 const publicUser = (u) => ({ id: String(u._id), name: u.name, email: u.email, role: u.role, emailVerified: !!u.emailVerified })
 const signToken = (u) => jwt.sign({ sub: String(u._id), email: u.email, role: u.role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn })

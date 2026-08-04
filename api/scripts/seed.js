@@ -14,9 +14,9 @@
    vanishes on exit (useful only to check the script runs); set MONGO_URI to
    seed a database your running API shares.
 
-   The demo accounts use fake @egeez.app addresses and a shared demo
+   The demo accounts use fake @easygeez.com addresses and a shared demo
    password. Do NOT run this against a production database you intend to keep
-   clean - it inserts demo records (removable by their .demo@egeez.app
+   clean - it inserts demo records (removable by their .demo@easygeez.com
    emails). */
 import crypto from 'node:crypto'
 import bcrypt from 'bcryptjs'
@@ -34,7 +34,7 @@ if (/prod/i.test(process.env.MONGO_URI || '')) {
   process.exit(1)
 }
 const PW = process.env.SEED_PASSWORD || `demo-${crypto.randomBytes(6).toString('hex')}`
-const TEACHER_EMAIL = 'hana.demo@egeez.app'
+const TEACHER_EMAIL = 'hana.demo@easygeez.com'
 const snap = (day, fams) => ({
   day, letters: fams * 7, streak: 3,
   mask: '1'.repeat(fams) + '0'.repeat(33 - fams), nodesDone: fams, nodesTotal: 80,
@@ -73,9 +73,9 @@ async function seed() {
   await ensureVerifiedUser({ name: 'Hana Demo', email: TEACHER_EMAIL, role: 'teacher' })
 
   const families = [
-    { email: 'lensa.demo@egeez.app', name: 'Lensa Demo', child: 'Soliana', stars: 5, comment: 'Patient and encouraging with our daughter.' },
-    { email: 'dawit.demo@egeez.app', name: 'Dawit Demo', child: 'Nahom', stars: 4, comment: '' },
-    { email: 'sara.demo@egeez.app', name: 'Sara Demo', child: 'Ruth', stars: 5, comment: 'Real progress in a few weeks.' },
+    { email: 'lensa.demo@easygeez.com', name: 'Lensa Demo', child: 'Soliana', stars: 5, comment: 'Patient and encouraging with our daughter.' },
+    { email: 'dawit.demo@easygeez.com', name: 'Dawit Demo', child: 'Nahom', stars: 4, comment: '' },
+    { email: 'sara.demo@easygeez.com', name: 'Sara Demo', child: 'Ruth', stars: 5, comment: 'Real progress in a few weeks.' },
   ]
   for (const f of families) {
     const parent = await ensureVerifiedUser({ name: f.name, email: f.email, role: 'parent' })
@@ -93,7 +93,7 @@ async function seed() {
   console.log('Seeded: 1 approved teacher (Hana Demo) + 3 linked families with progress and ratings.')
   console.log(`Demo logins (password: ${PW}):`)
   console.log(`  teacher: ${TEACHER_EMAIL}    -> sign in at /teach`)
-  console.log('  parent:  lensa.demo@egeez.app   -> sign in at /family')
+  console.log('  parent:  lensa.demo@easygeez.com   -> sign in at /family')
   console.log('Written reviews start as "pending"; approve them in /admin (needs ADMIN_TOKEN).')
   console.log('The board card should show 4/5 stars, "+35 letters/child, reported by 3 families", and "working with 3 families".')
   await disconnect()

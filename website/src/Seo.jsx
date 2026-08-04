@@ -2,7 +2,7 @@
    Site-wide Organization/WebSite JSON-LD lives statically in index.html. */
 import { useEffect } from 'react'
 
-const SITE = 'https://egeez.app'
+const SITE = 'https://easygeez.com'
 
 export default function Seo({ title, description, path = '/', jsonLd = null, noindex = false }) {
   useEffect(() => {

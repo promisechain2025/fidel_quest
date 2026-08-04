@@ -20,7 +20,7 @@ Legend: **[blocker]** = onboarding silently breaks without it.
 - **Hosting**: API on Render (`render.yaml` now defines the `egeez-hub-api`
   service alongside the analytics `fidel-quest-server` - `JWT_SECRET` and
   `ADMIN_TOKEN` are generated for you, the rest are set in the dashboard) or
-  any Node host; website on Netlify (`netlify.toml`). DNS for `egeez.app`
+  any Node host; website on Netlify (`netlify.toml`). DNS for `easygeez.com`
   pointed at both.
 
 ## 2. Environment variables
@@ -34,7 +34,7 @@ Legend: **[blocker]** = onboarding silently breaks without it.
 | `ADMIN_TOKEN` | **yes** | Owner panel (`/admin`) - approving teachers, moderating reviews. |
 | `EMAIL_USER` / `EMAIL_PASS` | **yes** | SMTP sender (Gmail-service transporter). No email = broken verification/intros. |
 | `NOTIFY_EMAIL` | recommended | Where owner notifications go (defaults to `EMAIL_USER`). |
-| `SITE_URL` | **yes** | Public site origin, e.g. `https://egeez.app`. Used in emailed links and Stripe redirects. |
+| `SITE_URL` | **yes** | Public site origin, e.g. `https://easygeez.com`. Used in emailed links and Stripe redirects. |
 | `CORS_ORIGIN` | recommended | The website origin(s), comma-separated. Defaults to `*`. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | if selling on web | Payments. Absent = pay endpoints return 503 (dormant, safe). |
 | `JWT_EXPIRES_IN` | optional | Session length (default `7d`). |
@@ -46,7 +46,7 @@ Legend: **[blocker]** = onboarding silently breaks without it.
 | Var | Required | Purpose |
 |---|---|---|
 | `VITE_API_URL` | **yes** | Base URL of the deployed API. Empty = forms fall back to mailto and accounts/board are disabled. |
-| `VITE_APP_URL` | recommended | "Open the app" links. Default `https://egeez.app`. |
+| `VITE_APP_URL` | recommended | "Open the app" links. Default `https://easygeez.com`. |
 | `VITE_CONTACT_EMAIL` | recommended | Shown on legal pages and contact. |
 
 ## 3. Stripe webhook (if selling on web)
@@ -105,7 +105,7 @@ MONGO_URI="mongodb://.../egeez_staging" npm run seed
 ```
 
 Idempotent (keyed on the demo teacher's email); demo accounts use
-`*.demo@egeez.app` and a shared demo password printed on completion. This is
+`*.demo@easygeez.com` and a shared demo password printed on completion. This is
 a convenience, NOT a substitute for the real rehearsal below - the rehearsal
 is what proves email and the live DB actually work.
 
