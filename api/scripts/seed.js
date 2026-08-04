@@ -19,7 +19,7 @@
    clean - it inserts demo records (removable by their .demo@easygeez.com
    emails). */
 import crypto from 'node:crypto'
-import bcrypt from 'bcryptjs'
+import { hash as hashPassword } from '../password.js'
 import { store, connect, disconnect } from '../store.js'
 
 // Never against production: the seed publishes an approved teacher to the
@@ -44,7 +44,7 @@ async function ensureVerifiedUser({ name, email, role }) {
   const existing = await store.findUserByEmail(email)
   if (existing) return existing
   const token = `seed-${email}`
-  await store.createUser({ name, email, passwordHash: await bcrypt.hash(PW, 10), role, verifyToken: token })
+  await store.createUser({ name, email, passwordHash: await hashPassword(PW), role, verifyToken: token })
   await store.verifyEmailToken(token)
   return store.findUserByEmail(email)
 }

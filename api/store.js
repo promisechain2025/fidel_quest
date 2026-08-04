@@ -138,6 +138,13 @@ export const store = {
     mem.users.push(doc)
     return clone(doc)
   },
+  /** Replace a stored password hash. Used to upgrade legacy bcrypt hashes to
+      scrypt on the next successful sign-in (see password.js). */
+  async updateUserPassword(id, passwordHash) {
+    if (useMongo) { await M.User.findByIdAndUpdate(id, { passwordHash }); return }
+    const u = mem.users.find((x) => x._id === String(id))
+    if (u) u.passwordHash = passwordHash
+  },
   async setVerifyToken(id, token) {
     if (useMongo) { await M.User.findByIdAndUpdate(id, { verifyToken: token }); return }
     const u = mem.users.find((x) => x._id === String(id))

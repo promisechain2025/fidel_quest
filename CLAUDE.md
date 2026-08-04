@@ -233,7 +233,9 @@ user-visible claim on the site must be checkable against app code:
   which only means anything when `trust proxy` matches the real deploy
   (`TRUST_PROXY`, empty by default).
 - Auth paths cost the same whether or not the account exists - no timing
-  oracle.
+  oracle - and password hashing runs OFF the event loop (`api/password.js`
+  uses `crypto.scrypt`; a pure-JS hash blocks the single thread and makes
+  login an unauthenticated CPU amplifier).
 - Anything an anonymous caller supplies is allow-listed before it reaches
   an email subject, a query, or the store.
 - Fail fast at boot on config that would silently corrupt production
