@@ -89,6 +89,13 @@ export default function Home() {
 
       {/* the two languages */}
       <Section eyebrow={t('langsEyebrow', 'Two languages, one script')} title={t('langsTitle', 'Start with the fidel your family speaks')} center mark="ፊ">
+        {/* The whole product rests on a word many visitors do not know - and
+            on a brand name that is a pun on it. Say both, once, plainly. */}
+        <Reveal>
+          <p className="mx-auto mb-6 max-w-2xl text-center text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {t('fidelWhat', 'Amharic and Tigrinya are both written in the fidel - the Ge’ez script (say it "GUH-ez"). It is a syllabary, not an alphabet: each of the 33 Amharic letter families has seven forms, one per vowel, which is how 33 letters become 231. That script is where eGeez gets its name.')}
+          </p>
+        </Reveal>
         <div className="grid gap-5 md:grid-cols-2">
           <Reveal>
             <Card wash className="h-full">
@@ -175,6 +182,34 @@ export default function Home() {
           </div>
         </Reveal>
       </div>
+
+      {/* The objections that actually stop a parent. Every answer here is
+          checkable against the app: the pace numbers come from the plan
+          settings (1/2/4 letter families a week), the free-forever content
+          from journey.js, the daily window from license.js. */}
+      <Section eyebrow={t('faqE', 'Before you start')} title={t('faqT', 'The questions parents actually ask')} center mark="ጥ">
+        <div className="mx-auto grid max-w-3xl gap-4">
+          {[
+            [t('hqQ1', 'I cannot read the fidel myself. Can I still do this with my child?'),
+             t('hqA1', 'Yes - that is who it is built for. All 231 letters are real recordings, and any word can be tapped to hear it, so the app does the teaching out loud and your child never needs you to sound anything out. The grown-ups corner then tells you in plain English what was learned, what is fading, and what to do next. Plenty of parents pick up the letters alongside their child.')],
+            [t('hqQ2', 'How long does it take to learn all of it?'),
+             t('hqA2', 'You choose the pace in the app: one letter family a week is a gentle school year, two a week gets through all 33 Amharic families in about four months, and four a week in about two. Ten minutes a day is the whole ask - the daily warm-up reviews exactly what is starting to fade, so nothing needs cramming.')],
+            [t('hqQ3', 'What happens when the 3 free days are over?'),
+             t('hqA3', 'The first two letter families and the first arcade game stay free forever, and one tap opens the entire app for 5 more free minutes every single day - no payment, no account, for as long as you like. The buy prompt appears at most once a day, behind a grown-up gate, and always has a "Not now". A child is never stopped in the middle of a lesson.')],
+            [t('hqQ4', 'Does my child need to speak Amharic or Tigrinya already?'),
+             t('hqA4', 'No. It starts at the sound of a single letter and builds up - first letters, then first words with pictures, then short stories read along with the voice. Children who speak only English at home start at exactly the same place as children who hear Amharic every day.')],
+            [t('hqQ5', 'Is it safe to hand my child the phone with this open?'),
+             t('hqA5', 'There are no ads, no chat, and no account to create. Nothing about your child leaves the device - progress lives in the phone itself. Everything that leaves the app or costs money (buying, sharing, settings) sits behind a hold-and-answer gate a young child cannot pass. And it works fully offline, so it is the same app on a plane as it is at home.')],
+          ].map(([q, a], i) => (
+            <Reveal key={i} delay={i * 0.05}>
+              <Card>
+                <h3 className="font-black">{q}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{a}</p>
+              </Card>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
 
       {/* teacher band */}
       <div className="mx-auto max-w-5xl px-5 pb-6 sm:px-6">

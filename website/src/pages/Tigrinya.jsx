@@ -59,7 +59,7 @@ export default function Tigrinya() {
 
       <Section mark="ወ" eyebrow={t('tiSoonEyebrow', 'Coming')} title={t('tiSoonTitle', 'The full Tigrinya course')} center>
         <p className="mx-auto max-w-2xl text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and decodable stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools - built with Eritrean educators, for Eritrean children. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
+          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and read-along stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools - built with Eritrean educators, for Eritrean children. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
         </p>
 
         <Card className="mx-auto mt-8 max-w-md">
