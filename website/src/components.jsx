@@ -142,14 +142,25 @@ export function Field({ label, children }) {
 export const inputCls = 'w-full rounded-xl px-4 py-3 text-[16px]'
 export const inputStyle = { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }
 
+/* HEADER nav: only the destinations a visitor is actually choosing between.
+   Nine links plus a theme toggle and a CTA overflowed into a second row at
+   every desktop width from 1024 to 1440 - "For teachers" wrapped, which is
+   what pushed the bar to 89px tall. The logo is Home, and Family/About live
+   in the footer, so nothing here costs a destination. */
 const NAV = [
-  ['/', 'Home'],
   ['/amharic', 'Amharic'],
   ['/tigrinya', 'Tigrinya'],
   ['/alphabet', 'Alphabet'],
-  ['/teachers', 'For teachers'],
+  ['/teachers', 'Teachers'],
   ['/homeschool', 'Homeschool'],
   ['/pricing', 'Pricing'],
+]
+
+/* The full map, for the footer and the mobile sheet - both have the room,
+   so trimming the header never makes a page unreachable. */
+const ALL_NAV = [
+  ['/', 'Home'],
+  ...NAV,
   ['/family', 'Family'],
   ['/about', 'About'],
 ]
@@ -195,8 +206,10 @@ function MobileMenu({ open, onClose, dark, setDark }) {
       if (root) { root.removeAttribute('aria-hidden'); root.inert = false }
     }
   }, [open, onClose])
-  // Portal to <body>: the header's backdrop-filter creates a containing
-  // block, which would trap this fixed overlay inside the header's box.
+  // Portal to <body>: keeps this fixed overlay out of the header's stacking
+  // context entirely. (It was required when the header used backdrop-filter,
+  // which created a containing block; it stays because a sticky, shadowed
+  // ancestor is still the wrong place to anchor a full-screen sheet.)
   return createPortal(
     <>
       {open && (
@@ -217,7 +230,7 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <nav className="flex flex-1 flex-col justify-center gap-1 px-7" aria-label="Main">
-            {NAV.map(([to, label], i) => (
+            {ALL_NAV.map(([to, label], i) => (
               <div key={to} className="menu-item" style={{ '--i': i }}>
                 <NavLink to={to} end={to === '/'} onClick={onClose}
                   className="block rounded-xl px-3 py-3.5 text-2xl font-black"
@@ -277,10 +290,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40"
       style={{
-        background: 'color-mix(in srgb, var(--paper) 90%, transparent)',
-        backdropFilter: 'blur(10px)',
+        // Opaque on purpose. At 90% the page slid visibly underneath - the
+        // tibeb border and headings read straight through the bar - and the
+        // blur did not hide it against high-contrast content.
+        background: 'var(--paper)',
         borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
-        transition: 'border-color .2s ease',
+        boxShadow: scrolled ? '0 6px 20px -12px rgba(0,0,0,0.45)' : 'none',
+        transition: 'border-color .2s ease, box-shadow .2s ease',
       }}>
       <Tibeb />
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-4 sm:px-6"
@@ -369,7 +385,7 @@ export function Footer() {
           </div>
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
-          {NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
+          {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
           <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
           <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
