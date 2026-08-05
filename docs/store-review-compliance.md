@@ -115,6 +115,24 @@ metadata / build-flags / console forms.**
    3.1.1's trial rule) state the trial length + what's lost. *(2.3.2, 3.1.1 —
    metadata, not code)*
 
+## Platform minimums
+
+| Platform | Setting | Value | Why |
+| --- | --- | --- | --- |
+| iOS | `IPHONEOS_DEPLOYMENT_TARGET` + `Podfile` platform | **15.0** | ITMS-90068 on build 115 (1.2.0): from Spring 2027 App Store Connect refuses uploads below 15.0. Raised early because it costs nothing - see below. |
+| Android | `minSdkVersion` | 23 (Android 6) | Capacitor 7's floor. |
+| Android | `targetSdkVersion` | 36 | Ahead of Play's current requirement. |
+
+**Raising iOS 14 -> 15 drops no devices.** iOS 15 runs on exactly the same
+hardware iOS 14 did (iPhone 6s / SE 1st gen and later), so the only people
+affected are those who chose never to update. Both are far below Capacitor
+7's own floor (iOS 14) and RevenueCat's (iOS 13), so no pod is at risk.
+
+**After pulling this change, run `pod install` in `ios/App`** - the
+`assertDeploymentTarget` hook in the Podfile only rewrites each pod target's
+deployment target during install, so the Pods project keeps the old value
+until you do.
+
 ## Build-flag & metadata checklist (store build)
 
 - [ ] **Unset** `VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`,
