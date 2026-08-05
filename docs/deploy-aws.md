@@ -102,6 +102,28 @@ plain CNAME for `www`.
 | `VITE_APP_URL` | `https://easygeez.com/app` | Already the default; set it only if the PWA moves. |
 | `VITE_SITE_URL` | `https://easygeez.com` | Used by the app's shareable progress cards. |
 
+## 6b. The deploy identity
+
+Create a dedicated IAM user (or role) for deploys - never your root or
+console-admin keys. `scripts/aws-deploy-policy.json` is the whole permission
+set it needs: read/write objects in one bucket, and invalidate one
+distribution. Nothing else. Replace the three REPLACE- placeholders, then:
+
+```bash
+aws iam create-user --user-name egeez-deploy
+aws iam put-user-policy --user-name egeez-deploy \
+  --policy-name egeez-deploy --policy-document file://scripts/aws-deploy-policy.json
+aws iam create-access-key --user-name egeez-deploy
+```
+
+If a key ever leaks, the blast radius is one bucket and one invalidation
+endpoint - not your account.
+
+**Prefer short-lived credentials for anything you hand to a tool or paste
+anywhere.** `aws sts get-session-token --duration-seconds 3600` returns a
+key/secret/session-token trio that expires in an hour and can be revoked
+early; long-lived keys, once pasted, live in that transcript forever.
+
 ## 7. Deploy
 
 ```bash
