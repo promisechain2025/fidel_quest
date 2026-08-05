@@ -15,6 +15,8 @@
    fails the build outside that band rather than shipping a bad snippet.
    ========================================================================== */
 
+import { GUIDES } from './guides.js'
+
 export const SITE = 'https://easygeez.com'
 
 /** Routes that get a prerendered HTML file. `noindex` pages are skipped by
@@ -60,6 +62,13 @@ export const ROUTE_META = Object.freeze({
     title: 'Terms of Service - eGeez',
     description: 'The terms for using the eGeez app, website and teacher tools, including purchases, unlock codes, refunds and the teacher directory.',
   },
+  '/guides': {
+    title: 'Guides for parents - eGeez',
+    description: 'Practical guides for teaching a child the Amharic fidel at home: where to start, how the Ge\u2019ez script works, and what helps in the diaspora.',
+  },
+  // Each guide's head comes from the guide itself, so the page and the
+  // prerendered tags can never disagree.
+  ...Object.fromEntries(GUIDES.map((g) => [`/guides/${g.slug}`, { title: g.metaTitle, description: g.metaDescription }])),
 })
 
 /** Absolute canonical for a route path. */

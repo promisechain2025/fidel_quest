@@ -16,6 +16,8 @@ const Progress = lazy(() => import('./pages/Progress.jsx'))
 const Family = lazy(() => import('./pages/Family.jsx'))
 const Teach = lazy(() => import('./pages/Teach.jsx'))
 const Pricing = lazy(() => import('./pages/Pricing.jsx'))
+const Guide = lazy(() => import('./pages/Guides.jsx'))
+const GuidesIndex = lazy(() => import('./pages/Guides.jsx').then((m) => ({ default: m.GuidesIndex })))
 const PricingSuccess = lazy(() => import('./pages/PricingSuccess.jsx'))
 const Verify = lazy(() => import('./pages/Verify.jsx'))
 const Privacy = lazy(() => import('./pages/Privacy.jsx'))
@@ -52,6 +54,8 @@ export default function App() {
       <Route path="/family" element={<Family />} />
       <Route path="/teach" element={<Teach />} />
       <Route path="/verify" element={<Verify />} />
+      <Route path="/guides" element={<GuidesIndex />} />
+      <Route path="/guides/:slug" element={<Guide />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/pricing/success" element={<PricingSuccess />} />
       {/* legacy aliases from the first launch */}
