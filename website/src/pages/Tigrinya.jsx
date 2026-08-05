@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Section, Card, CtaButton, LetterTile, Field, inputCls, inputStyle } from '../components.jsx'
+import AppGallery from '../components/AppGallery.jsx'
 import { APP_URL } from '../config.js'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
@@ -52,7 +53,13 @@ export default function Tigrinya() {
             </Card>
           ))}
         </div>
-        <div className="mt-6 text-center">
+        {/* Captured from the Tigrinya build, so the ትግርኛ header and the extra
+            ቐ family are the ones an Eritrean family will actually see. */}
+        <p className="lede mx-auto mb-6 mt-10 max-w-2xl text-center" style={{ color: 'var(--muted)' }}>
+          {t('tiSeeB', 'Real screens from the Tigrinya build - the same journey, games and review, in the script your family reads.')}
+        </p>
+        <AppGallery pack="ti" />
+        <div className="mt-8 text-center">
           <CtaButton href={APP_URL} tone="ghost">{t('tiTry', 'Try the script foundations now')}</CtaButton>
         </div>
       </Section>

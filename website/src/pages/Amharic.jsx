@@ -1,5 +1,6 @@
 import { Map, Gamepad2, BookOpenText, Mic, CalendarDays, Trophy } from 'lucide-react'
-import { Section, Card, CtaButton, LetterTile, Picture, Reveal } from '../components.jsx'
+import { Section, Card, CtaButton, LetterTile } from '../components.jsx'
+import AppGallery from '../components/AppGallery.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -46,32 +47,7 @@ export default function Amharic() {
         <p className="lede mx-auto -mt-2 mb-8 max-w-2xl text-center" style={{ color: 'var(--muted)' }}>
           {t('amSeeB', 'Real screens from the app, in the order a child meets them: find the next step, learn the letter, write it, prove it, read a word, and see the whole fidel laid out.')}
         </p>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {[
-            ['journey', t('amSh1', 'One path, one next step')],
-            ['learn', t('amSh2', 'Meet the letter by sound')],
-            ['trace', t('amSh3', 'Write it with a finger')],
-            ['quiz', t('amSh4', 'Prove it by ear')],
-            ['words', t('amSh5', 'Read a real word')],
-            ['explorer', t('amSh6', 'The whole fidel, tappable')],
-          ].map(([file, caption], i) => (
-            <Reveal key={file} delay={i * 0.04}>
-              <figure className="m-0">
-                <Picture
-                  src={`/shots/am-${file}.png`}
-                  loading="lazy"
-                  decoding="async"
-                  width={560}
-                  height={1212}
-                  alt={caption}
-                  className="w-full rounded-2xl"
-                  style={{ border: '1px solid var(--line)' }}
-                />
-                <figcaption className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>{caption}</figcaption>
-              </figure>
-            </Reveal>
-          ))}
-        </div>
+        <AppGallery pack="am" />
       </Section>
 
       <Section mark="ነ" eyebrow={t('amForEyebrow', 'For families')} title={t('amForTitle', 'Try it free, own it forever')}>

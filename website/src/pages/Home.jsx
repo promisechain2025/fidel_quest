@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
 import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
+import AppGallery from '../components/AppGallery.jsx'
 import { APP_URL } from '../config.js'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
@@ -161,6 +162,16 @@ export default function Home() {
         </div>
         <div className="mt-8 text-center">
           <CtaButton to="/about" tone="ghost">{t('visionCta', 'Read the full vision')}</CtaButton>
+        </div>
+      </Section>
+
+      {/* Three real screens between the vision block and the trust band -
+          the page went from a wall of prose straight into a wall of stats.
+          The full six-screen arc lives on /amharic. */}
+      <Section mark="ዐ" eyebrow={t('seeE', 'A look inside')} title={t('seeT', 'This is what your child sees')} center>
+        <AppGallery pack="am" keys={['learn', 'trace', 'words']} className="mx-auto max-w-2xl" />
+        <div className="mt-8 text-center">
+          <CtaButton to="/amharic" tone="ghost">{t('seeCta', 'See a whole week of it')}</CtaButton>
         </div>
       </Section>
 
