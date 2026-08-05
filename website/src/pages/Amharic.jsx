@@ -1,6 +1,7 @@
 import { Map, Gamepad2, BookOpenText, Mic, CalendarDays, Trophy } from 'lucide-react'
 import { Section, Card, CtaButton, LetterTile } from '../components.jsx'
 import AppGallery from '../components/AppGallery.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -70,6 +71,13 @@ export default function Amharic() {
           <CtaButton to="/pricing" tone="ghost">{t('amSeePricing', 'See pricing')}</CtaButton>
         </div>
       </Section>
+
+      <GuideLinks
+        slugs={['amharic-alphabet-for-kids', 'teach-amharic-at-home']}
+        eyebrow={t('amGuidesE', 'Before you start')}
+        title={t('amGuidesT', 'Two guides worth ten minutes')}
+        mark="ጎ"
+      />
     </>
   )
 }

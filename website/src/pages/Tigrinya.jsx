@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Section, Card, CtaButton, LetterTile, Field, inputCls, inputStyle } from '../components.jsx'
 import AppGallery from '../components/AppGallery.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { APP_URL } from '../config.js'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
@@ -92,6 +93,13 @@ export default function Tigrinya() {
           )}
         </Card>
       </Section>
+
+      <GuideLinks
+        slugs={['teaching-tigrinya-to-children', 'geez-amharic-and-tigrinya']}
+        eyebrow={t('tiGuidesE', 'While you wait')}
+        title={t('tiGuidesT', 'Two guides for Eritrean families')}
+        mark="ቐ"
+      />
     </>
   )
 }

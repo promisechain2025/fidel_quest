@@ -1,5 +1,6 @@
 import { CalendarDays, Repeat2, Search, ClipboardList, Share2, ShieldCheck } from 'lucide-react'
 import { Section, Card, CtaButton } from '../components.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -71,6 +72,13 @@ export default function Homeschool() {
           </Card>
         </div>
       </Section>
+
+      <GuideLinks
+        slugs={['teach-amharic-at-home', 'raising-a-fidel-reader-in-the-diaspora']}
+        eyebrow={t('hsGuidesE', 'Read next')}
+        title={t('hsGuidesT', 'If you are planning the year')}
+        mark="ም"
+      />
     </>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Printer, X } from 'lucide-react'
 import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { FAMILIES, ORDER_NAMES, GEEZ_ORDER_NAMES, ORDER_VOWELS } from '../fidelData.js'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
@@ -146,6 +147,15 @@ export default function Alphabet() {
           <div className="mt-5"><CtaButton href={APP_URL} tone="gold">{t('alCtaBtn', 'Start the free try-out')}</CtaButton></div>
         </Card>
       </Section>
+
+      <div className="print:hidden">
+        <GuideLinks
+          slugs={['the-fidel-explained', 'amharic-alphabet-for-kids']}
+          eyebrow={t('alGuidesE', 'Understand the chart')}
+          title={t('alGuidesT', 'How to read what you are looking at')}
+          mark="ሀ"
+        />
+      </div>
     </>
   )
 }

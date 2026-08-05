@@ -176,6 +176,130 @@ export const GUIDES = [
       },
     ],
   },
+  {
+    slug: 'amharic-alphabet-for-kids',
+    title: 'The Amharic alphabet for kids: where to start',
+    metaTitle: 'The Amharic alphabet for kids - where to start - eGeez',
+    metaDescription: 'Which fidel letters to teach a child first, why whole families beat single letters, and what it means to actually know a letter.',
+    lede: 'The question is never "which 231 characters" - it is "which handful first, and in what shape". Get the first fortnight right and the rest follows on its own.',
+    sections: [
+      {
+        h: 'Teach a family, not a letter',
+        p: [
+          'The temptation is to teach the 33 base letters first and come back for the vowels later. It looks faster and it is a trap. The base forms alone spell almost nothing, so the child does weeks of work before a single word appears.',
+          'Take one family at a time instead - ha, hu, hi, ha, he, h, ho - all seven forms together. It is more to hold in one week, but the child can read real words almost immediately, and the vowel pattern they learn on the first family transfers to every family after it.',
+        ],
+      },
+      {
+        h: 'Start in the traditional order',
+        p: [
+          'ሀ ለ ሐ መ ሠ ረ ሰ - the order every chart, classroom and relative already uses. There are cleverer orders you could build from letter frequency, and they cost more than they are worth: a child who learns an invented order cannot follow a wall chart, a schoolbook, or a grandparent reciting.',
+          'The familiar order also means anyone in the family can help without being taught your system first.',
+        ],
+      },
+      {
+        h: 'When a child is ready',
+        p: [
+          'Roughly three to nine. Under three, tracing and fine motor control get in the way of the letters. Over nine, children can move faster but often want a reason - which usually means reading something they chose themselves rather than working through a chart.',
+          'Readiness is not really about age: it is whether the child can sit for five to ten minutes and enjoy a small win. That is the whole requirement.',
+        ],
+      },
+      {
+        h: 'What "knowing a letter" means',
+        p: [
+          'There are three different things people mean, and they arrive in this order: recognising the shape when they see it, producing the sound when asked, and writing it from memory. Recognition comes quickly, recall takes longer, and writing takes longest.',
+          'It is worth being explicit about which one you are asking for. A child who can point to ሀ on a chart but cannot write it has not failed - they are exactly where they should be after a week.',
+        ],
+        cta: { to: '/alphabet', label: 'See the full chart' },
+      },
+      {
+        h: 'The two things that stall a start',
+        list: [
+          'Look-alike letters too close together. Amharic has several that sound identical - ሀ, ሐ, ኀ. Meeting them in the same fortnight makes both harder to place. Let each settle in its own words first.',
+          'No review. Letters learned in week one quietly leave in week three unless something brings them back. A few minutes of revisiting old letters matters more than adding new ones.',
+        ],
+      },
+    ],
+  },
+
+  {
+    slug: 'geez-amharic-and-tigrinya',
+    title: 'Ge\u2019ez, Amharic and Tigrinya: what is the difference?',
+    metaTitle: 'Ge\u2019ez vs Amharic vs Tigrinya - the difference - eGeez',
+    metaDescription: 'Ge\u2019ez is a script and an ancient language; Amharic and Tigrinya are separate modern languages that share it. What that means for teaching.',
+    lede: 'The three names get used interchangeably and they are not interchangeable. Sorting them out takes two minutes and saves a lot of confusion later.',
+    sections: [
+      {
+        h: 'Ge\u2019ez is two things',
+        p: [
+          'Ge\u2019ez is an ancient language of the Horn of Africa, still used liturgically in the Ethiopian and Eritrean Orthodox churches. Almost nobody speaks it conversationally today.',
+          'It is also the name of the writing system that language produced - the script Amharic and Tigrinya are both written in. When someone says "the Ge\u2019ez script" or "the fidel", they mean the letters, not the ancient language.',
+        ],
+      },
+      {
+        h: 'Amharic and Tigrinya are different languages',
+        p: [
+          'They are related, and they share the script, but they are not dialects of each other and a speaker of one does not simply understand the other. Vocabulary, grammar and pronunciation all differ.',
+          'The practical consequence: a child learning to read Tigrinya and a child learning to read Amharic learn nearly the same letters and almost none of the same words.',
+        ],
+      },
+      {
+        h: 'The letters they share, and the one they do not',
+        p: [
+          'Amharic uses 33 consonant families, each in seven vowel orders - 231 characters. Tigrinya uses the same system plus one more family, ቐ, giving 34 families and 238 characters.',
+          'This is why script foundations transfer so well between the two: a child who can read the fidel for one language can already decode most of the other, even without understanding it.',
+        ],
+        cta: { to: '/guides/the-fidel-explained', label: 'How the script works' },
+      },
+      {
+        h: 'Which one should we teach?',
+        p: [
+          'The one spoken in your family. There is no neutral or foundational choice between them - Ge\u2019ez is not a "beginner version" of either, and starting there would be like teaching a child Latin before Italian.',
+          'If your household uses both, start with the one the child hears most. The script carries over, so the second language costs far less than the first.',
+        ],
+      },
+    ],
+  },
+
+  {
+    slug: 'teaching-tigrinya-to-children',
+    title: 'Teaching Tigrinya to children',
+    metaTitle: 'Teaching Tigrinya to children - a starting point - eGeez',
+    metaDescription: 'How to start a child on Tigrinya reading: what the Ge\u2019ez script gives you free, what is language-specific, and where the gaps still are.',
+    lede: 'Tigrinya-speaking families abroad face the same problem as Amharic-speaking ones, with fewer materials. The script is the part you can start on today.',
+    sections: [
+      {
+        h: 'Start with what the script gives you',
+        p: [
+          'Tigrinya is written in the fidel, the same Ge\u2019ez script as Amharic, with one additional family - ቐ - making 34 families and 238 characters.',
+          'That matters because letter shapes, the seven vowel orders, tracing and sound-to-symbol practice are all language-neutral. A child can begin reading work immediately, long before any Tigrinya-specific material exists.',
+        ],
+      },
+      {
+        h: 'What is language-specific, and therefore scarcer',
+        p: [
+          'Letter names, example words, stories and recorded audio all have to be made for Tigrinya specifically - they cannot be borrowed from Amharic. This is where the shortage of material for diaspora families really bites.',
+          'It is worth knowing this before you start, so a gap in resources reads as a gap in the market rather than something you are doing wrong.',
+        ],
+      },
+      {
+        h: 'A realistic plan',
+        list: [
+          'Do the script daily - ten minutes, family by family, in the traditional order. This part needs nothing that does not already exist.',
+          'Do the language socially - names of people and food, greetings, video calls with relatives. Keep it separate from the reading time so a hard day in one does not poison the other.',
+          'Write Tigrinya words by hand as they come up. A child who has traced a word remembers the shape of it far better than one who has only seen it.',
+        ],
+      },
+      {
+        h: 'Where eGeez is, honestly',
+        p: [
+          'The script foundations work in Tigrinya today: the journey, the letter families including ቐ, tracing, games, review and the teacher tools all run in the Tigrinya pack.',
+          'The full Tigrinya course - letter names and chants, first words, stories, native-speaker audio - is still being built, so Story Time is Amharic-only for now and the Tigrinya path simply skips it. We would rather say that than ship half-finished screens.',
+        ],
+        cta: { to: '/tigrinya', label: 'Tigrinya plans and waitlist' },
+      },
+    ],
+  },
 ]
 
 export const guideBySlug = (slug) => GUIDES.find((g) => g.slug === slug) || null
