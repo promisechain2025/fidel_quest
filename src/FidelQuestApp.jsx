@@ -1291,6 +1291,20 @@ export default function FidelQuestApp() {
   // a single stale form does not gate a child who is otherwise current.
   const dueBacklog = useCallback(() => dueKeys().filter((k) => INDEXES.byAudioKey.has(k)).length, [])
 
+  // Every paid Backpack entry repeated this same line inline. The gate has to
+  // be the DEFAULT rather than something each call site remembers: the twelfth
+  // game added to the tray would otherwise have shipped free by omission, and
+  // silently. Entries that are deliberately free (Closet, Tees, Parents, Gift,
+  // Teacher, Family) simply do not use this wrapper.
+  const gated = useCallback(
+    (fn) => () => {
+      setBackpackOpen(false)
+      if (licenseState().phase === 'ended') return setAskSupport(true)
+      fn()
+    },
+    [],
+  )
+
   const openNode = useCallback((node, opts = {}) => {
     // Paid app: after the trial ends, only the free taste opens (first two
     // families + the chapter-1 gateway). Anything else asks to buy or gift.
@@ -1841,18 +1855,18 @@ export default function FidelQuestApp() {
               teeBadge={newTeeCount(progressStats(journey).families)}
               onTees={openTeeShop}
               onCloset={openCloset}
-              onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
-              onStories={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startStories() }}
-              onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
-              onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
-              onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
-              onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
-              onWorkshop={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'workshop' }) }}
-              onMarket={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'market' }) }}
-              onBingo={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'bingo' }) }}
+              onWords={gated(startWords)}
+              onStories={gated(startStories)}
+              onTwins={gated(startTwins)}
+              onLadder={gated(() => setScreen({ name: 'ladder' }))}
+              onMatch={gated(() => setScreen({ name: 'match' }))}
+              onLineup={gated(() => setScreen({ name: 'lineup' }))}
+              onWorkshop={gated(() => setScreen({ name: 'workshop' }))}
+              onMarket={gated(() => setScreen({ name: 'market' }))}
+              onBingo={gated(() => setScreen({ name: 'bingo' }))}
               onPractice={startPractice}
-              onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
-              onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
+              onExplore={gated(() => setScreen({ name: 'explore' }))}
+              onClassic={gated(() => setScreen({ name: 'classic' }))}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
