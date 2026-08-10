@@ -149,7 +149,7 @@ function PlanCard() {
       <div className="mt-3 flex flex-wrap gap-2">
         {PACES.map((p) => (
           <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
-            ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+            ? { background: 'var(--go-deep)', borderColor: 'var(--go-deep)', color: '#fff', outlineColor: 'var(--focus)' }
             : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             {paceLabels[p.id]}
           </button>

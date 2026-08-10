@@ -2902,7 +2902,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                         className={`chunk flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-lg font-black ${FOCUS}`}
                         style={
                           active
-                            ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
+                            ? { background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
                             : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }
                         }
                       >
@@ -3634,7 +3634,7 @@ function FeedbackSheet({ ctx, targetForm, onContinue }) {
           aria-label={success ? 'Correct answer' : 'Wrong answer'}
         >
           <div className="mx-auto flex max-w-xl items-center gap-4 px-5 py-6">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full" style={{ background: success ? 'var(--go)' : 'var(--bad)', color: '#fff' }} aria-hidden="true">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full" style={{ background: success ? 'var(--go-deep)' : 'var(--bad)', color: '#fff' }} aria-hidden="true">
               {success ? <Check className="h-7 w-7" strokeWidth={3.5} /> : <X className="h-7 w-7" strokeWidth={3.5} />}
             </span>
             <div className="min-w-0 flex-1">

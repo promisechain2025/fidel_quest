@@ -67,6 +67,23 @@ jobs:
         run: npm test
         working-directory: api
 
+  server:
+    name: Server tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      # Zero-dependency service: nothing to install, node --test runs it.
+      - name: Run tests
+        run: npm test
+        working-directory: server
+
   website:
     name: Website build
     runs-on: ubuntu-latest

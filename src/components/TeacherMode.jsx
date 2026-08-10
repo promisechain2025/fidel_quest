@@ -313,7 +313,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3].map((n) => (
               <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
-                ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--focus)' }
+                ? { background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--focus)' }
                 : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {t('tmPerWeek', '{n} families a week', { n })}
               </button>
@@ -400,7 +400,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <div className="mt-1 flex gap-1.5">
             {[5, 8, 12, 20].map((n) => (
               <button key={n} type="button" aria-pressed={count === n} onClick={() => { setCount(n); setMade(null) }} className={`mono rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={count === n
-                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+                ? { background: 'var(--go-deep)', borderColor: 'var(--go-deep)', color: '#fff', outlineColor: 'var(--focus)' }
                 : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {n}
               </button>
@@ -412,7 +412,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <div className="mt-1 flex gap-1.5">
             {[[false, t('tmOrdersBase', 'Base letters')], [true, t('tmOrdersAll', 'All 7 forms')]].map(([v, label]) => (
               <button key={String(v)} type="button" aria-pressed={allOrders === v} onClick={() => { setAllOrders(v); setMade(null) }} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={allOrders === v
-                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+                ? { background: 'var(--go-deep)', borderColor: 'var(--go-deep)', color: '#fff', outlineColor: 'var(--focus)' }
                 : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {label}
               </button>
@@ -497,7 +497,7 @@ function RosterCard({ code, onChanged }) {
           style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)' }} />
         <button type="button" onClick={add} disabled={!sanitizeName(name)}
           className={`rounded-xl px-4 py-2 text-sm font-black ${FOCUS}`}
-          style={{ background: 'var(--go)', color: '#fff', opacity: sanitizeName(name) ? 1 : 0.5 }}>
+          style={{ background: 'var(--go-deep)', color: '#fff', opacity: sanitizeName(name) ? 1 : 0.5 }}>
           {t('tmAdd', 'Add')}
         </button>
       </div>

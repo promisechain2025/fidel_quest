@@ -2,7 +2,9 @@
    Site-wide Organization/WebSite JSON-LD lives statically in index.html. */
 import { useEffect } from 'react'
 
-const SITE = 'https://egeez.app'
+// The live marketing site. egeez.app was never registered (NXDOMAIN), so
+// every canonical URL and share card pointed at a host that does not exist.
+const SITE = 'https://www.easygeez.com'
 
 export default function Seo({ title, description, path = '/', jsonLd = null }) {
   useEffect(() => {

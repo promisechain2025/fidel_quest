@@ -21,5 +21,11 @@ for (const dir of ['letters', 'letters/ti', 'words', 'prompts', 'stories', 'stor
   }
 }
 coverage.sort()
-writeFileSync(base + 'manifest.json', JSON.stringify({ packId: 'am-espeak', voice: 'espeak', coverage }, null, 1) + '\n')
+// packId/voice are provenance labels, not behaviour - the engine reads only
+// `coverage`. They still said 'am-espeak' / 'espeak' long after SOURCE.txt
+// recorded that every letter and first word was re-recorded with a native
+// speaker. That is actively misleading rather than merely stale: a reviewer
+// reading manifest.json concluded the core educational asset of a
+// PRONUNCIATION app was robotic TTS, when 231 human clips ship.
+writeFileSync(base + 'manifest.json', JSON.stringify({ packId: 'am', voice: 'human', coverage }, null, 1) + '\n')
 console.log(`manifest: ${coverage.length} clips`)

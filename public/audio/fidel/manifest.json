@@ -1,6 +1,6 @@
 {
- "packId": "am-espeak",
- "voice": "espeak",
+ "packId": "am",
+ "voice": "human",
  "coverage": [
   "letters/a-1",
   "letters/a-2",
