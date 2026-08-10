@@ -90,7 +90,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
             ) : (
               <>
                 {(iapAvailable() || buy) && (
-                  <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+                  <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                     <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuyPrice', 'Buy the app - {p} once', { p: APP_PRICE })}
                   </button>
                 )}

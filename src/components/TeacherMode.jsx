@@ -177,7 +177,7 @@ function CreateClassCard({ onCreated }) {
         className={`mono mt-1 w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
         style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
-      <button type="button" onClick={create} disabled={!ok} className={`chunk mt-4 w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
+      <button type="button" onClick={create} disabled={!ok} className={`chunk mt-4 w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
         {t('tmCreate', 'Create class')}
       </button>
     </SectionCard>
@@ -222,7 +222,7 @@ function PerWeekInput({ current = null, onSet }) {
         style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
       <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('tmPerWeekUnit', 'families a week')}</span>
-      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
+      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
         {t('tmPerWeekSet', 'Set')}
       </button>
     </form>
@@ -265,7 +265,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[1, 2, 3].map((n) => (
-            <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
+            <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
               {t('tmPerWeek', '{n} families a week', { n })}
             </button>
           ))}
@@ -288,7 +288,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-black">
                   {t('tmWeek', 'Week {n}', { n: i + 1 })}
-                  {isNow && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>{t('tmThisWeek', 'this week')}</span>}
+                  {isNow && <span className="ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-black uppercase text-white" style={{ background: 'var(--go-deep)' }}>{t('tmThisWeek', 'this week')}</span>}
                   <span className="geez ml-2 text-lg">{familyIds.map(glyphOf).join(' ')}</span>
                 </p>
                 <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{t('tmDueShort', 'due {date}', { date: ethioDay(weekDue(plan, i)) })}</p>
@@ -575,7 +575,7 @@ function CodeLock({ onOpen }) {
           className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
           style={{ background: 'var(--paper)', borderColor: wrong ? 'var(--bad)' : 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
         />
-        <button type="button" onClick={tryOpen} disabled={!val.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: val.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
+        <button type="button" onClick={tryOpen} disabled={!val.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: val.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
           {t('tmLockOpen', 'Open')}
         </button>
       </div>

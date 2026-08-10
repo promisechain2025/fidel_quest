@@ -114,7 +114,7 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
       </div>
 
       {/* Share */}
-      <button type="button" onClick={share} disabled={busy || !letters.length} className={`chunk mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-50 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+      <button type="button" onClick={share} disabled={busy || !letters.length} className={`chunk mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-50 ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
         <Share2 className="h-5 w-5" aria-hidden="true" /> {t('nameShare', 'Share my name')}
       </button>
       <p className="mt-3 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>

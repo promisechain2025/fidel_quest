@@ -103,7 +103,7 @@ function CardGrid({ card, marked, winSet, onCell, buzz = -1, disabled = false, r
 function WinButtons({ onAgain, onBack }) {
   return (
     <div className="flex gap-3">
-      <button type="button" onClick={onAgain} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>{t('bingoAgain', 'New card')}</button>
+      <button type="button" onClick={onAgain} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>{t('bingoAgain', 'New card')}</button>
       <button type="button" onClick={onBack} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>{t('orderDone', 'Done')}</button>
     </div>
   )
@@ -197,7 +197,7 @@ function HostSetup({ onBack, onStart, families }) {
             })}
           </div>
         </section>
-        <button type="button" disabled={!enough} onClick={() => onStart({ families: [...sel], pattern })} className={`chunk mt-1 rounded-2xl px-6 py-3.5 font-black text-white ${FOCUS}`} style={{ background: enough ? 'var(--go)' : 'var(--line)', boxShadow: `0 4px 0 ${enough ? 'var(--go-deep)' : 'var(--line)'}`, '--chunk-depth': '4px', opacity: enough ? 1 : 0.6 }}>
+        <button type="button" disabled={!enough} onClick={() => onStart({ families: [...sel], pattern })} className={`chunk mt-1 rounded-2xl px-6 py-3.5 font-black text-white ${FOCUS}`} style={{ background: enough ? 'var(--go-deep)' : 'var(--line)', boxShadow: `0 4px 0 ${enough ? 'var(--go-deep)' : 'var(--line)'}`, '--chunk-depth': '4px', opacity: enough ? 1 : 0.6 }}>
           <span className="inline-flex items-center gap-2"><Megaphone className="h-5 w-5" aria-hidden="true" /> {t('bingoStart', 'Start game')}</span>
         </button>
       </div>
@@ -247,7 +247,7 @@ function HostCaller({ soundOn, onBack, config }) {
             </button>
           ) : <p className="text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('bingoHostReady', 'Call a letter for the class to find.')}</p>}
         </div>
-        <button type="button" onClick={next} disabled={done} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: done ? 'var(--line)' : 'var(--go)', boxShadow: `0 4px 0 ${done ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', opacity: done ? 0.6 : 1 }}>
+        <button type="button" onClick={next} disabled={done} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: done ? 'var(--line)' : 'var(--go-deep)', boxShadow: `0 4px 0 ${done ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', opacity: done ? 0.6 : 1 }}>
           <span className="inline-flex items-center gap-2"><Megaphone className="h-5 w-5" aria-hidden="true" /> {done ? t('bingoAllCalled', 'All letters called') : t('bingoCallNext', 'Call next letter')}</span>
         </button>
         {caller.called.length > 0 && (
@@ -337,7 +337,7 @@ export default function BingoCard({ soundOn, onBack, families = [], code = null 
             <p className="text-center text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('bingoEnterCode', 'Enter the code from your teacher')}</p>
             <input value={entered} onChange={(e) => setEntered(e.target.value.trim())} placeholder="…" className={`w-56 rounded-2xl px-4 py-3 text-center text-lg font-black ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--sky)' }} />
             <div className="flex gap-3">
-              <button type="button" disabled={!entered} onClick={() => { setJoinCode(entered); setMode('play') }} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: entered ? 'var(--go)' : 'var(--line)', boxShadow: `0 4px 0 ${entered ? 'var(--go-deep)' : 'var(--line)'}`, '--chunk-depth': '4px', opacity: entered ? 1 : 0.6 }}>{t('bingoJoin', 'Join')}</button>
+              <button type="button" disabled={!entered} onClick={() => { setJoinCode(entered); setMode('play') }} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: entered ? 'var(--go-deep)' : 'var(--line)', boxShadow: `0 4px 0 ${entered ? 'var(--go-deep)' : 'var(--line)'}`, '--chunk-depth': '4px', opacity: entered ? 1 : 0.6 }}>{t('bingoJoin', 'Join')}</button>
               <button type="button" onClick={() => setMode('menu')} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>{t('back', 'Back')}</button>
             </div>
           </div>

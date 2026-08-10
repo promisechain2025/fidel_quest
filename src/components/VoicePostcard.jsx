@@ -211,7 +211,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
       )}
 
       {toast && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-x-0 bottom-6 z-50 mx-auto w-max max-w-[90%] rounded-full px-5 py-2.5 text-sm font-black text-white shadow-lg" style={{ background: 'var(--go)' }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-x-0 bottom-6 z-50 mx-auto w-max max-w-[90%] rounded-full px-5 py-2.5 text-sm font-black text-white shadow-lg" style={{ background: 'var(--go-deep)' }}>
           {toast}
         </motion.div>
       )}

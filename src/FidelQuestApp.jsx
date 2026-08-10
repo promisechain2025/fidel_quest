@@ -1455,7 +1455,7 @@ export default function FidelQuestApp() {
           {screen.name === 'classic' && (
             <Screen key="classic">
               <div className="relative">
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenLoading />}>
                   <AmharicFidelGame />
                 </Suspense>
                 <button
@@ -1541,7 +1541,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'stories' && (
             <Screen key="stories">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <StoryTime
                   soundOn={soundOn}
                   onBack={goBack}
@@ -1557,7 +1557,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'ladder' && (
             <Screen key="ladder">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <VowelLadder
                   soundOn={soundOn}
                   onBack={goBack}
@@ -1568,14 +1568,14 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'match' && (
             <Screen key="match">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
               </Suspense>
             </Screen>
           )}
           {screen.name === 'lineup' && (
             <Screen key="lineup">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <FidelLineup
                   soundOn={soundOn}
                   onBack={goBack}
@@ -1586,7 +1586,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'workshop' && (
             <Screen key="workshop">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <WordWorkshop
                   soundOn={soundOn}
                   onBack={goBack}
@@ -1597,14 +1597,14 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'market' && (
             <Screen key="market">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <MerkatoMarket soundOn={soundOn} onBack={goBack} />
               </Suspense>
             </Screen>
           )}
           {screen.name === 'bingo' && (
             <Screen key="bingo">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <BingoCard
                   soundOn={soundOn}
                   onBack={goBack}
@@ -1668,7 +1668,7 @@ export default function FidelQuestApp() {
                     ? t('placeDoneBody', `${screen.families} letter families credited — the path now starts right where the learning does.`, { n: screen.families })
                     : t('placeFreshBody', 'The first letters are the perfect place to grow. Off we go!')}
                 </p>
-                <button type="button" onClick={goHome} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+                <button type="button" onClick={goHome} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
                   {t('placeGo', 'To the path')}
                 </button>
               </div>
@@ -1762,7 +1762,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'teacher' && (
             <Screen key="teacher">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <TeacherMode
                   onBack={goBackOrHome}
                   onTv={(families) => setStack((s) => [
@@ -1781,7 +1781,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'tv' && (
             <Screen key="tv">
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenLoading />}>
                 <TvClass
                   onBack={goBack}
                   families={screen.families || null}
@@ -2139,7 +2139,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           )}
         </motion.button>
         {highlight && (
-          <motion.span className="mt-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--go)' }} animate={{ y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity }}>
+          <motion.span className="mt-1 rounded-full px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--go-deep)' }} animate={{ y: [0, -2, 0] }} transition={{ duration: 1, repeat: Infinity }}>
             {t('start', 'Start')}
           </motion.span>
         )}
@@ -2225,7 +2225,7 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
             : t('warmNudgeBody', 'A quick review of your letters, then the game!')}
         </p>
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
             {t('warmStart', 'Start warm-up')}
           </button>
           {!enforced && (
@@ -2277,7 +2277,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
       <p className="mt-4 text-center font-bold" style={{ color: 'var(--go-ink)' }}>
         {t('planEta', 'Whole Fidel by {date}', { date: eta })}
       </p>
-      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}>
+      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}>
         {t('planSave', 'Start my plan')}
       </button>
     </div>
@@ -2712,7 +2712,7 @@ function StreakSheet({ streak, onClose }) {
             {t('streakBest', `Best: ${best} days`, { n: best })}
           </p>
         )}
-        <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+        <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
           {t('keepGoing', 'Keep going!')}
         </button>
       </motion.div>
@@ -2961,7 +2961,7 @@ function InstallBanner() {
           <motion.div role="dialog" aria-modal="true" aria-label={t('installTitle', 'Add Anbessa to your home screen')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
             <Hero size={72} />
             <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
-            <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+            <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               {t('gotIt', 'Got it')}
             </button>
           </motion.div>
@@ -2996,7 +2996,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
         </p>
         <div className="mt-5 flex flex-col gap-3">
           {reward && (
-            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
             </button>
           )}
@@ -3045,7 +3045,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
           </p>
         )}
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
           {/* Pride peaks right here - offer to send the child's own voice to
@@ -4628,6 +4628,24 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool })
         <Runner seed={seed} soundOn={soundOn} onExit={finish} onRetry={onRetry} pool={pool} />
       </Suspense>
     </Arcade3D>
+  )
+}
+
+/* Shown while any lazy full-screen chunk is being fetched. Every screen but
+   the arcade rendered nothing while loading, so on the slow phones this app
+   targets a child tapped a Backpack tile and got a blank screen with no sign
+   anything was happening - the exact moment they decide it is broken and tap
+   again. Same furniture as ArcadeLoading, neutral copy. Modal overlays keep
+   rendering nothing: a full-screen loader flashing behind a dialog is worse
+   than the dialog arriving a beat late. */
+function ScreenLoading() {
+  return (
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4" style={{ background: 'var(--paper)' }}>
+      <AnbessaSvg size={110} />
+      <div className="text-lg font-extrabold" style={{ color: 'var(--muted)' }}>
+        {t('screenLoading', 'One moment...')}
+      </div>
+    </div>
   )
 }
 

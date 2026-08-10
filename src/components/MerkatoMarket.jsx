@@ -87,7 +87,7 @@ export default function MerkatoMarket({ soundOn, onBack }) {
           <div className="flex flex-col items-center gap-4">
             <p className="text-center text-base font-black" style={{ color: 'var(--muted)' }}>{t('marketWin', 'Basket full!')}</p>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setRound((r) => r + 1)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+              <button type="button" onClick={() => setRound((r) => r + 1)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
                 {t('marketAgain', 'Shop again!')}
               </button>
               <button type="button" onClick={onBack} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>

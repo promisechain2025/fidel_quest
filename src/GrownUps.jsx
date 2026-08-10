@@ -241,7 +241,7 @@ function ProfilesCard() {
           <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
             <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
             {p.id === reg.active ? (
-              <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>
+              <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go-deep)' }}>
                 {t('gpActiveNow', 'Playing')}
               </span>
             ) : (
@@ -275,7 +275,7 @@ function ProfilesCard() {
             <div className="mt-3 space-y-2">
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
               <div className="flex gap-2">
-                <button type="button" onClick={doAdd} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                <button type="button" onClick={doAdd} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
                   {t('gpAddStart', 'Add and start fresh')}
                 </button>
                 <button type="button" onClick={() => setAdding(false)} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
@@ -287,7 +287,7 @@ function ProfilesCard() {
               </p>
             </div>
           ) : (
-            <button type="button" onClick={() => setAdding(true)} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+            <button type="button" onClick={() => setAdding(true)} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
               {t('gpAddChild', 'Add another child')}
             </button>
           )
@@ -301,7 +301,7 @@ function ProfilesCard() {
             </p>
             {iapAvailable() && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
                   {storePrice
                     ? t('gpPackBuyStore', `Get the Family Pack (${storePrice})`, { price: storePrice })
                     : t('gpPackBuyStoreNoPrice', 'Get the Family Pack')}
@@ -320,7 +320,7 @@ function ProfilesCard() {
             {!isNativePlatform() && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {buyLink ? (
-                  <a href={buyLink} target="_blank" rel="noreferrer" className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+                  <a href={buyLink} target="_blank" rel="noreferrer" className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
                     {t('gpPackBuy', `Get the Family Pack (${FAMILY_PACK_PRICE})`, { price: FAMILY_PACK_PRICE })}
                   </a>
                 ) : null}
@@ -515,7 +515,7 @@ function CommunityCard() {
               className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
               style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
             />
-            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
+            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
               {t('ccApply', 'Apply')}
             </button>
           </div>
@@ -721,7 +721,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                           <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                             {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
-                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
+                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                             {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
@@ -756,7 +756,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   <>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {buy && (
-                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
+                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                           {t('payBuy', 'Buy the app')}
                         </a>
                       )}

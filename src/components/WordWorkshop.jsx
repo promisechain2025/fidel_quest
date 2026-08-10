@@ -144,7 +144,7 @@ export default function WordWorkshop({ soundOn, onBack, families = [] }) {
             <p className="geez text-3xl font-black" style={{ color: 'var(--ink)' }}>{word.geez}</p>
             <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{word.latin}{word.meaning ? ` - ${word.meaning}` : ''}</p>
             <div className="flex gap-3">
-              <button type="button" onClick={() => setRound((r) => r + 1)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+              <button type="button" onClick={() => setRound((r) => r + 1)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
                 {t('workshopNext', 'Next word!')}
               </button>
               <button type="button" onClick={onBack} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>

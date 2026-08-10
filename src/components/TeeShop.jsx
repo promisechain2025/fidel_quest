@@ -158,7 +158,7 @@ export default function TeeShop({ stats, collection, onBack }) {
 
       <AnimatePresence>
         {toast && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-2xl px-5 py-3 font-black text-white shadow-lg" style={{ background: 'var(--go)' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-2xl px-5 py-3 font-black text-white shadow-lg" style={{ background: 'var(--go-deep)' }}>
             <Check className="h-5 w-5" aria-hidden="true" /> {toast}
           </motion.div>
         )}

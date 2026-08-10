@@ -222,7 +222,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
                   </span>
                 ))}
               </div>
-              <button type="button" onClick={onDone} className={`chunk mt-2 w-full max-w-xs rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
+              <button type="button" onClick={onDone} className={`chunk mt-2 w-full max-w-xs rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                 {t('keepGoing', 'Keep going!')}
               </button>
             </motion.div>

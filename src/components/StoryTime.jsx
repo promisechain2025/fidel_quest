@@ -248,7 +248,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           {t('storyDoneBody', 'Anbessa is proud. Real reading, all by yourself!')}
         </p>
         <div className="flex gap-3">
-          <button type="button" onClick={() => openStory(story)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+          <button type="button" onClick={() => openStory(story)} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {t('storyAgain', 'Read it again')}
           </button>
           <button type="button" onClick={leaveReader} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
@@ -361,7 +361,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           <button type="button" onClick={readToMe} aria-label={t('storyReadToMe', 'Read to me')} className={`chunk flex h-14 w-14 items-center justify-center rounded-2xl text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px' }}>
             <Volume2 className="h-6 w-6" />
           </button>
-          <button type="button" onClick={nextPage} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
+          <button type="button" onClick={nextPage} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {pageIdx + 1 < story.pages.length ? t('storyNext', 'Next page') : t('storyFinish', 'The end!')}
             <ChevronRight className="h-5 w-5" />
           </button>

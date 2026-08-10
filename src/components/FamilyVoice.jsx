@@ -123,7 +123,7 @@ export default function FamilyVoice({ onBack }) {
       </div>
 
       {toast && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-x-0 bottom-6 z-50 mx-auto w-max max-w-[90%] rounded-full px-5 py-2.5 text-sm font-black text-white shadow-lg" style={{ background: 'var(--go)' }}>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="fixed inset-x-0 bottom-6 z-50 mx-auto w-max max-w-[90%] rounded-full px-5 py-2.5 text-sm font-black text-white shadow-lg" style={{ background: 'var(--go-deep)' }}>
           {toast}
         </motion.div>
       )}
@@ -244,7 +244,7 @@ function RecordVoice({ onDone, onCancel }) {
 
       {/* Sticky actions: use this voice here, or share the file with a child */}
       <div className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-xl gap-2 border-t-2 p-3" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
-        <button type="button" onClick={save} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
+        <button type="button" onClick={save} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go-deep)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
           <Check className="h-5 w-5" aria-hidden="true" /> {t('fvUseVoice', 'Use it here')}
         </button>
         <button type="button" onClick={share} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
