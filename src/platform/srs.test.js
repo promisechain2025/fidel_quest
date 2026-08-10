@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { reviewEntry, srsReview, loadSrs, dueForms, dueKeys, srsSize, EASE_START, EASE_MIN, EASE_MAX, epochDay } from './srs'
+import { reviewEntry, srsReview, loadSrs, dueForms, dueKeys, srsSize, EASE_START, EASE_MIN, EASE_MAX, epochDay, isMastered, masteredCount, masteredKeys } from './srs'
 import { recordAnswer } from './telemetry'
 
 beforeEach(() => localStorage.clear())
@@ -95,5 +95,49 @@ describe('pseudo-key hygiene', () => {
     srsReview('ha-1', true)
     expect(srsSize()).toBe(1)
     expect(dueKeys(epochDay() + 2)).toEqual(['ha-1'])
+  })
+})
+
+/* Mastery is what the app is ALLOWED to claim a child knows. The criterion is
+   "two correct answers on different days", and it is expressed as reps >= 2
+   only because the cram guard makes those equivalent. These tests pin that
+   equivalence - if the guard ever changes, the claim silently inflates. */
+describe('mastery: a claim backed by spaced retrieval', () => {
+  const D = 5000
+
+  it('is not granted for a single correct answer', () => {
+    const e = reviewEntry(undefined, true, D)
+    expect(isMastered(e)).toBe(false)
+  })
+
+  it('is NOT granted by cramming - five corrects in one day prove nothing', () => {
+    let e = reviewEntry(undefined, true, D)
+    for (let i = 0; i < 4; i++) e = reviewEntry(e, true, D) // same day, before due
+    expect(e[0]).toBe(1) // the cram guard held reps at one
+    expect(isMastered(e)).toBe(false)
+  })
+
+  it('is granted by two corrects on different days', () => {
+    let e = reviewEntry(undefined, true, D)
+    e = reviewEntry(e, true, D + 1) // due today, so it counts
+    expect(isMastered(e)).toBe(true)
+  })
+
+  it('is revoked by a miss - forgetting withdraws the claim', () => {
+    let e = reviewEntry(undefined, true, D)
+    e = reviewEntry(e, true, D + 1)
+    expect(isMastered(e)).toBe(true)
+    e = reviewEntry(e, false, D + 2)
+    expect(isMastered(e)).toBe(false)
+  })
+
+  it('counts only proven forms across the whole table', () => {
+    srsReview('ha-1', true, D)
+    srsReview('ha-1', true, D + 1) // mastered
+    srsReview('le-1', true, D) // seen once only
+    srsReview('me-1', true, D)
+    srsReview('me-1', false, D + 1) // missed
+    expect(masteredKeys()).toEqual(['ha-1'])
+    expect(masteredCount()).toBe(1)
   })
 })

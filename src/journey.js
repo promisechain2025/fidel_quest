@@ -13,7 +13,8 @@
    authored collectible - determinism, no loot RNG.
    ========================================================================== */
 
-import { FIDEL_FAMILIES, getActivePackId } from './platform/ethiopic'
+import { FIDEL_FAMILIES, getActivePackId, PACKS } from './platform/ethiopic'
+import { masteredCount } from './platform/srs'
 import { progressChanged } from './platform/childModel'
 import { STORIES } from './platform/stories'
 
@@ -308,11 +309,20 @@ export function chapterComplete(p, nodeId) {
 /** Child-facing progress for the share card and Closet. */
 export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length
+  const orders = PACKS[getActivePackId()]?.orders.length ?? 7
   return {
     families,
     totalFamilies: FIDEL_FAMILIES.length,
-    forms: families * 7,
-    totalForms: FIDEL_FAMILIES.length * 7,
+    // INTRODUCED, not proven: every form the child has been shown, because the
+    // lesson that shows them cannot be failed. Safe for the child's own
+    // celebration and closet, where a number that shrinks would punish.
+    forms: families * orders,
+    totalForms: FIDEL_FAMILIES.length * orders,
+    // MASTERED: forms with real spaced-retrieval evidence behind them (two
+    // corrects on different days - see srs.js). This is the only number the
+    // app may put in front of an adult as "letters learned"; `forms` would
+    // report 231 for 33 completed-but-unfailable lessons.
+    mastered: masteredCount(),
     nodes: Object.keys(p.done || {}).length,
   }
 }

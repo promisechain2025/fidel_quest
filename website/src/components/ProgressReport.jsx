@@ -7,7 +7,13 @@ import { TOTAL_LETTERS } from '../progressCard.js'
 import { t } from '../i18n.js'
 
 export default function ProgressReport({ snap }) {
-  const pct = Math.round((snap.letters / TOTAL_LETTERS) * 100)
+  // Three shapes reach this component: a v2 card (mastered + seen), a v1 card
+  // (mastered null - it never measured mastery), and a /family snapshot saved
+  // by the API before the split (letters). Only a real number counts as proof;
+  // everything else is an introduced count and is labelled as one.
+  const proven = typeof snap.mastered === 'number'
+  const headline = proven ? snap.mastered : (snap.seen ?? snap.letters ?? 0)
+  const pct = Math.round((headline / TOTAL_LETTERS) * 100)
   return (
     <Card className="text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -26,9 +32,16 @@ export default function ProgressReport({ snap }) {
       </div>
 
       <div className="mt-5 flex items-baseline gap-2">
-        <span className="display-2" style={{ color: 'var(--accent)' }}>{snap.letters}</span>
-        <span className="font-black">/ {TOTAL_LETTERS} {t('prpLetters', 'letters learned')}</span>
+        <span className="display-2" style={{ color: 'var(--accent)' }}>{headline}</span>
+        <span className="font-black">
+          / {TOTAL_LETTERS} {proven ? t('prpMastered', 'letters mastered') : t('prpLetters', 'letters introduced')}
+        </span>
       </div>
+      {proven && (
+        <p className="mt-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
+          {t('prpSeen', '{s} introduced so far').replace('{s}', String(snap.seen))}
+        </p>
+      )}
       <div className="mt-2 h-3 overflow-hidden rounded-full" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--accent), var(--tile))' }} />
       </div>
@@ -55,7 +68,7 @@ export default function ProgressReport({ snap }) {
         })}
       </div>
       <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>
-        {t('prpLegend', 'Gold tiles are learned families; each one is 7 letters mastered through play.')}
+        {t('prpLegend', 'Gold tiles are families your child has worked through. A letter counts as mastered once they have recalled it correctly on two different days.')}
       </p>
     </Card>
   )

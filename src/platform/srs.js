@@ -95,3 +95,30 @@ export function dueKeys(today = epochDay(), opts) {
 export function srsSize(table = loadSrs()) {
   return Object.keys(table.f || {}).length
 }
+
+/* ── Mastery ───────────────────────────────────────────────────────────────
+   What the app is allowed to CLAIM a child knows.
+
+   Finishing a family lesson used to be reported as 7 mastered characters, so
+   33 unfailable lessons became "231 letters learned" on a parent's report. A
+   character is mastered here only on retrieval evidence: two correct answers
+   on DIFFERENT days.
+
+   `reps >= 2` is exactly that criterion, and it needs no extra state, because
+   the cram guard in reviewEntry already refuses to count a correct answer
+   before the entry is due: the first correct sets ivl=1/due=tomorrow, so the
+   second can only increment reps on a later day. A miss resets reps to 0 -
+   forgetting revokes the claim, which is the point. */
+export const MASTERY_REPS = 2
+export const isMastered = (entry) => Array.isArray(entry) && entry.length >= 5 && entry[0] >= MASTERY_REPS
+
+/** Audio keys the child has actually proven, on spaced retrieval evidence. */
+export function masteredKeys(table = loadSrs()) {
+  return Object.entries(table.f || {})
+    .filter(([, e]) => isMastered(e))
+    .map(([k]) => k)
+}
+
+export function masteredCount(table = loadSrs()) {
+  return masteredKeys(table).length
+}

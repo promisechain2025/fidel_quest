@@ -110,7 +110,7 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   g.textAlign = 'center'
   g.textBaseline = 'middle'
   g.font = `900 ${S * 0.055}px system-ui, sans-serif`
-  g.fillText(`${forms} / ${FIDEL_FAMILIES.length * 7} letters learned`, S / 2, pillY + pillH * 0.5)
+  g.fillText(`${forms} / ${FIDEL_FAMILIES.length * 7} letters unlocked`, S / 2, pillY + pillH * 0.5)
 
   // Footer tagline.
   g.fillStyle = '#7c3d00'
