@@ -33,7 +33,7 @@ import { sayPrompt } from './platform/prompts'
 import { placementWindows, buildPlacementQueue, applyPlacement, PASS_RATE as PLACEMENT_PASS_RATE } from './platform/placement'
 import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
-import GrownUps from './GrownUps'
+
 import FamilyVoice from './components/FamilyVoice'
 import AnbessaSvg from './components/AnbessaSvg'
 import KokebSvg from './components/KokebSvg'
@@ -117,6 +117,10 @@ function lazyRetry(factory, tries = 3) {
 
 // The original eGeez game (chant mode, tracing pad, first words) lives
 // on as the Classic mode; lazy so the heavy page stays out of the home chunk.
+// Adult-only and parental-gated: 55KB of settings, billing and diagnostics
+// that a child's first paint should never pay for. Lazy also lets crashLog
+// and iap out of the entry chunk, which only GrownUps pulled in.
+const GrownUps = lazyRetry(() => import('./GrownUps'))
 const AmharicFidelGame = lazyRetry(() => import('./pages/AmharicFidelGame'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
 // encoder, so they stay out of the child-facing home chunk too.
@@ -1427,14 +1431,16 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'grownups' && (
             <Screen key="grownups">
-              <GrownUps
-                onBack={goBack}
-                onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
-                onReplayLevel={(levelId) => startLesson(levelId)}
-                onPlacement={startPlacement}
-                soundOn={soundOn}
-                onToggleSound={toggleSound}
-              />
+              <Suspense fallback={<ScreenLoading />}>
+                <GrownUps
+                  onBack={goBack}
+                  onPractice={(familyId) => setScreen({ name: 'explore', family: familyId })}
+                  onReplayLevel={(levelId) => startLesson(levelId)}
+                  onPlacement={startPlacement}
+                  soundOn={soundOn}
+                  onToggleSound={toggleSound}
+                />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'familyvoice' && (

@@ -132,4 +132,35 @@ describe('pack keys against call sites', () => {
     )
     expect(dead).toEqual([])
   })
+
+  /* The check above matches a key ANYWHERE in source, deliberately loose so
+     table-driven t(tb.key, ...) calls do not false-fail. Its cost is a false
+     NEGATIVE, and one bit: `lettersLearned` counted as "used" purely because
+     FamilyFriends passes a LEADERBOARD METRIC of the same name to getBoard().
+     Renaming the key at its only real call site therefore orphaned six
+     translations - dropping those languages to the English fallback - with the
+     suite still green.
+
+     This pass demands an actual t('key', ...) call. 391 of 397 keys qualify;
+     the handful that genuinely arrive through a table are listed explicitly,
+     so adding another one is a deliberate act rather than an accident. */
+  const TABLE_DRIVEN_KEYS = ['grownups', 'masterChart', 'masterAuto']
+
+  it('every key not reached through a table has a real t() call', () => {
+    const allSource = sourceFiles()
+      .filter((f) => !f.endsWith('langpacks.js'))
+      .map((f) => fs.readFileSync(f, 'utf8'))
+      .join('\n')
+    const called = new Set(
+      [...allSource.matchAll(/\bt\(\s*['"`]([A-Za-z0-9_]+)['"`]/g)].map((m) => m[1]),
+    )
+    const packKeys = Object.keys(LANGPACKS[Object.keys(LANGPACKS)[0]])
+    const orphaned = packKeys.filter(
+      (k) =>
+        !called.has(k) &&
+        !TABLE_DRIVEN_KEYS.includes(k) &&
+        !DYNAMIC_KEY_PATTERNS.some((re) => re.test(k)),
+    )
+    expect(orphaned).toEqual([])
+  })
 })
