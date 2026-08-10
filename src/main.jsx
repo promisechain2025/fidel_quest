@@ -8,7 +8,7 @@ import { applyUrlUnlock } from './utils/devUnlock'
 import { initVoice } from './platform/voicePack'
 import { warmAudioCache } from './platform/audioEngine'
 import { initReminder } from './platform/notify'
-import { t } from './platform/i18n'
+import { t, loadActiveLangPack } from './platform/i18n'
 import { initTheme } from './platform/theme'
 
 // Kick the bundled Ethiopic font loading immediately. The 3D games and the
@@ -42,19 +42,27 @@ import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Native: silently back the household's progress up to the OS-backed
 // Documents folder, at most once a day. Web keeps manual export.
 import('./platform/backup').then((m) => m.autoBackup()).catch(() => {})
-// Re-arm the daily reminder if a grown-up opted in (native only).
-initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
+/* The chosen UI language is fetched before ANYTHING reads a string, for the
+   same reason initTheme() runs ahead of render: otherwise the first paint (and
+   the reminder text below, which calls t() eagerly) would be English and then
+   snap. Only the active pack is fetched - English users await a resolved
+   promise and pay nothing. A failed fetch resolves false and every key falls
+   back to the inline English, so a boot can never hang on it. */
+loadActiveLangPack().then(() => {
+  // Re-arm the daily reminder if a grown-up opted in (native only).
+  initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
-)
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>,
+  )
 
-// Native shell setup (status bar, splash, Android back button). No-op on web.
-initNative()
+  // Native shell setup (status bar, splash, Android back button). No-op on web.
+  initNative()
+})
 
 // Background-warm the whole voice set into the SW runtime cache so the app
 // speaks every letter offline (the atomic audio precache was dropped so the

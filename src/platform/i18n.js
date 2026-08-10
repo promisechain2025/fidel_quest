@@ -9,18 +9,12 @@
    in getLang(). Language choice persists and applies on reload, like packs.
    ========================================================================== */
 
-import { LANGPACKS, LANG_IDS, REINFORCE } from './langpacks'
+import { LANGPACK_LOADERS, LANG_IDS, REINFORCE } from './langpacks'
 
 const LANG_KEY = 'fq.lang'
 
 const STRINGS = {
   en: {},
-}
-
-// Fold in the diaspora language packs (German, Italian, Swedish, Dutch,
-// Norwegian, French). Missing keys fall back to English inside t().
-for (const [id, pack] of Object.entries(LANGPACKS)) {
-  STRINGS[id] = { ...(STRINGS[id] || {}), ...pack }
 }
 
 export function getLang() {
@@ -42,6 +36,26 @@ export function setLang(lang) {
 }
 
 const ACTIVE = getLang()
+
+/* The active diaspora pack (German, Italian, Swedish, Dutch, Norwegian,
+   French) is fetched on demand rather than bundled - see langpacks.js for why.
+   main.jsx awaits this BEFORE the first render, so t() stays synchronous and
+   no screen ever paints in the wrong language. If the fetch fails, every key
+   falls back to the inline English at the call site, which is the same
+   behaviour as a pack with a missing key: degraded, never broken.
+   Idempotent, so a second call is free. */
+export async function loadActiveLangPack(lang = ACTIVE) {
+  if (lang === 'en' || STRINGS[lang]) return false
+  const load = LANGPACK_LOADERS[lang]
+  if (!load) return false
+  try {
+    const mod = await load()
+    STRINGS[lang] = { ...(mod.default || {}) }
+    return true
+  } catch {
+    return false // offline or chunk missing: English fallback carries the UI
+  }
+}
 
 /** Reinforcement word lists for the active language (praise on right answers,
     encourage on wrong), English if the language has none. Shared by the main

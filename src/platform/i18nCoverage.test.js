@@ -19,7 +19,21 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { LANGPACKS, LANG_IDS, LANG_META, REINFORCE } from './langpacks'
+import { LANG_IDS, LANG_META, REINFORCE, LANGPACK_LOADERS } from './langpacks'
+// The packs are code-split for the bundle (only the active language ships to a
+// child), so the audit re-assembles them statically. Importing every one here
+// is exactly what production must NOT do, and exactly what a coverage check
+// has to do - and it keeps this suite the thing that notices a pack drifting.
+// Suffixed because a bare `it` would shadow vitest's `it`, and a bare `no`
+// reads as a boolean at every use site.
+import dePack from './langpacks/de.js'
+import itPack from './langpacks/it.js'
+import svPack from './langpacks/sv.js'
+import nlPack from './langpacks/nl.js'
+import noPack from './langpacks/no.js'
+import frPack from './langpacks/fr.js'
+
+const LANGPACKS = { de: dePack, it: itPack, sv: svPack, nl: nlPack, no: noPack, fr: frPack }
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -162,5 +176,28 @@ describe('pack keys against call sites', () => {
         !DYNAMIC_KEY_PATTERNS.some((re) => re.test(k)),
     )
     expect(orphaned).toEqual([])
+  })
+})
+
+/* The split is only safe if the loader map and the on-disk modules agree: a
+   language registered in LANG_META with no loader would fall back to English
+   forever, silently, and a loader with no LANG_META entry is unreachable. */
+describe('language packs are code-split correctly', () => {
+  it('has a loader for every registered language except English', () => {
+    expect(Object.keys(LANGPACK_LOADERS).sort()).toEqual(
+      LANG_IDS.filter((id) => id !== 'en').sort(),
+    )
+  })
+
+  it('has a real module behind every loader, with the full key set', () => {
+    const ref = Object.keys(LANGPACKS.de).sort()
+    for (const id of Object.keys(LANGPACK_LOADERS)) {
+      expect(LANGPACKS[id], `no module imported for ${id}`).toBeTruthy()
+      expect(Object.keys(LANGPACKS[id]).sort()).toEqual(ref)
+    }
+  })
+
+  it('keeps English out of the split entirely - it is the inline fallback', () => {
+    expect(LANGPACK_LOADERS.en).toBeUndefined()
   })
 })
