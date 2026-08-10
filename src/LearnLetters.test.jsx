@@ -200,8 +200,10 @@ describe('first-try tally: mastery is proficiency, not attendance (P1)', () => {
     expect(starsForAccuracy(tallyAccuracy(rescued))).toBe(1)
   })
 
+  // Only the blind phases are fed in (see `touch`), so the realistic case is
+  // the same form asked in ECHO and again in SHUFFLE.
   it('treats the same form in different phases as separate evidence', () => {
-    const t = run([['FORWARD:ha-1', true], ['ECHO:ha-1', false]])
+    const t = run([['ECHO:ha-1', true], ['SHUFFLE:ha-1', false]])
     expect(t.total).toBe(2)
     expect(t.right).toBe(1)
   })

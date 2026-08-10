@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   JOURNEY,
   NodeKind,
@@ -19,6 +19,7 @@ import {
   REWARD_TABLE,
   NODE_BY_ID,
   creditInsertedReviews,
+  journeySaveHealthy,
 } from './journey'
 import { FIDEL_FAMILIES } from './platform/ethiopic'
 
@@ -262,5 +263,30 @@ describe('spacing legs and the returning-child migration (P1)', () => {
   it('leaves a brand-new child untouched', () => {
     const p = fresh()
     expect(creditInsertedReviews(p)).toBe(p) // same object: nothing to credit
+  })
+})
+
+describe('save failure is detectable, not silent (P1)', () => {
+  it('reports success normally', () => {
+    expect(saveJourney(fresh())).toBe(true)
+    expect(journeySaveHealthy()).toBe(true)
+  })
+
+  // A full or blocked localStorage used to be swallowed: every node completion
+  // looked successful and evaporated on reload, telling nobody.
+  it('reports failure when the write throws, and stays usable', () => {
+    // setItem lives on Storage.prototype in jsdom, so assigning to the
+    // instance silently does nothing - spy on the prototype instead.
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError')
+    })
+    try {
+      expect(saveJourney(fresh())).toBe(false)
+      expect(journeySaveHealthy()).toBe(false)
+    } finally {
+      spy.mockRestore()
+    }
+    expect(saveJourney(fresh())).toBe(true) // recovers once writes work again
+    expect(journeySaveHealthy()).toBe(true)
   })
 })

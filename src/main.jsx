@@ -61,7 +61,21 @@ initNative()
 // shell goes offline-ready fast). Idle + online + failure-tolerant, and a
 // no-op once the clips are cached.
 if (typeof window !== 'undefined') {
-  const warm = () => warmAudioCache()
+  const warm = async () => {
+    // Ask for PERSISTENT storage first. A best-effort origin is evicted whole
+    // under storage pressure - Cache API and localStorage together - so warming
+    // ~4.7MB of voice into the same bucket that holds the child's only copy of
+    // their progress was actively raising the odds of losing it. A persisted
+    // origin is never evicted without the user's say-so. Chrome grants this
+    // silently for an installed/engaged PWA; elsewhere it just resolves false
+    // and we are no worse off than before.
+    try {
+      await navigator.storage?.persist?.()
+    } catch {
+      /* unsupported or blocked - warm anyway */
+    }
+    warmAudioCache()
+  }
   if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 10000 })
   else setTimeout(warm, 5000)
 }

@@ -124,8 +124,12 @@ export default defineConfig({
         lang: 'am',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#fffbeb',
-        theme_color: '#f59e0b',
+        // Must match --paper (src/index.css). These were amber-50/amber-500,
+        // left over from before the dark-manuscript reskin, so every cold
+        // launch of the INSTALLED app flashed a cream splash and an orange
+        // system bar before snapping to the indigo ground.
+        background_color: '#1b2233',
+        theme_color: '#1b2233',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },

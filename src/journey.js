@@ -188,13 +188,26 @@ export function loadJourney() {
   }
   return migrateLegacyProgress()
 }
+/* Whether the last write to the journey actually landed. A full or blocked
+   localStorage (quota exceeded, Android WebView with site data off, iOS
+   Lockdown) made every node completion LOOK successful - stars animated,
+   rewards granted - and vanish on reload, with no signal to child or parent.
+   profiles.js already returns a boolean so callers can abort rather than lose
+   data; the spine module now does too, and remembers the failure so a grown-up
+   can be told. */
+let lastSaveOk = true
+export const journeySaveHealthy = () => lastSaveOk
+
 export function saveJourney(p) {
   try {
     localStorage.setItem(JOURNEY_KEY, JSON.stringify(p))
+    lastSaveOk = true
   } catch {
-    /* session-only; the app still works, progress just is not persisted */
+    /* session-only: the app keeps working, the progress just is not persisted */
+    lastSaveOk = false
   }
   progressChanged()
+  return lastSaveOk
 }
 
 /* One-time port of the pre-refactor blobs so returning children keep their

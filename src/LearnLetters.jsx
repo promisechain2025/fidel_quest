@@ -80,7 +80,10 @@ export const TRACE_ORDERS = [0, 1, 2, 3, 4, 5, 6]
 
    Each asked form counts ONCE, on the first attempt: the retries that follow a
    miss are teaching, so scoring them would measure persistence rather than
-   knowledge. Pure, so the mastery rule is testable without rendering. */
+   knowledge. Only the BLIND phases (ECHO, SHUFFLE) are fed in - see `touch`:
+   FORWARD and BACKWARD place the answer at a predictable position, so a child
+   who never listens still scores there. Pure, so the rule is testable without
+   rendering. */
 export const emptyTally = () => ({ asked: new Set(), right: 0, total: 0 })
 export function tallyFirstTry(tally, askedKey, correct) {
   if (tally.asked.has(askedKey)) return tally
@@ -1050,9 +1053,15 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       const { advanced, correct } = learnTransition(ctx, key)
       const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
       const stones = ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD
-      // First-try score for the honest star rating (see tallyFirstTry above).
-      if (stones || spoken) {
-        score.current = tallyFirstTry(score.current, `${ctx.phase}:${stones ? ctx.forms[ctx.idx] : ctx.target}`, correct)
+      // First-try score for the star rating (see tallyFirstTry above), from
+      // the BLIND phases only. FORWARD renders the tray in reading order with
+      // the target marching 0->6, and BACKWARD's trayMix swaps only ADJACENT
+      // pairs - so in both, position alone answers the question and a child
+      // who never listens still scores. Counting them inflated the rating with
+      // 14 position-solvable trials against 6 real ones. They are scaffolded
+      // practice, not retrieval, and scaffolded practice is not evidence.
+      if (spoken) {
+        score.current = tallyFirstTry(score.current, `${ctx.phase}:${ctx.target}`, correct)
       }
       // The stones are a listen-and-find game: the target was already spoken,
       // so a correct pick needs no re-voicing (the pluck + hop confirm it) and

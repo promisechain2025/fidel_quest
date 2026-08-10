@@ -39,7 +39,7 @@ import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, 
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
-import { learnedFamilyIds, loadJourney } from './journey'
+import { learnedFamilyIds, loadJourney, journeySaveHealthy } from './journey'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
@@ -571,6 +571,21 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
         <ParentalGate onOpen={() => setOpen(true)} />
       ) : (
         <div className="mt-6 flex flex-col gap-5">
+          {/* Storage is full or blocked: the child can still play, but nothing
+              they do is being kept. Silence here meant a parent found out only
+              once a week of progress had already vanished. */}
+          {!journeySaveHealthy() && (
+            <div
+              role="alert"
+              className="rounded-2xl p-3.5 text-sm font-bold"
+              style={{ background: 'var(--bad-soft)', color: 'var(--bad-ink)', border: '2px solid var(--bad)' }}
+            >
+              {t(
+                'gpSaveFailed',
+                'This device is not saving progress right now - storage may be full, or turned off for this site. Play still works, but today will not be kept. Freeing up space usually fixes it.',
+              )}
+            </div>
+          )}
           {/* totals */}
           <div className="grid grid-cols-3 gap-3">
             {[

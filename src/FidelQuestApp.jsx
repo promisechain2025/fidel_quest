@@ -2936,7 +2936,9 @@ function InstallBanner() {
     <AnimatePresence>
       <motion.div
         key="install"
-        className="fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-lg items-center gap-3 rounded-2xl p-3 shadow-lg"
+        // bottom-24, not bottom-3: at z-40 over the z-30 power bar this banner
+        // covered "My step" - the only primary action - on the very first open.
+        className="fixed inset-x-3 bottom-24 z-40 mx-auto flex max-w-lg items-center gap-3 rounded-2xl p-3 shadow-lg"
         style={{ background: 'var(--card)', border: '2px solid var(--accent)' }}
         initial={{ y: 60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
