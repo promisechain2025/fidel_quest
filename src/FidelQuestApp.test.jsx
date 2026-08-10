@@ -26,6 +26,7 @@ import FidelQuestApp, {
   warmupRequired,
   DUE_BACKLOG_GATE,
 } from './FidelQuestApp'
+import { isDecodable } from './platform/words'
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -387,5 +388,39 @@ describe('warm-up policy: the memory schedule can summon a review (P1)', () => {
 
   it("honours a parent's always-warm-up plan setting", () => {
     expect(warmupRequired({ planRequires: true, troubleCount: 0, dueCount: 0 })).toBe(true)
+  })
+})
+
+describe('decodable practice: never widen to text the child cannot read (P1)', () => {
+  const learnedAfter = (n) => new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+  const decodableCount = (n) => WORDS.filter((w) => isDecodable(w.geez, learnedAfter(n))).length
+
+  // Documents a LINGUISTIC limit, not a data bug: a family owns seven forms of
+  // one consonant, and no real Amharic word is spellable from a single family.
+  // Any future attempt to make every hero word decodable at its own family
+  // index is chasing something that cannot exist - this test says so out loud.
+  it('has no decodable word at all until the fourth family', () => {
+    expect(decodableCount(1)).toBe(0)
+    expect(decodableCount(3)).toBe(0)
+    expect(decodableCount(4)).toBeGreaterThan(0)
+  })
+
+  // The old rule was `dec.length >= 6 ? dec : base`, so a child holding 4 or 5
+  // families - two thirds of the way through chapter 1 - was handed the FULL
+  // word list and could only guess from the picture. The pool must now shrink
+  // instead, which is only viable if a decodable set exists from family 4 on.
+  it('always has something decodable to shrink to, from family 4 onward', () => {
+    for (let n = 4; n <= FIDEL_FAMILIES.length; n++) {
+      expect(decodableCount(n)).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('never shrinks the decodable set as the child learns more', () => {
+    let prev = 0
+    for (let n = 1; n <= FIDEL_FAMILIES.length; n++) {
+      const c = decodableCount(n)
+      expect(c).toBeGreaterThanOrEqual(prev)
+      prev = c
+    }
   })
 })

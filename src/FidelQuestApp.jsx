@@ -4651,16 +4651,24 @@ export const twinWords = () => WORDS.filter((w) => twinSiblingOf(FIDEL_FAMILIES[
 
 export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false }) {
   const [ctx, dispatch] = useReducer(machineReducer, undefined, () => {
-    // Prefer the words the child can actually READ (decodable from the
-    // learned families); when too few for a queue, the full voiced list
-    // keeps the game rich. The 'all letters' scope opens everything.
-    // Twin Drill: only words from twin families, so every question is the
-    // spelling choice Ethiopian schools teach by word (ሰላም takes ሰ, not ሠ).
+    // Only words the child can actually READ (decodable from the learned
+    // families). The 'all letters' scope opens everything. Twin Drill: only
+    // words from twin families, so every question is the spelling choice
+    // Ethiopian schools teach by word (ሰላም takes ሰ, not ሠ).
     const learned = new Set(learnedFamilyIds(loadJourney()))
     const base = twinsOnly ? twinWords() : WORDS
     const dec = getScope() === SCOPES.ALL ? base : base.filter((w) => isDecodable(w.geez, learned))
-    const pool = dec.length >= 6 ? dec : base
-    return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, twinsOnly ? 8 : 6, pool) } }).next
+    // SHRINK the round rather than widening to text the child cannot read.
+    // The old rule (`dec.length >= 6 ? dec : base`) silently handed a beginner
+    // the FULL word list at exactly the point decodable practice matters most,
+    // so the learner who most needed decodable text was the one guaranteed not
+    // to get it - they guess from the picture instead of decoding. Beginning
+    // readers must practise on correspondences already taught; four real words
+    // beat six guessable ones. `base` survives only for a child who has learned
+    // nothing yet, where there is no decodable set to draw on at all.
+    const pool = dec.length ? dec : base
+    const count = Math.min(twinsOnly ? 8 : 6, Math.max(2, pool.length))
+    return transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: 'words', seed, queue: buildWordQueue(seed, count, pool) } }).next
   })
   useEffect(() => { sayPrompt(twinsOnly ? 'whichGlyph' : 'tapPicture', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const question = selectQuestion(ctx)
