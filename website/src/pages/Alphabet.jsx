@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Printer, X } from 'lucide-react'
-import { Section, Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { FAMILIES, ORDER_NAMES, GEEZ_ORDER_NAMES, ORDER_VOWELS } from '../fidelData.js'
 import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
@@ -30,12 +31,12 @@ export default function Alphabet() {
 
   return (
     <>
-      <Seo title="The Fidel alphabet chart - all 231 letters - eGeez" description="The full interactive Ge'ez script chart: 33 consonant families in 7 vowel orders, searchable and printable." path="/alphabet" />
+      <Seo title="The Fidel alphabet chart - all 231 letters - eGeez" description="The full interactive Amharic fidel chart: 33 consonant families in 7 vowel orders, searchable and printable." path="/alphabet" />
       <div className="mx-auto max-w-5xl px-5 pt-12 text-center sm:px-6 print:hidden">
         <Reveal>
-          <h1 className="display-1 mx-auto max-w-2xl">{t('alTitle', 'All 231 letters, one page')}</h1>
+          <h1 className="display-1 mx-auto max-w-2xl">{t('alTitle', 'All 231 Amharic letters, one page')}</h1>
           <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-            {t('alLede', 'The fidel is a syllabary: 33 consonant families, each in 7 vowel orders. Read a row left to right and you can hear the vowel change. Tap any letter to see it big.')}
+            {t('alLede', 'The fidel is a syllabary: Amharic uses 33 consonant families, each in 7 vowel orders. Read a row left to right and you can hear the vowel change. Tap any letter to see it big. (Tigrinya adds one more family, ቐ - a Tigrinya chart is coming.)')}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <input
@@ -67,7 +68,7 @@ export default function Alphabet() {
 
       {/* chart */}
       <section className="print-chart mx-auto max-w-5xl px-5 py-10 sm:px-6">
-        <h2 className="hidden text-center text-xl font-black print:block">eGeez - the Fidel chart (33 families x 7 orders)</h2>
+        <h2 className="hidden text-center text-xl font-black print:block">eGeez - the Amharic Fidel chart (33 families x 7 orders)</h2>
         <div className="overflow-x-auto">
           <table className="mx-auto border-separate" style={{ borderSpacing: 4 }}>
             <thead>
@@ -138,7 +139,7 @@ export default function Alphabet() {
 
       <Section center className="print:hidden" mark="ፊ">
         <Card wash className="mx-auto max-w-2xl text-center">
-          <img src="/art/anbessa-happy.png" width={84} height={84} alt="" aria-hidden="true" className="mx-auto" />
+          <Picture src="/art/anbessa-happy.png" width={84} height={84} alt="" aria-hidden="true" className="mx-auto" />
           <h2 className="display-3 mt-2">{t('alCtaT', 'A chart shows letters. The app makes them stick.')}</h2>
           <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             {t('alCtaB', 'Every one of these letters is voiced, traced, played, and reviewed inside the eGeez journey - ten joyful minutes a day.')}
@@ -146,6 +147,15 @@ export default function Alphabet() {
           <div className="mt-5"><CtaButton href={APP_URL} tone="gold">{t('alCtaBtn', 'Start the free try-out')}</CtaButton></div>
         </Card>
       </Section>
+
+      <div className="print:hidden">
+        <GuideLinks
+          slugs={['the-fidel-explained', 'amharic-alphabet-for-kids']}
+          eyebrow={t('alGuidesE', 'Understand the chart')}
+          title={t('alGuidesT', 'How to read what you are looking at')}
+          mark="ሀ"
+        />
+      </div>
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { licenseState, markAsked, grantFeedbackGrace, markSupported, redeemAppCode, daysSince, TRIAL_DAYS, FEEDBACK_GRACE_DAYS, APP_PRICE } from './license'
+import { licenseState, markAsked, grantFeedbackGrace, markSupported, redeemAppCode, daysSince, dailyPass, startDailyPass, fullAccess, TRIAL_DAYS, DAILY_PASS_MINUTES, FEEDBACK_GRACE_DAYS, APP_PRICE } from './license'
 import { mintAppCode, isValidAppCode } from './appCodes'
 
 // The trial exists when monetization is ON and the platform can sell:
@@ -122,5 +122,82 @@ describe('license (honest free trial)', () => {
     resetEverything()
     expect(localStorage.getItem('fq.license.v1')).not.toBeNull()
     expect(web('2026-08-01').phase).toBe('ended')
+  })
+})
+
+/* ── the daily free window ───────────────────────────────────────────────
+   After the trial the app is not a wall: DAILY_PASS_MINUTES of everything,
+   once a day, forever. It is what a family who cannot pay still gets, and
+   what lets anyone demo the whole app to a friend on the spot. */
+describe('daily free window (after the trial)', () => {
+  beforeEach(() => localStorage.clear())
+
+  const T0 = 1_760_000_000_000 // fixed epoch ms; nothing here reads the clock
+  const ended = { phase: 'ended', daysLeft: 0, shouldAsk: true, feedbackAvailable: true }
+  const min = (n) => n * 60000
+
+  it('starts closed, with today unused', () => {
+    const p = dailyPass('2026-08-01', T0)
+    expect(p.active).toBe(false)
+    expect(p.available).toBe(true)
+    expect(p.msLeft).toBe(0)
+  })
+
+  it('opens for exactly DAILY_PASS_MINUTES and then closes', () => {
+    startDailyPass('2026-08-01', T0)
+    expect(dailyPass('2026-08-01', T0).msLeft).toBe(min(DAILY_PASS_MINUTES))
+    expect(dailyPass('2026-08-01', T0 + min(DAILY_PASS_MINUTES) - 1).active).toBe(true)
+    expect(dailyPass('2026-08-01', T0 + min(DAILY_PASS_MINUTES)).active).toBe(false)
+    expect(dailyPass('2026-08-01', T0 + min(DAILY_PASS_MINUTES)).msLeft).toBe(0)
+  })
+
+  it('tapping again does not buy more time', () => {
+    startDailyPass('2026-08-01', T0)
+    const again = startDailyPass('2026-08-01', T0 + min(3))
+    expect(again.msLeft).toBe(min(DAILY_PASS_MINUTES) - min(3))
+    expect(again.available).toBe(false)
+  })
+
+  it('is one per calendar day, and comes back the next day', () => {
+    startDailyPass('2026-08-01', T0)
+    const late = dailyPass('2026-08-01', T0 + min(60))
+    expect(late.active).toBe(false)
+    expect(late.available).toBe(false) // used up today
+    expect(dailyPass('2026-08-02', T0 + min(60)).available).toBe(true)
+  })
+
+  it('a device clock pushed backwards cannot stretch the window', () => {
+    startDailyPass('2026-08-01', T0)
+    expect(dailyPass('2026-08-01', T0 - min(600)).msLeft).toBe(min(DAILY_PASS_MINUTES))
+  })
+
+  it('survives a reload (it is wall-clock, not session, based)', () => {
+    startDailyPass('2026-08-01', T0)
+    const raw = localStorage.getItem('fq.license.v1')
+    localStorage.setItem('fq.license.v1', raw) // as a fresh load would read it
+    expect(dailyPass('2026-08-01', T0 + min(2)).msLeft).toBe(min(3))
+  })
+
+  it('fullAccess: open during the window, shut before and after it', () => {
+    expect(fullAccess('2026-08-01', T0, ended)).toBe(false)
+    startDailyPass('2026-08-01', T0)
+    expect(fullAccess('2026-08-01', T0 + min(1), ended)).toBe(true)
+    expect(fullAccess('2026-08-01', T0 + min(DAILY_PASS_MINUTES), ended)).toBe(false)
+  })
+
+  it('fullAccess is always true while licensed or still in the trial', () => {
+    const trial = { phase: 'trial', daysLeft: 2, shouldAsk: false, feedbackAvailable: true }
+    const paid = { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
+    expect(fullAccess('2026-08-01', T0, trial)).toBe(true)
+    expect(fullAccess('2026-08-01', T0, paid)).toBe(true)
+  })
+
+  it('the window does not touch the trial clock or the purchase flag', () => {
+    const before = web('2026-07-10')
+    startDailyPass('2026-07-10', T0)
+    expect(web('2026-07-10').phase).toBe(before.phase)
+    expect(web('2026-07-10').daysLeft).toBe(before.daysLeft)
+    markSupported('code')
+    expect(web('2026-07-10').phase).toBe('licensed')
   })
 })

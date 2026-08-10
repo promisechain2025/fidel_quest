@@ -16,11 +16,11 @@
 import { FIDEL_FAMILIES, getActivePackId, PACKS } from './platform/ethiopic'
 import { masteredCount } from './platform/srs'
 import { progressChanged } from './platform/childModel'
-import { STORIES } from './platform/stories'
+import { packHasStories } from './platform/stories'
 
 /* Story nodes exist only when the active pack ships stories (module-level
    like the family table itself; pack switching reloads the app). */
-const PACK_HAS_STORIES = STORIES.some((s) => s.pack === getActivePackId())
+const PACK_HAS_STORIES = packHasStories()
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson

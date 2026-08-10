@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
 import { APP_URL } from './config.js'
 import { t, currentLang, setLang } from './i18n.js'
@@ -43,49 +42,63 @@ export function BrandMark({ size = 36, className = '' }) {
 }
 
 export function LetterTile({ ch, size = 44, className = '', float = false, delay = 0 }) {
-  const reduce = useReducedMotion()
   const tile = (
     <span className={`lt geez ${className}`} style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">
       {ch}
     </span>
   )
-  if (reduce || !float) return tile
+  if (!float) return tile
+  // .lt-float is CSS (tokens.css); reduced motion is handled there.
+  return <span className="lt-float" style={{ '--lt-delay': `${delay}s` }}>{tile}</span>
+}
+
+/** Scroll-reveal wrapper - once, subtle, honors reduced motion (in CSS).
+    Plain IntersectionObserver: this was the only reason framer-motion sat on
+    the landing critical path. If the observer is missing, the content shows
+    immediately - never hidden by a failure. */
+export function Reveal({ children, delay = 0, className = '' }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    if (typeof IntersectionObserver === 'undefined') { el.classList.add('is-in'); return undefined }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        // Also reveal anything the reader has already scrolled PAST: a fast
+        // flick can coalesce into a single "not intersecting" delivery, and a
+        // section that has been and gone must not stay invisible.
+        const past = e.boundingClientRect.bottom < (e.rootBounds?.top ?? 0)
+        if (e.isIntersecting || past) { e.target.classList.add('is-in'); io.unobserve(e.target) }
+      }
+    }, { rootMargin: '200px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
-    <motion.span
-      initial={{ opacity: 0, y: 18, rotate: -4 }}
-      animate={{ opacity: 1, y: [0, -5, 0], rotate: 0 }}
-      transition={{
-        opacity: { duration: 0.4, delay },
-        rotate: { duration: 0.4, delay },
-        y: { delay: delay + 0.5, duration: 3.2 + delay, repeat: Infinity, ease: 'easeInOut' },
-      }}
-      className="inline-block"
-    >
-      {tile}
-    </motion.span>
+    <div ref={ref} className={`reveal ${className}`} style={delay ? { '--reveal-delay': `${delay}s` } : undefined}>
+      {children}
+    </div>
   )
 }
 
-/** Scroll-reveal wrapper - once, subtle, honors reduced motion. */
-export function Reveal({ children, delay = 0, className = '' }) {
-  const reduce = useReducedMotion()
-  if (reduce) return <div className={className}>{children}</div>
+/** <picture> with a WebP source and the original PNG as the fallback.
+    Every raster in public/ has a matching .webp generated at the size it
+    actually renders, which is where the page weight was going: the hero shot
+    alone was a 160 kB PNG painted into a 298px box. `pic` is
+    display:contents so the wrapper never disturbs the layout. */
+export function Picture({ src, alt = '', className = '', ...rest }) {
+  const webp = src.replace(/\.png$/, '.webp')
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, delay, ease: [0.21, 0.68, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
+    <picture className="pic">
+      <source srcSet={webp} type="image/webp" />
+      <img src={src} alt={alt} className={className} {...rest} />
+    </picture>
   )
 }
 
 export function CtaButton({ href, to, onClick, children, tone = 'gold', external = false, className = '', type, disabled = false }) {
   const styles = tone === 'green'
-    ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
+    ? { background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
     : tone === 'ghost'
       ? { background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }
       : { background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)' }
@@ -100,7 +113,7 @@ export function Section({ eyebrow, title, children, center = false, className = 
   return (
     <section className={`watermark mx-auto w-full max-w-5xl px-5 py-14 sm:px-6 md:py-20 ${className}`} data-mark={mark}>
       <Reveal>
-        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent)' }}>{eyebrow}</div>}
+        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent-text)' }}>{eyebrow}</div>}
         {title && <h2 className={`display-2 mt-2 ${center ? 'text-center' : ''}`}>{title}</h2>}
       </Reveal>
       <div className="mt-7 md:mt-9">{children}</div>
@@ -129,14 +142,26 @@ export function Field({ label, children }) {
 export const inputCls = 'w-full rounded-xl px-4 py-3 text-[16px]'
 export const inputStyle = { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }
 
+/* HEADER nav: only the destinations a visitor is actually choosing between.
+   Nine links plus a theme toggle and a CTA overflowed into a second row at
+   every desktop width from 1024 to 1440 - "For teachers" wrapped, which is
+   what pushed the bar to 89px tall. The logo is Home, and Family/About live
+   in the footer, so nothing here costs a destination. */
 const NAV = [
-  ['/', 'Home'],
   ['/amharic', 'Amharic'],
   ['/tigrinya', 'Tigrinya'],
   ['/alphabet', 'Alphabet'],
-  ['/teachers', 'For teachers'],
+  ['/teachers', 'Teachers'],
   ['/homeschool', 'Homeschool'],
+  ['/guides', 'Guides'],
   ['/pricing', 'Pricing'],
+]
+
+/* The full map, for the footer and the mobile sheet - both have the room,
+   so trimming the header never makes a page unreachable. */
+const ALL_NAV = [
+  ['/', 'Home'],
+  ...NAV,
   ['/family', 'Family'],
   ['/about', 'About'],
 ]
@@ -154,26 +179,46 @@ function useTheme() {
     the close button. */
 function MobileMenu({ open, onClose, dark, setDark }) {
   const closeRef = useRef(null)
+  const panelRef = useRef(null)
   useEffect(() => {
     if (!open) return undefined
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     closeRef.current?.focus()
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    // aria-modal claims the rest of the page is unavailable, so Tab must not
+    // walk out of the overlay into the header and hero behind it.
+    const root = document.getElementById('root')
+    if (root) { root.setAttribute('aria-hidden', 'true'); root.inert = true }
+    const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const onKey = (e) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Tab') return
+      const items = [...(panelRef.current?.querySelectorAll(FOCUSABLE) || [])].filter((el) => el.offsetParent !== null)
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+      if (root) { root.removeAttribute('aria-hidden'); root.inert = false }
+    }
   }, [open, onClose])
-  // Portal to <body>: the header's backdrop-filter creates a containing
-  // block, which would trap this fixed overlay inside the header's box.
+  // Portal to <body>: keeps this fixed overlay out of the header's stacking
+  // context entirely. (It was required when the header used backdrop-filter,
+  // which created a containing block; it stays because a sticky, shadowed
+  // ancestor is still the wrong place to anchor a full-screen sheet.)
   return createPortal(
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex flex-col lg:hidden"
+        <div
+          className="menu-in fixed inset-0 z-50 flex flex-col lg:hidden"
           style={{ background: 'var(--paper)' }}
           role="dialog" aria-modal="true" aria-label="Menu"
+          ref={panelRef}
         >
           <Tibeb />
           <div className="flex items-center justify-between px-5 py-3">
@@ -186,21 +231,19 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <nav className="flex flex-1 flex-col justify-center gap-1 px-7" aria-label="Main">
-            {NAV.map(([to, label], i) => (
-              <motion.div key={to}
-                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 + i * 0.045, duration: 0.3 }}>
+            {ALL_NAV.map(([to, label], i) => (
+              <div key={to} className="menu-item" style={{ '--i': i }}>
                 <NavLink to={to} end={to === '/'} onClick={onClose}
                   className="block rounded-xl px-3 py-3.5 text-2xl font-black"
                   style={({ isActive }) => ({ color: isActive ? 'var(--accent)' : 'var(--ink)' })}>
                   {t(to, label)}
                 </NavLink>
-              </motion.div>
+              </div>
             ))}
           </nav>
           <div className="flex items-center gap-3 px-7 pb-10">
             <a href={APP_URL} className="chunk flex-1 px-4 py-3.5 text-center text-base"
-              style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
+              style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
               {t('openApp', 'Open the app')}
             </a>
             <LangToggle className="border-2 p-3" />
@@ -211,9 +254,9 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <Tibeb />
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>,
+    </>,
     document.body,
   )
 }
@@ -222,8 +265,21 @@ export function Header() {
   const [dark, setDark] = useTheme()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { pathname } = useLocation()
-  useEffect(() => { setOpen(false); window.scrollTo(0, 0) }, [pathname])
+  const { pathname, hash } = useLocation()
+  // A deep link with a fragment (/teachers#apply) must not be yanked back
+  // to the top; and because routes are lazy the target usually does not
+  // exist yet on a cold load, so retry briefly until it mounts.
+  useEffect(() => {
+    setOpen(false)
+    if (!hash) { window.scrollTo(0, 0); return undefined }
+    let tries = 0
+    const id = setInterval(() => {
+      const el = document.querySelector(hash)
+      if (el) { el.scrollIntoView(); clearInterval(id) }
+      else if (++tries > 20) clearInterval(id)
+    }, 50)
+    return () => clearInterval(id)
+  }, [pathname, hash])
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
@@ -235,10 +291,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40"
       style={{
-        background: 'color-mix(in srgb, var(--paper) 90%, transparent)',
-        backdropFilter: 'blur(10px)',
+        // Opaque on purpose. At 90% the page slid visibly underneath - the
+        // tibeb border and headings read straight through the bar - and the
+        // blur did not hide it against high-contrast content.
+        background: 'var(--paper)',
         borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
-        transition: 'border-color .2s ease',
+        boxShadow: scrolled ? '0 6px 20px -12px rgba(0,0,0,0.45)' : 'none',
+        transition: 'border-color .2s ease, box-shadow .2s ease',
       }}>
       <Tibeb />
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-4 sm:px-6"
@@ -253,7 +312,7 @@ export function Header() {
           <button type="button" onClick={() => setDark(!dark)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} className="rounded-lg p-2" style={{ color: 'var(--muted)' }}>
             {dark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
           </button>
-          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
+          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
         </nav>
         <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
           className="ml-auto rounded-xl p-2.5 lg:hidden" style={{ color: 'var(--ink)' }}>
@@ -268,21 +327,35 @@ export function Header() {
 function NewsletterRow() {
   const [email, setEmail] = useState('')
   const [done, setDone] = useState(false)
+  const [error, setError] = useState('')
+  const [mailto, setMailto] = useState(false)
   const [busy, setBusy] = useState(false)
   const submit = async (e) => {
     e.preventDefault()
     setBusy(true)
     try {
+      setError('')
       const { submitForm } = await import('./api.js')
-      await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
+      const r = await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
+      setMailto(!!r?.mailto)
       setDone(true)
-    } catch { /* keep the row usable */ } finally { setBusy(false) }
+    } catch (e) {
+      // Silently swallowing this told the visitor they had signed up when
+      // nothing had been recorded.
+      setError(e.message || 'Could not sign you up. Please try again.')
+    } finally { setBusy(false) }
   }
   if (done) {
-    return <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{t('nlThanks', 'You are in - we write rarely and only when it matters.')}</p>
+    return (
+      <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>
+        {mailto
+          ? t('nlMailto', 'Your email app should have opened - send that message and you are in.')
+          : t('nlThanks', 'You are in - we write rarely and only when it matters.')}
+      </p>
+    )
   }
   return (
-    <form onSubmit={submit} className="flex w-full max-w-sm items-stretch gap-2">
+    <form onSubmit={submit} className="flex w-full max-w-sm flex-wrap items-stretch gap-2">
       <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
         placeholder={t('nlPlaceholder', 'Email for launch news')} aria-label={t('nlLabel', 'Email for launch news')}
         className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[16px]"
@@ -291,6 +364,7 @@ function NewsletterRow() {
         style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)', minHeight: 44 }}>
         {busy ? '…' : t('nlJoin', 'Join')}
       </button>
+      {error && <p role="alert" className="w-full text-xs font-bold" style={{ color: 'var(--danger)' }}>{error}</p>}
     </form>
   )
 }
@@ -300,7 +374,7 @@ export function Footer() {
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex min-w-0 items-start gap-4">
-          <img src="/art/anbessa-happy.png" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
+          <Picture src="/art/anbessa-happy.png" loading="lazy" decoding="async" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-lg font-black">
               <BrandMark size={26} /> eGeez
@@ -312,13 +386,13 @@ export function Footer() {
           </div>
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
-          {NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
+          {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
           <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
           <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
         </nav>
       </div>
-      <p className="pb-6 text-center text-xs opacity-60" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
+      <p className="pb-6 text-center text-xs" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
       <Tibeb />
     </footer>
   )

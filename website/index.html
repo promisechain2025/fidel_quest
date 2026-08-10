@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>eGeez — Learn Amharic and Tigrinya, guided from anywhere</title>
     <meta name="description" content="A learning home for Amharic and Tigrinya: the eGeez app for kids, tools for remote teachers, and resources for homeschooling families - wherever in the world they live." />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <!-- 32px PNG, not the 63 kB icon.svg: this is a 16px tab icon. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#1b2233" media="(prefers-color-scheme: dark)" />
@@ -14,15 +15,18 @@
     <meta property="og:site_name" content="eGeez" />
     <meta property="og:title" content="eGeez — Learn Amharic and Tigrinya, guided from anywhere" />
     <meta property="og:description" content="A joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling families." />
-    <meta property="og:image" content="https://www.easygeez.com/og.png" />
+    <meta property="og:image" content="https://easygeez.com/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preload" href="/fonts/nunito-var.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- The hero letter tiles are Ethiopic; without this the face is only
+         discovered once the CSS parses, making it the slowest asset. -->
+    <link rel="preload" href="/fonts/noto-sans-ethiopic-900.woff2" as="font" type="font/woff2" crossorigin />
     <script type="application/ld+json">
       {"@context":"https://schema.org","@graph":[
-        {"@type":"Organization","name":"eGeez","url":"https://www.easygeez.com","logo":"https://www.easygeez.com/icon-512.png"},
-        {"@type":"WebSite","name":"eGeez","url":"https://www.easygeez.com"}
+        {"@type":"Organization","name":"eGeez","url":"https://easygeez.com","logo":"https://easygeez.com/icon-512.png"},
+        {"@type":"WebSite","name":"eGeez","url":"https://easygeez.com"}
       ]}
     </script>
     <script>
@@ -33,6 +37,7 @@
         document.documentElement.dataset.theme = dark ? 'dark' : 'light'
       } catch (e) { /* default */ }
     </script>
+      <noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
   </head>
   <body>
     <div id="root"></div>

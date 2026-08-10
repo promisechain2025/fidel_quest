@@ -60,6 +60,7 @@ export function _resetRateLimits() { buckets.clear() }
 
 export function rateLimit({ windowMs = 15 * 60 * 1000, max = 20, key = 'rl' } = {}) {
   return (req, res, next) => {
+    // req.ip follows 'trust proxy'; when that is off it is the real peer.
     const id = `${key}:${req.ip}`
     const now = Date.now()
     let b = buckets.get(id)

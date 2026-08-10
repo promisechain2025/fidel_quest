@@ -5,6 +5,10 @@ import { requireAdminToken, rateLimit, isEmail, str } from '../middleware.js'
 import { cleanSubjectTags, isSubject } from '../subjects.js'
 
 const router = Router()
+
+/* The waitlist language is echoed back to the owner, so it is an allow-list
+   rather than free text an anonymous caller can choose. */
+const WAITLIST_LANGS = new Set(['ti', 'am', 'en', 'news'])
 const formLimit = rateLimit({ max: 20, key: 'forms' })
 // The public board is unauthenticated and each call fans out per-teacher, so
 // it gets its own generous-but-present limiter (was unthrottled).
@@ -41,12 +45,12 @@ router.post('/waitlist', formLimit, async (req, res, next) => {
   try {
     const entry = {
       email: str(req.body?.email, 254).toLowerCase(),
-      language: str(req.body?.language, 24) || 'ti',
+      language: WAITLIST_LANGS.has(str(req.body?.language, 24)) ? str(req.body?.language, 24) : 'ti',
       name: str(req.body?.name, 120),
     }
     if (!isEmail(entry.email)) return res.status(400).json({ error: 'A valid email is required' })
     const saved = await store.addWaitlistEntry(entry)
-    notifyOwner(`New ${entry.language} waitlist signup - eGeez`, [`Email: ${entry.email}`, entry.name && `Name: ${entry.name}`])
+    notifyOwner('New waitlist signup - eGeez', [`Language: ${entry.language}`, `Email: ${entry.email}`, entry.name && `Name: ${entry.name}`])
     res.status(201).json({ ok: true, id: String(saved._id) })
   } catch (err) { next(err) }
 })

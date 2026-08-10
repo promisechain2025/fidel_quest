@@ -4,10 +4,18 @@ import { connect } from './store.js'
 import { createApp } from './app.js'
 
 const { backend } = await connect()
-if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+if (!process.env.JWT_SECRET && !process.env.ALLOW_EPHEMERAL_JWT_SECRET) {
   // Without a fixed secret, config.js mints a random one per boot, so every
-  // restart/instance silently invalidates all sessions. Refuse to start.
-  console.error('FATAL: JWT_SECRET must be set in production (a per-boot random secret logs everyone out on restart).')
+  // restart/instance silently invalidates all sessions. This used to be
+  // gated on NODE_ENV === 'production', which several hosts never set -
+  // so the unsafe path was the quiet default. Now dev must opt in.
+  console.error('FATAL: set JWT_SECRET, or ALLOW_EPHEMERAL_JWT_SECRET=1 for a throwaway dev secret.')
+  process.exit(1)
+}
+if (process.env.STRIPE_SECRET_KEY && !process.env.SITE_URL) {
+  // Checkout builds success/cancel URLs from SITE_URL; unset, it defaults to
+  // localhost and a paying customer never reaches the page with their code.
+  console.error('FATAL: SITE_URL must be set when STRIPE_SECRET_KEY is - checkout would redirect buyers to localhost.')
   process.exit(1)
 }
 if (process.env.STRIPE_SECRET_KEY && backend === 'memory') {

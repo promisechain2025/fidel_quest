@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
-import { Section, Card, CtaButton, LetterTile, Tibeb, Reveal } from '../components.jsx'
+import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
+import AppGallery from '../components/AppGallery.jsx'
 import { APP_URL } from '../config.js'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
@@ -59,7 +60,7 @@ export default function Home() {
             </div>
             <h1 className="display-1">
               {t('heroTitle', 'Their language. Their story.')}{' '}
-              <span style={{ color: 'var(--accent)' }}>{t('heroTitle2', 'Learned at home.')}</span>
+              <span style={{ color: 'var(--accent-text)' }}>{t('heroTitle2', 'Learned at home.')}</span>
             </h1>
             <p className="lede mx-auto mt-5 max-w-xl md:mx-0" style={{ color: 'var(--muted)' }}>
               {t('heroLede', 'eGeez is a learning home for every family that wants its children to read Amharic or Tigrinya - wherever in the world they live: a joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling. The first step toward learning every subject, together.')}
@@ -68,14 +69,14 @@ export default function Home() {
               <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start the free try-out')}</CtaButton>
               <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
             </div>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Try free, then $12.99 once - on every platform. Ages 3-9.')}</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Free to download, free for 3 days, then $12.99 once. Ages 3-9.')}</p>
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
-          <img src="/art/anbessa-cheer.png" width={150} height={150} alt="" aria-hidden="true"
+          <Picture src="/art/anbessa-cheer.png" width={150} height={150} alt="" aria-hidden="true"
             className="absolute -left-16 -top-10 z-10 hidden w-[130px] md:block lg:w-[150px]" />
           <div className="phone">
-            <img src="/shots/app-journey.png" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
+            <Picture src="/shots/app-journey.png" fetchPriority="high" width={780} height={1688} alt={t('heroShotAlt', 'The eGeez journey: a winding path of golden letter tiles')} loading="eager" />
           </div>
         </Reveal>
       </div>
@@ -89,6 +90,13 @@ export default function Home() {
 
       {/* the two languages */}
       <Section eyebrow={t('langsEyebrow', 'Two languages, one script')} title={t('langsTitle', 'Start with the fidel your family speaks')} center mark="ፊ">
+        {/* The whole product rests on a word many visitors do not know - and
+            on a brand name that is a pun on it. Say both, once, plainly. */}
+        <Reveal>
+          <p className="mx-auto mb-6 max-w-2xl text-center text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+            {t('fidelWhat', 'Amharic and Tigrinya are both written in the fidel - the Ge’ez script (say it "GUH-ez"). It is a syllabary, not an alphabet: each of the 33 Amharic letter families has seven forms, one per vowel, which is how 33 letters become 231. That script is where eGeez gets its name.')}
+          </p>
+        </Reveal>
         <div className="grid gap-5 md:grid-cols-2">
           <Reveal>
             <Card wash className="h-full">
@@ -100,7 +108,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-                {t('amBlurb', 'A complete journey: all 231 letters, first words, decodable stories, tracing, songs, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
+                {t('amBlurb', 'A complete journey: all 231 letters, first words, read-along stories, tracing, chants, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
               </p>
               <div className="mt-5"><CtaButton to="/amharic" tone="gold">{t('amCta', 'See the Amharic journey')}</CtaButton></div>
             </Card>
@@ -111,7 +119,7 @@ export default function Home() {
                 <LetterTile ch="ት" size={46} />
                 <div>
                   <h3 className="display-3">{t('tiCard', 'Tigrinya')} · <span className="geez">ትግርኛ</span></h3>
-                  <p className="text-xs font-black" style={{ color: 'var(--accent)' }}>{t('tiStatus', 'Foundations now · full course coming')}</p>
+                  <p className="text-xs font-black" style={{ color: 'var(--accent-text)' }}>{t('tiStatus', 'Foundations now · full course coming')}</p>
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
@@ -157,6 +165,16 @@ export default function Home() {
         </div>
       </Section>
 
+      {/* Three real screens between the vision block and the trust band -
+          the page went from a wall of prose straight into a wall of stats.
+          The full six-screen arc lives on /amharic. */}
+      <Section mark="ዐ" eyebrow={t('seeE', 'A look inside')} title={t('seeT', 'This is what your child sees')} center>
+        <AppGallery pack="am" keys={['learn', 'trace', 'words']} className="mx-auto max-w-2xl" />
+        <div className="mt-8 text-center">
+          <CtaButton to="/amharic" tone="ghost">{t('seeCta', 'See a whole week of it')}</CtaButton>
+        </div>
+      </Section>
+
       {/* honest trust band - facts, not testimonials */}
       <div className="mx-auto max-w-5xl px-5 pb-2 sm:px-6">
         <Reveal>
@@ -165,10 +183,10 @@ export default function Home() {
               ['231', t('tb1', 'letters taught, all voiced')],
               ['100%', t('tb2', 'works offline - any phone')],
               ['0', t('tb3', 'ads. Zero child data collected')],
-              ['1x', t('tb4', 'pay once - web and stores')],
+              ['1x', t('tb4', 'pay once - never twice')],
             ].map(([big, small], i) => (
               <div key={i} className="rounded-2xl px-4 py-5 text-center" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
-                <div className="text-3xl font-black" style={{ color: 'var(--accent)' }}>{big}</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--accent-text)' }}>{big}</div>
                 <div className="mt-1 text-xs font-bold leading-snug" style={{ color: 'var(--muted)' }}>{small}</div>
               </div>
             ))}
@@ -176,11 +194,39 @@ export default function Home() {
         </Reveal>
       </div>
 
+      {/* The objections that actually stop a parent. Every answer here is
+          checkable against the app: the pace numbers come from the plan
+          settings (1/2/4 letter families a week), the free-forever content
+          from journey.js, the daily window from license.js. */}
+      <Section eyebrow={t('faqE', 'Before you start')} title={t('faqT', 'The questions parents actually ask')} center mark="ጥ">
+        <div className="mx-auto grid max-w-3xl gap-4">
+          {[
+            [t('hqQ1', 'I cannot read the fidel myself. Can I still do this with my child?'),
+             t('hqA1', 'Yes - that is who it is built for. All 231 letters are real recordings, and any word can be tapped to hear it, so the app does the teaching out loud and your child never needs you to sound anything out. The grown-ups corner then tells you in plain English what was learned, what is fading, and what to do next. Plenty of parents pick up the letters alongside their child.')],
+            [t('hqQ2', 'How long does it take to learn all of it?'),
+             t('hqA2', 'You choose the pace in the app: one letter family a week is a gentle school year, two a week gets through all 33 Amharic families in about four months, and four a week in about two. Ten minutes a day is the whole ask - the daily warm-up reviews exactly what is starting to fade, so nothing needs cramming.')],
+            [t('hqQ3', 'What happens when the 3 free days are over?'),
+             t('hqA3', 'The first two letter families and the first arcade game stay free forever, and one tap opens the entire app for 5 more free minutes every single day - no payment, no account, for as long as you like. The buy prompt appears at most once a day, behind a grown-up gate, and always has a "Not now". A child is never stopped in the middle of a lesson.')],
+            [t('hqQ4', 'Does my child need to speak Amharic or Tigrinya already?'),
+             t('hqA4', 'No. It starts at the sound of a single letter and builds up - first letters, then first words with pictures, then short stories read along with the voice. Children who speak only English at home start at exactly the same place as children who hear Amharic every day.')],
+            [t('hqQ5', 'Is it safe to hand my child the phone with this open?'),
+             t('hqA5', 'There are no ads, no chat, and no account to create. Nothing about your child leaves the device - progress lives in the phone itself. Everything that leaves the app or costs money (buying, sharing, settings) sits behind a hold-and-answer gate a young child cannot pass. And it works fully offline, so it is the same app on a plane as it is at home.')],
+          ].map(([q, a], i) => (
+            <Reveal key={i} delay={i * 0.05}>
+              <Card>
+                <h3 className="font-black">{q}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{a}</p>
+              </Card>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
       {/* teacher band */}
       <div className="mx-auto max-w-5xl px-5 pb-6 sm:px-6">
         <Reveal>
           <Card wash className="relative overflow-hidden text-center">
-            <img src="/art/kokeb.png" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
+            <Picture src="/art/kokeb.png" loading="lazy" decoding="async" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
             <BookOpen className="mx-auto h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />
             <h2 className="display-2 mt-3">{t('teachBandT', 'Do you teach Amharic or Tigrinya?')}</h2>
             <p className="lede mx-auto mt-2 max-w-xl" style={{ color: 'var(--muted)' }}>

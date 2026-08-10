@@ -13,11 +13,21 @@ import { store } from './store.js'
 export function createApp({ stripeClient } = {}) {
   if (stripeClient) setStripeClient(stripeClient)
   const app = express()
-  app.set('trust proxy', 1)
-  // The owner panel is a single inline-scripted page; it registers BEFORE
-  // helmet so the default CSP (script-src 'self') does not blank it. The
-  // page holds no data - every fetch inside it still needs the admin token.
-  app.get('/admin', async (_req, res) => {
+  // Only when the deploy really sits behind a proxy - see config.trustProxy.
+  if (config.trustProxy) {
+    const n = Number(config.trustProxy)
+    app.set('trust proxy', Number.isFinite(n) && String(n) === config.trustProxy ? n : config.trustProxy)
+  }
+  // The owner panel is a single inline-scripted page, so it gets helmet with
+  // a CSP that permits its own inline script - rather than (as before) being
+  // mounted ahead of helmet, which left the one page that handles the admin
+  // token with no CSP, no frame protection and a leaked X-Powered-By.
+  app.get('/admin', helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: { scriptSrc: ["'unsafe-inline'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null },
+    },
+  }), async (_req, res) => {
     const { ADMIN_HTML } = await import('./adminPage.js')
     res.type('html').send(ADMIN_HTML)
   })
@@ -38,8 +48,15 @@ export function createApp({ stripeClient } = {}) {
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
-    console.error('[api:error]', err.message)
-    res.status(500).json({ error: 'Something went wrong' })
+    // express.json rejects malformed/oversized bodies with err.status set.
+    // Reporting those as 500 both misleads the client and buries real
+    // server faults in the error log.
+    const status = err.status || err.statusCode || 500
+    if (status >= 500) console.error('[api:error]', err.message)
+    const msg = status === 413 ? 'Request body too large'
+      : status === 400 ? 'Malformed request body'
+      : 'Something went wrong'
+    res.status(status).json({ error: msg })
   })
   return app
 }

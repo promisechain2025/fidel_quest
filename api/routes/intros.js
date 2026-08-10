@@ -12,7 +12,7 @@ import { requireAuth, requireVerified, rateLimit, str } from '../middleware.js'
 
 const router = Router()
 const limit = rateLimit({ max: 60, key: 'intros' })
-const siteUrl = () => (process.env.SITE_URL || 'https://egeez.app').replace(/\/$/, '')
+const siteUrl = () => (process.env.SITE_URL || 'https://easygeez.com').replace(/\/$/, '')
 
 /** Parent asks for an introduction to an approved teacher. */
 router.post('/teachers/:id/intros', requireAuth, requireVerified, limit, async (req, res, next) => {

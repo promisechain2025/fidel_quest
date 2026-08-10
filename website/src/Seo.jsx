@@ -2,11 +2,9 @@
    Site-wide Organization/WebSite JSON-LD lives statically in index.html. */
 import { useEffect } from 'react'
 
-// The live marketing site. egeez.app was never registered (NXDOMAIN), so
-// every canonical URL and share card pointed at a host that does not exist.
-const SITE = 'https://www.easygeez.com'
+const SITE = 'https://easygeez.com'
 
-export default function Seo({ title, description, path = '/', jsonLd = null }) {
+export default function Seo({ title, description, path = '/', jsonLd = null, noindex = false }) {
   useEffect(() => {
     document.title = title
     const ensure = (selector, create) => {
@@ -27,6 +25,38 @@ export default function Seo({ title, description, path = '/', jsonLd = null }) {
       const m = document.createElement('meta'); m.setAttribute('property', 'og:title'); return m
     })
     og.content = title
+    // og:description / og:url / twitter:* used to keep index.html's generic
+    // values on every route, so every shared link looked like the homepage.
+    const metaProp = (prop, content) => {
+      const el = ensure(`meta[property="${prop}"]`, () => {
+        const m = document.createElement('meta'); m.setAttribute('property', prop); return m
+      })
+      const prev = el.content
+      el.content = content
+      return () => { el.content = prev }
+    }
+    const metaName = (name, content) => {
+      const el = ensure(`meta[name="${name}"]`, () => {
+        const m = document.createElement('meta'); m.name = name; return m
+      })
+      const prev = el.content
+      el.content = content
+      return () => { el.content = prev }
+    }
+    const restore = [
+      metaProp('og:description', description),
+      metaProp('og:url', SITE + path),
+      metaName('twitter:title', title),
+      metaName('twitter:description', description),
+    ]
+    // Thin, transactional or error pages must not compete in search.
+    let robots = null
+    if (noindex) {
+      robots = document.createElement('meta')
+      robots.name = 'robots'
+      robots.content = 'noindex, follow'
+      document.head.appendChild(robots)
+    }
     let script = null
     if (jsonLd) {
       script = document.createElement('script')
@@ -34,7 +64,12 @@ export default function Seo({ title, description, path = '/', jsonLd = null }) {
       script.textContent = JSON.stringify(jsonLd)
       document.head.appendChild(script)
     }
-    return () => { desc.content = prevDesc; if (script) script.remove() }
-  }, [title, description, path, jsonLd])
+    return () => {
+      desc.content = prevDesc
+      for (const undo of restore) undo()
+      if (robots) robots.remove()
+      if (script) script.remove()
+    }
+  }, [title, description, path, jsonLd, noindex])
   return null
 }

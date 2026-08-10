@@ -20,7 +20,7 @@
      entitlements: full_app, family_pack (attached to the store products;
      put both packages in the current offering - packages are matched by
      product identifier substring 'family' vs anything else).
-   Setup runbook for the owner: docs/family-pack-iap.md.
+   Setup runbook for the owner: docs/store-purchases-iap.md.
 
    The plugin is loaded via dynamic import so the web bundle never carries
    it and a plugin failure can never break app start.

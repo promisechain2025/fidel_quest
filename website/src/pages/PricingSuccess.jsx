@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { Copy, Check, Mail } from 'lucide-react'
-import { Card, CtaButton, Reveal } from '../components.jsx'
+import { Card, CtaButton, Picture, Reveal } from '../components.jsx'
 import { API_URL, APP_URL, CONTACT_EMAIL } from '../config.js'
 import { t } from '../i18n.js'
+import Seo from '../Seo.jsx'
 
 const STEPS = {
   app: [
@@ -27,7 +28,8 @@ export default function PricingSuccess() {
   const [copied, setCopied] = useState(false)
   const tries = useRef(0)
 
-  useEffect(() => { document.title = 'Your unlock code - eGeez' }, [])
+  // Keyed on a Stripe session id, so it is per-buyer and must not be indexed.
+
 
   useEffect(() => {
     if (!sessionId || !API_URL) {
@@ -41,11 +43,16 @@ export default function PricingSuccess() {
       try {
         const res = await fetch(`${API_URL}/api/pay/order/${encodeURIComponent(sessionId)}`)
         const json = await res.json().catch(() => ({}))
+        // 400/404 is the API's final answer - retrying it only made the
+        // visitor stare at "Usually a second or two" for 21 seconds.
+        if (res.status === 400 || res.status === 404) {
+          setState((s) => ({ ...s, status: 'error', error: json.error || t('fpsNotFound', 'We could not find this order. Check the email receipt for your code.') }))
+          return
+        }
         if (res.ok && json.status === 'paid' && json.code) {
           setState({ status: 'done', code: json.code, product: json.product || 'app', error: '' })
           return
         }
-        if (res.status === 404 || res.status === 400) throw new Error(t('fpsNotFound', 'We could not find this order.'))
       } catch (err) {
         if (tries.current > 8) { setState((s) => ({ ...s, status: 'error', error: err.message })); return }
       }
@@ -66,8 +73,9 @@ export default function PricingSuccess() {
 
   return (
     <div className="mx-auto max-w-xl px-5 pb-10 pt-12 text-center sm:px-6 md:pt-16">
+      <Seo title="Your unlock code - eGeez" description="Your eGeez purchase is complete. Copy your unlock code and enter it in the app to open the whole journey." path="/pricing/success" noindex />
       <Reveal>
-        <img src="/art/anbessa-cheer.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
+        <Picture src="/art/anbessa-cheer.png" width={120} height={120} alt="" aria-hidden="true" className="mx-auto" />
         <h1 className="display-2 mt-4">{t('fpsTitle', 'Thank you! Anbessa is cheering.')}</h1>
       </Reveal>
 

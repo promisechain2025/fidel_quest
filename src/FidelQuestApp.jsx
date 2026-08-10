@@ -63,7 +63,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
-import { licenseState, markAsked, MONETIZE } from './platform/license'
+import { licenseState, markAsked, dailyPass, startDailyPass, fullAccess, DAILY_PASS_MINUTES, MONETIZE } from './platform/license'
 import { loadProfiles, switchProfile, profileLabel } from './platform/profiles'
 import { useChildModel, useAppDay } from './platform/childModel'
 import { progressChanged } from './platform/childModel'
@@ -93,6 +93,7 @@ function armAssignmentReminder(assignment) {
     })
   }
 }
+import { packHasStories } from './platform/stories'
 import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
@@ -104,6 +105,12 @@ import Dropdown from './components/Dropdown'
 // first-load network, before the SW has cached the chunk) retries a few times
 // with backoff instead of throwing straight to the ErrorBoundary and leaving
 // that feature unreachable until the app is restarted.
+/** ms -> "4:07" for the daily-window countdown. */
+function fmtClock(ms) {
+  const s = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
 function lazyRetry(factory, tries = 3) {
   return lazy(() => {
     let n = 0
@@ -1133,6 +1140,21 @@ export default function FidelQuestApp() {
     const lic = licenseState(dayKey)
     if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
   }, [dayKey, childVer])
+  // Whatever the child reached for when the gate stopped them. Taking the
+  // daily 5 minutes runs it straight away, so the ask never costs a tap.
+  const pendingPaidRef = useRef(null)
+  const askToBuy = useCallback((retry) => {
+    pendingPaidRef.current = typeof retry === 'function' ? retry : null
+    setAskSupport(true)
+  }, [])
+  // Today's free window: a live countdown while it runs, so nobody is
+  // surprised by it closing. Only ticks while open - no idle timer.
+  const [pass, setPass] = useState(() => dailyPass())
+  useEffect(() => {
+    if (!pass.active) return undefined
+    const id = setInterval(() => setPass(dailyPass()), 1000)
+    return () => clearInterval(id)
+  }, [pass.active])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
   // Teacher assignments opened from links wait in fq.assign.v1 until done -
   // several can be pending at once (two teachers, or a make-up plus this week).
@@ -1299,17 +1321,19 @@ export default function FidelQuestApp() {
   const gated = useCallback(
     (fn) => () => {
       setBackpackOpen(false)
-      if (licenseState().phase === 'ended') return setAskSupport(true)
+      // askToBuy carries the retry, so the child lands on what they tapped
+      // once a grown-up unlocks it rather than back on an empty tray.
+      if (!fullAccess()) return askToBuy(fn)
       fn()
     },
-    [],
+    [askToBuy],
   )
 
   const openNode = useCallback((node, opts = {}) => {
     // Paid app: after the trial ends, only the free taste opens (first two
     // families + the chapter-1 gateway). Anything else asks to buy or gift.
-    if (licenseState().phase === 'ended' && !isNodeFree(node)) {
-      setAskSupport(true)
+    if (!fullAccess() && !isNodeFree(node)) {
+      askToBuy(() => openNodeRef.current?.(node, opts))
       return
     }
     // Games come AFTER the day's warm-up: kids rush to the arcade, so the
@@ -1366,7 +1390,11 @@ export default function FidelQuestApp() {
       })
     }
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
-  }, [setScreen, dueBacklog])
+  }, [setScreen, askToBuy, dueBacklog])
+  // Lets the gate above retry itself once the daily window opens, without
+  // openNode having to depend on (and re-create) itself.
+  const openNodeRef = useRef(null)
+  useEffect(() => { openNodeRef.current = openNode }, [openNode])
 
   return (
     <MotionConfig reducedMotion="user">
@@ -1883,10 +1911,29 @@ export default function FidelQuestApp() {
         <AnimatePresence>
           {askSupport && (
             <Suspense fallback={null}>
-              <SupportAsk key="support" onClose={() => setAskSupport(false)} />
+              <SupportAsk
+                key="support"
+                onClose={() => { pendingPaidRef.current = null; setAskSupport(false) }}
+                onPass={() => {
+                  setPass(startDailyPass())
+                  setAskSupport(false)
+                  const go = pendingPaidRef.current
+                  pendingPaidRef.current = null
+                  go?.()
+                }}
+              />
             </Suspense>
           )}
         </AnimatePresence>
+        {/* The window is open: say so, and say how long is left. Home only -
+            a ticking clock over a lesson would rush a child. */}
+        {pass.active && screen.name === 'home' && (
+          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex justify-center px-4">
+            <div className="rounded-full px-4 py-1.5 text-sm font-black" style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)' }}>
+              {t('passLeft', 'Everything open - {m} left', { m: fmtClock(pass.msLeft) })}
+            </div>
+          </div>
+        )}
         <AnimatePresence>
           {warmupNudge && (
             <WarmupNudge
@@ -2834,7 +2881,10 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
             <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
             <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
-            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            {/* Stories only exist for packs that ship them - no empty room. */}
+            {packHasStories() && (
+              <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            )}
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {

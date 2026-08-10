@@ -22,40 +22,43 @@
   --tile-deep: #c68d12;
   --glyph: #7c4f00;
   --danger: #f2846a;
+  /* --accent as TEXT; the fill colour is not always readable as a label. */
+  --accent-text: #e2c069;
+  /* The focus ring must clear 3:1 against whatever it sits on (WCAG 1.4.11).
+     --sky measured 2.13:1 on --card here, i.e. effectively invisible. */
+  --focus: #ffcb33;
   --wash: rgba(226, 192, 105, 0.05);
-  /* Focus ring: must clear WCAG 1.4.11 (3:1) on --paper AND --card.
-     The old --sky ring fails on dark (2.65:1 / 2.13:1). */
-  --focus: #e2c069;
 }
 :root[data-theme="light"] {
   --paper: #f7edcf;
   --paper-2: #e5d2a4;
   --ink: #3c3529;
-  --muted: #6f6040;
+  --muted: #5c4f34;
   --card: #fffaf0;
   --line: #e7dab2;
   --accent: #c99a33;
   --accent-deep: #9c7420;
+  --accent-text: #6f4f0a;
   --star: #f0b400;
   --go: #59a52a;
   --go-deep: #3f7a1e;
   --go-soft: #d7ffb8;
-  --go-ink: #4e9020;
+  --go-ink: #3f7a1e;
   --sky: #3f63a0;
+  --focus: #3f63a0;
   --tile: #ffc61f;
   --tile-deep: #d99e12;
   --glyph: #7c4f00;
   --danger: #b23b2e;
   --wash: rgba(124, 79, 0, 0.05);
-  --focus: #9c7420;  /* 3.64:1 paper / 4.09:1 card */
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #6f6040;
+    --paper: #f7edcf; --paper-2: #e5d2a4; --ink: #3c3529; --muted: #5c4f34;
     --card: #fffaf0; --line: #e7dab2; --accent: #c99a33; --accent-deep: #9c7420;
-    --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #4e9020; --tile: #ffc61f;
+    --accent-text: #6f4f0a; --focus: #3f63a0;
+    --star: #f0b400; --go-soft: #d7ffb8; --go-ink: #3f7a1e; --tile: #ffc61f;
     --tile-deep: #d99e12; --danger: #b23b2e; --wash: rgba(124, 79, 0, 0.05);
-    --focus: #9c7420;
   }
 }
 
@@ -148,6 +151,67 @@ body {
 .wash { background: linear-gradient(160deg, var(--wash), transparent 55%); }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+
+/* Skip link: off-screen until focused, then a real button at the top left. */
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  padding: 0.6rem 1rem; font-weight: 900; border-radius: 0 0 10px 0;
+  background: var(--go-deep); color: #fff;
+}
+.skip-link:focus { left: 0; }
+
+/* <picture> wrapper must not become a layout box of its own. */
+.pic { display: contents; }
+
+/* ── Motion, in CSS ──────────────────────────────────────────────────────
+   These four effects were the whole reason framer-motion (42 kB gzip, a
+   third of the landing bundle) sat on the critical path. They are cheap
+   enough in CSS that the library is no longer a dependency. Every one is
+   disabled under prefers-reduced-motion at the bottom of this block. */
+
+/* Scroll reveal. Base state is HIDDEN, so the .is-in class (added by an
+   IntersectionObserver) is what shows it - with two safety nets below:
+   no-JS and no-IntersectionObserver both fall back to visible, because
+   content a crawler cannot see is worse than content that does not
+   animate. */
+.reveal { opacity: 0; transform: translateY(22px); }
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s cubic-bezier(0.21, 0.68, 0.36, 1),
+              transform 0.55s cubic-bezier(0.21, 0.68, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+/* The drifting letter tiles in the hero. */
+@keyframes lt-in { from { opacity: 0; transform: translateY(18px) rotate(-4deg); } to { opacity: 1; transform: none; } }
+@keyframes lt-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.lt-float {
+  display: inline-block;
+  animation: lt-in 0.4s ease-out both var(--lt-delay, 0s),
+             lt-float 3.2s ease-in-out infinite calc(var(--lt-delay, 0s) + 0.9s);
+}
+
+/* Route change and mobile-menu open. */
+@keyframes route-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.route-in { animation: route-in 0.22s ease-out both; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.menu-in { animation: fade-in 0.18s ease-out both; }
+@keyframes menu-item-in { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.menu-item { animation: menu-item-in 0.3s ease-out both; animation-delay: calc(0.05s + var(--i, 0) * 0.045s); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; }
+  .reveal.is-in { transition: none; }
+  .lt-float, .route-in, .menu-in, .menu-item { animation: none; }
+}
+
+/* Printing must never depend on having scrolled past something first - the
+   /alphabet chart is advertised as print-ready, and a section the observer
+   has not reached yet would otherwise print blank. */
+@media print {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
 
 /* Printable fidel chart (/alphabet): hide the site chrome, keep the table. */
 @media print {

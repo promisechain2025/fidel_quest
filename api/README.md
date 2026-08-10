@@ -8,7 +8,7 @@ database and secrets.
 ## What it does
 
 - **Accounts base** — `POST /api/auth/register`, `POST /api/auth/login`,
-  `GET /api/auth/me` (Bearer JWT, bcrypt, roles `parent` | `teacher`). The
+  `GET /api/auth/me` (Bearer JWT, scrypt password hashing, roles `parent` | `teacher`). The
   foundation the teacher directory and booking will build on.
 - **Teacher applications** — `POST /api/teachers/apply`
 - **Language waitlist** — `POST /api/waitlist` (defaults to `ti` Tigrinya)

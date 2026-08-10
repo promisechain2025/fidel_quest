@@ -76,7 +76,7 @@ export default function Terms() {
         unlocks your access by code across your devices. Purchases made through
         the Apple App Store or Google Play are also governed by that store's terms
         and refund policy. For purchases made on this website, refunds are handled
-        as described at [refund policy / window]; contact us for help.
+        as follows: a full refund on request within 14 days of purchase; contact us for help.
       </P>
 
       <H2>Introductions and off-platform arrangements</H2>

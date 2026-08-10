@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import crypto from 'node:crypto'
-import bcrypt from 'bcryptjs'
+import { hash as hashPassword, verify as verifyPassword, needsRehash, DUMMY_HASH } from '../password.js'
 import jwt from 'jsonwebtoken'
 import config from '../config.js'
 import { store } from '../store.js'
@@ -8,13 +8,15 @@ import { sendTo } from '../mailer.js'
 import { requireAuth, rateLimit, isEmail, str } from '../middleware.js'
 
 const router = Router()
+
+
 // Register/login share a tight bucket - that is the credential-guessing
 // surface. Email verification is a separate, low-risk action (token is
 // single-use and unguessable), so it gets its own looser budget rather than
 // eating into the brute-force allowance a shared IP already needs.
 const authLimit = rateLimit({ max: 10, key: 'auth' })
 const verifyLimit = rateLimit({ max: 30, key: 'verify' })
-const siteUrl = () => (process.env.SITE_URL || 'https://egeez.app').replace(/\/$/, '')
+const siteUrl = () => (process.env.SITE_URL || 'https://easygeez.com').replace(/\/$/, '')
 
 const publicUser = (u) => ({ id: String(u._id), name: u.name, email: u.email, role: u.role, emailVerified: !!u.emailVerified })
 const signToken = (u) => jwt.sign({ sub: String(u._id), email: u.email, role: u.role }, config.jwtSecret, { expiresIn: config.jwtExpiresIn })
@@ -34,7 +36,7 @@ router.post('/register', authLimit, async (req, res, next) => {
     // and raises the cost of throwaway accounts. Sensitive teacher actions
     // require it; basic browsing does not, so we still return a session.
     const verifyToken = crypto.randomBytes(24).toString('hex')
-    const user = await store.createUser({ name, email, passwordHash: await bcrypt.hash(password, 10), role, verifyToken })
+    const user = await store.createUser({ name, email, passwordHash: await hashPassword(password), role, verifyToken })
     sendTo(email, 'Confirm your email - eGeez', [
       `Welcome to eGeez, ${name}.`,
       '',
@@ -52,8 +54,17 @@ router.post('/login', authLimit, async (req, res, next) => {
     const email = str(req.body?.email, 254).toLowerCase()
     const password = typeof req.body?.password === 'string' ? req.body.password : ''
     const user = email && (await store.findUserByEmail(email))
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return res.status(401).json({ error: 'Wrong email or password' })
+    // Always pay the hashing cost. Skipping it for an unknown email makes
+    // login a timing oracle: a missing account answers ~60x faster than a
+    // real one, which enumerates the parent/teacher list.
+    const ok = user
+      ? await verifyPassword(password, user.passwordHash)
+      : (await verifyPassword(password, DUMMY_HASH), false)
+    if (!ok) return res.status(401).json({ error: 'Wrong email or password' })
+    // Quietly upgrade a legacy bcrypt hash now that we know the password is
+    // right. Failure here must never block a valid sign-in.
+    if (needsRehash(user.passwordHash) && store.updateUserPassword) {
+      try { await store.updateUserPassword(user._id ?? user.id, await hashPassword(password)) } catch { /* try again next login */ }
     }
     res.json({ token: signToken(user), user: publicUser(user) })
   } catch (err) { next(err) }
