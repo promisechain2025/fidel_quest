@@ -18,6 +18,7 @@ import {
   chapterComplete,
   REWARD_TABLE,
   NODE_BY_ID,
+  creditInsertedReviews,
 } from './journey'
 import { FIDEL_FAMILIES } from './platform/ethiopic'
 
@@ -218,5 +219,48 @@ describe('legacy migration (P1)', () => {
     const loaded = loadJourney()
     expect(loaded.done).toEqual({})
     expect(loaded.collection).toEqual({ owned: [], worn: {} })
+  })
+})
+
+describe('spacing legs and the returning-child migration (P1)', () => {
+  const reviews = () => JOURNEY.filter((n) => n.kind === NodeKind.REVIEW)
+
+  it('services the memory schedule far more than once a chapter', () => {
+    // Was 4 legs across the whole path - a rounding error against 231 forms.
+    expect(reviews().length).toBeGreaterThanOrEqual(16)
+    // Every chapter gets several, not just its closing leg.
+    for (const ch of [1, 2, 3, 4]) {
+      expect(reviews().filter((n) => n.chapter === ch).length).toBeGreaterThanOrEqual(4)
+    }
+  })
+
+  it('never puts two review legs back to back', () => {
+    const idx = reviews().map((n) => n.index)
+    for (let i = 1; i < idx.length; i++) expect(idx[i] - idx[i - 1]).toBeGreaterThan(1)
+  })
+
+  // The hazard: nodeUnlockedAt requires EVERY earlier node to be done, so a
+  // leg inserted behind a returning child would lock everything after it.
+  it('does not lock out a child who had already finished the path', () => {
+    const p = fresh()
+    for (const n of JOURNEY) if (n.kind !== NodeKind.REVIEW) p.done[n.id] = { stars: 3 }
+    const migrated = creditInsertedReviews(p)
+    const last = JOURNEY[JOURNEY.length - 1]
+    expect(nodeUnlocked(migrated, last)).toBe(true)
+  })
+
+  it('credits only ground already covered, never legs ahead of the child', () => {
+    const p = fresh()
+    const midReview = reviews()[1]
+    for (const n of JOURNEY) if (n.index <= midReview.index + 2 && n.kind !== NodeKind.REVIEW) p.done[n.id] = { stars: 3 }
+    const migrated = creditInsertedReviews(p)
+    expect(migrated.done[midReview.id]).toBeTruthy() // behind them: credited
+    const ahead = reviews().find((n) => n.index > midReview.index + 2)
+    expect(migrated.done[ahead.id]).toBeUndefined() // ahead: still real work
+  })
+
+  it('leaves a brand-new child untouched', () => {
+    const p = fresh()
+    expect(creditInsertedReviews(p)).toBe(p) // same object: nothing to credit
   })
 })

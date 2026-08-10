@@ -101,6 +101,14 @@ export function buildJourney() {
     fams.forEach((fid, i) => {
       push({ id: `learn:${fid}`, kind: NodeKind.LEARN, chapter, familyId: fid })
       if (i > 0) push({ id: `mix:${fid}`, kind: NodeKind.MIX, chapter, families: fams.slice(0, i + 1) })
+      // Spacing legs. One review per chapter gave the memory schedule four
+      // service points across the whole path - a rounding error against 231
+      // forms on an expanding interval. A leg every second family multiplies
+      // that by four. Skipped after the chapter's LAST family, because the
+      // chapter-closing review below already sits there.
+      if (i % 2 === 1 && i < fams.length - 1) {
+        push({ id: `review:${chapter}:${(i + 1) / 2}`, kind: NodeKind.REVIEW, chapter })
+      }
     })
     push({ id: `quiz:${chapter}`, kind: NodeKind.QUIZ, chapter, levelId: `level-${chapter}` })
     // Reading sits ON the motivational spine, not in a side pocket: after
@@ -136,10 +144,34 @@ function safeParse(key, fallback) {
   }
 }
 
+/* Credit review legs added BEHIND a returning child's progress.
+
+   nodeUnlockedAt requires every earlier node to be done, so inserting a review
+   into the middle of the path would collapse a finished journey into "do these
+   first" - a child who had reached chapter 4 would find everything after the
+   first new leg locked. Ground already covered is credited automatically;
+   reviews ahead of them stay real and must be played.
+
+   Pure, and idempotent: it is applied on every load rather than persisted, so
+   it stays correct no matter how many legs a later release inserts. */
+export function creditInsertedReviews(p) {
+  let furthest = -1
+  for (const n of JOURNEY) if (p.done[n.id] && n.index > furthest) furthest = n.index
+  if (furthest < 0) return p
+  let done = p.done
+  for (const n of JOURNEY) {
+    if (n.kind === NodeKind.REVIEW && n.index < furthest && !done[n.id]) {
+      if (done === p.done) done = { ...p.done }
+      done[n.id] = { stars: 3 }
+    }
+  }
+  return done === p.done ? p : { ...p, done }
+}
+
 export function loadJourney() {
   const raw = safeParse(JOURNEY_KEY, null)
   if (raw && raw.version === 1 && raw.done) {
-    return { version: 1, done: raw.done, collection: { ...emptyCollection(), ...(raw.collection || {}) } }
+    return creditInsertedReviews({ version: 1, done: raw.done, collection: { ...emptyCollection(), ...(raw.collection || {}) } })
   }
   // A record we cannot recognise - a newer build's shape reached by a store
   // rollback or a stale service worker, or a half-finished write - must never
