@@ -67,7 +67,7 @@ function Shell({ title, onBack, children, scroll = false }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="flex-1 text-center text-lg font-black">{title}</h1>
@@ -86,7 +86,7 @@ function CardGrid({ card, marked, winSet, onCell, buzz = -1, disabled = false, r
           key={i} type="button" onClick={() => onCell(i)} disabled={disabled}
           whileTap={reduce || disabled ? undefined : { scale: 0.93 }}
           animate={buzz === i && !reduce ? { x: [0, -5, 5, -4, 0] } : { x: 0 }} transition={{ duration: 0.3 }}
-          aria-label={formOf(key)?.sound || 'letter'} className={`relative rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--go)' }}
+          aria-label={formOf(key)?.sound || 'letter'} className={`relative rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--focus)' }}
         >
           <LetterTile glyph={formOf(key)?.char} state={marked[i] ? 'done' : 'current'} size={82} style={winSet && winSet.has(i) ? { boxShadow: '0 0 0 4px var(--go), 0 5px 0 var(--tile-deep)' } : undefined} />
           {marked[i] && (

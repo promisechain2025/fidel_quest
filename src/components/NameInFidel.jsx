@@ -48,7 +48,7 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -68,13 +68,13 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
           <p className="py-2 text-base font-bold" style={{ color: 'var(--muted)' }}>{t('nameHint', 'Pick a vowel sound below, then tap letters to spell your name.')}</p>
         )}
         <div className="mt-3 flex justify-center gap-2">
-          <button type="button" onClick={playAll} disabled={!letters.length} aria-label={t('namePlay', 'Hear the name')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--accent)' }}>
+          <button type="button" onClick={playAll} disabled={!letters.length} aria-label={t('namePlay', 'Hear the name')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--focus)' }}>
             <Volume2 className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button type="button" onClick={backspace} disabled={!letters.length} aria-label={t('nameBackspace', 'Remove last letter')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={backspace} disabled={!letters.length} aria-label={t('nameBackspace', 'Remove last letter')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             <Delete className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button type="button" onClick={clearAll} disabled={!letters.length} aria-label={t('nameClear', 'Clear')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={clearAll} disabled={!letters.length} aria-label={t('nameClear', 'Clear')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             <Eraser className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -86,8 +86,8 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
         <div className="mt-2 flex flex-wrap gap-2">
           {ORDERS.map((o) => (
             <button key={o.index} type="button" aria-pressed={order === o.index} onClick={() => setOrder(o.index)} className={`chunk min-w-[3rem] rounded-2xl px-3 py-2 text-center font-black ${FOCUS}`} style={order === o.index
-              ? { background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
-              : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+              ? { background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--focus)' }
+              : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
               {/* Show the pure vowel-bearer (the አ family): its seven forms ARE
                   the vowels, so they read as vowel sounds, not "ka, ku, ki...". */}
               <span className="geez block text-xl leading-none">{formOf(`a-${o.index}`)?.char}</span>
@@ -104,7 +104,7 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
           {FIDEL_FAMILIES.map((fam) => {
             const form = formOf(`${fam.id}-${order}`)
             return (
-              <button key={fam.id} type="button" onClick={() => append(fam)} aria-label={form?.sound || fam.name} className={`chunk flex aspect-square flex-col items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              <button key={fam.id} type="button" onClick={() => append(fam)} aria-label={form?.sound || fam.name} className={`chunk flex aspect-square flex-col items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                 <span className="geez text-2xl font-black leading-none" style={{ color: 'var(--ink)' }}>{form?.char}</span>
                 <span className="mt-0.5 text-[10px] font-bold leading-none" style={{ color: 'var(--muted)' }}>{form?.sound}</span>
               </button>
@@ -114,7 +114,7 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
       </div>
 
       {/* Share */}
-      <button type="button" onClick={share} disabled={busy || !letters.length} className={`chunk mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-50 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={share} disabled={busy || !letters.length} className={`chunk mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-50 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
         <Share2 className="h-5 w-5" aria-hidden="true" /> {t('nameShare', 'Share my name')}
       </button>
       <p className="mt-3 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>

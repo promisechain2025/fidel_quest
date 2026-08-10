@@ -12,8 +12,11 @@ import {
   stoneUnlocked,
   groupMastered,
   trayMix,
+  emptyTally,
+  tallyFirstTry,
+  tallyAccuracy,
 } from './LearnLetters'
-import { INDEXES, FIDEL_FAMILIES } from './FidelQuestApp'
+import { INDEXES, FIDEL_FAMILIES, starsForAccuracy } from './FidelQuestApp'
 
 const soundOf = (k) => INDEXES.byAudioKey.get(k).sound
 
@@ -172,5 +175,47 @@ describe('the path', () => {
     const g1families = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
     expect(groupMastered({ mastered: g1families, mixes: [] }, 1)).toBe(true)
     expect(groupMastered({ mastered: g1families, mixes: [] }, 2)).toBe(false)
+  })
+})
+
+describe('first-try tally: mastery is proficiency, not attendance (P1)', () => {
+  const run = (picks) => picks.reduce((t, [key, ok]) => tallyFirstTry(t, key, ok), emptyTally())
+
+  it('counts each asked form once, on the FIRST attempt only', () => {
+    // Missed ha-1, then got it on the retry. The retry is teaching, not
+    // evidence: the form stays scored as a miss.
+    const t = run([['ECHO:ha-1', false], ['ECHO:ha-1', true], ['ECHO:ha-1', true]])
+    expect(t.total).toBe(1)
+    expect(t.right).toBe(0)
+    expect(tallyAccuracy(t)).toBe(0)
+  })
+
+  it('scores a clean lesson at 100 and a rescued one far below', () => {
+    const aced = run([['ECHO:ha-1', true], ['ECHO:le-1', true], ['ECHO:me-1', true], ['ECHO:be-1', true]])
+    const rescued = run([['ECHO:ha-1', false], ['ECHO:le-1', false], ['ECHO:me-1', false], ['ECHO:be-1', true]])
+    expect(tallyAccuracy(aced)).toBe(100)
+    expect(tallyAccuracy(rescued)).toBe(25)
+    // The whole point: these two children must NOT record the same thing.
+    expect(starsForAccuracy(tallyAccuracy(aced))).toBe(3)
+    expect(starsForAccuracy(tallyAccuracy(rescued))).toBe(1)
+  })
+
+  it('treats the same form in different phases as separate evidence', () => {
+    const t = run([['FORWARD:ha-1', true], ['ECHO:ha-1', false]])
+    expect(t.total).toBe(2)
+    expect(t.right).toBe(1)
+  })
+
+  it('reports null - not 0% - when the lesson graded nothing', () => {
+    expect(tallyAccuracy(emptyTally())).toBeNull()
+    expect(tallyAccuracy()).toBeNull()
+  })
+
+  it('does not mutate the tally it is given', () => {
+    const before = emptyTally()
+    const after = tallyFirstTry(before, 'ECHO:ha-1', true)
+    expect(before.total).toBe(0)
+    expect(before.asked.size).toBe(0)
+    expect(after.total).toBe(1)
   })
 })

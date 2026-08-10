@@ -178,7 +178,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-8 pt-4">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div className="min-w-0">
@@ -220,7 +220,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
                   color: '#3c2a10',
                   border: '3px solid rgba(0,0,0,0.12)',
                   boxShadow: isFound ? '0 0 0 4px var(--star)' : '0 4px 0 rgba(0,0,0,0.15)',
-                  outlineColor: 'var(--sky)',
+                  outlineColor: 'var(--focus)',
                 }}
               >
                 {f.char}
@@ -247,7 +247,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
             onClick={() => targetForm && playForm(targetForm, soundOn)}
             aria-label={t('huntListen', 'Hear the sound again')}
             className={`chunk flex items-center gap-2 rounded-2xl px-4 py-2.5 font-black text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
+            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
           >
             <Volume2 className="h-5 w-5" aria-hidden="true" />
             <span className="mono">“{targetForm?.sound}”</span>
@@ -264,12 +264,12 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1.2, repeat: Infinity }}
               className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`}
-              style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+              style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
             >
               <Gift className="h-5 w-5" aria-hidden="true" /> {t('huntTreasure', 'Open the treasure')}
             </motion.button>
           ) : (
-            <button type="button" onClick={onBack} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onBack} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               {t('continue', 'Continue')}
             </button>
           )}

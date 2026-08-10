@@ -77,7 +77,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
           /* Adult-only actions behind the parental gate. */
           <div className="mt-4 flex flex-col items-center gap-2">
             <ParentalGate onOpen={() => setUnlocked(true)} intro={t('payGateIntro', 'This is for a grown-up: buying, gifting, or sending feedback.')} />
-            <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
               {t('dismiss', 'Not now')}
             </button>
           </div>
@@ -90,12 +90,12 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
             ) : (
               <>
                 {(iapAvailable() || buy) && (
-                  <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                     <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuyPrice', 'Buy the app - {p} once', { p: APP_PRICE })}
                   </button>
                 )}
                 {iapAvailable() && (
-                  <button type="button" onClick={doRestore} className={`flex items-center justify-center gap-1.5 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={doRestore} className={`flex items-center justify-center gap-1.5 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
                     <RefreshCcw className="h-4 w-4" aria-hidden="true" /> {t('payRestore', 'Restore a previous purchase')}
                   </button>
                 )}
@@ -114,16 +114,16 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
                     aria-label={t('payCodeLabel', 'Unlock code')}
                     autoCapitalize="characters" autoCorrect="off" spellCheck="false"
                     className={`min-w-0 flex-1 rounded-2xl px-4 py-3 text-base font-black tracking-widest ${FOCUS}`}
-                    style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                    style={{ background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
                   />
-                  <button type="button" onClick={doRedeem} className={`chunk flex items-center gap-1.5 rounded-2xl px-4 font-black ${FOCUS}`} style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={doRedeem} className={`chunk flex items-center gap-1.5 rounded-2xl px-4 font-black ${FOCUS}`} style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                     <KeyRound className="h-4 w-4" aria-hidden="true" /> {t('payRedeem', 'Unlock')}
                   </button>
                 </div>
                 {codeMsg === 'bad' && (
                   <p className="text-xs font-bold" role="alert" style={{ color: 'var(--bad-ink)' }}>{t('payCodeBad', 'That code does not look right - check it and try again.')}</p>
                 )}
-                <button type="button" onClick={shareWithFamily} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
+                <button type="button" onClick={shareWithFamily} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                   <Share2 className="h-5 w-5" aria-hidden="true" /> {t('payFamily', 'Ask family to gift it')}
                 </button>
                 <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>
@@ -131,7 +131,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
                 </p>
                 {canFeedback && (
                   <>
-                    <button type="button" onClick={feedback} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                    <button type="button" onClick={feedback} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                       <MessageCircle className="h-5 w-5" aria-hidden="true" /> {t('payFeedback', 'Not buying? Tell us honestly why')}
                     </button>
                     <p className="flex items-center justify-center gap-1 text-xs font-bold" style={{ color: 'var(--muted)' }}>
@@ -141,7 +141,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
                 )}
               </>
             )}
-            <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
               {thanked ? t('continue', 'Continue') : t('dismiss', 'Not now')}
             </button>
           </div>

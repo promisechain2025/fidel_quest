@@ -50,7 +50,7 @@ export default function FamilyVoice({ onBack }) {
   if (mode === 'gate') {
     return (
       <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
-        <button type="button" onClick={() => setMode('home')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => setMode('home')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <ParentalGate intro={t('fvGateIntro', 'Recording is for grown-ups — it uses the microphone.')} onOpen={() => setMode('record')} />
@@ -65,7 +65,7 @@ export default function FamilyVoice({ onBack }) {
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -95,7 +95,7 @@ export default function FamilyVoice({ onBack }) {
         </section>
 
         {/* Import */}
-        <button type="button" onClick={() => fileRef.current?.click()} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
+        <button type="button" onClick={() => fileRef.current?.click()} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
           <Upload className="h-5 w-5" aria-hidden="true" /> {t('fvImport', 'Import a voice')}
         </button>
         <input ref={fileRef} type="file" accept=".fidelvoice,application/json" className="hidden" onChange={onImport} />
@@ -108,7 +108,7 @@ export default function FamilyVoice({ onBack }) {
             {t('fvRecordBlurb', 'Record the letters in your own voice, then share the file with your child by WhatsApp. A grandparent far away can record for kids here — and the other way around.')}
           </p>
           {recordSupported() ? (
-            <button type="button" onClick={() => setMode('gate')} className={`chunk mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => setMode('gate')} className={`chunk mt-3 flex items-center gap-2 rounded-2xl px-4 py-3 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               <Mic className="h-5 w-5" aria-hidden="true" /> {t('fvRecordBtn', 'Record a new voice')}
             </button>
           ) : (
@@ -134,11 +134,11 @@ export default function FamilyVoice({ onBack }) {
 function VoiceChip({ label, sub, on, onClick, onDelete }) {
   return (
     <span className="inline-flex items-center overflow-hidden rounded-full" style={{ border: '2px solid', borderColor: on ? 'var(--go)' : 'var(--line)', background: on ? 'var(--go)' : 'var(--paper)' }}>
-      <button type="button" aria-pressed={on} onClick={onClick} className={`px-3 py-1.5 text-sm font-black ${FOCUS}`} style={{ color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--sky)' }}>
+      <button type="button" aria-pressed={on} onClick={onClick} className={`px-3 py-1.5 text-sm font-black ${FOCUS}`} style={{ color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--focus)' }}>
         {label}{sub ? <span className="ml-1 text-[11px] font-bold opacity-75">{sub}</span> : null}
       </button>
       {onDelete && (
-        <button type="button" aria-label={t('fvDelete', 'Delete voice')} onClick={onDelete} className={`px-2 py-1.5 ${FOCUS}`} style={{ color: on ? '#fff' : 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" aria-label={t('fvDelete', 'Delete voice')} onClick={onDelete} className={`px-2 py-1.5 ${FOCUS}`} style={{ color: on ? '#fff' : 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       )}
@@ -198,7 +198,7 @@ function RecordVoice({ onDone, onCancel }) {
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-28 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onCancel} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onCancel} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div className="flex-1">
@@ -212,7 +212,7 @@ function RecordVoice({ onDone, onCancel }) {
         type="text" value={name} onChange={(e) => setName(e.target.value.slice(0, 24))} maxLength={24}
         placeholder={t('fvNamePh', 'Whose voice? e.g. Grandma')} aria-label={t('fvNameLabel', "Voice name")}
         className={`mt-4 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
 
       <div className="mt-4 grid grid-cols-4 gap-2.5 sm:grid-cols-6">
@@ -228,7 +228,7 @@ function RecordVoice({ onDone, onCancel }) {
               style={{
                 background: rec ? 'var(--bad)' : has ? 'var(--go-soft)' : 'var(--card)',
                 border: '2px solid', borderColor: rec ? 'var(--bad)' : has ? 'var(--go)' : 'var(--line)',
-                color: rec ? '#fff' : has ? 'var(--go-ink)' : 'var(--ink)', opacity: dim ? 0.4 : 1, outlineColor: 'var(--sky)',
+                color: rec ? '#fff' : has ? 'var(--go-ink)' : 'var(--ink)', opacity: dim ? 0.4 : 1, outlineColor: 'var(--focus)',
               }}
               aria-label={slot.greeting ? t('fvGreetingSlot', 'Greeting') : `${slot.sound}${has ? ' recorded' : ''}`}
             >
@@ -244,10 +244,10 @@ function RecordVoice({ onDone, onCancel }) {
 
       {/* Sticky actions: use this voice here, or share the file with a child */}
       <div className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-xl gap-2 border-t-2 p-3" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
-        <button type="button" onClick={save} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={save} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
           <Check className="h-5 w-5" aria-hidden="true" /> {t('fvUseVoice', 'Use it here')}
         </button>
-        <button type="button" onClick={share} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={share} disabled={!canSave || busy} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px', opacity: canSave && !busy ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
           <Share2 className="h-5 w-5" aria-hidden="true" /> {t('fvShare', 'Share with a child')}
         </button>
       </div>

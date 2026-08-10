@@ -90,7 +90,7 @@ function ShareLinkButton({ url, text, label, tone = 'go', small = false }) {
     ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)' }
     : { background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)' }
   return (
-    <button type="button" onClick={() => shareUrl(url, text, copied2s)} className={`chunk flex items-center justify-center gap-2 rounded-2xl font-black text-white ${small ? 'px-3 py-2 text-xs' : 'px-4 py-3'} ${FOCUS}`} style={{ ...colors, '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+    <button type="button" onClick={() => shareUrl(url, text, copied2s)} className={`chunk flex items-center justify-center gap-2 rounded-2xl font-black text-white ${small ? 'px-3 py-2 text-xs' : 'px-4 py-3'} ${FOCUS}`} style={{ ...colors, '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
       <Share2 className={small ? 'h-4 w-4' : 'h-5 w-5'} aria-hidden="true" />
       {copied ? t('linkCopied', 'Link copied!') : label}
     </button>
@@ -110,7 +110,7 @@ function SectionCard({ icon, title, children, collapsible = false, defaultOpen =
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       {collapsible ? (
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex w-full items-center justify-between gap-2 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex w-full items-center justify-between gap-2 ${FOCUS}`} style={{ outlineColor: 'var(--focus)' }}>
           {heading}
           <ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--muted)' }} aria-hidden="true" />
         </button>
@@ -168,16 +168,16 @@ function CreateClassCard({ onCreated }) {
         id="tm-name" type="text" value={name} onChange={(e) => setName(e.target.value)} maxLength={16}
         placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
         className={`mt-1 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
       <label className="mt-3 block text-xs font-black" htmlFor="tm-code">{t('tmClassCode', 'Class code (4-12 letters or digits)')}</label>
       <input
         id="tm-code" type="text" value={code} onChange={(e) => setCode(e.target.value)} maxLength={12}
         placeholder={t('tmCodePh', 'e.g. STMARY1')}
         className={`mono mt-1 w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
-      <button type="button" onClick={create} disabled={!ok} className={`chunk mt-4 w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={create} disabled={!ok} className={`chunk mt-4 w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
         {t('tmCreate', 'Create class')}
       </button>
     </SectionCard>
@@ -219,10 +219,10 @@ function PerWeekInput({ current = null, onSet }) {
         placeholder={current ? String(current) : '5'}
         aria-label={t('tmPerWeekAny', 'Your own pace (1-10)')}
         className={`mono w-20 rounded-2xl border-2 px-3 py-2 text-center font-black ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
       <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('tmPerWeekUnit', 'families a week')}</span>
-      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
         {t('tmPerWeekSet', 'Set')}
       </button>
     </form>
@@ -265,7 +265,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {[1, 2, 3].map((n) => (
-            <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+            <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
               {t('tmPerWeek', '{n} families a week', { n })}
             </button>
           ))}
@@ -294,10 +294,10 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
                 <p className="mono text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{t('tmDueShort', 'due {date}', { date: ethioDay(weekDue(plan, i)) })}</p>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => onTv(familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={() => onTv(familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                   <Tv className="h-4 w-4" aria-hidden="true" /> {t('tmTeach', 'TV lesson')}
                 </button>
-                <button type="button" onClick={() => sendHomework(i, familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                <button type="button" onClick={() => sendHomework(i, familyIds)} className={`chunk flex items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                   <Share2 className="h-4 w-4" aria-hidden="true" /> {a ? t('tmShareAgain', 'Share link again') : t('tmHomework', 'Send homework')}
                 </button>
               </div>
@@ -313,8 +313,8 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
           <div className="flex flex-wrap gap-2">
             {[1, 2, 3].map((n) => (
               <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
-                ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
-                : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--focus)' }
+                : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {t('tmPerWeek', '{n} families a week', { n })}
               </button>
             ))}
@@ -322,7 +322,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
           <PerWeekInput current={plan.perWeek} onSet={(n) => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} />
         </div>
       ) : (
-        <button type="button" onClick={() => setChanging(true)} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+        <button type="button" onClick={() => setChanging(true)} className={`mt-2 px-1 text-xs font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--focus)' }}>
           {t('tmChangePace', 'Change pace')}
         </button>
       )}
@@ -388,7 +388,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
         {FIDEL_FAMILIES.map((f) => {
           const on = picked.includes(f.id)
           return (
-            <button key={f.id} type="button" aria-pressed={on} onClick={() => toggle(f.id)} title={f.name} className={`geez flex aspect-square items-center justify-center rounded-lg text-base font-black ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--paper)', color: on ? '#fff' : 'var(--ink)', border: `2px solid ${on ? 'var(--go)' : 'var(--line)'}`, outlineColor: 'var(--sky)' }}>
+            <button key={f.id} type="button" aria-pressed={on} onClick={() => toggle(f.id)} title={f.name} className={`geez flex aspect-square items-center justify-center rounded-lg text-base font-black ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--paper)', color: on ? '#fff' : 'var(--ink)', border: `2px solid ${on ? 'var(--go)' : 'var(--line)'}`, outlineColor: 'var(--focus)' }}>
               {Array.from(f.chars)[0]}
             </button>
           )
@@ -400,8 +400,8 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <div className="mt-1 flex gap-1.5">
             {[5, 8, 12, 20].map((n) => (
               <button key={n} type="button" aria-pressed={count === n} onClick={() => { setCount(n); setMade(null) }} className={`mono rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={count === n
-                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
-                : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+                : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {n}
               </button>
             ))}
@@ -412,8 +412,8 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <div className="mt-1 flex gap-1.5">
             {[[false, t('tmOrdersBase', 'Base letters')], [true, t('tmOrdersAll', 'All 7 forms')]].map(([v, label]) => (
               <button key={String(v)} type="button" aria-pressed={allOrders === v} onClick={() => { setAllOrders(v); setMade(null) }} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={allOrders === v
-                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
-                : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+                : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                 {label}
               </button>
             ))}
@@ -424,7 +424,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <input
             id="tm-due" type="date" value={due} onChange={(e) => { setDue(e.target.value); setMade(null) }}
             className={`mono mt-1 block rounded-2xl border-2 px-3 py-2 text-sm font-bold ${FOCUS}`}
-            style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+            style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
           />
         </div>
       </div>
@@ -432,7 +432,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
         {made ? (
           <ShareLinkButton url={made.url} text={t('asShareText', 'eGeez homework from your teacher:')} label={t('tmMakeLink', 'Share assignment link')} />
         ) : (
-          <button type="button" onClick={make} disabled={!picked.length} className={`chunk w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', opacity: picked.length ? 1 : 0.5, outlineColor: 'var(--accent)' }}>
+          <button type="button" onClick={make} disabled={!picked.length} className={`chunk w-full rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', opacity: picked.length ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
             {t('tmBuildLink', 'Build the link')}
           </button>
         )}
@@ -573,9 +573,9 @@ function CodeLock({ onOpen }) {
           placeholder={t('tmCodePh', 'e.g. STMARY1')}
           aria-label={t('tmLockTitle', 'Teacher area')}
           className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
-          style={{ background: 'var(--paper)', borderColor: wrong ? 'var(--bad)' : 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+          style={{ background: 'var(--paper)', borderColor: wrong ? 'var(--bad)' : 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
         />
-        <button type="button" onClick={tryOpen} disabled={!val.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: val.trim() ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={tryOpen} disabled={!val.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: val.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
           {t('tmLockOpen', 'Open')}
         </button>
       </div>
@@ -614,7 +614,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   return (
     <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -678,7 +678,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
                 // on its letter chooser so the teacher picks first.
                 const plan = cls?.plan || null
                 onTv(plan ? termWeeks(plan.perWeek).slice(0, currentWeekIndex(plan) + 1).flat() : null)
-              }} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              }} className={`chunk mt-3 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                 <Tv className="h-5 w-5" aria-hidden="true" /> {t('tmTvOpen', 'Open TV display')}
               </button>
             </SectionCard>
@@ -687,16 +687,16 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
 
             <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {!confirmRemove ? (
-                <button type="button" onClick={() => setConfirmRemove(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
+                <button type="button" onClick={() => setConfirmRemove(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--focus)' }}>
                   <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('tmRemove', 'Remove class and results…')}
                 </button>
               ) : (
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>{t('tmRemoveConfirm', 'Erase this class and all its results from this device?')}</p>
-                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); refresh() }} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); refresh() }} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                     {t('gpResetYes', 'Yes, erase')}
                   </button>
-                  <button type="button" onClick={() => setConfirmRemove(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={() => setConfirmRemove(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
                     {t('gpResetNo', 'Keep it')}
                   </button>
                 </div>

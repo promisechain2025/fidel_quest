@@ -134,7 +134,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   if (phase === 'gate') {
     return (
       <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
-        <button type="button" onClick={() => setPhase('ready')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => setPhase('ready')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <ParentalGate intro={t('pcGateIntro', 'Sending is for grown-ups — you pick who receives it.')} onOpen={send} />
@@ -145,7 +145,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -172,7 +172,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
               animate={phase === 'recording' ? { scale: [1, 1.06, 1] } : {}}
               transition={{ duration: 0.9, repeat: Infinity }}
               className={`flex h-32 w-32 flex-col items-center justify-center gap-1 rounded-full font-black text-white ${FOCUS}`}
-              style={{ background: phase === 'recording' ? 'var(--bad)' : 'var(--accent)', boxShadow: `0 6px 0 ${phase === 'recording' ? 'var(--bad-deep)' : 'var(--accent-deep)'}`, outlineColor: 'var(--sky)' }}
+              style={{ background: phase === 'recording' ? 'var(--bad)' : 'var(--accent)', boxShadow: `0 6px 0 ${phase === 'recording' ? 'var(--bad-deep)' : 'var(--accent-deep)'}`, outlineColor: 'var(--focus)' }}
               aria-label={phase === 'recording' ? t('pcStop', 'Stop') : t('pcRecord', 'Record')}
             >
               {phase === 'recording' ? <Square className="h-9 w-9" fill="currentColor" aria-hidden="true" /> : <Mic className="h-10 w-10" aria-hidden="true" />}
@@ -183,10 +183,10 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
           {(phase === 'ready' || phase === 'sending' || phase === 'sent') && (
             <>
               <div className="flex items-center gap-3">
-                <button type="button" onClick={replay} disabled={phase === 'sending'} aria-label={t('pcListen', 'Listen')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 5px 0 var(--sky-deep)', '--chunk-depth': '5px', outlineColor: 'var(--accent)' }}>
+                <button type="button" onClick={replay} disabled={phase === 'sending'} aria-label={t('pcListen', 'Listen')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 5px 0 var(--sky-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}>
                   <Play className="h-7 w-7" fill="currentColor" aria-hidden="true" />
                 </button>
-                <button type="button" disabled={phase === 'sending'} onClick={() => { setClip(null); setPhase('idle') }} aria-label={t('pcRedo', 'Record again')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                <button type="button" disabled={phase === 'sending'} onClick={() => { setClip(null); setPhase('idle') }} aria-label={t('pcRedo', 'Record again')} className={`chunk flex h-16 w-16 items-center justify-center rounded-full disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 5px 0 var(--line)', '--chunk-depth': '5px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
                   <RotateCcw className="h-7 w-7" aria-hidden="true" />
                 </button>
               </div>
@@ -197,7 +197,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
                 animate={phase === 'sent' || phase === 'sending' ? {} : { scale: [1, 1.04, 1] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
                 className={`chunk flex items-center gap-2 rounded-2xl px-7 py-3.5 text-lg font-black text-white disabled:opacity-60 ${FOCUS}`}
-                style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}
               >
                 <Send className="h-5 w-5" aria-hidden="true" /> {phase === 'sent' ? t('pcSendAgain', 'Send again') : t('pcSend', 'Send to family')}
               </motion.button>

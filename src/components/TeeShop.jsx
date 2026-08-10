@@ -70,7 +70,7 @@ export default function TeeShop({ stats, collection, onBack }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-12 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="text-xl font-black leading-tight">{t('teeTitle', 'Anbessa Tee Shop')}</h1>
@@ -91,7 +91,7 @@ export default function TeeShop({ stats, collection, onBack }) {
               onClick={() => unlocked && setPreview(design)}
               aria-label={unlocked ? `${teeName(design, lang)} — open` : `${teeName(design, lang)} — locked, learn ${design.unlock} letters`}
               className={`chunk relative flex flex-col items-center gap-2 rounded-3xl p-3 ${FOCUS}`}
-              style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--sky)', cursor: unlocked ? 'pointer' : 'default' }}
+              style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--focus)', cursor: unlocked ? 'pointer' : 'default' }}
             >
               <TeeCanvas design={design} forms={forms} worn={worn} size={140} dim={!unlocked} />
               <span className="text-center text-sm font-black leading-tight">{teeName(design, lang)}</span>
@@ -121,7 +121,7 @@ export default function TeeShop({ stats, collection, onBack }) {
             <motion.div role="dialog" aria-modal="true" aria-label={teeName(preview, lang)} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {preview.am}</span>}</h2>
-                <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
                   <X className="h-6 w-6" />
                 </button>
               </div>
@@ -134,7 +134,7 @@ export default function TeeShop({ stats, collection, onBack }) {
                   onClick={() => doOrder(preview)}
                   disabled={busy}
                   className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`}
-                  style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+                  style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
                 >
                   <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('teeOrder', 'Order a real shirt')}
                 </button>
@@ -143,7 +143,7 @@ export default function TeeShop({ stats, collection, onBack }) {
                   onClick={() => doSave(preview)}
                   disabled={busy}
                   className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-2.5 font-black disabled:opacity-60 ${FOCUS}`}
-                  style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+                  style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
                 >
                   <Download className="h-5 w-5" aria-hidden="true" /> {t('teeSave', 'Save the design')}
                 </button>

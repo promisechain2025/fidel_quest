@@ -76,7 +76,7 @@ export default function FidelMatch({ soundOn, onBack, pool = [] }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="flex-1 text-center text-lg font-black">{t('matchTitle', 'Find the pairs!')}</h1>
@@ -102,7 +102,7 @@ export default function FidelMatch({ soundOn, onBack, pool = [] }) {
                   whileTap={reduce || shown ? undefined : { scale: 0.92 }}
                   aria-label={shown ? glyphOf(card.key) : t('matchCardBack', 'Hidden card')}
                   className={`rounded-2xl ${FOCUS}`}
-                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: shown ? 'default' : 'pointer', outlineColor: 'var(--sky)' }}
+                  style={{ background: 'transparent', border: 'none', padding: 0, cursor: shown ? 'default' : 'pointer', outlineColor: 'var(--focus)' }}
                 >
                   {shown
                     ? <FidelCard glyph={glyphOf(card.key)} size={cardW} done={card.matched} />

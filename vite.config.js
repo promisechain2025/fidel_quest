@@ -65,7 +65,14 @@ export default defineConfig({
         // bloat the up-front install on the slow devices this app targets.
         // The runtime CacheFirst rule below still caches them after first play,
         // and offline reading degrades to word-by-word audio.
-        globIgnores: ['**/audio/fidel/stories/**'],
+        // ...and NOT the three.js bundle (~519KB raw / ~129KB gzip). It is
+        // already lazy at runtime, but the glob above swept it into the ATOMIC
+        // precache, so every user - including the low-end phones that are
+        // routed to the 2D arcade and will never mount WebGL - had to finish
+        // downloading a 3D engine before the app became offline-ready. Same
+        // all-or-nothing trap as the voice set above. The runtime rule below
+        // caches it on first actual 3D use instead.
+        globIgnores: ['**/audio/fidel/stories/**', '**/assets/three-vendor-*.js'],
         // The generated SW registers an SPA navigation fallback (every
         // navigation resolves to index.html). The /review page is a SEPARATE
         // static document, not part of the SPA, so it must be exempt — without
@@ -94,6 +101,18 @@ export default defineConfig({
               // Hold the whole voice set (letters + words, ~400 clips) now that
               // it caches at runtime rather than via the atomic precache.
               expiration: { maxEntries: 700, maxAgeSeconds: 60 * 60 * 24 * 60 },
+            },
+          },
+          {
+            // The 3D engine, excluded from the atomic precache above. A device
+            // that actually enters a 3D arcade caches it on first fetch and is
+            // then offline-capable for 3D too; a device that never does pays
+            // nothing. Content-hashed filename, so no expiry games needed.
+            urlPattern: /\/assets\/three-vendor-.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'three-vendor-v1',
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 180 },
             },
           },
         ],

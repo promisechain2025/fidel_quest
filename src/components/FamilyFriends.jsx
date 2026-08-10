@@ -25,7 +25,7 @@ function Btn({ children, onClick, tone = 'sky', disabled }) {
       onClick={onClick}
       disabled={disabled}
       className={`chunk w-full rounded-2xl py-3 text-base font-extrabold uppercase tracking-wide disabled:opacity-40 ${FOCUS}`}
-      style={{ background: bg, color: fg, boxShadow: `0 4px 0 ${edge}`, '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
+      style={{ background: bg, color: fg, boxShadow: `0 4px 0 ${edge}`, '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
     >
       {children}
     </button>
@@ -43,7 +43,7 @@ function Field({ label, value, onChange, placeholder, maxLength = 16 }) {
         placeholder={placeholder}
         maxLength={maxLength}
         className={`mt-1 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
     </label>
   )
@@ -88,7 +88,7 @@ export default function FamilyFriends({ onBack, lettersLearned = 0, nickname = '
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="mb-5 flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export default function FamilyFriends({ onBack, lettersLearned = 0, nickname = '
                 type="button"
                 onClick={() => { setTab(tName); setError('') }}
                 className={`rounded-2xl py-2 text-sm font-black uppercase tracking-wide ${FOCUS}`}
-                style={{ background: tab === tName ? 'var(--sky)' : 'var(--card)', color: tab === tName ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}
+                style={{ background: tab === tName ? 'var(--sky)' : 'var(--card)', color: tab === tName ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}
               >
                 {tName === 'create' ? 'Make a group' : 'Join a group'}
               </button>
@@ -176,7 +176,7 @@ function GroupView({ membership, lettersLearned, nickname }) {
         <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Group code — share with family</p>
         <div className="mt-2 flex items-center gap-3">
           <span className="mono text-3xl font-black tracking-[0.2em]" style={{ color: 'var(--ink)' }}>{membership.code}</span>
-          <button type="button" onClick={copyCode} aria-label="Copy code" className={`chunk flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+          <button type="button" onClick={copyCode} aria-label="Copy code" className={`chunk flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
             {copied ? <Check className="h-5 w-5 text-white" /> : <Copy className="h-5 w-5 text-white" />}
           </button>
         </div>

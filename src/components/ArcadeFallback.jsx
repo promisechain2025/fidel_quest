@@ -116,7 +116,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} aria-label="Quit run" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -176,7 +176,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
                       borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
                       boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)'}`,
                       '--chunk-depth': '5px',
-                      outlineColor: 'var(--sky)',
+                      outlineColor: 'var(--focus)',
                     }}
                     aria-label={`Gate ${form?.sound}`}
                   >

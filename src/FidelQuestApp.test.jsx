@@ -23,6 +23,8 @@ import FidelQuestApp, {
   WORDS,
   WORD_BY_LATIN,
   WordMatch,
+  warmupRequired,
+  DUE_BACKLOG_GATE,
 } from './FidelQuestApp'
 
 beforeEach(() => {
@@ -359,5 +361,31 @@ describe('twin-letter differentiation (P5)', () => {
         }
       }
     }
+  })
+})
+
+describe('warm-up policy: the memory schedule can summon a review (P1)', () => {
+  it('is only a suggestion when nothing is wrong and nothing has decayed', () => {
+    expect(warmupRequired({ troubleCount: 0, dueCount: 0 })).toBe(false)
+    expect(warmupRequired()).toBe(false)
+  })
+
+  it('is required by a single fresh miss - trouble is always urgent', () => {
+    expect(warmupRequired({ troubleCount: 1, dueCount: 0 })).toBe(true)
+  })
+
+  // The gap this closes: a form the child learned and then quietly forgot was
+  // never MISSED recently, so troubleLetters() never saw it and the warm-up was
+  // never summoned. The SRS knew it was due and had no way to say so.
+  it('is required by a decayed backlog even with a spotless answer ledger', () => {
+    expect(warmupRequired({ troubleCount: 0, dueCount: DUE_BACKLOG_GATE })).toBe(true)
+  })
+
+  it('does not gate a child who is merely a little stale', () => {
+    expect(warmupRequired({ troubleCount: 0, dueCount: DUE_BACKLOG_GATE - 1 })).toBe(false)
+  })
+
+  it("honours a parent's always-warm-up plan setting", () => {
+    expect(warmupRequired({ planRequires: true, troubleCount: 0, dueCount: 0 })).toBe(true)
   })
 })

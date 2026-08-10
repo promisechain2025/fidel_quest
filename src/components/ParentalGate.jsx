@@ -58,7 +58,7 @@ export default function ParentalGate({ onOpen, intro }) {
               if (e.key === 'Enter' || e.key === ' ') cancelHold()
             }}
             className={`relative h-28 w-28 rounded-full font-extrabold text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', outlineColor: 'var(--accent)' }}
+            style={{ background: 'var(--sky)', outlineColor: 'var(--focus)' }}
           >
             <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
               <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
@@ -80,7 +80,7 @@ export default function ParentalGate({ onOpen, intro }) {
                 type="button"
                 onClick={() => (n === challenge.value ? onOpen() : setHeld(false) || setProgress(0))}
                 className={`chunk mono h-16 w-20 rounded-2xl border-2 text-2xl font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--focus)' }}
               >
                 {n}
               </button>

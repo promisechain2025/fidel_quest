@@ -71,6 +71,28 @@ export const MIX_POOL_SIZE = 12
 // a quick pass per letter keeps it light while covering the full row.
 export const TRACE_ORDERS = [0, 1, 2, 3, 4, 5, 6]
 
+/* ── First-try tally ───────────────────────────────────────────────────────
+   The lesson is deliberately unfailable - a sink is a lesson, not a wall - but
+   it still has to REPORT honestly. Without this, finishing a lesson recorded a
+   flat 3 stars on attendance, so a child the rescue carried every round was
+   indistinguishable from one who aced it, and 33 lesson completions were
+   reported as 231 characters mastered.
+
+   Each asked form counts ONCE, on the first attempt: the retries that follow a
+   miss are teaching, so scoring them would measure persistence rather than
+   knowledge. Pure, so the mastery rule is testable without rendering. */
+export const emptyTally = () => ({ asked: new Set(), right: 0, total: 0 })
+export function tallyFirstTry(tally, askedKey, correct) {
+  if (tally.asked.has(askedKey)) return tally
+  const asked = new Set(tally.asked)
+  asked.add(askedKey)
+  return { asked, right: tally.right + (correct ? 1 : 0), total: tally.total + 1 }
+}
+/** Percent first-try correct, or null when the lesson graded nothing (a pure
+    MEET/TRACE stone) so the caller keeps its own default instead of recording
+    a 0% the child never had a chance to avoid. */
+export const tallyAccuracy = ({ right, total } = {}) => (total > 0 ? Math.round((right / total) * 100) : null)
+
 // `avoid` may be a single key or a list of keys (the letters already eaten
 // this round-set). Excluding all of them keeps the spoken target inside the
 // letters still on the tray, so a fed-and-removed letter is never asked for.
@@ -422,7 +444,7 @@ function BubbleMeet({ ctx, onTouch }) {
             color: '#ffffff',
             textShadow: '0 2px 5px rgba(0,0,0,0.4)',
             touchAction: 'none',
-            outlineColor: 'var(--sky)',
+            outlineColor: 'var(--focus)',
           }}
           aria-label={`Pop the bubble to hear ${form.sound}`}
         >
@@ -580,7 +602,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           onClick={() => playForm(activeForm, soundOn)}
           aria-label={t('hearIt', 'Hear it again')}
           className={`chunk flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${FOCUS}`}
-          style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+          style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
         >
           <Volume2 className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -721,7 +743,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
                 color: done ? 'var(--muted)' : wrong ? '#fff' : '#5b3a12',
                 opacity: done ? 0.45 : 1,
                 boxShadow: hinted ? '0 0 0 4px rgba(255,150,0,0.4)' : undefined,
-                outlineColor: 'var(--sky)',
+                outlineColor: 'var(--focus)',
               }}
             >
               {form?.char}
@@ -793,7 +815,7 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
         borderColor: refusing ? '#b21e12' : hinted ? 'var(--accent)' : '#c68a44',
         color: refusing ? '#fff' : '#5b3a12',
         boxShadow: refusing ? '0 4px 0 #8f160c, 0 0 0 4px rgba(226,59,44,0.30)' : '0 4px 0 #a06a30',
-        outlineColor: 'var(--sky)',
+        outlineColor: 'var(--focus)',
       }}
     >
       {form?.char}
@@ -1005,6 +1027,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const refuseTimer = useRef(null)
   const meetTimer = useRef(null)
   const retargetTimer = useRef(null)
+  // First-try tally for this lesson, reported to onDone so the journey records
+  // real stars instead of a flat 3. A ref, not state: it must never re-render.
+  const score = useRef(emptyTally())
   useEffect(
     () => () => {
       clearTimeout(moodTimer.current)
@@ -1025,6 +1050,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       const { advanced, correct } = learnTransition(ctx, key)
       const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
       const stones = ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD
+      // First-try score for the honest star rating (see tallyFirstTry above).
+      if (stones || spoken) {
+        score.current = tallyFirstTry(score.current, `${ctx.phase}:${stones ? ctx.forms[ctx.idx] : ctx.target}`, correct)
+      }
       // The stones are a listen-and-find game: the target was already spoken,
       // so a correct pick needs no re-voicing (the pluck + hop confirm it) and
       // a wrong pick re-voices the ASKED letter, same as the feed game. Every
@@ -1150,7 +1179,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       prevPhase.current = ctx.phase
       if (ctx.phase === LearnPhase.DONE) {
         playEffect('win', soundOn)
-        const timer = setTimeout(onDone, 1800)
+        const { right, total } = score.current
+        const accuracy = tallyAccuracy(score.current)
+        const timer = setTimeout(() => onDone({ accuracy, right, total }), 1800)
         return () => clearTimeout(timer)
       }
       playEffect('good', soundOn)
@@ -1164,7 +1195,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" />
         </button>
         <div className="flex flex-1 justify-center gap-1.5" aria-label="Lesson steps">
@@ -1195,7 +1226,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                   type="button"
                   onClick={() => playForm(traceForm, soundOn)}
                   className={`chunk flex items-center gap-2 rounded-2xl px-5 py-2 font-black text-white ${FOCUS}`}
-                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
                   aria-label={t('hearIt', 'Hear it again')}
                 >
                   <Volume2 className="h-6 w-6" aria-hidden="true" />
@@ -1251,7 +1282,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
             type="button"
             onClick={() => playForm(formOf(ctx.target), soundOn)}
             className={`chunk flex items-center gap-2 rounded-full px-5 py-3 font-black text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
+            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
             aria-label={t('hearIt', 'Hear it again')}
           >
             <Volume2 className="h-7 w-7" aria-hidden="true" /> {t('hearIt', 'Hear it again')}
@@ -1315,7 +1346,7 @@ export default function LearnLetters({ soundOn, onBack }) {
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div className="min-w-0 flex-1">
@@ -1353,7 +1384,7 @@ export default function LearnLetters({ soundOn, onBack }) {
                       color: done ? '#7c5200' : unlocked ? 'var(--ink)' : 'var(--muted)',
                       borderColor: done ? 'var(--accent)' : unlocked ? 'var(--accent)' : 'var(--line)',
                       boxShadow: `0 4px 0 ${done ? 'var(--accent)' : 'var(--line)'}`,
-                      outlineColor: 'var(--sky)',
+                      outlineColor: 'var(--focus)',
                     }}
                     aria-label={`${stone.type === 'family' ? `Learn ${stone.id}` : 'Mix challenge'}${done ? ', mastered' : unlocked ? '' : ', locked'}`}
                   >

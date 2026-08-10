@@ -49,7 +49,7 @@ export default function Dropdown({ value, options, onChange, label, geez = false
         aria-label={label}
         onClick={() => setOpen((o) => !o)}
         className={`flex w-full items-center justify-between gap-2 rounded-2xl border-2 px-3 py-2.5 text-sm font-black ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       >
         <span className={`${geez ? 'geez ' : ''}truncate`}>{current ? current[1] : ''}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--muted)' }} aria-hidden="true" />
@@ -73,7 +73,7 @@ export default function Dropdown({ value, options, onChange, label, geez = false
                   style={{
                     background: active ? 'var(--go)' : i === hi ? 'var(--go-soft)' : 'transparent',
                     color: active ? '#fff' : 'var(--ink)',
-                    outlineColor: 'var(--sky)',
+                    outlineColor: 'var(--focus)',
                   }}
                 >
                   <span className="truncate">{text}</span>

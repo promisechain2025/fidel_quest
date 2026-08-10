@@ -56,7 +56,7 @@ export default function GiftModal({ onClose }) {
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label="Close" className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -88,7 +88,7 @@ export default function GiftModal({ onClose }) {
             background: ready ? 'var(--accent)' : 'var(--line)',
             boxShadow: ready ? '0 4px 0 var(--accent-deep)' : 'none',
             '--chunk-depth': '4px',
-            outlineColor: 'var(--sky)',
+            outlineColor: 'var(--focus)',
             cursor: ready ? 'pointer' : 'not-allowed',
           }}
         >

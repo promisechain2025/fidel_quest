@@ -34,7 +34,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-12 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="text-xl font-black leading-tight">{t('closetTitle', "Anbessa's Closet")}</h1>
@@ -54,7 +54,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
           onClick={() => requestShare(share)}
           disabled={sharing}
           className={`chunk flex items-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`}
-          style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+          style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
         >
           <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
         </button>
@@ -84,7 +84,7 @@ export default function Closet({ collection, stats, onEquip, onBack }) {
                         aria-pressed={on}
                         aria-label={`${item.name}${on ? ', worn' : ''}`}
                         className={`chunk relative flex h-20 w-20 items-center justify-center rounded-2xl border-2 ${FOCUS}`}
-                        style={{ background: on ? 'var(--go-soft)' : 'var(--card)', borderColor: on ? 'var(--go)' : 'var(--line)', boxShadow: `0 4px 0 ${on ? 'var(--go)' : 'var(--line)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+                        style={{ background: on ? 'var(--go-soft)' : 'var(--card)', borderColor: on ? 'var(--go)' : 'var(--line)', boxShadow: `0 4px 0 ${on ? 'var(--go)' : 'var(--line)'}`, '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
                       >
                         <Hero size={60} worn={[item]} />
                         {on && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}

@@ -26,7 +26,7 @@ export default function ScopeToggle({ scope, onChange, className = '' }) {
             aria-pressed={on}
             onClick={() => { if (!on) onChange(id) }}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-black ${FOCUS}`}
-            style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}
+            style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}
           >
             {label}
             <span className="mono text-[11px] font-bold opacity-80">{sub}</span>

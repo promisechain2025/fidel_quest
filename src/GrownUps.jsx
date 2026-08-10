@@ -92,7 +92,7 @@ function NicknameField() {
         placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
         aria-label={t('gpPlayerName', 'Player name')}
         className={`mt-3 w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`}
-        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
     </section>
   )
@@ -122,7 +122,7 @@ function ReminderCard() {
           <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
         </div>
       </div>
-      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--focus)', opacity: busy ? 0.6 : 1 }}>
         <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
       </button>
     </section>
@@ -149,8 +149,8 @@ function PlanCard() {
       <div className="mt-3 flex flex-wrap gap-2">
         {PACES.map((p) => (
           <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
-            ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
-            : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--focus)' }
+            : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             {paceLabels[p.id]}
           </button>
         ))}
@@ -168,7 +168,7 @@ function PlanCard() {
             <p className="text-sm font-black">{t('gpRequireWarmup', 'Require warm-up before games')}</p>
             <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpRequireHint', "When on, the child must finish the day's review before the games open.")}</p>
           </div>
-          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--focus)' }}>
             <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: plan.requireWarmup ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
           </button>
         </div>
@@ -228,7 +228,7 @@ function ProfilesCard() {
   }
 
   const inputCls = `w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`
-  const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }
+  const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }
   const buyLink = familyPackUrl() || buyUrl()
 
   return (
@@ -413,7 +413,7 @@ function ProgressReportCard() {
       </p>
       <button type="button" onClick={share}
         className="chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2"
-        style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
         {copied ? t('gpReportCopied', 'Link copied!') : t('gpReportShare', 'Share progress report')}
       </button>
     </section>
@@ -501,7 +501,7 @@ function CommunityCard() {
       {code ? (
         <p className="mt-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
           {t('ccThanks', 'Thanks — you’re supporting')} <span className="mono font-black" style={{ color: 'var(--go-ink)' }}>{code}</span>.{' '}
-          <button type="button" onClick={() => { setCommunityCode(''); setCode('') }} className={`font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>{t('ccChange', 'Change')}</button>
+          <button type="button" onClick={() => { setCommunityCode(''); setCode('') }} className={`font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>{t('ccChange', 'Change')}</button>
         </p>
       ) : (
         <>
@@ -513,9 +513,9 @@ function CommunityCard() {
               type="text" value={input} onChange={(e) => setInput(e.target.value)} maxLength={12}
               placeholder={t('ccPh', 'e.g. DEBRE')} aria-label={t('ccTitle', 'Community code')}
               className={`mono w-full rounded-2xl border-2 px-4 py-3 font-black uppercase tracking-wider ${FOCUS}`}
-              style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+              style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
             />
-            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={apply} disabled={!input.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: input.trim() ? 1 : 0.5, outlineColor: 'var(--focus)' }}>
               {t('ccApply', 'Apply')}
             </button>
           </div>
@@ -555,7 +555,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -604,7 +604,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                 type="button"
                 onClick={() => setThemeState(toggleTheme())}
                 className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
-                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
               >
                 {theme === 'dark' ? t('gpThemeNight', 'Night') : t('gpThemeDay', 'Daylight')}
               </button>
@@ -618,7 +618,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                 type="button"
                 onClick={() => setLangOpen(true)}
                 className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`}
-                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--paper-2)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
               >
                 <span className="geez">{PACKS[getActivePackId()].nativeName}</span>
               </button>
@@ -629,7 +629,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   {soundOn ? <Volume2 className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" /> : <VolumeX className="h-5 w-5" style={{ color: 'var(--muted)' }} aria-hidden="true" />}
                   {t('gpSound', 'Sound')}
                 </span>
-                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--focus)' }}>
                   <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: soundOn ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
                 </button>
               </div>
@@ -718,10 +718,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                           {tip.text}
                         </p>
                         <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                             {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
-                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                             {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
@@ -756,11 +756,11 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   <>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {buy && (
-                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                           {t('payBuy', 'Buy the app')}
                         </a>
                       )}
-                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                         {t('payFamily', 'Ask family to gift it')}
                       </button>
                       {lic.feedbackAvailable && (
@@ -771,7 +771,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                             try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
                           }}
                           className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
-                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
                         >
                           {t('payFeedback', 'Not buying? Tell us honestly why')}
                         </button>
@@ -781,7 +781,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                       {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
                       {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
                     </p>
-                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--focus)' }}>
                       {t('payOwned', 'My family already bought it')}
                     </button>
                   </>
@@ -801,7 +801,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                 {t('gpExport', 'Save progress file')}
               </button>
               <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
@@ -834,7 +834,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
              Reversible with the reset right below. */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmUnlock ? (
-              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--focus)' }}>
                 <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('gpUnlockAll', 'Open everything (for testing)…')}
               </button>
             ) : (
@@ -852,11 +852,11 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     try { window.location.reload() } catch { setConfirmUnlock(false) }
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
-                  style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                  style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
                 >
                   {t('gpUnlockYes', 'Yes, open all')}
                 </button>
-                <button type="button" onClick={() => setConfirmUnlock(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={() => setConfirmUnlock(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
                   {t('gpResetNo', 'Keep it')}
                 </button>
               </div>
@@ -866,7 +866,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* reset */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmReset ? (
-              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
+              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--focus)' }}>
                 <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('gpReset', 'Reset all progress…')}
               </button>
             ) : (
@@ -891,11 +891,11 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     try { window.location.reload() } catch { setConfirmReset(false) }
                   }}
                   className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
-                  style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                  style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
                 >
                   {t('gpResetYes', 'Yes, erase')}
                 </button>
-                <button type="button" onClick={() => setConfirmReset(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={() => setConfirmReset(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
                   {t('gpResetNo', 'Keep it')}
                 </button>
               </div>

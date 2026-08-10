@@ -66,7 +66,7 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="flex-1 text-center text-lg font-black">{t('orderTitle', 'Put them in order!')}</h1>

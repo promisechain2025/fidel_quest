@@ -634,6 +634,18 @@ export const selectAccuracy = (ctx) => {
 // fix-it loop (below the Lesson screen) enforces it rather than nagging.
 export const PASS_ACCURACY = 80
 export const FIXIT_MAX_CYCLES = 2
+// REVIEW BAR: how many forms the memory schedule must have DUE before the
+// warm-up stops being a suggestion. Set above 1 so one stale letter never
+// gates a child who is otherwise current, and low enough that a real backlog
+// is serviced long before the whole chapter decays.
+export const DUE_BACKLOG_GATE = 5
+/** Is the day's warm-up REQUIRED rather than merely suggested?
+    Three independent reasons, all meaning "heal before stacking anything new":
+    a parent set the plan to enforce it; the ledger holds a fresh miss; or the
+    memory schedule has let a real backlog decay. Pure, so the policy is
+    testable on its own - the callers only supply the counts. */
+export const warmupRequired = ({ planRequires = false, troubleCount = 0, dueCount = 0 } = {}) =>
+  !!planRequires || troubleCount > 0 || dueCount >= DUE_BACKLOG_GATE
 export const starsForAccuracy = (accuracy) => (accuracy >= 90 ? 3 : accuracy >= PASS_ACCURACY ? 2 : 1)
 export const formOf = (audioKey) => INDEXES.byAudioKey.get(audioKey)
 
@@ -1266,6 +1278,15 @@ export default function FidelQuestApp() {
     setScreen({ name: 'warmup', queue })
   }, [setScreen])
 
+  // The memory schedule (srs.js) shaped WHAT a review contained but never
+  // whether one happened: only fresh misses from the 600-event ledger could
+  // summon the warm-up, so a form that quietly decayed without ever being
+  // missed had no route back onto the path. A real backlog of DUE forms now
+  // counts exactly like unresolved trouble letters - the same "don't stack new
+  // letters on shaky ones" rule, one timescale out. Threshold rather than >0 so
+  // a single stale form does not gate a child who is otherwise current.
+  const dueBacklog = useCallback(() => dueKeys().filter((k) => INDEXES.byAudioKey.has(k)).length, [])
+
   const openNode = useCallback((node, opts = {}) => {
     // Paid app: after the trial ends, only the free taste opens (first two
     // families + the chapter-1 gateway). Anything else asks to buy or gift.
@@ -1283,21 +1304,32 @@ export default function FidelQuestApp() {
       node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
       learnedFamilyIds(journeyRef.current).length > 0
     ) {
-      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
+      const enforced = warmupRequired({
+        planRequires: !!loadPlan()?.requireWarmup,
+        troubleCount: troubleLetters(loadLedger()).filter((t) => INDEXES.byAudioKey.has(t.key)).length,
+        dueCount: dueBacklog(),
+      })
       setWarmupNudge({ node, enforced })
       return
     }
-    // NEW letters also wait when the ledger holds unresolved trouble letters:
-    // no stacking fresh families on top of shaky ones. Unlike the arcade
-    // nudge this only appears when there is something to heal, and it is
-    // always required - the warm-up drills exactly those letters. Quiz
-    // bosses are exempt: they run their own 80% + fix-it loop.
+    // NEW letters also wait when the ledger holds unresolved trouble letters,
+    // or when the memory schedule has a real backlog of DUE forms: no stacking
+    // fresh families on top of shaky OR decayed ones. Unlike the arcade nudge
+    // this only appears when there is something to heal, and it is always
+    // required - the warm-up drills exactly those forms (buildWarmup seats
+    // trouble first, then due). Quiz bosses are exempt: they run their own
+    // 80% + fix-it loop.
     if (
       (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) && !opts.skipWarmup &&
       !warmupDoneToday() && learnedFamilyIds(journeyRef.current).length > 0 &&
       // Letter trouble only: the warm-up drills letters and cannot heal a
-      // word:* miss, so word trouble must not force the gate.
-      troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
+      // word:* miss, so word trouble must not force the gate. No planRequires
+      // here - a parent's "always warm up" setting gates the ARCADE reward,
+      // never the next lesson.
+      warmupRequired({
+        troubleCount: troubleLetters(loadLedger()).filter((t) => INDEXES.byAudioKey.has(t.key)).length,
+        dueCount: dueBacklog(),
+      })
     ) {
       setWarmupNudge({ node, enforced: true })
       return
@@ -1316,7 +1348,7 @@ export default function FidelQuestApp() {
       })
     }
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
-  }, [setScreen])
+  }, [setScreen, dueBacklog])
 
   return (
     <MotionConfig reducedMotion="user">
@@ -1442,7 +1474,7 @@ export default function FidelQuestApp() {
               <StoneLessonForNode
                 node={screen.node}
                 soundOn={soundOn}
-                onDone={() => {
+                onDone={(result) => {
                   // Which words did THIS family just unlock? Computed before
                   // the node is marked done (newlyDecodable needs the before
                   // state), practiced words never re-run.
@@ -1455,7 +1487,13 @@ export default function FidelQuestApp() {
                       node.familyId,
                     )
                   }
-                  markNodeDone(node.id)
+                  // Stars from the lesson's OWN first-try accuracy, on the same
+                  // 80% bar the quiz bosses use, instead of a flat 3 for merely
+                  // showing up. The lesson still never blocks - the child always
+                  // moves on - but the record now distinguishes a child who aced
+                  // it from one the sink rescued every round. completeNode keeps
+                  // the best score, so a replay can only improve it.
+                  markNodeDone(node.id, result?.accuracy == null ? 3 : starsForAccuracy(result.accuracy))
                   if (fresh.length) {
                     setRunSeed((Date.now() % 1000000) | 1)
                     setScreen({ name: 'wordsteps', words: fresh })
@@ -1874,7 +1912,7 @@ export function Chunky({ tone = 'go', className = '', style, children, depth = 4
         color: t.fg,
         boxShadow: `0 ${depth}px 0 ${t.edge}`,
         '--chunk-depth': `${depth}px`,
-        outlineColor: 'var(--sky)',
+        outlineColor: 'var(--focus)',
         ...style,
       }}
       {...props}
@@ -2077,7 +2115,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             color: fg,
             borderColor: goldTile ? 'var(--tile-deep)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
             boxShadow: unlocked ? `0 5px 0 ${shadowColor}` : 'none',
-            outlineColor: 'var(--sky)',
+            outlineColor: 'var(--focus)',
           }}
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
           aria-current={highlight ? 'step' : undefined}
@@ -2160,10 +2198,10 @@ function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
       transition={{ duration: 1.6, repeat: Infinity }}
       className={`chunk flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
       style={done
-        ? { background: 'var(--go-soft)', color: 'var(--go-ink)', boxShadow: '0 2px 0 rgba(0,0,0,0.05)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }
+        ? { background: 'var(--go-soft)', color: 'var(--go-ink)', boxShadow: '0 2px 0 rgba(0,0,0,0.05)', '--chunk-depth': '2px', outlineColor: 'var(--focus)' }
         : active
-          ? { background: 'var(--sky)', color: '#fff', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }
-          : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }}
+          ? { background: 'var(--sky)', color: '#fff', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }
+          : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', outlineColor: 'var(--focus)' }}
     >
       {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
       <span className="whitespace-nowrap">{label}</span>
@@ -2187,15 +2225,15 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
             : t('warmNudgeBody', 'A quick review of your letters, then the game!')}
         </p>
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onStart} className={`chunk rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
             {t('warmStart', 'Start warm-up')}
           </button>
           {!enforced && (
-            <button type="button" onClick={onSkip} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onSkip} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
               {t('warmSkip', 'Play anyway')}
             </button>
           )}
-          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
             {t('dismiss', 'Not now')}
           </button>
         </div>
@@ -2219,7 +2257,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-6">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <div>
@@ -2230,8 +2268,8 @@ function PlanSetup({ learned, today, onSave, onBack }) {
       <div className="mt-6 flex flex-col gap-3">
         {PACES.map((p) => (
           <button key={p.id} type="button" aria-pressed={pace === p.id} onClick={() => setPace(p.id)} className={`chunk rounded-2xl px-5 py-4 text-left font-black ${FOCUS}`} style={pace === p.id
-            ? { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--accent)' }
-            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+            ? { background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', color: '#fff', outlineColor: 'var(--focus)' }
+            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             {labels[p.id]}
           </button>
         ))}
@@ -2239,7 +2277,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
       <p className="mt-4 text-center font-bold" style={{ color: 'var(--go-ink)' }}>
         {t('planEta', 'Whole Fidel by {date}', { date: eta })}
       </p>
-      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={() => onSave(pace)} className={`chunk mx-auto mt-6 rounded-2xl px-8 py-3.5 text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}>
         {t('planSave', 'Start my plan')}
       </button>
     </div>
@@ -2298,7 +2336,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-0 items-center gap-2">
-          <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--focus)' }}>
             <Hero size={48} worn={worn} />
           </button>
           <div className="min-w-0 text-left">
@@ -2315,7 +2353,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 onClick={() => setLangOpen(true)}
                 aria-label={t('langTitle', 'Language')}
                 className={`flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--focus)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
@@ -2334,7 +2372,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
               animate={{ rotate: [0, -8, 8, -8, 0], scale: [1, 1.06, 1] }}
               transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 0.6 }}
               className={`chunk relative flex h-11 w-11 items-center justify-center rounded-2xl text-white ${FOCUS}`}
-              style={{ background: 'var(--accent)', border: '2px solid var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+              style={{ background: 'var(--accent)', border: '2px solid var(--accent)', boxShadow: '0 3px 0 var(--accent-deep)', outlineColor: 'var(--focus)', '--chunk-depth': '3px' }}
             >
               <Gift className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full" style={{ background: 'var(--bad)', border: '2px solid var(--paper)' }} aria-hidden="true" />
@@ -2345,7 +2383,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             onClick={flipTheme}
             aria-label={theme === 'dark' ? t('themeToLight', 'Switch to daylight') : t('themeToDark', 'Switch to night')}
             className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
-            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--accent)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--accent)', outlineColor: 'var(--focus)', '--chunk-depth': '3px' }}
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </button>
@@ -2354,7 +2392,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             onClick={onBackpack}
             aria-label="Open backpack"
             className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
-            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+            style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--focus)', '--chunk-depth': '3px' }}
           >
             <BackpackIcon className="h-5 w-5" />
           </button>
@@ -2411,11 +2449,11 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         <div className="flex items-baseline justify-between gap-2 px-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
           {coach?.hasPlan && coach?.eta ? (
-            <button type="button" onClick={onPlanSetup} className={`truncate text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onPlanSetup} className={`truncate text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--focus)' }}>
               {t('planEta', 'Whole Fidel by {date}', { date: coach.eta })}
             </button>
           ) : (
-            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--focus)' }}>
               {t('planMake', 'Make my learning plan')}
             </button>
           )}
@@ -2549,12 +2587,12 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
           >
             <div className="mx-auto flex w-full max-w-md items-center gap-2 px-7 py-2.5">
               {/* Kokeb power = the streak; tap it for the streak detail. */}
-              <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
+              <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--focus)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
                 <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
-                <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}>
                   <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}
                 </button>
               )}
@@ -2562,7 +2600,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 type="button"
                 onClick={() => (stepInView ? onOpen(current) : jumpToStep())}
                 className={`chunk flex flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 font-black text-white ${FOCUS}`}
-                style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+                style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
                 aria-label={stepInView ? t('myStep', 'My step') : t('jumpToStep', 'Go to my next step')}
               >
                 {stepInView ? <Play className="h-5 w-5" fill="currentColor" aria-hidden="true" /> : <ArrowDown className="h-5 w-5" aria-hidden="true" />}
@@ -2585,7 +2623,7 @@ function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) 
       type="button"
       onClick={onClick}
       className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
-      style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+      style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--focus)' }}
     >
       <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
         {icon}
@@ -2674,7 +2712,7 @@ function StreakSheet({ streak, onClose }) {
             {t('streakBest', `Best: ${best} days`, { n: best })}
           </p>
         )}
-        <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
           {t('keepGoing', 'Keep going!')}
         </button>
       </motion.div>
@@ -2707,7 +2745,7 @@ export function LanguageSheet({ onClose }) {
             <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
             {t('langTitle', 'Language')}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -2753,7 +2791,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
       >
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
-          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -2910,11 +2948,11 @@ function InstallBanner() {
           type="button"
           onClick={state === 'prompt' ? promptInstall : () => setIosOpen(true)}
           className={`chunk shrink-0 rounded-xl px-4 py-2 text-sm font-black text-white ${FOCUS}`}
-          style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
+          style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
         >
           {state === 'prompt' ? t('installCta', 'Add') : t('installHow', 'How?')}
         </button>
-        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`shrink-0 rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`shrink-0 rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-5 w-5" />
         </button>
       </motion.div>
@@ -2923,7 +2961,7 @@ function InstallBanner() {
           <motion.div role="dialog" aria-modal="true" aria-label={t('installTitle', 'Add Anbessa to your home screen')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
             <Hero size={72} />
             <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
-            <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => setIosOpen(false)} className={`chunk mt-4 rounded-2xl px-6 py-2.5 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               {t('gotIt', 'Got it')}
             </button>
           </motion.div>
@@ -2958,11 +2996,11 @@ function GiftModal({ reward, worn, forms, onClose }) {
         </p>
         <div className="mt-5 flex flex-col gap-3">
           {reward && (
-            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
             </button>
           )}
-          <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: reward ? 'var(--card)' : 'var(--go)', border: reward ? '2px solid var(--line)' : 'none', color: reward ? 'var(--ink)' : '#fff', boxShadow: `0 4px 0 ${reward ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: reward ? 'var(--card)' : 'var(--go)', border: reward ? '2px solid var(--line)' : 'none', color: reward ? 'var(--ink)' : '#fff', boxShadow: `0 4px 0 ${reward ? 'var(--line)' : 'var(--go-deep)'}`, '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
             {reward ? t('keepGoing', 'Keep going!') : t('gotIt', 'Got it')}
           </button>
         </div>
@@ -3007,17 +3045,17 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
           </p>
         )}
         <div className="mt-5 flex flex-col gap-3">
-          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={() => requestShare(share)} disabled={busy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white disabled:opacity-60 ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
             <Share2 className="h-5 w-5" aria-hidden="true" /> {shareCtaLabel(t)}
           </button>
           {/* Pride peaks right here - offer to send the child's own voice to
              the family (Gashe / Ayay) while the chapter win is still warm. */}
           {onPostcard && (
-            <button type="button" onClick={onPostcard} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}>
+            <button type="button" onClick={onPostcard} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
               <Send className="h-5 w-5" aria-hidden="true" /> {t('celebPostcard', 'Send this to family!')}
             </button>
           )}
-          <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} className={`chunk rounded-2xl px-6 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', color: 'var(--ink)', outlineColor: 'var(--focus)' }}>
             {t('keepGoing', 'Keep going!')}
           </button>
         </div>
@@ -3113,7 +3151,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
               return (
                 <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on} aria-label={o.geezName}
                   className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
-                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                  style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}>
                   <span className="geez text-xl">{INDEXES.byAudioKey.get(`a-${o.index}`)?.char}</span>
                   <span className="mono mt-0.5 text-[10px] font-bold" style={{ opacity: on ? 0.9 : 0.75 }}>-{o.vowel}</span>
                 </button>
@@ -3134,7 +3172,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
             {['slow', 'normal', 'fast'].map((p) => (
               <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
-                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
+                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}>
                 {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
               </button>
             ))}
@@ -3167,7 +3205,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
                     border: `2.5px solid ${isActive ? '#fff' : face.rim}`,
                     boxShadow: isActive ? `0 0 0 3px ${face.rim}, 0 8px 18px rgba(0,0,0,0.35)` : `0 4px 0 ${face.shadow}`,
                     color: face.fg,
-                    outlineColor: 'var(--sky)',
+                    outlineColor: 'var(--focus)',
                   }}
                 >
                   <span className="geez text-4xl font-black" style={{ color: face.fg, textShadow: face.glyphShadow }}>{cell.char}</span>
@@ -3207,7 +3245,7 @@ function FamilyDetail({ family, soundOn }) {
             animate={active === form.audioKey ? { scale: [1, 1.12, 1] } : {}}
             transition={{ duration: 0.3 }}
             className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 py-4 ${FOCUS}`}
-            style={{ background: 'var(--card)', borderColor: active === form.audioKey ? 'var(--sky)' : 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+            style={{ background: 'var(--card)', borderColor: active === form.audioKey ? 'var(--sky)' : 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--focus)' }}
           >
             <span className="geez text-5xl font-black">{form.char}</span>
             <span className="mono text-sm font-bold" style={{ color: 'var(--sky)' }}>
@@ -3223,7 +3261,7 @@ function FamilyDetail({ family, soundOn }) {
             type="button"
             onClick={() => playEffect('good', soundOn)}
             className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 border-dashed py-4 ${FOCUS}`}
-            style={{ background: 'var(--card)', borderColor: 'var(--accent)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+            style={{ background: 'var(--card)', borderColor: 'var(--accent)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--focus)' }}
           >
             <span className="geez text-5xl font-black" style={{ color: 'var(--accent)' }}>
               {family.labial}
@@ -3465,7 +3503,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         </div>
       </div>
       <header className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
-        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">
@@ -3507,7 +3545,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
               type="button"
               onClick={() => playForm(targetForm, soundOn)}
               className={`chunk inline-flex items-center gap-1.5 rounded-xl px-3 py-1 align-middle text-white ${FOCUS}`}
-              style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+              style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
               aria-label={`Play the sound ${targetForm?.sound} again`}
             >
               <Volume2 className="h-5 w-5" aria-hidden="true" />“{targetForm?.sound}”
@@ -3541,7 +3579,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                   boxShadow: `0 5px 0 ${showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--tile-deep)'}`,
                   '--chunk-depth': '5px',
                   opacity: isWrongPick && !showAsWrong ? 0.35 : presenting ? 0.6 : 1,
-                  outlineColor: 'var(--sky)',
+                  outlineColor: 'var(--focus)',
                 }}
                 aria-label={`Choose the letter that says ${form.sound}`}
                 data-tut={`opt-${key}`}
@@ -3681,7 +3719,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
       <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onPractice}>
         {t('fixCta', 'Practice the tricky ones')}
       </Chunky>
-      <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
         {t('home', 'Home')}
       </button>
     </div>
@@ -3702,7 +3740,7 @@ function FixItReady({ onRetry, onHome }) {
       {/* Always leave a way back to the path - a tired child must not be forced
          into another full quiz to escape (same exit the fix-it gate/cap give). */}
       {onHome && (
-        <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           {t('backToPath', 'Back to the path')}
         </button>
       )}
@@ -4136,7 +4174,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
         maxLength={16}
         placeholder={t('gpPlayerNamePh', 'e.g. Selam')}
         className={`mt-1 w-full max-w-sm rounded-2xl border-2 px-4 py-3 text-center font-bold ${FOCUS}`}
-        style={{ background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        style={{ background: 'var(--card)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--focus)' }}
       />
       <div className="mt-4 flex w-full max-w-sm flex-col gap-3">
         <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={send} disabled={!clean}>
@@ -4577,7 +4615,11 @@ function ArcadeGateway({ node, seed, soundOn, onDone, onCancel, onRetry, pool })
       </Suspense>
     )
   }
-  if (isDegraded()) {
+  // LOW_END first: a 2-core / 2GB phone should never fetch the 519KB three
+  // bundle or mount WebGL at all. isDegraded() alone only helps AFTER a full
+  // stuttering run has been measured and persisted - one bad session too late,
+  // on exactly the device class this app targets.
+  if (LOW_END || isDegraded()) {
     return <Runner2D seed={seed} soundOn={soundOn} onExit={finish} pool={pool} />
   }
   return (
@@ -4682,7 +4724,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Words progress">
@@ -4710,7 +4752,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
                 type="button"
                 onClick={() => audioPlayWord(word, soundOn)}
                 className={`chunk mt-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-white ${FOCUS}`}
-                style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+                style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
                 aria-label={`Play the word ${word?.latin} again`}
               >
                 <Volume2 className="h-5 w-5" aria-hidden="true" />
@@ -4752,7 +4794,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
                   boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : isGlyph ? 'var(--tile-deep)' : 'var(--line)'}`,
                   '--chunk-depth': '5px',
                   opacity: dead && !showBad ? 0.35 : 1,
-                  outlineColor: 'var(--sky)',
+                  outlineColor: 'var(--focus)',
                 }}
                 aria-label={isGlyph ? `Letter ${opt}` : `Picture of ${option?.meaning}`}
               >

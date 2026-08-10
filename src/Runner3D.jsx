@@ -883,7 +883,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   return (
     <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -925,7 +925,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
               onClick={() => setSpeedName(s)}
               aria-pressed={speedName === s}
               className={`rounded-full px-2.5 py-1 text-xs font-black ${FOCUS}`}
-              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
+              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--focus)' }}
             >
               {t(`speed_${s}`, s)}
             </button>
@@ -960,7 +960,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
             onClick={() => playForm(targetForm, soundOn)}
             disabled={boss}
             className={`chunk inline-flex items-center gap-1.5 rounded-xl px-3 py-1 align-middle text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+            style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
             aria-label={`Play the sound ${targetForm?.sound} again`}
           >
             <Volume2 className="h-5 w-5" aria-hidden="true" />“{targetForm?.sound}”

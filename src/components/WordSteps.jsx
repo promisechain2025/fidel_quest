@@ -61,7 +61,7 @@ function BuildBoard({ word, ctx, onTile }) {
                 borderColor: tile.used ? 'transparent' : wrong ? '#8f160c' : '#a06a30',
                 color: tile.used ? 'var(--muted)' : wrong ? '#fff' : '#5b3a12',
                 opacity: tile.used ? 0.4 : 1,
-                outlineColor: 'var(--sky)',
+                outlineColor: 'var(--focus)',
               }}
             >
               {tile.ch}
@@ -132,7 +132,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onSkip} aria-label={t('dismiss', 'Not now')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onSkip} aria-label={t('dismiss', 'Not now')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <X className="h-6 w-6" aria-hidden="true" />
         </button>
         <div className="flex flex-1 justify-center gap-1.5" aria-label="Word steps">
@@ -162,7 +162,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
                 onClick={() => voiceWord(word, soundOn)}
                 aria-label={t('hearIt', 'Hear it again')}
                 className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl text-white ${FOCUS} ${word?.noAudio ? 'invisible' : ''}`}
-                style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
+                style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--focus)' }}
               >
                 <Volume2 className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -190,7 +190,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
                     onClick={() => act({ type: 'PICK', latin: opt.latin })}
                     animate={ctx.lastWrong === opt.latin ? { x: [0, -7, 7, -5, 5, 0], transition: { duration: 0.42 } } : { x: 0 }}
                     className={`chunk flex h-24 items-center justify-center rounded-3xl border-2 text-5xl ${FOCUS}`}
-                    style={{ background: 'var(--card)', borderColor: ctx.lastWrong === opt.latin ? 'var(--bad)' : 'var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+                    style={{ background: 'var(--card)', borderColor: ctx.lastWrong === opt.latin ? 'var(--bad)' : 'var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}
                     aria-label={opt.latin}
                   >
                     <span aria-hidden="true">{opt.picture}</span>
@@ -222,7 +222,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
                   </span>
                 ))}
               </div>
-              <button type="button" onClick={onDone} className={`chunk mt-2 w-full max-w-xs rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+              <button type="button" onClick={onDone} className={`chunk mt-2 w-full max-w-xs rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                 {t('keepGoing', 'Keep going!')}
               </button>
             </motion.div>

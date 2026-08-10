@@ -36,7 +36,7 @@ function OrderChip({ active, glyph, label, sub, title, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-pressed={active} aria-label={title || label}
       className={`flex shrink-0 flex-col items-center justify-center rounded-xl px-2 py-2 font-black leading-none ${FOCUS}`}
-      style={{ background: active ? 'var(--go)' : 'var(--card)', color: active ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+      style={{ background: active ? 'var(--go)' : 'var(--card)', color: active ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}>
       {/* A vowel order reads clearest as its actual glyph (the አ family's forms
           ARE the pure vowels), big and high-contrast; the Abugida chip has no
           single glyph, so it keeps a text label. */}
@@ -50,7 +50,7 @@ function ToggleChip({ on, icon: Icon, label, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-pressed={on}
       className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-black ${FOCUS}`}
-      style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+      style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}>
       {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null} {label}
     </button>
   )
@@ -121,7 +121,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-12 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--focus)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <h1 className="text-xl font-black leading-tight">{t('masterTitle', 'Fidel Master')}</h1>
@@ -140,7 +140,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           return (
             <button key={tb.id} type="button" onClick={() => setTab(tb.id)} aria-pressed={on}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-sm font-black ${FOCUS}`}
-              style={{ background: on ? 'var(--sky)' : 'transparent', color: on ? '#fff' : 'var(--muted)', outlineColor: 'var(--accent)' }}>
+              style={{ background: on ? 'var(--sky)' : 'transparent', color: on ? '#fff' : 'var(--muted)', outlineColor: 'var(--focus)' }}>
               {tb.icon && <tb.icon className="h-4 w-4" aria-hidden="true" />}
               {t(tb.key, tb.label)}
             </button>
@@ -154,7 +154,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
         <div className="mt-4 flex flex-col gap-4">
           <button type="button" onClick={() => { setOrder(null); setMix(true); reshuffle(); setTab('auto'); setPlaying(true) }}
             className={`chunk flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-400 to-amber-400 px-5 py-4 text-lg font-black text-white ${FOCUS}`}
-            style={{ boxShadow: '0 5px 0 rgba(0,0,0,0.18)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }}>
+            style={{ boxShadow: '0 5px 0 rgba(0,0,0,0.18)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }}>
             <Shuffle className="h-6 w-6" aria-hidden="true" /> {t('masterPlayAbugida', 'Play the whole Abugida')}
           </button>
 
@@ -168,7 +168,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
                   onClick={() => { play(base); setOpenFam(open ? null : fam.id) }}
                   aria-label={`Hear ${base?.char}`}
                   className={`chunk flex flex-col items-center gap-1 rounded-2xl bg-gradient-to-br ${gradOf(fi)} px-2 py-3 text-white ${FOCUS} ${open ? 'ring-4 ring-white/80' : ''}`}
-                  style={{ boxShadow: '0 4px 0 rgba(0,0,0,0.18)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
+                  style={{ boxShadow: '0 4px 0 rgba(0,0,0,0.18)', '--chunk-depth': '4px', outlineColor: 'var(--focus)' }}>
                   <span className="geez text-3xl font-black drop-shadow-md sm:text-4xl">{base?.char}</span>
                   <span className="rounded-full bg-white/25 px-2 py-0.5 text-[11px] font-black">{base?.sound}</span>
                 </button>
@@ -216,11 +216,11 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           </div>
 
           <div className="flex w-full items-center justify-between text-sm font-black" style={{ color: 'var(--muted)' }}>
-            <button type="button" onClick={() => setMix((m) => !m)} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }} aria-pressed={mix}>
+            <button type="button" onClick={() => setMix((m) => !m)} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--focus)' }} aria-pressed={mix}>
               <Shuffle className="h-4 w-4" aria-hidden="true" /> {mix ? t('masterMixed', 'Mixed') : t('masterInOrder', 'In order')}
             </button>
             <span>{idx + 1} / {seq.length}</span>
-            <button type="button" onClick={reshuffle} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }} aria-label={t('masterReshuffle', 'Reshuffle')}>
+            <button type="button" onClick={reshuffle} className={`flex items-center gap-1 rounded-lg px-2 py-1 ${FOCUS}`} style={{ outlineColor: 'var(--focus)' }} aria-label={t('masterReshuffle', 'Reshuffle')}>
               <RotateCcw className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
@@ -232,7 +232,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className={`geez flex h-56 w-56 items-center justify-center rounded-3xl text-9xl font-black text-white ${FOCUS}`}
-            style={{ background: 'radial-gradient(circle at 34% 28%, var(--sky), var(--sky-deep))', boxShadow: '0 10px 24px rgba(0,0,0,0.25)', outlineColor: 'var(--accent)' }}
+            style={{ background: 'radial-gradient(circle at 34% 28%, var(--sky), var(--sky-deep))', boxShadow: '0 10px 24px rgba(0,0,0,0.25)', outlineColor: 'var(--focus)' }}
             aria-label={`Hear ${form?.char}`}
           >
             {form?.char}
@@ -261,13 +261,13 @@ export default function FidelMaster({ onBack, soundOn = true }) {
           {tab === 'auto' && (
             <div className="flex flex-col items-center gap-3">
               <div className="flex items-center gap-3">
-                <button type="button" onClick={() => step(-1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }} aria-label="Previous">
+                <button type="button" onClick={() => step(-1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--focus)' }} aria-label="Previous">
                   <ArrowRight className="h-6 w-6 rotate-180" aria-hidden="true" />
                 </button>
-                <button type="button" onClick={() => setPlaying((p) => !p)} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--sky)' }} aria-label={playing ? t('masterPause', 'Pause') : t('masterPlay', 'Play')}>
+                <button type="button" onClick={() => setPlaying((p) => !p)} className={`chunk flex h-16 w-16 items-center justify-center rounded-full text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 5px 0 var(--go-deep)', '--chunk-depth': '5px', outlineColor: 'var(--focus)' }} aria-label={playing ? t('masterPause', 'Pause') : t('masterPlay', 'Play')}>
                   {playing ? <Pause className="h-8 w-8" aria-hidden="true" /> : <Play className="h-8 w-8" aria-hidden="true" />}
                 </button>
-                <button type="button" onClick={() => step(1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }} aria-label="Next">
+                <button type="button" onClick={() => step(1)} className={`chunk flex h-12 w-12 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--focus)' }} aria-label="Next">
                   <ArrowRight className="h-6 w-6" aria-hidden="true" />
                 </button>
               </div>
@@ -276,7 +276,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
                 {SPEED_ORDER.map((s) => (
                   <button key={s} type="button" onClick={() => setSpeed(s)} aria-pressed={speed === s}
                     className={`rounded-full px-3 py-1 text-sm font-black ${FOCUS}`}
-                    style={{ background: speed === s ? 'var(--sky)' : 'var(--card)', color: speed === s ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
+                    style={{ background: speed === s ? 'var(--sky)' : 'var(--card)', color: speed === s ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--focus)' }}>
                     {t(`speed_${s}`, s)}
                   </button>
                 ))}

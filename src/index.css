@@ -41,6 +41,11 @@
   --glyph: #7c4f00;   /* Ge'ez glyph on the gold tile */
   --cream: #f8f2e2;   /* glyph-on-jewel / button text */
   --overlay: rgba(8, 12, 22, 0.62);
+  /* Focus ring. One semantic token instead of per-element colours, because the
+     indicator has to clear WCAG 1.4.11 (3:1) against BOTH --paper and --card in
+     whichever theme is active. --sky was the old ring and fails badly on dark
+     (2.65:1 on paper, 2.13:1 on card); gold clears it at 9.05:1 / 7.27:1. */
+  --focus: #e2c069;
 }
 :root[data-theme="light"] {
   --paper: #f7edcf;   /* warm parchment */
@@ -67,6 +72,9 @@
   --glyph: #7c4f00;
   --cream: #f8f2e2;
   --overlay: rgba(60, 53, 41, 0.4);
+  /* Light theme needs a darker ring: the dark theme's gold (#e2c069) is only
+     2.20:1 on parchment. --accent-deep clears 3:1 on both grounds (3.64 / 4.09). */
+  --focus: #9c7420;
 }
 
 /* Self-hosted Ethiopic (Ge'ez) font — bundled so glyphs render offline on first
