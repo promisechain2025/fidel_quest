@@ -188,4 +188,35 @@ describe('legacy migration (P1)', () => {
     expect(Object.keys(p.done)).toHaveLength(0)
     expect(p.collection.owned).toHaveLength(0)
   })
+
+  // A store rollback or a stale service worker can hand this build a record
+  // written by a newer one. Falling through to the legacy migration would
+  // PERSIST over it and wipe the child's journey - silently, and permanently.
+  it('never overwrites a record from a newer build, and carries it forward', () => {
+    const future = {
+      version: 2,
+      done: { [JOURNEY[0].id]: { stars: 3 }, [JOURNEY[1].id]: { stars: 2 } },
+      collection: { owned: ['cape'], worn: { back: 'cape' } },
+      somethingNew: 'from a later release',
+    }
+    localStorage.setItem('fq.journey.v1', JSON.stringify(future))
+    // Legacy keys also present, so the migration path would have plenty to write.
+    localStorage.setItem('fq.learn.v1', JSON.stringify({ mastered: ['zzz'], mixes: [] }))
+
+    const loaded = loadJourney()
+    expect(loaded.done[JOURNEY[0].id]).toEqual({ stars: 3 })
+    expect(loaded.done[JOURNEY[1].id]).toEqual({ stars: 2 })
+    expect(loaded.collection.owned).toContain('cape')
+    expect(loaded.done['learn:zzz']).toBeUndefined() // did not re-migrate
+
+    // The stored copy must be untouched, so the newer build still finds it.
+    expect(JSON.parse(localStorage.getItem('fq.journey.v1'))).toEqual(future)
+  })
+
+  it('salvages a partially written record instead of discarding it', () => {
+    localStorage.setItem('fq.journey.v1', JSON.stringify({ version: 1 })) // no `done`
+    const loaded = loadJourney()
+    expect(loaded.done).toEqual({})
+    expect(loaded.collection).toEqual({ owned: [], worn: {} })
+  })
 })

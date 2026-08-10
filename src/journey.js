@@ -141,6 +141,18 @@ export function loadJourney() {
   if (raw && raw.version === 1 && raw.done) {
     return { version: 1, done: raw.done, collection: { ...emptyCollection(), ...(raw.collection || {}) } }
   }
+  // A record we cannot recognise - a newer build's shape reached by a store
+  // rollback or a stale service worker, or a half-finished write - must never
+  // fall through to the legacy migration, because that path PERSISTS and would
+  // overwrite the child's whole journey with a rebuild from pre-refactor keys.
+  // Carry forward whatever is still readable and leave the stored copy alone.
+  if (raw && typeof raw === 'object') {
+    return {
+      version: 1,
+      done: raw.done && typeof raw.done === 'object' ? raw.done : {},
+      collection: { ...emptyCollection(), ...(raw.collection || {}) },
+    }
+  }
   return migrateLegacyProgress()
 }
 export function saveJourney(p) {
