@@ -50,6 +50,10 @@ export const ROUTE_META = Object.freeze({
     title: 'Pricing - eGeez',
     description: 'Free to download and free for 3 days, then $12.99 once for the whole journey - and never twice. Family Pack add-on $4.99.',
   },
+  '/support': {
+    title: 'Support - eGeez',
+    description: 'Get help with eGeez: how to reach us, restore a purchase, move a child to a new device, and answers to the questions families ask most.',
+  },
   '/about': {
     title: 'About eGeez',
     description: 'Why we built a fidel app for diaspora families, who Anbessa and Kokeb are, and what we will never do with your child data.',

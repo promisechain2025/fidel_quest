@@ -388,7 +388,8 @@ export function Footer() {
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
           {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
           <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
-          <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
+          <Link to="/support" className="rounded py-0.5 hover:underline">{t('navSupport', 'Support')}</Link>
+            <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
         </nav>
       </div>

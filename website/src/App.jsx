@@ -11,6 +11,7 @@ const Tigrinya = lazy(() => import('./pages/Tigrinya.jsx'))
 const Teachers = lazy(() => import('./pages/Teachers.jsx'))
 const Homeschool = lazy(() => import('./pages/Homeschool.jsx'))
 const About = lazy(() => import('./pages/About.jsx'))
+const Support = lazy(() => import('./pages/Support.jsx'))
 const Alphabet = lazy(() => import('./pages/Alphabet.jsx'))
 const Progress = lazy(() => import('./pages/Progress.jsx'))
 const Family = lazy(() => import('./pages/Family.jsx'))
@@ -61,6 +62,7 @@ export default function App() {
       {/* legacy aliases from the first launch */}
       <Route path="/family-pack" element={<Pricing />} />
       <Route path="/family-pack/success" element={<PricingSuccess />} />
+      <Route path="/support" element={<Support />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
