@@ -229,7 +229,17 @@ function ProfilesCard() {
 
   const inputCls = `w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`
   const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }
-  const buyLink = familyPackUrl() || buyUrl()
+  // ONLY the Family Pack's own shop. buyUrl() falls back to the App Store
+  // product page, which sells the APP and has no add-on and no FAM code on
+  // it - linking "Get the Family Pack" there, or naming it as where codes
+  // come from, sends the parent somewhere they cannot buy what they want.
+  // With no shop configured the card falls back to the code box plus a
+  // generic sentence, which is the honest state of "we cannot sell you this
+  // here yet".
+  const buyLink = familyPackUrl()
+  const shopHost = (() => {
+    try { return new URL(buyLink).host.replace(/^www\./, '') } catch { return '' }
+  })()
 
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -299,6 +309,16 @@ function ProfilesCard() {
                 ? t('gpPackNative', 'Each child gets their own path, streak, and rewards on this device. Have a Family Pack code? Enter it below.')
                 : t('gpPackWeb', `One ${FAMILY_PACK_PRICE} unlock gives every child in the family their own path, streak, and rewards on this device — instead of buying the app again.`, { price: FAMILY_PACK_PRICE })}
             </p>
+            {/* A code field with no answer to "where do I get one?" is a dead
+               end - and on a store build with no in-app purchase configured
+               yet, the code IS the only way in. Say where it comes from. */}
+            {!iapAvailable() && (
+              <p className="mt-1.5 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+                {shopHost
+                  ? t('gpPackWhereSite', 'A Family Pack code comes with a purchase at {host} — or from a relative or teacher who bought one for your family.', { host: shopHost })
+                  : t('gpPackWhere', 'A Family Pack code comes with a purchase on our website — or from a relative or teacher who bought one for your family.')}
+              </p>
+            )}
             {iapAvailable() && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>

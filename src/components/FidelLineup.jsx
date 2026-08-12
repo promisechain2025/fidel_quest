@@ -1,15 +1,26 @@
 /* ============================================================================
-   LINE UP — the drag renderer
+   LINE UP — the place-the-seven-forms renderer
    ----------------------------------------------------------------------------
    Thin shell over the pure lineupCore. A family's seven forms lie scattered
-   as loose cards; the child DRAGS each into its numbered home slot. framer's
-   `dragSnapToOrigin` springs a card straight back to where it lay on a wrong
-   drop, so "if it's wrong you get back to where it was" is free. A correct
-   drop unmounts the scattered card and re-renders it locked in its slot.
+   as loose cards; each belongs in one numbered home slot.
 
-   Slot hit-testing is done at drop time against the live slot rects, so it
-   holds up on any viewport. Board is voiced (picking a card speaks its form)
-   but never depends on audio. Fill all seven -> Anbessa cheers.
+   TWO ways to place, because drag-only was the wrong ask of a four-year-old:
+
+     TAP   pick a card (it lifts and speaks), then tap a number. This is the
+           primary path - the child's two taps say exactly what a drag says
+           ("this letter" / "this place") with none of the aiming.
+     DRAG  still works for anyone who prefers it, with slack: the drop point
+           only has to land NEAR a slot (SLOT_SLACK), and the nearest empty
+           slot inside that margin wins. framer's `dragSnapToOrigin` springs
+           a card back to where it lay on a miss.
+
+   Note the game is NOT "tap the right card" - every card is right somewhere.
+   The answer is the PLACE, so tapping a card can never auto-place it.
+
+   Voicing is once per interaction: picking a card speaks its form, and the
+   drop answers with a chime, not a second reading of the same letter (two
+   voices back to back read as a correction even when the child was right).
+   Fill all seven -> Anbessa cheers.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -36,12 +47,20 @@ const ANCHORS = [
 ]
 const TILTS = [-7, 5, -4, 7, -6, 4, -3]
 
+// How far outside a slot a drop still counts (px). A slot is 44x62, so this
+// roughly doubles its catching area without letting a drop reach past its
+// neighbour's centre.
+const SLOT_SLACK = 22
+
 export default function FidelLineup({ soundOn, onBack, families = [] }) {
   const pool = families.length ? families : ['ha']
   const startRef = useRef(Math.floor(Math.random() * pool.length)) // cosmetic pick
   const [round, setRound] = useState(0)
   const family = pool[(startRef.current + round) % pool.length]
   const [ctx, setCtx] = useState(() => initLineup(family, (round + 1) * 89 + startRef.current))
+  // The card in hand. Set by a tap OR by starting a drag - both mean "this
+  // letter" - and cleared once it lands somewhere.
+  const [held, setHeld] = useState(null)
   const reduce = useReducedMotion()
   const slotRefs = useRef([])
 
@@ -57,36 +76,57 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
 
   useEffect(() => {
     setCtx(initLineup(family, (round + 1) * 89 + startRef.current))
+    setHeld(null)
     sayPrompt('lineupFind', soundOn)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round])
 
   const won = ctx.phase === Phase.WIN
 
-  const onPickUp = (key) => playForm(formOf(key), soundOn)
+  const pickUp = (key) => {
+    setHeld(key)
+    playForm(formOf(key), soundOn) // the ONE voice of this interaction
+  }
+
+  const place = (key, slot) => {
+    if (!key || slot < 0 || ctx.slots[slot] != null) return
+    recordAnswer(ctx.order[slot], key, 'lineup')
+    const r = lineupTransition(ctx, { type: LineupEvent.PLACE, payload: { key, slot } })
+    if (r.accepted) {
+      setHeld(null)
+      playEffect('good', soundOn)
+      setCtx(r.next)
+      if (r.next.phase === Phase.WIN) setTimeout(() => playEffect('win', soundOn), 200)
+    } else {
+      // Wrong home. Keep the card in hand so the next try is one tap, and do
+      // not re-read the letter - the child just heard it, and a second
+      // reading right after a buzz sounds like the letter was the mistake.
+      playEffect('bad', soundOn)
+    }
+  }
+
+  /** The empty slot a point lands on or near, or -1. Ties go to the nearest
+      centre, so overlapping slack never picks the wrong neighbour. */
+  const slotAt = (px, py) => {
+    let best = -1
+    let bestDist = Infinity
+    slotRefs.current.forEach((el, i) => {
+      if (!el || ctx.slots[i] != null) return
+      const r = el.getBoundingClientRect()
+      if (px < r.left - SLOT_SLACK || px > r.right + SLOT_SLACK) return
+      if (py < r.top - SLOT_SLACK || py > r.bottom + SLOT_SLACK) return
+      const d = Math.hypot(px - (r.left + r.right) / 2, py - (r.top + r.bottom) / 2)
+      if (d < bestDist) { bestDist = d; best = i }
+    })
+    return best
+  }
 
   const onDrop = (key, event, info) => {
     const px = (event && typeof event.clientX === 'number') ? event.clientX : info.point.x
     const py = (event && typeof event.clientY === 'number') ? event.clientY : info.point.y
-    // Which slot (if any) did the card land over?
-    let target = -1
-    slotRefs.current.forEach((el, i) => {
-      if (!el || ctx.slots[i] != null) return
-      const r = el.getBoundingClientRect()
-      if (px >= r.left && px <= r.right && py >= r.top && py <= r.bottom) target = i
-    })
-    if (target < 0) return // dropped on nothing -> snaps back
-    recordAnswer(ctx.order[target], key, 'lineup')
-    const r = lineupTransition(ctx, { type: LineupEvent.PLACE, payload: { key, slot: target } })
-    if (r.accepted) {
-      playForm(formOf(key), soundOn)
-      setCtx(r.next)
-      if (r.next.phase === Phase.WIN) setTimeout(() => playEffect('win', soundOn), 200)
-    } else {
-      // wrong home: gentle miss + re-chant so the child hears it again
-      playEffect('bad', soundOn)
-      setTimeout(() => playForm(formOf(key), soundOn), 300)
-    }
+    const target = slotAt(px, py)
+    if (target < 0) return // dropped on nothing -> snaps back, still in hand
+    place(key, target)
   }
 
   return (
@@ -102,9 +142,10 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
       <main className="flex flex-1 flex-col items-center gap-4 pt-2">
         <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 92 : 64} mood="happy" pose={won ? 'cheer' : 'stand'} />
 
-        {/* the seven home slots: empty ones show the Arabic + Ge'ez numeral,
-           filled ones show the landed card as a gold tile */}
-        <div className="flex items-end justify-center gap-1" aria-hidden="true">
+        {/* The seven home slots: empty ones show the Arabic + Ge'ez numeral
+           and TAKE A TAP once a card is in hand; filled ones show the landed
+           card as a gold tile. */}
+        <div className="flex items-end justify-center gap-1" role="group" aria-label={t('lineupSlots', 'The seven places')}>
           {ctx.slots.map((k, i) => (
             <div
               key={i}
@@ -113,15 +154,26 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
               style={{ width: 44, height: 62 }}
             >
               {k ? (
-                <FidelCard glyph={glyphOf(k)} size={40} done />
-              ) : (
-                <div
-                  className="flex h-full w-full flex-col items-center justify-center rounded-xl border-2 border-dashed"
-                  style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}
-                >
-                  <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: 'var(--muted)' }}>{i + 1}</span>
-                  <span className="geez" style={{ fontSize: 13, fontWeight: 900, lineHeight: 1.15, color: 'var(--accent)' }}>{GEEZ_DIGITS[i]}</span>
+                <div role="img" aria-label={t('lineupSlotFilled', 'Place {n}: {g}', { n: i + 1, g: glyphOf(k) })}>
+                  <FidelCard glyph={glyphOf(k)} size={40} done />
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => place(held, i)}
+                  disabled={!held}
+                  aria-label={t('lineupSlotEmpty', 'Put the letter in place {n}', { n: i + 1 })}
+                  className={`flex h-full w-full flex-col items-center justify-center rounded-xl border-2 border-dashed ${FOCUS}`}
+                  style={{
+                    borderColor: held ? 'var(--go)' : 'var(--line)',
+                    background: held ? 'var(--go-soft)' : 'var(--paper)',
+                    cursor: held ? 'pointer' : 'default',
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: held ? 'var(--go-ink)' : 'var(--muted)' }}>{i + 1}</span>
+                  <span className="geez" style={{ fontSize: 13, fontWeight: 900, lineHeight: 1.15, color: 'var(--accent)' }}>{GEEZ_DIGITS[i]}</span>
+                </button>
               )}
             </div>
           ))}
@@ -140,13 +192,19 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
                   dragSnapToOrigin
                   dragMomentum={false}
                   whileDrag={{ scale: 1.12, zIndex: 30, rotate: 0 }}
-                  onPointerDown={() => onPickUp(key)}
+                  onPointerDown={() => pickUp(key)}
                   onDragEnd={(e, info) => onDrop(key, e, info)}
-                  aria-label={glyphOf(key)}
+                  aria-label={t('lineupCard', 'Letter {g}', { g: glyphOf(key) })}
+                  aria-pressed={held === key}
                   className={`absolute rounded-2xl ${FOCUS}`}
                   style={{
                     left: `${home.x}%`, top: `${home.y}%`,
-                    rotate: reduce ? 0 : `${home.tilt}deg`,
+                    rotate: reduce || held === key ? 0 : `${home.tilt}deg`,
+                    zIndex: held === key ? 20 : 1,
+                    scale: held === key && !reduce ? 1.1 : 1,
+                    // A held card wears the same green as the waiting slots,
+                    // so "this letter is going somewhere" reads at a glance.
+                    boxShadow: held === key ? '0 0 0 4px var(--go)' : 'none',
                     background: 'transparent', border: 'none', padding: 0,
                     cursor: 'grab', touchAction: 'none',
                   }}
@@ -171,7 +229,9 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
         )}
         {!won && (
           <p className="px-4 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('lineupHint', 'Drag each letter to its number.')}
+            {held
+              ? t('lineupHintPlace', 'Now tap the number it belongs to.')
+              : t('lineupHintPick', 'Tap a letter, then tap its number.')}
           </p>
         )}
       </main>

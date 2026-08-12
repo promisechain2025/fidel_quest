@@ -5,6 +5,12 @@
    order; the child taps the matching glyph from the shuffled tray and it
    climbs a rung. A wrong tap re-chants the wanted form (never blocks). Fill
    all seven rungs -> Anbessa cheers.
+
+   ONE VOICE PER TAP. A correct tap answers with a chime and then Kokeb calls
+   the NEXT form; it deliberately does not read the tapped letter back first.
+   Two letters spoken back to back (the one you just placed, then the one
+   wanted next) is the single most confusing thing this screen can do - a
+   child hears the second one as a correction of the first.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -37,10 +43,12 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
   }, [round])
 
   // Announce the next expected form whenever a rung is filled (and at start).
+  // Mid-round the call waits out the "good" chime, so the child hears one
+  // thing at a time: ding, then the next letter.
   useEffect(() => {
     if (ctx.phase !== Phase.PLAY) return
     const want = formOf(ctx.order[ctx.placed])
-    const id = setTimeout(() => playForm(want, soundOn), 320)
+    const id = setTimeout(() => playForm(want, soundOn), ctx.placed === 0 ? 320 : 620)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx.placed, family])
@@ -51,7 +59,8 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
     recordAnswer(want, key, 'ladder')
     const r = ladderTransition(ctx, { type: LadderEvent.TAP, payload: { key } })
     if (r.accepted) {
-      playForm(formOf(key), soundOn)
+      // Chime only - the effect above speaks the next wanted form.
+      playEffect('good', soundOn)
       setCtx(r.next)
       if (r.next.phase === Phase.WIN) setTimeout(() => playEffect('win', soundOn), 200)
     } else {

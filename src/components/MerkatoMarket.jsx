@@ -3,10 +3,16 @@
    ----------------------------------------------------------------------------
    Anbessa's market stall. An item sits on the counter with its price written
    as a Ge'ez numeral (፩..፱); the child reads the number and taps the coin bag
-   holding that many birr. Right bag -> the item drops in the basket and
+   holding that many coins. Right bag -> the item drops in the basket and
    Anbessa thanks them; wrong bag -> a gentle re-cue, never a charge. Fill the
    basket to win. Teaches Ge'ez-numeral reading + counting, wrapped in a warm
    Merkato scene. Thin shell over the pure marketCore.
+
+   Prices are in DOLLARS, not birr. The stall is Ethiopian but the players are
+   not: this ships to diaspora families in a dozen currencies and to the
+   Tigrinya pack (Eritrean nakfa), so a birr price tag is wrong for most of
+   them. The lesson here is the Ge'ez NUMERAL, and a unit every child already
+   recognises keeps the numeral the only new thing on screen.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -102,7 +108,7 @@ export default function MerkatoMarket({ soundOn, onBack }) {
               <WordPicture emoji={item.picture} size={84} />
               <div className="flex items-center gap-2 rounded-xl px-3 py-1" style={{ background: 'var(--go-soft)', border: '1.5px solid var(--go)' }}>
                 <span className="geez text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{GEEZ_DIGITS[item.price - 1]}</span>
-                <span className="text-xs font-black" style={{ color: 'var(--muted)' }}>{t('marketBirr', 'birr')}</span>
+                <span className="text-xs font-black" style={{ color: 'var(--muted)' }}>{t('marketUnit', 'dollars')}</span>
               </div>
             </div>
 

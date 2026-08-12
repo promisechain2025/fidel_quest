@@ -51,6 +51,7 @@ import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
 import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import { gameReady, gamesPending } from './platform/gameReadiness'
 import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
@@ -2776,6 +2777,12 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
   // lost), so the child-facing surface needs no parental gate.
   const [profileReg] = useState(loadProfiles)
   const [whoOpen, setWhoOpen] = useState(false)
+  // A game whose board cannot be filled from what the child knows is hidden
+  // rather than dealt half-empty (platform/gameReadiness.js). `scope` is
+  // state, so flipping the letter-scope toggle brings the tiles straight
+  // back without closing the Backpack.
+  const [learnedFamilies] = useState(() => learnedFamilyIds(loadJourney()).length)
+  const ready = (game) => gameReady(game, { scope, learned: learnedFamilies })
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -2815,12 +2822,12 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
-            <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
-            <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
-            <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
-            <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
-            <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
+            {ready('workshop') && <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
+            {ready('ladder') && <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />}
+            {ready('lineup') && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />}
+            {ready('match') && <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />}
+            {ready('market') && <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />}
+            {ready('bingo') && <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
             {packHasStories() && (
               <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
@@ -2847,6 +2854,13 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
           </div>
+          {/* Say WHY the grid is short, so a hidden game reads as "not yet"
+             rather than "missing". */}
+          {gamesPending({ scope, learned: learnedFamilies }) && (
+            <p className="mt-2.5 px-1 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+              {t('gamesLocked', 'More games appear as more letters are learned.')}
+            </p>
+          )}
           {/* Adult utilities live in their own visually quieter row so a
              child's play grid is not interleaved with settings doors. */}
           <p className="mt-3 px-1 text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>

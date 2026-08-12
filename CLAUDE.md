@@ -206,6 +206,26 @@ user-visible claim on the site must be checkable against app code:
 - **A promise on a sales page must match the Terms page**, and no
   `[bracketed placeholder]` ships next to a live checkout.
 
+### A game must be playable before it is offered
+
+- **No game is shown before its board can be filled.** Every side game
+  declares its minimum in `platform/gameReadiness.js` and the Backpack hides
+  the tile until then; the thresholds are asserted against the real data
+  (board sizes, word lists) in `gameReadiness.test.js`, never guessed. With
+  one family learned, Match used to deal a "pair" of the same letter twice
+  and Bingo repeated it across nine cells - a game that cannot be played is
+  worse than a game that is not there yet. The ALL letter-scope stays the
+  deliberate override.
+- **One voice per interaction.** A tap may speak the letter, or chime and
+  let the next call speak - never both. Two letters spoken back to back
+  (what you placed, then what is wanted next) reads to a child as a
+  correction even when they were right.
+- **Never require precision a four-year-old does not have.** A drag target
+  gets slack around it and, wherever the choice can be expressed in taps,
+  a tap path exists alongside the drag (`FidelLineup`: pick the letter, then
+  tap its place). Auto-placing on the tap is not the fix when the placement
+  IS the question being asked.
+
 ### Accessibility is measured, not eyeballed
 
 - Text contrast >= 4.5:1 (>= 3:1 at 18.66px bold / 24px), and focus
