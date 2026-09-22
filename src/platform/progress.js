@@ -14,6 +14,7 @@
    The snapshot moves over WhatsApp/AirDrop as a small .json - no server,
    nothing leaves the device unless the family shares it.
    ========================================================================== */
+import { APP_NAME } from './brand'
 import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
@@ -103,7 +104,7 @@ export async function shareProgressSnapshot(snap = snapshotProgress()) {
       const b64 = btoa(unescape(encodeURIComponent(text)))
       await Filesystem.writeFile({ path: filename, data: b64, directory: Directory.Cache })
       const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache })
-      await Share.share({ title: 'eGeez progress', files: [uri] })
+      await Share.share({ title: `${APP_NAME} progress`, files: [uri] })
       return 'shared'
     } catch { /* fall through to web share / download */ }
   }
@@ -111,7 +112,7 @@ export async function shareProgressSnapshot(snap = snapshotProgress()) {
   const file = typeof File !== 'undefined' ? new File([blob], filename, { type: 'application/json' }) : null
   try {
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: 'eGeez progress', files: [file] })
+      await navigator.share({ title: `${APP_NAME} progress`, files: [file] })
       return 'shared'
     }
   } catch { /* cancelled or unsupported; fall through */ }

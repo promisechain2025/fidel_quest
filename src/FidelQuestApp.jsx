@@ -73,7 +73,7 @@ import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
-import { t, getLang, setLang } from './platform/i18n'
+import { t, getLang, setLang, APP_NAME } from './platform/i18n'
 import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D } from './components/ArcadeFallback'
@@ -2314,7 +2314,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             <Hero size={48} worn={worn} />
           </button>
           <div className="min-w-0 text-left">
-            <h1 className="text-base font-black leading-none">eGeez</h1>
+            <h1 className="geez text-base font-black leading-none">{t('appName', 'ኢግእዝ')}</h1>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
               <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
                 {doneCount}/{JOURNEY.length}
@@ -2605,7 +2605,7 @@ function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
       {art ? (
-        <SpecialtyIcon name={art} size={48} />
+        <SpecialtyIcon name={art} size={72} />
       ) : (
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
           {icon}
@@ -2773,7 +2773,10 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex shrink-0 items-center justify-between">
-          <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
+          <h2 className="min-w-0 leading-tight">
+            <span className="geez block text-lg font-black">{t('appName', 'ኢግእዝ')}</span>
+            <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>{t('backpack', 'Backpack')}</span>
+          </h2>
           <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
@@ -3656,12 +3659,12 @@ function ChallengeShareButton({ payload, label }) {
     const text = `${t('challengeShareText', 'Beat my eGeez score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: APP_NAME, text, url }) } catch { /* dismissed */ }
       return
     }
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'eGeez', text, url })
+        await navigator.share({ title: APP_NAME, text, url })
         return
       }
     } catch {
@@ -4125,11 +4128,11 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
     track('assignment_receipt')
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: APP_NAME, text, url }) } catch { /* dismissed */ }
       return
     }
     try {
-      if (navigator.share) { await navigator.share({ title: 'eGeez', text, url }); return }
+      if (navigator.share) { await navigator.share({ title: APP_NAME, text, url }); return }
     } catch { return /* user dismissed */ }
     try {
       await navigator.clipboard.writeText(text)

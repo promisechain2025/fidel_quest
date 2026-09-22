@@ -36,23 +36,37 @@ const PLATE_STOPS = {
 
 function Plate({ gid, name }) {
   const [from, to] = PLATE_STOPS[name] || PLATE_STOPS.hunt
+  const gems = [[9, 9, '#c0453a'], [55, 9, '#3f63a0'], [9, 55, '#3f8f4a'], [55, 55, '#ffe08a']]
   return (
     <>
       <defs>
-        <linearGradient id={gid('plate')} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gid('plate')} x1="0" y1="0" x2="0.2" y2="1">
           <stop offset="0%" stopColor={from} />
           <stop offset="100%" stopColor={to} />
         </linearGradient>
         <linearGradient id={gid('gloss')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.48" />
-          <stop offset="38%" stopColor="#ffffff" stopOpacity="0.06" />
-          <stop offset="100%" stopColor="#1b140c" stopOpacity="0.16" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.62" />
+          <stop offset="32%" stopColor="#ffffff" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#1b140c" stopOpacity="0.22" />
         </linearGradient>
+        <radialGradient id={gid('gem')} cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#fff" />
+          <stop offset="45%" stopColor="#fff" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#1b140c" stopOpacity="0.35" />
+        </radialGradient>
       </defs>
-      <rect x="1.5" y="1.5" width="61" height="61" rx="16" fill={`url(#${gid('plate')})`} />
-      <rect x="1.5" y="1.5" width="61" height="61" rx="16" fill={`url(#${gid('gloss')})`} />
-      <rect x="3.2" y="3.2" width="57.6" height="57.6" rx="14" fill="none" stroke="#fff8e4" strokeOpacity="0.62" strokeWidth="1.3" />
-      <rect x="5" y="5" width="54" height="54" rx="12.5" fill="none" stroke="#6b4414" strokeOpacity="0.22" strokeWidth="0.8" />
+      <ellipse cx="32" cy="60" rx="24" ry="3.2" fill="#1b140c" opacity="0.28" />
+      <rect x="1.2" y="1.2" width="61.6" height="61.6" rx="16" fill={`url(#${gid('plate')})`} />
+      <rect x="1.2" y="1.2" width="61.6" height="61.6" rx="16" fill={`url(#${gid('gloss')})`} />
+      <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="#e2c069" strokeWidth="2.3" />
+      <rect x="4.6" y="4.6" width="54.8" height="54.8" rx="13" fill="none" stroke="#fff8e4" strokeOpacity="0.75" strokeWidth="1.15" />
+      <path d="M14 7.2 Q32 3.4 50 7.2" fill="none" stroke="#fff" strokeOpacity="0.7" strokeWidth="2.4" strokeLinecap="round" />
+      {gems.map(([x, y, fill]) => (
+        <g key={`${x}${y}`}>
+          <circle cx={x} cy={y} r="3.1" fill={fill} stroke="#e2c069" strokeWidth="0.9" />
+          <circle cx={x - 0.7} cy={y - 0.8} r="1.1" fill={`url(#${gid('gem')})`} />
+        </g>
+      ))}
     </>
   )
 }
@@ -112,11 +126,16 @@ const OBJECTS = {
   ladder: () => (
     <g>
       <Shadow />
-      {star(32, 13, 7.5, '#fff6c8')}
-      <path d="M22 48 L26 20" stroke="#f8e7b0" strokeWidth="3.2" strokeLinecap="round" />
-      <path d="M42 48 L38 20" stroke="#e2c069" strokeWidth="3.2" strokeLinecap="round" />
-      {[24, 32, 40].map((y) => (
-        <path key={y} d={`M${24 + (y - 24) * 0.12} ${y} H${40 - (y - 24) * 0.12}`} stroke="#fffaf0" strokeWidth="2.4" strokeLinecap="round" />
+      {star(32, 12, 6.5, '#fff6c8')}
+      <path d="M21 50 L25.5 18" stroke="#8a6420" strokeWidth="5" strokeLinecap="round" />
+      <path d="M21 50 L25.5 18" stroke="#f8e7b0" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M43 50 L38.5 18" stroke="#6b4414" strokeWidth="5" strokeLinecap="round" />
+      <path d="M43 50 L38.5 18" stroke="#e2c069" strokeWidth="2.6" strokeLinecap="round" />
+      {[26, 34, 42].map((y) => (
+        <g key={y}>
+          <path d={`M${23.5 + (y - 26) * 0.1} ${y + 1.2} H${41 - (y - 26) * 0.1}`} stroke="#8a6420" strokeWidth="3.2" strokeLinecap="round" />
+          <path d={`M${23.5 + (y - 26) * 0.1} ${y} H${41 - (y - 26) * 0.1}`} stroke="#fffaf0" strokeWidth="2" strokeLinecap="round" />
+        </g>
       ))}
     </g>
   ),
@@ -163,15 +182,19 @@ const OBJECTS = {
   market: () => (
     <g>
       <Shadow />
-      <path d="M12 28 h40 v16 h-40 z" fill="#8a5a32" />
-      <path d="M10 28 h44 v4 h-44 z" fill="#6b4424" />
-      <path d="M10 16 h44 v12 h-44 z" fill="#c0453a" />
-      <path d="M10 16 h8 v12 h-8 z" fill="#e2c069" />
-      <path d="M26 16 h8 v12 h-8 z" fill="#e2c069" />
-      <path d="M42 16 h12 v12 h-12 z" fill="#3f8f4a" />
-      <ellipse cx="24" cy="40" rx="5" ry="3.2" fill="#ffcb33" />
-      <ellipse cx="36" cy="41" rx="4" ry="2.8" fill="#59a52a" />
-      <circle cx="42" cy="38" r="2.4" fill="#c0453a" />
+      <path d="M12 30 h40 v14 h-40 z" fill="#a56b38" />
+      <path d="M12 30 h40 v3 h-40 z" fill="#fff3d4" opacity="0.35" />
+      <path d="M10 30 h44 v3.5 h-44 z" fill="#6b4424" />
+      <path d="M8 16 h48 v8 c-8 6 -16 6 -24 0 c-8 6 -16 6 -24 0 z" fill="#c0453a" />
+      <path d="M8 16 h16 v8 c-5 4 -11 4 -16 0 z" fill="#e2c069" />
+      <path d="M24 16 h16 v8 c-5 4 -11 4 -16 0 z" fill="#fff6d4" />
+      <path d="M40 16 h16 v8 c-5 4 -11 4 -16 0 z" fill="#3f8f4a" />
+      <path d="M14 18 h8 M30 18 h8" stroke="#fff" strokeWidth="1" opacity="0.45" />
+      <ellipse cx="22" cy="40" rx="5.2" ry="3.4" fill="#ffcb33" />
+      <ellipse cx="21" cy="39" rx="2" ry="1" fill="#fff6c8" opacity="0.7" />
+      <ellipse cx="34" cy="41" rx="4.2" ry="3" fill="#59a52a" />
+      <circle cx="43" cy="38" r="2.6" fill="#c0453a" />
+      <circle cx="42.2" cy="37.2" r="0.8" fill="#fff" opacity="0.7" />
     </g>
   ),
   bingo: () => (
@@ -181,10 +204,12 @@ const OBJECTS = {
       {[0, 1, 2].map((r) => [0, 1, 2].map((c) => (
         <rect key={`${r}${c}`} x={20 + c * 9} y={18 + r * 9} width="7" height="7" rx="1.2" fill="#f3e6c4" stroke="#e2c069" strokeWidth="0.6" />
       )))}
-      <circle cx="23.5" cy="21.5" r="2.6" fill="#e2c069" />
-      <circle cx="32.5" cy="30.5" r="2.6" fill="#c0453a" />
-      <circle cx="41.5" cy="39.5" r="2.6" fill="#3f8f4a" />
-      {star(44, 14, 5, '#ffcb33')}
+      <circle cx="23.5" cy="21.5" r="2.8" fill="#e2c069" stroke="#fff6d4" strokeWidth="0.6" />
+      <circle cx="32.5" cy="30.5" r="2.8" fill="#c0453a" stroke="#fff" strokeWidth="0.5" />
+      <circle cx="41.5" cy="39.5" r="2.8" fill="#3f8f4a" />
+      <circle cx="22.6" cy="20.6" r="0.8" fill="#fff" opacity="0.8" />
+      <rect x="40" y="14" width="7" height="12" rx="3.5" fill="#3f63a0" stroke="#e2c069" strokeWidth="0.7" />
+      <circle cx="43.5" cy="22" r="2.2" fill="#c0453a" />
     </g>
   ),
   stories: () => (

@@ -10,6 +10,9 @@
    ========================================================================== */
 
 import { LANGPACKS, LANG_IDS, REINFORCE } from './langpacks'
+import { APP_NAME, HYENA_NAME } from './brand'
+
+export { APP_NAME, HYENA_NAME }
 
 const LANG_KEY = 'fq.lang'
 
@@ -51,9 +54,18 @@ export const encourageWords = () => REINFORCE[ACTIVE]?.encourage || REINFORCE.en
 export const randomPraise = () => { const w = praiseWords(); return w[Math.floor(Math.random() * w.length)] }
 export const randomEncourage = () => { const w = encourageWords(); return w[Math.floor(Math.random() * w.length)] }
 
-/** Translate a key; `fallback` is the English inline text; {n} interpolates. */
+/** Translate a key; `fallback` is the English inline text; {n} interpolates.
+    `appName` is never translated. Any other string that still says the old
+    Latin brand is rewritten to APP_NAME, and the hyena's old Latin name is
+    rewritten to HYENA_NAME, so Amharic, Tigrinya, and the diaspora packs
+    cannot show "eGeez" or "Jibby" on screen. */
 export function t(key, fallback, vars) {
-  let out = (ACTIVE !== 'en' && STRINGS[ACTIVE]?.[key]) || fallback || key
+  let out = key === 'appName'
+    ? APP_NAME
+    : (ACTIVE !== 'en' && STRINGS[ACTIVE]?.[key]) || fallback || key
+  if (typeof out === 'string') {
+    out = out.replaceAll('eGeez', APP_NAME).replaceAll('Jibby', HYENA_NAME)
+  }
   if (vars) for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, String(v))
   return out
 }

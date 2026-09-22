@@ -8,6 +8,7 @@
    No network, no accounts.
    ========================================================================== */
 import { isNativePlatform } from './native'
+import { APP_NAME } from './brand'
 
 const FLAG = 'fq.reminder.v1'
 const REMINDER_ID = 4201
@@ -95,7 +96,7 @@ export async function scheduleAssignmentDue({ due, title, body, hour = 16, key }
       notifications: [{
         id,
         title: title || 'Homework due today',
-        body: body || 'Finish your eGeez class assignment.',
+        body: body || `Finish your ${APP_NAME} class assignment.`,
         schedule: { at, allowWhileIdle: true },
       }],
     })

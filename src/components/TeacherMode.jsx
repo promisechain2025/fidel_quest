@@ -26,7 +26,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronLeft, Link2, Tv, Users, ClipboardList, Share2, Trash2, Check, CalendarDays, Flame } from 'lucide-react'
 import QRCode from 'qrcode'
-import { t, getLang } from '../platform/i18n'
+import { t, getLang, APP_NAME } from '../platform/i18n'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { sanitizeName } from '../utils/challenge'
 import { addDays } from '../platform/coach'
@@ -71,11 +71,11 @@ export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }
 async function shareUrl(url, text, onCopied) {
   const body = text ? `${text} ${url}` : url
   if (isNativePlatform()) {
-    try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text: body, url }) } catch { /* dismissed */ }
+    try { const { Share } = await import('@capacitor/share'); await Share.share({ title: APP_NAME, text: body, url }) } catch { /* dismissed */ }
     return
   }
   try {
-    if (navigator.share) { await navigator.share({ title: 'eGeez', text: body, url }); return }
+    if (navigator.share) { await navigator.share({ title: APP_NAME, text: body, url }); return }
   } catch { return /* user dismissed */ }
   try {
     await navigator.clipboard.writeText(body)

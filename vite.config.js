@@ -99,8 +99,8 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'eGeez: Easy Geez',
-        short_name: 'eGeez',
+        name: 'ኢግእዝ',
+        short_name: 'ኢግእዝ',
         description: 'An Amharic alphabet (Fidel) learning game for kids.',
         lang: 'am',
         display: 'standalone',
