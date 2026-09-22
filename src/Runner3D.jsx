@@ -70,9 +70,9 @@ function canvasTexture(size, draw) {
 function glyphTexture(char) {
   return canvasTexture(256, (g, s) => {
     const face = g.createLinearGradient(0, 16, 0, s - 8)
-    face.addColorStop(0, '#fff1c4')
-    face.addColorStop(0.46, '#f0c14a')
-    face.addColorStop(1, '#d79a22')
+    face.addColorStop(0, '#ffe7a0')
+    face.addColorStop(0.42, '#f0b429')
+    face.addColorStop(1, '#c88818')
     g.fillStyle = face
     g.beginPath()
     g.roundRect(10, 10, s - 20, s - 20, 40)
@@ -103,28 +103,49 @@ function glyphTexture(char) {
   })
 }
 
-/* A vertical highland sky. Mapped onto the inside of a dome; fog stays off
-   that material so the golden-hour wash does not dissolve into the ground. */
+/* Equirectangular highland sky. The chase camera looks slightly down, so
+   the pixels on screen are only the band just above the horizon (texture
+   v about 0.37 to 0.50). The warm wash has to live THERE, not at the
+   zenith. Fog uses the same horizon colour. A canvas background costs no
+   extra mesh, including on the low-end tier. */
+function mixSky(skyNum, t, toward) {
+  const sky = [(skyNum >> 16) & 255, (skyNum >> 8) & 255, skyNum & 255]
+  return sky.map((v, i) => Math.round(v + (toward[i] - v) * t))
+}
+function rgbNum(rgb) {
+  return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
+}
 function skyTexture(skyNum) {
   const c = document.createElement('canvas')
-  c.width = 8
+  c.width = 512
   c.height = 256
   const g = c.getContext('2d')
   const tex = new THREE.CanvasTexture(c)
   tex.colorSpace = THREE.SRGBColorSpace
+  tex.mapping = THREE.EquirectangularReflectionMapping
   tex.magFilter = THREE.LinearFilter
-  if (!g) return tex
-  const sky = [(skyNum >> 16) & 255, (skyNum >> 8) & 255, skyNum & 255]
-  const mix = (t, toward) => sky.map((v, i) => Math.round(v + (toward[i] - v) * t))
+  tex.minFilter = THREE.LinearFilter
+  const horizon = mixSky(skyNum, 0.55, [255, 170, 72])
+  const high = mixSky(skyNum, 0.78, [255, 150, 48])
+  if (!g) return { tex, fog: rgbNum(horizon) }
   const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   const grad = g.createLinearGradient(0, 0, 0, 256)
-  grad.addColorStop(0, css(mix(0.45, [255, 196, 110])))
-  grad.addColorStop(0.2, css(mix(0.22, [255, 226, 168])))
-  grad.addColorStop(0.48, css(sky))
-  grad.addColorStop(1, css(sky))
+  grad.addColorStop(0, css(high))
+  grad.addColorStop(0.36, css(high))
+  grad.addColorStop(0.46, css(horizon))
+  grad.addColorStop(1, css(horizon))
   g.fillStyle = grad
-  g.fillRect(0, 0, 8, 256)
-  return tex
+  g.fillRect(0, 0, 512, 256)
+  // Sun sits in the on-screen band (about 15 degrees above the horizon).
+  g.fillStyle = 'rgba(255, 214, 120, 0.45)'
+  g.beginPath()
+  g.arc(400, 104, 26, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = '#fff6d2'
+  g.beginPath()
+  g.arc(400, 104, 11, 0, Math.PI * 2)
+  g.fill()
+  return { tex, fog: rgbNum(horizon) }
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -494,12 +515,7 @@ class RunnerWorld {
     sun.position.set(-6, 12, 4)
     this.scene.add(sun)
 
-    this.sky = new THREE.Mesh(
-      new THREE.SphereGeometry(160, LOW_END ? 12 : 20, LOW_END ? 8 : 12),
-      new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false, fog: false }),
-    )
-    this.sky.position.set(0, 6, -16)
-    this.scene.add(this.sky)
+    this.skyMap = null
 
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
     this.ground.rotation.x = -Math.PI / 2
@@ -570,11 +586,11 @@ class RunnerWorld {
   }
 
   setPlace(place) {
-    this.scene.background = new THREE.Color(place.sky)
-    this.scene.fog = new THREE.Fog(place.sky, place.fog[0], place.fog[1])
-    const prevSky = this.sky.material.map
-    this.sky.material.map = skyTexture(place.sky)
-    this.sky.material.needsUpdate = true
+    const prevSky = this.skyMap
+    const sky = skyTexture(place.sky)
+    this.skyMap = sky.tex
+    this.scene.background = this.skyMap
+    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0], place.fog[1])
     if (prevSky) prevSky.dispose()
     this.ground.material = mat(place.ground)
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
@@ -753,6 +769,8 @@ class RunnerWorld {
     // renderer.dispose() alone leaves uploaded geometry/texture buffers; walk
     // the whole scene freeing per-instance resources first (shared MATS + zebra
     // texture survive for the next world, which reuses them).
+    if (this.skyMap) { this.skyMap.dispose(); this.skyMap = null }
+    this.scene.background = null
     disposeGroup(this.scene)
     this.renderer.dispose()
   }
