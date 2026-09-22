@@ -69,19 +69,62 @@ function canvasTexture(size, draw) {
 
 function glyphTexture(char) {
   return canvasTexture(256, (g, s) => {
-    g.fillStyle = '#fffdf6'
+    const face = g.createLinearGradient(0, 16, 0, s - 8)
+    face.addColorStop(0, '#fff1c4')
+    face.addColorStop(0.46, '#f0c14a')
+    face.addColorStop(1, '#d79a22')
+    g.fillStyle = face
     g.beginPath()
-    g.roundRect(8, 8, s - 16, s - 16, 36)
+    g.roundRect(10, 10, s - 20, s - 20, 40)
     g.fill()
-    g.lineWidth = 10
-    g.strokeStyle = '#e0b25a'
+    g.lineWidth = 12
+    g.strokeStyle = '#a9832f'
     g.stroke()
-    g.fillStyle = '#3c3529'
-    g.font = `900 ${s * 0.62}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+    g.lineWidth = 4
+    g.strokeStyle = 'rgba(255, 248, 220, 0.9)'
+    g.beginPath()
+    g.roundRect(28, 28, s - 56, s - 56, 28)
+    g.stroke()
+    const gems = [[46, 46, '#c0453a'], [s - 46, 46, '#3f63a0'], [46, s - 46, '#3f8f4a'], [s - 46, s - 46, '#fff6c8']]
+    for (const [x, y, col] of gems) {
+      g.beginPath()
+      g.fillStyle = col
+      g.arc(x, y, 10, 0, Math.PI * 2)
+      g.fill()
+      g.lineWidth = 3
+      g.strokeStyle = '#e2c069'
+      g.stroke()
+    }
+    g.fillStyle = '#7c4f00'
+    g.font = `900 ${s * 0.5}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
     g.textAlign = 'center'
     g.textBaseline = 'middle'
-    g.fillText(char, s / 2, s / 2 + s * 0.03)
+    g.fillText(char, s / 2, s / 2 + s * 0.02)
   })
+}
+
+/* A vertical highland sky. Mapped onto the inside of a dome; fog stays off
+   that material so the golden-hour wash does not dissolve into the ground. */
+function skyTexture(skyNum) {
+  const c = document.createElement('canvas')
+  c.width = 8
+  c.height = 256
+  const g = c.getContext('2d')
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.magFilter = THREE.LinearFilter
+  if (!g) return tex
+  const sky = [(skyNum >> 16) & 255, (skyNum >> 8) & 255, skyNum & 255]
+  const mix = (t, toward) => sky.map((v, i) => Math.round(v + (toward[i] - v) * t))
+  const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+  const grad = g.createLinearGradient(0, 0, 0, 256)
+  grad.addColorStop(0, css(mix(0.45, [255, 196, 110])))
+  grad.addColorStop(0.2, css(mix(0.22, [255, 226, 168])))
+  grad.addColorStop(0.48, css(sky))
+  grad.addColorStop(1, css(sky))
+  g.fillStyle = grad
+  g.fillRect(0, 0, 8, 256)
+  return tex
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -281,6 +324,14 @@ function sph(g, r, color, x, y, z) {
   return m
 }
 
+/* A meskel tuft on the track shoulder. One or two per chunk; skipped density
+   on the low-end tier so the extra cones stay a handful. */
+function grassTuft(g, x, z) {
+  cone(g, 0.16, 0.48, 0x2f6a32, x, 0.24, z, 5)
+  cone(g, 0.12, 0.36, 0x67b255, x + 0.18, 0.18, z + 0.06, 5)
+  cone(g, 0.045, 0.1, 0xffd34d, x + 0.02, 0.5, z, 4)
+}
+
 const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
 /** Free the GPU resources of a group before dropping it. three.js does NOT
     reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
@@ -438,16 +489,23 @@ class RunnerWorld {
     this.camera.position.set(0, 3.9, 7.2)
     this.camera.lookAt(0, 1.1, -11)
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
+    this.scene.add(new THREE.HemisphereLight(0xfff2d8, 0x6a7a48, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
     sun.position.set(-6, 12, 4)
     this.scene.add(sun)
+
+    this.sky = new THREE.Mesh(
+      new THREE.SphereGeometry(160, LOW_END ? 12 : 20, LOW_END ? 8 : 12),
+      new THREE.MeshBasicMaterial({ side: THREE.BackSide, depthWrite: false, fog: false }),
+    )
+    this.sky.position.set(0, 6, -16)
+    this.scene.add(this.sky)
 
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
     this.ground.rotation.x = -Math.PI / 2
     this.ground.position.z = -200
     this.scene.add(this.ground)
-    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xcfc0a0 }))
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xe6d3ae }))
     this.track.rotation.x = -Math.PI / 2
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
@@ -514,6 +572,10 @@ class RunnerWorld {
   setPlace(place) {
     this.scene.background = new THREE.Color(place.sky)
     this.scene.fog = new THREE.Fog(place.sky, place.fog[0], place.fog[1])
+    const prevSky = this.sky.material.map
+    this.sky.material.map = skyTexture(place.sky)
+    this.sky.material.needsUpdate = true
+    if (prevSky) prevSky.dispose()
     this.ground.material = mat(place.ground)
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
@@ -521,10 +583,13 @@ class RunnerWorld {
     for (let k = 0; k < CHUNK_COUNT; k++) {
       const g = new THREE.Group()
       build(g, k)
+      const side = k % 2 === 0 ? -1 : 1
+      grassTuft(g, side * 5.15, -8)
+      if (!LOW_END) grassTuft(g, -side * 5.25, -28)
       // lane dashes ride along in the chunk so the ground reads as moving
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xfff6dd, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xfff6dd, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xe2c069, -1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xe2c069, 1.2, 0.05, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)
@@ -545,9 +610,13 @@ class RunnerWorld {
       g.add(sign)
       cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
     }
-    box(g, 8.4, 0.22, 0.22, 0xe0b25a, 0, 3, 0)
+    box(g, 8.4, 0.22, 0.22, 0xe2c069, 0, 3, 0)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
+    sph(g, 0.2, 0xe2c069, -4.1, 3.08, 0)
+    sph(g, 0.2, 0xe2c069, 4.1, 3.08, 0)
+    sph(g, 0.09, 0xc0453a, -4.1, 3.08, 0.14)
+    sph(g, 0.09, 0x3f63a0, 4.1, 3.08, 0.14)
     g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false

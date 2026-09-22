@@ -22,6 +22,30 @@ import { t } from './platform/i18n'
 import { initCatch, catchTransition, Phase, CatchEvent } from './letterCatchCore'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
+
+/* Four corner jewels on a falling gold tile. Static spans — the tile
+   already moves, and this must stay cheap on the low-end tick. */
+function CatchJewel() {
+  const dot = (style) => (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
+      style={{
+        ...style,
+        background: 'radial-gradient(circle at 35% 32%, #fff8dc, #e2c069 55%, #8a5a12)',
+        boxShadow: '0 0 0 1px rgba(92, 58, 8, 0.4)',
+      }}
+    />
+  )
+  return (
+    <>
+      {dot({ left: 3, top: 3 })}
+      {dot({ right: 3, top: 3 })}
+      {dot({ left: 3, bottom: 3 })}
+      {dot({ right: 3, bottom: 3 })}
+    </>
+  )
+}
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const reseed = (s) => ((s * 1664525 + 1013904223) >>> 0) | 1
 const SPARK = ['#ffd25a', '#ff8a3d', '#8affc1', '#7db8ff', '#ffffff']
@@ -146,7 +170,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
   if (ctx.phase === Phase.LOSE) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#171334,#3a2352)', color: '#fdf4e2' }}>
+      <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#12182a,#24362a)', color: '#fdf4e2' }}>
         <JibbySvg size={120} />
         <h2 className="text-2xl font-black">{t('catchLose', 'Out of hearts!')}</h2>
         <p className="font-bold" style={{ color: '#c9bfe6' }}>{t('caughtCount', `Shot ${ctx.caught}`, { n: ctx.caught })}</p>
@@ -163,7 +187,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col" style={{ background: 'linear-gradient(180deg,#171334 0%,#241a49 55%,#3a2352 100%)', color: '#fdf4e2' }}>
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col" style={{ background: 'linear-gradient(180deg,#12182a 0%,#1a2340 46%,#24362a 100%)', color: '#fdf4e2' }}>
       <header className="flex items-center gap-2 px-4 pt-3">
         <button type="button" onClick={() => onExit({ won: false })} aria-label={t('quit', 'Quit')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: '#c9bfe6', outlineColor: '#ffd25a' }}>
           <X className="h-6 w-6" />
@@ -203,8 +227,9 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
             <motion.button key={it.id} type="button" data-fam={it.key} onClick={() => onShoot(it)} whileTap={{ scale: 0.86 }}
               aria-label={`${t('lcShoot', 'Shoot')} ${f?.sound}`}
               className={`geez absolute flex h-14 w-14 items-center justify-center rounded-2xl text-3xl font-black ${FOCUS}`}
-              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,210,90,0.4)', color: '#fff', boxShadow: '0 3px 10px rgba(0,0,0,0.35)', outlineColor: '#ffd25a' }}>
-              {f?.char}
+              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle at 32% 24%, #fff1c4, #f0c14a 58%, #d79a22)', border: '2px solid #a9832f', color: '#7c4f00', boxShadow: '0 3px 0 #a06a30, 0 4px 10px rgba(0,0,0,0.35)', outlineColor: '#ffd25a' }}>
+              <CatchJewel />
+              <span className="relative">{f?.char}</span>
             </motion.button>
           )
         })}
@@ -250,10 +275,10 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   )
 }
 
-/* A living night sky (no game logic): a glowing moon, soft nebula haze, layered
-   twinkling stars, two slow shooting stars, and a horizon glow that grounds
-   Anbessa. Deterministic positions (stable across renders); all motion is
-   dropped when the player prefers reduced motion. */
+/* A living night sky (no game logic): a glowing moon, lapis and gold haze,
+   layered twinkling stars, two slow shooting stars, and a highland ridge
+   that grounds Anbessa. Deterministic positions (stable across renders);
+   all motion is dropped when the player prefers reduced motion. */
 const SKY_CSS = `
 @keyframes lc-twk { 0%,100% { opacity: var(--o); } 50% { opacity: calc(var(--o) * 0.3); } }
 @keyframes lc-shoot {
@@ -269,6 +294,7 @@ const SKY_CSS = `
 const SKY_STARS = Array.from({ length: 66 }, (_, i) => ({
   left: `${(i * 71 + 7) % 100}%`, top: `${(i * 37 + 3) % 82}%`,
   s: 1 + (i % 4) * 0.9, o: 0.32 + (i % 5) * 0.13, dur: 2.2 + (i % 5) * 0.6, delay: (i % 7) * 0.5,
+  fill: i % 8 === 0 ? '#ffd34d' : i % 8 === 3 ? '#9eb6e6' : '#fff',
 }))
 // memo: the sky only depends on `reduce`, so it stays out of the per-frame
 // TICK re-render loop entirely.
@@ -276,9 +302,9 @@ const SkyScape = memo(function SkyScape({ reduce = false }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <style>{SKY_CSS}</style>
-      {/* nebula haze */}
-      <div className="absolute" style={{ left: '-12%', top: '4%', width: '58%', height: '46%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(120,90,220,0.30), rgba(120,90,220,0) 68%)', filter: 'blur(8px)' }} />
-      <div className="absolute" style={{ right: '-16%', top: '30%', width: '62%', height: '52%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(60,120,220,0.22), rgba(60,120,220,0) 70%)', filter: 'blur(10px)' }} />
+      {/* nebula haze — lapis and a warm gold wash, manuscript night */}
+      <div className="absolute" style={{ left: '-12%', top: '4%', width: '58%', height: '46%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(63,99,160,0.34), rgba(63,99,160,0) 68%)', filter: 'blur(8px)' }} />
+      <div className="absolute" style={{ right: '-8%', top: '8%', width: '46%', height: '36%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(226,192,105,0.16), rgba(226,192,105,0) 70%)', filter: 'blur(10px)' }} />
       {/* moon */}
       <div className="absolute" style={{ right: '11%', top: '7%', width: 58, height: 58, borderRadius: '50%', background: 'radial-gradient(circle at 36% 32%, #fff7e0, #f3d998 62%, #e6c273)', boxShadow: '0 0 34px 10px rgba(255,230,160,0.4), 0 0 90px 30px rgba(255,220,150,0.16)' }}>
         <span className="absolute rounded-full" style={{ left: 14, top: 12, width: 10, height: 10, background: 'rgba(198,160,90,0.35)' }} />
@@ -288,7 +314,7 @@ const SkyScape = memo(function SkyScape({ reduce = false }) {
       {/* stars */}
       {SKY_STARS.map((st, i) => (
         <span key={i} className="absolute rounded-full" style={{
-          left: st.left, top: st.top, width: st.s, height: st.s, background: '#fff', '--o': st.o, opacity: st.o,
+          left: st.left, top: st.top, width: st.s, height: st.s, background: st.fill, '--o': st.o, opacity: st.o,
           boxShadow: st.s > 2.6 ? '0 0 5px 1px rgba(255,255,255,0.7)' : 'none',
           animation: reduce ? 'none' : `lc-twk ${st.dur}s ease-in-out ${st.delay}s infinite`,
         }} />
@@ -301,8 +327,20 @@ const SkyScape = memo(function SkyScape({ reduce = false }) {
           animation: `lc-shoot ${7 + k * 4}s ease-in ${2 + k * 5}s infinite`,
         }} />
       ))}
-      {/* horizon glow grounding Anbessa */}
-      <div className="absolute inset-x-0 bottom-0" style={{ height: '22%', background: 'radial-gradient(120% 90% at 50% 118%, rgba(120,86,190,0.55), rgba(120,86,190,0) 70%)' }} />
+      {/* highland night ridge under the moon; Anbessa stands in front of it */}
+      <svg className="absolute inset-x-0 bottom-0 h-[32%] w-full" viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+        <path d="M0 52 L28 30 L58 46 L96 18 L138 42 L176 16 L220 40 L264 20 L310 44 L352 22 L400 38 L400 120 L0 120 Z" fill="#1a2744" />
+        <path d="M96 18 H138 M176 16 H220 M264 20 H310" stroke="#efe4d4" strokeWidth="1.2" opacity="0.28" />
+        <path d="M0 72 L46 50 L88 68 L136 46 L186 66 L240 48 L296 68 L348 50 L400 64 L400 120 L0 120 Z" fill="#1c3324" />
+        <path d="M0 96 C70 82 130 104 210 88 C280 76 340 98 400 84 L400 120 L0 120 Z" fill="#16321f" />
+        <path d="M304 70 L316 54 L328 70 Z" fill="#8a3830" />
+        <rect x="310" y="70" width="10" height="9" fill="#3a2a22" />
+        <g stroke="#2f6a32" strokeWidth="1.6" fill="none" strokeLinecap="round" opacity="0.8">
+          <path d="M18 116 q2 -12 0 -22" />
+          <path d="M28 118 q3 -10 0 -18" />
+          <path d="M372 116 q-2 -10 1 -18" />
+        </g>
+      </svg>
     </div>
   )
 })
