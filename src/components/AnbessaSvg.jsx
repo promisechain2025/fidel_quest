@@ -81,6 +81,10 @@ export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbess
       <ellipse cx={CX + 16} cy="198" rx="13" ry="10" fill="#f7b04a" />
       {/* chest star (Kokeb's little brother) */}
       <path d={`M${CX},156 l4.4,9 9.6,1 -7.2,6.5 2.1,9.5 -8.9,-5 -8.9,5 2.1,-9.5 -7.2,-6.5 9.6,-1 z`} fill="#ffc800" stroke="#e0a400" strokeWidth="1.6" />
+      <ellipse cx={CX - 28} cy="196" rx="6" ry="4" fill="#e07a28" opacity="0.55" />
+      <ellipse cx={CX + 28} cy="196" rx="6" ry="4" fill="#e07a28" opacity="0.55" />
+      <ellipse cx={CX - 14} cy="200" rx="5" ry="3.4" fill="#e88930" opacity="0.5" />
+      <ellipse cx={CX + 14} cy="200" rx="5" ry="3.4" fill="#e88930" opacity="0.5" />
 
       {/* mane */}
       <g>
@@ -106,7 +110,10 @@ export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbess
       ))}
       {/* head + muzzle */}
       <circle cx={CX} cy={HEAD_Y} r="48" fill={`url(#${id('head')})`} />
+      <ellipse cx={CX - 10} cy={HEAD_Y - 16} rx="16" ry="9" fill="#fff" opacity="0.28" transform={`rotate(-24 ${CX - 10} ${HEAD_Y - 16})`} />
+      <path d={`M${CX - 18},${HEAD_Y + 6} q6,8 2,14 M${CX + 14},${HEAD_Y + 8} q4,7 1,12`} stroke="#e8892a" strokeWidth="1.3" fill="none" opacity="0.45" strokeLinecap="round" />
       <ellipse cx={CX} cy={HEAD_Y + 18} rx="26" ry="20" fill={`url(#${id('muz')})`} />
+      <ellipse cx={CX - 6} cy={HEAD_Y + 12} rx="8" ry="4" fill="#fff" opacity="0.35" />
       <ellipse cx={CX - 30} cy={HEAD_Y + 16} rx="8" ry="5.5" fill="#ff8a6a" opacity="0.4" />
       <ellipse cx={CX + 30} cy={HEAD_Y + 16} rx="8" ry="5.5" fill="#ff8a6a" opacity="0.4" />
       {/* nose */}

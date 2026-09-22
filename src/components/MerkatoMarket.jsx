@@ -15,7 +15,9 @@ import { playEffect, playPluck } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import WordPicture, { DRAWN_PICTURES } from './Pictures'
 import { GEEZ_DIGITS } from './FidelCard'
 import { initMarket, marketTransition, Phase, MarketEvent } from '../marketCore'
@@ -81,7 +83,7 @@ export default function MerkatoMarket({ soundOn, onBack }) {
       </div>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-5">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 96 : 68} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={96} mood="happy" pose="cheer" /> : <KokebSvg size={68} />}
 
         {won ? (
           <div className="flex flex-col items-center gap-4">

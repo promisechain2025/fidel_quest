@@ -6,6 +6,7 @@
    On-model sandy-tan palette. Vector; gradient ids namespaced with useId.
    `expression` is 'grin' (default) or 'agitated' (caught mid-chomp). */
 import { useId } from 'react'
+import { HYENA_NAME } from '../platform/brand'
 
 const CX = 100
 // spots on the coat + cheeks (x, y, r)
@@ -13,7 +14,7 @@ const SPOTS = [[66, 152, 5], [134, 156, 4.6], [56, 182, 4], [144, 184, 4], [73, 
 // coarse crown mane: center spikes tallest, leaning back for a bristly look
 const MANE = [-3, -2, -1, 0, 1, 2, 3]
 
-export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', className = '', style = {} }) {
+export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
   const agit = expression === 'agitated'
@@ -83,6 +84,20 @@ export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', cla
       <ellipse cx={CX} cy="118" rx="9" ry="6" fill="#2f2415" />
       <ellipse cx={CX - 3} cy="116" rx="2.3" ry="1.4" fill="#5a4a30" />
       {SPOTS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#7c6a4a" opacity="0.7" />)}
+      <ellipse cx={CX - 8} cy="58" rx="14" ry="6" fill="#fff" opacity="0.22" transform={`rotate(-18 ${CX - 8} 58)`} />
+      <g stroke="#8a7758" strokeWidth="1.1" fill="none" opacity="0.45" strokeLinecap="round">
+        <path d="M70,150 q8,6 6,14" />
+        <path d="M84,168 q6,8 2,16" />
+        <path d="M130,152 q-8,6 -4,14" />
+        <path d="M118,176 q-4,8 2,14" />
+      </g>
+      <g stroke="#5a4b34" strokeWidth="1.2" fill="none" opacity="0.55" strokeLinecap="round">
+        <path d="M78,108 q-18,2 -28,8" />
+        <path d="M78,114 q-16,6 -26,8" />
+        <path d="M122,108 q18,2 28,8" />
+        <path d="M122,114 q16,6 26,8" />
+      </g>
+      <path d="M86,203 l-3,4 M92,204 l-2,4 M108,204 l2,4 M114,203 l3,4" stroke="#4a3c28" strokeWidth="1.3" strokeLinecap="round" />
 
       {/* heavy sloping brows angled inward-down => sly menace */}
       <path d={`M64,64 Q78,60 92,70`} stroke="#5a4b34" strokeWidth="5" fill="none" strokeLinecap="round" />

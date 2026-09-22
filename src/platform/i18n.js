@@ -10,6 +10,9 @@
    ========================================================================== */
 
 import { LANGPACKS, LANG_IDS, REINFORCE } from './langpacks'
+import { APP_NAME, HYENA_NAME } from './brand'
+
+export { APP_NAME, HYENA_NAME }
 
 const LANG_KEY = 'fq.lang'
 

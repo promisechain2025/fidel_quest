@@ -253,6 +253,36 @@ export function Harag({ w = 210, className = '', style = {} }) {
   )
 }
 
+/** Soft jewel rim for a gold chunky tile. Corner gems and an inner fillet
+    sit in the margin so the Ge'ez glyph keeps its full gold face (AA). */
+export function JewelRim() {
+  const gem = {
+    position: 'absolute',
+    width: 6,
+    height: 6,
+    borderRadius: 99,
+    background: 'radial-gradient(circle at 35% 35%, #fff8dc, #e2c069 46%, #8a5a12)',
+    boxShadow: '0 0 0 1px rgba(92, 58, 8, 0.35)',
+    pointerEvents: 'none',
+  }
+  return (
+    <span aria-hidden="true" className="pointer-events-none absolute inset-0">
+      <span
+        style={{
+          position: 'absolute',
+          inset: '7%',
+          borderRadius: '20%',
+          boxShadow: 'inset 0 1px 0 rgba(255,248,220,0.9), inset 0 0 0 1.5px rgba(140, 96, 20, 0.38)',
+        }}
+      />
+      <span style={{ ...gem, left: '6%', top: '6%' }} />
+      <span style={{ ...gem, right: '6%', top: '6%' }} />
+      <span style={{ ...gem, left: '6%', bottom: '6%' }} />
+      <span style={{ ...gem, right: '6%', bottom: '6%' }} />
+    </span>
+  )
+}
+
 /** The shared gold letter object. `state`: done | current | locked. */
 export function LetterTile({ glyph, state = 'current', size = 60, className = '', style = {} }) {
   const locked = state === 'locked'
@@ -275,7 +305,8 @@ export function LetterTile({ glyph, state = 'current', size = 60, className = ''
       }}
       aria-hidden="true"
     >
-      {locked ? <Lock style={{ width: size * 0.32, height: size * 0.32 }} /> : glyph}
+      {!locked && <JewelRim />}
+      <span className="relative">{locked ? <Lock style={{ width: size * 0.32, height: size * 0.32 }} /> : glyph}</span>
       {state === 'done' && (
         <Check
           className="absolute -right-1.5 -top-1.5 rounded-full bg-white p-0.5"
