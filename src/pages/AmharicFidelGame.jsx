@@ -33,7 +33,6 @@ import { audio as platformAudio, afterVoice, effectiveKey } from '../platform/au
 import { getLang, praiseWords, encourageWords } from '../platform/i18n'
 import { loadClassicProgress, saveClassicProgress } from '../platform/classicSave'
 import { UI_STRINGS, ORDER_NAMES, GEEZ_ORDER_NAMES } from '../data/fidelGameData'
-import { APP_NAME } from '../platform/brand'
 import { buildClassicData } from '../data/classicPack'
 import { getActivePackId, PACKS } from '../platform/ethiopic'
 import { soundEnabled, setSoundEnabled } from '../platform/sound'
@@ -663,7 +662,6 @@ export default function AmharicFidelGame() {
   // {placeholder} interpolation. Strings live in the data module.
   const t = useCallback(
     (key, vars) => {
-      if (key === 'title') return APP_NAME
       let s = UI_STRINGS[lang]?.[key] ?? UI_STRINGS.en[key] ?? key
       if (vars && typeof s === 'string') {
         Object.entries(vars).forEach(([k, v]) => {
@@ -1133,7 +1131,7 @@ export default function AmharicFidelGame() {
       <div className="flex w-full max-w-md flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <Mascot mood="idle" size="sm" />
-          <h1 className="geez text-2xl font-extrabold tracking-tight" style={{ color: 'var(--ink)' }}>
+          <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--ink)' }}>
             {t('title')}
           </h1>
         </div>

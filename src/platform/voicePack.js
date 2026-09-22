@@ -10,7 +10,6 @@
 import { FIDEL_FAMILIES, INDEXES } from './ethiopic'
 import { audio } from './audioEngine'
 import { isNativePlatform } from './native'
-import { APP_NAME } from './brand'
 
 const DB_NAME = 'fq.voice'
 const STORE = 'packs'
@@ -236,7 +235,7 @@ export async function exportAndShareVoice(pack) {
   const text = await packToFileText(pack)
   const safe = (pack.name || 'family').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
   const filename = `${safe || 'family'}.fidelvoice`
-  const caption = `A ${APP_NAME} voice from ${pack.name || 'family'} - open it in ${APP_NAME} so Anbessa speaks in this voice.`
+  const caption = `A eGeez voice from ${pack.name || 'family'} - open it in eGeez so Anbessa speaks in this voice.`
 
   if (isNativePlatform()) {
     try {
@@ -244,7 +243,7 @@ export async function exportAndShareVoice(pack) {
       const b64 = btoa(unescape(encodeURIComponent(text)))
       await Filesystem.writeFile({ path: filename, data: b64, directory: Directory.Cache })
       const { uri } = await Filesystem.getUri({ path: filename, directory: Directory.Cache })
-      await Share.share({ title: `${APP_NAME} voice`, text: caption, files: [uri] })
+      await Share.share({ title: 'eGeez voice', text: caption, files: [uri] })
       return 'shared'
     } catch { /* fall through to web share / download */ }
   }
@@ -253,7 +252,7 @@ export async function exportAndShareVoice(pack) {
   const file = typeof File !== 'undefined' ? new File([blob], filename, { type: 'application/json' }) : null
   try {
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ title: `${APP_NAME} voice`, text: caption, files: [file] })
+      await navigator.share({ title: 'eGeez voice', text: caption, files: [file] })
       return 'shared'
     }
   } catch { /* user cancelled or unsupported; fall through */ }

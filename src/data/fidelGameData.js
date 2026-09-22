@@ -18,7 +18,6 @@
    NOTE: the Amharic translations are best-effort and should be reviewed
    by a native speaker before marketing pushes.
    ========================================================================== */
-import { APP_NAME } from '../platform/brand'
 
 // Index 5 (the 6th order) is never read: that order is the bare consonant
 // and is special-cased in the form mapping below. Kept as '' to preserve
@@ -234,7 +233,7 @@ export const WORDS = FIDEL_FAMILIES.flatMap((f) => {
 
 export const UI_STRINGS = {
   en: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Learn the Amharic alphabet with Kokeb the Star',
     level: 'Level {n}',
     best: 'Best {n}',
@@ -318,7 +317,7 @@ export const UI_STRINGS = {
     },
   },
   am: {
-    title: APP_NAME,
+    title: 'የፊደል ጉዞ',
     tagline: 'ከኮከብ ጋር ፊደል እንማር',
     level: 'ደረጃ {n}',
     best: 'ምርጥ {n}',
@@ -404,7 +403,7 @@ export const UI_STRINGS = {
   // Tigrinya (best-effort; flagged for native-speaker review). Missing keys
   // fall back to English via the ?? UI_STRINGS.en lookup in AmharicFidelGame.
   ti: {
-    title: APP_NAME,
+    title: 'ጉዕዞ ፊደል',
     tagline: 'ምስ ኮኸብ ፊደል ንመሃር',
     level: 'ደረጃ {n}',
     best: 'ዝበለጸ {n}',
@@ -488,7 +487,7 @@ export const UI_STRINGS = {
     },
   },
   de: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Lerne das amharische Alphabet mit Kokeb dem Stern',
     level: 'Level {n}',
     best: 'Bestwert {n}',
@@ -593,7 +592,7 @@ export const UI_STRINGS = {
     },
   },
   it: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Impara l\'alfabeto amarico con Kokeb la Stella',
     level: 'Livello {n}',
     best: 'Record {n}',
@@ -698,7 +697,7 @@ export const UI_STRINGS = {
     },
   },
   sv: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Lär dig amhariska alfabetet med stjärnan Kokeb',
     level: 'Nivå {n}',
     best: 'Bäst {n}',
@@ -803,7 +802,7 @@ export const UI_STRINGS = {
     },
   },
   nl: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Leer het Amhaarse alfabet met Kokeb de Ster',
     level: 'Level {n}',
     best: 'Beste {n}',
@@ -908,7 +907,7 @@ export const UI_STRINGS = {
     },
   },
   no: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Lær det amhariske alfabetet med stjernen Kokeb',
     level: 'Nivå {n}',
     best: 'Best {n}',
@@ -1013,7 +1012,7 @@ export const UI_STRINGS = {
     },
   },
   fr: {
-    title: APP_NAME,
+    title: 'eGeez',
     tagline: 'Apprends l\'alphabet amharique avec Kokeb l\'étoile',
     level: 'Niveau {n}',
     best: 'Record {n}',

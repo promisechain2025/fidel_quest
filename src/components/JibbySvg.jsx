@@ -6,6 +6,7 @@
    On-model sandy-tan palette. Vector; gradient ids namespaced with useId.
    `expression` is 'grin' (default) or 'agitated' (caught mid-chomp). */
 import { useId } from 'react'
+import { HYENA_NAME } from '../platform/brand'
 
 const CX = 100
 // spots on the coat + cheeks (x, y, r)
@@ -13,7 +14,7 @@ const SPOTS = [[66, 152, 5], [134, 156, 4.6], [56, 182, 4], [144, 184, 4], [73, 
 // coarse crown mane: center spikes tallest, leaning back for a bristly look
 const MANE = [-3, -2, -1, 0, 1, 2, 3]
 
-export function JibbySvg({ size = 160, expression = 'grin', title = 'ጅብ', className = '', style = {} }) {
+export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
   const agit = expression === 'agitated'

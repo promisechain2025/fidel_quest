@@ -876,7 +876,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
   return (
     <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
       <p className="text-lg font-extrabold">
-        {isShuffle ? t('catchHint', 'Feed Anbessa before ጅብ grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}{' '}
+        {isShuffle ? t('catchHint', 'Feed Anbessa before Jibby grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}{' '}
         <span className="mono" style={{ color: 'var(--muted)' }}>
           {ctx.round + 1}/{roundLimit}
         </span>

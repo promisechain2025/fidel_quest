@@ -24,7 +24,7 @@ import { progressCardUrl } from './platform/progressCard'
 import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
-import { t, getLang, APP_NAME } from './platform/i18n'
+import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
@@ -398,7 +398,7 @@ function ProgressReportCard() {
   const share = async () => {
     const url = progressCardUrl()
     if (!url) return
-    const shared = await nativeShare({ title: `${APP_NAME} progress`, text: t('gpReportShareText', 'Our eGeez progress report:'), url })
+    const shared = await nativeShare({ title: 'eGeez progress', text: t('gpReportShareText', 'Our eGeez progress report:'), url })
     if (!shared) {
       try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch { /* no clipboard */ }
     }

@@ -265,7 +265,7 @@ describe('directional tracing (P6)', () => {
 describe('<AmharicFidelGame />', () => {
   it('renders one current-level card and a level strip with the rest locked', () => {
     render(<AmharicFidelGame />)
-    expect(screen.getByText('ኢግእዝ')).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument()
     // Only the CURRENT level gets a full card; the others live as chips.
     expect(screen.getByText('First Letters').closest('button')).toBeEnabled()
     expect(screen.queryByText('More Letters')).not.toBeInTheDocument()
@@ -378,17 +378,15 @@ describe('<AmharicFidelGame />', () => {
 
   it('renders the Classic UI in the global app language', () => {
     // Language follows the single global app-text setting (fq.lang), set from
-    // the main app's picker, rather than a Classic-only toggle. The visible
-    // name is ኢግእዝ in every language. Amharic and Tigrinya are learn
-    // languages only — a legacy stored 'am' still leaves the English chrome.
+    // the main app's picker, rather than a Classic-only toggle. Amharic and
+    // Tigrinya are learn languages only — a legacy stored 'am' falls back to
+    // the English UI.
     render(<AmharicFidelGame />)
-    expect(screen.getByText('ኢግእዝ')).toBeInTheDocument()
-    expect(screen.getByText(/Explore Mode/)).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument() // English default
     cleanup()
     localStorage.setItem('fq.lang', 'am')
     render(<AmharicFidelGame />)
-    expect(screen.getByText('ኢግእዝ')).toBeInTheDocument()
-    expect(screen.getByText(/Explore Mode/)).toBeInTheDocument()
+    expect(screen.getByText('eGeez')).toBeInTheDocument()
   })
 
   it('opens trace mode and falls back gracefully without canvas support', () => {

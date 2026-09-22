@@ -11,7 +11,7 @@ import JibbySvg from '../components/JibbySvg.jsx'
 const CAST = [
   { Art: AnbessaSvg, name: 'Anbessa', props: { expression: 'happy' }, blurb: 'The lion cub who learns alongside your child - brave, warm, and always cheering the next letter.' },
   { Art: KokebSvg, name: 'Kokeb', props: {}, blurb: 'The little star who calls out the sounds and lights up when your child gets one right.' },
-  { Art: JibbySvg, name: 'ጅብ', props: { expression: 'grin' }, blurb: 'The mischievous hyena who tries to munch the letters - playful trouble, never scary.' },
+  { Art: JibbySvg, name: 'Jibby', props: { expression: 'grin' }, blurb: 'The mischievous hyena who tries to munch the letters - playful trouble, never scary.' },
 ]
 
 function Characters() {
@@ -21,7 +21,7 @@ function Characters() {
         {CAST.map(({ Art, name, props, blurb }) => (
           <Card key={name} className="flex flex-col items-center text-center">
             <Art size={132} {...props} title={name} />
-            <h3 className="geez mt-2 text-lg font-black">{name}</h3>
+            <h3 className="mt-2 text-lg font-black">{name}</h3>
             <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{blurb}</p>
           </Card>
         ))}

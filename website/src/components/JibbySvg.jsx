@@ -9,7 +9,7 @@ const CX = 100
 const SPOTS = [[62, 60, 5], [134, 54, 4.5], [144, 80, 3.6], [58, 86, 4], [126, 150, 4.6], [76, 158, 4.2]]
 const CREST = [-3, -2, -1, 0, 1, 2, 3]
 
-export function JibbySvg({ size = 160, expression = 'grin', title = 'ጅብ', className = '', style = {} }) {
+export function JibbySvg({ size = 160, expression = 'grin', title = 'Jibby', className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
   const agit = expression === 'agitated'

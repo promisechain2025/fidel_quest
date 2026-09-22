@@ -8,9 +8,6 @@ import { track } from '../platform/analytics'
 import { isNativePlatform, isApplePlatform } from '../platform/native'
 import { appStoreUrl } from '../platform/gift'
 import { blobToDataUrl } from '../platform/voicePack'
-import { APP_NAME } from '../platform/brand'
-
-const BRAND_FONT = (px, weight = 900) => `${weight} ${px}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
 
 /** The link that travels with shares so the recipient can find the app:
     VITE_APP_URL when set (the canonical web/store landing), else the App
@@ -78,8 +75,8 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   g.fillStyle = '#7c3d00'
   g.textAlign = 'center'
   g.textBaseline = 'alphabetic'
-  g.font = BRAND_FONT(S * 0.075)
-  g.fillText(APP_NAME, S / 2, S * 0.16)
+  g.font = `900 ${S * 0.075}px system-ui, -apple-system, sans-serif`
+  g.fillText('eGeez', S / 2, S * 0.16)
   if (headline) {
     // Personalized milestone: shrink to fit the card width. The headline is
     // localized (Amharic/Tigrinya UIs pass Ge'ez, and the nickname itself can
@@ -132,8 +129,8 @@ export function drawNameCard(g, S, { name = '', latin = '', worn = [] } = {}) {
 
   // Eyebrow.
   g.fillStyle = '#7c3d00'
-  g.font = BRAND_FONT(S * 0.05)
-  g.fillText(APP_NAME, S / 2, S * 0.13)
+  g.font = `900 ${S * 0.05}px system-ui, -apple-system, sans-serif`
+  g.fillText('eGeez', S / 2, S * 0.13)
 
   // The name in Ge'ez — the hero. Shrink to fit within the card width.
   g.fillStyle = '#c85400'
@@ -170,8 +167,8 @@ export function drawNameCard(g, S, { name = '', latin = '', worn = [] } = {}) {
   // Footer tagline.
   g.fillStyle = '#7c3d00'
   g.textBaseline = 'alphabetic'
-  g.font = BRAND_FONT(S * 0.032, 700)
-  g.fillText(`Write yours — ${APP_NAME}, free & offline`, S / 2, S * 0.965)
+  g.font = `700 ${S * 0.032}px system-ui, sans-serif`
+  g.fillText('Write yours - eGeez, free & offline', S / 2, S * 0.965)
 }
 
 async function toBlob(canvas) {
@@ -190,7 +187,7 @@ async function toBlob(canvas) {
    Returns 'shared' | 'downloaded' | 'cancelled' | 'unsupported'. */
 async function shareFiles({ files = [], text = '', url = '', event = 'share', allowTextOnly = true } = {}) {
   const real = files.filter((f) => f && f.blob)
-  const payload = { title: APP_NAME, text, ...(url ? { url } : {}) }
+  const payload = { title: 'eGeez', text, ...(url ? { url } : {}) }
 
   // Native shell: write to the cache and share file URIs via the OS sheet
   // (WebView navigator.share can't share an in-memory File reliably).
@@ -280,8 +277,8 @@ export function drawVoicePostcard(g, S, { heading = 'ሰላም!', lines = [], wo
   g.textAlign = 'center'
   g.textBaseline = 'alphabetic'
   g.fillStyle = '#7c3d00'
-  g.font = BRAND_FONT(S * 0.05)
-  g.fillText(APP_NAME, S / 2, S * 0.12)
+  g.font = `900 ${S * 0.05}px system-ui, -apple-system, sans-serif`
+  g.fillText('eGeez', S / 2, S * 0.12)
 
   // The greeting, big and warm.
   g.fillStyle = '#c85400'
@@ -368,8 +365,8 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
   return shareFiles({
     files: [{ blob: await toBlob(canvas), name: 'fidel-name.png', type: 'image/png' }],
     text: latin
-      ? `${latin} - written in the Amharic alphabet with ${APP_NAME}!`
-      : `My name in the Amharic alphabet, written with ${APP_NAME}!`,
+      ? `${latin} - written in the Amharic alphabet with eGeez!`
+      : 'My name in the Amharic alphabet, written with eGeez!',
     url: appShareUrl(),
   })
 }

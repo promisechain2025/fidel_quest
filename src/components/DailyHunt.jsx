@@ -143,7 +143,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
         </button>
         <div className="min-w-0">
           <h1 className="text-xl font-black leading-tight">{t('huntTitle', 'Daily Letter Hunt')}</h1>
-          <p className="truncate text-sm font-semibold" style={{ color: 'var(--muted)' }}>{t('huntSub', 'ጅብ hid the letters! Find them by sound')}</p>
+          <p className="truncate text-sm font-semibold" style={{ color: 'var(--muted)' }}>{t('huntSub', 'Jibby hid the letters! Find them by sound')}</p>
         </div>
         <span className="ml-auto flex shrink-0 items-center gap-1 rounded-2xl px-3 py-1.5 font-black" style={{ background: 'var(--card)', border: '2px solid var(--line)' }}>
           <Star className="h-4 w-4" fill="currentColor" style={{ color: 'var(--star)' }} aria-hidden="true" />
@@ -232,7 +232,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
               {t('continue', 'Continue')}
             </button>
           )}
-          <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('huntTomorrow', 'Come back tomorrow — ጅብ will hide new letters!')}</p>
+          <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('huntTomorrow', 'Come back tomorrow — Jibby will hide new letters!')}</p>
         </motion.div>
       )}
 

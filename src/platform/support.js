@@ -2,7 +2,7 @@
    Grown-ups card. No backend anywhere: buying happens in the app stores
    (Apple gifting via the Backpack Gift guide, Play gift cards on Android),
    and the family share below hands the relative the exact link to pay at. */
-import { t, APP_NAME } from './i18n'
+import { t } from './i18n'
 import { nativeShare } from './native'
 import { appStoreUrl } from './gift'
 import { appShareUrl } from '../components/ShareCard'
@@ -35,7 +35,7 @@ export function feedbackMailto() {
     can PAY - the store page when we have one - falling back to the app URL. */
 export function shareWithFamily() {
   return nativeShare({
-    title: APP_NAME,
+    title: 'eGeez',
     text: t('payShareText', 'Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app?'),
     url: buyUrl() || appShareUrl(),
   })

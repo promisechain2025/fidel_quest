@@ -2314,7 +2314,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             <Hero size={48} worn={worn} />
           </button>
           <div className="min-w-0 text-left">
-            <h1 className="geez text-base font-black leading-none">{t('appName', 'ኢግእዝ')}</h1>
+            <h1 className="text-base font-black leading-none">{APP_NAME}</h1>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
               <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
                 {doneCount}/{JOURNEY.length}
@@ -2774,7 +2774,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
       >
         <div className="mb-3 flex shrink-0 items-center justify-between">
           <h2 className="min-w-0 leading-tight">
-            <span className="geez block text-lg font-black">{t('appName', 'ኢግእዝ')}</span>
+            <span className="block text-lg font-black">{APP_NAME}</span>
             <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>{t('backpack', 'Backpack')}</span>
           </h2>
           <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
@@ -3659,12 +3659,12 @@ function ChallengeShareButton({ payload, label }) {
     const text = `${t('challengeShareText', 'Beat my eGeez score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: APP_NAME, text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
     }
     try {
       if (navigator.share) {
-        await navigator.share({ title: APP_NAME, text, url })
+        await navigator.share({ title: 'eGeez', text, url })
         return
       }
     } catch {
@@ -4128,11 +4128,11 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
     track('assignment_receipt')
     if (isNativePlatform()) {
-      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: APP_NAME, text, url }) } catch { /* dismissed */ }
+      try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
     }
     try {
-      if (navigator.share) { await navigator.share({ title: APP_NAME, text, url }); return }
+      if (navigator.share) { await navigator.share({ title: 'eGeez', text, url }); return }
     } catch { return /* user dismissed */ }
     try {
       await navigator.clipboard.writeText(text)

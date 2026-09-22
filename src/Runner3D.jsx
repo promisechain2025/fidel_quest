@@ -942,7 +942,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
           {boss && (
             <motion.div key="bosscap" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 bottom-5 text-center">
               <span className="rounded-2xl px-4 py-2 text-base font-black uppercase tracking-wider text-white" style={{ background: ctx.survivedBoss ? 'var(--go)' : 'var(--bad)' }}>
-                {ctx.survivedBoss ? t('runBossWin', 'Anbessa’s letter power wins!') : t('runBossAttack', 'ጅብ attacks!')}
+                {ctx.survivedBoss ? t('runBossWin', 'Anbessa’s letter power wins!') : t('runBossAttack', 'Jibby the hyena attacks!')}
               </span>
             </motion.div>
           )}
@@ -1013,11 +1013,7 @@ function RunnerDestroyed({ ctx, onRetry, onExit }) {
         {t('munched', 'Munched!')}
       </h1>
       <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        {t('runCaught', 'ጅብ caught Anbessa in {place}, {country} (level {level}). Feed him more correct letters to keep him strong!', {
-          place: placeForLevel(ctx.level).name,
-          country: placeForLevel(ctx.level).country,
-          level: ctx.level,
-        })}
+        Jibby the hyena caught Anbessa in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed him more correct letters to keep him strong!
       </p>
 
       <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
