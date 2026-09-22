@@ -22,30 +22,6 @@ import { t } from './platform/i18n'
 import { initCatch, catchTransition, Phase, CatchEvent } from './letterCatchCore'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
-
-/* Four corner jewels on a falling gold tile. Static spans — the tile
-   already moves, and this must stay cheap on the low-end tick. */
-function CatchJewel() {
-  const dot = (style) => (
-    <span
-      aria-hidden="true"
-      className="pointer-events-none absolute h-1.5 w-1.5 rounded-full"
-      style={{
-        ...style,
-        background: 'radial-gradient(circle at 35% 32%, #fff8dc, #e2c069 55%, #8a5a12)',
-        boxShadow: '0 0 0 1px rgba(92, 58, 8, 0.4)',
-      }}
-    />
-  )
-  return (
-    <>
-      {dot({ left: 3, top: 3 })}
-      {dot({ right: 3, top: 3 })}
-      {dot({ left: 3, bottom: 3 })}
-      {dot({ right: 3, bottom: 3 })}
-    </>
-  )
-}
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const reseed = (s) => ((s * 1664525 + 1013904223) >>> 0) | 1
 const SPARK = ['#ffd25a', '#ff8a3d', '#8affc1', '#7db8ff', '#ffffff']
@@ -227,9 +203,8 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
             <motion.button key={it.id} type="button" data-fam={it.key} onClick={() => onShoot(it)} whileTap={{ scale: 0.86 }}
               aria-label={`${t('lcShoot', 'Shoot')} ${f?.sound}`}
               className={`geez absolute flex h-14 w-14 items-center justify-center rounded-2xl text-3xl font-black ${FOCUS}`}
-              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle at 32% 24%, #fff1c4, #f0c14a 58%, #d79a22)', border: '2px solid #a9832f', color: '#7c4f00', boxShadow: '0 3px 0 #a06a30, 0 4px 10px rgba(0,0,0,0.35)', outlineColor: '#ffd25a' }}>
-              <CatchJewel />
-              <span className="relative">{f?.char}</span>
+              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle at 32% 28%, #f4e4c0, #e0c07a 62%, #c4a060)', border: '1.5px solid #b08958', color: '#5c4020', boxShadow: '0 2px 0 #8a6840, 0 3px 8px rgba(0,0,0,0.28)', outlineColor: '#ffd25a' }}>
+              {f?.char}
             </motion.button>
           )
         })}

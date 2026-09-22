@@ -21,7 +21,6 @@ import AnbessaSvg from './AnbessaSvg'
 import JibbySvg from './JibbySvg'
 import KokebSvg from './KokebSvg'
 import { LaneVista } from './StepScenery'
-import { JewelRim } from './Manuscript'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
@@ -172,21 +171,20 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
                     onClick={() => dispatch({ type: RunnerEvent.FEED, payload: { audioKey: opt } })}
                     onFocus={() => playForm(form, soundOn)}
                     animate={showBad ? { x: [0, -8, 8, 0] } : showGood ? { scale: [1, 1.15, 1] } : {}}
-                    className={`geez chunk relative flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
+                    className={`geez chunk flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
                     style={{
-                      background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'radial-gradient(circle at 32% 24%, #fff1c4, #f0c14a 58%, #d79a22)',
+                      background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'radial-gradient(circle at 32% 28%, #f6e6c4, #e4c48a 64%, #c9a36a)',
                       // Never hint the answer: the 2D runner is a LISTEN-and-pick game, same
                       // as the 3D one - an accent border on the target made it tap-the-color.
-                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#a9832f',
-                      color: showGood ? 'var(--go-ink)' : showBad ? 'var(--bad-ink)' : '#7c4f00',
-                      boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#a06a30'}`,
-                      '--chunk-depth': '5px',
+                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#b08958',
+                      color: showGood ? 'var(--go-ink)' : showBad ? 'var(--bad-ink)' : '#5c4020',
+                      boxShadow: `0 4px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#a08050'}`,
+                      '--chunk-depth': '4px',
                       outlineColor: 'var(--sky)',
                     }}
                     aria-label={`Gate ${form?.sound}`}
                   >
-                    {!showGood && !showBad && <JewelRim />}
-                    <span className="relative">{form?.char}</span>
+                    {form?.char}
                   </motion.button>
                 )
               })}

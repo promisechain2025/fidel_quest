@@ -596,15 +596,15 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
                 left: `${p2.left}%`,
                 top: `${p2.top}%`,
                 background: done
-                  ? 'radial-gradient(circle at 35% 30%, #ffe08a, #f5b91e)'
+                  ? 'radial-gradient(circle at 35% 30%, #efe2c4, #cbb892)'
                   : active
-                    ? 'radial-gradient(circle at 35% 30%, #fffbe9, #efe3c8)'
-                    : 'radial-gradient(circle at 35% 30%, #d7dde2, #97a3ac)',
-                color: '#7c5200',
-                border: `3px solid ${done ? '#c98d0a' : active ? '#ffc800' : 'rgba(255,255,255,0.55)'}`,
+                    ? 'radial-gradient(circle at 35% 30%, #f7f1e4, #e4d8c4)'
+                    : 'radial-gradient(circle at 35% 30%, #d5dde2, #8f9aa6)',
+                color: '#5c4630',
+                border: `2px solid ${done ? '#a89070' : active ? '#d2c2a4' : 'rgba(255,255,255,0.45)'}`,
                 boxShadow: active
-                  ? '0 0 0 5px rgba(255,200,0,0.35), 0 6px 0 rgba(0,0,0,0.22)'
-                  : '0 6px 0 rgba(0,0,0,0.22)',
+                  ? '0 0 0 3px rgba(210, 194, 164, 0.45), 0 5px 0 rgba(0,0,0,0.18)'
+                  : '0 5px 0 rgba(0,0,0,0.18)',
               }}
             >
               {done ? form?.char : ''}
@@ -862,7 +862,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
           {ctx.round + 1}/{roundLimit}
         </span>
       </p>
-      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl border-2 p-4" style={{ background: '#5a9a40', borderColor: '#e2c069', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
+      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl border p-4" style={{ background: '#5a9a40', borderColor: 'rgba(196, 176, 138, 0.45)', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
         <FeedMeadow />
         <div className="relative z-10 grid grid-cols-4 place-items-center gap-3 sm:gap-4">
           <AnimatePresence>

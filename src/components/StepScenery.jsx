@@ -1,28 +1,13 @@
 /* Authored scenery for Letter Steps and the 2D runner lane.
-   Highland miniatures in the manuscript palette (champagne gold frame,
-   madder / lapis / malachite jewels, ochre sun). Local SVG only.
-   Static on purpose: no looping motion, so reduced-motion stays quiet.
+   Highland miniatures. A single quiet edge, no corner jewels — the sky,
+   river, and lawn carry the mood. Local SVG only. Static on purpose:
+   no looping motion, so reduced-motion stays quiet.
    The step machine and the runner machine are not involved. */
 import { useId } from 'react'
 
 function Frame({ w, h, rx = 22 }) {
-  const gems = [
-    [18, 18, '#c0453a'],
-    [w - 18, 18, '#3f63a0'],
-    [18, h - 18, '#3f8f4a'],
-    [w - 18, h - 18, '#e2c069'],
-  ]
   return (
-    <g>
-      <rect x="6" y="6" width={w - 12} height={h - 12} rx={rx} fill="none" stroke="#e2c069" strokeWidth="2.8" />
-      <rect x="11" y="11" width={w - 22} height={h - 22} rx={Math.max(8, rx - 5)} fill="none" stroke="#a9832f" strokeWidth="1.1" opacity="0.85" />
-      {gems.map(([x, y, fill]) => (
-        <g key={`${x}-${y}`}>
-          <circle cx={x} cy={y} r="4.2" fill={fill} stroke="#e2c069" strokeWidth="1.15" />
-          <circle cx={x - 1.1} cy={y - 1.1} r="1.25" fill="#fff8dc" opacity="0.85" />
-        </g>
-      ))}
-    </g>
+    <rect x="7" y="7" width={w - 14} height={h - 14} rx={rx} fill="none" stroke="#c4b08a" strokeWidth="1.25" opacity="0.5" />
   )
 }
 
@@ -139,15 +124,27 @@ export function RiverCrossing({ className = '' }) {
         <ellipse cx="300" cy="188" rx="24" ry="3" />
         <ellipse cx="196" cy="214" rx="20" ry="2.6" />
       </g>
-      <path d="M0 70 C18 78 28 92 34 256 L0 256 Z" fill={`url(#${id('bank')})`} />
-      <path d="M400 70 C382 78 372 92 366 256 L400 256 Z" fill={`url(#${id('bank')})`} />
-      <path d="M0 86 C16 96 24 110 22 140" fill="none" stroke="#e4f0a4" strokeWidth="2" opacity="0.45" />
-      <path d="M400 86 C384 96 376 110 378 140" fill="none" stroke="#e4f0a4" strokeWidth="2" opacity="0.45" />
-      <g stroke="#1f5c28" strokeWidth="1.7" fill="none" strokeLinecap="round">
-        <path d="M18 150 q3 -16 0 -28" />
-        <path d="M26 168 q4 -18 1 -32" />
-        <path d="M374 156 q-3 -14 0 -26" />
-        <path d="M382 174 q-4 -16 -1 -30" />
+      {/* Earth lip, then grass, so the banks read as a real shore. */}
+      <path d="M0 86 C14 98 22 120 26 256 L0 256 Z" fill="#3a4e28" />
+      <path d="M400 86 C386 98 378 120 374 256 L400 256 Z" fill="#3a4e28" />
+      <path d="M0 68 C20 82 30 108 40 256 L0 256 Z" fill={`url(#${id('bank')})`} />
+      <path d="M400 68 C380 82 370 108 360 256 L400 256 Z" fill={`url(#${id('bank')})`} />
+      <path d="M8 100 C18 130 16 180 14 240" fill="none" stroke="#6a8a3a" strokeWidth="3" opacity="0.35" />
+      <path d="M392 100 C382 130 384 180 386 240" fill="none" stroke="#6a8a3a" strokeWidth="3" opacity="0.35" />
+      <g strokeLinecap="round" fill="none">
+        <path d="M10 248 q2 -28 -1 -52" stroke="#1c4a22" strokeWidth="2.2" />
+        <path d="M18 252 q4 -34 0 -64" stroke="#2f6a30" strokeWidth="2.4" />
+        <path d="M26 246 q-2 -22 2 -46" stroke="#3d7a34" strokeWidth="1.8" />
+        <path d="M32 250 q3 -18 1 -36" stroke="#245c28" strokeWidth="1.6" />
+        <path d="M14 200 q6 -8 2 -2" stroke="#8fbe58" strokeWidth="1.4" />
+        <path d="M22 168 q5 -6 1 -1" stroke="#c6de78" strokeWidth="1.3" />
+        <path d="M390 248 q-2 -26 1 -48" stroke="#1c4a22" strokeWidth="2.2" />
+        <path d="M382 252 q-4 -32 0 -60" stroke="#2f6a30" strokeWidth="2.4" />
+        <path d="M374 244 q2 -20 -2 -42" stroke="#3d7a34" strokeWidth="1.8" />
+        <path d="M368 250 q-3 -16 -1 -34" stroke="#245c28" strokeWidth="1.6" />
+        <path d="M386 196 q-6 -8 -2 -2" stroke="#8fbe58" strokeWidth="1.4" />
+        <ellipse cx="20" cy="188" rx="2.2" ry="4" fill="#6a8f40" stroke="none" opacity="0.7" />
+        <ellipse cx="380" cy="192" rx="2.2" ry="4" fill="#6a8f40" stroke="none" opacity="0.7" />
       </g>
       <g>
         <path d="M332 58 L340 46 L348 58 Z" fill="#c45a32" />
@@ -266,7 +263,7 @@ export function LaneVista({ className = '' }) {
       <ellipse cx="200" cy="268" rx="180" ry="12" fill="#fff" opacity="0.28" />
       <path d="M0 300 C80 270 140 310 400 268 L400 640 L0 640 Z" fill={`url(#${id('grass')})`} />
       <path d="M118 300 L92 640 L308 640 L282 300 Z" fill={`url(#${id('road')})`} />
-      <path d="M200 320 V620" stroke="#e2c069" strokeWidth="4" strokeDasharray="16 18" opacity="0.85" />
+      <path d="M200 320 V620" stroke="#d4c4a2" strokeWidth="2.5" strokeDasharray="14 20" opacity="0.55" />
       <path d="M148 340 L132 630" stroke="#fff8dc" strokeWidth="2" opacity="0.35" />
       <path d="M252 340 L268 630" stroke="#fff8dc" strokeWidth="2" opacity="0.35" />
       <g>
@@ -290,31 +287,14 @@ export function LaneVista({ className = '' }) {
   )
 }
 
-/** Corner jewels and a gold fillet over the trace vellum. Sits in the
-    pad's margin so the letter and the finger path stay clear. */
+/** A hairline on the trace vellum. No corner jewels — the letter is the focus. */
 export function TraceChrome() {
-  const gems = [
-    ['left-1.5 top-1.5', '#c0453a'],
-    ['right-1.5 top-1.5', '#3f63a0'],
-    ['left-1.5 bottom-1.5', '#3f8f4a'],
-    ['right-1.5 bottom-1.5', '#e2c069'],
-  ]
   return (
     <span data-scene="trace" aria-hidden="true" className="pointer-events-none absolute inset-0">
       <span
-        className="absolute inset-1.5 rounded-[1.35rem]"
-        style={{ boxShadow: 'inset 0 0 0 2px rgba(226,192,105,0.95), inset 0 0 0 4px rgba(169,131,47,0.35)' }}
+        className="absolute inset-2 rounded-[1.25rem]"
+        style={{ boxShadow: 'inset 0 0 0 1px rgba(140, 112, 72, 0.28)' }}
       />
-      {gems.map(([pos, fill]) => (
-        <span
-          key={pos}
-          className={`absolute h-3 w-3 rounded-full ${pos}`}
-          style={{
-            background: `radial-gradient(circle at 35% 32%, #fff8dc, ${fill} 58%, #5c3a08)`,
-            boxShadow: '0 0 0 1.5px #e2c069',
-          }}
-        />
-      ))}
     </span>
   )
 }

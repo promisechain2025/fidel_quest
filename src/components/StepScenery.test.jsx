@@ -19,11 +19,12 @@ describe('letter-step scenery', () => {
     expect(container.querySelector('[data-scene="lane"]')).toBeTruthy()
   })
 
-  it('frames the trace pad with corner jewels and no extra motion', () => {
+  it('gives the trace pad a quiet hairline and no corner jewels', () => {
     const { container } = render(<TraceChrome />)
     const frame = container.querySelector('[data-scene="trace"]')
     expect(frame).toBeTruthy()
-    expect(frame.querySelectorAll('span')).toHaveLength(5)
+    expect(frame.querySelectorAll('span')).toHaveLength(1)
+    expect(frame.querySelector('circle')).toBeNull()
     expect(frame.getAttribute('class')).toContain('pointer-events-none')
   })
 })

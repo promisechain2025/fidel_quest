@@ -70,33 +70,18 @@ function canvasTexture(size, draw) {
 function glyphTexture(char) {
   return canvasTexture(256, (g, s) => {
     const face = g.createLinearGradient(0, 16, 0, s - 8)
-    face.addColorStop(0, '#ffe7a0')
-    face.addColorStop(0.42, '#f0b429')
-    face.addColorStop(1, '#c88818')
+    face.addColorStop(0, '#f6e7c8')
+    face.addColorStop(0.5, '#e4c98a')
+    face.addColorStop(1, '#d2b06a')
     g.fillStyle = face
     g.beginPath()
     g.roundRect(10, 10, s - 20, s - 20, 40)
     g.fill()
-    g.lineWidth = 12
-    g.strokeStyle = '#a9832f'
+    g.lineWidth = 7
+    g.strokeStyle = '#b08958'
     g.stroke()
-    g.lineWidth = 4
-    g.strokeStyle = 'rgba(255, 248, 220, 0.9)'
-    g.beginPath()
-    g.roundRect(28, 28, s - 56, s - 56, 28)
-    g.stroke()
-    const gems = [[46, 46, '#c0453a'], [s - 46, 46, '#3f63a0'], [46, s - 46, '#3f8f4a'], [s - 46, s - 46, '#fff6c8']]
-    for (const [x, y, col] of gems) {
-      g.beginPath()
-      g.fillStyle = col
-      g.arc(x, y, 10, 0, Math.PI * 2)
-      g.fill()
-      g.lineWidth = 3
-      g.strokeStyle = '#e2c069'
-      g.stroke()
-    }
-    g.fillStyle = '#7c4f00'
-    g.font = `900 ${s * 0.5}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+    g.fillStyle = '#5c4020'
+    g.font = `900 ${s * 0.56}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
     g.textAlign = 'center'
     g.textBaseline = 'middle'
     g.fillText(char, s / 2, s / 2 + s * 0.02)
@@ -604,8 +589,8 @@ class RunnerWorld {
       if (!LOW_END) grassTuft(g, -side * 5.25, -28)
       // lane dashes ride along in the chunk so the ground reads as moving
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xe2c069, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xe2c069, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, -1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, 1.2, 0.05, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)
@@ -626,13 +611,9 @@ class RunnerWorld {
       g.add(sign)
       cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
     }
-    box(g, 8.4, 0.22, 0.22, 0xe2c069, 0, 3, 0)
+    box(g, 8.4, 0.18, 0.18, 0xc4a36a, 0, 3, 0)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
-    sph(g, 0.2, 0xe2c069, -4.1, 3.08, 0)
-    sph(g, 0.2, 0xe2c069, 4.1, 3.08, 0)
-    sph(g, 0.09, 0xc0453a, -4.1, 3.08, 0.14)
-    sph(g, 0.09, 0x3f63a0, 4.1, 3.08, 0.14)
     g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false
