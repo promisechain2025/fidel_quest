@@ -17,7 +17,9 @@ import { playForm, playEffect, audio } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS, ALL_WORDS } from '../FidelQuestApp'
+import { FOCUS, ALL_WORDS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import WordPicture, { DRAWN_PICTURES } from './Pictures'
 import { FidelCard } from './FidelCard'
 import { initWorkshop, workshopTransition, wordToKeys, Phase, WorkshopEvent } from '../workshopCore'
@@ -106,7 +108,7 @@ export default function WordWorkshop({ soundOn, onBack, families = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-5 pt-2">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 92 : 60} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={92} mood="happy" pose="cheer" /> : <KokebSvg size={60} />}
 
         {/* the picture cue - what word are we building? tap to hear it */}
         <button

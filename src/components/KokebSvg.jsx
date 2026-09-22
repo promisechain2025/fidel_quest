@@ -37,8 +37,11 @@ export function KokebSvg({ size = 160, title = 'Kokeb', className = '', style = 
           <stop offset="0%" stopColor="#fff2b8" /><stop offset="55%" stopColor="#ffc927" /><stop offset="100%" stopColor="#f0a500" />
         </radialGradient>
       </defs>
+      <ellipse cx={CX} cy={CY} rx="74" ry="70" fill="#ffe27a" opacity="0.22" />
       <path d="M172,44 l3,9 9,3 -9,3 -3,9 -3,-9 -9,-3 9,-3 z" fill="#ffe27a" opacity="0.9" />
+      <path d="M36,150 l2,6 6,2 -6,2 -2,6 -2,-6 -6,-2 6,-2 z" fill="#fff6c8" opacity="0.85" />
       <path d={d} fill={`url(#${gid})`} stroke="#e0a400" strokeWidth="7" strokeLinejoin="round" />
+      <ellipse cx={CX - 16} cy={CY - 28} rx="16" ry="9" fill="#fff" opacity="0.38" transform={`rotate(-28 ${CX - 16} ${CY - 28})`} />
       {[-1, 1].map(eye)}
       <path d={`M${CX - 11},${CY + 8} q11,12 22,0`} stroke="#3a2a15" strokeWidth="4" fill="none" strokeLinecap="round" />
       <ellipse cx={CX - 27} cy={CY + 9} rx="7" ry="4.5" fill="#ff785a" opacity="0.5" />

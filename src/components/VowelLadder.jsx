@@ -13,7 +13,9 @@ import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { FidelCard, GEEZ_DIGITS } from './FidelCard'
 import { initLadder, ladderTransition, Phase, LadderEvent } from '../ladderCore'
 
@@ -76,7 +78,7 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 108 : 84} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={108} mood="happy" pose="cheer" /> : <KokebSvg size={84} />}
 
         {/* the seven rungs */}
         <div role="img" aria-label={t('orderProgress', `${ctx.placed} of 7 in order`, { n: ctx.placed })} className="flex items-end justify-center gap-1.5">

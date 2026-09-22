@@ -30,7 +30,9 @@ import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES, ALL_FORMS, FIDEL_FAMILIES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import {
   Phase, TrafficEvent, AMBULANCE, WHISTLES_PER_SHIFT,
   initTraffic, trafficTransition, correctLane, starsFor,
@@ -338,7 +340,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <Sprite2D draw={drawAnbessa} size={96} mood="happy" pose="stand" />
+          <AnbessaSvg size={96} mood="happy" pose="stand" />
           <p className="max-w-xs text-base font-black" style={{ color: 'var(--muted)' }}>
             {t('trNeedMore', 'Learn a few more letters and the road will open!')}
           </p>
@@ -353,7 +355,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <Sprite2D draw={drawAnbessa} size={104} mood="happy" pose="stand" />
+          <AnbessaSvg size={104} mood="happy" pose="stand" />
           <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
             {t('trTagline', 'Wave through the car whose letter comes first!')}
           </p>
@@ -383,7 +385,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <Sprite2D draw={drawKokeb} size={92} mood="happy" pose="stand" />
+          <KokebSvg size={92} />
           <h2 className="text-2xl font-black">{t('trPassTitle', 'Pass the phone!')}</h2>
           <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
             {t('trPassBody', '{who}, you are on duty.', { who: t('trOfficerN', 'Officer {n}', { n: day.turn + 1 }) })}
@@ -399,7 +401,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <Sprite2D draw={drawAnbessa} size={112} mood="happy" pose="cheer" />
+          <AnbessaSvg size={112} mood="happy" pose="cheer" />
           <h2 className="text-2xl font-black">{t('trShiftDone', 'Shift complete!')}</h2>
           <Stars n={starsFor(ctx)} />
           <p className="text-4xl font-black" style={{ color: 'var(--go)' }}>{ctx.score}</p>
@@ -433,7 +435,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
       <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-5">
-          <Sprite2D draw={drawAnbessa} size={104} mood="happy" pose="cheer" />
+          <AnbessaSvg size={104} mood="happy" pose="cheer" />
           <h2 className="text-xl font-black">{t('trStandings', 'Traffic officers')}</h2>
           <ul className="w-full max-w-xs space-y-2">
             {table.map((p, i) => (
@@ -518,7 +520,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
           ))}
           <div className="absolute grid place-items-center rounded-2xl"
             style={{ left: MID - JUNCTION, top: MID - JUNCTION, width: JUNCTION * 2, height: JUNCTION * 2, background: 'var(--card)', border: '2px dashed var(--line)' }}>
-            <Sprite2D draw={drawAnbessa} size={62} mood="happy" pose={cheer ? 'cheer' : 'stand'} />
+            <AnbessaSvg size={62} mood="happy" pose={cheer ? 'cheer' : 'stand'} />
           </div>
 
           {ctx.lanes.map((lane, li) => lane.cars.map((car, slot) => {

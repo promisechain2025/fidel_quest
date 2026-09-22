@@ -17,7 +17,9 @@ import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { FidelCard } from './FidelCard'
 import { initMatch, matchTransition, levelForCount, Phase, MatchEvent } from '../memoryCore'
 
@@ -89,7 +91,7 @@ export default function FidelMatch({ soundOn, onBack, pool = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-5">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 100 : 72} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={100} mood="happy" pose="cheer" /> : <KokebSvg size={72} />}
 
         {!enough ? (
           <div className="flex flex-col items-center gap-4 text-center">

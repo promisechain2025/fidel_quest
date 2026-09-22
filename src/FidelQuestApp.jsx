@@ -44,7 +44,10 @@ import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
 import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
-import { Harag } from './components/Manuscript'
+import { Harag, JewelRim } from './components/Manuscript'
+import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
+import { ChapterVista } from './components/HighlandScenery'
+import ZebraSvg from './components/ZebraSvg'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
@@ -152,28 +155,15 @@ import {
   Pause,
   BookOpen,
   Check,
-  RotateCcw,
-  Pencil,
-  Shirt,
   Share2,
   Gift,
-  Mic,
-  Backpack as BackpackIcon,
   ClipboardCheck,
   Users,
   Globe,
   ArrowDown,
   Send,
-  Search,
   Sun,
   Moon,
-  ListOrdered,
-  Grid2x2,
-  Car,
-  Grid3x3,
-  Layers,
-  Blocks,
-  Store,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -1989,17 +1979,24 @@ export function drawWearables(g, s, worn) {
 /** Anbessa the lion cub, in his current wardrobe, with Kokeb bobbing along. */
 export function Hero({ size = 104, mood = 'happy', worn = [], pose = 'stand' }) {
   const wornKey = worn.map((w) => w.id).join(',')
+  const dressed = worn.length > 0
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
-      <Sprite2D draw={drawAnbessa} mood={mood} size={size} pose={pose} />
-      {worn.length > 0 && <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />}
+      {dressed ? (
+        <>
+          <Sprite2D draw={drawAnbessa} mood={mood} size={size} pose={pose} />
+          <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />
+        </>
+      ) : (
+        <AnbessaSvg size={size} mood={mood} pose={pose} />
+      )}
       <motion.div
         className="absolute"
         style={{ right: -size * 0.14, top: -size * 0.06 }}
         animate={{ y: [0, -size * 0.05, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <Sprite2D draw={drawKokeb} size={size * 0.34} />
+        <KokebSvg size={Math.round(size * 0.34)} />
       </motion.div>
     </div>
   )
@@ -2096,16 +2093,17 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
           aria-current={highlight ? 'step' : undefined}
         >
+          {(goldTile || (isBoss && unlocked)) && <JewelRim />}
           {isArcade ? (
-            node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <Sparkles className="h-7 w-7" aria-hidden="true" />
+            <NodeEmblem kind={node.gateway.mode === 'runner' ? 'runner' : 'catch'} />
           ) : isBoss ? (
-            <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+            <NodeEmblem kind="boss" />
           ) : isStory ? (
-            <BookOpen className="h-7 w-7" aria-hidden="true" />
+            <NodeEmblem kind="story" />
           ) : isReview ? (
-            <RotateCcw className="h-6 w-6" aria-hidden="true" />
+            <NodeEmblem kind="review" />
           ) : (
-            nodeGlyph(node)
+            <span className="relative">{nodeGlyph(node)}</span>
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
           {!unlocked && (
@@ -2163,7 +2161,7 @@ const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
    soft green = done, plain card = later. Each pill sizes to its label and the
    row wraps whole pills to a second line, so a long translation never breaks
    mid-word or forces a sideways scroll. */
-function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
+function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
   const active = pulse && !done
   return (
     <motion.button
@@ -2179,7 +2177,7 @@ function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
           ? { background: 'var(--sky)', color: '#fff', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }
           : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }}
     >
-      {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+      {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : art ? <SpecialtyIcon name={art} bare size={20} /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
       <span className="whitespace-nowrap">{label}</span>
     </motion.button>
   )
@@ -2370,7 +2368,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
             style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
           >
-            <BackpackIcon className="h-5 w-5" />
+            <SpecialtyIcon name="backpack" bare size={26} />
           </button>
         </div>
       </header>
@@ -2470,7 +2468,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             />
           )}
           <PlanChip
-            icon={Search}
+            art="hunt"
             done={huntDone}
             label={t('huntShort', 'Daily Hunt')}
             onClick={onHunt}
@@ -2501,15 +2499,20 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
           return (
             <div key={r}>
               {chapter !== prevChapter && (
-                <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
-                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                  {/* Place names are proper nouns from the active pack's
-                     geography - never translated. */}
-                  <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
-                    {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
-                  </span>
-                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                </div>
+                <>
+                  <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
+                    <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                    {/* Place names are proper nouns from the active pack's
+                       geography - never translated. */}
+                    <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
+                      {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
+                    </span>
+                    <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                  </div>
+                  <div className="mb-2 overflow-hidden rounded-2xl" style={{ boxShadow: '0 0 0 1px rgba(169,131,47,0.45)' }}>
+                    <ChapterVista chapter={chapter} />
+                  </div>
+                </>
               )}
               <div className="grid items-center gap-3 rounded-3xl px-1 py-2" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))`, background: CHAPTER_TINT[chapter]?.band }}>
                 {row.map((node, i) => {
@@ -2593,7 +2596,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
 // whole toolkit on one screen so nothing (Classic, Review...) gets buried.
-function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) {
+function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
       type="button"
@@ -2601,9 +2604,13 @@ function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) 
       className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
-        {icon}
-      </span>
+      {art ? (
+        <SpecialtyIcon name={art} size={48} />
+      ) : (
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+          {icon}
+        </span>
+      )}
       <span className="text-xs font-extrabold leading-tight">{title}</span>
       {badge > 0 && (
         <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
@@ -2778,20 +2785,20 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             {profileReg.list.length > 1 && (
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={() => setWhoOpen(true)} />
             )}
-            <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
+            <BackpackTile art="closet" title={t('closetShort', 'Closet')} onClick={onCloset} />
             {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
                sell - the screen, unlock logic, and tests all stay wired, so
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
-            <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
-            <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />
-            <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
-            <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />
-            <BackpackTile icon={<Car className="h-6 w-6" />} tone="var(--sky)" title={t('trShort', 'Traffic')} onClick={onTraffic} />
-            <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />
-            <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
-            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            <BackpackTile art="words" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
+            <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />
+            <BackpackTile art="lineup" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
+            <BackpackTile art="match" title={t('matchShort', 'Match')} onClick={onMatch} />
+            <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />
+            <BackpackTile art="market" title={t('marketShort', 'Market')} onClick={onMarket} />
+            <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
+            <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {
@@ -2800,19 +2807,19 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                 const s = twinSiblingOf(f)
                 return s && learned.has(f.id) && learned.has(s.id)
               })
-              return ready ? <BackpackTile icon={<span className="geez text-lg font-black">ሀሐ</span>} tone="var(--sky)" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
+              return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
-            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
+            <BackpackTile art="classic" title={t('classicShort', 'Classic')} onClick={onClassic} />
             {troubleCount > 0 && (
-              <BackpackTile icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
+              <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
             {isSocialEnabled() && (
-              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
+              <BackpackTile art="family" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
-            <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
-            <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
-            <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
+            <BackpackTile art="voice" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
+            <BackpackTile art="name" title={t('nameShort', 'My Name')} onClick={onName} />
+            <BackpackTile art="postcard" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
           </div>
           {/* Adult utilities live in their own visually quieter row so a
              child's play grid is not interleaved with settings doors. */}
@@ -3561,6 +3568,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 aria-label={`Choose the letter that says ${form.sound}`}
                 data-tut={`opt-${key}`}
               >
+                {!showAsCorrect && !showAsWrong && <JewelRim />}
                 {form.char}
                 {/* Shape + color, not color alone: a check/cross so a
                    colorblind child gets the same right/wrong signal. */}
@@ -3806,7 +3814,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           animate={{ y: [0, -10, 0] }}
           transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
         >
-          <Sprite2D draw={drawZebra} size={84} />
+          <ZebraSvg size={84} />
           <Hero size={124} pose="cheer" />
         </motion.span>
       </motion.div>
