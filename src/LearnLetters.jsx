@@ -36,7 +36,9 @@ import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
 import AnbessaSvg from './components/AnbessaSvg'
 import JibbySvg from './components/JibbySvg'
+import KokebSvg from './components/KokebSvg'
 import FidelTracePad from './components/FidelTracePad'
+import { BubbleSky, RiverCrossing, FeedMeadow } from './components/StepScenery'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -371,20 +373,8 @@ function BubbleMeet({ ctx, onTouch }) {
       <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
-      <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #cfeafd 0%, #eaf7ff 55%, #fff6e8 100%)' }}>
-        {/* floating sparkles for a lively stage. Sky-tinted and faint, never
-            solid white: the glyph on the bubble is white, so any bright white
-            shape on this stage reads as part of a letter. */}
-        {[14, 40, 66, 88, 28, 74].map((left, i) => (
-          <motion.span
-            key={i}
-            className="absolute h-1.5 w-1.5 rounded-full"
-            style={{ left: `${left}%`, top: `${(i * 37) % 78 + 8}%`, background: '#9fd4f5' }}
-            animate={{ opacity: [0.1, 0.45, 0.1], scale: [0.6, 1.2, 0.6] }}
-            transition={{ duration: 2 + (i % 3) * 0.7, repeat: Infinity, delay: i * 0.3 }}
-            aria-hidden="true"
-          />
-        ))}
+      <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#d7ecfb', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }}>
+        <BubbleSky />
         <motion.button
           ref={btnRef}
           type="button"
@@ -587,16 +577,8 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
       </div>
       {/* The river is a picture now, not a touch target: the child plays the
           TRAY below, and the stones show where Anbessa is going. */}
-      <div className="fq-land-short pointer-events-none relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: 'linear-gradient(to bottom, #aee3ff 0%, #7ecbfa 26%, #2fa8ec 30%, #1287cf 100%)' }} aria-hidden="true">
-        {/* far bank, sun, and the two grassy shores */}
-        <div className="absolute inset-x-0 top-[22%] h-3" style={{ background: 'rgba(255,255,255,0.35)', filter: 'blur(3px)' }} />
-        <div className="absolute left-[46%] top-2 h-10 w-10 rounded-full" style={{ background: 'radial-gradient(circle at 40% 35%, #fff3b0, #ffc800)', boxShadow: '0 0 24px 6px rgba(255,200,0,0.45)' }} />
-        <div className="absolute bottom-0 left-0 top-[26%] w-[9%] rounded-r-3xl" style={{ background: 'linear-gradient(to right, #58cc02, #3f9302)' }} />
-        <div className="absolute bottom-0 right-0 top-[26%] w-[9%] rounded-l-3xl" style={{ background: 'linear-gradient(to left, #58cc02, #3f9302)' }} />
-        {/* drifting ripples */}
-        {[18, 42, 66, 84].map((left, i) => (
-          <motion.span key={i} className="absolute h-1.5 w-10 rounded-full" style={{ left: `${left}%`, top: `${34 + (i * 17) % 46}%`, background: 'rgba(255,255,255,0.35)' }} animate={{ x: [0, 10, 0], opacity: [0.25, 0.6, 0.25] }} transition={{ duration: 3 + i, repeat: Infinity }} />
-        ))}
+      <div className="fq-land-short pointer-events-none relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#1f8ec8', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }} aria-hidden="true">
+        <RiverCrossing />
         {/* The stones are BLANK until crossed: showing their letters would
             let the child shape-match card to stone instead of picking by
             ear. A stone earns its letter (golden) once Anbessa lands on
@@ -615,15 +597,15 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
                 left: `${p2.left}%`,
                 top: `${p2.top}%`,
                 background: done
-                  ? 'radial-gradient(circle at 35% 30%, #ffe08a, #f5b91e)'
+                  ? 'radial-gradient(circle at 35% 30%, #efe2c4, #cbb892)'
                   : active
-                    ? 'radial-gradient(circle at 35% 30%, #fffbe9, #efe3c8)'
-                    : 'radial-gradient(circle at 35% 30%, #d7dde2, #97a3ac)',
-                color: '#7c5200',
-                border: `3px solid ${done ? '#c98d0a' : active ? '#ffc800' : 'rgba(255,255,255,0.55)'}`,
+                    ? 'radial-gradient(circle at 35% 30%, #f7f1e4, #e4d8c4)'
+                    : 'radial-gradient(circle at 35% 30%, #d5dde2, #8f9aa6)',
+                color: '#5c4630',
+                border: `2px solid ${done ? '#a89070' : active ? '#d2c2a4' : 'rgba(255,255,255,0.45)'}`,
                 boxShadow: active
-                  ? '0 0 0 5px rgba(255,200,0,0.35), 0 6px 0 rgba(0,0,0,0.22)'
-                  : '0 6px 0 rgba(0,0,0,0.22)',
+                  ? '0 0 0 3px rgba(210, 194, 164, 0.45), 0 5px 0 rgba(0,0,0,0.18)'
+                  : '0 5px 0 rgba(0,0,0,0.18)',
               }}
             >
               {done ? form?.char : ''}
@@ -824,7 +806,42 @@ function ChompCrumbs() {
   )
 }
 
-function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
+/** Kokeb is the one who says the letter. A short pulse marks each time that
+    letter is spoken. No new rounds or scoring — the cue follows the voice. */
+function KokebSpeaker({ pulse }) {
+  const reduce = useReducedMotion()
+  return (
+    <div className="relative">
+      <motion.div
+        key={pulse ? `kokeb-${pulse}` : 'kokeb'}
+        initial={false}
+        animate={pulse && !reduce ? { scale: [1, 1.08, 1], y: [0, -3, 0] } : { scale: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+      >
+        <KokebSvg size={54} />
+      </motion.div>
+      {pulse > 0 && !reduce && (
+        <motion.svg
+          key={`say-${pulse}`}
+          className="pointer-events-none absolute left-12 top-2"
+          width="26"
+          height="32"
+          viewBox="0 0 26 32"
+          aria-hidden="true"
+          initial={{ opacity: 0.15 }}
+          animate={{ opacity: [0.2, 1, 0] }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        >
+          <path d="M3 12 q7 -3 5 8" stroke="#fff6c8" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M9 8 q9 -4 6 12" stroke="#ffe08a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M16 6 q8 -3 5 10" stroke="#f0c56a" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </motion.svg>
+      )}
+    </div>
+  )
+}
+
+function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
   const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
   const trayRef = useRef(null)
@@ -881,8 +898,13 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
           {ctx.round + 1}/{roundLimit}
         </span>
       </p>
-      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-        <div className="grid grid-cols-4 place-items-center gap-3 sm:gap-4">
+      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl p-4" style={{ background: 'transparent', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
+        <FeedMeadow />
+        {/* Kokeb sits in the sky of the lawn: the companion who called the letter. */}
+        <div className="relative z-20 mb-2 flex items-start">
+          <KokebSpeaker pulse={speakPulse} />
+        </div>
+        <div className="relative z-10 grid grid-cols-4 place-items-center gap-3 sm:gap-4">
           <AnimatePresence>
             {visible.map((k, i) => (
               <LetterCard
@@ -929,7 +951,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
         {isShuffle && (
           <motion.div
             key={`jibby-${ctx.round}`}
-            className="pointer-events-none absolute -right-2 top-2"
+            className="pointer-events-none absolute -right-2 top-2 z-20"
             initial={{ x: 90, rotate: 8 }}
             animate={{ x: 14 }}
             transition={{ duration: 6.5, ease: 'linear' }}
@@ -941,7 +963,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
         {/* Anbessa waits below — alive: he breathes and sways, leans in when a
             letter is dragged near, chews on a correct feed, and shakes+swats
             on a wrong one. He is the drop target (mouthRef). */}
-        <div className="mt-3 flex justify-center">
+        <div className="relative z-10 mt-3 flex justify-center">
           <motion.div
             ref={mouthRef}
             className="relative origin-bottom"
@@ -1000,6 +1022,8 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   // 'refuse' on a wrong one) and which letter he just swatted away.
   const [lionMood, setLionMood] = useState('happy')
   const [refuseKey, setRefuseKey] = useState(null)
+  // Bumps each time the feed game speaks the target, so Kokeb can show it.
+  const [speakPulse, setSpeakPulse] = useState(0)
   const prevPhase = useRef(ctx.phase)
   const moodTimer = useRef(null)
   const refuseTimer = useRef(null)
@@ -1065,7 +1089,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         clearTimeout(refuseTimer.current)
         refuseTimer.current = setTimeout(() => setRefuseKey(null), 950)
         clearTimeout(retargetTimer.current)
-        retargetTimer.current = setTimeout(() => playForm(formOf(ctx.target), soundOn), 420)
+        retargetTimer.current = setTimeout(() => {
+          playForm(formOf(ctx.target), soundOn)
+          setSpeakPulse((n) => n + 1)
+        }, 420)
         flashMood('refuse', 550)
         dispatch(key)
         return
@@ -1132,7 +1159,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // first prompt must not talk over it.
       const entering = prevSpokenPhase.current !== ctx.phase
       prevSpokenPhase.current = ctx.phase
-      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), entering ? 1700 : 850)
+      const timer = setTimeout(() => {
+        playForm(formOf(ctx.target), soundOn)
+        setSpeakPulse((n) => n + 1)
+      }, entering ? 1700 : 850)
       return () => clearTimeout(timer)
     }
     prevSpokenPhase.current = ctx.phase
@@ -1181,7 +1211,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
-          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
+          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
             const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
             const traceForm = formOf(traceForms[ctx.traceIdx ?? 0])
@@ -1249,7 +1279,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         {spoken && (
           <button
             type="button"
-            onClick={() => playForm(formOf(ctx.target), soundOn)}
+            onClick={() => {
+              playForm(formOf(ctx.target), soundOn)
+              setSpeakPulse((n) => n + 1)
+            }}
             className={`chunk flex items-center gap-2 rounded-full px-5 py-3 font-black text-white ${FOCUS}`}
             style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
             aria-label={t('hearIt', 'Hear it again')}

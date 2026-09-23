@@ -264,6 +264,8 @@ export function ChapterVista({ chapter = 1 }) {
       <path d="M0 48 L30 36 L62 46 L100 32 L140 46 L180 34 L220 46 L264 32 L310 44 L360 34 L360 58 L0 58 Z" fill={v.far} />
       <path d="M0 56 C50 46 90 54 140 48 C200 40 240 56 300 46 C330 42 348 50 360 46 L360 80 L0 80 Z" fill={v.hill} />
       <path d="M0 64 C90 56 150 68 230 58 C290 52 330 64 360 56 L360 80 L0 80 Z" fill={v.grass} />
+      <path d="M0 72 C80 64 140 78 220 68 C290 60 330 74 360 66 L360 80 L0 80 Z" fill="#1e4a28" opacity="0.28" />
+      <path d="M120 46 L126 58 M206 42 L212 56" stroke="#5c4a62" strokeWidth="1" opacity="0.28" />
       <path d="M248 62 L248 46" stroke="#6b4428" strokeWidth="2" />
       <path d="M240 50 Q248 40 256 50 Z" fill="#c45a32" />
       <rect x="245" y="58" width="6" height="6" fill="#8a6848" />

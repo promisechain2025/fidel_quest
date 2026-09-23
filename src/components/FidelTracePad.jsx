@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Eraser, Check, ArrowDown, ArrowRight } from 'lucide-react'
+import { TraceChrome } from './StepScenery'
 
 /* Letter-tracing pad for eGeez. The child draws over a faint guide
    glyph; scoring compares the drawn points against a pixel mask of the
@@ -276,13 +277,14 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
           height={CANVAS_SIZE}
           role="img"
           aria-label={labels.instruction}
-          className="w-full touch-none rounded-3xl border-4 border-dashed border-amber-300 shadow-inner dark:border-amber-700"
-          style={{ touchAction: 'none', background: '#f6ecd4' }}
+          className="w-full touch-none rounded-3xl border-4 border-dashed shadow-inner"
+          style={{ touchAction: 'none', background: '#f6ecd4', borderColor: '#d4c4a4' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
         />
+        <TraceChrome />
         {/* Start-here dot: always shown in directional mode, pulsing harder
             when the last check said the child began in the wrong place. */}
         {hint && (

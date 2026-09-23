@@ -69,19 +69,68 @@ function canvasTexture(size, draw) {
 
 function glyphTexture(char) {
   return canvasTexture(256, (g, s) => {
-    g.fillStyle = '#fffdf6'
+    const face = g.createLinearGradient(0, 16, 0, s - 8)
+    face.addColorStop(0, '#f6e7c8')
+    face.addColorStop(0.5, '#e4c98a')
+    face.addColorStop(1, '#d2b06a')
+    g.fillStyle = face
     g.beginPath()
-    g.roundRect(8, 8, s - 16, s - 16, 36)
+    g.roundRect(10, 10, s - 20, s - 20, 40)
     g.fill()
-    g.lineWidth = 10
-    g.strokeStyle = '#e0b25a'
+    g.lineWidth = 7
+    g.strokeStyle = '#b08958'
     g.stroke()
-    g.fillStyle = '#3c3529'
-    g.font = `900 ${s * 0.62}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
+    g.fillStyle = '#5c4020'
+    g.font = `900 ${s * 0.56}px 'Noto Sans Ethiopic', 'Abyssinica SIL', sans-serif`
     g.textAlign = 'center'
     g.textBaseline = 'middle'
-    g.fillText(char, s / 2, s / 2 + s * 0.03)
+    g.fillText(char, s / 2, s / 2 + s * 0.02)
   })
+}
+
+/* Equirectangular highland sky. The chase camera looks slightly down, so
+   the pixels on screen are only the band just above the horizon (texture
+   v about 0.37 to 0.50). The warm wash has to live THERE, not at the
+   zenith. Fog uses the same horizon colour. A canvas background costs no
+   extra mesh, including on the low-end tier. */
+function mixSky(skyNum, t, toward) {
+  const sky = [(skyNum >> 16) & 255, (skyNum >> 8) & 255, skyNum & 255]
+  return sky.map((v, i) => Math.round(v + (toward[i] - v) * t))
+}
+function rgbNum(rgb) {
+  return (rgb[0] << 16) | (rgb[1] << 8) | rgb[2]
+}
+function skyTexture(skyNum) {
+  const c = document.createElement('canvas')
+  c.width = 512
+  c.height = 256
+  const g = c.getContext('2d')
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.mapping = THREE.EquirectangularReflectionMapping
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  const horizon = mixSky(skyNum, 0.55, [255, 170, 72])
+  const high = mixSky(skyNum, 0.78, [255, 150, 48])
+  if (!g) return { tex, fog: rgbNum(horizon) }
+  const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+  const grad = g.createLinearGradient(0, 0, 0, 256)
+  grad.addColorStop(0, css(high))
+  grad.addColorStop(0.36, css(high))
+  grad.addColorStop(0.46, css(horizon))
+  grad.addColorStop(1, css(horizon))
+  g.fillStyle = grad
+  g.fillRect(0, 0, 512, 256)
+  // Sun sits in the on-screen band (about 15 degrees above the horizon).
+  g.fillStyle = 'rgba(255, 214, 120, 0.45)'
+  g.beginPath()
+  g.arc(400, 104, 26, 0, Math.PI * 2)
+  g.fill()
+  g.fillStyle = '#fff6d2'
+  g.beginPath()
+  g.arc(400, 104, 11, 0, Math.PI * 2)
+  g.fill()
+  return { tex, fog: rgbNum(horizon) }
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -281,6 +330,14 @@ function sph(g, r, color, x, y, z) {
   return m
 }
 
+/* A meskel tuft on the track shoulder. One or two per chunk; skipped density
+   on the low-end tier so the extra cones stay a handful. */
+function grassTuft(g, x, z) {
+  cone(g, 0.16, 0.48, 0x2f6a32, x, 0.24, z, 5)
+  cone(g, 0.12, 0.36, 0x67b255, x + 0.18, 0.18, z + 0.06, 5)
+  cone(g, 0.045, 0.1, 0xffd34d, x + 0.02, 0.5, z, 4)
+}
+
 const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
 /** Free the GPU resources of a group before dropping it. three.js does NOT
     reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
@@ -438,16 +495,18 @@ class RunnerWorld {
     this.camera.position.set(0, 3.9, 7.2)
     this.camera.lookAt(0, 1.1, -11)
 
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a55, 1.15))
+    this.scene.add(new THREE.HemisphereLight(0xfff2d8, 0x6a7a48, 1.15))
     const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
     sun.position.set(-6, 12, 4)
     this.scene.add(sun)
+
+    this.skyMap = null
 
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
     this.ground.rotation.x = -Math.PI / 2
     this.ground.position.z = -200
     this.scene.add(this.ground)
-    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xcfc0a0 }))
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xe6d3ae }))
     this.track.rotation.x = -Math.PI / 2
     this.track.position.set(0, 0.02, -200)
     this.scene.add(this.track)
@@ -512,8 +571,12 @@ class RunnerWorld {
   }
 
   setPlace(place) {
-    this.scene.background = new THREE.Color(place.sky)
-    this.scene.fog = new THREE.Fog(place.sky, place.fog[0], place.fog[1])
+    const prevSky = this.skyMap
+    const sky = skyTexture(place.sky)
+    this.skyMap = sky.tex
+    this.scene.background = this.skyMap
+    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0], place.fog[1])
+    if (prevSky) prevSky.dispose()
     this.ground.material = mat(place.ground)
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
@@ -521,10 +584,13 @@ class RunnerWorld {
     for (let k = 0; k < CHUNK_COUNT; k++) {
       const g = new THREE.Group()
       build(g, k)
+      const side = k % 2 === 0 ? -1 : 1
+      grassTuft(g, side * 5.15, -8)
+      if (!LOW_END) grassTuft(g, -side * 5.25, -28)
       // lane dashes ride along in the chunk so the ground reads as moving
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xfff6dd, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xfff6dd, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, -1.2, 0.05, -4 - d * 8)
+        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, 1.2, 0.05, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)
@@ -545,7 +611,7 @@ class RunnerWorld {
       g.add(sign)
       cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
     }
-    box(g, 8.4, 0.22, 0.22, 0xe0b25a, 0, 3, 0)
+    box(g, 8.4, 0.18, 0.18, 0xc4a36a, 0, 3, 0)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
     cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
     g.position.z = SIGN_SPAWN_Z
@@ -684,6 +750,8 @@ class RunnerWorld {
     // renderer.dispose() alone leaves uploaded geometry/texture buffers; walk
     // the whole scene freeing per-instance resources first (shared MATS + zebra
     // texture survive for the next world, which reuses them).
+    if (this.skyMap) { this.skyMap.dispose(); this.skyMap = null }
+    this.scene.background = null
     disposeGroup(this.scene)
     this.renderer.dispose()
   }

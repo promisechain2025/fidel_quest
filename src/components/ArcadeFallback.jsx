@@ -20,6 +20,7 @@ import {
 import AnbessaSvg from './AnbessaSvg'
 import JibbySvg from './JibbySvg'
 import KokebSvg from './KokebSvg'
+import { LaneVista } from './StepScenery'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
@@ -132,8 +133,10 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
       </header>
 
       <main className="relative flex flex-1 flex-col items-center justify-center gap-6 text-center">
-        {/* soft ambient spotlight behind the cast (theme-safe, static) */}
-        <div className="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,180,60,0.16), rgba(255,180,60,0) 68%)' }} aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl" aria-hidden="true">
+          <LaneVista />
+        </div>
+        <div className="relative z-10 flex w-full flex-col items-center gap-6">
         <div className="flex items-end justify-center gap-4">
           {/* Kokeb, the caller - pulses each time she voices a new letter */}
           {!boss && (
@@ -149,12 +152,12 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
         </div>
 
         {boss ? (
-          <h2 className="text-2xl font-black" style={{ color: ctx.survivedBoss ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
+          <h2 className="rounded-2xl px-4 py-2 text-2xl font-black" style={{ background: 'rgba(18, 24, 40, 0.72)', color: ctx.survivedBoss ? '#b6e986' : '#f0a8a0' }}>
             {ctx.survivedBoss ? t('levelUp', 'Level up!') : t('muncherWins', 'The Muncher wins!')}
           </h2>
         ) : (
           <>
-            <p className="text-lg font-extrabold">{t('runFeedHint', 'Feed Anbessa the letter Kokeb says')}</p>
+            <p className="rounded-2xl px-4 py-2 text-lg font-extrabold" style={{ background: 'rgba(18, 24, 40, 0.72)', color: '#f8f2e2' }}>{t('runFeedHint', 'Feed Anbessa the letter Kokeb says')}</p>
             <div className="grid w-full grid-cols-3 gap-3">
               {q?.options.map((opt) => {
                 const form = formOf(opt)
@@ -170,12 +173,13 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
                     animate={showBad ? { x: [0, -8, 8, 0] } : showGood ? { scale: [1, 1.15, 1] } : {}}
                     className={`geez chunk flex h-24 items-center justify-center rounded-3xl border-2 text-5xl font-black ${FOCUS}`}
                     style={{
-                      background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'var(--card)',
+                      background: showGood ? 'var(--go-soft)' : showBad ? 'var(--bad-soft)' : 'radial-gradient(circle at 32% 28%, #f6e6c4, #e4c48a 64%, #c9a36a)',
                       // Never hint the answer: the 2D runner is a LISTEN-and-pick game, same
                       // as the 3D one - an accent border on the target made it tap-the-color.
-                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)',
-                      boxShadow: `0 5px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : 'var(--line)'}`,
-                      '--chunk-depth': '5px',
+                      borderColor: showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#b08958',
+                      color: showGood ? 'var(--go-ink)' : showBad ? 'var(--bad-ink)' : '#5c4020',
+                      boxShadow: `0 4px 0 ${showGood ? 'var(--go)' : showBad ? 'var(--bad)' : '#a08050'}`,
+                      '--chunk-depth': '4px',
                       outlineColor: 'var(--sky)',
                     }}
                     aria-label={`Gate ${form?.sound}`}
@@ -187,6 +191,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
             </div>
           </>
         )}
+        </div>
       </main>
     </div>
   )
