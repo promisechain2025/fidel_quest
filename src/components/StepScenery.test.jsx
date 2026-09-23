@@ -15,7 +15,11 @@ describe('letter-step scenery', () => {
     expect(container.querySelectorAll('svg')).toHaveLength(4)
     expect(container.querySelector('[data-scene="bubble"]')).toBeTruthy()
     expect(container.querySelector('[data-scene="river"]')).toBeTruthy()
-    expect(container.querySelector('[data-scene="feed"]')).toBeTruthy()
+    const feed = container.querySelector('[data-scene="feed"]')
+    expect(feed).toBeTruthy()
+    const quiet = [...feed.querySelectorAll('rect')].filter((r) => r.getAttribute('stroke') === '#c4b08a')
+    expect(quiet).toHaveLength(1)
+    expect(feed.querySelector('circle[fill="#c0453a"]')).toBeNull()
     expect(container.querySelector('[data-scene="lane"]')).toBeTruthy()
   })
 

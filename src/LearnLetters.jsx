@@ -36,6 +36,7 @@ import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
 import AnbessaSvg from './components/AnbessaSvg'
 import JibbySvg from './components/JibbySvg'
+import KokebSvg from './components/KokebSvg'
 import FidelTracePad from './components/FidelTracePad'
 import { BubbleSky, RiverCrossing, FeedMeadow } from './components/StepScenery'
 
@@ -805,7 +806,42 @@ function ChompCrumbs() {
   )
 }
 
-function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
+/** Kokeb is the one who says the letter. A short pulse marks each time that
+    letter is spoken. No new rounds or scoring — the cue follows the voice. */
+function KokebSpeaker({ pulse }) {
+  const reduce = useReducedMotion()
+  return (
+    <div className="relative">
+      <motion.div
+        key={pulse ? `kokeb-${pulse}` : 'kokeb'}
+        initial={false}
+        animate={pulse && !reduce ? { scale: [1, 1.08, 1], y: [0, -3, 0] } : { scale: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: 'easeOut' }}
+      >
+        <KokebSvg size={54} />
+      </motion.div>
+      {pulse > 0 && !reduce && (
+        <motion.svg
+          key={`say-${pulse}`}
+          className="pointer-events-none absolute left-12 top-2"
+          width="26"
+          height="32"
+          viewBox="0 0 26 32"
+          aria-hidden="true"
+          initial={{ opacity: 0.15 }}
+          animate={{ opacity: [0.2, 1, 0] }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        >
+          <path d="M3 12 q7 -3 5 8" stroke="#fff6c8" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M9 8 q9 -4 6 12" stroke="#ffe08a" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+          <path d="M16 6 q8 -3 5 10" stroke="#f0c56a" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </motion.svg>
+      )}
+    </div>
+  )
+}
+
+function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
   const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
   const trayRef = useRef(null)
@@ -862,8 +898,12 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch }) {
           {ctx.round + 1}/{roundLimit}
         </span>
       </p>
-      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl border p-4" style={{ background: '#5a9a40', borderColor: 'rgba(196, 176, 138, 0.45)', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
+      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl p-4" style={{ background: 'transparent', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
         <FeedMeadow />
+        {/* Kokeb sits in the sky of the lawn: the companion who called the letter. */}
+        <div className="relative z-20 mb-2 flex items-start">
+          <KokebSpeaker pulse={speakPulse} />
+        </div>
         <div className="relative z-10 grid grid-cols-4 place-items-center gap-3 sm:gap-4">
           <AnimatePresence>
             {visible.map((k, i) => (
@@ -982,6 +1022,8 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   // 'refuse' on a wrong one) and which letter he just swatted away.
   const [lionMood, setLionMood] = useState('happy')
   const [refuseKey, setRefuseKey] = useState(null)
+  // Bumps each time the feed game speaks the target, so Kokeb can show it.
+  const [speakPulse, setSpeakPulse] = useState(0)
   const prevPhase = useRef(ctx.phase)
   const moodTimer = useRef(null)
   const refuseTimer = useRef(null)
@@ -1047,7 +1089,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         clearTimeout(refuseTimer.current)
         refuseTimer.current = setTimeout(() => setRefuseKey(null), 950)
         clearTimeout(retargetTimer.current)
-        retargetTimer.current = setTimeout(() => playForm(formOf(ctx.target), soundOn), 420)
+        retargetTimer.current = setTimeout(() => {
+          playForm(formOf(ctx.target), soundOn)
+          setSpeakPulse((n) => n + 1)
+        }, 420)
         flashMood('refuse', 550)
         dispatch(key)
         return
@@ -1114,7 +1159,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // first prompt must not talk over it.
       const entering = prevSpokenPhase.current !== ctx.phase
       prevSpokenPhase.current = ctx.phase
-      const timer = setTimeout(() => playForm(formOf(ctx.target), soundOn), entering ? 1700 : 850)
+      const timer = setTimeout(() => {
+        playForm(formOf(ctx.target), soundOn)
+        setSpeakPulse((n) => n + 1)
+      }, entering ? 1700 : 850)
       return () => clearTimeout(timer)
     }
     prevSpokenPhase.current = ctx.phase
@@ -1163,7 +1211,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         <AnimatePresence mode="wait">
           {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
           {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
-          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} />}
+          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />}
           {ctx.phase === LearnPhase.TRACE && (() => {
             const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
             const traceForm = formOf(traceForms[ctx.traceIdx ?? 0])
@@ -1231,7 +1279,10 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
         {spoken && (
           <button
             type="button"
-            onClick={() => playForm(formOf(ctx.target), soundOn)}
+            onClick={() => {
+              playForm(formOf(ctx.target), soundOn)
+              setSpeakPulse((n) => n + 1)
+            }}
             className={`chunk flex items-center gap-2 rounded-full px-5 py-3 font-black text-white ${FOCUS}`}
             style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
             aria-label={t('hearIt', 'Hear it again')}

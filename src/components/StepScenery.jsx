@@ -155,8 +155,9 @@ export function RiverCrossing({ className = '' }) {
   )
 }
 
-/** ECHO / SHUFFLE: a quiet lawn the letter cards and Anbessa sit on.
-    The middle stays open so the gold tiles keep their contrast. */
+/** ECHO / SHUFFLE: highland lawn under the letter cards. Sky, escarpment,
+    and grass carry the depth. The middle stays open so the cards stay
+    readable. One quiet edge — no corner jewels. */
 export function FeedMeadow({ className = '' }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `fed-${n}-${raw}`
@@ -164,56 +165,95 @@ export function FeedMeadow({ className = '' }) {
     <svg data-scene="feed" className={`pointer-events-none absolute inset-0 h-full w-full ${className}`} viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={id('sky')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f0c56a" />
-          <stop offset="70%" stopColor="#f7e7c8" />
-          <stop offset="100%" stopColor="#d5e8f8" />
+          <stop offset="0%" stopColor="#e8923a" />
+          <stop offset="16%" stopColor="#f6c56a" />
+          <stop offset="36%" stopColor="#f7e2c0" />
+          <stop offset="58%" stopColor="#9ec4ea" />
+          <stop offset="100%" stopColor="#e7f4ff" />
         </linearGradient>
-        <linearGradient id={id('grass')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d7e86e" />
-          <stop offset="35%" stopColor="#7eb84e" />
-          <stop offset="100%" stopColor="#3a7a32" />
-        </linearGradient>
-        <radialGradient id={id('lawn')} cx="50%" cy="42%" r="55%">
-          <stop offset="0%" stopColor="#e7f0a4" stopOpacity="0.55" />
-          <stop offset="70%" stopColor="#e7f0a4" stopOpacity="0" />
+        <radialGradient id={id('sun')} cx="42%" cy="40%" r="50%">
+          <stop offset="0%" stopColor="#fffce8" />
+          <stop offset="50%" stopColor="#ffe08a" />
+          <stop offset="100%" stopColor="#f0a030" />
         </radialGradient>
-        <linearGradient id={id('hill')} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={id('wash')} x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffe7a8" stopOpacity="0.35" />
+          <stop offset="60%" stopColor="#ffe7a8" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={id('far')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#b7c6e4" />
+          <stop offset="100%" stopColor="#7f93b8" />
+        </linearGradient>
+        <linearGradient id={id('mid')} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#9aa6c8" />
           <stop offset="100%" stopColor="#6a789c" />
         </linearGradient>
+        <linearGradient id={id('esc')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#d2b8c4" />
+          <stop offset="50%" stopColor="#a88898" />
+          <stop offset="100%" stopColor="#6e586c" />
+        </linearGradient>
+        <linearGradient id={id('hill')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c6d86a" />
+          <stop offset="100%" stopColor="#5a9440" />
+        </linearGradient>
+        <linearGradient id={id('grass')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e4e892" />
+          <stop offset="30%" stopColor="#8fbe58" />
+          <stop offset="68%" stopColor="#4e8a38" />
+          <stop offset="100%" stopColor="#2a5c24" />
+        </linearGradient>
+        <linearGradient id={id('mist')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+          <stop offset="50%" stopColor="#fff" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <filter id={id('soft')} x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="0.7" />
+        </filter>
       </defs>
-      <rect width="400" height="320" fill={`url(#${id('grass')})`} />
-      <rect width="400" height="78" fill={`url(#${id('sky')})`} />
-      <circle cx="330" cy="28" r="14" fill="#ffe9a0" />
-      <ellipse cx="54" cy="24" rx="20" ry="8" fill="#eef6fc" />
-      <ellipse cx="74" cy="20" rx="14" ry="7" fill="#fff" opacity="0.85" />
-      <path d="M0 70 L24 46 L58 62 L98 40 L140 58 L184 36 L228 56 L274 38 L318 54 L360 40 L400 52 L400 86 L0 86 Z" fill={`url(#${id('hill')})`} opacity="0.9" />
-      <ellipse cx="200" cy="78" rx="160" ry="8" fill="#fff" opacity="0.28" />
-      <path d="M0 96 C80 78 140 104 220 86 C300 70 350 98 400 82 L400 120 L0 120 Z" fill="#8fbe58" />
-      <ellipse cx="200" cy="150" rx="150" ry="70" fill={`url(#${id('lawn')})`} />
-      <path d="M0 250 C90 230 150 268 240 244 C310 226 350 260 400 242" fill="none" stroke="#2f6a28" strokeWidth="8" opacity="0.12" strokeLinecap="round" />
+      <rect width="400" height="320" fill={`url(#${id('sky')})`} />
+      <rect width="400" height="150" fill={`url(#${id('wash')})`} />
+      <circle cx="328" cy="36" r="28" fill="#ffe08a" opacity="0.22" />
+      <circle cx="328" cy="34" r="13" fill={`url(#${id('sun')})`} />
       <g>
-        <rect x="22" y="58" width="5" height="22" rx="2" fill="#6b4428" />
-        <ellipse cx="24" cy="54" rx="16" ry="8" fill="#2f6a32" />
-        <ellipse cx="14" cy="60" rx="9" ry="6" fill="#4e9a48" />
-        <ellipse cx="34" cy="58" rx="8" ry="5" fill="#67b255" />
+        <ellipse cx="58" cy="32" rx="22" ry="9" fill="#e7f1fa" />
+        <ellipse cx="78" cy="26" rx="16" ry="10" fill="#f4fbff" />
+        <ellipse cx="42" cy="30" rx="12" ry="7" fill="#d5e4f2" />
+        <ellipse cx="168" cy="22" rx="16" ry="6" fill="#eef6fc" />
+      </g>
+      <path d="M0 118 L26 92 L58 108 L96 84 L136 106 L174 80 L214 104 L254 78 L294 100 L334 82 L372 98 L400 88 L400 136 L0 136 Z" fill={`url(#${id('far')})`} />
+      <ellipse cx="200" cy="128" rx="180" ry="8" fill={`url(#${id('mist')})`} />
+      <path d="M0 148 L0 124 L40 118 L78 134 L114 112 L152 132 L188 108 L226 128 L266 106 L308 126 L348 110 L400 122 L400 162 L0 162 Z" fill={`url(#${id('mid')})`} />
+      <path d="M0 168 L0 142 L32 136 L70 152 L108 128 L146 148 L182 122 L220 146 L260 118 L304 142 L346 124 L400 136 L400 186 L0 186 Z" fill={`url(#${id('esc')})`} />
+      <path d="M108 128 H146 M182 122 H220 M260 118 H304" stroke="#efe4d4" strokeWidth="1.3" opacity="0.5" />
+      <g filter={`url(#${id('soft')})`}>
+        <ellipse cx="236" cy="146" rx="14" ry="4" fill="#5c4a62" opacity="0.3" />
+        <path d="M226 144 Q236 130 246 144 Z" fill="#c45a32" />
+        <rect x="232" y="144" width="8" height="7" fill="#8a6848" />
+      </g>
+      <path d="M0 188 C70 168 120 196 180 174 C240 154 280 188 340 168 C370 158 386 176 400 166 L400 214 L0 214 Z" fill={`url(#${id('hill')})`} />
+      <path d="M0 198 C90 184 150 206 400 176" fill="none" stroke="#f4f8d4" strokeWidth="2" opacity="0.35" />
+      <path d="M0 206 C50 192 100 214 170 198 C240 182 290 210 400 192 L400 320 L0 320 Z" fill={`url(#${id('grass')})`} />
+      <path d="M0 236 C80 220 140 248 220 228 C290 214 340 244 400 226" fill="none" stroke="#d7e86a" strokeWidth="7" opacity="0.28" strokeLinecap="round" />
+      <path d="M0 278 C100 262 160 292 260 270 C320 256 360 286 400 272" fill="none" stroke="#1e4a22" strokeWidth="9" opacity="0.14" strokeLinecap="round" />
+      <g>
+        <rect x="16" y="168" width="5" height="24" rx="2" fill="#6b4428" />
+        <ellipse cx="18" cy="162" rx="16" ry="8" fill="#245c28" />
+        <ellipse cx="8" cy="168" rx="9" ry="6" fill="#3f8a3c" />
+        <ellipse cx="30" cy="166" rx="9" ry="6" fill="#67b255" />
+      </g>
+      <g stroke="#245c28" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.7">
+        <path d="M14 312 q3 -16 0 -30" />
+        <path d="M26 316 q4 -14 0 -26" />
+        <path d="M374 314 q-3 -14 1 -26" />
+        <path d="M386 310 q2 -12 0 -22" />
       </g>
       <g>
-        <path d="M348 62 L360 46 L372 62 Z" fill="#c45a32" />
-        <rect x="354" y="62" width="12" height="10" fill="#8a6848" />
-      </g>
-      <g stroke="#245c28" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.75">
-        <path d="M16 310 q3 -18 0 -34" />
-        <path d="M28 314 q4 -16 0 -30" />
-        <path d="M372 312 q-3 -16 1 -30" />
-        <path d="M384 308 q2 -14 0 -26" />
-      </g>
-      <g>
-        <circle cx="22" cy="286" r="3.2" fill="#ffd34d" />
-        <circle cx="22" cy="286" r="1.2" fill="#b4560a" />
-        <circle cx="36" cy="300" r="2.2" fill="#fff" opacity="0.8" />
-        <circle cx="368" cy="292" r="2.8" fill="#e24b6a" />
-        <circle cx="382" cy="304" r="2.2" fill="#ffd34d" />
+        <circle cx="20" cy="292" r="2.6" fill="#ffd34d" />
+        <circle cx="20" cy="292" r="1" fill="#b4560a" />
+        <circle cx="372" cy="296" r="2.4" fill="#e24b6a" />
+        <circle cx="384" cy="308" r="2" fill="#ffd34d" />
       </g>
       <Frame w={400} h={320} rx={26} />
     </svg>
