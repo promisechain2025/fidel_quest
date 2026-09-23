@@ -110,27 +110,175 @@ function skyTexture(skyNum) {
   tex.mapping = THREE.EquirectangularReflectionMapping
   tex.magFilter = THREE.LinearFilter
   tex.minFilter = THREE.LinearFilter
-  const horizon = mixSky(skyNum, 0.55, [255, 170, 72])
-  const high = mixSky(skyNum, 0.78, [255, 150, 48])
-  if (!g) return { tex, fog: rgbNum(horizon) }
+  // The chase camera only shows v about 0.37–0.50. Blue stays at the top of
+  // that band; the golden hour and the far escarpment live on the horizon.
+  const haze = mixSky(skyNum, 0.48, [255, 186, 112])
+  if (!g) return { tex, fog: rgbNum(haze) }
   const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   const grad = g.createLinearGradient(0, 0, 0, 256)
-  grad.addColorStop(0, css(high))
-  grad.addColorStop(0.36, css(high))
-  grad.addColorStop(0.46, css(horizon))
-  grad.addColorStop(1, css(horizon))
+  // Visible sky is only v 0.37–0.50. Keep that upper half blue; gold is the
+  // horizon, not a slab across the whole band.
+  grad.addColorStop(0, '#3d6eac')
+  grad.addColorStop(0.34, '#5e92c4')
+  grad.addColorStop(0.40, '#8eb6d4')
+  grad.addColorStop(0.455, '#f2c98a')
+  grad.addColorStop(0.50, css(haze))
+  grad.addColorStop(1, css(mixSky(skyNum, 0.55, [150, 108, 72])))
   g.fillStyle = grad
   g.fillRect(0, 0, 512, 256)
-  // Sun sits in the on-screen band (about 15 degrees above the horizon).
-  g.fillStyle = 'rgba(255, 214, 120, 0.45)'
+
+  // Wisps in the visible band, warm rather than paper-white.
+  g.fillStyle = 'rgba(255, 246, 230, 0.42)'
+  const puffs = [[64, 102, 40, 11], [92, 98, 24, 13], [150, 108, 22, 8], [214, 104, 30, 10], [246, 100, 16, 9]]
+  for (const [x, y, rx, ry] of puffs) {
+    g.beginPath()
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
+    g.fill()
+  }
+
+  // Low sun, soft halo, no hard rays. Sits about 14 degrees above the horizon.
+  const glow = g.createRadialGradient(392, 108, 4, 392, 108, 78)
+  glow.addColorStop(0, 'rgba(255, 250, 230, 0.95)')
+  glow.addColorStop(0.16, 'rgba(255, 214, 130, 0.55)')
+  glow.addColorStop(0.42, 'rgba(255, 176, 80, 0.16)')
+  glow.addColorStop(1, 'rgba(255, 176, 80, 0)')
+  g.fillStyle = glow
+  g.fillRect(300, 40, 180, 140)
+  const column = g.createLinearGradient(392, 88, 392, 136)
+  column.addColorStop(0, 'rgba(255, 210, 130, 0)')
+  column.addColorStop(0.55, 'rgba(255, 196, 110, 0.22)')
+  column.addColorStop(1, 'rgba(255, 186, 100, 0)')
+  g.fillStyle = column
+  g.fillRect(350, 88, 90, 48)
+
+  // Flat-topped highland line kissing the horizon, so the vista still reads
+  // when fog swallows the far meshes.
+  g.fillStyle = 'rgba(118, 132, 154, 0.78)'
   g.beginPath()
-  g.arc(400, 104, 26, 0, Math.PI * 2)
+  g.moveTo(0, 134)
+  g.lineTo(0, 122)
+  g.lineTo(36, 118)
+  g.lineTo(70, 124)
+  g.lineTo(70, 112)
+  g.lineTo(128, 112)
+  g.lineTo(128, 121)
+  g.lineTo(176, 116)
+  g.lineTo(220, 124)
+  g.lineTo(262, 114)
+  g.lineTo(318, 114)
+  g.lineTo(318, 122)
+  g.lineTo(372, 117)
+  g.lineTo(424, 126)
+  g.lineTo(468, 116)
+  g.lineTo(512, 121)
+  g.lineTo(512, 134)
+  g.closePath()
   g.fill()
-  g.fillStyle = '#fff6d2'
+  g.fillStyle = 'rgba(168, 132, 118, 0.45)'
   g.beginPath()
-  g.arc(400, 104, 11, 0, Math.PI * 2)
+  g.moveTo(0, 136)
+  g.lineTo(0, 128)
+  g.lineTo(48, 126)
+  g.lineTo(90, 130)
+  g.lineTo(140, 124)
+  g.lineTo(190, 130)
+  g.lineTo(250, 125)
+  g.lineTo(310, 131)
+  g.lineTo(380, 126)
+  g.lineTo(450, 132)
+  g.lineTo(512, 127)
+  g.lineTo(512, 136)
+  g.closePath()
   g.fill()
-  return { tex, fog: rgbNum(horizon) }
+  g.fillStyle = 'rgba(255, 232, 200, 0.38)'
+  g.beginPath()
+  g.ellipse(256, 130, 250, 9, 0, 0, Math.PI * 2)
+  g.fill()
+  return { tex, fog: rgbNum(haze) }
+}
+
+/* Highland turf and a packed-earth road. Painted once per place (turf) or
+   once per world (road). Repeat across the long ground plane. No Math.random:
+   the blotches are a fixed weave so a level always looks the same. */
+function paintRepeat(draw, w, h, repeatX, repeatY) {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')
+  if (g) draw(g, w, h)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(repeatX, repeatY)
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  return tex
+}
+function turfTexture(groundNum) {
+  const base = [(groundNum >> 16) & 255, (groundNum >> 8) & 255, groundNum & 255]
+  const lift = (amt) => base.map((v) => Math.max(0, Math.min(255, v + amt)))
+  const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+  return paintRepeat((g, w, h) => {
+    g.fillStyle = css(base)
+    g.fillRect(0, 0, w, h)
+    for (let i = 0; i < 36; i++) {
+      g.globalAlpha = 0.32
+      g.fillStyle = css(lift(i % 2 ? 34 : -26))
+      g.beginPath()
+      g.ellipse((i * 47) % w, (i * 83) % h, 16 + (i % 5) * 5, 8 + (i % 3) * 4, i * 0.4, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.globalAlpha = 0.75
+    g.strokeStyle = css(lift(40))
+    g.lineWidth = 1.6
+    g.lineCap = 'round'
+    for (let i = 0; i < 26; i++) {
+      const x = (i * 29) % w
+      const y = (i * 53) % h
+      g.beginPath()
+      g.moveTo(x, y + 12)
+      g.quadraticCurveTo(x + 4, y + 5, x - 1, y)
+      g.stroke()
+    }
+    g.globalAlpha = 1
+    g.fillStyle = '#e2c056'
+    for (let i = 0; i < 5; i++) {
+      g.beginPath()
+      g.arc((i * 70 + 24) % w, (i * 40 + 18) % h, 2, 0, Math.PI * 2)
+      g.fill()
+    }
+  }, 256, 256, 8, 30)
+}
+function dirtTexture() {
+  return paintRepeat((g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, w, 0)
+    grad.addColorStop(0, '#a87444')
+    grad.addColorStop(0.14, '#d4b888')
+    grad.addColorStop(0.5, '#f0e0c0')
+    grad.addColorStop(0.86, '#d4b888')
+    grad.addColorStop(1, '#9a6840')
+    g.fillStyle = grad
+    g.fillRect(0, 0, w, h)
+    g.strokeStyle = 'rgba(110, 72, 36, 0.32)'
+    g.lineWidth = 3
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(w * 0.28, 0)
+    g.bezierCurveTo(w * 0.34, h * 0.3, w * 0.22, h * 0.62, w * 0.3, h)
+    g.stroke()
+    g.beginPath()
+    g.moveTo(w * 0.72, 0)
+    g.bezierCurveTo(w * 0.66, h * 0.35, w * 0.78, h * 0.7, w * 0.7, h)
+    g.stroke()
+    g.fillStyle = 'rgba(90, 58, 32, 0.28)'
+    for (let i = 0; i < 16; i++) {
+      g.beginPath()
+      g.ellipse((i * 23) % (w - 8) + 4, (i * 41) % (h - 8) + 4, 2 + (i % 3), 1.3, 0, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.fillStyle = 'rgba(255, 246, 226, 0.2)'
+    g.fillRect(w * 0.38, 0, w * 0.24, h)
+  }, 128, 256, 1, 16)
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -191,14 +339,23 @@ function legAt(parent, x, y, z, r, h, color) {
 }
 
 function buildRunnerLion() {
+  const fur = 0xf4b04a
+  const deep = 0xd9841c
+  const mane = 0xc86a10
+  const maneLit = 0xee8c28
   const group = new THREE.Group()
-  blobShadow(group, 0.46)
+  blobShadow(group, 0.52)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.15, 0.16], [0.15, 0.16], [-0.15, -0.14], [0.15, -0.14]]
-    .map(([lx, lz]) => legAt(body, lx, 0.44, lz, 0.065, 0.42, 0xe08300))
-  sphAt(body, 0.34, 0xf7a83c, 0, 0.64, 0.03, 1, 1.02, 1.3)
-  // his signature star on the rump
+  // Hind legs (toward the camera, +Z) a little thicker than the front pair.
+  const legs = [[-0.16, 0.24], [0.16, 0.24], [-0.14, -0.22], [0.14, -0.22]]
+    .map(([lx, lz], i) => legAt(body, lx, 0.5, lz, i < 2 ? 0.078 : 0.06, i < 2 ? 0.48 : 0.42, deep))
+  // Chest forward, haunches back, so the rear silhouette is a cub and not a ball.
+  sphAt(body, 0.26, fur, 0, 0.7, -0.12, 1.05, 0.95, 1.05)
+  sphAt(body, 0.3, fur, 0, 0.64, 0.16, 1.12, 0.92, 1.15)
+  sphAt(body, 0.14, 0xffe4bf, 0, 0.5, 0.12, 0.9, 0.7, 0.85)
+  sphAt(body, 0.15, fur, 0, 0.9, -0.18, 0.9, 1.2, 0.85)
+  // Star on the back: the chase camera is behind him.
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
     starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
     g.fillStyle = '#ffc800'
@@ -207,31 +364,43 @@ function buildRunnerLion() {
     g.strokeStyle = '#e0a400'
     g.stroke()
   }), transparent: true }))
-  star.scale.set(0.28, 0.28, 1)
-  star.position.set(-0.18, 0.74, 0.52)
+  star.scale.set(0.34, 0.34, 1)
+  star.position.set(0, 0.92, 0.28)
   body.add(star)
   // tail up and wagging when happy; setMood droops it
   const tail = new THREE.Group()
-  tail.position.set(0.12, 0.7, 0.34)
+  tail.position.set(0.04, 0.74, 0.46)
   tail.rotation.x = 0.3
   tail.rotation.z = -0.7
-  cyl(tail, 0.04, 0.05, 0.45, 0xe08300, 0, 0.22, 0)
-  sphAt(tail, 0.08, 0x8a5a00, 0, 0.47, 0)
+  cyl(tail, 0.035, 0.05, 0.52, deep, 0, 0.26, 0)
+  sphAt(tail, 0.1, 0x8a4e12, 0, 0.54, 0, 1, 1.05, 0.85)
   body.add(tail)
-  // head straight down the road: the mane halo IS the silhouette
+  // Mane halo is the from-behind read. A rear ruff faces the camera.
   const head = new THREE.Group()
-  head.position.set(0, 1.08, -0.06)
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2
-    sphAt(head, 0.125, 0xd97706, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.02, 1, 1, 0.7)
+  head.position.set(0, 1.16, -0.2)
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2
+    const outer = i % 2 === 0
+    sphAt(head, outer ? 0.145 : 0.1, outer ? mane : maneLit, Math.cos(a) * 0.34, Math.sin(a) * 0.32, Math.sin(a) * 0.04, 1, 1.08, 0.72)
   }
-  sphAt(head, 0.24, 0xf7a83c, 0, 0, -0.04)
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI * 0.2 + (i / 5) * Math.PI * 0.6
+    sphAt(head, 0.11, i % 2 ? maneLit : mane, Math.cos(a) * 0.26, -0.16 - (i % 3) * 0.02, 0.16, 1, 1.25, 0.7)
+  }
+  sphAt(head, 0.22, fur, 0, 0.02, -0.02)
+  sphAt(head, 0.1, 0xffe6c4, 0, -0.06, -0.2, 1.15, 0.72, 0.9)
+  sphAt(head, 0.038, 0x6e4520, 0, -0.02, -0.29)
+  for (const side of [-1, 1]) {
+    sphAt(head, 0.045, 0xffffff, side * 0.09, 0.06, -0.18)
+    sphAt(head, 0.024, 0x3a2a14, side * 0.09, 0.06, -0.22)
+    sphAt(head, 0.012, 0xffffff, side * 0.07, 0.075, -0.23)
+  }
   // ears poke out past the mane; groups so the worried droop carries the pinks
   const ears = [-1, 1].map((side) => {
     const ear = new THREE.Group()
-    ear.position.set(side * 0.26, 0.3, 0)
-    sphAt(ear, 0.1, 0xf7a83c, 0, 0, 0, 1, 1, 0.6)
-    sphAt(ear, 0.05, 0xffb7c5, 0, 0.01, 0.06, 1, 1, 0.5)
+    ear.position.set(side * 0.24, 0.3, -0.02)
+    cone(ear, 0.09, 0.22, fur, 0, 0.1, 0, 6)
+    sphAt(ear, 0.045, 0xffc8b4, 0, 0.08, 0.04, 0.7, 1, 0.45)
     head.add(ear)
     return ear
   })
@@ -240,51 +409,66 @@ function buildRunnerLion() {
 }
 
 function buildRunnerHyena() {
-  const coat = 0x9a8b76, dark = 0x6e614f, crest = 0x57493a, belly = 0xc9b99d
+  const coat = 0xc6ad84
+  const spot = 0x5c4636
+  const dark = 0x6a5344
+  const crest = 0x3c322a
+  const belly = 0xf0e2c6
   const group = new THREE.Group()
-  blobShadow(group, 0.42)
+  blobShadow(group, 0.48)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.14, 0.18], [0.14, 0.18], [-0.14, -0.16], [0.14, -0.16]]
-    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.055, 0.38, dark))
-  // sloped torso: haunches low at the rear, shoulders high at the front
-  sphAt(body, 0.32, coat, 0, 0.6, 0.04, 1, 0.95, 1.4).rotation.x = 0.16
-  // dorsal crest down the spine
-  for (let i = 0; i < 5; i++) {
-    cone(body, 0.05, 0.16, crest, 0, 0.99 - i * 0.04, -0.25 + i * 0.15)
+  const legs = [[-0.15, 0.22], [0.15, 0.22], [-0.13, -0.2], [0.13, -0.2]]
+    .map(([lx, lz]) => legAt(body, lx, 0.46, lz, 0.055, 0.42, dark))
+  // Sloped torso: haunches low toward the camera, shoulders high down the road.
+  const torso = sphAt(body, 0.3, coat, 0, 0.62, 0.02, 0.92, 0.82, 1.5)
+  torso.rotation.x = -0.32
+  sphAt(body, 0.16, belly, 0, 0.48, 0.08, 0.7, 0.55, 1.1)
+  // Bristly crest, tallest over the shoulders.
+  for (let i = 0; i < 6; i++) {
+    const t = i / 5
+    cone(body, 0.045, 0.2 - t * 0.06, crest, 0, 1.02 - t * 0.16, -0.32 + t * 0.55, 5)
   }
-  // spots on the haunches
-  for (const [sx, sy, sz] of [[-0.2, 0.7, 0.22], [0.22, 0.66, 0.18], [-0.16, 0.52, 0.3], [0.14, 0.5, 0.32], [0.02, 0.62, 0.38]]) {
-    sphAt(body, 0.045, dark, sx, sy, sz, 1, 1, 0.5)
+  // Spots on the back and flanks, where the chase camera can see them.
+  for (const [sx, sy, sz] of [[-0.2, 0.72, 0.28], [0.18, 0.66, 0.32], [-0.12, 0.58, 0.4], [0.16, 0.78, 0.12], [0, 0.84, 0.22], [-0.22, 0.6, 0.05]]) {
+    sphAt(body, 0.05, spot, sx, sy, sz, 1.1, 0.8, 0.55)
   }
   const tail = new THREE.Group()
-  tail.position.set(0.08, 0.56, 0.42)
-  tail.rotation.x = -0.7
-  tail.rotation.z = -0.35
-  cyl(tail, 0.035, 0.045, 0.3, crest, 0, 0.14, 0)
-  sphAt(tail, 0.065, crest, 0, 0.3, 0)
+  tail.position.set(0, 0.52, 0.5)
+  tail.rotation.x = -0.85
+  cyl(tail, 0.03, 0.042, 0.34, crest, 0, 0.16, 0)
+  sphAt(tail, 0.07, crest, 0, 0.34, 0)
   body.add(tail)
-  // head turned to flash the grin back down the road
+  // Looks back over the shoulder so the grin, not the back of the skull,
+  // looms at the bottom of the chase frame. Body still runs down the road.
   const head = new THREE.Group()
-  head.position.set(0, 0.98, -0.36)
-  head.rotation.y = 1.15
-  sphAt(head, 0.22, coat, 0, 0, -0.02)
+  head.position.set(0, 1.02, -0.22)
+  head.rotation.y = 2.7
+  head.rotation.x = 0.42
+  sphAt(head, 0.2, coat, 0, 0.02, 0)
+  sphAt(head, 0.12, coat, 0, -0.02, -0.14, 0.85, 0.8, 1.15)
   for (const side of [-1, 1]) {
-    sphAt(head, 0.105, 0x8a7d6a, side * 0.16, 0.2, 0.02, 1, 1.15, 0.5)
-    sphAt(head, 0.055, crest, side * 0.16, 0.2, -0.02, 1, 1.15, 0.5)
+    const ear = new THREE.Group()
+    ear.position.set(side * 0.16, 0.2, 0.02)
+    ear.rotation.z = side * -0.25
+    cone(ear, 0.1, 0.22, 0xb89a74, 0, 0.08, 0, 7)
+    sphAt(ear, 0.05, crest, 0, 0.06, -0.02, 0.65, 0.9, 0.4)
+    head.add(ear)
   }
-  sphAt(head, 0.115, belly, 0, -0.06, -0.2, 0.85, 0.7, 1.05)
-  sphAt(head, 0.04, 0x3a2d1c, 0, -0.02, -0.31)
-  // open grin: dark mouth band + teeth
-  sphAt(head, 0.09, 0x3a2216, 0, -0.125, -0.2, 0.9, 0.45, 0.95)
-  for (const tx of [-0.05, 0, 0.05]) {
-    cone(head, 0.018, 0.05, 0xffffff, tx, -0.135, -0.285).rotation.x = Math.PI
-  }
-  // eyes + heavy mischievous brows
+  // Long muzzle, dark nose, sly eyes, one-fang grin.
+  sphAt(head, 0.11, belly, 0, -0.08, -0.28, 0.8, 0.62, 1.2)
+  sphAt(head, 0.045, 0x2c2418, 0, -0.02, -0.4)
+  sphAt(head, 0.085, 0x3a2216, 0, -0.14, -0.3, 0.95, 0.42, 0.85)
+  cone(head, 0.02, 0.055, 0xffffff, 0.04, -0.12, -0.36).rotation.x = Math.PI
   for (const side of [-1, 1]) {
-    sphAt(head, 0.045, 0xffffff, side * 0.1, 0.06, -0.185)
-    sphAt(head, 0.022, 0x241c12, side * 0.1, 0.055, -0.225)
-    cyl(head, 0.015, 0.015, 0.09, crest, side * 0.1, 0.125, -0.19).rotation.z = Math.PI / 2 - side * 0.25
+    sphAt(head, 0.05, 0xffffff, side * 0.09, 0.05, -0.2)
+    sphAt(head, 0.026, 0x241c12, side * 0.1, 0.045, -0.24)
+    sphAt(head, 0.012, 0xffffff, side * 0.08, 0.06, -0.25)
+    const brow = cyl(head, 0.016, 0.016, 0.1, crest, side * 0.09, 0.12, -0.2)
+    brow.rotation.z = Math.PI / 2 - side * 0.35
+  }
+  for (const [sx, sy, sz] of [[-0.16, 0.02, -0.08], [0.15, -0.02, -0.1], [0.12, 0.08, 0.06]]) {
+    sphAt(head, 0.035, spot, sx, sy, sz, 1, 0.8, 0.6)
   }
   body.add(head)
   return { group, body, legs, tail }
@@ -333,9 +517,12 @@ function sph(g, r, color, x, y, z) {
 /* A meskel tuft on the track shoulder. One or two per chunk; skipped density
    on the low-end tier so the extra cones stay a handful. */
 function grassTuft(g, x, z) {
-  cone(g, 0.16, 0.48, 0x2f6a32, x, 0.24, z, 5)
-  cone(g, 0.12, 0.36, 0x67b255, x + 0.18, 0.18, z + 0.06, 5)
-  cone(g, 0.045, 0.1, 0xffd34d, x + 0.02, 0.5, z, 4)
+  const greens = [0x2f6a32, 0x4e8a3c, 0x67b255, 0x3d7a34, 0x8fbe58]
+  greens.forEach((c, i) => {
+    const blade = cone(g, 0.045, 0.38 + (i % 3) * 0.08, c, x + (i - 2) * 0.09, 0.18, z + ((i % 2) - 0.5) * 0.06, 4)
+    blade.rotation.z = (i - 2) * 0.16
+  })
+  cone(g, 0.035, 0.08, 0xffd34d, x, 0.46, z, 4)
 }
 
 const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
@@ -360,8 +547,10 @@ function disposeGroup(root) {
 /* ── procedural landmarks; i is the chunk index for deterministic variety ── */
 
 function acacia(g, x, z, s = 1) {
-  cyl(g, 0.12 * s, 0.2 * s, 2.2 * s, 0x6b4a2d, x, 1.1 * s, z, 6)
-  cone(g, 2.1 * s, 0.9 * s, 0x4f7a34, x, 2.6 * s, z, 9)
+  cyl(g, 0.1 * s, 0.18 * s, 2.4 * s, 0x6b4a2d, x, 1.2 * s, z, 6)
+  // Flat highland canopy, not a pine spike.
+  cone(g, 2.3 * s, 0.62 * s, 0x3f6e30, x, 2.5 * s, z, 10)
+  cone(g, 1.5 * s, 0.4 * s, 0x6a9a48, x, 2.78 * s, z, 9)
 }
 function palm(g, x, z, s = 1) {
   cyl(g, 0.1 * s, 0.18 * s, 3 * s, 0x8a6a45, x, 1.5 * s, z, 6)
@@ -404,17 +593,37 @@ function chunkAksum(g, i) {
   if (i % 2 === 0) zebraAt(g, 15 + ((i * 5) % 4), -20, 2)
 }
 
+/* Flat-topped amba. y is the ground; the cap is the pale cliff lip. */
+function plateau(g, x, z, w, h, d, rock, cap) {
+  box(g, w, h, d, rock, x, h / 2, z)
+  box(g, w * 0.64, Math.max(0.4, h * 0.28), d * 0.64, cap, x, h + h * 0.1, z)
+}
+
+/* Static valley the road runs into. Side walls frame the lanes; the center
+   stays open so letter gates keep a clear line to the horizon. */
+function buildHighlandVista() {
+  const g = new THREE.Group()
+  plateau(g, -24, -112, 30, 15, 14, 0x8a9aaf, 0xc5d2de)
+  plateau(g, 26, -118, 28, 13, 12, 0x9a8c96, 0xd4c6bc)
+  plateau(g, 0, -102, 16, 4.5, 10, 0x7d8a62, 0xb7c49a)
+  plateau(g, -28, -60, 16, 12, 20, 0x7a6c66, 0xc2ae9e)
+  plateau(g, 30, -66, 15, 11, 18, 0x5f784c, 0x96ae78)
+  plateau(g, -20, -38, 8, 4.2, 7, 0x6e8a50, 0xa8c484)
+  plateau(g, 21, -34, 7, 3.6, 6, 0x6e8a50, 0xa8c484)
+  acacia(g, -16, -28, 1.05)
+  acacia(g, 17, -46, 0.9)
+  return g
+}
+
 function chunkSimien(g, i) {
-  // Highland escarpment: layered peaks pushed out beyond the track.
+  // Roadside amba you pass, off the lanes. The far valley is the static vista.
   for (const side of [-1, 1]) {
-    cone(g, 9 + ((i * 3 + side) % 4), 11 + ((i * 7) % 6), 0x55794a, side * (22 + ((i * 5) % 6)), 5, -26, 7)
-    cone(g, 6, 8, 0x6b8f5b, side * 16, 3.6, -44, 6)
-    cone(g, 3.4, 4, 0x7fa06a, side * 12, 1.9, -8, 6)
+    const x = side * (17 + ((i * 3) % 4))
+    plateau(g, x, -18 - ((i * 5) % 10), 7, 4.5 + ((i + side + 4) % 3), 6, 0x6d8a52, 0xb7c8a0)
+    plateau(g, side * (25 + ((i * 2) % 3)), -38, 9, 6 + (i % 3), 8, 0x5c6c56, 0xc8b8a4)
   }
-  sph(g, 0.8, 0x8a9a7a, 8, 0.3, -36)
-  sph(g, 0.6, 0x8a9a7a, -7, 0.25, -16)
-  acacia(g, 10 + ((i * 3) % 3), -50, 0.8)
-  if (i % 3 === 0) zebraAt(g, -12, -28, 1.8)
+  acacia(g, 12 + ((i * 3) % 3), -50, 0.8)
+  if (i % 3 === 0) zebraAt(g, -13, -26, 1.8)
 }
 
 function chunkGondar(g, i) {
@@ -502,14 +711,17 @@ class RunnerWorld {
 
     this.skyMap = null
 
-    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
+    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), mat(0x6a8a48))
     this.ground.rotation.x = -Math.PI / 2
     this.ground.position.z = -200
     this.scene.add(this.ground)
-    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xe6d3ae }))
+    this._turfMat = null
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ map: dirtTexture() }))
     this.track.rotation.x = -Math.PI / 2
-    this.track.position.set(0, 0.02, -200)
+    this.track.position.set(0, 0.03, -200)
     this.scene.add(this.track)
+    this.vista = buildHighlandVista()
+    this.scene.add(this.vista)
 
     // Anbessa as a real low-poly mesh (feet at the group origin), seen from
     // behind running toward the letters.
@@ -577,7 +789,13 @@ class RunnerWorld {
     this.scene.background = this.skyMap
     this.scene.fog = new THREE.Fog(sky.fog, place.fog[0], place.fog[1])
     if (prevSky) prevSky.dispose()
-    this.ground.material = mat(place.ground)
+    const prevTurf = this._turfMat
+    this._turfMat = new THREE.MeshLambertMaterial({ map: turfTexture(place.ground) })
+    this.ground.material = this._turfMat
+    if (prevTurf) {
+      prevTurf.map?.dispose()
+      prevTurf.dispose()
+    }
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
     const build = CHUNK_BUILDERS[place.builder] || CHUNK_BUILDERS[place.id]
@@ -587,10 +805,12 @@ class RunnerWorld {
       const side = k % 2 === 0 ? -1 : 1
       grassTuft(g, side * 5.15, -8)
       if (!LOW_END) grassTuft(g, -side * 5.25, -28)
-      // lane dashes ride along in the chunk so the ground reads as moving
+      // Pale shoulder and lane dashes ride in the chunk so the road reads as moving.
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, -3.55, 0.055, -CHUNK / 2)
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, 3.55, 0.055, -CHUNK / 2)
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, -1.15, 0.06, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, 1.15, 0.06, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)

@@ -4394,76 +4394,105 @@ export function drawKokeb(g, s) {
   }
 }
 
-/** Jibby the hyena — the Letter Muncher. Mischievous, not scary. */
+/** Jibby the hyena — the Letter Muncher. Mischievous, not scary.
+    Sandy coat, round ears, long muzzle, spots. The 3D mesh is the in-race
+    body; this portrait is the munched card. */
 export function drawHyena(g, s, mood = 'grin') {
   const cx = s / 2
+  g.fillStyle = 'rgba(20,16,8,0.12)'
+  g.beginPath()
+  g.ellipse(cx, s * 0.9, s * 0.22, s * 0.035, 0, 0, 7)
+  g.fill()
+  // shoulders
+  g.fillStyle = '#c6a15e'
+  g.beginPath()
+  g.ellipse(cx, s * 0.78, s * 0.26, s * 0.16, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f0ddb4'
+  g.beginPath()
+  g.ellipse(cx, s * 0.82, s * 0.12, s * 0.08, 0, 0, 7)
+  g.fill()
   // big rounded ears
   for (const side of [-1, 1]) {
-    g.fillStyle = '#8a7d6a'
+    g.fillStyle = '#e2c48a'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
+    g.ellipse(cx + side * s * 0.2, s * 0.16, s * 0.09, s * 0.13, side * 0.3, 0, 7)
     g.fill()
-    g.fillStyle = '#57493a'
+    g.fillStyle = '#5c4632'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.18, s * 0.185, s * 0.045, s * 0.07, side * 0.25, 0, 7)
+    g.ellipse(cx + side * s * 0.2, s * 0.175, s * 0.048, s * 0.075, side * 0.3, 0, 7)
     g.fill()
   }
   // scruffy crest
-  g.fillStyle = '#57493a'
-  for (let i = -2; i <= 2; i++) {
+  g.fillStyle = '#4a3a2c'
+  for (let i = -3; i <= 3; i++) {
+    const h = 0.1 + (3 - Math.abs(i)) * 0.012
     g.beginPath()
-    g.moveTo(cx + i * s * 0.055 - s * 0.03, s * 0.185)
-    g.lineTo(cx + i * s * 0.055, s * 0.1)
-    g.lineTo(cx + i * s * 0.055 + s * 0.03, s * 0.185)
+    g.moveTo(cx + i * s * 0.045 - s * 0.028, s * 0.2)
+    g.lineTo(cx + i * s * 0.045, s * h)
+    g.lineTo(cx + i * s * 0.045 + s * 0.028, s * 0.2)
     g.closePath()
     g.fill()
   }
   // head
-  g.fillStyle = '#9a8b76'
+  g.fillStyle = '#d7b56e'
   g.beginPath()
-  g.arc(cx, s * 0.43, s * 0.28, 0, 7)
+  g.ellipse(cx, s * 0.4, s * 0.26, s * 0.24, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f3e2bc'
+  g.beginPath()
+  g.ellipse(cx - s * 0.06, s * 0.32, s * 0.08, s * 0.04, -0.4, 0, 7)
   g.fill()
   // spots
-  g.fillStyle = '#6e614f'
-  for (const [px, py, pr] of [[0.3, 0.3, 0.028], [0.68, 0.27, 0.024], [0.74, 0.42, 0.02], [0.26, 0.46, 0.022]]) {
+  g.fillStyle = '#5c4632'
+  for (const [px, py, pr] of [[0.28, 0.28, 0.03], [0.72, 0.26, 0.026], [0.76, 0.44, 0.022], [0.24, 0.48, 0.024], [0.62, 0.72, 0.028]]) {
     g.beginPath()
-    g.arc(px * s, py * s, pr * s, 0, 7)
+    g.ellipse(px * s, py * s, pr * s, pr * s * 0.75, 0, 0, 7)
     g.fill()
   }
   // heavy brow
-  g.strokeStyle = '#57493a'
-  g.lineWidth = s * 0.03
+  g.strokeStyle = '#4a3a2c'
+  g.lineWidth = s * 0.028
   g.lineCap = 'round'
   g.beginPath()
-  g.moveTo(cx - s * 0.16, s * 0.3)
-  g.quadraticCurveTo(cx, s * 0.27, cx + s * 0.16, s * 0.3)
+  g.moveTo(cx - s * 0.18, s * 0.3)
+  g.quadraticCurveTo(cx - s * 0.08, s * 0.26, cx - s * 0.02, s * 0.32)
+  g.moveTo(cx + s * 0.18, s * 0.3)
+  g.quadraticCurveTo(cx + s * 0.08, s * 0.26, cx + s * 0.02, s * 0.32)
   g.stroke()
-  // mischievous eyes
+  // mischievous eyes, glancing to one side
   for (const side of [-1, 1]) {
     g.fillStyle = '#fff'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.05, s * 0.042, 0, 0, 7)
+    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.055, s * 0.04, 0, 0, 7)
     g.fill()
     g.fillStyle = '#241c12'
     g.beginPath()
-    g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
+    g.arc(cx + side * s * 0.08 + s * 0.012, s * 0.372, s * 0.02, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.074, s * 0.362, s * 0.008, 0, 7)
     g.fill()
   }
-  // muzzle
-  g.fillStyle = '#c9b99d'
+  // long muzzle
+  g.fillStyle = '#f6e6c4'
   g.beginPath()
-  g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
+  g.ellipse(cx, s * 0.54, s * 0.15, s * 0.12, 0, 0, 7)
   g.fill()
-  // nose
-  g.fillStyle = '#3a2d1c'
+  g.fillStyle = '#2c2418'
   g.beginPath()
-  g.ellipse(cx, s * 0.485, s * 0.045, s * 0.03, 0, 0, 7)
+  g.ellipse(cx, s * 0.48, s * 0.05, s * 0.032, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#6a5840'
+  g.beginPath()
+  g.ellipse(cx - s * 0.018, s * 0.472, s * 0.012, s * 0.008, 0, 0, 7)
   g.fill()
   // the letter-munching grin
   if (mood === 'agitated') {
     g.fillStyle = '#3a2216'
     g.beginPath()
-    g.ellipse(cx, s * 0.6, s * 0.11, s * 0.075, 0, 0, 7)
+    g.ellipse(cx, s * 0.6, s * 0.11, s * 0.08, 0, 0, 7)
     g.fill()
     g.fillStyle = '#fff'
     for (let i = 0; i < 3; i++) {
@@ -4475,24 +4504,24 @@ export function drawHyena(g, s, mood = 'grin') {
       g.closePath()
       g.fill()
     }
+    g.fillStyle = '#e58aa0'
+    g.beginPath()
+    g.ellipse(cx, s * 0.64, s * 0.04, s * 0.025, 0, 0, 7)
+    g.fill()
   } else {
     g.strokeStyle = '#3a2d1c'
     g.lineWidth = s * 0.016
     g.beginPath()
-    g.moveTo(cx - s * 0.12, s * 0.575)
-    g.quadraticCurveTo(cx, s * 0.655, cx + s * 0.12, s * 0.575)
+    g.moveTo(cx - s * 0.1, s * 0.56)
+    g.quadraticCurveTo(cx + s * 0.02, s * 0.64, cx + s * 0.12, s * 0.55)
     g.stroke()
     g.fillStyle = '#fff'
-    for (let i = 0; i < 4; i++) {
-      const x = cx - s * 0.105 + i * s * 0.056
-      const y = s * (0.585 + Math.sin((i / 3) * Math.PI) * 0.028)
-      g.beginPath()
-      g.moveTo(x, y)
-      g.lineTo(x + s * 0.028, y + s * 0.05)
-      g.lineTo(x + s * 0.056, y)
-      g.closePath()
-      g.fill()
-    }
+    g.beginPath()
+    g.moveTo(cx + s * 0.04, s * 0.56)
+    g.lineTo(cx + s * 0.07, s * 0.62)
+    g.lineTo(cx + s * 0.1, s * 0.55)
+    g.closePath()
+    g.fill()
   }
 }
 
