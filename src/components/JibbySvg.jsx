@@ -7,7 +7,7 @@ import { useId } from 'react'
 import { HYENA_NAME } from '../platform/brand'
 
 const CX = 100
-const SPOTS = [[58, 148, 6, 4.2], [140, 152, 5.2, 3.8], [48, 178, 4.6, 3.4], [152, 176, 4.4, 3.2], [70, 96, 3.6, 2.6], [132, 98, 3.4, 2.4], [86, 168, 3.2, 2.4], [118, 186, 3.6, 2.6]]
+const SPOTS = [[52, 144, 9, 6], [146, 148, 8, 5.4], [44, 174, 7, 4.8], [156, 172, 6.6, 4.6], [68, 92, 4.8, 3.4], [136, 94, 4.6, 3.2], [82, 164, 5.4, 3.6], [124, 182, 5.6, 3.8], [100, 156, 6.2, 4]]
 const MANE = [-3, -2, -1, 0, 1, 2, 3]
 
 export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, className = '', style = {} }) {
@@ -59,12 +59,12 @@ export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, 
       })}
 
       <path d="M58,70 Q52,40 100,36 Q148,40 142,70 Q152,102 116,112 Q100,118 84,112 Q48,102 58,70 Z" fill={`url(#${id('jh')})`} />
-      <path d="M82,96 Q76,132 100,146 Q124,132 118,96 Q100,88 82,96 Z" fill={`url(#${id('jm')})`} />
-      <ellipse cx={CX} cy="124" rx="11" ry="7" fill="#2c2418" />
-      <ellipse cx={CX - 4} cy="122" rx="2.4" ry="1.5" fill="#6a5840" />
-      <ellipse cx={CX + 4} cy="123" rx="1.6" ry="1.1" fill="#6a5840" />
+      <path d="M84,98 Q74,136 100,156 Q126,136 116,98 Q100,88 84,98 Z" fill={`url(#${id('jm')})`} />
+      <ellipse cx={CX} cy="138" rx="12" ry="7" fill="#1c140e" />
+      <ellipse cx={CX - 4} cy="136" rx="2.4" ry="1.5" fill="#6a5840" />
+      <ellipse cx={CX + 4} cy="137" rx="1.6" ry="1.1" fill="#6a5840" />
       {SPOTS.map(([x, y, rx, ry], i) => (
-        <ellipse key={i} cx={x} cy={y} rx={rx} ry={ry} fill="#5c4632" opacity="0.78" />
+        <ellipse key={i} cx={x} cy={y} rx={rx} ry={ry} fill="#2a2118" opacity="0.9" />
       ))}
       <ellipse cx={CX - 10} cy="54" rx="16" ry="6" fill="#fff" opacity="0.22" transform={`rotate(-16 ${CX - 10} 54)`} />
 
@@ -81,14 +81,14 @@ export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, 
 
       {agit ? (
         <>
-          <path d="M78,122 Q100,112 122,122 Q114,156 100,160 Q86,156 78,122 Z" fill="#3a2216" />
-          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 16},122 L${CX + s * 9},136 L${CX + s * 3},122 Z`} fill="#fff" />)}
-          <ellipse cx={CX} cy="150" rx="9" ry="6" fill="#e58aa0" />
+          <path d="M78,134 Q100,124 122,134 Q114,168 100,172 Q86,168 78,134 Z" fill="#3a2216" />
+          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 16},134 L${CX + s * 9},148 L${CX + s * 3},134 Z`} fill="#fff" />)}
+          <ellipse cx={CX} cy="162" rx="9" ry="6" fill="#e58aa0" />
         </>
       ) : (
         <>
-          <path d="M82,130 Q100,140 120,126" stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-          <path d="M108,128 L113,140 L118,124 Z" fill="#fff" />
+          <path d="M84,144 Q100,156 118,142" stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <path d="M108,142 L113,154 L118,138 Z" fill="#fff" />
         </>
       )}
     </svg>

@@ -336,30 +336,30 @@ function blobShadow(group, r) {
 function legAt(parent, x, y, z, r, h, color) {
   const leg = new THREE.Group()
   leg.position.set(x, y, z)
-  cyl(leg, r, r + 0.01, h, color, 0, -h / 2, 0)
-  sphAt(leg, r + 0.02, color, 0, -h, -0.02, 1, 0.7, 1.15)
+  cyl(leg, r * 0.85, r, h * 0.78, color, 0, -h * 0.36, 0)
+  // Wide flat paw, toes a little forward, so the foot reads from the chase view.
+  sphAt(leg, r * 1.25, color, 0, -h * 0.9, 0.03, 1.5, 0.38, 1.75)
   parent.add(leg)
   return leg
 }
 
 function buildRunnerLion() {
-  const fur = 0xf6b84a
-  const deep = 0xd48418
-  const mane = 0xc25e0c
-  const maneDark = 0x7a3208
+  const fur = 0xe9a33c
+  const lit = 0xf6c56e
+  const deep = 0xc47a28
+  const mane = 0xd4842a
+  const maneDeep = 0xb46214
   const group = new THREE.Group()
-  blobShadow(group, 0.62)
+  blobShadow(group, 0.5)
   const body = new THREE.Group()
   group.add(body)
-  // Wide hind stance so both back paws read from the chase camera.
-  const legs = [[-0.3, 0.36], [0.3, 0.36], [-0.15, -0.34], [0.15, -0.34]]
-    .map(([lx, lz], i) => legAt(body, lx, 0.6, lz, i < 2 ? 0.115 : 0.07, i < 2 ? 0.58 : 0.46, deep))
-  // Long cub: chest down the road, big haunches toward the camera.
-  sphAt(body, 0.18, fur, 0, 0.78, -0.38, 0.9, 0.8, 1.0)
-  sphAt(body, 0.24, fur, 0, 0.72, -0.06, 1.1, 0.82, 1.15)
-  sphAt(body, 0.3, fur, 0, 0.58, 0.28, 1.28, 0.78, 1.05)
-  sphAt(body, 0.12, 0xffe8c4, 0, 0.46, 0.2, 0.7, 0.4, 0.65)
-  // Star on the back, where the chase camera looks.
+  // Cub: short legs, big paws. A little yaw so the chase camera sees the face.
+  group.rotation.y = 0.42
+  const legs = [[-0.2, 0.18], [0.2, 0.18], [-0.13, -0.2], [0.13, -0.2]]
+    .map(([lx, lz], i) => legAt(body, lx, 0.4, lz, i < 2 ? 0.07 : 0.055, i < 2 ? 0.34 : 0.28, deep))
+  sphAt(body, 0.2, fur, 0, 0.5, -0.12, 1.0, 0.88, 1.05)
+  sphAt(body, 0.24, lit, 0, 0.46, 0.1, 1.12, 0.82, 1.0)
+  sphAt(body, 0.12, 0xffe6c4, 0, 0.38, 0.12, 0.7, 0.42, 0.65)
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
     starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
     g.fillStyle = '#ffe14a'
@@ -368,43 +368,58 @@ function buildRunnerLion() {
     g.strokeStyle = '#c98400'
     g.stroke()
   }), transparent: true }))
-  star.scale.set(0.58, 0.58, 1)
-  star.position.set(0, 0.96, 0.02)
+  star.scale.set(0.32, 0.32, 1)
+  star.position.set(0, 0.66, 0.08)
   body.add(star)
-  // Tail curls up and out to the side. A straight stick read as a third leg.
-  // setMood droops this root; the tip curl stays.
+  // Tail leaves the rump and curls up. setMood lifts or droops this root.
   const tail = new THREE.Group()
-  tail.position.set(-0.04, 0.7, 0.48)
-  tail.rotation.x = -0.2
-  tail.rotation.z = -0.55
-  cyl(tail, 0.05, 0.055, 0.28, deep, 0, 0.15, 0)
-  const tip = new THREE.Group()
-  tip.position.set(0, 0.3, 0)
-  tip.rotation.z = -0.35
-  cyl(tip, 0.04, 0.042, 0.2, deep, 0, 0.1, 0)
-  sphAt(tip, 0.15, 0x4e280c, 0, 0.24, 0, 1.2, 1.05, 0.85)
-  tail.add(tip)
+  tail.position.set(0.04, 0.48, 0.32)
+  tail.rotation.x = -1.05
+  tail.rotation.z = 0.4
+  cyl(tail, 0.035, 0.04, 0.2, deep, 0, 0.1, 0)
+  const curl = new THREE.Group()
+  curl.position.set(0, 0.2, 0)
+  curl.rotation.z = 0.85
+  curl.rotation.x = -0.25
+  cyl(curl, 0.03, 0.032, 0.16, deep, 0, 0.08, 0)
+  sphAt(curl, 0.09, 0x5c3010, 0, 0.18, 0, 1.15, 1.0, 0.9)
+  tail.add(curl)
   body.add(tail)
-  // Mane is one dark cape on the back of the neck, not a ring of beads.
+  // Big cub head, turned toward the chase camera so muzzle and eyes read.
   const head = new THREE.Group()
-  head.position.set(0, 1.2, -0.16)
-  sphAt(head, 0.15, fur, 0, -0.18, 0.06, 1.05, 0.65, 0.85)
-  sphAt(head, 0.36, mane, 0, 0.05, 0.0, 1.35, 1.12, 0.7)
-  sphAt(head, 0.3, maneDark, 0, 0.04, 0.12, 1.48, 1.0, 0.36)
-  sphAt(head, 0.2, fur, 0, 0.02, -0.14)
-  sphAt(head, 0.09, 0xffe6c4, 0, -0.02, -0.26, 1.1, 0.65, 0.9)
-  sphAt(head, 0.035, 0x6e4520, 0, 0, -0.34)
+  head.position.set(0, 0.86, -0.08)
+  head.rotation.y = 0.72
+  sphAt(head, 0.08, fur, 0, -0.06, 0.06, 0.9, 0.6, 0.7)
+  sphAt(head, 0.24, lit, 0, 0.06, 0, 1.02, 0.98, 0.95)
+  // Small ruff around the cheeks and nape. Not a ball, not a bead ring.
+  const tufts = [
+    [0, 0.02, 0.14, 0.13, maneDeep, 1.15, 0.85, 0.55],
+    [-0.18, 0.0, 0.02, 0.11, mane, 0.85, 1.15, 0.7],
+    [0.18, 0.0, 0.02, 0.11, maneDeep, 0.85, 1.15, 0.7],
+    [-0.1, -0.06, -0.06, 0.1, mane, 1.05, 0.8, 0.75],
+    [0.1, -0.06, -0.06, 0.1, mane, 1.05, 0.8, 0.75],
+    [0, 0.14, 0.06, 0.08, maneDeep, 1.4, 0.5, 0.55],
+  ]
+  for (const [x, y, z, r, c, sx, sy, sz] of tufts) sphAt(head, r, c, x, y, z, sx, sy, sz)
+  sphAt(head, 0.11, 0xffe8c8, 0, -0.02, -0.18, 1.15, 0.72, 1.2)
+  sphAt(head, 0.04, 0xfff3e0, -0.08, -0.04, -0.26, 1.2, 0.65, 0.75)
+  sphAt(head, 0.04, 0xfff3e0, 0.08, -0.04, -0.26, 1.2, 0.65, 0.75)
+  sphAt(head, 0.032, 0x6b4424, 0, 0.0, -0.3, 1.15, 0.7, 0.8)
   for (const side of [-1, 1]) {
-    sphAt(head, 0.045, 0xffffff, side * 0.09, 0.06, -0.2)
-    sphAt(head, 0.024, 0x3a2a14, side * 0.09, 0.06, -0.24)
+    sphAt(head, 0.05, 0xffffff, side * 0.09, 0.08, -0.16)
+    sphAt(head, 0.028, 0x3a2a14, side * 0.09, 0.07, -0.2)
+    sphAt(head, 0.012, 0xffffff, side * 0.075, 0.09, -0.22)
+    const whisker = cyl(head, 0.008, 0.008, 0.16, 0xc4a060, side * 0.16, -0.02, -0.26, 5)
+    whisker.rotation.z = Math.PI / 2
+    whisker.rotation.y = side * 0.25
   }
-  // Ears stand clear of the mane. Groups so the worried droop still carries them.
   const ears = [-1, 1].map((side) => {
     const ear = new THREE.Group()
-    ear.position.set(side * 0.18, 0.42, -0.02)
-    ear.rotation.z = side * 0.18
-    cone(ear, 0.1, 0.46, 0xf8d48a, 0, 0.22, 0, 6)
-    sphAt(ear, 0.05, 0xff9aab, 0, 0.16, 0.03, 0.55, 1.15, 0.35)
+    ear.position.set(side * 0.14, 0.3, 0.0)
+    ear.rotation.z = side * -0.35
+    ear.rotation.x = -0.25
+    sphAt(ear, 0.085, lit, 0, 0.05, 0, 0.7, 1.2, 0.42)
+    sphAt(ear, 0.048, 0xf4a8b0, 0, 0.04, -0.02, 0.5, 0.95, 0.28)
     head.add(ear)
     return ear
   })
@@ -422,20 +437,20 @@ function buildRunnerHyena() {
   blobShadow(group, 0.48)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.15, 0.22], [0.15, 0.22], [-0.13, -0.2], [0.13, -0.2]]
-    .map(([lx, lz]) => legAt(body, lx, 0.46, lz, 0.055, 0.42, dark))
-  // Sloped torso: haunches low toward the camera, shoulders high down the road.
-  const torso = sphAt(body, 0.3, coat, 0, 0.62, 0.02, 0.92, 0.82, 1.5)
-  torso.rotation.x = -0.32
-  sphAt(body, 0.16, belly, 0, 0.48, 0.08, 0.7, 0.55, 1.1)
-  // Bristly crest, tallest over the shoulders.
-  for (let i = 0; i < 6; i++) {
-    const t = i / 5
-    cone(body, 0.045, 0.2 - t * 0.06, crest, 0, 1.02 - t * 0.16, -0.32 + t * 0.55, 5)
+  const legs = [[-0.16, 0.2], [0.16, 0.2], [-0.13, -0.22], [0.13, -0.22]]
+    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.05, 0.34, dark))
+  // Sloping back: shoulders high down the road, rump low toward the camera.
+  sphAt(body, 0.2, coat, 0, 0.72, -0.26, 0.95, 0.8, 0.85)
+  const rump = sphAt(body, 0.24, coat, 0, 0.46, 0.18, 1.1, 0.72, 1.2)
+  rump.rotation.x = -0.2
+  sphAt(body, 0.12, belly, 0, 0.4, 0.16, 0.65, 0.4, 0.9)
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4
+    cone(body, 0.03, 0.12 - t * 0.03, crest, 0, 0.92 - t * 0.18, -0.22 + t * 0.4, 5)
   }
-  // Spots on the back and flanks, where the chase camera can see them.
-  for (const [sx, sy, sz] of [[-0.22, 0.74, 0.3], [0.2, 0.66, 0.34], [-0.1, 0.56, 0.42], [0.18, 0.8, 0.14], [0, 0.86, 0.24], [-0.24, 0.6, 0.08], [0.08, 0.7, 0.38]]) {
-    sphAt(body, 0.085, spot, sx, sy, sz, 1.2, 0.7, 0.45)
+  // Big dark spots on the rump and flank the chase camera actually sees.
+  for (const [sx, sy, sz] of [[0.16, 0.58, 0.38], [-0.14, 0.52, 0.4], [0.02, 0.66, 0.36], [0.18, 0.44, 0.28], [-0.06, 0.42, 0.42], [0.1, 0.7, 0.22]]) {
+    sphAt(body, 0.075, spot, sx, sy, sz, 1.4, 0.38, 0.95)
   }
   const tail = new THREE.Group()
   tail.position.set(0, 0.52, 0.5)
@@ -446,22 +461,24 @@ function buildRunnerHyena() {
   // Looks back over the shoulder so the chase camera sees the face.
   // Body still runs down the road.
   const head = new THREE.Group()
-  head.position.set(0, 1.08, -0.16)
+  head.position.set(0, 0.9, -0.1)
   head.rotation.y = 2.5
   head.rotation.x = 0.22
-  sphAt(head, 0.24, coat, 0, 0.04, 0)
-  sphAt(head, 0.14, coat, 0, -0.02, -0.16, 0.9, 0.8, 1.2)
+  sphAt(head, 0.22, coat, 0, 0.06, 0.02, 1.05, 0.95, 0.9)
+  sphAt(head, 0.1, coat, 0, 0.0, -0.12, 0.85, 0.75, 1.15)
   for (const side of [-1, 1]) {
     const ear = new THREE.Group()
-    ear.position.set(side * 0.16, 0.26, 0.02)
-    ear.rotation.z = side * -0.15
-    cone(ear, 0.14, 0.36, 0xf0d7a2, 0, 0.16, 0, 7)
-    sphAt(ear, 0.07, crest, 0, 0.08, -0.02, 0.6, 1, 0.4)
+    ear.position.set(side * 0.14, 0.2, 0.02)
+    ear.rotation.z = side * -0.25
+    sphAt(ear, 0.09, 0xecd4a6, 0, 0.04, 0, 0.72, 1.15, 0.4)
+    sphAt(ear, 0.05, crest, 0, 0.03, -0.02, 0.5, 0.85, 0.25)
     head.add(ear)
   }
-  sphAt(head, 0.13, belly, 0, -0.06, -0.32, 0.85, 0.65, 1.25)
-  sphAt(head, 0.055, 0x2c2418, 0, 0, -0.46)
-  sphAt(head, 0.1, 0x3a2216, 0, -0.14, -0.34, 1, 0.45, 0.9)
+  // Long snout, dark at the tip, so the profile reads as a hyena.
+  sphAt(head, 0.09, belly, 0, -0.02, -0.24, 0.7, 0.55, 1.55)
+  sphAt(head, 0.055, 0x3a2e22, 0, -0.01, -0.4, 0.85, 0.6, 1.05)
+  sphAt(head, 0.035, 0x1c140e, 0, 0.01, -0.5)
+  sphAt(head, 0.07, 0x3a2216, 0, -0.1, -0.32, 0.9, 0.4, 0.8)
   cone(head, 0.028, 0.07, 0xffffff, 0.05, -0.12, -0.4).rotation.x = Math.PI
   for (const side of [-1, 1]) {
     sphAt(head, 0.062, 0xffffff, side * 0.1, 0.08, -0.22)
@@ -966,11 +983,11 @@ class RunnerWorld {
     // Readable from behind: worried droops the ears sideways and the tail down.
     const c = this.playerChar
     for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
-      ear.position.y = worried ? 0.22 : 0.42
-      ear.rotation.z = worried ? side * -0.9 : side * 0.18
+      ear.position.y = worried ? 0.16 : 0.3
+      ear.rotation.z = worried ? side * -0.8 : side * -0.35
     }
-    c.tail.rotation.x = worried ? 1.15 : -0.2
-    c.tail.rotation.z = worried ? -0.2 : -0.55
+    c.tail.rotation.x = worried ? 0.85 : -1.05
+    c.tail.rotation.z = worried ? 0.12 : 0.4
   }
 
   resize(w, h) {

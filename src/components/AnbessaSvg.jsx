@@ -27,9 +27,9 @@ const MANE = Array.from({ length: 16 }, (_, i) => {
   const a = (i / 16) * Math.PI * 2 - Math.PI / 2
   const wobble = 1 + ((i % 3) - 1) * 0.08
   return {
-    x: +(CX + Math.cos(a) * 56 * wobble).toFixed(1),
-    y: +(HEAD_Y + Math.sin(a) * 50).toFixed(1),
-    r: 13 + (i % 4) * 2.4,
+    x: +(CX + Math.cos(a) * 46 * wobble).toFixed(1),
+    y: +(HEAD_Y + Math.sin(a) * 40).toFixed(1),
+    r: 11 + (i % 4) * 2,
     lit: i % 2 === 0,
   }
 })
@@ -75,7 +75,7 @@ export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbess
 
       <ellipse cx={CX} cy="198" rx="46" ry="7" fill="#1b140c" opacity="0.16" />
       <path d="M146,168 Q186,160 178,124 Q174,146 154,154" fill="#e9922c" />
-      <ellipse cx="180" cy="120" rx="11" ry="12" fill="#c86a10" />
+      <ellipse cx="180" cy="120" rx="11" ry="12" fill="#5c3010" />
       <ellipse cx="176" cy="116" rx="4" ry="3" fill="#f0b060" opacity="0.7" />
 
       <ellipse cx={CX} cy="168" rx="48" ry="34" fill={`url(#${id('body')})`} />
