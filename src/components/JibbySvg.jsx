@@ -59,10 +59,10 @@ export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, 
       })}
 
       <path d="M58,70 Q52,40 100,36 Q148,40 142,70 Q152,102 116,112 Q100,118 84,112 Q48,102 58,70 Z" fill={`url(#${id('jh')})`} />
-      <path d="M84,98 Q74,136 100,156 Q126,136 116,98 Q100,88 84,98 Z" fill={`url(#${id('jm')})`} />
-      <ellipse cx={CX} cy="138" rx="12" ry="7" fill="#1c140e" />
-      <ellipse cx={CX - 4} cy="136" rx="2.4" ry="1.5" fill="#6a5840" />
-      <ellipse cx={CX + 4} cy="137" rx="1.6" ry="1.1" fill="#6a5840" />
+      <path d="M86,100 Q78,128 100,142 Q122,128 114,100 Q100,90 86,100 Z" fill={`url(#${id('jm')})`} />
+      <ellipse cx={CX} cy="128" rx="11" ry="6.5" fill="#1c140e" />
+      <ellipse cx={CX - 4} cy="126" rx="2.4" ry="1.5" fill="#6a5840" />
+      <ellipse cx={CX + 4} cy="127" rx="1.6" ry="1.1" fill="#6a5840" />
       {SPOTS.map(([x, y, rx, ry], i) => (
         <ellipse key={i} cx={x} cy={y} rx={rx} ry={ry} fill="#2a2118" opacity="0.9" />
       ))}
@@ -81,14 +81,14 @@ export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, 
 
       {agit ? (
         <>
-          <path d="M78,134 Q100,124 122,134 Q114,168 100,172 Q86,168 78,134 Z" fill="#3a2216" />
-          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 16},134 L${CX + s * 9},148 L${CX + s * 3},134 Z`} fill="#fff" />)}
-          <ellipse cx={CX} cy="162" rx="9" ry="6" fill="#e58aa0" />
+          <path d="M80,126 Q100,116 120,126 Q112,156 100,160 Q88,156 80,126 Z" fill="#3a2216" />
+          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 14},126 L${CX + s * 8},140 L${CX + s * 2},126 Z`} fill="#fff" />)}
+          <ellipse cx={CX} cy="150" rx="8" ry="5" fill="#e58aa0" />
         </>
       ) : (
         <>
-          <path d="M84,144 Q100,156 118,142" stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-          <path d="M108,142 L113,154 L118,138 Z" fill="#fff" />
+          <path d="M84,134 Q100,146 118,132" stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <path d="M106,132 L111,144 L116,128 Z" fill="#fff" />
         </>
       )}
     </svg>

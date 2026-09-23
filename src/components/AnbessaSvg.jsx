@@ -22,17 +22,24 @@ function toExpression({ expression, mood, pose }) {
   return 'happy'
 }
 
-/* Uneven tufts so the mane reads as fur, not a ring of identical dots. */
-const MANE = Array.from({ length: 16 }, (_, i) => {
-  const a = (i / 16) * Math.PI * 2 - Math.PI / 2
-  const wobble = 1 + ((i % 3) - 1) * 0.08
-  return {
-    x: +(CX + Math.cos(a) * 46 * wobble).toFixed(1),
-    y: +(HEAD_Y + Math.sin(a) * 40).toFixed(1),
-    r: 11 + (i % 4) * 2,
-    lit: i % 2 === 0,
-  }
-})
+/* A few big overlapping lobes, so the mane is fur and not a bead ring. */
+const MANE = [
+  [-0.4, 0.9, 22, 26],
+  [0.6, 0.2, 26, 20],
+  [1.6, 0.85, 24, 22],
+  [2.5, 0.15, 22, 26],
+  [3.4, 0.8, 24, 20],
+  [4.4, 0.2, 20, 24],
+  [-1.4, 0.15, 20, 22],
+  [5.2, 0.75, 18, 16],
+].map(([a, wobble, rx, ry]) => ({
+  x: +(CX + Math.cos(a) * (38 + wobble * 8)).toFixed(1),
+  y: +(HEAD_Y + Math.sin(a) * 34).toFixed(1),
+  rx,
+  ry,
+  rot: +(a * 20).toFixed(1),
+  lit: wobble > 0.5,
+}))
 
 export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbessa', className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
@@ -90,7 +97,7 @@ export function AnbessaSvg({ size = 160, expression, mood, pose, title = 'Anbess
 
       <g>
         {MANE.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={`url(#${id(p.lit ? 'mane2' : 'mane')})`} />
+          <ellipse key={i} cx={p.x} cy={p.y} rx={p.rx} ry={p.ry} transform={`rotate(${p.rot} ${p.x} ${p.y})`} fill={`url(#${id(p.lit ? 'mane2' : 'mane')})`} />
         ))}
         <circle cx={CX} cy={HEAD_Y} r="44" fill="#e07a16" opacity="0.35" />
       </g>

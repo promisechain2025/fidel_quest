@@ -309,11 +309,9 @@ function ringTexture() {
 
 /* ── the runner characters ── */
 
-/* Anbessa and Jibby are real low-poly meshes in the runner (not billboard
-   sprites): chunky bodies from scaled spheres, legs that pivot at the hip so
-   they can pump, and a soft blob shadow that grounds them on the track. Both
-   are built feet-at-origin facing -Z (down the road, away from the chase
-   camera) like every classic kids' runner. */
+/* Anbessa and Jibby are cartoon animals: lathed bodies, capsule limbs,
+   and a painted face. Feet at the origin, body running toward -Z. The head
+   looks back so the chase camera sees the face. Legs pivot at the hip. */
 
 function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
@@ -333,33 +331,188 @@ function blobShadow(group, r) {
   group.add(m)
 }
 
-function legAt(parent, x, y, z, r, h, color) {
+/* Soft cel ramp. Shared, so disposeGroup must not free it. */
+let TOON_GRAD = null
+const TOON = new Map()
+function toonGradient() {
+  if (TOON_GRAD) return TOON_GRAD
+  const c = document.createElement('canvas')
+  c.width = 4
+  c.height = 1
+  const g = c.getContext('2d')
+  g.fillStyle = '#b9b9b9'
+  g.fillRect(0, 0, 1, 1)
+  g.fillStyle = '#dedede'
+  g.fillRect(1, 0, 1, 1)
+  g.fillStyle = '#ffffff'
+  g.fillRect(2, 0, 2, 1)
+  const tex = new THREE.CanvasTexture(c)
+  tex.magFilter = THREE.NearestFilter
+  tex.minFilter = THREE.NearestFilter
+  TOON_GRAD = tex
+  return tex
+}
+function toon(color) {
+  if (!TOON.has(color)) {
+    TOON.set(color, new THREE.MeshToonMaterial({ color, gradientMap: toonGradient() }))
+  }
+  return TOON.get(color)
+}
+function painted(draw) {
+  return new THREE.MeshBasicMaterial({ map: canvasTexture(512, draw), transparent: true, depthWrite: false })
+}
+
+/* Chubby body of revolution. Lathe spins around Y; tip it onto the road. */
+function latheBody(profile, color) {
+  const mesh = new THREE.Mesh(new THREE.LatheGeometry(profile, 18), toon(color))
+  mesh.rotation.x = Math.PI / 2
+  return mesh
+}
+function earShape(outer, inner) {
+  const pts = [
+    new THREE.Vector2(0.012, 0),
+    new THREE.Vector2(0.07, 0.05),
+    new THREE.Vector2(0.085, 0.16),
+    new THREE.Vector2(0.045, 0.28),
+    new THREE.Vector2(0.012, 0.32),
+  ]
+  const ear = new THREE.Group()
+  ear.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 10), toon(outer)))
+  const cup = new THREE.Mesh(new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x * 0.55, p.y * 0.72 + 0.04)), 8), toon(inner))
+  cup.position.z = -0.02
+  ear.add(cup)
+  return ear
+}
+/* Thigh, shin, and a paw with toes. The group origin is the hip. */
+function cartoonLeg(parent, x, y, z, s, fur, paw) {
   const leg = new THREE.Group()
   leg.position.set(x, y, z)
-  cyl(leg, r * 0.85, r, h * 0.78, color, 0, -h * 0.36, 0)
-  // Wide flat paw, toes a little forward, so the foot reads from the chase view.
-  sphAt(leg, r * 1.25, color, 0, -h * 0.9, 0.03, 1.5, 0.38, 1.75)
+  const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.065 * s, 0.1 * s, 3, 8), toon(fur))
+  thigh.position.y = -0.1 * s
+  leg.add(thigh)
+  const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.048 * s, 0.09 * s, 3, 8), toon(fur))
+  shin.position.y = -0.24 * s
+  leg.add(shin)
+  const foot = new THREE.Mesh(new THREE.SphereGeometry(0.08 * s, 12, 8), toon(paw))
+  foot.scale.set(1.25, 0.5, 1.45)
+  foot.position.set(0, -0.34 * s, 0.03 * s)
+  leg.add(foot)
+  for (const tx of [-1, 0, 1]) {
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.026 * s, 8, 6), toon(paw))
+    toe.position.set(tx * 0.038 * s, -0.36 * s, 0.09 * s)
+    leg.add(toe)
+  }
   parent.add(leg)
   return leg
 }
+function facePlane(draw, w, h) {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), painted(draw))
+  mesh.rotation.y = Math.PI
+  return mesh
+}
+
+function drawLionFace(g, s) {
+  const cx = s / 2
+  const cy = s * 0.46
+  g.clearRect(0, 0, s, s)
+  // Soft cheek ruff, a few big overlapping lobes, not a ring of beads.
+  g.fillStyle = '#e0902a'
+  for (const [a, rad, lobe] of [[-2.4, 0.34, 0.16], [-1.2, 0.36, 0.15], [0.2, 0.38, 0.14], [1.5, 0.36, 0.16], [2.6, 0.34, 0.15], [3.4, 0.3, 0.13]]) {
+    g.beginPath()
+    g.arc(cx + Math.cos(a) * s * rad, cy + Math.sin(a) * s * rad * 0.85, s * lobe, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#f0b24a'
+  g.beginPath()
+  g.arc(cx, cy, s * 0.3, 0, 7)
+  g.fill()
+  g.fillStyle = '#ffe0b0'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.1, s * 0.14, s * 0.1, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#ffb090'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.16, cy + s * 0.06, s * 0.045, s * 0.028, 0, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#6b4424'
+  g.beginPath()
+  g.moveTo(cx, cy + s * 0.06)
+  g.quadraticCurveTo(cx + s * 0.045, cy + s * 0.1, cx + s * 0.02, cy + s * 0.13)
+  g.quadraticCurveTo(cx, cy + s * 0.15, cx - s * 0.02, cy + s * 0.13)
+  g.quadraticCurveTo(cx - s * 0.045, cy + s * 0.1, cx, cy + s * 0.06)
+  g.fill()
+  g.strokeStyle = '#6b4424'
+  g.lineWidth = s * 0.012
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.05, cy + s * 0.15)
+  g.quadraticCurveTo(cx - s * 0.02, cy + s * 0.19, cx, cy + s * 0.15)
+  g.quadraticCurveTo(cx + s * 0.02, cy + s * 0.19, cx + s * 0.05, cy + s * 0.15)
+  g.stroke()
+  g.strokeStyle = '#c4924a'
+  g.lineWidth = s * 0.008
+  for (const side of [-1, 1]) {
+    for (const dy of [-0.01, 0.02, 0.05]) {
+      g.beginPath()
+      g.moveTo(cx + side * s * 0.1, cy + s * (0.08 + dy))
+      g.lineTo(cx + side * s * 0.26, cy + s * (0.05 + dy * 1.4))
+      g.stroke()
+    }
+  }
+  for (const side of [-1, 1]) {
+    const ex = cx + side * s * 0.11
+    const ey = cy - s * 0.02
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.ellipse(ex, ey, s * 0.07, s * 0.08, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#4a3018'
+    g.beginPath()
+    g.arc(ex, ey + s * 0.01, s * 0.04, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(ex - s * 0.015, ey - s * 0.015, s * 0.015, 0, 7)
+    g.fill()
+    g.strokeStyle = '#a86820'
+    g.lineWidth = s * 0.012
+    g.beginPath()
+    g.moveTo(ex - s * 0.07, ey - s * 0.07)
+    g.quadraticCurveTo(ex, ey - s * 0.1, ex + s * 0.07, ey - s * 0.06)
+    g.stroke()
+  }
+}
 
 function buildRunnerLion() {
-  const fur = 0xe9a33c
-  const lit = 0xf6c56e
+  const fur = 0xe8a33a
   const deep = 0xc47a28
-  const mane = 0xd4842a
-  const maneDeep = 0xb46214
+  const paw = 0xd4923a
   const group = new THREE.Group()
-  blobShadow(group, 0.5)
+  blobShadow(group, 0.48)
   const body = new THREE.Group()
   group.add(body)
-  // Cub: short legs, big paws. A little yaw so the chase camera sees the face.
-  group.rotation.y = 0.42
-  const legs = [[-0.2, 0.18], [0.2, 0.18], [-0.13, -0.2], [0.13, -0.2]]
-    .map(([lx, lz], i) => legAt(body, lx, 0.4, lz, i < 2 ? 0.07 : 0.055, i < 2 ? 0.34 : 0.28, deep))
-  sphAt(body, 0.2, fur, 0, 0.5, -0.12, 1.0, 0.88, 1.05)
-  sphAt(body, 0.24, lit, 0, 0.46, 0.1, 1.12, 0.82, 1.0)
-  sphAt(body, 0.12, 0xffe6c4, 0, 0.38, 0.12, 0.7, 0.42, 0.65)
+  const legs = [
+    [-0.18, 0.16, 1.05],
+    [0.18, 0.16, 1.05],
+    [-0.12, -0.18, 0.82],
+    [0.12, -0.18, 0.82],
+  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.46, lz, s, deep, paw))
+  const torso = latheBody([
+    new THREE.Vector2(0.02, -0.26),
+    new THREE.Vector2(0.16, -0.18),
+    new THREE.Vector2(0.26, 0.0),
+    new THREE.Vector2(0.24, 0.14),
+    new THREE.Vector2(0.12, 0.24),
+    new THREE.Vector2(0.02, 0.28),
+  ], fur)
+  torso.position.y = 0.5
+  body.add(torso)
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), toon(0xffe4c0))
+  belly.scale.set(0.7, 0.4, 0.6)
+  belly.position.set(0, 0.38, 0.08)
+  body.add(belly)
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
     starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
     g.fillStyle = '#ffe14a'
@@ -368,58 +521,48 @@ function buildRunnerLion() {
     g.strokeStyle = '#c98400'
     g.stroke()
   }), transparent: true }))
-  star.scale.set(0.32, 0.32, 1)
-  star.position.set(0, 0.66, 0.08)
+  star.scale.set(0.28, 0.28, 1)
+  star.position.set(0, 0.62, 0.12)
   body.add(star)
-  // Tail leaves the rump and curls up. setMood lifts or droops this root.
   const tail = new THREE.Group()
-  tail.position.set(0.04, 0.48, 0.32)
-  tail.rotation.x = -1.05
-  tail.rotation.z = 0.4
-  cyl(tail, 0.035, 0.04, 0.2, deep, 0, 0.1, 0)
-  const curl = new THREE.Group()
-  curl.position.set(0, 0.2, 0)
-  curl.rotation.z = 0.85
-  curl.rotation.x = -0.25
-  cyl(curl, 0.03, 0.032, 0.16, deep, 0, 0.08, 0)
-  sphAt(curl, 0.09, 0x5c3010, 0, 0.18, 0, 1.15, 1.0, 0.9)
-  tail.add(curl)
+  tail.position.set(0.02, 0.5, 0.26)
+  tail.rotation.x = 0.35
+  tail.rotation.z = 0.55
+  const curl = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.06, 0.12, 0.1),
+    new THREE.Vector3(0.14, 0.28, 0.16),
+    new THREE.Vector3(0.06, 0.42, 0.06),
+  ])
+  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curl, 14, 0.032, 7, false), toon(deep)))
+  const puff = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), toon(0x5c3010))
+  puff.scale.set(1.1, 0.9, 0.95)
+  puff.position.set(0.06, 0.44, 0.05)
+  tail.add(puff)
   body.add(tail)
-  // Big cub head, turned toward the chase camera so muzzle and eyes read.
   const head = new THREE.Group()
-  head.position.set(0, 0.86, -0.08)
-  head.rotation.y = 0.72
-  sphAt(head, 0.08, fur, 0, -0.06, 0.06, 0.9, 0.6, 0.7)
-  sphAt(head, 0.24, lit, 0, 0.06, 0, 1.02, 0.98, 0.95)
-  // Small ruff around the cheeks and nape. Not a ball, not a bead ring.
-  const tufts = [
-    [0, 0.02, 0.14, 0.13, maneDeep, 1.15, 0.85, 0.55],
-    [-0.18, 0.0, 0.02, 0.11, mane, 0.85, 1.15, 0.7],
-    [0.18, 0.0, 0.02, 0.11, maneDeep, 0.85, 1.15, 0.7],
-    [-0.1, -0.06, -0.06, 0.1, mane, 1.05, 0.8, 0.75],
-    [0.1, -0.06, -0.06, 0.1, mane, 1.05, 0.8, 0.75],
-    [0, 0.14, 0.06, 0.08, maneDeep, 1.4, 0.5, 0.55],
-  ]
-  for (const [x, y, z, r, c, sx, sy, sz] of tufts) sphAt(head, r, c, x, y, z, sx, sy, sz)
-  sphAt(head, 0.11, 0xffe8c8, 0, -0.02, -0.18, 1.15, 0.72, 1.2)
-  sphAt(head, 0.04, 0xfff3e0, -0.08, -0.04, -0.26, 1.2, 0.65, 0.75)
-  sphAt(head, 0.04, 0xfff3e0, 0.08, -0.04, -0.26, 1.2, 0.65, 0.75)
-  sphAt(head, 0.032, 0x6b4424, 0, 0.0, -0.3, 1.15, 0.7, 0.8)
-  for (const side of [-1, 1]) {
-    sphAt(head, 0.05, 0xffffff, side * 0.09, 0.08, -0.16)
-    sphAt(head, 0.028, 0x3a2a14, side * 0.09, 0.07, -0.2)
-    sphAt(head, 0.012, 0xffffff, side * 0.075, 0.09, -0.22)
-    const whisker = cyl(head, 0.008, 0.008, 0.16, 0xc4a060, side * 0.16, -0.02, -0.26, 5)
-    whisker.rotation.z = Math.PI / 2
-    whisker.rotation.y = side * 0.25
-  }
+  head.position.set(0, 0.92, -0.02)
+  head.rotation.y = 2.35
+  head.rotation.x = -0.28
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.26, 18, 14), toon(0xf0b24a))
+  head.add(skull)
+  const ruff = latheBody([
+    new THREE.Vector2(0.24, -0.02),
+    new THREE.Vector2(0.42, 0.04),
+    new THREE.Vector2(0.36, 0.1),
+    new THREE.Vector2(0.22, 0.14),
+  ], 0xe0902a)
+  ruff.position.set(0, 0.02, 0.06)
+  head.add(ruff)
+  const face = facePlane(drawLionFace, 0.62, 0.68)
+  face.position.set(0, 0.05, -0.28)
+  face.renderOrder = 2
+  head.add(face)
   const ears = [-1, 1].map((side) => {
-    const ear = new THREE.Group()
-    ear.position.set(side * 0.14, 0.3, 0.0)
+    const ear = earShape(0xf3c56e, 0xf4a0ae)
+    ear.position.set(side * 0.16, 0.3, 0.02)
     ear.rotation.z = side * -0.35
-    ear.rotation.x = -0.25
-    sphAt(ear, 0.085, lit, 0, 0.05, 0, 0.7, 1.2, 0.42)
-    sphAt(ear, 0.048, 0xf4a8b0, 0, 0.04, -0.02, 0.5, 0.95, 0.28)
+    ear.scale.setScalar(0.85)
     head.add(ear)
     return ear
   })
@@ -427,68 +570,168 @@ function buildRunnerLion() {
   return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
 }
 
+function drawHyenaFace(g, s) {
+  const cx = s / 2
+  const cy = s * 0.4
+  g.clearRect(0, 0, s, s)
+  g.fillStyle = '#d7b57a'
+  g.beginPath()
+  g.ellipse(cx, cy, s * 0.28, s * 0.26, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f3e0b4'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.12, s * 0.16, s * 0.14, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#3a2e22'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.2, s * 0.07, s * 0.045, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#1c140e'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.2, s * 0.035, s * 0.025, 0, 0, 7)
+  g.fill()
+  g.strokeStyle = '#3a2d1c'
+  g.lineWidth = s * 0.012
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.05, cy + s * 0.24)
+  g.quadraticCurveTo(cx, cy + s * 0.28, cx + s * 0.06, cy + s * 0.22)
+  g.stroke()
+  g.fillStyle = '#fff'
+  g.beginPath()
+  g.moveTo(cx + s * 0.03, cy + s * 0.22)
+  g.lineTo(cx + s * 0.055, cy + s * 0.28)
+  g.lineTo(cx + s * 0.07, cy + s * 0.22)
+  g.fill()
+  for (const side of [-1, 1]) {
+    const ex = cx + side * s * 0.11
+    const ey = cy + s * 0.02
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.ellipse(ex, ey, s * 0.065, s * 0.055, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#241c12'
+    g.beginPath()
+    g.arc(ex + side * s * 0.01, ey + s * 0.005, s * 0.028, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(ex, ey - s * 0.01, s * 0.01, 0, 7)
+    g.fill()
+    g.strokeStyle = '#3c322a'
+    g.lineWidth = s * 0.016
+    g.beginPath()
+    g.moveTo(ex - side * s * 0.06, ey - s * 0.07)
+    g.lineTo(ex + side * s * 0.06, ey - s * 0.045)
+    g.stroke()
+  }
+}
+
+function spottedRump() {
+  const map = canvasTexture(256, (g, s) => {
+    const coat = g.createLinearGradient(0, 0, 0, s)
+    coat.addColorStop(0, '#e4c48a')
+    coat.addColorStop(0.55, '#c6a36a')
+    coat.addColorStop(1, '#a8844e')
+    g.fillStyle = coat
+    g.fillRect(0, 0, s, s)
+    g.fillStyle = '#24180f'
+    for (const [u, v, rx, ry] of [[0.28, 0.26, 0.12, 0.075], [0.55, 0.2, 0.11, 0.07], [0.74, 0.36, 0.11, 0.07], [0.38, 0.46, 0.12, 0.075], [0.18, 0.4, 0.09, 0.06], [0.64, 0.55, 0.1, 0.065], [0.46, 0.68, 0.09, 0.06], [0.8, 0.6, 0.08, 0.055]]) {
+      g.beginPath()
+      g.ellipse(u * s, v * s, rx * s, ry * s, 0.5, 0, 7)
+      g.fill()
+    }
+  })
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.26, 20, 14),
+    new THREE.MeshToonMaterial({ map, color: 0xffffff, gradientMap: toonGradient() }),
+  )
+  return mesh
+}
+
 function buildRunnerHyena() {
-  const coat = 0xc6ad84
-  const spot = 0x2a2118
-  const dark = 0x6a5344
+  const fur = 0x8d6a40
+  const paw = 0x5c4634
   const crest = 0x3c322a
-  const belly = 0xf0e2c6
   const group = new THREE.Group()
-  blobShadow(group, 0.48)
+  blobShadow(group, 0.46)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.16, 0.2], [0.16, 0.2], [-0.13, -0.22], [0.13, -0.22]]
-    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.05, 0.34, dark))
-  // Sloping back: shoulders high down the road, rump low toward the camera.
-  sphAt(body, 0.2, coat, 0, 0.72, -0.26, 0.95, 0.8, 0.85)
-  const rump = sphAt(body, 0.24, coat, 0, 0.46, 0.18, 1.1, 0.72, 1.2)
-  rump.rotation.x = -0.2
-  sphAt(body, 0.12, belly, 0, 0.4, 0.16, 0.65, 0.4, 0.9)
+  const legs = [
+    [-0.15, 0.14, 0.95],
+    [0.15, 0.14, 0.95],
+    [-0.12, -0.2, 0.8],
+    [0.12, -0.2, 0.8],
+  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.42, lz, s, fur, paw))
+  const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), toon(0xd7b57a))
+  shoulders.scale.set(1.05, 0.85, 0.9)
+  shoulders.position.set(0, 0.66, -0.22)
+  body.add(shoulders)
+  const rump = spottedRump()
+  rump.scale.set(1.15, 0.78, 1.2)
+  rump.position.set(0, 0.48, 0.12)
+  rump.rotation.x = -0.35
+  body.add(rump)
+  // Flat spots on the side the chase camera sees, so they stay marks and not rods.
+  for (const [x, y, z, rx, ry] of [[0.12, 0.6, 0.4, 0.07, 0.045], [-0.1, 0.52, 0.42, 0.065, 0.04], [0.02, 0.7, 0.3, 0.055, 0.038], [0.16, 0.46, 0.34, 0.05, 0.034]]) {
+    const mark = new THREE.Mesh(
+      new THREE.CircleGeometry(1, 12),
+      new THREE.MeshBasicMaterial({ color: 0x24180f, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 }),
+    )
+    mark.scale.set(rx, ry, 1)
+    mark.position.set(x, y, z)
+    mark.lookAt(x, y, z + 1)
+    body.add(mark)
+  }
   for (let i = 0; i < 5; i++) {
     const t = i / 4
-    cone(body, 0.03, 0.12 - t * 0.03, crest, 0, 0.92 - t * 0.18, -0.22 + t * 0.4, 5)
-  }
-  // Big dark spots on the rump and flank the chase camera actually sees.
-  for (const [sx, sy, sz] of [[0.16, 0.58, 0.38], [-0.14, 0.52, 0.4], [0.02, 0.66, 0.36], [0.18, 0.44, 0.28], [-0.06, 0.42, 0.42], [0.1, 0.7, 0.22]]) {
-    sphAt(body, 0.075, spot, sx, sy, sz, 1.4, 0.38, 0.95)
+    const scruff = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 6), toon(crest))
+    scruff.position.set(0, 0.84 - t * 0.16, -0.18 + t * 0.28)
+    body.add(scruff)
   }
   const tail = new THREE.Group()
-  tail.position.set(0, 0.52, 0.5)
-  tail.rotation.x = -0.85
-  cyl(tail, 0.03, 0.042, 0.34, crest, 0, 0.16, 0)
-  sphAt(tail, 0.07, crest, 0, 0.34, 0)
+  tail.position.set(0, 0.42, 0.32)
+  tail.rotation.x = 0.5
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0.1, 0.08),
+    new THREE.Vector3(0.04, 0.2, 0.12),
+  ])
+  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 8, 0.025, 6, false), toon(crest)))
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(crest))
+  tip.position.set(0.04, 0.22, 0.12)
+  tail.add(tip)
   body.add(tail)
-  // Looks back over the shoulder so the chase camera sees the face.
-  // Body still runs down the road.
   const head = new THREE.Group()
-  head.position.set(0, 0.9, -0.1)
-  head.rotation.y = 2.5
-  head.rotation.x = 0.22
-  sphAt(head, 0.22, coat, 0, 0.06, 0.02, 1.05, 0.95, 0.9)
-  sphAt(head, 0.1, coat, 0, 0.0, -0.12, 0.85, 0.75, 1.15)
+  head.position.set(0, 0.86, -0.16)
+  head.rotation.y = 2.45
+  head.rotation.x = -0.2
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), toon(0xd7b57a))
+  head.add(skull)
+  const snout = latheBody([
+    new THREE.Vector2(0.02, -0.16),
+    new THREE.Vector2(0.08, -0.1),
+    new THREE.Vector2(0.1, 0.0),
+    new THREE.Vector2(0.06, 0.08),
+    new THREE.Vector2(0.02, 0.1),
+  ], 0xf0e2c6)
+  snout.rotation.x = -Math.PI / 2
+  snout.position.set(0, -0.04, -0.18)
+  head.add(snout)
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), toon(0x1c140e))
+  nose.scale.set(1.1, 0.7, 0.8)
+  nose.position.set(0, -0.05, -0.34)
+  head.add(nose)
+  const face = facePlane(drawHyenaFace, 0.52, 0.56)
+  face.position.set(0, 0.05, -0.2)
+  face.renderOrder = 2
+  head.add(face)
   for (const side of [-1, 1]) {
-    const ear = new THREE.Group()
+    const ear = earShape(0xecd4a6, crest)
     ear.position.set(side * 0.14, 0.2, 0.02)
-    ear.rotation.z = side * -0.25
-    sphAt(ear, 0.09, 0xecd4a6, 0, 0.04, 0, 0.72, 1.15, 0.4)
-    sphAt(ear, 0.05, crest, 0, 0.03, -0.02, 0.5, 0.85, 0.25)
+    ear.rotation.z = side * -0.3
+    ear.scale.setScalar(0.7)
     head.add(ear)
-  }
-  // Long snout, dark at the tip, so the profile reads as a hyena.
-  sphAt(head, 0.09, belly, 0, -0.02, -0.24, 0.7, 0.55, 1.55)
-  sphAt(head, 0.055, 0x3a2e22, 0, -0.01, -0.4, 0.85, 0.6, 1.05)
-  sphAt(head, 0.035, 0x1c140e, 0, 0.01, -0.5)
-  sphAt(head, 0.07, 0x3a2216, 0, -0.1, -0.32, 0.9, 0.4, 0.8)
-  cone(head, 0.028, 0.07, 0xffffff, 0.05, -0.12, -0.4).rotation.x = Math.PI
-  for (const side of [-1, 1]) {
-    sphAt(head, 0.062, 0xffffff, side * 0.1, 0.08, -0.22)
-    sphAt(head, 0.032, 0x241c12, side * 0.11, 0.075, -0.27)
-    sphAt(head, 0.014, 0xffffff, side * 0.09, 0.09, -0.28)
-    const brow = cyl(head, 0.02, 0.02, 0.12, crest, side * 0.1, 0.15, -0.22)
-    brow.rotation.z = Math.PI / 2 - side * 0.4
-  }
-  for (const [sx, sy, sz] of [[-0.16, 0.02, -0.08], [0.15, -0.02, -0.1], [0.12, 0.08, 0.06]]) {
-    sphAt(head, 0.035, spot, sx, sy, sz, 1, 0.8, 0.6)
   }
   body.add(head)
   return { group, body, legs, tail }
@@ -545,7 +788,11 @@ function grassTuft(g, x, z) {
   cone(g, 0.035, 0.08, 0xffd34d, x, 0.46, z, 4)
 }
 
-const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
+const isSharedMat = (m) => {
+  for (const v of MATS.values()) if (v === m) return true
+  for (const v of TOON.values()) if (v === m) return true
+  return false
+}
 /** Free the GPU resources of a group before dropping it. three.js does NOT
     reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
     question) and chunks (rebuilt every level) leak without this. Per-instance
@@ -984,10 +1231,10 @@ class RunnerWorld {
     const c = this.playerChar
     for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
       ear.position.y = worried ? 0.16 : 0.3
-      ear.rotation.z = worried ? side * -0.8 : side * -0.35
+      ear.rotation.z = worried ? side * -0.75 : side * -0.35
     }
-    c.tail.rotation.x = worried ? 0.85 : -1.05
-    c.tail.rotation.z = worried ? 0.12 : 0.4
+    c.tail.rotation.x = worried ? 1.25 : 0.35
+    c.tail.rotation.z = worried ? 0.15 : 0.55
   }
 
   resize(w, h) {
