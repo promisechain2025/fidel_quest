@@ -110,27 +110,179 @@ function skyTexture(skyNum) {
   tex.mapping = THREE.EquirectangularReflectionMapping
   tex.magFilter = THREE.LinearFilter
   tex.minFilter = THREE.LinearFilter
-  const horizon = mixSky(skyNum, 0.55, [255, 170, 72])
-  const high = mixSky(skyNum, 0.78, [255, 150, 48])
-  if (!g) return { tex, fog: rgbNum(horizon) }
+  // The chase camera only shows v about 0.37–0.50. Blue stays at the top of
+  // that band; the golden hour and the far escarpment live on the horizon.
+  const haze = mixSky(skyNum, 0.48, [255, 186, 112])
+  if (!g) return { tex, fog: rgbNum(haze) }
   const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   const grad = g.createLinearGradient(0, 0, 0, 256)
-  grad.addColorStop(0, css(high))
-  grad.addColorStop(0.36, css(high))
-  grad.addColorStop(0.46, css(horizon))
-  grad.addColorStop(1, css(horizon))
+  // Visible sky is only v 0.37–0.50. Keep that upper half blue; gold is the
+  // horizon, not a slab across the whole band.
+  grad.addColorStop(0, '#3d6eac')
+  grad.addColorStop(0.34, '#5e92c4')
+  grad.addColorStop(0.40, '#8eb6d4')
+  grad.addColorStop(0.455, '#f2c98a')
+  grad.addColorStop(0.50, css(haze))
+  grad.addColorStop(1, css(mixSky(skyNum, 0.55, [150, 108, 72])))
   g.fillStyle = grad
   g.fillRect(0, 0, 512, 256)
-  // Sun sits in the on-screen band (about 15 degrees above the horizon).
-  g.fillStyle = 'rgba(255, 214, 120, 0.45)'
+
+  // Wisps in the visible band, warm rather than paper-white.
+  g.fillStyle = 'rgba(255, 246, 230, 0.42)'
+  const puffs = [[64, 102, 40, 11], [92, 98, 24, 13], [150, 108, 22, 8], [214, 104, 30, 10], [246, 100, 16, 9]]
+  for (const [x, y, rx, ry] of puffs) {
+    g.beginPath()
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
+    g.fill()
+  }
+
+  // Low sun, soft halo, no hard rays. Sits about 14 degrees above the horizon.
+  const glow = g.createRadialGradient(392, 108, 4, 392, 108, 78)
+  glow.addColorStop(0, 'rgba(255, 250, 230, 0.95)')
+  glow.addColorStop(0.16, 'rgba(255, 214, 130, 0.55)')
+  glow.addColorStop(0.42, 'rgba(255, 176, 80, 0.16)')
+  glow.addColorStop(1, 'rgba(255, 176, 80, 0)')
+  g.fillStyle = glow
+  g.fillRect(300, 40, 180, 140)
+  const column = g.createLinearGradient(392, 88, 392, 136)
+  column.addColorStop(0, 'rgba(255, 210, 130, 0)')
+  column.addColorStop(0.55, 'rgba(255, 196, 110, 0.22)')
+  column.addColorStop(1, 'rgba(255, 186, 100, 0)')
+  g.fillStyle = column
+  g.fillRect(350, 88, 90, 48)
+
+  // Flat-topped highland line kissing the horizon, so the vista still reads
+  // when fog swallows the far meshes.
+  g.fillStyle = 'rgba(118, 132, 154, 0.78)'
   g.beginPath()
-  g.arc(400, 104, 26, 0, Math.PI * 2)
+  g.moveTo(0, 134)
+  g.lineTo(0, 122)
+  g.lineTo(36, 118)
+  g.lineTo(70, 124)
+  g.lineTo(70, 112)
+  g.lineTo(128, 112)
+  g.lineTo(128, 121)
+  g.lineTo(176, 116)
+  g.lineTo(220, 124)
+  g.lineTo(262, 114)
+  g.lineTo(318, 114)
+  g.lineTo(318, 122)
+  g.lineTo(372, 117)
+  g.lineTo(424, 126)
+  g.lineTo(468, 116)
+  g.lineTo(512, 121)
+  g.lineTo(512, 134)
+  g.closePath()
   g.fill()
-  g.fillStyle = '#fff6d2'
+  g.fillStyle = 'rgba(168, 132, 118, 0.45)'
   g.beginPath()
-  g.arc(400, 104, 11, 0, Math.PI * 2)
+  g.moveTo(0, 136)
+  g.lineTo(0, 128)
+  g.lineTo(48, 126)
+  g.lineTo(90, 130)
+  g.lineTo(140, 124)
+  g.lineTo(190, 130)
+  g.lineTo(250, 125)
+  g.lineTo(310, 131)
+  g.lineTo(380, 126)
+  g.lineTo(450, 132)
+  g.lineTo(512, 127)
+  g.lineTo(512, 136)
+  g.closePath()
   g.fill()
-  return { tex, fog: rgbNum(horizon) }
+  g.fillStyle = 'rgba(255, 232, 200, 0.38)'
+  g.beginPath()
+  g.ellipse(256, 130, 250, 9, 0, 0, Math.PI * 2)
+  g.fill()
+  return { tex, fog: rgbNum(haze) }
+}
+
+/* Highland turf and a packed-earth road. Painted once per place (turf) or
+   once per world (road). Repeat across the long ground plane. No Math.random:
+   the blotches are a fixed weave so a level always looks the same. */
+function paintRepeat(draw, w, h, repeatX, repeatY) {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')
+  if (g) draw(g, w, h)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(repeatX, repeatY)
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  return tex
+}
+function turfTexture(groundNum) {
+  const place = [(groundNum >> 16) & 255, (groundNum >> 8) & 255, groundNum & 255]
+  // Meadow first. The place tint is only a wash, so Lalibela stays green
+  // highland instead of a brown slab.
+  const grass = [86, 158, 58]
+  const base = grass.map((v, i) => Math.round(v * 0.72 + place[i] * 0.28))
+  const lift = (amt) => base.map((v) => Math.max(0, Math.min(255, v + amt)))
+  const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+  return paintRepeat((g, w, h) => {
+    g.fillStyle = css(base)
+    g.fillRect(0, 0, w, h)
+    for (let i = 0; i < 36; i++) {
+      g.globalAlpha = 0.32
+      g.fillStyle = css(lift(i % 2 ? 34 : -26))
+      g.beginPath()
+      g.ellipse((i * 47) % w, (i * 83) % h, 16 + (i % 5) * 5, 8 + (i % 3) * 4, i * 0.4, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.globalAlpha = 0.75
+    g.strokeStyle = css(lift(40))
+    g.lineWidth = 1.6
+    g.lineCap = 'round'
+    for (let i = 0; i < 26; i++) {
+      const x = (i * 29) % w
+      const y = (i * 53) % h
+      g.beginPath()
+      g.moveTo(x, y + 12)
+      g.quadraticCurveTo(x + 4, y + 5, x - 1, y)
+      g.stroke()
+    }
+    g.globalAlpha = 1
+    g.fillStyle = '#e2c056'
+    for (let i = 0; i < 5; i++) {
+      g.beginPath()
+      g.arc((i * 70 + 24) % w, (i * 40 + 18) % h, 2, 0, Math.PI * 2)
+      g.fill()
+    }
+  }, 256, 256, 8, 30)
+}
+function dirtTexture() {
+  return paintRepeat((g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, w, 0)
+    grad.addColorStop(0, '#a87444')
+    grad.addColorStop(0.14, '#d4b888')
+    grad.addColorStop(0.5, '#f0e0c0')
+    grad.addColorStop(0.86, '#d4b888')
+    grad.addColorStop(1, '#9a6840')
+    g.fillStyle = grad
+    g.fillRect(0, 0, w, h)
+    g.strokeStyle = 'rgba(110, 72, 36, 0.32)'
+    g.lineWidth = 3
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(w * 0.28, 0)
+    g.bezierCurveTo(w * 0.34, h * 0.3, w * 0.22, h * 0.62, w * 0.3, h)
+    g.stroke()
+    g.beginPath()
+    g.moveTo(w * 0.72, 0)
+    g.bezierCurveTo(w * 0.66, h * 0.35, w * 0.78, h * 0.7, w * 0.7, h)
+    g.stroke()
+    g.fillStyle = 'rgba(90, 58, 32, 0.28)'
+    for (let i = 0; i < 16; i++) {
+      g.beginPath()
+      g.ellipse((i * 23) % (w - 8) + 4, (i * 41) % (h - 8) + 4, 2 + (i % 3), 1.3, 0, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.fillStyle = 'rgba(255, 246, 226, 0.2)'
+    g.fillRect(w * 0.38, 0, w * 0.24, h)
+  }, 128, 256, 1, 16)
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -157,11 +309,9 @@ function ringTexture() {
 
 /* ── the runner characters ── */
 
-/* Anbessa and Jibby are real low-poly meshes in the runner (not billboard
-   sprites): chunky bodies from scaled spheres, legs that pivot at the hip so
-   they can pump, and a soft blob shadow that grounds them on the track. Both
-   are built feet-at-origin facing -Z (down the road, away from the chase
-   camera) like every classic kids' runner. */
+/* Anbessa and Jibby are cartoon animals: lathed bodies, capsule limbs,
+   and a painted face. Feet at the origin, body running toward -Z. The head
+   looks back so the chase camera sees the face. Legs pivot at the hip. */
 
 function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
   const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
@@ -181,57 +331,238 @@ function blobShadow(group, r) {
   group.add(m)
 }
 
-function legAt(parent, x, y, z, r, h, color) {
+/* Soft cel ramp. Shared, so disposeGroup must not free it. */
+let TOON_GRAD = null
+const TOON = new Map()
+function toonGradient() {
+  if (TOON_GRAD) return TOON_GRAD
+  const c = document.createElement('canvas')
+  c.width = 4
+  c.height = 1
+  const g = c.getContext('2d')
+  g.fillStyle = '#b9b9b9'
+  g.fillRect(0, 0, 1, 1)
+  g.fillStyle = '#dedede'
+  g.fillRect(1, 0, 1, 1)
+  g.fillStyle = '#ffffff'
+  g.fillRect(2, 0, 2, 1)
+  const tex = new THREE.CanvasTexture(c)
+  tex.magFilter = THREE.NearestFilter
+  tex.minFilter = THREE.NearestFilter
+  TOON_GRAD = tex
+  return tex
+}
+function toon(color) {
+  if (!TOON.has(color)) {
+    TOON.set(color, new THREE.MeshToonMaterial({ color, gradientMap: toonGradient() }))
+  }
+  return TOON.get(color)
+}
+function painted(draw) {
+  return new THREE.MeshBasicMaterial({ map: canvasTexture(512, draw), transparent: true, depthWrite: false })
+}
+
+/* Chubby body of revolution. Lathe spins around Y; tip it onto the road. */
+function latheBody(profile, color) {
+  const mesh = new THREE.Mesh(new THREE.LatheGeometry(profile, 18), toon(color))
+  mesh.rotation.x = Math.PI / 2
+  return mesh
+}
+function earShape(outer, inner) {
+  const pts = [
+    new THREE.Vector2(0.012, 0),
+    new THREE.Vector2(0.07, 0.05),
+    new THREE.Vector2(0.085, 0.16),
+    new THREE.Vector2(0.045, 0.28),
+    new THREE.Vector2(0.012, 0.32),
+  ]
+  const ear = new THREE.Group()
+  ear.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 10), toon(outer)))
+  const cup = new THREE.Mesh(new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x * 0.55, p.y * 0.72 + 0.04)), 8), toon(inner))
+  cup.position.z = -0.02
+  ear.add(cup)
+  return ear
+}
+/* Thigh, shin, and a paw with toes. The group origin is the hip. */
+function cartoonLeg(parent, x, y, z, s, fur, paw) {
   const leg = new THREE.Group()
   leg.position.set(x, y, z)
-  cyl(leg, r, r + 0.01, h, color, 0, -h / 2, 0)
-  sphAt(leg, r + 0.02, color, 0, -h, -0.02, 1, 0.7, 1.15)
+  const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.065 * s, 0.1 * s, 3, 8), toon(fur))
+  thigh.position.y = -0.1 * s
+  leg.add(thigh)
+  const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.048 * s, 0.09 * s, 3, 8), toon(fur))
+  shin.position.y = -0.24 * s
+  leg.add(shin)
+  const foot = new THREE.Mesh(new THREE.SphereGeometry(0.08 * s, 12, 8), toon(paw))
+  foot.scale.set(1.25, 0.5, 1.45)
+  foot.position.set(0, -0.34 * s, 0.03 * s)
+  leg.add(foot)
+  for (const tx of [-1, 0, 1]) {
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.026 * s, 8, 6), toon(paw))
+    toe.position.set(tx * 0.038 * s, -0.36 * s, 0.09 * s)
+    leg.add(toe)
+  }
   parent.add(leg)
   return leg
 }
+function facePlane(draw, w, h) {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), painted(draw))
+  mesh.rotation.y = Math.PI
+  return mesh
+}
+
+function drawLionFace(g, s) {
+  const cx = s / 2
+  const cy = s * 0.46
+  g.clearRect(0, 0, s, s)
+  // Soft cheek ruff, a few big overlapping lobes, not a ring of beads.
+  g.fillStyle = '#e0902a'
+  for (const [a, rad, lobe] of [[-2.4, 0.34, 0.16], [-1.2, 0.36, 0.15], [0.2, 0.38, 0.14], [1.5, 0.36, 0.16], [2.6, 0.34, 0.15], [3.4, 0.3, 0.13]]) {
+    g.beginPath()
+    g.arc(cx + Math.cos(a) * s * rad, cy + Math.sin(a) * s * rad * 0.85, s * lobe, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#f0b24a'
+  g.beginPath()
+  g.arc(cx, cy, s * 0.3, 0, 7)
+  g.fill()
+  g.fillStyle = '#ffe0b0'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.1, s * 0.14, s * 0.1, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#ffb090'
+  for (const side of [-1, 1]) {
+    g.beginPath()
+    g.ellipse(cx + side * s * 0.16, cy + s * 0.06, s * 0.045, s * 0.028, 0, 0, 7)
+    g.fill()
+  }
+  g.fillStyle = '#6b4424'
+  g.beginPath()
+  g.moveTo(cx, cy + s * 0.06)
+  g.quadraticCurveTo(cx + s * 0.045, cy + s * 0.1, cx + s * 0.02, cy + s * 0.13)
+  g.quadraticCurveTo(cx, cy + s * 0.15, cx - s * 0.02, cy + s * 0.13)
+  g.quadraticCurveTo(cx - s * 0.045, cy + s * 0.1, cx, cy + s * 0.06)
+  g.fill()
+  g.strokeStyle = '#6b4424'
+  g.lineWidth = s * 0.012
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.05, cy + s * 0.15)
+  g.quadraticCurveTo(cx - s * 0.02, cy + s * 0.19, cx, cy + s * 0.15)
+  g.quadraticCurveTo(cx + s * 0.02, cy + s * 0.19, cx + s * 0.05, cy + s * 0.15)
+  g.stroke()
+  g.strokeStyle = '#c4924a'
+  g.lineWidth = s * 0.008
+  for (const side of [-1, 1]) {
+    for (const dy of [-0.01, 0.02, 0.05]) {
+      g.beginPath()
+      g.moveTo(cx + side * s * 0.1, cy + s * (0.08 + dy))
+      g.lineTo(cx + side * s * 0.26, cy + s * (0.05 + dy * 1.4))
+      g.stroke()
+    }
+  }
+  for (const side of [-1, 1]) {
+    const ex = cx + side * s * 0.11
+    const ey = cy - s * 0.02
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.ellipse(ex, ey, s * 0.07, s * 0.08, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#4a3018'
+    g.beginPath()
+    g.arc(ex, ey + s * 0.01, s * 0.04, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(ex - s * 0.015, ey - s * 0.015, s * 0.015, 0, 7)
+    g.fill()
+    g.strokeStyle = '#a86820'
+    g.lineWidth = s * 0.012
+    g.beginPath()
+    g.moveTo(ex - s * 0.07, ey - s * 0.07)
+    g.quadraticCurveTo(ex, ey - s * 0.1, ex + s * 0.07, ey - s * 0.06)
+    g.stroke()
+  }
+}
 
 function buildRunnerLion() {
+  const fur = 0xe8a33a
+  const deep = 0xc47a28
+  const paw = 0xd4923a
   const group = new THREE.Group()
-  blobShadow(group, 0.46)
+  blobShadow(group, 0.48)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.15, 0.16], [0.15, 0.16], [-0.15, -0.14], [0.15, -0.14]]
-    .map(([lx, lz]) => legAt(body, lx, 0.44, lz, 0.065, 0.42, 0xe08300))
-  sphAt(body, 0.34, 0xf7a83c, 0, 0.64, 0.03, 1, 1.02, 1.3)
-  // his signature star on the rump
+  const legs = [
+    [-0.18, 0.16, 1.05],
+    [0.18, 0.16, 1.05],
+    [-0.12, -0.18, 0.82],
+    [0.12, -0.18, 0.82],
+  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.46, lz, s, deep, paw))
+  const torso = latheBody([
+    new THREE.Vector2(0.02, -0.26),
+    new THREE.Vector2(0.16, -0.18),
+    new THREE.Vector2(0.26, 0.0),
+    new THREE.Vector2(0.24, 0.14),
+    new THREE.Vector2(0.12, 0.24),
+    new THREE.Vector2(0.02, 0.28),
+  ], fur)
+  torso.position.y = 0.5
+  body.add(torso)
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), toon(0xffe4c0))
+  belly.scale.set(0.7, 0.4, 0.6)
+  belly.position.set(0, 0.38, 0.08)
+  body.add(belly)
   const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
     starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
-    g.fillStyle = '#ffc800'
+    g.fillStyle = '#ffe14a'
     g.fill()
-    g.lineWidth = 6
-    g.strokeStyle = '#e0a400'
+    g.lineWidth = 8
+    g.strokeStyle = '#c98400'
     g.stroke()
   }), transparent: true }))
   star.scale.set(0.28, 0.28, 1)
-  star.position.set(-0.18, 0.74, 0.52)
+  star.position.set(0, 0.62, 0.12)
   body.add(star)
-  // tail up and wagging when happy; setMood droops it
   const tail = new THREE.Group()
-  tail.position.set(0.12, 0.7, 0.34)
-  tail.rotation.x = 0.3
-  tail.rotation.z = -0.7
-  cyl(tail, 0.04, 0.05, 0.45, 0xe08300, 0, 0.22, 0)
-  sphAt(tail, 0.08, 0x8a5a00, 0, 0.47, 0)
+  tail.position.set(0.02, 0.5, 0.26)
+  tail.rotation.x = 0.35
+  tail.rotation.z = 0.55
+  const curl = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0.06, 0.12, 0.1),
+    new THREE.Vector3(0.14, 0.28, 0.16),
+    new THREE.Vector3(0.06, 0.42, 0.06),
+  ])
+  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curl, 14, 0.032, 7, false), toon(deep)))
+  const puff = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), toon(0x5c3010))
+  puff.scale.set(1.1, 0.9, 0.95)
+  puff.position.set(0.06, 0.44, 0.05)
+  tail.add(puff)
   body.add(tail)
-  // head straight down the road: the mane halo IS the silhouette
   const head = new THREE.Group()
-  head.position.set(0, 1.08, -0.06)
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2
-    sphAt(head, 0.125, 0xd97706, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.02, 1, 1, 0.7)
-  }
-  sphAt(head, 0.24, 0xf7a83c, 0, 0, -0.04)
-  // ears poke out past the mane; groups so the worried droop carries the pinks
+  head.position.set(0, 0.92, -0.02)
+  head.rotation.y = 2.35
+  head.rotation.x = -0.28
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.26, 18, 14), toon(0xf0b24a))
+  head.add(skull)
+  const ruff = latheBody([
+    new THREE.Vector2(0.24, -0.02),
+    new THREE.Vector2(0.42, 0.04),
+    new THREE.Vector2(0.36, 0.1),
+    new THREE.Vector2(0.22, 0.14),
+  ], 0xe0902a)
+  ruff.position.set(0, 0.02, 0.06)
+  head.add(ruff)
+  const face = facePlane(drawLionFace, 0.62, 0.68)
+  face.position.set(0, 0.05, -0.28)
+  face.renderOrder = 2
+  head.add(face)
   const ears = [-1, 1].map((side) => {
-    const ear = new THREE.Group()
-    ear.position.set(side * 0.26, 0.3, 0)
-    sphAt(ear, 0.1, 0xf7a83c, 0, 0, 0, 1, 1, 0.6)
-    sphAt(ear, 0.05, 0xffb7c5, 0, 0.01, 0.06, 1, 1, 0.5)
+    const ear = earShape(0xf3c56e, 0xf4a0ae)
+    ear.position.set(side * 0.16, 0.3, 0.02)
+    ear.rotation.z = side * -0.35
+    ear.scale.setScalar(0.85)
     head.add(ear)
     return ear
   })
@@ -239,52 +570,168 @@ function buildRunnerLion() {
   return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
 }
 
+function drawHyenaFace(g, s) {
+  const cx = s / 2
+  const cy = s * 0.4
+  g.clearRect(0, 0, s, s)
+  g.fillStyle = '#d7b57a'
+  g.beginPath()
+  g.ellipse(cx, cy, s * 0.28, s * 0.26, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f3e0b4'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.12, s * 0.16, s * 0.14, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#3a2e22'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.2, s * 0.07, s * 0.045, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#1c140e'
+  g.beginPath()
+  g.ellipse(cx, cy + s * 0.2, s * 0.035, s * 0.025, 0, 0, 7)
+  g.fill()
+  g.strokeStyle = '#3a2d1c'
+  g.lineWidth = s * 0.012
+  g.lineCap = 'round'
+  g.beginPath()
+  g.moveTo(cx - s * 0.05, cy + s * 0.24)
+  g.quadraticCurveTo(cx, cy + s * 0.28, cx + s * 0.06, cy + s * 0.22)
+  g.stroke()
+  g.fillStyle = '#fff'
+  g.beginPath()
+  g.moveTo(cx + s * 0.03, cy + s * 0.22)
+  g.lineTo(cx + s * 0.055, cy + s * 0.28)
+  g.lineTo(cx + s * 0.07, cy + s * 0.22)
+  g.fill()
+  for (const side of [-1, 1]) {
+    const ex = cx + side * s * 0.11
+    const ey = cy + s * 0.02
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.ellipse(ex, ey, s * 0.065, s * 0.055, 0, 0, 7)
+    g.fill()
+    g.fillStyle = '#241c12'
+    g.beginPath()
+    g.arc(ex + side * s * 0.01, ey + s * 0.005, s * 0.028, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(ex, ey - s * 0.01, s * 0.01, 0, 7)
+    g.fill()
+    g.strokeStyle = '#3c322a'
+    g.lineWidth = s * 0.016
+    g.beginPath()
+    g.moveTo(ex - side * s * 0.06, ey - s * 0.07)
+    g.lineTo(ex + side * s * 0.06, ey - s * 0.045)
+    g.stroke()
+  }
+}
+
+function spottedRump() {
+  const map = canvasTexture(256, (g, s) => {
+    const coat = g.createLinearGradient(0, 0, 0, s)
+    coat.addColorStop(0, '#e4c48a')
+    coat.addColorStop(0.55, '#c6a36a')
+    coat.addColorStop(1, '#a8844e')
+    g.fillStyle = coat
+    g.fillRect(0, 0, s, s)
+    g.fillStyle = '#24180f'
+    for (const [u, v, rx, ry] of [[0.28, 0.26, 0.12, 0.075], [0.55, 0.2, 0.11, 0.07], [0.74, 0.36, 0.11, 0.07], [0.38, 0.46, 0.12, 0.075], [0.18, 0.4, 0.09, 0.06], [0.64, 0.55, 0.1, 0.065], [0.46, 0.68, 0.09, 0.06], [0.8, 0.6, 0.08, 0.055]]) {
+      g.beginPath()
+      g.ellipse(u * s, v * s, rx * s, ry * s, 0.5, 0, 7)
+      g.fill()
+    }
+  })
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.26, 20, 14),
+    new THREE.MeshToonMaterial({ map, color: 0xffffff, gradientMap: toonGradient() }),
+  )
+  return mesh
+}
+
 function buildRunnerHyena() {
-  const coat = 0x9a8b76, dark = 0x6e614f, crest = 0x57493a, belly = 0xc9b99d
+  const fur = 0x8d6a40
+  const paw = 0x5c4634
+  const crest = 0x3c322a
   const group = new THREE.Group()
-  blobShadow(group, 0.42)
+  blobShadow(group, 0.46)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.14, 0.18], [0.14, 0.18], [-0.14, -0.16], [0.14, -0.16]]
-    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.055, 0.38, dark))
-  // sloped torso: haunches low at the rear, shoulders high at the front
-  sphAt(body, 0.32, coat, 0, 0.6, 0.04, 1, 0.95, 1.4).rotation.x = 0.16
-  // dorsal crest down the spine
-  for (let i = 0; i < 5; i++) {
-    cone(body, 0.05, 0.16, crest, 0, 0.99 - i * 0.04, -0.25 + i * 0.15)
+  const legs = [
+    [-0.15, 0.14, 0.95],
+    [0.15, 0.14, 0.95],
+    [-0.12, -0.2, 0.8],
+    [0.12, -0.2, 0.8],
+  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.42, lz, s, fur, paw))
+  const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), toon(0xd7b57a))
+  shoulders.scale.set(1.05, 0.85, 0.9)
+  shoulders.position.set(0, 0.66, -0.22)
+  body.add(shoulders)
+  const rump = spottedRump()
+  rump.scale.set(1.15, 0.78, 1.2)
+  rump.position.set(0, 0.48, 0.12)
+  rump.rotation.x = -0.35
+  body.add(rump)
+  // Flat spots on the side the chase camera sees, so they stay marks and not rods.
+  for (const [x, y, z, rx, ry] of [[0.12, 0.6, 0.4, 0.07, 0.045], [-0.1, 0.52, 0.42, 0.065, 0.04], [0.02, 0.7, 0.3, 0.055, 0.038], [0.16, 0.46, 0.34, 0.05, 0.034]]) {
+    const mark = new THREE.Mesh(
+      new THREE.CircleGeometry(1, 12),
+      new THREE.MeshBasicMaterial({ color: 0x24180f, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 }),
+    )
+    mark.scale.set(rx, ry, 1)
+    mark.position.set(x, y, z)
+    mark.lookAt(x, y, z + 1)
+    body.add(mark)
   }
-  // spots on the haunches
-  for (const [sx, sy, sz] of [[-0.2, 0.7, 0.22], [0.22, 0.66, 0.18], [-0.16, 0.52, 0.3], [0.14, 0.5, 0.32], [0.02, 0.62, 0.38]]) {
-    sphAt(body, 0.045, dark, sx, sy, sz, 1, 1, 0.5)
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4
+    const scruff = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 6), toon(crest))
+    scruff.position.set(0, 0.84 - t * 0.16, -0.18 + t * 0.28)
+    body.add(scruff)
   }
   const tail = new THREE.Group()
-  tail.position.set(0.08, 0.56, 0.42)
-  tail.rotation.x = -0.7
-  tail.rotation.z = -0.35
-  cyl(tail, 0.035, 0.045, 0.3, crest, 0, 0.14, 0)
-  sphAt(tail, 0.065, crest, 0, 0.3, 0)
+  tail.position.set(0, 0.42, 0.32)
+  tail.rotation.x = 0.5
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(0, 0.1, 0.08),
+    new THREE.Vector3(0.04, 0.2, 0.12),
+  ])
+  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 8, 0.025, 6, false), toon(crest)))
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(crest))
+  tip.position.set(0.04, 0.22, 0.12)
+  tail.add(tip)
   body.add(tail)
-  // head turned to flash the grin back down the road
   const head = new THREE.Group()
-  head.position.set(0, 0.98, -0.36)
-  head.rotation.y = 1.15
-  sphAt(head, 0.22, coat, 0, 0, -0.02)
+  head.position.set(0, 0.86, -0.16)
+  head.rotation.y = 2.45
+  head.rotation.x = -0.2
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), toon(0xd7b57a))
+  head.add(skull)
+  const snout = latheBody([
+    new THREE.Vector2(0.02, -0.16),
+    new THREE.Vector2(0.08, -0.1),
+    new THREE.Vector2(0.1, 0.0),
+    new THREE.Vector2(0.06, 0.08),
+    new THREE.Vector2(0.02, 0.1),
+  ], 0xf0e2c6)
+  snout.rotation.x = -Math.PI / 2
+  snout.position.set(0, -0.04, -0.18)
+  head.add(snout)
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), toon(0x1c140e))
+  nose.scale.set(1.1, 0.7, 0.8)
+  nose.position.set(0, -0.05, -0.34)
+  head.add(nose)
+  const face = facePlane(drawHyenaFace, 0.52, 0.56)
+  face.position.set(0, 0.05, -0.2)
+  face.renderOrder = 2
+  head.add(face)
   for (const side of [-1, 1]) {
-    sphAt(head, 0.105, 0x8a7d6a, side * 0.16, 0.2, 0.02, 1, 1.15, 0.5)
-    sphAt(head, 0.055, crest, side * 0.16, 0.2, -0.02, 1, 1.15, 0.5)
-  }
-  sphAt(head, 0.115, belly, 0, -0.06, -0.2, 0.85, 0.7, 1.05)
-  sphAt(head, 0.04, 0x3a2d1c, 0, -0.02, -0.31)
-  // open grin: dark mouth band + teeth
-  sphAt(head, 0.09, 0x3a2216, 0, -0.125, -0.2, 0.9, 0.45, 0.95)
-  for (const tx of [-0.05, 0, 0.05]) {
-    cone(head, 0.018, 0.05, 0xffffff, tx, -0.135, -0.285).rotation.x = Math.PI
-  }
-  // eyes + heavy mischievous brows
-  for (const side of [-1, 1]) {
-    sphAt(head, 0.045, 0xffffff, side * 0.1, 0.06, -0.185)
-    sphAt(head, 0.022, 0x241c12, side * 0.1, 0.055, -0.225)
-    cyl(head, 0.015, 0.015, 0.09, crest, side * 0.1, 0.125, -0.19).rotation.z = Math.PI / 2 - side * 0.25
+    const ear = earShape(0xecd4a6, crest)
+    ear.position.set(side * 0.14, 0.2, 0.02)
+    ear.rotation.z = side * -0.3
+    ear.scale.setScalar(0.7)
+    head.add(ear)
   }
   body.add(head)
   return { group, body, legs, tail }
@@ -333,12 +780,19 @@ function sph(g, r, color, x, y, z) {
 /* A meskel tuft on the track shoulder. One or two per chunk; skipped density
    on the low-end tier so the extra cones stay a handful. */
 function grassTuft(g, x, z) {
-  cone(g, 0.16, 0.48, 0x2f6a32, x, 0.24, z, 5)
-  cone(g, 0.12, 0.36, 0x67b255, x + 0.18, 0.18, z + 0.06, 5)
-  cone(g, 0.045, 0.1, 0xffd34d, x + 0.02, 0.5, z, 4)
+  const greens = [0x2f6a32, 0x4e8a3c, 0x67b255, 0x3d7a34, 0x8fbe58]
+  greens.forEach((c, i) => {
+    const blade = cone(g, 0.045, 0.38 + (i % 3) * 0.08, c, x + (i - 2) * 0.09, 0.18, z + ((i % 2) - 0.5) * 0.06, 4)
+    blade.rotation.z = (i - 2) * 0.16
+  })
+  cone(g, 0.035, 0.08, 0xffd34d, x, 0.46, z, 4)
 }
 
-const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
+const isSharedMat = (m) => {
+  for (const v of MATS.values()) if (v === m) return true
+  for (const v of TOON.values()) if (v === m) return true
+  return false
+}
 /** Free the GPU resources of a group before dropping it. three.js does NOT
     reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
     question) and chunks (rebuilt every level) leak without this. Per-instance
@@ -360,8 +814,10 @@ function disposeGroup(root) {
 /* ── procedural landmarks; i is the chunk index for deterministic variety ── */
 
 function acacia(g, x, z, s = 1) {
-  cyl(g, 0.12 * s, 0.2 * s, 2.2 * s, 0x6b4a2d, x, 1.1 * s, z, 6)
-  cone(g, 2.1 * s, 0.9 * s, 0x4f7a34, x, 2.6 * s, z, 9)
+  cyl(g, 0.1 * s, 0.18 * s, 2.4 * s, 0x6b4a2d, x, 1.2 * s, z, 6)
+  // Flat highland canopy, not a pine spike.
+  cone(g, 2.3 * s, 0.62 * s, 0x3f6e30, x, 2.5 * s, z, 10)
+  cone(g, 1.5 * s, 0.4 * s, 0x6a9a48, x, 2.78 * s, z, 9)
 }
 function palm(g, x, z, s = 1) {
   cyl(g, 0.1 * s, 0.18 * s, 3 * s, 0x8a6a45, x, 1.5 * s, z, 6)
@@ -404,17 +860,38 @@ function chunkAksum(g, i) {
   if (i % 2 === 0) zebraAt(g, 15 + ((i * 5) % 4), -20, 2)
 }
 
+/* Flat-topped amba. y is the ground; the cap is the pale cliff lip. */
+function plateau(g, x, z, w, h, d, rock, cap) {
+  box(g, w, h, d, rock, x, h / 2, z)
+  box(g, w * 0.64, Math.max(0.4, h * 0.28), d * 0.64, cap, x, h + h * 0.1, z)
+}
+
+/* Static valley the road runs into. Side walls frame the lanes; the center
+   stays open so letter gates keep a clear line to the horizon. */
+function buildHighlandVista() {
+  const g = new THREE.Group()
+  // Far blue ridge, then olive slopes with a tan cliff lip. Not gray blocks.
+  plateau(g, -26, -118, 32, 14, 14, 0x6e8eae, 0xc5dcc0)
+  plateau(g, 28, -124, 30, 12, 12, 0x7a96b4, 0xd5e4c8)
+  plateau(g, 0, -108, 18, 4.2, 10, 0x7aaa48, 0xd4e6a4)
+  plateau(g, -30, -52, 14, 8, 16, 0x5f8a3e, 0xe4d2a8)
+  plateau(g, 32, -56, 13, 7.5, 14, 0x6a9448, 0xe8d4aa)
+  plateau(g, -18, -36, 7, 3.4, 6, 0x78b050, 0xdce8a8)
+  plateau(g, 19, -32, 6.5, 3, 5.5, 0x78b050, 0xdce8a8)
+  acacia(g, -15, -26, 1.15)
+  acacia(g, 16, -42, 1)
+  return g
+}
+
 function chunkSimien(g, i) {
-  // Highland escarpment: layered peaks pushed out beyond the track.
+  // Roadside amba you pass, off the lanes. The far valley is the static vista.
   for (const side of [-1, 1]) {
-    cone(g, 9 + ((i * 3 + side) % 4), 11 + ((i * 7) % 6), 0x55794a, side * (22 + ((i * 5) % 6)), 5, -26, 7)
-    cone(g, 6, 8, 0x6b8f5b, side * 16, 3.6, -44, 6)
-    cone(g, 3.4, 4, 0x7fa06a, side * 12, 1.9, -8, 6)
+    const x = side * (17 + ((i * 3) % 4))
+    plateau(g, x, -18 - ((i * 5) % 10), 7, 4.5 + ((i + side + 4) % 3), 6, 0x6d8a52, 0xb7c8a0)
+    plateau(g, side * (25 + ((i * 2) % 3)), -38, 9, 6 + (i % 3), 8, 0x5c6c56, 0xc8b8a4)
   }
-  sph(g, 0.8, 0x8a9a7a, 8, 0.3, -36)
-  sph(g, 0.6, 0x8a9a7a, -7, 0.25, -16)
-  acacia(g, 10 + ((i * 3) % 3), -50, 0.8)
-  if (i % 3 === 0) zebraAt(g, -12, -28, 1.8)
+  acacia(g, 12 + ((i * 3) % 3), -50, 0.8)
+  if (i % 3 === 0) zebraAt(g, -13, -26, 1.8)
 }
 
 function chunkGondar(g, i) {
@@ -492,30 +969,42 @@ class RunnerWorld {
     // sprites are drawn from behind at three-quarter (glancing back over
     // the shoulder), so Anbessa faces the letter gates by construction and
     // the lanes line up with the screen: left lane is left of the screen.
-    this.camera.position.set(0, 3.9, 7.2)
-    this.camera.lookAt(0, 1.1, -11)
+    // Close enough that mane, ears, tail, and Jibby read from the chase view.
+    this.camera.position.set(0, 2.75, 4.15)
+    this.camera.lookAt(0, 1.0, -7)
 
-    this.scene.add(new THREE.HemisphereLight(0xfff2d8, 0x6a7a48, 1.15))
-    const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
+    this.scene.add(new THREE.HemisphereLight(0xfff8e8, 0x6a9a48, 1.35))
+    const sun = new THREE.DirectionalLight(0xfff4d4, 1.65)
     sun.position.set(-6, 12, 4)
     this.scene.add(sun)
 
     this.skyMap = null
 
-    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
+    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), mat(0x6a8a48))
     this.ground.rotation.x = -Math.PI / 2
     this.ground.position.z = -200
     this.scene.add(this.ground)
-    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xe6d3ae }))
+    this._turfMat = null
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ map: dirtTexture() }))
     this.track.rotation.x = -Math.PI / 2
-    this.track.position.set(0, 0.02, -200)
+    this.track.position.set(0, 0.03, -200)
     this.scene.add(this.track)
+    // Green shoulders so the packed-earth road reads against meadow, even
+    // when a place's ground colour is red rock.
+    for (const side of [-1, 1]) {
+      const verge = new THREE.Mesh(new THREE.PlaneGeometry(12, 560), mat(0x6aaa40))
+      verge.rotation.x = -Math.PI / 2
+      verge.position.set(side * 10.2, 0.018, -200)
+      this.scene.add(verge)
+    }
+    this.vista = buildHighlandVista()
+    this.scene.add(this.vista)
 
     // Anbessa as a real low-poly mesh (feet at the group origin), seen from
     // behind running toward the letters.
     this.playerChar = buildRunnerLion()
     this.player = this.playerChar.group
-    this.player.scale.setScalar(1.9)
+    this.player.scale.setScalar(1.95)
     this.player.position.set(0, 0, 0)
     this.scene.add(this.player)
 
@@ -539,10 +1028,12 @@ class RunnerWorld {
 
     this.munchChar = buildRunnerHyena()
     this.muncher = this.munchChar.group
-    this.muncher.scale.setScalar(1.75)
-    this.muncher.position.set(1.4, 0, 3.9)
+    // Beside Anbessa at the same depth, so a phone chase frame shows his
+    // whole spotted body. z near the camera cropped him to a sliver.
+    this.muncher.scale.setScalar(1.62)
+    this.muncher.position.set(1.62, 0, 0.15)
     this.scene.add(this.muncher)
-    this._munchScale = 1.75
+    this._munchScale = 1.62
 
     // Extra hyenas that join the chase as wrong answers pile up, so the pressure
     // is visible: one more Jibby per mistake, closing in, and swarming Anbessa
@@ -575,9 +1066,15 @@ class RunnerWorld {
     const sky = skyTexture(place.sky)
     this.skyMap = sky.tex
     this.scene.background = this.skyMap
-    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0], place.fog[1])
+    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0] + 28, place.fog[1])
     if (prevSky) prevSky.dispose()
-    this.ground.material = mat(place.ground)
+    const prevTurf = this._turfMat
+    this._turfMat = new THREE.MeshLambertMaterial({ map: turfTexture(place.ground) })
+    this.ground.material = this._turfMat
+    if (prevTurf) {
+      prevTurf.map?.dispose()
+      prevTurf.dispose()
+    }
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
     const build = CHUNK_BUILDERS[place.builder] || CHUNK_BUILDERS[place.id]
@@ -587,10 +1084,12 @@ class RunnerWorld {
       const side = k % 2 === 0 ? -1 : 1
       grassTuft(g, side * 5.15, -8)
       if (!LOW_END) grassTuft(g, -side * 5.25, -28)
-      // lane dashes ride along in the chunk so the ground reads as moving
+      // Pale shoulder and lane dashes ride in the chunk so the road reads as moving.
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, -3.55, 0.055, -CHUNK / 2)
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, 3.55, 0.055, -CHUNK / 2)
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, -1.15, 0.06, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, 1.15, 0.06, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)
@@ -666,11 +1165,10 @@ class RunnerWorld {
     this.player.rotation.z = Math.max(-0.22, Math.min(0.22, -steer * 0.35))
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
-    // Baseline sits at the bottom edge of the centered chase camera (ears and
-    // grin looming into frame); every wrong feed brings him up toward Anbessa.
-    let mz = 3.9 - this.threat * 0.75
+    // Rest pose stays in frame beside Anbessa. Each miss steps him forward.
+    let mz = 0.15 - this.threat * 0.06
     let my = 0
-    if (this.bossMode === 'lose') mz = 0.4
+    if (this.bossMode === 'lose') mz = 0.02
     if (this.bossMode === 'win') {
       mz = 10.5
       my = 4
@@ -678,12 +1176,12 @@ class RunnerWorld {
     this.muncher.position.z += (mz - this.muncher.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2.5))
     // Chase from the right shoulder so he never hides Anbessa; pile straight
     // on when the boss round is lost.
-    const mx = this.player.position.x * 0.75 + (this.bossMode === 'lose' ? 0 : 1.15)
+    const mx = this.player.position.x * 0.45 + (this.bossMode === 'lose' ? 0.1 : 1.58)
     this.muncher.position.x += (mx - this.muncher.position.x) * Math.min(1, dt * 2)
     this.muncher.position.y += (my - this.muncher.position.y) * Math.min(1, dt * 3)
     this.munchChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7)) * 0.08
     if (!this.reduced) runnerLegSwing(this.munchChar.legs, this.t * 10.5, 0.6)
-    const mscale = this.bossMode === 'lose' ? 2.9 : 1.75
+    const mscale = this.bossMode === 'lose' ? 2.15 : 1.62
     this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
     // Jibby leans toward the lion he is chasing.
     this.muncher.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
@@ -732,11 +1230,11 @@ class RunnerWorld {
     // Readable from behind: worried droops the ears sideways and the tail down.
     const c = this.playerChar
     for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
-      ear.position.y = worried ? 0.24 : 0.3
-      ear.rotation.z = worried ? side * -0.9 : 0
+      ear.position.y = worried ? 0.16 : 0.3
+      ear.rotation.z = worried ? side * -0.75 : side * -0.35
     }
-    c.tail.rotation.x = worried ? 1.6 : 0.3
-    c.tail.rotation.z = worried ? -0.2 : -0.7
+    c.tail.rotation.x = worried ? 1.25 : 0.35
+    c.tail.rotation.z = worried ? 0.15 : 0.55
   }
 
   resize(w, h) {
