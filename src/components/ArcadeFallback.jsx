@@ -146,14 +146,14 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
           )}
           <div className="relative">
             <span className="absolute bottom-1 left-1/2 h-3 w-16 -translate-x-1/2 rounded-full" style={{ background: 'rgba(20, 16, 8, 0.28)' }} aria-hidden="true" />
-            <AnbessaSvg size={128} mood={goodFeed ? 'eating' : feeding ? 'sad' : 'happy'} pose={boss ? 'stand' : goodFeed ? 'cheer' : 'stand'} />
+            <AnbessaSvg size={156} mood={goodFeed ? 'eating' : feeding ? 'sad' : 'happy'} pose={boss ? 'stand' : goodFeed ? 'cheer' : 'stand'} />
             {goodFeed && !reduce && <FeedSparkle key={ctx.fed} />}
           </div>
           {/* Jibby is always on the chase, the way the 3D runner shows him.
               A miss or the boss round pulls him up into the agitated maw. */}
           <div className="relative mb-1">
             <span className="absolute bottom-1 left-1/2 h-2.5 w-12 -translate-x-1/2 rounded-full" style={{ background: 'rgba(20, 16, 8, 0.22)' }} aria-hidden="true" />
-            <JibbySvg size={(boss && !ctx.survivedBoss) || (feeding && !ctx.lastFeed?.good) ? 112 : 96} expression={(feeding && !ctx.lastFeed?.good) || (boss && !ctx.survivedBoss) ? 'agitated' : 'grin'} />
+            <JibbySvg size={(boss && !ctx.survivedBoss) || (feeding && !ctx.lastFeed?.good) ? 140 : 124} expression={(feeding && !ctx.lastFeed?.good) || (boss && !ctx.survivedBoss) ? 'agitated' : 'grin'} />
           </div>
         </div>
 
