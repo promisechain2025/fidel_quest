@@ -30,6 +30,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
+import { meetPictureForFamily } from './data/schoolPathGr1'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
@@ -92,6 +93,9 @@ export function learnInitial(familyId, seed) {
     kind: 'family',
     familyId,
     familyName: family ? family.name : familyId,
+    // Base-letter picture for MEET: the School Path unit word when the
+    // Tigrinya path names one, otherwise the pack word.
+    meetWord: meetPictureForFamily(familyId, { packFamily: family }),
     phase: LearnPhase.MEET,
     forms,
     order: forms, // display order; re-shuffled for SHUFFLE
@@ -431,6 +435,13 @@ function BubbleMeet({ ctx, onTouch }) {
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
         {form.sound}
       </p>
+      {ctx.idx === 0 && ctx.meetWord?.geez && (
+        <p className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+          {ctx.meetWord.picture ? <span className="text-2xl" aria-hidden="true">{ctx.meetWord.picture}</span> : null}
+          <span className="geez text-xl font-black">{ctx.meetWord.geez}</span>
+          {ctx.meetWord.meaning ? <span style={{ color: 'var(--muted)' }}>{ctx.meetWord.meaning}</span> : null}
+        </p>
+      )}
       {/* Anbessa's shelf of collected letters */}
       <div className="flex min-h-12 items-end gap-2">
         <Hero size={48} />

@@ -49,6 +49,7 @@ import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
+import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
@@ -248,7 +249,7 @@ export function initialContext(seed = 1) {
 
 const TRANSITIONS = {
   [GameState.IDLE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue, level }) => startLevel(ctx, levelId, seed, queue, level),
   },
   [GameState.PRESENTATION]: {
     [GameEvent.PRESENTATION_DONE]: (ctx) => ({ ...ctx, status: GameState.AWAITING_INPUT }),
@@ -293,7 +294,7 @@ const TRANSITIONS = {
     [GameEvent.EXIT]: exitToIdle,
   },
   [GameState.LEVEL_COMPLETE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue, level }) => startLevel(ctx, levelId, seed, queue, level),
     [GameEvent.EXIT]: exitToIdle,
   },
 }
@@ -302,14 +303,16 @@ function exitToIdle(ctx) {
   return { ...initialContext(ctx.seed), status: GameState.IDLE }
 }
 
-function startLevel(ctx, levelId, seed, presetQueue) {
+function startLevel(ctx, levelId, seed, presetQueue, levelSpec) {
   const effectiveSeed = seed ?? ctx.seed
   // A preset queue (adaptive practice) bypasses the level table; it is
   // still pure - the caller built it from ledger + seed.
   if (presetQueue && presetQueue.length) {
     return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState: effectiveSeed, queue: presetQueue }
   }
-  const level = LEVELS.find((l) => l.id === levelId)
+  // School Path bosses carry their own family scope (a unit, or a vowel
+  // band). Classic levels still resolve through the LEVELS table.
+  const level = levelSpec || LEVELS.find((l) => l.id === levelId)
   if (!level) return null
   const [queue, rngState] = buildQuestionQueue(level, effectiveSeed)
   return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState, queue }
@@ -1678,7 +1681,7 @@ export default function FidelQuestApp() {
           {screen.name === 'lesson' && (
             <Screen key={`lesson-${screen.levelId}-${runSeed}`}>
               <Lesson
-                level={LEVELS.find((l) => l.id === screen.levelId)}
+                level={(screen.nodeId && NODE_BY_ID.get(screen.nodeId)?.quiz) || LEVELS.find((l) => l.id === screen.levelId)}
                 seed={runSeed}
                 soundOn={soundOn}
                 onFinish={(levelId, result) => {
@@ -1697,7 +1700,10 @@ export default function FidelQuestApp() {
                     finishLevel(levelId, result)
                   }
                 }}
-                onReplay={() => startLesson(screen.levelId)}
+                onReplay={() => {
+                  setRunSeed((Date.now() % 1000000) | 1)
+                  setScreen({ name: 'lesson', levelId: screen.levelId, nodeId: screen.nodeId })
+                }}
               />
             </Screen>
           )}
@@ -2038,7 +2044,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           : isReview
             ? 'Letter check-in'
             : isBoss
-            ? `Quiz level ${node.levelId?.split('-')[1]}`
+            ? (node.unitIndex && !node.vowel ? schoolPathLabel(node.unitIndex) : `Quiz level ${node.levelId?.split('-')[1]}`)
             : node.gateway.mode === 'runner'
               ? 'Letter Runner'
               : 'Letter Catch'
@@ -2152,6 +2158,18 @@ function serpentineRows(nodes, cols) {
   return rows
 }
 const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
+const SCHOOL_PATH_ON = JOURNEY.some((n) => n.unitId)
+
+/** Unit indexes that begin inside this row (parent label on the path). */
+function unitLabelsForRow(row, prevRow) {
+  const labels = []
+  let prevUnit = prevRow?.length ? prevRow[prevRow.length - 1]?.unitIndex : null
+  for (const node of row) {
+    if (node.unitIndex && node.unitIndex !== prevUnit) labels.push(node.unitIndex)
+    if (node.unitIndex) prevUnit = node.unitIndex
+  }
+  return labels
+}
 
 /* One chip of the Today's-plan strip: number -> check when done. Chips sit
    in a single horizontal row so the coach guides without burying the path
@@ -2333,6 +2351,11 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
+            {SCHOOL_PATH_ON && (
+              <p className="truncate text-[11px] font-bold leading-tight" style={{ color: 'var(--muted)' }}>
+                {schoolPathLabel(current?.unitIndex)}
+              </p>
+            )}
           </div>
         </div>
         {/* Header stays minimal: the streak lives in the bottom power bar and
@@ -2496,6 +2519,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
           const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
+          const unitLabels = SCHOOL_PATH_ON ? unitLabelsForRow(row, r > 0 ? PATH_ROWS[r - 1] : null) : []
           return (
             <div key={r}>
               {chapter !== prevChapter && (
@@ -2514,6 +2538,11 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                   </div>
                 </>
               )}
+              {unitLabels.map((unitIndex) => (
+                <p key={unitIndex} className="mb-1 text-center text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+                  {schoolPathLabel(unitIndex)}
+                </p>
+              ))}
               <div className="grid items-center gap-3 rounded-3xl px-1 py-2" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))`, background: CHAPTER_TINT[chapter]?.band }}>
                 {row.map((node, i) => {
                   const done = !!journey.done[node.id]
@@ -3291,7 +3320,8 @@ function machineReducer(ctx, event) {
 }
 
 function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, practiceQueue = null, noDemo = false, incoming = null }) {
-  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
+  const schoolLevel = level?.schoolPath ? level : undefined
+  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined, level: schoolLevel } }).next)
   // Spoken instruction for pre-readers, once per session; the engine's
   // wait-queue lets it finish before the first target letter plays.
   useEffect(() => { sayPrompt('whichLetter', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -3302,7 +3332,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   // letters runs, then the quiz re-offers - at most FIXIT_MAX_CYCLES per
   // sitting, then the child leaves with encouragement and the node stays
   // open (tomorrow's warm-up picks the same letters up from the ledger).
-  const isRealLevel = !practiceQueue && !isChallenge && LEVELS.some((l) => l.id === level.id)
+  const isRealLevel = !practiceQueue && !isChallenge && (LEVELS.some((l) => l.id === level.id) || !!level.schoolPath)
   const drilling = ctx.levelId === 'fixit'
   const [fixit, setFixit] = useState({ cycle: 0 })
 
@@ -3325,8 +3355,8 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
     // Preset-queue levels (warm-up, Star Practice) are NOT in the LEVELS
     // table - restarting them without their queue would be rejected and leave
     // an empty machine (a dead "says ''" screen). Thread the queue through.
-    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined } })
-  }, [level.id, seed, practiceQueue])
+    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined, level: schoolLevel } })
+  }, [level.id, seed, practiceQueue, schoolLevel])
   useEffect(() => {
     if (!hasOnboarded('lesson') && prefersReducedMotion()) markOnboarded('lesson')
   }, [])
@@ -3408,7 +3438,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         <FixItReady
           onRetry={() => {
             const qseed = ((seed * 7919 + fixit.cycle * 131 + 17) % 1000000) | 1
-            dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed } })
+            dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed, level: schoolLevel } })
           }}
           onHome={() => (onQuit || onFinish)(level.id, null)}
         />
@@ -3440,7 +3470,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
               const queue = buildFixItQueue(loadLedger(), result.missed, solid, dseed)
               setFixit((f) => ({ cycle: f.cycle + 1 }))
               if (queue.length) dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: 'fixit', seed: dseed, queue } })
-              else dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: dseed } })
+              else dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: dseed, level: schoolLevel } })
             }}
             onHome={goHome}
           />

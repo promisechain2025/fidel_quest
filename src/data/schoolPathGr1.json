@@ -1,0 +1,491 @@
+{
+  "id": "school-path-gr1-alphabet",
+  "label": "School Path — Grade 1 Alphabet",
+  "packId": "ti",
+  "source": {
+    "driveFolder": "https://drive.google.com/drive/folders/18SRGwtnjNn_m1bwAalptkpDA3hD7Yo7I",
+    "book": "MoE Eritrea Mother Tongue GR1 Alphabet (pedagogy order only — no verbatim MoE text/art)",
+    "copyrightNote": "Encode teaching order + original eGeez art/audio. Do not ship MoE PDF pages or SIL artwork."
+  },
+  "chrome": {
+    "appName": "eGeez",
+    "mascot": "Jibby",
+    "menus": "en"
+  },
+  "pedagogy": {
+    "unitFlow": [
+      "meet",
+      "trace",
+      "vowelFamily",
+      "blend",
+      "unitQuiz"
+    ],
+    "mapToGames": {
+      "meet": "Letter Steps Meet — curriculum pictureWord for the family",
+      "trace": "Letter Steps Trace",
+      "vowelFamily": "Letter Steps river / Bubble twin-safe drills",
+      "blend": "Quiz build-the-word using unit.blendWords (decodable from unlocked families only)",
+      "unitQuiz": "existing QUIZ boss node scoped to unit familyIds",
+      "arcade": "Runner/Catch letter pool = learnedFamilyIds only (already in journey)"
+    }
+  },
+  "units": [
+    {
+      "id": "u01",
+      "titleEn": "Ha and Le",
+      "familyIds": [
+        "ha",
+        "le"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ha",
+          "geez": "ሀሎ",
+          "meaningEn": "hello",
+          "pictureHint": "wave"
+        },
+        {
+          "familyId": "le",
+          "geez": "ልቢ",
+          "meaningEn": "heart",
+          "pictureHint": "heart"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሀሎ",
+          "familyIds": [
+            "ha",
+            "le"
+          ]
+        },
+        {
+          "geez": "ልቢ",
+          "familyIds": [
+            "le"
+          ]
+        }
+      ],
+      "note": "First free-taste families; keep FREE_FAMILIES in sync"
+    },
+    {
+      "id": "u02",
+      "titleEn": "Hha and Me",
+      "familyIds": [
+        "hha",
+        "me"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "hha",
+          "geez": "ሓርማዝ",
+          "meaningEn": "elephant",
+          "pictureHint": "elephant"
+        },
+        {
+          "familyId": "me",
+          "geez": "ማይ",
+          "meaningEn": "water",
+          "pictureHint": "water"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ማማ",
+          "familyIds": [
+            "me"
+          ]
+        },
+        {
+          "geez": "ሓርማዝ",
+          "familyIds": [
+            "hha"
+          ]
+        },
+        {
+          "geez": "ማይ",
+          "familyIds": [
+            "me"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u03",
+      "titleEn": "Sse, Re, Se",
+      "familyIds": [
+        "sse",
+        "re",
+        "se"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "se",
+          "geez": "ሰብ",
+          "meaningEn": "person",
+          "pictureHint": "person"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሰላም",
+          "familyIds": [
+            "se",
+            "le",
+            "me"
+          ]
+        },
+        {
+          "geez": "ሰብ",
+          "familyIds": [
+            "se"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u04",
+      "titleEn": "She, Qe, Qhe",
+      "familyIds": [
+        "she",
+        "qe",
+        "qhe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "she",
+          "geez": "ሻሂ",
+          "meaningEn": "tea",
+          "pictureHint": "tea"
+        },
+        {
+          "familyId": "qe",
+          "geez": "ቆልዓ",
+          "meaningEn": "child",
+          "pictureHint": "child"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሻሂ",
+          "familyIds": [
+            "she"
+          ]
+        },
+        {
+          "geez": "ቆልዓ",
+          "familyIds": [
+            "qe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u05",
+      "titleEn": "Be, Te, Che",
+      "familyIds": [
+        "be",
+        "te",
+        "che"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "be",
+          "geez": "ቤት",
+          "meaningEn": "house",
+          "pictureHint": "house"
+        },
+        {
+          "familyId": "te",
+          "geez": "ተመን",
+          "meaningEn": "snake",
+          "pictureHint": "snake"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ቤት",
+          "familyIds": [
+            "be"
+          ]
+        },
+        {
+          "geez": "ተመን",
+          "familyIds": [
+            "te"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u06",
+      "titleEn": "Kha, Ne, Nye",
+      "familyIds": [
+        "kha",
+        "ne",
+        "nye"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ne",
+          "geez": "ነብሪ",
+          "meaningEn": "leopard",
+          "pictureHint": "leopard"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ነብሪ",
+          "familyIds": [
+            "ne"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u07",
+      "titleEn": "A, Ke, Khe",
+      "familyIds": [
+        "a",
+        "ke",
+        "khe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "a",
+          "geez": "ዓሳ",
+          "meaningEn": "fish",
+          "pictureHint": "fish"
+        },
+        {
+          "familyId": "ke",
+          "geez": "ኮኾብ",
+          "meaningEn": "star",
+          "pictureHint": "star"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ኣንበሳ",
+          "familyIds": [
+            "a",
+            "ne",
+            "be",
+            "se"
+          ]
+        },
+        {
+          "geez": "ከልቢ",
+          "familyIds": [
+            "ke",
+            "le",
+            "be"
+          ]
+        },
+        {
+          "geez": "ዓሳ",
+          "familyIds": [
+            "a"
+          ]
+        },
+        {
+          "geez": "ኮኾብ",
+          "familyIds": [
+            "ke"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u08",
+      "titleEn": "We, Ae, Ze",
+      "familyIds": [
+        "we",
+        "ae",
+        "ze"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "we",
+          "geez": "ወርሒ",
+          "meaningEn": "moon",
+          "pictureHint": "moon"
+        },
+        {
+          "familyId": "ae",
+          "geez": "ዓይኒ",
+          "meaningEn": "eye",
+          "pictureHint": "eye"
+        },
+        {
+          "familyId": "ze",
+          "geez": "ዘይቲ",
+          "meaningEn": "oil",
+          "pictureHint": "oil"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ዝብኢ",
+          "familyIds": [
+            "ze",
+            "be",
+            "a"
+          ]
+        },
+        {
+          "geez": "ወርሒ",
+          "familyIds": [
+            "we"
+          ]
+        },
+        {
+          "geez": "ዓይኒ",
+          "familyIds": [
+            "ae"
+          ]
+        },
+        {
+          "geez": "ዘይቲ",
+          "familyIds": [
+            "ze"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u09",
+      "titleEn": "Zhe, Ye, De, Je",
+      "familyIds": [
+        "zhe",
+        "ye",
+        "de",
+        "je"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "de",
+          "geez": "ደርሆ",
+          "meaningEn": "chicken",
+          "pictureHint": "chicken"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ደርሆ",
+          "familyIds": [
+            "de"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u10",
+      "titleEn": "Ge, The, Chhe",
+      "familyIds": [
+        "ge",
+        "the",
+        "chhe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ge",
+          "geez": "ገዛ",
+          "meaningEn": "house",
+          "pictureHint": "house"
+        },
+        {
+          "familyId": "the",
+          "geez": "ጤል",
+          "meaningEn": "goat",
+          "pictureHint": "goat"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ጎቦ",
+          "familyIds": [
+            "ge",
+            "be"
+          ]
+        },
+        {
+          "geez": "ገዛ",
+          "familyIds": [
+            "ge"
+          ]
+        },
+        {
+          "geez": "ጤል",
+          "familyIds": [
+            "the"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u11",
+      "titleEn": "Ppe, Tse, Ttse",
+      "familyIds": [
+        "ppe",
+        "tse",
+        "ttse"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "tse",
+          "geez": "ጸሓይ",
+          "meaningEn": "sun",
+          "pictureHint": "sun"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ጸባ",
+          "familyIds": [
+            "tse",
+            "be"
+          ]
+        },
+        {
+          "geez": "ጸሓይ",
+          "familyIds": [
+            "tse"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u12",
+      "titleEn": "Fe and Pe",
+      "familyIds": [
+        "fe",
+        "pe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "fe",
+          "geez": "ፈረስ",
+          "meaningEn": "horse",
+          "pictureHint": "horse"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ፊደል",
+          "familyIds": [
+            "fe",
+            "de",
+            "le"
+          ]
+        },
+        {
+          "geez": "ፈረስ",
+          "familyIds": [
+            "fe"
+          ]
+        }
+      ]
+    }
+  ]
+}
