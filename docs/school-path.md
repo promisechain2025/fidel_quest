@@ -43,7 +43,9 @@ Letter Steps Meet shows the unit picture word on the base letter when the
 unit names one, and the pack's own word otherwise.
 
 The home header and the path show a small English label, `School Path · Unit
-N`. Menus stay eGeez / Jibby. Learning words stay Tigrinya.
+N`. Menus stay eGeez / Jibby. Learning words stay Tigrinya. Chrome page
+translate is blocked for the whole app so those letters are not rewritten
+(see the README).
 
 `FREE_FAMILIES` is still `ha` and `le` (unit 1).
 

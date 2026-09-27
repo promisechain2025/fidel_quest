@@ -74,7 +74,7 @@ import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
-import { t, getLang, setLang, APP_NAME } from './platform/i18n'
+import { t, getLang, setLang, lockDocumentTranslate, APP_NAME } from './platform/i18n'
 import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D } from './components/ArcadeFallback'
@@ -1039,7 +1039,7 @@ export default function FidelQuestApp() {
   const goBackOrHome = useCallback(() => setStack((s) => { if (s.length <= 1) return [{ name: 'home' }]; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   useEffect(() => {
     try {
-      document.documentElement.lang = getLang()
+      lockDocumentTranslate(getLang())
       // Strip deep-link tokens from the address bar once we've captured them,
       // so a refresh or a shared-back link starts from a clean URL. An opened
       // assignment also becomes the pending one (surfaces in Today's plan).

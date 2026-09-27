@@ -32,7 +32,7 @@ for (const rel of ['letters', 'letters/ti', 'words']) {
 const fragment =
   '<title>eGeez</title>\n' +
   styles.join('\n') +
-  '\n<div id="root"></div>\n' +
+  '\n<div id="root" translate="no" class="notranslate"></div>\n' +
   '<script>window.FIDEL_AUDIO=' + JSON.stringify(map) + '</script>\n' +
   scripts.join('\n') + '\n'
 writeFileSync(root + 'dist-artifact/fragment.html', fragment)

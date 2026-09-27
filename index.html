@@ -1,7 +1,12 @@
 <!doctype html>
-<html lang="am">
+<!-- lang is the UI language (English by default; the app updates it when a
+     parent picks another chrome language). Fidel stays Ethiopic in the text.
+     translate=no / notranslate / the google meta stop Chrome and Google
+     Translate from rewriting those letters. -->
+<html lang="en" translate="no" class="notranslate">
   <head>
     <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta
@@ -29,8 +34,8 @@
     <meta name="twitter:image" content="__APP_URL__/icon-512.png" />
     <title>eGeez — Easy Geez</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body translate="no" class="notranslate">
+    <div id="root" translate="no" class="notranslate"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

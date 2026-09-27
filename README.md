@@ -9,6 +9,12 @@ order, on the same Journey as Letter Steps and the quizzes. Amharic keeps
 chapters of eight. See `docs/school-path.md`. The path follows pedagogy
 order with original eGeez words.
 
+Chrome and Google Translate are blocked on the learning app (`translate="no"`,
+`class="notranslate"`, and `<meta name="google" content="notranslate">`).
+The document language stays the UI language (English, or the diaspora
+language a parent picks) so screen readers voice the menus. Amharic and
+Tigrinya letters stay on screen as authored.
+
 ## Five modes, one home screen
 
 - **Lesson Levels 1–4** — Duolingo-style listen-and-pick quizzes over all 33

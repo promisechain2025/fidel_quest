@@ -35,6 +35,29 @@ export function getLang() {
   }
 }
 
+/** Keep Chrome/Google Translate from rewriting fidel or chrome.
+    `lang` stays the UI language (getLang: en, or a diaspora pack) so a
+    screen reader voices the menus correctly. Amharic and Tigrinya are the
+    learn pack, not the document language. Idempotent. */
+export function lockDocumentTranslate(lang = getLang()) {
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
+  root.lang = LANG_IDS.includes(lang) ? lang : 'en'
+  root.setAttribute('translate', 'no')
+  root.classList.add('notranslate')
+  for (const el of [document.body, document.getElementById('root')]) {
+    if (!el) continue
+    el.setAttribute('translate', 'no')
+    el.classList.add('notranslate')
+  }
+  if (document.head && !document.querySelector('meta[name="google"][content="notranslate"]')) {
+    const meta = document.createElement('meta')
+    meta.name = 'google'
+    meta.content = 'notranslate'
+    document.head.appendChild(meta)
+  }
+}
+
 /** Persist and apply on next load (data is module-level by design). */
 export function setLang(lang) {
   try {
