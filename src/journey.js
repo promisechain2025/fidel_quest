@@ -22,6 +22,8 @@ import {
   quizSpecForFamilies,
   schoolPathActive,
   schoolPathBands,
+  blendWordsReadyAtUnit,
+  playableMidLetterTargets,
 } from './data/schoolPathGr1'
 import { SCHOOL_PATH_STORY_COUNT } from './data/schoolPathGr1Stories'
 
@@ -38,6 +40,8 @@ export const NodeKind = Object.freeze({
   ARCADE: 'arcade', // GATEWAY  -> a 3D Runner leg / Skylands island
   STORY: 'story', // read a decodable story - real reading ON the spine
   REVIEW: 'review', // service the spaced-repetition backlog ON the spine
+  BLEND: 'blend', // School Path Word Build — syllable tiles from blend words
+  FIND: 'find', // School Path Find-the-fidel — mid or final letter in a word
 })
 
 // One earned 3D gateway per chapter (P1 decision: no free-play menu; a child
@@ -89,6 +93,10 @@ export function isNodeFree(node) {
   if (!node) return false
   if (node.kind === NodeKind.LEARN) return FREE_FAMILIES.includes(node.familyId)
   if (node.kind === NodeKind.MIX) return (node.families || []).every((f) => FREE_FAMILIES.includes(f))
+  if (node.kind === NodeKind.BLEND || node.kind === NodeKind.FIND) {
+    const ids = node.families || []
+    return ids.length > 0 && ids.every((f) => FREE_FAMILIES.includes(f))
+  }
   if (node.kind === NodeKind.ARCADE) return node.chapter === 1
   return false // quiz bosses and vowel laps are part of the paid app
 }
@@ -137,9 +145,10 @@ function buildClassicJourney(packId) {
 }
 
 /* Tigrinya School Path. LEARN nodes follow the unit family list (each
-   family once). Each unit ends in a QUIZ boss scoped to that unit. Units
-   are grouped into the same four arcade chapters so Runner/Catch gateways
-   stay at four — Play practice still uses learned families only. */
+   family once). After the unit's families, Word Build and Find-the-fidel
+   sit before the QUIZ boss (echo lines stay data-only). Units are grouped
+   into the same four arcade chapters so Runner/Catch gateways stay at
+   four — Play practice still uses learned families only. */
 function buildSchoolPathJourney() {
   const nodes = []
   const stories = packHasStories(SCHOOL_PATH_PACK_ID)
@@ -168,6 +177,30 @@ function buildSchoolPathJourney() {
           })
         }
       })
+      const blendWords = blendWordsReadyAtUnit(unit)
+      if (blendWords.length) {
+        pushNode(nodes, {
+          id: `blend:${unit.id}`,
+          kind: NodeKind.BLEND,
+          chapter,
+          unitId: unit.id,
+          unitIndex: unit.index,
+          families: fams.slice(),
+          words: blendWords,
+        })
+      }
+      const findTargets = playableMidLetterTargets(unit)
+      if (findTargets.length) {
+        pushNode(nodes, {
+          id: `find:${unit.id}`,
+          kind: NodeKind.FIND,
+          chapter,
+          unitId: unit.id,
+          unitIndex: unit.index,
+          families: fams.slice(),
+          targets: findTargets,
+        })
+      }
       const quiz = quizSpecForFamilies(fams, {
         levelId: `unit-${unit.id}`,
         title: unit.titleEn,

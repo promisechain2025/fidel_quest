@@ -37,10 +37,10 @@ Each unit also carries:
 - one or two `echoLines` — short original lines (family, action, food, or
   home) with an English gloss
 - `midLetterTargets` where a natural word hides the new fidel in the middle
-  or at the end, for a future find-the-fidel quiz
+  or at the end
 
-Echo lines and mid-letter targets are data only. No Echo game and no
-find-the-fidel quiz read them yet.
+Word Build and Find-the-fidel play those lists. Echo lines stay data only.
+There is no Echo screen in this pass.
 
 On that first Meet card the picture-word painting (`public/art/meet`,
 original gouache) is the background, and the fidel stays a large centered
@@ -65,10 +65,19 @@ Runner, Catch, and the other games draw from.
 
 Twelve units, every Tigrinya family once, in unit order:
 
-1. A LEARN node per family (Letter Steps).
+1. A LEARN node per family (Letter Steps: Meet, Trace, vowel family).
 2. A MIX node after each family except the unit's first, over the families
    met so far in that unit.
-3. A QUIZ boss whose questions use only that unit's families. A two-family
+3. A Word Build node. It uses blend words that become readable here (every
+   family in the word is learned, and this unit teaches at least one of
+   them). The unit's own words come first, action verbs before the rest,
+   and the step stops at four words so it does not sit in front of the quiz
+   like a wall. A word is scheduled once.
+4. A Find-the-fidel node. The child taps the authored fidel in the middle
+   or at the end of the word. ፀ (`ttse`) and ፐ (`pe`) have no natural
+   mid-word target, so those families are skipped. The unit still plays
+   any other target it has (unit 12 still asks for ፍ in ኣፍ).
+5. A QUIZ boss whose questions use only that unit's families. A two-family
    unit still runs eight questions; the option count drops to the number of
    distinct sounds so the question stays answerable.
 
@@ -103,11 +112,8 @@ Family Voice clips for these lines are not recorded yet.
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).
-- Word Build from each unit's `blendWords`, including the new action verbs.
-  `blendWordsForLearned` already hides a blend until every family it needs
-  is unlocked.
-- Echo player for `echoLines`, and a find-the-fidel quiz for
-  `midLetterTargets`.
+- Echo player for `echoLines`. Word Build and Find-the-fidel already read
+  `blendWords` and `midLetterTargets`.
 - Gouache Meet paintings for sse, kha, nye, zhe, ppe, and ttse.
 - Soft-fail feedback that never blocks a child mid-task.
 - Legacy chapter-quiz stars (`quiz:1` … `quiz:4`) do not map onto the new

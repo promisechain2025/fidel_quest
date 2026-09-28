@@ -141,15 +141,94 @@ export function meetPictureForFamily(familyId, { active = schoolPathActive(), pa
   return { ...fallback, familyId, fromSchoolPath: false }
 }
 
-/** Blend words whose letters are all in the learned set. P1 Word Build reads this. */
+/** Blend words whose letters are all in the learned set. Word Build reads this. */
 export function blendWordsForLearned(learnedIds, pathUnits = SCHOOL_PATH_UNITS) {
   const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds || [])
   const out = []
   for (const unit of pathUnits) {
     for (const word of unit.blendWords || []) {
       const needs = word.familyIds || []
-      if (needs.every((id) => learned.has(id))) out.push({ ...word, unitId: unit.id })
+      if (needs.length && needs.every((id) => learned.has(id))) out.push({ ...word, unitId: unit.id })
     }
+  }
+  return out
+}
+
+/** Kid-length cap, same idea as Letter Steps Mix (4 rounds). A unit can
+    unlock more blends than a child should build before the quiz. */
+export const WORD_BUILD_CAP = 4
+
+/** Families with no natural mid-word or final fidel in the authored lists.
+    Find-the-fidel skips these rather than inventing a target. A real
+    target added later still plays — the skip is "no natural word", not a ban. */
+export const MID_LETTER_GAP_FAMILIES = Object.freeze(['ttse', 'pe'])
+
+function meaningForBlend(word, pathUnits) {
+  if (word.meaningEn) return word.meaningEn
+  for (const unit of pathUnits) {
+    const pic = (unit.pictureWords || []).find((w) => w.geez === word.geez && w.meaningEn)
+    if (pic) return pic.meaningEn
+  }
+  return null
+}
+
+/**
+ * Blend words that become readable at this unit: every family they need is
+ * learned through this unit, and this unit teaches at least one of them
+ * (so each word is scheduled once, at the unit that unlocks it).
+ * Own-unit words come first, action verbs before the rest, authored order
+ * inside each group. Capped at WORD_BUILD_CAP.
+ */
+export function blendWordsReadyAtUnit(unit, pathUnits = SCHOOL_PATH_UNITS) {
+  if (!unit) return []
+  const idx = pathUnits.findIndex((u) => u.id === unit.id)
+  if (idx < 0) return []
+  const learned = new Set(pathUnits.slice(0, idx + 1).flatMap((u) => u.familyIds))
+  const here = new Set(unit.familyIds || [])
+  const ready = []
+  for (const u of pathUnits) {
+    for (const word of u.blendWords || []) {
+      const needs = word.familyIds || []
+      if (!needs.length) continue
+      if (!needs.every((id) => learned.has(id))) continue
+      if (!needs.some((id) => here.has(id))) continue
+      ready.push({
+        geez: word.geez,
+        meaningEn: meaningForBlend(word, pathUnits),
+        familyIds: needs.slice(),
+        unitId: u.id,
+        kind: word.kind || null,
+        _rank: (u.id === unit.id ? 0 : 2) + (word.kind === 'action' ? 0 : 1),
+      })
+    }
+  }
+  ready.sort((a, b) => a._rank - b._rank)
+  return ready.slice(0, WORD_BUILD_CAP).map(({ _rank, ...word }) => word)
+}
+
+/**
+ * Mid-letter targets a child can actually tap: the fidel is in the word and
+ * is not the first letter. Gap families (ttse, pe) are included only when a
+ * natural target is already authored — this function never invents one.
+ */
+export function playableMidLetterTargets(unit) {
+  if (!unit) return []
+  const out = []
+  for (const target of unit.midLetterTargets || []) {
+    if (!target?.geez || !target.target) continue
+    const chars = [...target.geez]
+    const index = chars.indexOf(target.target)
+    if (index <= 0) continue
+    const position = index === chars.length - 1 ? 'final' : 'mid'
+    if (target.position && target.position !== position) continue
+    out.push({
+      geez: target.geez,
+      meaningEn: target.meaningEn || null,
+      target: target.target,
+      familyId: target.familyId,
+      position,
+      index,
+    })
   }
   return out
 }
