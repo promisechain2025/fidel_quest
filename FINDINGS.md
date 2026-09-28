@@ -25,8 +25,9 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
   stories (Where Is Sam?, Walk to School, Coffee With Grandma, Baby Won't
   Sleep, Sun All Week). Each has an original Tigrinya title, an unlock
   unit, pages, and a refrain. Lines recycle Meet and blend words.
-- Wiring: Tigrinya Story Time lists those five books and draws them with
-  the existing StoryScene stamps. A story node sits on each School Path
+- Wiring: Tigrinya Story Time lists those five books. Each page paints a
+  Meet-style scene from `public/art/stories` (the stamp scene is only the
+  fallback). A story node sits on each School Path
   chapter. Biblical Amharic Story Time is unchanged.
 - Tests cover the new alphabet fields and the story schema. Docs:
   `docs/school-path.md`.

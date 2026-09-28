@@ -9,10 +9,11 @@
    where one exists (cat, cow, lemon, honey, ...) and add the people/animals a
    storybook needs (a child, a lion, a leopard, a book, a heart).
 
-   Flat, chunky, offline, no image assets - the same code-drawn style as the
-   rest of eGeez. jsdom has no canvas, so getContext is guarded: no scene in
-   tests, never a crash. Falls back to the plain emoji when a page has no
-   scene, so the contract never breaks.
+   Biblical Story Time stays on these stamps. School Path stories pass
+   scene.src, a Meet-style painting in public/art/stories, and this canvas
+   draws that bitmap into the same rounded page window. If the file is
+   missing, the stamps still paint. jsdom has no canvas, so getContext is
+   guarded: no scene in tests, never a crash.
    ========================================================================== */
 import { useEffect, useRef } from 'react'
 import { stampPicture } from './Pictures'
@@ -1096,11 +1097,35 @@ export function paintScene(g, W, H, scene) {
  * A full illustrated page panel. Renders the `scene` if the page has one; the
  * caller keeps a plain-emoji fallback for pages/scenes without art.
  */
+function clipPage(g, W, H, r) {
+  g.beginPath()
+  g.moveTo(r, 0)
+  g.arcTo(W, 0, W, H, r)
+  g.arcTo(W, H, 0, H, r)
+  g.arcTo(0, H, 0, 0, r)
+  g.arcTo(0, 0, W, 0, r)
+  g.closePath()
+  g.clip()
+}
+
+/** Cover-fit a painting into the page window. */
+function drawCover(g, img, W, H) {
+  const iw = img.naturalWidth || img.width
+  const ih = img.naturalHeight || img.height
+  if (!iw || !ih) return
+  const ir = iw / ih
+  const cr = W / H
+  const dw = ir > cr ? H * ir : W
+  const dh = ir > cr ? H : W / ir
+  g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh)
+}
+
 export default function StoryScene({ scene, width = 320, height = 208, className = '', rounded = 22 }) {
   const ref = useRef(null)
   useEffect(() => {
     const c = ref.current
     if (!c) return
+    let cancelled = false
     // Size the backing store from the display size at a capped DPR, so a cheap
     // phone paints ~display pixels, not a fixed 800x520 over-sample.
     const dpr = Math.min(2, (typeof window !== 'undefined' && window.devicePixelRatio) || 1)
@@ -1110,20 +1135,37 @@ export default function StoryScene({ scene, width = 320, height = 208, className
     c.height = Hh
     const g = c.getContext('2d')
     if (!g) return
+    const r = (rounded / width) * W
+    const paintStamps = () => {
+      if (cancelled || ref.current !== c) return
+      g.clearRect(0, 0, W, Hh)
+      g.save()
+      clipPage(g, W, Hh, r)
+      paintScene(g, W, Hh, scene)
+      g.restore()
+    }
+    if (!scene?.src || typeof Image === 'undefined') {
+      paintStamps()
+      return undefined
+    }
     g.clearRect(0, 0, W, Hh)
     g.save()
-    // clip to rounded rect so the scene sits in a page-window
-    const r = (rounded / width) * W
-    g.beginPath()
-    g.moveTo(r, 0)
-    g.arcTo(W, 0, W, Hh, r)
-    g.arcTo(W, Hh, 0, Hh, r)
-    g.arcTo(0, Hh, 0, 0, r)
-    g.arcTo(0, 0, W, 0, r)
-    g.closePath()
-    g.clip()
-    paintScene(g, W, Hh, scene)
+    clipPage(g, W, Hh, r)
+    g.fillStyle = '#efe4cf'
+    g.fillRect(0, 0, W, Hh)
     g.restore()
+    const img = new Image()
+    img.onload = () => {
+      if (cancelled || ref.current !== c) return
+      g.clearRect(0, 0, W, Hh)
+      g.save()
+      clipPage(g, W, Hh, r)
+      drawCover(g, img, W, Hh)
+      g.restore()
+    }
+    img.onerror = paintStamps
+    img.src = scene.src
+    return () => { cancelled = true }
   }, [scene, width, height, rounded])
   return <canvas ref={ref} className={className} style={{ width, height, borderRadius: rounded }} aria-hidden="true" />
 }

@@ -15,17 +15,21 @@ const KID = { k: 'person', skin: '#c98a5a', hair: '#241812', cloth: '#3f8f7a', b
 const MOM = { k: 'person', robe: true, head: 'scarf', headColor: '#c45a6a', skin: '#c98a5a', cloth: '#d9642e' }
 const GRANDMA = { k: 'person', robe: true, head: 'scarf', headColor: '#6d84c9', skin: '#c98a5a', cloth: '#8a6a9a' }
 
-/* Picture-book panels for StoryScene. Hints in the JSON stay the art brief;
-   these stamps are the code-drawn stand-in already used by Story Time. */
+/* Picture-book panels. scene.src is the Meet-style painting. The stamp
+   scene stays as the fallback if that file does not load. */
+function painted(id, n, scene) {
+  return { ...scene, src: `/art/stories/${id}-${n}.webp` }
+}
+
 const ART = {
   'where-is-sam': {
     pics: ['🧒', '☕', '🏠', '🛏️', '🐶'],
     scenes: [
-      { bg: 'indoor', items: [{ ...KID, x: 0.42, foot: 0.78, s: 0.34 }] },
-      { bg: 'kitchen', items: [{ k: 'pot', x: 0.55, y: 0.48, s: 0.28 }] },
-      { bg: 'day', items: [{ k: 'house', x: 0.55, y: 0.48, s: 0.36 }] },
-      { bg: 'indoor', items: [{ k: 'zzz', x: 0.62, y: 0.36, s: 0.16 }] },
-      { bg: 'indoor', items: [{ ...KID, x: 0.36, foot: 0.78, s: 0.32 }, { k: 'dog', x: 0.68, y: 0.58, s: 0.28 }] },
+      painted('where-is-sam', 1, { bg: 'indoor', items: [{ ...KID, x: 0.42, foot: 0.78, s: 0.34 }] }),
+      painted('where-is-sam', 2, { bg: 'kitchen', items: [{ k: 'pot', x: 0.55, y: 0.48, s: 0.28 }] }),
+      painted('where-is-sam', 3, { bg: 'day', items: [{ k: 'house', x: 0.55, y: 0.48, s: 0.36 }] }),
+      painted('where-is-sam', 4, { bg: 'indoor', items: [{ k: 'zzz', x: 0.62, y: 0.36, s: 0.16 }] }),
+      painted('where-is-sam', 5, { bg: 'indoor', items: [{ ...KID, x: 0.36, foot: 0.78, s: 0.32 }, { k: 'dog', x: 0.68, y: 0.58, s: 0.28 }] }),
     ],
     question: {
       en: 'Who is with Sam at the end?',
@@ -35,14 +39,14 @@ const ART = {
   'walk-to-school': {
     pics: ['🚶', '🐶', '🐦', '🐫', '🐔', '🐐', '🍈', '🏫'],
     scenes: [
-      { bg: 'field', items: [{ ...KID, x: 0.4, foot: 0.76, s: 0.32 }] },
-      { bg: 'field', items: [{ k: 'dog', x: 0.55, y: 0.58, s: 0.3 }] },
-      { bg: 'field', items: [{ k: 'bird', x: 0.62, y: 0.32, s: 0.2 }] },
-      { bg: 'field', items: [{ k: '🐫', x: 0.55, y: 0.52, s: 0.34 }] },
-      { bg: 'field', items: [{ k: '🐔', x: 0.55, y: 0.58, s: 0.28 }] },
-      { bg: 'field', items: [{ k: '🐐', x: 0.55, y: 0.56, s: 0.3 }] },
-      { bg: 'field', items: [{ ...KID, x: 0.34, foot: 0.76, s: 0.3 }, { k: '🍈', x: 0.66, y: 0.55, s: 0.22 }] },
-      { bg: 'day', items: [{ k: 'house', x: 0.58, y: 0.48, s: 0.36 }, { ...KID, x: 0.28, foot: 0.78, s: 0.28 }] },
+      painted('walk-to-school', 1, { bg: 'field', items: [{ ...KID, x: 0.4, foot: 0.76, s: 0.32 }] }),
+      painted('walk-to-school', 2, { bg: 'field', items: [{ k: 'dog', x: 0.55, y: 0.58, s: 0.3 }] }),
+      painted('walk-to-school', 3, { bg: 'field', items: [{ k: 'bird', x: 0.62, y: 0.32, s: 0.2 }] }),
+      painted('walk-to-school', 4, { bg: 'field', items: [{ k: '🐫', x: 0.55, y: 0.52, s: 0.34 }] }),
+      painted('walk-to-school', 5, { bg: 'field', items: [{ k: '🐔', x: 0.55, y: 0.58, s: 0.28 }] }),
+      painted('walk-to-school', 6, { bg: 'field', items: [{ k: '🐐', x: 0.55, y: 0.56, s: 0.3 }] }),
+      painted('walk-to-school', 7, { bg: 'field', items: [{ ...KID, x: 0.34, foot: 0.76, s: 0.3 }, { k: '🍈', x: 0.66, y: 0.55, s: 0.22 }] }),
+      painted('walk-to-school', 8, { bg: 'day', items: [{ k: 'house', x: 0.58, y: 0.48, s: 0.36 }, { ...KID, x: 0.28, foot: 0.78, s: 0.28 }] }),
     ],
     question: {
       en: 'Where did the child arrive?',
@@ -52,11 +56,11 @@ const ART = {
   'coffee-with-grandma': {
     pics: ['☕', '🍵', '🥛', '👵', '🧒'],
     scenes: [
-      { bg: 'kitchen', items: [{ k: 'pot', x: 0.52, y: 0.48, s: 0.3 }] },
-      { bg: 'kitchen', items: [{ k: '☕', x: 0.52, y: 0.46, s: 0.26 }] },
-      { bg: 'kitchen', items: [{ k: 'milk', x: 0.52, y: 0.48, s: 0.26 }] },
-      { bg: 'kitchen', items: [{ ...GRANDMA, x: 0.46, foot: 0.8, s: 0.36 }, { k: '☕', x: 0.72, y: 0.5, s: 0.18 }] },
-      { bg: 'kitchen', items: [{ ...KID, x: 0.38, foot: 0.8, s: 0.3 }, { k: 'milk', x: 0.66, y: 0.52, s: 0.2 }] },
+      painted('coffee-with-grandma', 1, { bg: 'kitchen', items: [{ k: 'pot', x: 0.52, y: 0.48, s: 0.3 }] }),
+      painted('coffee-with-grandma', 2, { bg: 'kitchen', items: [{ k: '☕', x: 0.52, y: 0.46, s: 0.26 }] }),
+      painted('coffee-with-grandma', 3, { bg: 'kitchen', items: [{ k: 'milk', x: 0.52, y: 0.48, s: 0.26 }] }),
+      painted('coffee-with-grandma', 4, { bg: 'kitchen', items: [{ ...GRANDMA, x: 0.46, foot: 0.8, s: 0.36 }, { k: '☕', x: 0.72, y: 0.5, s: 0.18 }] }),
+      painted('coffee-with-grandma', 5, { bg: 'kitchen', items: [{ ...KID, x: 0.38, foot: 0.8, s: 0.3 }, { k: 'milk', x: 0.66, y: 0.52, s: 0.2 }] }),
     ],
     question: {
       en: 'What did grandma drink from?',
@@ -66,11 +70,11 @@ const ART = {
   'baby-wont-sleep': {
     pics: ['👶', '🎵', '🤗', '🥛', '😴'],
     scenes: [
-      { bg: 'night', items: [{ ...KID, x: 0.5, foot: 0.78, s: 0.3 }] },
-      { bg: 'indoor', items: [{ ...MOM, x: 0.42, foot: 0.78, s: 0.36 }, { k: 'note', x: 0.7, y: 0.32, s: 0.14 }] },
-      { bg: 'indoor', items: [{ ...MOM, x: 0.42, foot: 0.78, s: 0.36 }, { k: 'heart', x: 0.68, y: 0.36, s: 0.12 }] },
-      { bg: 'indoor', items: [{ ...KID, x: 0.36, foot: 0.8, s: 0.28 }, { k: 'milk', x: 0.66, y: 0.52, s: 0.22 }] },
-      { bg: 'indoor', items: [{ ...KID, x: 0.46, foot: 0.8, s: 0.28 }, { k: 'zzz', x: 0.68, y: 0.32, s: 0.16 }] },
+      painted('baby-wont-sleep', 1, { bg: 'night', items: [{ ...KID, x: 0.5, foot: 0.78, s: 0.3 }] }),
+      painted('baby-wont-sleep', 2, { bg: 'indoor', items: [{ ...MOM, x: 0.42, foot: 0.78, s: 0.36 }, { k: 'note', x: 0.7, y: 0.32, s: 0.14 }] }),
+      painted('baby-wont-sleep', 3, { bg: 'indoor', items: [{ ...MOM, x: 0.42, foot: 0.78, s: 0.36 }, { k: 'heart', x: 0.68, y: 0.36, s: 0.12 }] }),
+      painted('baby-wont-sleep', 4, { bg: 'indoor', items: [{ ...KID, x: 0.36, foot: 0.8, s: 0.28 }, { k: 'milk', x: 0.66, y: 0.52, s: 0.22 }] }),
+      painted('baby-wont-sleep', 5, { bg: 'indoor', items: [{ ...KID, x: 0.46, foot: 0.8, s: 0.28 }, { k: 'zzz', x: 0.68, y: 0.32, s: 0.16 }] }),
     ],
     question: {
       en: 'What did the baby drink?',
@@ -80,14 +84,14 @@ const ART = {
   'sun-all-week': {
     pics: ['☀️', '☀️', '☀️', '☀️', '☀️', '🧺', '☀️', '☀️'],
     scenes: [
-      { bg: 'day', items: [] },
-      { bg: 'day', items: [{ k: 'bird', x: 0.3, y: 0.34, s: 0.14 }] },
-      { bg: 'field', items: [] },
-      { bg: 'day', items: [{ k: 'house', x: 0.72, y: 0.5, s: 0.28 }] },
-      { bg: 'field', items: [{ k: '🐑', x: 0.7, y: 0.62, s: 0.22 }] },
-      { bg: 'field', items: [{ k: 'basket', x: 0.62, y: 0.58, s: 0.24 }, { ...KID, x: 0.32, foot: 0.78, s: 0.28 }] },
-      { bg: 'day', items: [{ ...KID, x: 0.4, foot: 0.78, s: 0.28 }, { ...MOM, x: 0.66, foot: 0.76, s: 0.32 }] },
-      { bg: 'day', items: [{ k: 'rays', x: 0.5, y: 0.28, s: 0.22 }] },
+      painted('sun-all-week', 1, { bg: 'day', items: [] }),
+      painted('sun-all-week', 2, { bg: 'day', items: [{ k: 'bird', x: 0.3, y: 0.34, s: 0.14 }] }),
+      painted('sun-all-week', 3, { bg: 'field', items: [] }),
+      painted('sun-all-week', 4, { bg: 'day', items: [{ k: 'house', x: 0.72, y: 0.5, s: 0.28 }] }),
+      painted('sun-all-week', 5, { bg: 'field', items: [{ k: '🐑', x: 0.7, y: 0.62, s: 0.22 }] }),
+      painted('sun-all-week', 6, { bg: 'field', items: [{ k: 'basket', x: 0.62, y: 0.58, s: 0.24 }, { ...KID, x: 0.32, foot: 0.78, s: 0.28 }] }),
+      painted('sun-all-week', 7, { bg: 'day', items: [{ ...KID, x: 0.4, foot: 0.78, s: 0.28 }, { ...MOM, x: 0.66, foot: 0.76, s: 0.32 }] }),
+      painted('sun-all-week', 8, { bg: 'day', items: [{ k: 'rays', x: 0.5, y: 0.28, s: 0.22 }] }),
     ],
     question: {
       en: 'What shone all week?',

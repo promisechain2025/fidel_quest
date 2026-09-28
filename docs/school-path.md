@@ -96,7 +96,8 @@ Each story names `unlockAfterUnitId`. It opens in Story Time once every
 family through that unit is learned. Tigrinya Story Time shows these five
 books. The biblical Story Time tracks stay on the Amharic pack and are not
 rewritten. A story node sits on each School Path chapter, the same way
-Amharic already does. Pages draw with the existing StoryScene stamps.
+Amharic already does. Each page paints a Meet-style scene from
+`public/art/stories`. Biblical pages keep the code-drawn StoryScene stamps.
 Family Voice clips for these lines are not recorded yet.
 
 ## P1 follow-ups

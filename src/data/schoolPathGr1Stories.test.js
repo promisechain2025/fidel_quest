@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { STORIES, storyLibrary, storyUnlocked, storyWords } from '../platform/stories'
 import { NodeKind, buildJourney } from '../journey'
@@ -138,6 +140,16 @@ describe('school path story pack', () => {
     const am = storyLibrary([], undefined, 'am')
     expect(am.some((s) => IDS.includes(s.id))).toBe(false)
     expect(am.length).toBe(STORIES.length)
+  })
+
+  it('gives every School Path page a Meet-style painting on disk', () => {
+    for (const entry of schoolPathStoryTimeEntries()) {
+      entry.pages.forEach((page, i) => {
+        const src = `/art/stories/${entry.id}-${i + 1}.webp`
+        expect(page.scene.src, `${entry.id} ${i}`).toBe(src)
+        expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+      })
+    }
   })
 
   it('puts a story node on each Tigrinya chapter and leaves Amharic stories in place', () => {
