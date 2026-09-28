@@ -1,13 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import { TI_PACK } from '../packs/ti'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
-import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds } from '../journey'
+import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds, isNodeFree } from '../journey'
 import { learnInitial } from '../LearnLetters'
 import { buildQuestionQueue } from '../FidelQuestApp'
 import rawPath from './schoolPathGr1.json'
 import {
   SCHOOL_PATH_UNITS,
   blendWordsForLearned,
+  blendWordsReadyAtUnit,
+  playableMidLetterTargets,
+  WORD_BUILD_CAP,
+  MID_LETTER_GAP_FAMILIES,
   meetPictureForFamily,
   pictureWordForFamily,
   schoolPathFamilyCoverage,
@@ -155,6 +159,72 @@ describe('school path journey spine', () => {
         expect(key.startsWith('ha-') || key.startsWith('le-')).toBe(true)
       }
     }
+  })
+})
+
+describe('word build and find-the-fidel on the spine', () => {
+  const ti = buildJourney('ti')
+
+  it('puts Word Build and Find-the-fidel after the unit families and before the quiz', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      const ids = ti.map((n) => n.id)
+      const lastFamily = unit.familyIds[unit.familyIds.length - 1]
+      const familyAt = Math.max(ids.indexOf(`learn:${lastFamily}`), ids.indexOf(`mix:${lastFamily}`))
+      const quizAt = ids.indexOf(`quiz:${unit.id}`)
+      const blend = ti.find((n) => n.id === `blend:${unit.id}`)
+      const find = ti.find((n) => n.id === `find:${unit.id}`)
+      const words = blendWordsReadyAtUnit(unit)
+      const targets = playableMidLetterTargets(unit)
+      expect(words.length, unit.id).toBeGreaterThan(0)
+      expect(words.length, unit.id).toBeLessThanOrEqual(WORD_BUILD_CAP)
+      expect(blend.words.map((w) => w.geez)).toEqual(words.map((w) => w.geez))
+      expect(blend.index).toBeGreaterThan(familyAt)
+      expect(blend.index).toBeLessThan(quizAt)
+      expect(targets.length, unit.id).toBeGreaterThan(0)
+      expect(find.targets.map((t) => t.geez)).toEqual(targets.map((t) => t.geez))
+      expect(find.index).toBeGreaterThan(blend.index)
+      expect(find.index).toBeLessThan(quizAt)
+    }
+  })
+
+  it('schedules each blend word once, only when its letters are learned', () => {
+    const seen = []
+    SCHOOL_PATH_UNITS.forEach((unit, i) => {
+      const learned = new Set(SCHOOL_PATH_UNITS.slice(0, i + 1).flatMap((u) => u.familyIds))
+      for (const word of blendWordsReadyAtUnit(unit)) {
+        expect(word.familyIds.every((id) => learned.has(id)), word.geez).toBe(true)
+        expect(word.familyIds.some((id) => unit.familyIds.includes(id)), word.geez).toBe(true)
+        seen.push(word.geez)
+      }
+    })
+    expect(new Set(seen).size).toBe(seen.length)
+    expect(blendWordsReadyAtUnit(SCHOOL_PATH_UNITS[0]).map((w) => w.geez)).toEqual(['ሀሎ'])
+    expect(blendWordsReadyAtUnit(SCHOOL_PATH_UNITS[0])[0].meaningEn).toBe('hello')
+  })
+
+  it('skips ttse and pe when no natural mid-word target is authored', () => {
+    const played = SCHOOL_PATH_UNITS.flatMap((u) => playableMidLetterTargets(u))
+    for (const id of MID_LETTER_GAP_FAMILIES) {
+      expect(played.some((t) => t.familyId === id), id).toBe(false)
+    }
+    const u11 = SCHOOL_PATH_UNITS.find((u) => u.id === 'u11')
+    const u12 = SCHOOL_PATH_UNITS.find((u) => u.id === 'u12')
+    expect(playableMidLetterTargets(u11).map((t) => t.familyId)).toEqual(['ppe', 'tse'])
+    expect(playableMidLetterTargets(u12).map((t) => t.familyId)).toEqual(['fe'])
+    for (const target of played) {
+      const chars = [...target.geez]
+      expect(chars[target.index]).toBe(target.target)
+      expect(target.index).toBeGreaterThan(0)
+    }
+  })
+
+  it('keeps unit 1 drills in the free taste and leaves the Amharic spine alone', () => {
+    expect(isNodeFree(ti.find((n) => n.id === 'blend:u01'))).toBe(true)
+    expect(isNodeFree(ti.find((n) => n.id === 'find:u01'))).toBe(true)
+    expect(isNodeFree(ti.find((n) => n.id === 'blend:u02'))).toBe(false)
+    const am = buildJourney('am')
+    expect(am.some((n) => n.kind === NodeKind.BLEND || n.kind === NodeKind.FIND)).toBe(false)
+    expect(ti.some((n) => n.kind === 'echo')).toBe(false)
   })
 })
 

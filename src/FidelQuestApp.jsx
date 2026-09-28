@@ -59,6 +59,7 @@ import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
+import { WordBuildScreen, FindFidelScreen } from './components/SchoolPathDrills'
 import WordPicture from './components/Pictures'
 import { useShareGate } from './components/ShareGate'
 import ScopeToggle from './components/ScopeToggle'
@@ -1299,6 +1300,8 @@ export default function FidelQuestApp() {
     }
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
+    if (node.kind === NodeKind.BLEND) return setScreen({ name: 'wordbuild', node })
+    if (node.kind === NodeKind.FIND) return setScreen({ name: 'findfidel', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
     if (node.kind === NodeKind.REVIEW) {
@@ -1468,6 +1471,29 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 onDone={() => { markWordsPracticed(screen.words.map((w) => w.latin)); goBack() }}
                 onSkip={() => { markWordsPracticed(screen.words.map((w) => w.latin)); goBack() }}
+              />
+            </Screen>
+          )}
+          {screen.name === 'wordbuild' && (
+            <Screen key={`wordbuild-${screen.node.id}-${runSeed}`}>
+              <WordBuildScreen
+                words={screen.node.words}
+                unitIndex={screen.node.unitIndex}
+                seed={runSeed}
+                soundOn={soundOn}
+                onBack={goBack}
+                onDone={() => markNodeDone(screen.node.id)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'findfidel' && (
+            <Screen key={`findfidel-${screen.node.id}`}>
+              <FindFidelScreen
+                targets={screen.node.targets}
+                unitIndex={screen.node.unitIndex}
+                soundOn={soundOn}
+                onBack={goBack}
+                onDone={() => markNodeDone(screen.node.id)}
               />
             </Screen>
           )}
@@ -2024,6 +2050,8 @@ const nodeGlyph = (node) => {
     const b = formOf(`${node.families[node.families.length - 1]}-1`)?.char ?? ''
     return `${a}${b}`
   }
+  if (node.kind === NodeKind.BLEND) return [...(node.words?.[0]?.geez || '?')][0]
+  if (node.kind === NodeKind.FIND) return node.targets?.[0]?.target || '?'
   return null
 }
 
@@ -2032,6 +2060,8 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isArcade = node.kind === NodeKind.ARCADE
   const isStory = node.kind === NodeKind.STORY
   const isReview = node.kind === NodeKind.REVIEW
+  const isBlend = node.kind === NodeKind.BLEND
+  const isFind = node.kind === NodeKind.FIND
   const big = isBoss || isArcade
   const size = big ? 76 : 60
   const label =
@@ -2039,22 +2069,26 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
       ? `Learn ${node.familyId}`
       : node.kind === NodeKind.MIX
         ? 'Mix challenge'
-        : isStory
-          ? 'Story time'
-          : isReview
-            ? 'Letter check-in'
-            : isBoss
-            ? (node.unitIndex && !node.vowel ? schoolPathLabel(node.unitIndex) : `Quiz level ${node.levelId?.split('-')[1]}`)
-            : node.gateway.mode === 'runner'
-              ? 'Letter Runner'
-              : 'Letter Catch'
+        : isBlend
+          ? 'Word Build'
+          : isFind
+            ? 'Find the letter'
+            : isStory
+              ? 'Story time'
+              : isReview
+                ? 'Letter check-in'
+                : isBoss
+                  ? (node.unitIndex && !node.vowel ? schoolPathLabel(node.unitIndex) : `Quiz level ${node.levelId?.split('-')[1]}`)
+                  : node.gateway?.mode === 'runner'
+                    ? 'Letter Runner'
+                    : 'Letter Catch'
   // Locked nodes keep the original muted tile colour, but now show WHAT they
   // are (the letter, or the game icon) with a small lock badge instead of only
   // a lock, so kids can preview what is coming.
   // A LEARN/MIX/REVIEW step reads as the shared gold letter-tile (done or
   // active); the special nodes keep their emblem tones (green arcade, gold
   // boss, lapis story) in the manuscript palette.
-  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX
+  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX || isBlend || isFind
   const goldTile = done || (unlocked && (isLetter || isReview))
   const bg = goldTile ? 'var(--tile)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
   // Boss sits on champagne gold, so its glyph must be the dark glyph ink (a
@@ -3807,6 +3841,10 @@ function NextUpTeaser({ levelId }) {
       t('nextUpStory', 'a story to read!')
     ) : target.kind === NodeKind.REVIEW ? (
       t('nextUpReview', 'a letter check-in!')
+    ) : target.kind === NodeKind.BLEND ? (
+      t('nextUpBlend', 'build a word!')
+    ) : target.kind === NodeKind.FIND ? (
+      t('nextUpFind', 'find the letter!')
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (

@@ -19,15 +19,16 @@
       "trace",
       "vowelFamily",
       "blend",
+      "midLetter",
       "unitQuiz"
     ],
     "mapToGames": {
       "meet": "Letter Steps Meet — curriculum pictureWord for the family",
       "trace": "Letter Steps Trace",
       "vowelFamily": "Letter Steps river / Bubble twin-safe drills",
-      "blend": "Quiz build-the-word using unit.blendWords (decodable from unlocked families only)",
+      "blend": "Word Build — tap syllable tiles in order. Uses blend words that become decodable at this unit (capped at 4).",
       "echo": "Future Echo fluency — unit.echoLines are original two-word lines (not a game yet)",
-      "midLetter": "Future Quiz find-the-fidel — unit.midLetterTargets (not a game yet)",
+      "midLetter": "Find the letter — tap the fidel in the middle or at the end (midLetterTargets). ttse and pe are skipped when no natural target is authored",
       "unitQuiz": "existing QUIZ boss node scoped to unit familyIds",
       "arcade": "Runner/Catch letter pool = learnedFamilyIds only (already in journey)"
     }
