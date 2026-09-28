@@ -1,121 +1,94 @@
-/* Jibby - authored SVG art. The mischievous (not scary) spotted hyena, the
-   Letter Muncher. Redrawn to read as a hyena and not a cub: hunched high
-   shoulders with a sloping back, a wedge head with a sloping forehead, an
-   elongated spotted snout, big rounded ears, a coarse dark mane running up
-   the crown and down the neck, and narrow scheming side-glance eyes.
-   On-model sandy-tan palette. Vector; gradient ids namespaced with useId.
-   `expression` is 'grin' (default) or 'agitated' (caught mid-chomp). */
+/* Jibby - authored SVG art. The mischievous (not scary) spotted hyena.
+   Hunched shoulders, a sloping forehead, a long spotted muzzle, round ears,
+   and a coarse mane. Sandy highland palette. Vector; gradient ids are
+   namespaced with useId. `expression` is 'grin' (default) or 'agitated'
+   (caught mid-chomp). */
 import { useId } from 'react'
 import { HYENA_NAME } from '../platform/brand'
 
 const CX = 100
-// spots on the coat + cheeks (x, y, r)
-const SPOTS = [[66, 152, 5], [134, 156, 4.6], [56, 182, 4], [144, 184, 4], [73, 92, 3.4], [127, 92, 3.4]]
-// coarse crown mane: center spikes tallest, leaning back for a bristly look
+const SPOTS = [[52, 144, 9, 6], [146, 148, 8, 5.4], [44, 174, 7, 4.8], [156, 172, 6.6, 4.6], [68, 92, 4.8, 3.4], [136, 94, 4.6, 3.2], [82, 164, 5.4, 3.6], [124, 182, 5.6, 3.8], [100, 156, 6.2, 4]]
 const MANE = [-3, -2, -1, 0, 1, 2, 3]
 
 export function JibbySvg({ size = 160, expression = 'grin', title = HYENA_NAME, className = '', style = {} }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `${n}-${raw}`
   const agit = expression === 'agitated'
-  const ear = (s) => (
-    <g key={s} transform={`rotate(${s * 24} ${CX + s * 40} 52)`}>
-      <ellipse cx={CX + s * 40} cy="50" rx="16" ry="20" fill={`url(#${id('jh')})`} />
-      <ellipse cx={CX + s * 40} cy="54" rx="8.5" ry="12" fill="#6a5940" />
-    </g>
-  )
-  // narrow half-lidded almond, both pupils cut to one side => a sly glance
-  const eye = (s) => (
-    <g key={s}>
-      <ellipse cx={CX + s * 20} cy="84" rx="11" ry="6" fill="#fff" transform={`rotate(${s * -6} ${CX + s * 20} 84)`} />
-      {/* heavy upper lid drops the eye to a scheming slit */}
-      <path d={`M${CX + s * 20 - 12},83 Q${CX + s * 20},77 ${CX + s * 20 + 12},83 Z`} fill={`url(#${id('jh')})`} />
-      <circle cx={CX + s * 20 + 3} cy="86" r="4.3" fill="#241c12" />
-      <circle cx={CX + s * 20 + 1.6} cy="84.5" r="1.4" fill="#fff" />
-    </g>
-  )
   return (
     <svg width={size} height={size} viewBox="0 0 200 210" className={className} style={style}
       role="img" aria-label={title} xmlns="http://www.w3.org/2000/svg">
       <title>{title}</title>
       <defs>
-        <radialGradient id={id('jh')} cx="42%" cy="26%" r="80%">
-          <stop offset="0%" stopColor="#cbb789" /><stop offset="100%" stopColor="#a8946a" />
+        <radialGradient id={id('jh')} cx="40%" cy="28%" r="78%">
+          <stop offset="0%" stopColor="#f0d7a4" /><stop offset="48%" stopColor="#d7b57a" /><stop offset="100%" stopColor="#b48a52" />
         </radialGradient>
-        <radialGradient id={id('jb')} cx="45%" cy="20%" r="85%">
-          <stop offset="0%" stopColor="#c2ad7d" /><stop offset="100%" stopColor="#9a875f" />
+        <radialGradient id={id('jb')} cx="45%" cy="18%" r="85%">
+          <stop offset="0%" stopColor="#e4c48a" /><stop offset="100%" stopColor="#a8844e" />
         </radialGradient>
         <radialGradient id={id('jm')} cx="50%" cy="30%" r="74%">
-          <stop offset="0%" stopColor="#eaddbe" /><stop offset="100%" stopColor="#d3c096" />
+          <stop offset="0%" stopColor="#fff4dc" /><stop offset="100%" stopColor="#e6c98e" />
         </radialGradient>
       </defs>
 
-      {/* body: hunched, high shoulders sloping down to the rump. Drawn first so
-          the head sits over the shoulders with no floating gap. */}
-      <path d={`M52,201 Q40,150 64,126 Q100,113 136,126 Q160,150 148,201 Q100,217 52,201 Z`} fill={`url(#${id('jb')})`} />
-      {/* raised shoulder humps flanking the neck - the hyena hunch */}
-      <ellipse cx={CX - 34} cy="126" rx="20" ry="16" fill={`url(#${id('jb')})`} />
-      <ellipse cx={CX + 34} cy="126" rx="20" ry="16" fill={`url(#${id('jb')})`} />
-      {/* neck mane running down the spine into the shoulders (behind the head) */}
+      <ellipse cx={CX} cy="202" rx="54" ry="7" fill="#1b140c" opacity="0.16" />
+      {/* Hunched body: high shoulders, low rump. */}
+      <path d="M46,200 Q34,148 62,118 Q100,104 138,118 Q166,148 154,200 Q100,214 46,200 Z" fill={`url(#${id('jb')})`} />
+      <ellipse cx={CX - 36} cy="124" rx="22" ry="16" fill={`url(#${id('jb')})`} />
+      <ellipse cx={CX + 36} cy="124" rx="22" ry="16" fill={`url(#${id('jb')})`} />
+      <ellipse cx={CX} cy="168" rx="28" ry="26" fill="#f3e0b4" opacity="0.45" />
+      <ellipse cx={CX - 24} cy="200" rx="15" ry="8" fill="#8d6a40" />
+      <ellipse cx={CX + 24} cy="200" rx="15" ry="8" fill="#8d6a40" />
       {[-1, 1].map((s) => (
         <g key={s}>
           {[0, 1, 2, 3].map((k) => (
-            <path key={k} d={`M${CX + s * (26 + k * 4)},${104 + k * 8} l${s * 11},4 l${-s * 9},7 z`} fill="#5a4b34" />
+            <path key={k} d={`M${CX + s * (24 + k * 5)},${100 + k * 9} l${s * 12},3 l${-s * 8},8 z`} fill="#5c4632" />
           ))}
         </g>
       ))}
-      <ellipse cx={CX} cy="170" rx="26" ry="30" fill="#d8c69a" opacity="0.42" />
-      <ellipse cx={CX - 22} cy="203" rx="14" ry="9" fill="#8a7752" />
-      <ellipse cx={CX + 22} cy="203" rx="14" ry="9" fill="#8a7752" />
 
-      {[-1, 1].map(ear)}
-      {/* coarse crown mane: tall bristles leaning back */}
+      {[-1, 1].map((s) => (
+        <g key={`ear${s}`} transform={`rotate(${s * 18} ${CX + s * 42} 48)`}>
+          <ellipse cx={CX + s * 42} cy="46" rx="18" ry="24" fill={`url(#${id('jh')})`} />
+          <ellipse cx={CX + s * 42} cy="52" rx="9" ry="14" fill="#6a5344" />
+        </g>
+      ))}
       {MANE.map((i) => {
-        const x = CX + i * 9
-        const h = 30 - Math.abs(i) * 4
-        return <path key={i} d={`M${x - 6},50 L${x - 3},${50 - h} L${x + 6},48 Z`} fill="#5a4b34" />
+        const x = CX + i * 10
+        const h = 34 - Math.abs(i) * 4
+        return <path key={i} d={`M${x - 7},48 L${x - 2},${48 - h} L${x + 7},46 Z`} fill="#4a3a2c" />
       })}
 
-      {/* head: a wedge, broad cranium sloping to a lower brow (not a round cub head) */}
-      <path d={`M60,68 Q56,44 100,42 Q144,44 140,68 Q147,98 118,106 Q100,111 82,106 Q53,98 60,68 Z`} fill={`url(#${id('jh')})`} />
-      {/* elongated projecting snout */}
-      <path d={`M84,92 Q80,122 100,132 Q120,122 116,92 Q100,86 84,92 Z`} fill={`url(#${id('jm')})`} />
-      {/* nose + nostril highlight */}
-      <ellipse cx={CX} cy="118" rx="9" ry="6" fill="#2f2415" />
-      <ellipse cx={CX - 3} cy="116" rx="2.3" ry="1.4" fill="#5a4a30" />
-      {SPOTS.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} fill="#7c6a4a" opacity="0.7" />)}
-      <ellipse cx={CX - 8} cy="58" rx="14" ry="6" fill="#fff" opacity="0.22" transform={`rotate(-18 ${CX - 8} 58)`} />
-      <g stroke="#8a7758" strokeWidth="1.1" fill="none" opacity="0.45" strokeLinecap="round">
-        <path d="M70,150 q8,6 6,14" />
-        <path d="M84,168 q6,8 2,16" />
-        <path d="M130,152 q-8,6 -4,14" />
-        <path d="M118,176 q-4,8 2,14" />
-      </g>
-      <g stroke="#5a4b34" strokeWidth="1.2" fill="none" opacity="0.55" strokeLinecap="round">
-        <path d="M78,108 q-18,2 -28,8" />
-        <path d="M78,114 q-16,6 -26,8" />
-        <path d="M122,108 q18,2 28,8" />
-        <path d="M122,114 q16,6 26,8" />
-      </g>
-      <path d="M86,203 l-3,4 M92,204 l-2,4 M108,204 l2,4 M114,203 l3,4" stroke="#4a3c28" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M58,70 Q52,40 100,36 Q148,40 142,70 Q152,102 116,112 Q100,118 84,112 Q48,102 58,70 Z" fill={`url(#${id('jh')})`} />
+      <path d="M86,100 Q78,128 100,142 Q122,128 114,100 Q100,90 86,100 Z" fill={`url(#${id('jm')})`} />
+      <ellipse cx={CX} cy="128" rx="11" ry="6.5" fill="#1c140e" />
+      <ellipse cx={CX - 4} cy="126" rx="2.4" ry="1.5" fill="#6a5840" />
+      <ellipse cx={CX + 4} cy="127" rx="1.6" ry="1.1" fill="#6a5840" />
+      {SPOTS.map(([x, y, rx, ry], i) => (
+        <ellipse key={i} cx={x} cy={y} rx={rx} ry={ry} fill="#2a2118" opacity="0.9" />
+      ))}
+      <ellipse cx={CX - 10} cy="54" rx="16" ry="6" fill="#fff" opacity="0.22" transform={`rotate(-16 ${CX - 10} 54)`} />
 
-      {/* heavy sloping brows angled inward-down => sly menace */}
-      <path d={`M64,64 Q78,60 92,70`} stroke="#5a4b34" strokeWidth="5" fill="none" strokeLinecap="round" />
-      <path d={`M136,64 Q122,60 108,70`} stroke="#5a4b34" strokeWidth="5" fill="none" strokeLinecap="round" />
-      {[-1, 1].map(eye)}
+      <path d="M62,66 Q78,58 94,72" stroke="#4a3a2c" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M138,66 Q122,58 106,72" stroke="#4a3a2c" strokeWidth="5" fill="none" strokeLinecap="round" />
+      {[-1, 1].map((s) => (
+        <g key={`eye${s}`}>
+          <ellipse cx={CX + s * 20} cy="86" rx="12" ry="7" fill="#fff" transform={`rotate(${s * -8} ${CX + s * 20} 86)`} />
+          <path d={`M${CX + s * 20 - 13},84 Q${CX + s * 20},76 ${CX + s * 20 + 13},84 Z`} fill={`url(#${id('jh')})`} />
+          <circle cx={CX + s * 20 + 3.2} cy="88" r="4.2" fill="#241c12" />
+          <circle cx={CX + s * 20 + 1.4} cy="86.2" r="1.5" fill="#fff" />
+        </g>
+      ))}
 
-      {/* mouth */}
       {agit ? (
         <>
-          <path d={`M80,120 Q100,112 120,120 Q114,150 100,153 Q86,150 80,120 Z`} fill="#3a2216" />
-          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 14},120 L${CX + s * 9},132 L${CX + s * 4},120 Z`} fill="#fff" />)}
-          <ellipse cx={CX} cy="146" rx="8" ry="5" fill="#e58aa0" />
+          <path d="M80,126 Q100,116 120,126 Q112,156 100,160 Q88,156 80,126 Z" fill="#3a2216" />
+          {[-1, 1].map((s) => <path key={s} d={`M${CX + s * 14},126 L${CX + s * 8},140 L${CX + s * 2},126 Z`} fill="#fff" />)}
+          <ellipse cx={CX} cy="150" rx="8" ry="5" fill="#e58aa0" />
         </>
       ) : (
         <>
-          {/* sly asymmetric smirk + one bared fang */}
-          <path d={`M84,126 Q100,135 118,123`} stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
-          <path d={`M108,126 L112,135 L116,123 Z`} fill="#fff" />
+          <path d="M84,134 Q100,146 118,132" stroke="#3a2d1c" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+          <path d="M106,132 L111,144 L116,128 Z" fill="#fff" />
         </>
       )}
     </svg>

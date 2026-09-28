@@ -82,10 +82,10 @@ export default defineConfig({
         // precaching files that may not exist yet.
         runtimeCaching: [
           {
-            // School Path Meet paintings. Cached after the first view so a
-            // later offline lesson still has the picture, without putting
-            // the whole set in the atomic install.
-            urlPattern: /\/art\/meet\/.*\.webp$/,
+            // School Path Meet paintings and the Letter Runner cast.
+            // Cached after the first view so a later offline visit still
+            // has the picture, without putting the whole set in the install.
+            urlPattern: /\/art\/(meet|runner)\/.*\.webp$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'meet-heroes-v1',

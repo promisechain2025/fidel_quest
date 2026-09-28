@@ -260,8 +260,9 @@ export function FeedMeadow({ className = '' }) {
   )
 }
 
-/** 2D runner backdrop: the same highland road, quiet enough that the
-    gold gates in front stay the thing you tap. */
+/** 2D runner backdrop: a golden-hour highland road. The middle of the lane
+    stays open so the letter gates in front stay the thing you tap.
+    One quiet edge — no corner jewels. */
 export function LaneVista({ className = '' }) {
   const raw = useId().replace(/:/g, '')
   const id = (n) => `lane-${n}-${raw}`
@@ -269,58 +270,102 @@ export function LaneVista({ className = '' }) {
     <svg data-scene="lane" className={`h-full w-full ${className}`} viewBox="0 0 400 640" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id={id('sky')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#e8923a" />
-          <stop offset="16%" stopColor="#f6c56a" />
-          <stop offset="42%" stopColor="#f4e0bc" />
-          <stop offset="70%" stopColor="#9ec4ea" />
-          <stop offset="100%" stopColor="#e7f4ff" />
+          <stop offset="0%" stopColor="#5d86bc" />
+          <stop offset="28%" stopColor="#9ec0dc" />
+          <stop offset="52%" stopColor="#f3d09a" />
+          <stop offset="70%" stopColor="#fbe6c4" />
+          <stop offset="100%" stopColor="#f6edd4" />
         </linearGradient>
+        <radialGradient id={id('sun')} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fffce8" />
+          <stop offset="40%" stopColor="#ffe08a" />
+          <stop offset="100%" stopColor="#f0a040" />
+        </radialGradient>
         <linearGradient id={id('far')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#b7c6e4" />
-          <stop offset="100%" stopColor="#7f93b8" />
+          <stop offset="0%" stopColor="#c5d4e6" />
+          <stop offset="100%" stopColor="#7e92b0" />
         </linearGradient>
         <linearGradient id={id('esc')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d2b8c4" />
-          <stop offset="100%" stopColor="#6e586c" />
+          <stop offset="0%" stopColor="#e4d2c4" />
+          <stop offset="42%" stopColor="#b48978" />
+          <stop offset="100%" stopColor="#6e534c" />
+        </linearGradient>
+        <linearGradient id={id('hill')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c6d96a" />
+          <stop offset="100%" stopColor="#4e8a38" />
         </linearGradient>
         <linearGradient id={id('grass')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c6de78" />
-          <stop offset="100%" stopColor="#2f6a28" />
+          <stop offset="0%" stopColor="#d7e888" />
+          <stop offset="40%" stopColor="#6aaa44" />
+          <stop offset="100%" stopColor="#2c6424" />
         </linearGradient>
         <linearGradient id={id('road')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f0e0b8" />
-          <stop offset="100%" stopColor="#c4a36a" />
+          <stop offset="0%" stopColor="#f3e2bc" />
+          <stop offset="45%" stopColor="#d7b57a" />
+          <stop offset="100%" stopColor="#a87844" />
+        </linearGradient>
+        <linearGradient id={id('verge')} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#8a5a32" />
+          <stop offset="50%" stopColor="#e7d3a4" />
+          <stop offset="100%" stopColor="#8a5a32" />
         </linearGradient>
       </defs>
       <rect width="400" height="640" fill={`url(#${id('sky')})`} />
-      <circle cx="318" cy="78" r="28" fill="#ffe08a" />
-      <circle cx="318" cy="78" r="46" fill="#ffe08a" opacity="0.25" />
-      <ellipse cx="70" cy="64" rx="26" ry="11" fill="#fff" opacity="0.9" />
-      <ellipse cx="94" cy="58" rx="16" ry="9" fill="#f7fbff" />
-      <path d="M0 210 L40 160 L84 190 L130 148 L176 186 L224 140 L274 178 L324 146 L370 176 L400 158 L400 240 L0 240 Z" fill={`url(#${id('far')})`} />
-      <path d="M0 248 L36 214 L80 240 L128 200 L176 236 L230 196 L286 234 L340 202 L400 228 L400 280 L0 280 Z" fill={`url(#${id('esc')})`} />
-      <path d="M128 200 H176 M230 196 H286" stroke="#efe4d4" strokeWidth="1.5" opacity="0.5" />
-      <ellipse cx="200" cy="268" rx="180" ry="12" fill="#fff" opacity="0.28" />
-      <path d="M0 300 C80 270 140 310 400 268 L400 640 L0 640 Z" fill={`url(#${id('grass')})`} />
-      <path d="M118 300 L92 640 L308 640 L282 300 Z" fill={`url(#${id('road')})`} />
-      <path d="M200 320 V620" stroke="#d4c4a2" strokeWidth="2.5" strokeDasharray="14 20" opacity="0.55" />
-      <path d="M148 340 L132 630" stroke="#fff8dc" strokeWidth="2" opacity="0.35" />
-      <path d="M252 340 L268 630" stroke="#fff8dc" strokeWidth="2" opacity="0.35" />
+      <circle cx="308" cy="168" r="54" fill="#ffe08a" opacity="0.28" />
+      <circle cx="308" cy="168" r="22" fill={`url(#${id('sun')})`} />
       <g>
-        <rect x="36" y="286" width="7" height="36" rx="2" fill="#6b4428" />
-        <ellipse cx="40" cy="278" rx="22" ry="10" fill="#245c28" />
-        <ellipse cx="26" cy="288" rx="12" ry="7" fill="#3f8a3c" />
-        <ellipse cx="54" cy="286" rx="12" ry="7" fill="#67b255" />
+        <ellipse cx="58" cy="78" rx="32" ry="12" fill="#fff6ea" opacity="0.85" />
+        <ellipse cx="84" cy="72" rx="20" ry="13" fill="#fff" opacity="0.8" />
+        <ellipse cx="40" cy="82" rx="14" ry="8" fill="#f0e4d4" opacity="0.7" />
+        <ellipse cx="168" cy="96" rx="22" ry="8" fill="#fff8ee" opacity="0.55" />
+        <ellipse cx="188" cy="92" rx="14" ry="7" fill="#fff" opacity="0.6" />
+      </g>
+      {/* Far blue ridge, flat amba tops, a valley notch over the road. */}
+      <path d="M0 248 L0 196 L28 188 L58 198 L58 176 L108 176 L108 194 L150 186 L186 200 L214 188 L214 174 L268 174 L268 192 L314 184 L352 198 L400 186 L400 248 Z" fill={`url(#${id('far')})`} />
+      <path d="M58 176 H108 M214 174 H268" stroke="#f4f7fb" strokeWidth="1.4" opacity="0.55" />
+      <ellipse cx="200" cy="236" rx="190" ry="14" fill="#fff" opacity="0.28" />
+      {/* Warm escarpment in front of the blue, still flat-topped. */}
+      <path d="M0 292 L0 228 L46 220 L78 236 L78 208 L132 208 L132 230 L178 218 L220 236 L258 214 L258 200 L320 200 L320 224 L366 214 L400 228 L400 300 Z" fill={`url(#${id('esc')})`} />
+      <path d="M78 208 H132 M258 200 H320" stroke="#f6efe4" strokeWidth="1.6" opacity="0.5" />
+      <path d="M96 230 L104 258 M286 226 L294 252" stroke="#5c463c" strokeWidth="1.2" opacity="0.28" />
+      <ellipse cx="200" cy="286" rx="180" ry="12" fill="#fff6ea" opacity="0.35" />
+      <path d="M0 318 C90 286 150 324 400 292 L400 360 L0 360 Z" fill={`url(#${id('hill')})`} />
+      <path d="M0 348 C70 328 130 360 210 338 C290 316 340 352 400 332 L400 640 L0 640 Z" fill={`url(#${id('grass')})`} />
+      <path d="M0 420 C100 400 160 440 260 414 C330 396 360 430 400 416" fill="none" stroke="#e4ee9a" strokeWidth="10" opacity="0.22" strokeLinecap="round" />
+      <path d="M0 500 C120 478 180 520 280 492 C340 474 370 510 400 496" fill="none" stroke="#245c28" strokeWidth="12" opacity="0.12" strokeLinecap="round" />
+      {/* Packed-earth road, lighter in the distance, darker at the feet. */}
+      <path d="M168 332 L70 640 L330 640 L232 332 Z" fill={`url(#${id('road')})`} />
+      <path d="M168 332 L70 640 L92 640 L178 332 Z" fill={`url(#${id('verge')})`} opacity="0.35" />
+      <path d="M232 332 L330 640 L308 640 L222 332 Z" fill={`url(#${id('verge')})`} opacity="0.35" />
+      <path d="M200 348 L200 628" stroke="#f7f0dc" strokeWidth="3" strokeDasharray="16 22" opacity="0.55" />
+      <path d="M186 360 L112 630" stroke="rgba(255,248,230,0.35)" strokeWidth="2" />
+      <path d="M214 360 L288 630" stroke="rgba(255,248,230,0.35)" strokeWidth="2" />
+      {/* Edge acacia and a tukul, clear of the lane. */}
+      <g>
+        <rect x="28" y="300" width="6" height="34" rx="2" fill="#6b4428" />
+        <ellipse cx="31" cy="292" rx="26" ry="9" fill="#2f6a32" />
+        <ellipse cx="16" cy="300" rx="14" ry="7" fill="#3f8a3c" />
+        <ellipse cx="48" cy="298" rx="14" ry="7" fill="#67b255" />
+        <ellipse cx="26" cy="286" rx="10" ry="4" fill="#c6e6a4" opacity="0.55" />
       </g>
       <g>
-        <path d="M330 292 L346 270 L362 292 Z" fill="#c45a32" />
-        <rect x="338" y="292" width="16" height="14" fill="#8a6848" />
+        <ellipse cx="352" cy="318" rx="18" ry="4" fill="#5c4a38" opacity="0.25" />
+        <path d="M336 314 Q352 286 368 314 Z" fill="#c45a32" />
+        <path d="M342 302 Q352 286 362 302" fill="none" stroke="#e8c07a" strokeWidth="1.2" opacity="0.75" />
+        <rect x="346" y="312" width="12" height="12" fill="#8a6848" />
+      </g>
+      <g stroke="#245c28" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8">
+        <path d="M18 620 q3 -22 -1 -40" />
+        <path d="M28 624 q4 -20 0 -36" />
+        <path d="M372 618 q-3 -18 1 -34" />
+        <path d="M384 622 q2 -16 -1 -30" />
       </g>
       <g>
-        <circle cx="48" cy="560" r="4" fill="#ffd34d" />
-        <circle cx="48" cy="560" r="1.5" fill="#b4560a" />
-        <circle cx="352" cy="548" r="3.4" fill="#e24b6a" />
-        <circle cx="366" cy="572" r="2.6" fill="#ffd34d" />
+        <circle cx="36" cy="560" r="3.4" fill="#ffd34d" />
+        <circle cx="36" cy="560" r="1.3" fill="#b4560a" />
+        <circle cx="48" cy="578" r="2.4" fill="#fff" />
+        <circle cx="358" cy="552" r="3" fill="#e24b6a" />
+        <circle cx="372" cy="570" r="2.4" fill="#ffd34d" />
       </g>
       <Frame w={400} h={640} rx={28} />
     </svg>

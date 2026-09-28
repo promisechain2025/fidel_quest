@@ -18,9 +18,7 @@ import { ChevronLeft, Sparkles, Volume2, X } from 'lucide-react'
 import {
   Chunky,
   FOCUS,
-  Sprite2D,
   starPath,
-  drawHyena,
   drawZebra,
   formOf,
   runnerReducer,
@@ -47,6 +45,7 @@ import { Runner2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
+import { RUNNER_CAST } from './components/runnerCast'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
@@ -110,27 +109,179 @@ function skyTexture(skyNum) {
   tex.mapping = THREE.EquirectangularReflectionMapping
   tex.magFilter = THREE.LinearFilter
   tex.minFilter = THREE.LinearFilter
-  const horizon = mixSky(skyNum, 0.55, [255, 170, 72])
-  const high = mixSky(skyNum, 0.78, [255, 150, 48])
-  if (!g) return { tex, fog: rgbNum(horizon) }
+  // The chase camera only shows v about 0.37–0.50. Blue stays at the top of
+  // that band; the golden hour and the far escarpment live on the horizon.
+  const haze = mixSky(skyNum, 0.48, [255, 186, 112])
+  if (!g) return { tex, fog: rgbNum(haze) }
   const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   const grad = g.createLinearGradient(0, 0, 0, 256)
-  grad.addColorStop(0, css(high))
-  grad.addColorStop(0.36, css(high))
-  grad.addColorStop(0.46, css(horizon))
-  grad.addColorStop(1, css(horizon))
+  // Visible sky is only v 0.37–0.50. Keep that upper half blue; gold is the
+  // horizon, not a slab across the whole band.
+  grad.addColorStop(0, '#3d6eac')
+  grad.addColorStop(0.34, '#5e92c4')
+  grad.addColorStop(0.40, '#8eb6d4')
+  grad.addColorStop(0.455, '#f2c98a')
+  grad.addColorStop(0.50, css(haze))
+  grad.addColorStop(1, css(mixSky(skyNum, 0.55, [150, 108, 72])))
   g.fillStyle = grad
   g.fillRect(0, 0, 512, 256)
-  // Sun sits in the on-screen band (about 15 degrees above the horizon).
-  g.fillStyle = 'rgba(255, 214, 120, 0.45)'
+
+  // Wisps in the visible band, warm rather than paper-white.
+  g.fillStyle = 'rgba(255, 246, 230, 0.42)'
+  const puffs = [[64, 102, 40, 11], [92, 98, 24, 13], [150, 108, 22, 8], [214, 104, 30, 10], [246, 100, 16, 9]]
+  for (const [x, y, rx, ry] of puffs) {
+    g.beginPath()
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
+    g.fill()
+  }
+
+  // Low sun, soft halo, no hard rays. Sits about 14 degrees above the horizon.
+  const glow = g.createRadialGradient(392, 108, 4, 392, 108, 78)
+  glow.addColorStop(0, 'rgba(255, 250, 230, 0.95)')
+  glow.addColorStop(0.16, 'rgba(255, 214, 130, 0.55)')
+  glow.addColorStop(0.42, 'rgba(255, 176, 80, 0.16)')
+  glow.addColorStop(1, 'rgba(255, 176, 80, 0)')
+  g.fillStyle = glow
+  g.fillRect(300, 40, 180, 140)
+  const column = g.createLinearGradient(392, 88, 392, 136)
+  column.addColorStop(0, 'rgba(255, 210, 130, 0)')
+  column.addColorStop(0.55, 'rgba(255, 196, 110, 0.22)')
+  column.addColorStop(1, 'rgba(255, 186, 100, 0)')
+  g.fillStyle = column
+  g.fillRect(350, 88, 90, 48)
+
+  // Flat-topped highland line kissing the horizon, so the vista still reads
+  // when fog swallows the far meshes.
+  g.fillStyle = 'rgba(118, 132, 154, 0.78)'
   g.beginPath()
-  g.arc(400, 104, 26, 0, Math.PI * 2)
+  g.moveTo(0, 134)
+  g.lineTo(0, 122)
+  g.lineTo(36, 118)
+  g.lineTo(70, 124)
+  g.lineTo(70, 112)
+  g.lineTo(128, 112)
+  g.lineTo(128, 121)
+  g.lineTo(176, 116)
+  g.lineTo(220, 124)
+  g.lineTo(262, 114)
+  g.lineTo(318, 114)
+  g.lineTo(318, 122)
+  g.lineTo(372, 117)
+  g.lineTo(424, 126)
+  g.lineTo(468, 116)
+  g.lineTo(512, 121)
+  g.lineTo(512, 134)
+  g.closePath()
   g.fill()
-  g.fillStyle = '#fff6d2'
+  g.fillStyle = 'rgba(168, 132, 118, 0.45)'
   g.beginPath()
-  g.arc(400, 104, 11, 0, Math.PI * 2)
+  g.moveTo(0, 136)
+  g.lineTo(0, 128)
+  g.lineTo(48, 126)
+  g.lineTo(90, 130)
+  g.lineTo(140, 124)
+  g.lineTo(190, 130)
+  g.lineTo(250, 125)
+  g.lineTo(310, 131)
+  g.lineTo(380, 126)
+  g.lineTo(450, 132)
+  g.lineTo(512, 127)
+  g.lineTo(512, 136)
+  g.closePath()
   g.fill()
-  return { tex, fog: rgbNum(horizon) }
+  g.fillStyle = 'rgba(255, 232, 200, 0.38)'
+  g.beginPath()
+  g.ellipse(256, 130, 250, 9, 0, 0, Math.PI * 2)
+  g.fill()
+  return { tex, fog: rgbNum(haze) }
+}
+
+/* Highland turf and a packed-earth road. Painted once per place (turf) or
+   once per world (road). Repeat across the long ground plane. No Math.random:
+   the blotches are a fixed weave so a level always looks the same. */
+function paintRepeat(draw, w, h, repeatX, repeatY) {
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const g = c.getContext('2d')
+  if (g) draw(g, w, h)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(repeatX, repeatY)
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearFilter
+  return tex
+}
+function turfTexture(groundNum) {
+  const place = [(groundNum >> 16) & 255, (groundNum >> 8) & 255, groundNum & 255]
+  // Meadow first. The place tint is only a wash, so Lalibela stays green
+  // highland instead of a brown slab.
+  const grass = [86, 158, 58]
+  const base = grass.map((v, i) => Math.round(v * 0.72 + place[i] * 0.28))
+  const lift = (amt) => base.map((v) => Math.max(0, Math.min(255, v + amt)))
+  const css = (rgb) => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
+  return paintRepeat((g, w, h) => {
+    g.fillStyle = css(base)
+    g.fillRect(0, 0, w, h)
+    for (let i = 0; i < 36; i++) {
+      g.globalAlpha = 0.32
+      g.fillStyle = css(lift(i % 2 ? 34 : -26))
+      g.beginPath()
+      g.ellipse((i * 47) % w, (i * 83) % h, 16 + (i % 5) * 5, 8 + (i % 3) * 4, i * 0.4, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.globalAlpha = 0.75
+    g.strokeStyle = css(lift(40))
+    g.lineWidth = 1.6
+    g.lineCap = 'round'
+    for (let i = 0; i < 26; i++) {
+      const x = (i * 29) % w
+      const y = (i * 53) % h
+      g.beginPath()
+      g.moveTo(x, y + 12)
+      g.quadraticCurveTo(x + 4, y + 5, x - 1, y)
+      g.stroke()
+    }
+    g.globalAlpha = 1
+    g.fillStyle = '#e2c056'
+    for (let i = 0; i < 5; i++) {
+      g.beginPath()
+      g.arc((i * 70 + 24) % w, (i * 40 + 18) % h, 2, 0, Math.PI * 2)
+      g.fill()
+    }
+  }, 256, 256, 8, 30)
+}
+function dirtTexture() {
+  return paintRepeat((g, w, h) => {
+    const grad = g.createLinearGradient(0, 0, w, 0)
+    grad.addColorStop(0, '#a87444')
+    grad.addColorStop(0.14, '#d4b888')
+    grad.addColorStop(0.5, '#f0e0c0')
+    grad.addColorStop(0.86, '#d4b888')
+    grad.addColorStop(1, '#9a6840')
+    g.fillStyle = grad
+    g.fillRect(0, 0, w, h)
+    g.strokeStyle = 'rgba(110, 72, 36, 0.32)'
+    g.lineWidth = 3
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(w * 0.28, 0)
+    g.bezierCurveTo(w * 0.34, h * 0.3, w * 0.22, h * 0.62, w * 0.3, h)
+    g.stroke()
+    g.beginPath()
+    g.moveTo(w * 0.72, 0)
+    g.bezierCurveTo(w * 0.66, h * 0.35, w * 0.78, h * 0.7, w * 0.7, h)
+    g.stroke()
+    g.fillStyle = 'rgba(90, 58, 32, 0.28)'
+    for (let i = 0; i < 16; i++) {
+      g.beginPath()
+      g.ellipse((i * 23) % (w - 8) + 4, (i * 41) % (h - 8) + 4, 2 + (i % 3), 1.3, 0, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.fillStyle = 'rgba(255, 246, 226, 0.2)'
+    g.fillRect(w * 0.38, 0, w * 0.24, h)
+  }, 128, 256, 1, 16)
 }
 function charTexture(draw, mood) {
   return canvasTexture(256, (g, s) => draw(g, s, mood))
@@ -157,18 +308,26 @@ function ringTexture() {
 
 /* ── the runner characters ── */
 
-/* Anbessa and Jibby are real low-poly meshes in the runner (not billboard
-   sprites): chunky bodies from scaled spheres, legs that pivot at the hip so
-   they can pump, and a soft blob shadow that grounds them on the track. Both
-   are built feet-at-origin facing -Z (down the road, away from the chase
-   camera) like every classic kids' runner. */
+/* Anbessa and Jibby are picture-book paintings (the same warm gouache
+   language as the School Path Meet animals). They run away from the
+   chase camera: backs, ears, and gait, feet on the group origin.
+   Ear, tail, and leg groups stay so the run loop and setMood keep
+   working. Cast textures are shared by every Jibby, so disposeGroup
+   must not free them. */
 
-function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
-  m.position.set(x, y, z)
-  m.scale.set(sx, sy, sz)
-  parent.add(m)
-  return m
+const CAST_TEX = new Set()
+
+function loadCastTexture(url) {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      tex.magFilter = THREE.LinearFilter
+      tex.minFilter = THREE.LinearMipmapLinearFilter
+      tex.generateMipmaps = true
+      CAST_TEX.add(tex)
+      resolve(tex)
+    }, undefined, reject)
+  })
 }
 
 function blobShadow(group, r) {
@@ -181,113 +340,40 @@ function blobShadow(group, r) {
   group.add(m)
 }
 
-function legAt(parent, x, y, z, r, h, color) {
-  const leg = new THREE.Group()
-  leg.position.set(x, y, z)
-  cyl(leg, r, r + 0.01, h, color, 0, -h / 2, 0)
-  sphAt(leg, r + 0.02, color, 0, -h, -0.02, 1, 0.7, 1.15)
-  parent.add(leg)
-  return leg
-}
-
-function buildRunnerLion() {
+function buildPictureAnimal(tex) {
   const group = new THREE.Group()
-  blobShadow(group, 0.46)
+  blobShadow(group, 0.5)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [[-0.15, 0.16], [0.15, 0.16], [-0.15, -0.14], [0.15, -0.14]]
-    .map(([lx, lz]) => legAt(body, lx, 0.44, lz, 0.065, 0.42, 0xe08300))
-  sphAt(body, 0.34, 0xf7a83c, 0, 0.64, 0.03, 1, 1.02, 1.3)
-  // his signature star on the rump
-  const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
-    starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
-    g.fillStyle = '#ffc800'
-    g.fill()
-    g.lineWidth = 6
-    g.strokeStyle = '#e0a400'
-    g.stroke()
-  }), transparent: true }))
-  star.scale.set(0.28, 0.28, 1)
-  star.position.set(-0.18, 0.74, 0.52)
-  body.add(star)
-  // tail up and wagging when happy; setMood droops it
+  const img = tex.image
+  const aspect = (img && img.width && img.height) ? img.width / img.height : 0.85
+  const h = 1.22
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.08,
+    depthWrite: false,
+    // The billboard's depth is the paws. The road between the camera and
+    // those paws was winning the depth test and painting a flat plate
+    // across the torso. The cubs stay in front of the ground.
+    depthTest: false,
+  }))
+  // Bottom of the painting (the paws) sits on the ground.
+  sprite.center.set(0.5, 0)
+  sprite.scale.set(h * aspect, h, 1)
+  sprite.position.set(0, 0.02, 0)
+  sprite.renderOrder = 2
+  body.add(sprite)
   const tail = new THREE.Group()
-  tail.position.set(0.12, 0.7, 0.34)
-  tail.rotation.x = 0.3
-  tail.rotation.z = -0.7
-  cyl(tail, 0.04, 0.05, 0.45, 0xe08300, 0, 0.22, 0)
-  sphAt(tail, 0.08, 0x8a5a00, 0, 0.47, 0)
-  body.add(tail)
-  // head straight down the road: the mane halo IS the silhouette
-  const head = new THREE.Group()
-  head.position.set(0, 1.08, -0.06)
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2
-    sphAt(head, 0.125, 0xd97706, Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0.02, 1, 1, 0.7)
-  }
-  sphAt(head, 0.24, 0xf7a83c, 0, 0, -0.04)
-  // ears poke out past the mane; groups so the worried droop carries the pinks
-  const ears = [-1, 1].map((side) => {
-    const ear = new THREE.Group()
-    ear.position.set(side * 0.26, 0.3, 0)
-    sphAt(ear, 0.1, 0xf7a83c, 0, 0, 0, 1, 1, 0.6)
-    sphAt(ear, 0.05, 0xffb7c5, 0, 0.01, 0.06, 1, 1, 0.5)
-    head.add(ear)
-    return ear
+  const earL = new THREE.Group()
+  const earR = new THREE.Group()
+  body.add(tail, earL, earR)
+  const legs = [0, 1, 2, 3].map(() => {
+    const leg = new THREE.Group()
+    body.add(leg)
+    return leg
   })
-  body.add(head)
-  return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
-}
-
-function buildRunnerHyena() {
-  const coat = 0x9a8b76, dark = 0x6e614f, crest = 0x57493a, belly = 0xc9b99d
-  const group = new THREE.Group()
-  blobShadow(group, 0.42)
-  const body = new THREE.Group()
-  group.add(body)
-  const legs = [[-0.14, 0.18], [0.14, 0.18], [-0.14, -0.16], [0.14, -0.16]]
-    .map(([lx, lz]) => legAt(body, lx, 0.4, lz, 0.055, 0.38, dark))
-  // sloped torso: haunches low at the rear, shoulders high at the front
-  sphAt(body, 0.32, coat, 0, 0.6, 0.04, 1, 0.95, 1.4).rotation.x = 0.16
-  // dorsal crest down the spine
-  for (let i = 0; i < 5; i++) {
-    cone(body, 0.05, 0.16, crest, 0, 0.99 - i * 0.04, -0.25 + i * 0.15)
-  }
-  // spots on the haunches
-  for (const [sx, sy, sz] of [[-0.2, 0.7, 0.22], [0.22, 0.66, 0.18], [-0.16, 0.52, 0.3], [0.14, 0.5, 0.32], [0.02, 0.62, 0.38]]) {
-    sphAt(body, 0.045, dark, sx, sy, sz, 1, 1, 0.5)
-  }
-  const tail = new THREE.Group()
-  tail.position.set(0.08, 0.56, 0.42)
-  tail.rotation.x = -0.7
-  tail.rotation.z = -0.35
-  cyl(tail, 0.035, 0.045, 0.3, crest, 0, 0.14, 0)
-  sphAt(tail, 0.065, crest, 0, 0.3, 0)
-  body.add(tail)
-  // head turned to flash the grin back down the road
-  const head = new THREE.Group()
-  head.position.set(0, 0.98, -0.36)
-  head.rotation.y = 1.15
-  sphAt(head, 0.22, coat, 0, 0, -0.02)
-  for (const side of [-1, 1]) {
-    sphAt(head, 0.105, 0x8a7d6a, side * 0.16, 0.2, 0.02, 1, 1.15, 0.5)
-    sphAt(head, 0.055, crest, side * 0.16, 0.2, -0.02, 1, 1.15, 0.5)
-  }
-  sphAt(head, 0.115, belly, 0, -0.06, -0.2, 0.85, 0.7, 1.05)
-  sphAt(head, 0.04, 0x3a2d1c, 0, -0.02, -0.31)
-  // open grin: dark mouth band + teeth
-  sphAt(head, 0.09, 0x3a2216, 0, -0.125, -0.2, 0.9, 0.45, 0.95)
-  for (const tx of [-0.05, 0, 0.05]) {
-    cone(head, 0.018, 0.05, 0xffffff, tx, -0.135, -0.285).rotation.x = Math.PI
-  }
-  // eyes + heavy mischievous brows
-  for (const side of [-1, 1]) {
-    sphAt(head, 0.045, 0xffffff, side * 0.1, 0.06, -0.185)
-    sphAt(head, 0.022, 0x241c12, side * 0.1, 0.055, -0.225)
-    cyl(head, 0.015, 0.015, 0.09, crest, side * 0.1, 0.125, -0.19).rotation.z = Math.PI / 2 - side * 0.25
-  }
-  body.add(head)
-  return { group, body, legs, tail }
+  return { group, body, legs, tail, earL, earR }
 }
 
 /* Diagonal leg pairs swing in opposite phase - a simple believable run. */
@@ -333,12 +419,18 @@ function sph(g, r, color, x, y, z) {
 /* A meskel tuft on the track shoulder. One or two per chunk; skipped density
    on the low-end tier so the extra cones stay a handful. */
 function grassTuft(g, x, z) {
-  cone(g, 0.16, 0.48, 0x2f6a32, x, 0.24, z, 5)
-  cone(g, 0.12, 0.36, 0x67b255, x + 0.18, 0.18, z + 0.06, 5)
-  cone(g, 0.045, 0.1, 0xffd34d, x + 0.02, 0.5, z, 4)
+  const greens = [0x2f6a32, 0x4e8a3c, 0x67b255, 0x3d7a34, 0x8fbe58]
+  greens.forEach((c, i) => {
+    const blade = cone(g, 0.045, 0.38 + (i % 3) * 0.08, c, x + (i - 2) * 0.09, 0.18, z + ((i % 2) - 0.5) * 0.06, 4)
+    blade.rotation.z = (i - 2) * 0.16
+  })
+  cone(g, 0.035, 0.08, 0xffd34d, x, 0.46, z, 4)
 }
 
-const isSharedMat = (m) => { for (const v of MATS.values()) if (v === m) return true; return false }
+const isSharedMat = (m) => {
+  for (const v of MATS.values()) if (v === m) return true
+  return false
+}
 /** Free the GPU resources of a group before dropping it. three.js does NOT
     reclaim geometry/texture buffers on scene.remove(), so gates (rebuilt every
     question) and chunks (rebuilt every level) leak without this. Per-instance
@@ -351,7 +443,7 @@ function disposeGroup(root) {
     const mats = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : []
     for (const m of mats) {
       if (isSharedMat(m)) continue // never dispose the shared colour cache
-      if (m.map && m.map !== ZEBRA_TEX) m.map.dispose() // shared zebra texture stays
+      if (m.map && m.map !== ZEBRA_TEX && !CAST_TEX.has(m.map)) m.map.dispose() // shared zebra + cast paintings stay
       m.dispose()
     }
   })
@@ -360,8 +452,10 @@ function disposeGroup(root) {
 /* ── procedural landmarks; i is the chunk index for deterministic variety ── */
 
 function acacia(g, x, z, s = 1) {
-  cyl(g, 0.12 * s, 0.2 * s, 2.2 * s, 0x6b4a2d, x, 1.1 * s, z, 6)
-  cone(g, 2.1 * s, 0.9 * s, 0x4f7a34, x, 2.6 * s, z, 9)
+  cyl(g, 0.1 * s, 0.18 * s, 2.4 * s, 0x6b4a2d, x, 1.2 * s, z, 6)
+  // Flat highland canopy, not a pine spike.
+  cone(g, 2.3 * s, 0.62 * s, 0x3f6e30, x, 2.5 * s, z, 10)
+  cone(g, 1.5 * s, 0.4 * s, 0x6a9a48, x, 2.78 * s, z, 9)
 }
 function palm(g, x, z, s = 1) {
   cyl(g, 0.1 * s, 0.18 * s, 3 * s, 0x8a6a45, x, 1.5 * s, z, 6)
@@ -404,17 +498,38 @@ function chunkAksum(g, i) {
   if (i % 2 === 0) zebraAt(g, 15 + ((i * 5) % 4), -20, 2)
 }
 
+/* Flat-topped amba. y is the ground; the cap is the pale cliff lip. */
+function plateau(g, x, z, w, h, d, rock, cap) {
+  box(g, w, h, d, rock, x, h / 2, z)
+  box(g, w * 0.64, Math.max(0.4, h * 0.28), d * 0.64, cap, x, h + h * 0.1, z)
+}
+
+/* Static valley the road runs into. Side walls frame the lanes; the center
+   stays open so letter gates keep a clear line to the horizon. */
+function buildHighlandVista() {
+  const g = new THREE.Group()
+  // Far blue ridge, then olive slopes with a tan cliff lip. Not gray blocks.
+  plateau(g, -26, -118, 32, 14, 14, 0x6e8eae, 0xc5dcc0)
+  plateau(g, 28, -124, 30, 12, 12, 0x7a96b4, 0xd5e4c8)
+  plateau(g, 0, -108, 18, 4.2, 10, 0x7aaa48, 0xd4e6a4)
+  plateau(g, -30, -52, 14, 8, 16, 0x5f8a3e, 0xe4d2a8)
+  plateau(g, 32, -56, 13, 7.5, 14, 0x6a9448, 0xe8d4aa)
+  plateau(g, -18, -36, 7, 3.4, 6, 0x78b050, 0xdce8a8)
+  plateau(g, 19, -32, 6.5, 3, 5.5, 0x78b050, 0xdce8a8)
+  acacia(g, -15, -26, 1.15)
+  acacia(g, 16, -42, 1)
+  return g
+}
+
 function chunkSimien(g, i) {
-  // Highland escarpment: layered peaks pushed out beyond the track.
+  // Roadside amba you pass, off the lanes. The far valley is the static vista.
   for (const side of [-1, 1]) {
-    cone(g, 9 + ((i * 3 + side) % 4), 11 + ((i * 7) % 6), 0x55794a, side * (22 + ((i * 5) % 6)), 5, -26, 7)
-    cone(g, 6, 8, 0x6b8f5b, side * 16, 3.6, -44, 6)
-    cone(g, 3.4, 4, 0x7fa06a, side * 12, 1.9, -8, 6)
+    const x = side * (17 + ((i * 3) % 4))
+    plateau(g, x, -18 - ((i * 5) % 10), 7, 4.5 + ((i + side + 4) % 3), 6, 0x6d8a52, 0xb7c8a0)
+    plateau(g, side * (25 + ((i * 2) % 3)), -38, 9, 6 + (i % 3), 8, 0x5c6c56, 0xc8b8a4)
   }
-  sph(g, 0.8, 0x8a9a7a, 8, 0.3, -36)
-  sph(g, 0.6, 0x8a9a7a, -7, 0.25, -16)
-  acacia(g, 10 + ((i * 3) % 3), -50, 0.8)
-  if (i % 3 === 0) zebraAt(g, -12, -28, 1.8)
+  acacia(g, 12 + ((i * 3) % 3), -50, 0.8)
+  if (i % 3 === 0) zebraAt(g, -13, -26, 1.8)
 }
 
 function chunkGondar(g, i) {
@@ -482,40 +597,49 @@ const CHUNK_BUILDERS = {
 /* ── the world ── */
 
 class RunnerWorld {
-  constructor(canvas, onGate) {
+  constructor(canvas, onGate, cast) {
     this.onGate = onGate
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_END })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
-    // Classic centered chase camera, straight down the track. The run
-    // sprites are drawn from behind at three-quarter (glancing back over
-    // the shoulder), so Anbessa faces the letter gates by construction and
-    // the lanes line up with the screen: left lane is left of the screen.
-    this.camera.position.set(0, 3.9, 7.2)
-    this.camera.lookAt(0, 1.1, -11)
+    // Classic centered chase camera, straight down the track. The cubs
+    // are painted from behind, running away toward the gates, so the
+    // lanes line up with the screen: left lane is left of the screen.
+    this.camera.position.set(0, 2.75, 4.15)
+    this.camera.lookAt(0, 1.0, -7)
 
-    this.scene.add(new THREE.HemisphereLight(0xfff2d8, 0x6a7a48, 1.15))
-    const sun = new THREE.DirectionalLight(0xfff2d8, 1.4)
+    this.scene.add(new THREE.HemisphereLight(0xfff8e8, 0x6a9a48, 1.35))
+    const sun = new THREE.DirectionalLight(0xfff4d4, 1.65)
     sun.position.set(-6, 12, 4)
     this.scene.add(sun)
 
     this.skyMap = null
 
-    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), new THREE.MeshLambertMaterial({ color: 0x888888 }))
+    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 560), mat(0x6a8a48))
     this.ground.rotation.x = -Math.PI / 2
     this.ground.position.z = -200
     this.scene.add(this.ground)
-    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ color: 0xe6d3ae }))
+    this._turfMat = null
+    this.track = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 560), new THREE.MeshLambertMaterial({ map: dirtTexture() }))
     this.track.rotation.x = -Math.PI / 2
-    this.track.position.set(0, 0.02, -200)
+    this.track.position.set(0, 0.03, -200)
     this.scene.add(this.track)
+    // Green shoulders so the packed-earth road reads against meadow, even
+    // when a place's ground colour is red rock.
+    for (const side of [-1, 1]) {
+      const verge = new THREE.Mesh(new THREE.PlaneGeometry(12, 560), mat(0x6aaa40))
+      verge.rotation.x = -Math.PI / 2
+      verge.position.set(side * 10.2, 0.018, -200)
+      this.scene.add(verge)
+    }
+    this.vista = buildHighlandVista()
+    this.scene.add(this.vista)
 
-    // Anbessa as a real low-poly mesh (feet at the group origin), seen from
-    // behind running toward the letters.
-    this.playerChar = buildRunnerLion()
+    // Picture-book cub, feet at the group origin, running away up the road.
+    this.playerChar = buildPictureAnimal(cast.anbessa)
     this.player = this.playerChar.group
-    this.player.scale.setScalar(1.9)
+    this.player.scale.setScalar(1.95)
     this.player.position.set(0, 0, 0)
     this.scene.add(this.player)
 
@@ -537,19 +661,21 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchChar = buildRunnerHyena()
+    this.munchChar = buildPictureAnimal(cast.jibby)
     this.muncher = this.munchChar.group
-    this.muncher.scale.setScalar(1.75)
-    this.muncher.position.set(1.4, 0, 3.9)
+    // Beside Anbessa at the same depth, so a phone chase frame shows his
+    // whole spotted body. z near the camera cropped him to a sliver.
+    this.muncher.scale.setScalar(1.62)
+    this.muncher.position.set(1.62, 0, 0.15)
     this.scene.add(this.muncher)
-    this._munchScale = 1.75
+    this._munchScale = 1.62
 
     // Extra hyenas that join the chase as wrong answers pile up, so the pressure
     // is visible: one more Jibby per mistake, closing in, and swarming Anbessa
     // when the boss round is lost.
     this.extras = []
     for (let i = 0; i < 3; i++) {
-      const char = buildRunnerHyena()
+      const char = buildPictureAnimal(cast.jibby)
       const sp = char.group
       sp.scale.setScalar(0)
       sp.position.set(0, 0, 7.5)
@@ -575,9 +701,15 @@ class RunnerWorld {
     const sky = skyTexture(place.sky)
     this.skyMap = sky.tex
     this.scene.background = this.skyMap
-    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0], place.fog[1])
+    this.scene.fog = new THREE.Fog(sky.fog, place.fog[0] + 28, place.fog[1])
     if (prevSky) prevSky.dispose()
-    this.ground.material = mat(place.ground)
+    const prevTurf = this._turfMat
+    this._turfMat = new THREE.MeshLambertMaterial({ map: turfTexture(place.ground) })
+    this.ground.material = this._turfMat
+    if (prevTurf) {
+      prevTurf.map?.dispose()
+      prevTurf.dispose()
+    }
     for (const c of this.chunks) { this.scene.remove(c); disposeGroup(c) }
     this.chunks = []
     const build = CHUNK_BUILDERS[place.builder] || CHUNK_BUILDERS[place.id]
@@ -587,10 +719,12 @@ class RunnerWorld {
       const side = k % 2 === 0 ? -1 : 1
       grassTuft(g, side * 5.15, -8)
       if (!LOW_END) grassTuft(g, -side * 5.25, -28)
-      // lane dashes ride along in the chunk so the ground reads as moving
+      // Pale shoulder and lane dashes ride in the chunk so the road reads as moving.
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, -3.55, 0.055, -CHUNK / 2)
+      box(g, 0.16, 0.02, CHUNK * 0.92, 0xf3e6c8, 3.55, 0.055, -CHUNK / 2)
       for (let d = 0; d < 6; d++) {
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, -1.2, 0.05, -4 - d * 8)
-        box(g, 0.18, 0.02, 1.6, 0xd4c4a2, 1.2, 0.05, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, -1.15, 0.06, -4 - d * 8)
+        box(g, 0.16, 0.02, 1.5, 0xf7f0dc, 1.15, 0.06, -4 - d * 8)
       }
       g.position.z = -k * CHUNK + 10
       this.scene.add(g)
@@ -603,17 +737,19 @@ class RunnerWorld {
     const g = new THREE.Group()
     for (let lane = 0; lane < 3; lane++) {
       const form = INDEXES.byAudioKey.get(options[lane])
+      // Overhead, above the cubs. A sign at chest height in the center
+      // lane sits on Anbessa in the chase view.
       const sign = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.4, 2.4),
-        new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true }),
+        new THREE.PlaneGeometry(1.55, 1.55),
+        new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true, depthWrite: false }),
       )
-      sign.position.set(LANE_X[lane], 1.95, 0)
+      sign.position.set(LANE_X[lane], 3.45, 0)
       g.add(sign)
-      cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
+      cyl(g, 0.07, 0.07, 1.15, 0x8a6a45, LANE_X[lane], 2.55, 0, 6)
     }
-    box(g, 8.4, 0.18, 0.18, 0xc4a36a, 0, 3, 0)
-    cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
-    cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
+    box(g, 8.4, 0.16, 0.16, 0xc4a36a, 0, 4.28, 0)
+    cyl(g, 0.09, 0.09, 4.3, 0x8a6a45, -4.1, 2.15, 0, 6)
+    cyl(g, 0.09, 0.09, 4.3, 0x8a6a45, 4.1, 2.15, 0, 6)
     g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false
@@ -666,11 +802,10 @@ class RunnerWorld {
     this.player.rotation.z = Math.max(-0.22, Math.min(0.22, -steer * 0.35))
 
     // The Muncher: closer with every wrong feed; lunges or flees at the boss.
-    // Baseline sits at the bottom edge of the centered chase camera (ears and
-    // grin looming into frame); every wrong feed brings him up toward Anbessa.
-    let mz = 3.9 - this.threat * 0.75
+    // Rest pose stays in frame beside Anbessa. Each miss steps him forward.
+    let mz = 0.15 - this.threat * 0.06
     let my = 0
-    if (this.bossMode === 'lose') mz = 0.4
+    if (this.bossMode === 'lose') mz = 0.02
     if (this.bossMode === 'win') {
       mz = 10.5
       my = 4
@@ -678,12 +813,12 @@ class RunnerWorld {
     this.muncher.position.z += (mz - this.muncher.position.z) * Math.min(1, dt * (this.bossMode ? 4 : 2.5))
     // Chase from the right shoulder so he never hides Anbessa; pile straight
     // on when the boss round is lost.
-    const mx = this.player.position.x * 0.75 + (this.bossMode === 'lose' ? 0 : 1.15)
+    const mx = this.player.position.x * 0.45 + (this.bossMode === 'lose' ? 0.1 : 1.58)
     this.muncher.position.x += (mx - this.muncher.position.x) * Math.min(1, dt * 2)
     this.muncher.position.y += (my - this.muncher.position.y) * Math.min(1, dt * 3)
     this.munchChar.body.position.y = this.reduced ? 0 : Math.abs(Math.sin(this.t * 7)) * 0.08
     if (!this.reduced) runnerLegSwing(this.munchChar.legs, this.t * 10.5, 0.6)
-    const mscale = this.bossMode === 'lose' ? 2.9 : 1.75
+    const mscale = this.bossMode === 'lose' ? 2.15 : 1.62
     this._munchScale += (mscale - this._munchScale) * Math.min(1, dt * 4)
     // Jibby leans toward the lion he is chasing.
     this.muncher.rotation.z = Math.max(-0.24, Math.min(0.24, (this.player.position.x - this.muncher.position.x) * 0.18))
@@ -732,11 +867,11 @@ class RunnerWorld {
     // Readable from behind: worried droops the ears sideways and the tail down.
     const c = this.playerChar
     for (const [ear, side] of [[c.earL, -1], [c.earR, 1]]) {
-      ear.position.y = worried ? 0.24 : 0.3
-      ear.rotation.z = worried ? side * -0.9 : 0
+      ear.position.y = worried ? 0.16 : 0.3
+      ear.rotation.z = worried ? side * -0.75 : side * -0.35
     }
-    c.tail.rotation.x = worried ? 1.6 : 0.3
-    c.tail.rotation.z = worried ? -0.2 : -0.7
+    c.tail.rotation.x = worried ? 1.25 : 0.35
+    c.tail.rotation.z = worried ? 0.15 : 0.55
   }
 
   resize(w, h) {
@@ -746,6 +881,7 @@ class RunnerWorld {
   }
 
   dispose() {
+    if (this.disposed) return
     this.disposed = true
     // renderer.dispose() alone leaves uploaded geometry/texture buffers; walk
     // the whole scene freeing per-instance resources first (shared MATS + zebra
@@ -753,6 +889,8 @@ class RunnerWorld {
     if (this.skyMap) { this.skyMap.dispose(); this.skyMap = null }
     this.scene.background = null
     disposeGroup(this.scene)
+    for (const tex of CAST_TEX) tex.dispose()
+    CAST_TEX.clear()
     this.renderer.dispose()
   }
 }
@@ -769,12 +907,15 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   const [lane, setLane] = useState(1)
   const [speedName, setSpeedName] = useState(loadRunnerSpeed)
   const [webglOk, setWebglOk] = useState(true)
+  const [castReady, setCastReady] = useState(false)
   const [banner, setBanner] = useState(true)
   const [demo, setDemo] = useState(() => !hasOnboarded('runner') && !prefersReducedMotion())
   const demoRef = useRef(demo)
   demoRef.current = demo
   const [hand, setHand] = useState({ x: null, y: null })
   const [yourTurn, setYourTurn] = useState(false)
+  const speedRef = useRef(speedName)
+  speedRef.current = speedName
   const endDemo = useCallback(() => {
     markOnboarded('runner')
     setDemo(false)
@@ -809,56 +950,106 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     })
   }, [])
 
-  // World lifecycle.
+  // World lifecycle. Paintings load first so the cubs are on the road
+  // before the first frame, then the same place/speed/question the mount
+  // effects would have applied (those run before the textures resolve).
   useEffect(() => {
     let world
-    try {
-      world = new RunnerWorld(canvasRef.current, (laneIdx) => {
-        const q = selectRunnerQuestion(ctxRef.current)
-        if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
-      })
-    } catch {
-      // Remember 3D is not viable so every future arcade entry routes straight
-      // to the 2D fallback instead of re-failing here.
-      savePerf('low')
-      setWebglOk(false)
-      return undefined
-    }
-    worldRef.current = world
-    world.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
     let raf
-    let last = performance.now()
-    const loop = (now) => {
-      const dt = Math.min(0.05, (now - last) / 1000)
-      last = now
-      const st = ctxRef.current.status
-      try {
-        world.tick(dt, st === RunnerState.RUNNING)
-      } catch {
-        // A mid-run WebGL context loss makes render throw; drop to the 2D
-        // fallback rather than freezing the loop (and the game) silently.
-        savePerf('low')
-        setWebglOk(false)
-        return
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
+    let cancelled = false
     const ro = new ResizeObserver(() => {
       const r = wrapRef.current?.getBoundingClientRect()
-      if (r) world.resize(r.width, r.height)
+      if (r && world) world.resize(r.width, r.height)
     })
-    ro.observe(wrapRef.current)
+    if (wrapRef.current) ro.observe(wrapRef.current)
     const onKey = (e) => {
       if (e.key === 'ArrowLeft') steer(-1)
       if (e.key === 'ArrowRight') steer(1)
     }
     window.addEventListener('keydown', onKey)
+    ;(async () => {
+      let cast
+      try {
+        const [anbessa, jibby] = await Promise.all([
+          loadCastTexture(RUNNER_CAST.anbessaChase),
+          loadCastTexture(RUNNER_CAST.jibbyChase),
+        ])
+        cast = { anbessa, jibby }
+      } catch {
+        savePerf('low')
+        if (!cancelled) setWebglOk(false)
+        return
+      }
+      if (cancelled || !canvasRef.current) {
+        cast.anbessa.dispose()
+        cast.jibby.dispose()
+        CAST_TEX.delete(cast.anbessa)
+        CAST_TEX.delete(cast.jibby)
+        return
+      }
+      try {
+        world = new RunnerWorld(canvasRef.current, (laneIdx) => {
+          const q = selectRunnerQuestion(ctxRef.current)
+          if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
+        }, cast)
+      } catch {
+        // Remember 3D is not viable so every future arcade entry routes straight
+        // to the 2D fallback instead of re-failing here.
+        savePerf('low')
+        if (!cancelled) setWebglOk(false)
+        return
+      }
+      if (cancelled) {
+        world.dispose()
+        return
+      }
+      const st = ctxRef.current
+      world.setPlace(placeForLevel(st.level))
+      world.setSpeed(RUNNER_SPEEDS[speedRef.current] ?? 1)
+      world.speed = Math.min(30, 16 + (st.level - 1) * 2.2)
+      world.threat = st.wrong
+      world.power = st.correct
+      if (st.status === RunnerState.RUNNING) {
+        const q = selectRunnerQuestion(st)
+        if (q) {
+          world.setQuestion(q.options)
+          // The machine effect ran before the paintings loaded, so the
+          // first call-out happens here instead of being skipped.
+          playForm(formOf(q.target), soundOn)
+        }
+        world.setMood(false)
+      } else if (st.status === RunnerState.BOSS) {
+        world.bossMode = st.survivedBoss ? 'win' : 'lose'
+        world.setMood(!st.survivedBoss)
+      }
+      worldRef.current = world
+      setCastReady(true)
+      const r = wrapRef.current?.getBoundingClientRect()
+      if (r) world.resize(r.width, r.height)
+      let last = performance.now()
+      const loop = (now) => {
+        const dt = Math.min(0.05, (now - last) / 1000)
+        last = now
+        const status = ctxRef.current.status
+        try {
+          world.tick(dt, status === RunnerState.RUNNING)
+        } catch {
+          // A mid-run WebGL context loss makes render throw; drop to the 2D
+          // fallback rather than freezing the loop (and the game) silently.
+          savePerf('low')
+          setWebglOk(false)
+          return
+        }
+        raf = requestAnimationFrame(loop)
+      }
+      raf = requestAnimationFrame(loop)
+    })()
     return () => {
-      cancelAnimationFrame(raf)
+      cancelled = true
+      if (raf) cancelAnimationFrame(raf)
       ro.disconnect()
       window.removeEventListener('keydown', onKey)
-      world.dispose()
+      world?.dispose()
       worldRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -878,7 +1069,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     setBanner(true)
     const t = setTimeout(() => setBanner(false), 1900)
     return () => clearTimeout(t)
-  }, [ctx.level, webglOk]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx.level, webglOk, castReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Machine-state side effects drive the 3D scene.
   useEffect(() => {
@@ -1064,7 +1255,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
 function Muncher({ size = 56 }) {
   return (
     <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
-      <Sprite2D draw={drawHyena} size={size} />
+      <img src={RUNNER_CAST.jibbyFront} alt="" draggable={false} style={{ height: size, width: 'auto' }} />
     </motion.div>
   )
 }
