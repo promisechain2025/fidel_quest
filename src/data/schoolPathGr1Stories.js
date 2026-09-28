@@ -19,17 +19,17 @@ const GRANDMA = { k: 'person', robe: true, head: 'scarf', headColor: '#6d84c9', 
    these stamps are the code-drawn stand-in already used by Story Time. */
 const ART = {
   'where-is-sam': {
-    pics: ['🧒', '☕', '💧', '🛏️', '🐶'],
+    pics: ['🧒', '☕', '🏠', '🛏️', '🐶'],
     scenes: [
       { bg: 'indoor', items: [{ ...KID, x: 0.42, foot: 0.78, s: 0.34 }] },
       { bg: 'kitchen', items: [{ k: 'pot', x: 0.55, y: 0.48, s: 0.28 }] },
-      { bg: 'indoor', items: [{ k: 'water', x: 0.55, y: 0.5, s: 0.28 }] },
+      { bg: 'day', items: [{ k: 'house', x: 0.55, y: 0.48, s: 0.36 }] },
       { bg: 'indoor', items: [{ k: 'zzz', x: 0.62, y: 0.36, s: 0.16 }] },
       { bg: 'indoor', items: [{ ...KID, x: 0.36, foot: 0.78, s: 0.32 }, { k: 'dog', x: 0.68, y: 0.58, s: 0.28 }] },
     ],
     question: {
       en: 'Who is with Sam at the end?',
-      a: [{ pic: '🐶', ok: true }, { pic: '☕', ok: false }, { pic: '💧', ok: false }],
+      a: [{ pic: '🐶', ok: true }, { pic: '☕', ok: false }, { pic: '🏠', ok: false }],
     },
   },
   'walk-to-school': {

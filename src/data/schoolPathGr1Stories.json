@@ -11,46 +11,46 @@
     {
       "id": "where-is-sam",
       "titleEn": "Where Is Sam?",
-      "titleTi": "ሳም ኣበይ ኣሎ?",
-      "latinTitle": "Sam abey alo?",
+      "titleTi": "ሴም ኣበይ ኣሎ?",
+      "latinTitle": "Sem abey alo?",
       "unlockAfterUnitId": "u09",
       "refrain": {
-        "geez": "ሳም ኣበይ ኣሎ?",
+        "geez": "ሴም ኣበይ ኣሎ?",
         "meaningEn": "Where is Sam?",
         "familyIds": ["se", "me", "a", "be", "ye", "le"]
       },
       "pages": [
         {
-          "geez": "ሳም ኣበይ ኣሎ?",
-          "latin": "Sam abey alo?",
+          "geez": "ሴም ኣበይ ኣሎ?",
+          "latin": "Sem abey alo?",
           "meaningEn": "Where is Sam?",
           "pictureHint": "child peering around a cozy highland room, soft window light, picture-book search",
           "familyIds": ["se", "me", "a", "be", "ye", "le"]
         },
         {
-          "geez": "ሳም ኣብ ኩሽና የለን።",
-          "latin": "Sam ab kushina yellen.",
+          "geez": "ሴም ኣብ ክሽነ የለን።",
+          "latin": "Sem ab kishne yellen.",
           "meaningEn": "Sam is not in the kitchen.",
           "pictureHint": "empty highland kitchen, jebena on the stove, no child",
           "familyIds": ["se", "me", "a", "be", "ke", "she", "ne", "ye", "le"]
         },
         {
-          "geez": "ሳም ኣብ ቤት ማይ የለን።",
-          "latin": "Sam ab bet may yellen.",
-          "meaningEn": "Sam is not in the bathroom.",
-          "pictureHint": "small bathroom with a wash basin, no child, soft light",
+          "geez": "ሴም ኣብ ቤት የለን።",
+          "latin": "Sem ab bet yellen.",
+          "meaningEn": "Sam is not in the house.",
+          "pictureHint": "highland house from the yard, door shut, no child, soft morning light",
           "familyIds": ["se", "me", "a", "be", "te", "ye", "le", "ne"]
         },
         {
-          "geez": "ሳም ኣብ መደቀሲ የለን።",
-          "latin": "Sam ab medeqesi yellen.",
+          "geez": "ሴም ኣብ መደቀሲ የለን።",
+          "latin": "Sem ab medeqesi yellen.",
           "meaningEn": "Sam is not in the bedroom.",
           "pictureHint": "empty little bed with a folded blanket, quiet bedroom",
           "familyIds": ["se", "me", "a", "be", "de", "qe", "ye", "le", "ne"]
         },
         {
-          "geez": "ሳም ምስ ከልቢ ኣሎ።",
-          "latin": "Sam mis kelbi alo.",
+          "geez": "ሴም ምስ ከልቢ ኣሎ።",
+          "latin": "Sem mis kelbi alo.",
           "meaningEn": "Sam is with the dog.",
           "pictureHint": "child hugging a fluffy puppy on a rug, tiny hearts, cozy ending",
           "familyIds": ["se", "me", "ke", "le", "be", "a"]

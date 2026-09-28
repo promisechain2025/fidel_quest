@@ -27,6 +27,13 @@ import { Harag, LetterTile } from './Manuscript'
 
 const famGlyph = (id) => INDEXES.byAudioKey.get(`${id}-1`)?.char || id
 
+/* Word chips drop punctuation. Paint the line's own stop so a question
+   stays ? and a statement stays ።. Pages with no mark still close with ።. */
+function pageStop(geez) {
+  const marks = String(geez || '').match(/[።?!]/g)
+  return marks ? marks[marks.length - 1] : '።'
+}
+
 /* Page-turn like a book leaf: the outgoing page folds away over the spine
    while the next swings in from the opposite edge (3D rotateY + a slide, so
    it reads as paper turning, not a card spinning). `dir` is +1 forward,
@@ -350,7 +357,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                     {w}
                   </button>
                 ))}
-                <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>።</span>
+                <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>{pageStop(page.g)}</span>
               </div>
               {showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>}
             </motion.div>
