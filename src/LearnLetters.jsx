@@ -3,7 +3,9 @@
    ----------------------------------------------------------------------------
    Kids must LEARN letters before being quizzed on them. Per family:
 
-     MEET      each form arrives alone, huge; touch it to hear it
+     MEET      each form arrives alone, huge; touch it to hear it. On
+               School Path the first card paints that word behind the
+               letter. Other packs keep the plain sky.
      FORWARD   stepping stones: a letter is SPOKEN; pick it from the
                bottom tray and Anbessa hops the next stone (tray in
                reading order)
@@ -30,6 +32,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
+import { meetPictureForFamily } from './data/schoolPathGr1'
+import { meetHeroSrc } from './data/meetHeroes'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
@@ -92,6 +96,9 @@ export function learnInitial(familyId, seed) {
     kind: 'family',
     familyId,
     familyName: family ? family.name : familyId,
+    // Base-letter picture for MEET: the School Path unit word when the
+    // Tigrinya path names one, otherwise the pack word.
+    meetWord: meetPictureForFamily(familyId, { packFamily: family }),
     phase: LearnPhase.MEET,
     forms,
     order: forms, // display order; re-shuffled for SHUFFLE
@@ -342,17 +349,23 @@ function BubblePop({ left, top, color }) {
   )
 }
 
-/** MEET: pop the drifting bubble to hear the letter. */
+/** MEET: pop the drifting bubble to hear the letter.
+    School Path's first card paints the picture-word behind the bubble so
+    the fidel stays the thing you read. A missing painting falls back to
+    the highland sky. */
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const met = ctx.forms.slice(0, ctx.idx)
   const [popped, setPopped] = useState(false)
   const [popAt, setPopAt] = useState(null)
+  const [heroFailed, setHeroFailed] = useState(false)
   const reduce = useReducedMotion()
   const stageRef = useRef(null)
   const btnRef = useRef(null)
   if (!form) return null
   const c = BUBBLE_COLORS[ctx.idx % BUBBLE_COLORS.length]
+  const heroSrc = ctx.idx === 0 ? meetHeroSrc(ctx.meetWord) : null
+  const hero = Boolean(heroSrc) && !heroFailed
   // On pop: freeze the wandering, voice the letter, and let the bubble swell and
   // fade. The parent holds the advance (~0.9s) so the next letter only drifts in
   // once this one has been fully spoken and cleared.
@@ -374,34 +387,55 @@ function BubbleMeet({ ctx, onTouch }) {
         {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
       </p>
       <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#d7ecfb', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }}>
-        <BubbleSky />
+        {hero ? (
+          <img
+            src={heroSrc}
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            onError={() => setHeroFailed(true)}
+          />
+        ) : (
+          <BubbleSky />
+        )}
         <motion.button
           ref={btnRef}
           type="button"
           onPointerDown={pop}
           disabled={popped}
-          initial={{ x: '-30%', y: 30, scale: 0.5 }}
+          initial={hero ? { x: '-50%', y: '-50%', scale: 0.6 } : { x: '-30%', y: 30, scale: 0.5 }}
           animate={
             popped
               ? // Popped: stop wandering, swell and fade out slowly while the
                 // letter is voiced, so the stage clears before the next drifts in.
-                { scale: 1.4, opacity: 0 }
-              : {
-                  // A wandering loop (roughly a figure-8) instead of a straight
-                  // back-and-forth, with a rocking tilt and a bouncy squash-stretch
-                  // so the letter looks like it is dancing around the stage.
-                  x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-                  y: [24, 8, 26, 52, 66, 54, 30, 24],
-                  rotate: [0, 9, -5, 8, -9, 6, -3, 0],
-                  scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
-                }
+                hero
+                  ? { x: '-50%', y: '-50%', scale: 1.25, opacity: 0 }
+                  : { scale: 1.4, opacity: 0 }
+              : hero
+                ? {
+                    // Stay centered on the picture-word so the scene reads
+                    // around the letter. A small bob keeps it alive.
+                    x: '-50%',
+                    y: reduce ? '-50%' : ['-56%', '-50%', '-44%', '-50%'],
+                    scale: reduce ? 1 : [1, 1.04, 1],
+                  }
+                : {
+                    // A wandering loop (roughly a figure-8) instead of a straight
+                    // back-and-forth, with a rocking tilt and a bouncy squash-stretch
+                    // so the letter looks like it is dancing around the stage.
+                    x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
+                    y: [24, 8, 26, 52, 66, 54, 30, 24],
+                    rotate: [0, 9, -5, 8, -9, 6, -3, 0],
+                    scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
+                  }
           }
           transition={
             popped
               ? { duration: 0.85, ease: 'easeInOut' }
-              : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
+              : hero
+                ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
           }
-          className={`geez absolute left-1/2 top-4 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
+          className={`geez absolute flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${hero ? 'left-1/2 top-1/2' : 'left-1/2 top-4'} ${FOCUS}`}
           style={{
             // Glossy candy ball: a bright off-centre core melts into the rich
             // base and a deep rim, an inner top-light gives the sheen, and a
@@ -426,11 +460,19 @@ function BubbleMeet({ ctx, onTouch }) {
             {form.char}
           </motion.span>
         </motion.button>
+        {hero && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 3px rgba(196,176,138,0.75)' }} />}
         {popAt && <BubblePop left={popAt.left} top={popAt.top} color={c} />}
       </div>
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
         {form.sound}
       </p>
+      {ctx.idx === 0 && ctx.meetWord?.geez && (
+        <p className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
+          {!hero && ctx.meetWord.picture ? <span className="text-2xl" aria-hidden="true">{ctx.meetWord.picture}</span> : null}
+          <span className="geez text-xl font-black">{ctx.meetWord.geez}</span>
+          {ctx.meetWord.meaning ? <span style={{ color: 'var(--muted)' }}>{ctx.meetWord.meaning}</span> : null}
+        </p>
+      )}
       {/* Anbessa's shelf of collected letters */}
       <div className="flex min-h-12 items-end gap-2">
         <Hero size={48} />
