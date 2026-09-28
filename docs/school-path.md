@@ -24,10 +24,11 @@ is the family it introduces. Blends stay hidden until every family in the
 word is learned.
 
 On that first Meet card the picture-word painting (`public/art/meet`,
-original gouache) is the background, and the fidel stays a large foreground
-bubble so the letter is what the child reads. The Ge'ez word and English
-gloss stay under the card. The other six vowels in the family use the plain
-sky. Amharic Meet is unchanged.
+original gouache) is the background, and the fidel stays a large centered
+bubble. The paintings leave the middle open so the animal or object is
+visible around that bubble. The Ge'ez word and English gloss stay under the
+card. The other six vowels in the family use the plain sky. Amharic Meet is
+unchanged.
 
 ## How it turns on
 
