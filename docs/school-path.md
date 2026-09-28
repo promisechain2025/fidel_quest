@@ -25,8 +25,9 @@ word is learned.
 
 On that first Meet card the picture-word painting (`public/art/meet`,
 original gouache) is the background, and the fidel stays a large centered
-bubble. The paintings leave the middle open so the animal or object is
-visible around that bubble. The Ge'ez word and English gloss stay under the
+bubble. Each painting puts the animal or object in the side third, with
+soft sky or meadow in the center so the face and body stay clear of that
+bubble. The Ge'ez word and English gloss stay under the
 card. The other six vowels in the family use the plain sky. Amharic Meet is
 unchanged.
 
