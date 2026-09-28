@@ -1,5 +1,6 @@
-/* Picture-book paintings for the School Path Meet card.
+/* Picture-book backgrounds for the School Path Meet card.
    One original gouache scene per picture word, keyed by family id.
+   The fidel bubble stays in front; the painting is the scenery behind it.
    Files live in public/art/meet so they stay out of the JS bundle and
    cache on first view (see the runtime cache in vite.config.js).
    Amharic Meet does not use these: meetHeroSrc requires fromSchoolPath. */

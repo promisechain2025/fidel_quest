@@ -3,9 +3,9 @@
    ----------------------------------------------------------------------------
    Kids must LEARN letters before being quizzed on them. Per family:
 
-     MEET      each form arrives alone; touch it to hear it. On School
-               Path the first card is the picture-word painting, and the
-               fidel sits in a small badge. Other packs keep the bubble.
+     MEET      each form arrives alone, huge; touch it to hear it. On
+               School Path the first card paints that word behind the
+               letter. Other packs keep the plain sky.
      FORWARD   stepping stones: a letter is SPOKEN; pick it from the
                bottom tray and Anbessa hops the next stone (tray in
                reading order)
@@ -350,8 +350,9 @@ function BubblePop({ left, top, color }) {
 }
 
 /** MEET: pop the drifting bubble to hear the letter.
-    School Path's first card is the picture-word painting; the fidel is a
-    small badge. A missing painting falls back to the letter bubble. */
+    School Path's first card paints the picture-word behind the bubble so
+    the fidel stays the thing you read. A missing painting falls back to
+    the highland sky. */
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const met = ctx.forms.slice(0, ctx.idx)
@@ -387,94 +388,79 @@ function BubbleMeet({ ctx, onTouch }) {
       </p>
       <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#d7ecfb', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }}>
         {hero ? (
-          <>
-            <img
-              src={heroSrc}
-              alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-              onError={() => setHeroFailed(true)}
-            />
-            <motion.button
-              type="button"
-              onPointerDown={pop}
-              disabled={popped}
-              className={`absolute inset-0 ${FOCUS}`}
-              style={{ touchAction: 'none', outlineColor: 'var(--sky)' }}
-              aria-label={`Pop the bubble to hear ${form.sound}`}
-            >
-              <motion.span
-                ref={btnRef}
-                animate={popped ? { scale: 1.25, opacity: 0 } : reduce ? { y: 0 } : { y: [0, -5, 0] }}
-                transition={popped ? { duration: 0.85, ease: 'easeInOut' } : { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="geez absolute bottom-3 right-3 flex h-16 w-16 items-center justify-center rounded-full text-4xl font-black"
-                style={{
-                  background: '#fff6e4',
-                  color: 'var(--glyph)',
-                  border: '3px solid rgba(255,255,255,0.95)',
-                  boxShadow: '0 3px 0 #c4b08a',
-                }}
-              >
-                {form.char}
-              </motion.span>
-            </motion.button>
-            <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 3px rgba(196,176,138,0.75)' }} />
-          </>
+          <img
+            src={heroSrc}
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            onError={() => setHeroFailed(true)}
+          />
         ) : (
-          <>
-            <BubbleSky />
-            <motion.button
-              ref={btnRef}
-              type="button"
-              onPointerDown={pop}
-              disabled={popped}
-              initial={{ x: '-30%', y: 30, scale: 0.5 }}
-              animate={
-                popped
-                  ? // Popped: stop wandering, swell and fade out slowly while the
-                    // letter is voiced, so the stage clears before the next drifts in.
-                    { scale: 1.4, opacity: 0 }
-                  : {
-                      // A wandering loop (roughly a figure-8) instead of a straight
-                      // back-and-forth, with a rocking tilt and a bouncy squash-stretch
-                      // so the letter looks like it is dancing around the stage.
-                      x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-                      y: [24, 8, 26, 52, 66, 54, 30, 24],
-                      rotate: [0, 9, -5, 8, -9, 6, -3, 0],
-                      scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
-                    }
-              }
-              transition={
-                popped
-                  ? { duration: 0.85, ease: 'easeInOut' }
-                  : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
-              }
-              className={`geez absolute left-1/2 top-4 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
-              style={{
-                // Glossy candy ball: a bright off-centre core melts into the rich
-                // base and a deep rim, an inner top-light gives the sheen, and a
-                // soft glow in the bubble's own colour makes it pop off the stage.
-                background: `radial-gradient(circle at 36% 26%, ${c.hi} 0%, ${c.base} 56%, ${c.lo} 100%)`,
-                border: '4px solid rgba(255,255,255,0.95)',
-                boxShadow: `inset -7px -11px 24px rgba(0,0,0,0.20), inset 7px 9px 20px rgba(255,255,255,0.28), 0 12px 30px ${c.base}59`,
-                color: '#ffffff',
-                textShadow: '0 2px 5px rgba(0,0,0,0.4)',
-                touchAction: 'none',
-                outlineColor: 'var(--sky)',
-              }}
-              aria-label={`Pop the bubble to hear ${form.sound}`}
-            >
-              {/* counter-rotate the glyph a touch so it stays readable while the
-                  bubble rocks, then give it its own gentle wiggle (the dance) */}
-              <motion.span
-                animate={{ rotate: [0, -6, 4, -5, 0], y: [0, -2, 1, -2, 0] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="block"
-              >
-                {form.char}
-              </motion.span>
-            </motion.button>
-          </>
+          <BubbleSky />
         )}
+        <motion.button
+          ref={btnRef}
+          type="button"
+          onPointerDown={pop}
+          disabled={popped}
+          initial={hero ? { x: '-50%', y: '-50%', scale: 0.6 } : { x: '-30%', y: 30, scale: 0.5 }}
+          animate={
+            popped
+              ? // Popped: stop wandering, swell and fade out slowly while the
+                // letter is voiced, so the stage clears before the next drifts in.
+                hero
+                  ? { x: '-50%', y: '-50%', scale: 1.25, opacity: 0 }
+                  : { scale: 1.4, opacity: 0 }
+              : hero
+                ? {
+                    // Stay centered on the picture-word so the scene reads
+                    // around the letter. A small bob keeps it alive.
+                    x: '-50%',
+                    y: reduce ? '-50%' : ['-56%', '-50%', '-44%', '-50%'],
+                    scale: reduce ? 1 : [1, 1.04, 1],
+                  }
+                : {
+                    // A wandering loop (roughly a figure-8) instead of a straight
+                    // back-and-forth, with a rocking tilt and a bouncy squash-stretch
+                    // so the letter looks like it is dancing around the stage.
+                    x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
+                    y: [24, 8, 26, 52, 66, 54, 30, 24],
+                    rotate: [0, 9, -5, 8, -9, 6, -3, 0],
+                    scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
+                  }
+          }
+          transition={
+            popped
+              ? { duration: 0.85, ease: 'easeInOut' }
+              : hero
+                ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
+          }
+          className={`geez absolute flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${hero ? 'left-1/2 top-1/2' : 'left-1/2 top-4'} ${FOCUS}`}
+          style={{
+            // Glossy candy ball: a bright off-centre core melts into the rich
+            // base and a deep rim, an inner top-light gives the sheen, and a
+            // soft glow in the bubble's own colour makes it pop off the stage.
+            background: `radial-gradient(circle at 36% 26%, ${c.hi} 0%, ${c.base} 56%, ${c.lo} 100%)`,
+            border: '4px solid rgba(255,255,255,0.95)',
+            boxShadow: `inset -7px -11px 24px rgba(0,0,0,0.20), inset 7px 9px 20px rgba(255,255,255,0.28), 0 12px 30px ${c.base}59`,
+            color: '#ffffff',
+            textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+            touchAction: 'none',
+            outlineColor: 'var(--sky)',
+          }}
+          aria-label={`Pop the bubble to hear ${form.sound}`}
+        >
+          {/* counter-rotate the glyph a touch so it stays readable while the
+              bubble rocks, then give it its own gentle wiggle (the dance) */}
+          <motion.span
+            animate={{ rotate: [0, -6, 4, -5, 0], y: [0, -2, 1, -2, 0] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="block"
+          >
+            {form.char}
+          </motion.span>
+        </motion.button>
+        {hero && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 3px rgba(196,176,138,0.75)' }} />}
         {popAt && <BubblePop left={popAt.left} top={popAt.top} color={c} />}
       </div>
       <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>

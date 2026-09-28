@@ -23,10 +23,11 @@ pages, and the app does not ship MoE or SIL art. A Meet word's first fidel
 is the family it introduces. Blends stay hidden until every family in the
 word is learned.
 
-On that first Meet card the stage is the picture-book painting of the word
-(`public/art/meet`, original gouache). The fidel is a small badge in the
-corner, and the Ge'ez word plus English gloss stay under the card. The other
-six vowels in the family stay letter bubbles. Amharic Meet is unchanged.
+On that first Meet card the picture-word painting (`public/art/meet`,
+original gouache) is the background, and the fidel stays a large foreground
+bubble so the letter is what the child reads. The Ge'ez word and English
+gloss stay under the card. The other six vowels in the family use the plain
+sky. Amharic Meet is unchanged.
 
 ## How it turns on
 
