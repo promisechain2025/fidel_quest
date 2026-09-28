@@ -118,8 +118,13 @@ describe('school path story pack', () => {
     expect(byId['walk-to-school'].titleTi).toBe('ናብ ቤት ትምህርቲ')
     expect(byId['walk-to-school'].pages[0].geez).toBe('ቆልዓ ናብ ቤት ትምህርቲ ከደ።')
     expect(byId['walk-to-school'].pages.at(-1).geez).toBe('ቆልዓ ናብ ቤት ትምህርቲ በጽሐ።')
-    expect(byId['coffee-with-grandma'].titleTi).toBe('ጀበና ምስ ዓባይ')
-    expect(byId['coffee-with-grandma'].pages[3].geez).toBe('ዓባይ ሰተየት።')
+    expect(byId['walk-to-school'].pages[2].geez).toBe('ጭሩ ኣሎ።')
+    expect(byId['walk-to-school'].pages[2].meaningEn).toBe('A little bird is there.')
+    expect(byId['walk-to-school'].pages[2].familyIds).toEqual(['chhe', 're', 'a', 'le'])
+    expect(byId['coffee-with-grandma'].titleTi).toBe('ጀበና ምስ ዓባየይ')
+    expect(byId['coffee-with-grandma'].pages[3].geez).toBe('ዓባየይ ሰተየት።')
+    expect(byId['coffee-with-grandma'].pages[3].meaningEn).toBe('Grandma drank.')
+    expect(byId['coffee-with-grandma'].pages[3].familyIds).toEqual(['ae', 'be', 'ye', 'se', 'te'])
     expect(byId['baby-wont-sleep'].pages[1].geez).toBe('ማማ ዘመረት።')
     expect(byId['baby-wont-sleep'].pages[2].geez).toBe('ማማ ቆልዓ ሓዘት።')
     const sun = byId['sun-all-week']
@@ -129,7 +134,7 @@ describe('school path story pack', () => {
     const tiTitles = storyLibrary([], undefined, 'ti').map((s) => s.title.g)
     expect(tiTitles).toContain('ሴም ኣበይ ኣሎ?')
     expect(tiTitles).toContain('ናብ ቤት ትምህርቲ')
-    expect(tiTitles).toContain('ጀበና ምስ ዓባይ')
+    expect(tiTitles).toContain('ጀበና ምስ ዓባየይ')
   })
 
   it('shows the five stories in the Tigrinya library and not in Amharic', () => {

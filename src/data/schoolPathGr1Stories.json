@@ -84,8 +84,8 @@
           "familyIds": ["ke", "le", "be", "a"]
         },
         {
-          "geez": "ጨሩሩ ኣሎ።",
-          "latin": "Cheruru alo.",
+          "geez": "ጭሩ ኣሎ።",
+          "latin": "Chiru alo.",
           "meaningEn": "A little bird is there.",
           "pictureHint": "tiny bird on a branch above the path, mid-song",
           "familyIds": ["chhe", "re", "a", "le"]
@@ -130,8 +130,8 @@
     {
       "id": "coffee-with-grandma",
       "titleEn": "Coffee With Grandma",
-      "titleTi": "ጀበና ምስ ዓባይ",
-      "latinTitle": "Jebena mis abay",
+      "titleTi": "ጀበና ምስ ዓባየይ",
+      "latinTitle": "Jebena mis abayey",
       "unlockAfterUnitId": "u11",
       "refrain": {
         "geez": "ጀበና ኣሎ።",
@@ -161,8 +161,8 @@
           "familyIds": ["tse", "be", "a", "le"]
         },
         {
-          "geez": "ዓባይ ሰተየት።",
-          "latin": "Abay seteyet.",
+          "geez": "ዓባየይ ሰተየት።",
+          "latin": "Abayey seteyet.",
           "meaningEn": "Grandma drank.",
           "pictureHint": "grandma in a soft shawl lifting a little cup, warm smile",
           "familyIds": ["ae", "be", "ye", "se", "te"]
