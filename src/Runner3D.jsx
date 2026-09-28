@@ -353,6 +353,10 @@ function buildPictureAnimal(tex) {
     transparent: true,
     alphaTest: 0.08,
     depthWrite: false,
+    // The billboard's depth is the paws. The road between the camera and
+    // those paws was winning the depth test and painting a flat plate
+    // across the torso. The cubs stay in front of the ground.
+    depthTest: false,
   }))
   // Bottom of the painting (the paws) sits on the ground.
   sprite.center.set(0.5, 0)
@@ -632,7 +636,7 @@ class RunnerWorld {
     this.vista = buildHighlandVista()
     this.scene.add(this.vista)
 
-    // Picture-book cub, feet at the group origin, face turned back to the chase camera.
+    // Picture-book cub, feet at the group origin, running away up the road.
     this.playerChar = buildPictureAnimal(cast.anbessa)
     this.player = this.playerChar.group
     this.player.scale.setScalar(1.95)
