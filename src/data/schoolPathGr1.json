@@ -1,0 +1,731 @@
+{
+  "id": "school-path-gr1-alphabet",
+  "label": "School Path — Grade 1 Alphabet",
+  "packId": "ti",
+  "source": {
+    "driveFolder": "https://drive.google.com/drive/folders/18SRGwtnjNn_m1bwAalptkpDA3hD7Yo7I",
+    "book": "MoE Eritrea Mother Tongue GR1 Alphabet (drill shapes + diaspora word choices — not page-order copy; no verbatim MoE text/art)",
+    "copyrightNote": "Encode teaching order + original eGeez art/audio. Do not ship MoE PDF pages or SIL artwork.",
+    "diasporaNote": "Picture words favor diaspora home/culture AND kid-book magnets (cute animals, bright food, cozy jebena, sun, train-as-blend). pictureHint is art direction for premium kids-book style in eGeez highland look — soft, friendly, high color, never dry textbook SIL. Traditional ሀ/ለ free-taste kept; MoE book opens በ/ሰ/ሸ."
+  },
+  "chrome": {
+    "appName": "eGeez",
+    "mascot": "Jibby",
+    "menus": "en"
+  },
+  "pedagogy": {
+    "unitFlow": [
+      "meet",
+      "trace",
+      "vowelFamily",
+      "blend",
+      "unitQuiz"
+    ],
+    "mapToGames": {
+      "meet": "Letter Steps Meet — curriculum pictureWord for the family",
+      "trace": "Letter Steps Trace",
+      "vowelFamily": "Letter Steps river / Bubble twin-safe drills",
+      "blend": "Quiz build-the-word using unit.blendWords (decodable from unlocked families only)",
+      "unitQuiz": "existing QUIZ boss node scoped to unit familyIds",
+      "arcade": "Runner/Catch letter pool = learnedFamilyIds only (already in journey)"
+    }
+  },
+  "units": [
+    {
+      "id": "u01",
+      "titleEn": "Ha and Le",
+      "familyIds": [
+        "ha",
+        "le"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ha",
+          "geez": "ሀሎ",
+          "meaningEn": "hello",
+          "pictureHint": "cute kid waving hello, soft highland meadow, picture-book glow"
+        },
+        {
+          "familyId": "le",
+          "geez": "ልቢ",
+          "meaningEn": "heart",
+          "pictureHint": "friendly glowing heart character, soft pinks, kids-book sticker cute"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሀሎ",
+          "familyIds": [
+            "ha",
+            "le"
+          ]
+        },
+        {
+          "geez": "ልቢ",
+          "familyIds": [
+            "le",
+            "be"
+          ]
+        }
+      ],
+      "note": "Free-taste ሀ/ለ. Kid-book meet art. MoE opens በ/ሰ/ሸ — free-taste intentional."
+    },
+    {
+      "id": "u02",
+      "titleEn": "Hha and Me",
+      "familyIds": [
+        "hha",
+        "me"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "hha",
+          "geez": "ሓዊ",
+          "meaningEn": "fire",
+          "pictureHint": "cozy campfire with warm sparkles, friendly not scary, bedtime-story light"
+        },
+        {
+          "familyId": "me",
+          "geez": "ማይ",
+          "meaningEn": "water",
+          "pictureHint": "sparkly blue water splash / little spring, joyful kids-book water"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ማማ",
+          "familyIds": [
+            "me"
+          ]
+        },
+        {
+          "geez": "ሓዊ",
+          "familyIds": [
+            "hha",
+            "we"
+          ]
+        },
+        {
+          "geez": "ማይ",
+          "familyIds": [
+            "me",
+            "ye"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u03",
+      "titleEn": "Sse, Re, Se",
+      "familyIds": [
+        "sse",
+        "re",
+        "se"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "se",
+          "geez": "ሰብ",
+          "meaningEn": "person",
+          "pictureHint": "cheerful diaspora kid character, big smile, soft sweater, picture-book hero"
+        },
+        {
+          "familyId": "re",
+          "geez": "ርግቢት",
+          "meaningEn": "pigeon",
+          "pictureHint": "round cute pigeon with shiny feathers, friendly eyes, storybook bird"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሰላም",
+          "familyIds": [
+            "se",
+            "le",
+            "me"
+          ]
+        },
+        {
+          "geez": "ሰብ",
+          "familyIds": [
+            "se",
+            "be"
+          ]
+        },
+        {
+          "geez": "ርግቢት",
+          "familyIds": [
+            "re",
+            "ge",
+            "be",
+            "te"
+          ]
+        }
+      ],
+      "note": "sse rare — no forced Meet. Pigeon over abstract calendar for kid-book wow."
+    },
+    {
+      "id": "u04",
+      "titleEn": "She, Qe, Qhe",
+      "familyIds": [
+        "she",
+        "qe",
+        "qhe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "she",
+          "geez": "ሸበጥ",
+          "meaningEn": "flip-flops",
+          "pictureHint": "bright colorful kid flip-flops with tiny pattern, sunny porch, fun"
+        },
+        {
+          "familyId": "qe",
+          "geez": "ቆልዓ",
+          "meaningEn": "child",
+          "pictureHint": "adorable little child hugging a toy, soft cheeks, premium kids-book"
+        },
+        {
+          "familyId": "qhe",
+          "geez": "ቕጫ",
+          "meaningEn": "flatbread",
+          "pictureHint": "soft stack of warm round flatbread, kitcha or chapati, on a plain cloth, kids-book kitchen"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ሸበጥ",
+          "familyIds": [
+            "she",
+            "be",
+            "the"
+          ]
+        },
+        {
+          "geez": "ሸሓኒ",
+          "familyIds": [
+            "she",
+            "hha",
+            "ne"
+          ]
+        },
+        {
+          "geez": "ሻሂ",
+          "familyIds": [
+            "she",
+            "ha"
+          ]
+        },
+        {
+          "geez": "ቆልዓ",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae"
+          ]
+        },
+        {
+          "geez": "መቐስ",
+          "familyIds": [
+            "me",
+            "qhe",
+            "se"
+          ]
+        },
+        {
+          "geez": "ቕጫ",
+          "familyIds": [
+            "qhe",
+            "chhe"
+          ]
+        }
+      ],
+      "note": "Scissors starts with መ, so it stays a blend. Meet is flatbread, a ቐ-family word."
+    },
+    {
+      "id": "u05",
+      "titleEn": "Be, Te, Che",
+      "familyIds": [
+        "be",
+        "te",
+        "che"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "be",
+          "geez": "በለስ",
+          "meaningEn": "beles (cactus fruit)",
+          "pictureHint": "juicy purple beles fruit with sparkle juice drops, summer market cute"
+        },
+        {
+          "familyId": "te",
+          "geez": "ተመን",
+          "meaningEn": "snake",
+          "pictureHint": "friendly cartoon snake with big eyes, not scary, storybook sidekick"
+        },
+        {
+          "familyId": "che",
+          "geez": "ቸኮላታ",
+          "meaningEn": "chocolate",
+          "pictureHint": "cheerful chocolate squares with a soft shine, warm brown and gold, kids-book treat"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ቤት",
+          "familyIds": [
+            "be",
+            "te"
+          ]
+        },
+        {
+          "geez": "በለስ",
+          "familyIds": [
+            "be",
+            "le",
+            "se"
+          ]
+        },
+        {
+          "geez": "ተመን",
+          "familyIds": [
+            "te",
+            "me",
+            "ne"
+          ]
+        },
+        {
+          "geez": "ቸኮላታ",
+          "familyIds": [
+            "che",
+            "ke",
+            "le",
+            "te"
+          ]
+        }
+      ],
+      "note": "Home stays a blend. Meet is chocolate, a ቸ-family treat. The little bird is ጨ and meets on chhe."
+    },
+    {
+      "id": "u06",
+      "titleEn": "Kha, Ne, Nye",
+      "familyIds": [
+        "kha",
+        "ne",
+        "nye"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ne",
+          "geez": "ነብሪ",
+          "meaningEn": "leopard",
+          "pictureHint": "soft spotted leopard cub, big eyes, highland grass, premium animal book"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ነብሪ",
+          "familyIds": [
+            "ne",
+            "be",
+            "re"
+          ]
+        },
+        {
+          "geez": "ንህቢ",
+          "familyIds": [
+            "ne",
+            "ha",
+            "be"
+          ]
+        }
+      ],
+      "note": "kha/nye rare. Bee ንህቢ as blend for later cute bug art."
+    },
+    {
+      "id": "u07",
+      "titleEn": "A, Ke, Khe",
+      "familyIds": [
+        "a",
+        "ke",
+        "khe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "a",
+          "geez": "ኣንበሳ",
+          "meaningEn": "lion",
+          "pictureHint": "soft lion cub with a gentle mane, highland grass, friendly kids-book hero"
+        },
+        {
+          "familyId": "ke",
+          "geez": "ከልቢ",
+          "meaningEn": "dog",
+          "pictureHint": "fluffy friendly puppy with wagging tail, heart eyes, picture-book pet"
+        },
+        {
+          "familyId": "khe",
+          "geez": "ኸረምት",
+          "meaningEn": "autumn",
+          "pictureHint": "kid kicking golden leaves under soft sunset, cozy sweater, fall magic"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ኣንበሳ",
+          "familyIds": [
+            "a",
+            "ne",
+            "be",
+            "se"
+          ]
+        },
+        {
+          "geez": "ከልቢ",
+          "familyIds": [
+            "ke",
+            "le",
+            "be"
+          ]
+        },
+        {
+          "geez": "ክራር",
+          "familyIds": [
+            "ke",
+            "re"
+          ]
+        },
+        {
+          "geez": "ኮኾብ",
+          "familyIds": [
+            "ke",
+            "khe",
+            "be"
+          ]
+        },
+        {
+          "geez": "ኸረምት",
+          "familyIds": [
+            "khe",
+            "re",
+            "me",
+            "te"
+          ]
+        }
+      ],
+      "note": "Lion cub is the Meet: ኣ is family a. Fish starts with ዓ and blends on ae."
+    },
+    {
+      "id": "u08",
+      "titleEn": "We, Ae, Ze",
+      "familyIds": [
+        "we",
+        "ae",
+        "ze"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "we",
+          "geez": "ወይኒ",
+          "meaningEn": "grapes",
+          "pictureHint": "plump purple grape cluster with dew, inviting snack, fruit-book cute"
+        },
+        {
+          "familyId": "ae",
+          "geez": "ዓይኒ",
+          "meaningEn": "eye",
+          "pictureHint": "sparkly friendly eye icon with lashes, soft pastel sticker style"
+        },
+        {
+          "familyId": "ze",
+          "geez": "ዘራፍ",
+          "meaningEn": "giraffe",
+          "pictureHint": "tall smiling giraffe calf, soft spots, blue sky, classic kids animal book"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ዝብኢ",
+          "familyIds": [
+            "ze",
+            "be",
+            "a"
+          ]
+        },
+        {
+          "geez": "ወይኒ",
+          "familyIds": [
+            "we",
+            "ye",
+            "ne"
+          ]
+        },
+        {
+          "geez": "ዓይኒ",
+          "familyIds": [
+            "ae",
+            "ye",
+            "ne"
+          ]
+        },
+        {
+          "geez": "ዘራፍ",
+          "familyIds": [
+            "ze",
+            "re",
+            "fe"
+          ]
+        },
+        {
+          "geez": "ዘንቢል",
+          "familyIds": [
+            "ze",
+            "ne",
+            "be",
+            "le"
+          ]
+        },
+        {
+          "geez": "ዓሳ",
+          "familyIds": [
+            "ae",
+            "se"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "u09",
+      "titleEn": "Zhe, Ye, De, Je",
+      "familyIds": [
+        "zhe",
+        "ye",
+        "de",
+        "je"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "de",
+          "geez": "ደርሆ",
+          "meaningEn": "chicken",
+          "pictureHint": "plump happy hen with chicks peeking, warm yard, farm-cute"
+        },
+        {
+          "familyId": "je",
+          "geez": "ጀበና",
+          "meaningEn": "jebena (coffee pot)",
+          "pictureHint": "cozy glowing jebena with steam curls, grandma kitchen magic, inviting"
+        },
+        {
+          "familyId": "ye",
+          "geez": "የማን",
+          "meaningEn": "right (hand)",
+          "pictureHint": "kid raising right hand cheerfully with star stickers, playful lesson"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ደርሆ",
+          "familyIds": [
+            "de",
+            "re",
+            "ha"
+          ]
+        },
+        {
+          "geez": "ጀበና",
+          "familyIds": [
+            "je",
+            "be",
+            "ne"
+          ]
+        },
+        {
+          "geez": "የማን",
+          "familyIds": [
+            "ye",
+            "me",
+            "ne"
+          ]
+        }
+      ],
+      "note": "zhe rare. ጀበና = cozy culture magnet for diaspora kids books."
+    },
+    {
+      "id": "u10",
+      "titleEn": "Ge, The, Chhe",
+      "familyIds": [
+        "ge",
+        "the",
+        "chhe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "ge",
+          "geez": "ገመል",
+          "meaningEn": "camel",
+          "pictureHint": "friendly camel with long lashes and soft hump blanket, desert-cute"
+        },
+        {
+          "familyId": "the",
+          "geez": "ጤል",
+          "meaningEn": "goat",
+          "pictureHint": "bouncy baby goat with tiny horns, grassy hill, laugh-out-loud cute"
+        },
+        {
+          "familyId": "chhe",
+          "geez": "ጨሩሩ",
+          "meaningEn": "little bird",
+          "pictureHint": "tiny fluffy bird mid-song, soft feathers, storybook friend on a highland branch"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ገመል",
+          "familyIds": [
+            "ge",
+            "me",
+            "le"
+          ]
+        },
+        {
+          "geez": "ጤል",
+          "familyIds": [
+            "the",
+            "le"
+          ]
+        },
+        {
+          "geez": "ጠረጴዛ",
+          "familyIds": [
+            "the",
+            "re",
+            "ppe",
+            "ze"
+          ]
+        },
+        {
+          "geez": "ጨው",
+          "familyIds": [
+            "chhe",
+            "we"
+          ]
+        },
+        {
+          "geez": "ጨሩሩ",
+          "familyIds": [
+            "chhe",
+            "re"
+          ]
+        }
+      ],
+      "note": "Meet is the little bird. Salt and the table stay blends."
+    },
+    {
+      "id": "u11",
+      "titleEn": "Ppe, Tse, Ttse",
+      "familyIds": [
+        "ppe",
+        "tse",
+        "ttse"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "tse",
+          "geez": "ጸሓይ",
+          "meaningEn": "sun",
+          "pictureHint": "big smiling sun with soft rays, golden sky, classic preschool book cover"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ጸባ",
+          "familyIds": [
+            "tse",
+            "be"
+          ]
+        },
+        {
+          "geez": "ጸሓይ",
+          "familyIds": [
+            "tse",
+            "hha",
+            "ye"
+          ]
+        }
+      ],
+      "note": "ጸባ milk = cozy blend. ppe/ttse rare."
+    },
+    {
+      "id": "u12",
+      "titleEn": "Fe and Pe",
+      "familyIds": [
+        "fe",
+        "pe"
+      ],
+      "pictureWords": [
+        {
+          "familyId": "fe",
+          "geez": "ፈረስ",
+          "meaningEn": "horse",
+          "pictureHint": "shiny mane horse mid-gallop, wind sparkles, adventure kids book"
+        },
+        {
+          "familyId": "pe",
+          "geez": "ፖስታ",
+          "meaningEn": "mail",
+          "pictureHint": "colorful envelope with heart stamp and tiny wings, mail magic"
+        }
+      ],
+      "blendWords": [
+        {
+          "geez": "ፊደል",
+          "familyIds": [
+            "fe",
+            "de",
+            "le"
+          ]
+        },
+        {
+          "geez": "ፈረስ",
+          "familyIds": [
+            "fe",
+            "re",
+            "se"
+          ]
+        },
+        {
+          "geez": "ፖስታ",
+          "familyIds": [
+            "pe",
+            "se",
+            "te"
+          ]
+        },
+        {
+          "geez": "ባቡር",
+          "familyIds": [
+            "be",
+            "re"
+          ]
+        }
+      ],
+      "note": "ባቡር (train) is be-family — keep as cross-unit blend when be unlocked; pe Meet uses cute mail. Horse is star Meet."
+    }
+  ],
+  "artDirection": {
+    "style": "advanced kids picture book",
+    "do": [
+      "soft rounded shapes, big friendly eyes on animals",
+      "rich but gentle color, light bloom, highland meadow / cozy home",
+      "one clear subject per Meet tile",
+      "match existing eGeez enchanted highland tone (not noisy neon)"
+    ],
+    "dont": [
+      "dry textbook clipart or SIL International stock look",
+      "scary animals, realistic blood/fangs",
+      "crowded adult scenes",
+      "verbatim MoE/SIL illustrations"
+    ]
+  }
+}

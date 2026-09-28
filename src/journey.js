@@ -16,10 +16,17 @@
 import { FIDEL_FAMILIES, getActivePackId } from './platform/ethiopic'
 import { progressChanged } from './platform/childModel'
 import { STORIES } from './platform/stories'
+import {
+  SCHOOL_PATH_PACK_ID,
+  SCHOOL_PATH_UNITS,
+  quizSpecForFamilies,
+  schoolPathActive,
+  schoolPathBands,
+} from './data/schoolPathGr1'
 
-/* Story nodes exist only when the active pack ships stories (module-level
-   like the family table itself; pack switching reloads the app). */
-const PACK_HAS_STORIES = STORIES.some((s) => s.pack === getActivePackId())
+/* Story nodes exist only when that pack ships stories. Pack switching
+   reloads the app, so the module-level JOURNEY matches the active pack. */
+const packHasStories = (packId) => STORIES.some((s) => s.pack === packId)
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson
@@ -84,40 +91,126 @@ export function isNodeFree(node) {
 }
 
 /** Family ids for chapter c (0..3): groups of 8, the last chapter taking
-    the remainder (9 in Amharic, 10 in Tigrinya with its extra ቐ family). */
+    the remainder (9 in Amharic, 10 in Tigrinya with its extra ቐ family).
+    The Tigrinya School Path does not use these slices — it follows
+    SCHOOL_PATH_UNITS. This helper stays for the classic (Amharic) spine. */
 export function chapterFamilies(c) {
   return FIDEL_FAMILIES.slice(c * 8, c === 3 ? FIDEL_FAMILIES.length : c * 8 + 8).map((f) => f.id)
 }
 
-/* The ordered path. Each chapter is:
+function pushNode(nodes, n) {
+  nodes.push({ ...n, index: nodes.length, reward: REWARD_TABLE[nodes.length % REWARD_TABLE.length] })
+}
+
+/* Classic spine (Amharic, and any pack without School Path). Each chapter:
    [family, family, mix, family, mix, ... , QUIZ boss, ARCADE gateway].
    Then a second lap of vowel QUIZ bosses (levels 5-8) reuses the families. */
-export function buildJourney() {
+function buildClassicJourney(packId) {
   const nodes = []
-  const push = (n) => nodes.push({ ...n, index: nodes.length, reward: REWARD_TABLE[nodes.length % REWARD_TABLE.length] })
+  const stories = packHasStories(packId)
   for (let c = 0; c < 4; c++) {
     const chapter = c + 1
     const fams = chapterFamilies(c)
     fams.forEach((fid, i) => {
-      push({ id: `learn:${fid}`, kind: NodeKind.LEARN, chapter, familyId: fid })
-      if (i > 0) push({ id: `mix:${fid}`, kind: NodeKind.MIX, chapter, families: fams.slice(0, i + 1) })
+      pushNode(nodes, { id: `learn:${fid}`, kind: NodeKind.LEARN, chapter, familyId: fid })
+      if (i > 0) pushNode(nodes, { id: `mix:${fid}`, kind: NodeKind.MIX, chapter, families: fams.slice(0, i + 1) })
     })
-    push({ id: `quiz:${chapter}`, kind: NodeKind.QUIZ, chapter, levelId: `level-${chapter}` })
+    pushNode(nodes, { id: `quiz:${chapter}`, kind: NodeKind.QUIZ, chapter, levelId: `level-${chapter}` })
     // Reading sits ON the motivational spine, not in a side pocket: after
     // each boss the child reads a real story before earning the arcade.
     // Only for packs that ship stories (Tigrinya's path must never block
     // on an empty library).
-    if (PACK_HAS_STORIES) push({ id: `story:${chapter}`, kind: NodeKind.STORY, chapter })
-    push({ id: `arcade:${chapter}`, kind: NodeKind.ARCADE, chapter, gateway: ARCADE_GATEWAYS[c] })
+    if (stories) pushNode(nodes, { id: `story:${chapter}`, kind: NodeKind.STORY, chapter })
+    pushNode(nodes, { id: `arcade:${chapter}`, kind: NodeKind.ARCADE, chapter, gateway: ARCADE_GATEWAYS[c] })
     // The chapter closes with a review leg: the memory schedule's due
     // forms get a guaranteed traffic lane on the path itself, not just
     // the optional daily warm-up (the SRS was scheduled but starved).
-    push({ id: `review:${chapter}`, kind: NodeKind.REVIEW, chapter })
+    pushNode(nodes, { id: `review:${chapter}`, kind: NodeKind.REVIEW, chapter })
   }
   for (let c = 0; c < 4; c++) {
-    push({ id: `vowel:${c + 1}`, kind: NodeKind.QUIZ, chapter: 5, levelId: `level-${c + 5}`, vowel: true })
+    pushNode(nodes, { id: `vowel:${c + 1}`, kind: NodeKind.QUIZ, chapter: 5, levelId: `level-${c + 5}`, vowel: true })
   }
   return nodes
+}
+
+/* Tigrinya School Path. LEARN nodes follow the unit family list (each
+   family once). Each unit ends in a QUIZ boss scoped to that unit. Units
+   are grouped into the same four arcade chapters so Runner/Catch gateways
+   stay at four — Play practice still uses learned families only. */
+function buildSchoolPathJourney() {
+  const nodes = []
+  const stories = packHasStories(SCHOOL_PATH_PACK_ID)
+  const bands = schoolPathBands(SCHOOL_PATH_UNITS, ARCADE_GATEWAYS.length)
+  bands.forEach((band, c) => {
+    const chapter = c + 1
+    band.forEach((unit) => {
+      const fams = unit.familyIds
+      fams.forEach((fid, i) => {
+        pushNode(nodes, {
+          id: `learn:${fid}`,
+          kind: NodeKind.LEARN,
+          chapter,
+          unitId: unit.id,
+          unitIndex: unit.index,
+          familyId: fid,
+        })
+        if (i > 0) {
+          pushNode(nodes, {
+            id: `mix:${fid}`,
+            kind: NodeKind.MIX,
+            chapter,
+            unitId: unit.id,
+            unitIndex: unit.index,
+            families: fams.slice(0, i + 1),
+          })
+        }
+      })
+      const quiz = quizSpecForFamilies(fams, {
+        levelId: `unit-${unit.id}`,
+        title: unit.titleEn,
+        unitId: unit.id,
+        unitIndex: unit.index,
+      })
+      pushNode(nodes, {
+        id: `quiz:${unit.id}`,
+        kind: NodeKind.QUIZ,
+        chapter,
+        unitId: unit.id,
+        unitIndex: unit.index,
+        levelId: quiz.id,
+        families: fams.slice(),
+        quiz,
+      })
+    })
+    if (stories) pushNode(nodes, { id: `story:${chapter}`, kind: NodeKind.STORY, chapter })
+    pushNode(nodes, { id: `arcade:${chapter}`, kind: NodeKind.ARCADE, chapter, gateway: ARCADE_GATEWAYS[c] })
+    pushNode(nodes, { id: `review:${chapter}`, kind: NodeKind.REVIEW, chapter })
+  })
+  bands.forEach((band, c) => {
+    const families = band.flatMap((u) => u.familyIds)
+    const quiz = quizSpecForFamilies(families, {
+      vowel: true,
+      levelId: `level-${c + 5}`,
+      title: 'Vowel Magic',
+    })
+    pushNode(nodes, {
+      id: `vowel:${c + 1}`,
+      kind: NodeKind.QUIZ,
+      chapter: 5,
+      levelId: quiz.id,
+      vowel: true,
+      families,
+      quiz,
+    })
+  })
+  return nodes
+}
+
+/* The ordered path. packId defaults to the active pack so a reload after
+   setActivePack rebuilds the matching spine. Pass 'ti' or 'am' in tests. */
+export function buildJourney(packId = getActivePackId()) {
+  if (schoolPathActive(packId)) return buildSchoolPathJourney()
+  return buildClassicJourney(packId)
 }
 export const JOURNEY = buildJourney()
 export const NODE_BY_ID = new Map(JOURNEY.map((n) => [n.id, n]))
@@ -275,7 +368,10 @@ export function progressStats(p) {
 
 /** The family ids the child has actually learned (completed LEARN nodes), in
    journey order. This is the set the games scope to by default so a child only
-   practises letters they have met; games offer an "all letters" override. */
-export function learnedFamilyIds(p) {
-  return JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p?.done?.[n.id]).map((n) => n.familyId)
+   practises letters they have met; games offer an "all letters" override.
+   Runner, Catch, and the other arcade games read this list — on the School
+   Path that is the unlocked unit prefix, not the whole abugida.
+   `nodes` defaults to the active spine; tests pass a built journey. */
+export function learnedFamilyIds(p, nodes = JOURNEY) {
+  return nodes.filter((n) => n.kind === NodeKind.LEARN && p?.done?.[n.id]).map((n) => n.familyId)
 }
