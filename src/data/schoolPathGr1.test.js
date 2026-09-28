@@ -4,6 +4,7 @@ import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds } from '../journey'
 import { learnInitial } from '../LearnLetters'
 import { buildQuestionQueue } from '../FidelQuestApp'
+import rawPath from './schoolPathGr1.json'
 import {
   SCHOOL_PATH_UNITS,
   blendWordsForLearned,
@@ -21,13 +22,18 @@ function familyOfChar(ch) {
   return null
 }
 
-function familiesOfWord(geez) {
+function familiesOfGeez(geez) {
   const ids = []
   for (const ch of geez) {
     const id = familyOfChar(ch)
-    if (!ids.includes(id)) ids.push(id)
+    if (!id || ids.includes(id)) continue
+    ids.push(id)
   }
   return ids
+}
+
+function wordsOf(geez) {
+  return String(geez || '').split(/[፡-፨!?,.\s"'«»“”‘’]+/).filter(Boolean)
 }
 
 describe('school path coverage', () => {
@@ -82,6 +88,7 @@ describe('meet picture preference', () => {
     const missing = meetPictureForFamily('sse', {
       active: true,
       packFamily: { word: { geez: 'ሠዓት', meaning: 'hour' } },
+      pathUnits: [{ id: 'bare', index: 1, familyIds: ['sse'], pictureWords: [] }],
     })
     expect(missing.fromSchoolPath).toBe(false)
     expect(missing.geez).toBe('ሠዓት')
@@ -163,7 +170,7 @@ describe('picture words match their family', () => {
   it('lists every family a blend actually spells', () => {
     for (const unit of SCHOOL_PATH_UNITS) {
       for (const word of unit.blendWords) {
-        expect(word.familyIds, word.geez).toEqual(familiesOfWord(word.geez))
+        expect(word.familyIds, word.geez).toEqual(familiesOfGeez(word.geez))
       }
     }
   })
@@ -176,6 +183,78 @@ describe('picture words match their family', () => {
     expect(pictureWordForFamily('chhe').geez).toBe('ጨሩሩ')
     const train = SCHOOL_PATH_UNITS.flatMap((u) => u.blendWords).find((w) => w.geez === 'ባቡር')
     expect(train.familyIds).toEqual(['be', 're'])
+    expect(pictureWordForFamily('sse').geez).toBe('ሠዓሊ')
+    expect(pictureWordForFamily('kha').geez).toBe('ኃይሊ')
+    expect(pictureWordForFamily('nye').geez).toBe('ኘው')
+    expect(pictureWordForFamily('zhe').geez).toBe('ዥዋዥዌ')
+    expect(pictureWordForFamily('ppe').geez).toBe('ጳጉሜ')
+    expect(pictureWordForFamily('ttse').geez).toBe('ፅዋ')
+  })
+
+  it('gives every family in the unit its own Meet word', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      for (const id of unit.familyIds) {
+        const hits = unit.pictureWords.filter((w) => w.familyId === id)
+        expect(hits, `${unit.id} ${id}`).toHaveLength(1)
+        expect(hits[0].meaningEn, hits[0].geez).toBeTruthy()
+        expect(hits[0].pictureHint, hits[0].geez).toBeTruthy()
+      }
+    }
+  })
+})
+
+const MOE_PHRASES = ['ቀለተ ነበበ', 'ከሰተ ዘለለ', 'ሓወይ ኣበይ ኣሎ', 'ሓጋይ']
+
+describe('action blends, echo lines, and mid-letter targets', () => {
+  it('does not claim MoE page order', () => {
+    expect(rawPath.source.copyrightNote).toMatch(/not claim MoE page order/i)
+    expect(rawPath.source.diasporaNote).toMatch(/does not follow that page order/i)
+  })
+
+  it('adds one or two original action blends in every unit', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      const actions = unit.blendWords.filter((w) => w.kind === 'action')
+      expect(actions.length, unit.id).toBeGreaterThanOrEqual(1)
+      expect(actions.length, unit.id).toBeLessThanOrEqual(2)
+      for (const word of actions) {
+        expect(word.meaningEn, word.geez).toBeTruthy()
+        expect(word.familyIds, word.geez).toEqual(familiesOfGeez(word.geez))
+        expect(MOE_PHRASES.some((p) => word.geez.includes(p)), word.geez).toBe(false)
+      }
+    }
+  })
+
+  it('keeps one or two short echo lines, with the families they spell', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      expect(unit.echoLines.length, unit.id).toBeGreaterThanOrEqual(1)
+      expect(unit.echoLines.length, unit.id).toBeLessThanOrEqual(2)
+      for (const line of unit.echoLines) {
+        const words = wordsOf(line.geez)
+        expect(words.length, line.geez).toBeGreaterThanOrEqual(2)
+        expect(words.length, line.geez).toBeLessThanOrEqual(4)
+        expect(line.meaningEn, line.geez).toBeTruthy()
+        expect(line.familyIds, line.geez).toEqual(familiesOfGeez(line.geez))
+        expect(MOE_PHRASES.some((p) => line.geez.includes(p)), line.geez).toBe(false)
+      }
+    }
+  })
+
+  it('points each mid-letter target at a fidel that is not the first letter', () => {
+    const targets = SCHOOL_PATH_UNITS.flatMap((u) => u.midLetterTargets || [])
+    expect(targets.length).toBeGreaterThanOrEqual(8)
+    for (const unit of SCHOOL_PATH_UNITS) {
+      for (const target of unit.midLetterTargets || []) {
+        const chars = [...target.geez]
+        const idx = chars.indexOf(target.target)
+        expect(idx, target.geez).toBeGreaterThan(0)
+        expect(familyOfChar(target.target), target.geez).toBe(target.familyId)
+        expect(unit.familyIds, target.geez).toContain(target.familyId)
+        const position = idx === chars.length - 1 ? 'final' : 'mid'
+        expect(target.position, target.geez).toBe(position)
+        expect(target.meaningEn, target.geez).toBeTruthy()
+        expect(MOE_PHRASES.some((p) => target.geez.includes(p)), target.geez).toBe(false)
+      }
+    }
   })
 })
 

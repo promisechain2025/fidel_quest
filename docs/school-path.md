@@ -9,19 +9,38 @@ spine. Play (Runner, Catch, and the other practice games) stays available.
 
 `src/data/schoolPathGr1.json` is original eGeez content. Each unit names the
 families introduced together, plus a picture word and a few blend words in
-eGeez's own spelling. The file records pedagogy order only: original words,
-no textbook pages, and no SIL artwork.
+eGeez's own spelling. The file records pedagogy shapes only: original words,
+no textbook pages, and no SIL artwork. It does not follow MoE page order.
 
 The Drive folder the order was read from is noted on the JSON `source` field.
 Do not ship those PDFs in the app.
 
 The MoE Alphabet book opens on በ, ሰ, and ሸ. School Path keeps ሀ and ለ as the
-free taste. Meet words are an original diaspora and kids-book rewrite —
+free taste. That choice is intentional. Do not describe the unit list as
+MoE page order.
+
+Meet words are an original diaspora and kids-book rewrite —
 cute animals, bright food, a cozy jebena, the sun, friendly pets — and each
 `pictureHint` is a soft highland art brief. They are not copies of textbook
 pages, and the app does not ship MoE or SIL art. A Meet word's first fidel
-is the family it introduces. Blends stay hidden until every family in the
-word is learned.
+is the family it introduces. Every family in a unit has one Meet word,
+including the rare letters (painter, power, meow, swing, Pagume, cup).
+Those six do not have a gouache painting yet, so the Meet card stays a
+letter bubble until the art pass. Blends stay hidden until every family in
+the word is learned.
+
+Each unit also carries:
+
+- one or two `blendWords` with `"kind": "action"` — high-frequency diaspora
+  verbs (gave, ate, drank, slept, ran), original spellings, not MoE
+  Name+Verb lists
+- one or two `echoLines` — short original lines (family, action, food, or
+  home) with an English gloss
+- `midLetterTargets` where a natural word hides the new fidel in the middle
+  or at the end, for a future find-the-fidel quiz
+
+Echo lines and mid-letter targets are data only. No Echo game and no
+find-the-fidel quiz read them yet.
 
 On that first Meet card the picture-word painting (`public/art/meet`,
 original gouache) is the background, and the fidel stays a large centered
@@ -65,11 +84,32 @@ translate is blocked for the whole app so those letters are not rewritten
 
 `FREE_FAMILIES` is still `ha` and `le` (unit 1).
 
+## Story Path (P2)
+
+`src/data/schoolPathGr1Stories.json` is five original diaspora stories.
+They borrow Reading Book shapes only: a room-to-room refrain, a walk that
+recycles Meet animals, coffee with grandma, a baby who will not sleep, and
+the sun through the week. Titles and sentences are eGeez's own. They do
+not copy MoE titles or pages.
+
+Each story names `unlockAfterUnitId`. It opens in Story Time once every
+family through that unit is learned. Tigrinya Story Time shows these five
+books. The biblical Story Time tracks stay on the Amharic pack and are not
+rewritten. A story node sits on each School Path chapter, the same way
+Amharic already does. Pages draw with the existing StoryScene stamps.
+Family Voice clips for these lines are not recorded yet.
+
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).
-- Word Build from each unit's `blendWords`. `blendWordsForLearned` already
-  hides a blend until every family it needs is unlocked.
+- Word Build from each unit's `blendWords`, including the new action verbs.
+  `blendWordsForLearned` already hides a blend until every family it needs
+  is unlocked.
+- Echo player for `echoLines`, and a find-the-fidel quiz for
+  `midLetterTargets`.
+- Gouache Meet paintings for sse, kha, nye, zhe, ppe, and ttse.
 - Soft-fail feedback that never blocks a child mid-task.
 - Legacy chapter-quiz stars (`quiz:1` … `quiz:4`) do not map onto the new
   unit quizzes. Letter Steps mastery (`learn:<familyId>`) still migrates.
+- Family Voice for the new Meet words, echo lines, and Story Path pages.
+- Grade 2 and later harvests stay future work.

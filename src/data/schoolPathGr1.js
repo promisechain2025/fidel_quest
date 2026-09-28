@@ -1,10 +1,11 @@
 /* ============================================================================
    SCHOOL PATH — Grade 1 Alphabet (Tigrinya)
    ----------------------------------------------------------------------------
-   MoE Eritrea Mother Tongue GR1 teaching ORDER, encoded as original eGeez
-   units. This is not textbook text or art: picture words and blends are
-   an original diaspora kids-book rewrite (pictureHint is the art brief),
-   sequenced the way the Grade 1 alphabet introduces families.
+   Eritrean GR1 alphabet pedagogy, encoded as original eGeez units.
+   This is not textbook text or art, and it is not MoE page order: the
+   free taste stays ሀ/ለ while the MoE book opens በ/ሰ/ሸ. Picture words,
+   action blends, echo lines, and mid-letter targets are an original
+   diaspora kids-book rewrite (pictureHint is the art brief).
    See docs/school-path.md.
 
    The unit list is the source of truth (src/data/schoolPathGr1.json). When
@@ -26,6 +27,8 @@ const units = (raw.units || []).map((unit, i) => Object.freeze({
   familyIds: Object.freeze([...(unit.familyIds || [])]),
   pictureWords: Object.freeze([...(unit.pictureWords || [])]),
   blendWords: Object.freeze([...(unit.blendWords || [])]),
+  echoLines: Object.freeze([...(unit.echoLines || [])]),
+  midLetterTargets: Object.freeze([...(unit.midLetterTargets || [])]),
   note: unit.note || null,
 }))
 

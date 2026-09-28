@@ -1,0 +1,299 @@
+{
+  "id": "school-path-gr1-stories",
+  "label": "Story Path — Grade 1",
+  "packId": "ti",
+  "source": {
+    "book": "MoE Eritrea Reading Books GR1 (pedagogy shapes only — refrain, rooms, animals, care, week — not titles or sentences)",
+    "copyrightNote": "Original eGeez diaspora stories. Do not ship MoE PDF pages, MoE titles, or SIL art. Do not claim MoE page order.",
+    "shapeNote": "Five stories borrow Reading Book shapes (room refrain, walk recycle, coffee ritual, care verbs, sun-through-the-week) and rewrite them with School Path Meet words."
+  },
+  "stories": [
+    {
+      "id": "where-is-sam",
+      "titleEn": "Where Is Sam?",
+      "titleTi": "ንሳም ደሊ",
+      "latinTitle": "Nesam deli",
+      "unlockAfterUnitId": "u09",
+      "refrain": {
+        "geez": "ሳም ኣበይ?",
+        "meaningEn": "Sam, where?",
+        "familyIds": ["se", "me", "a", "be", "ye"]
+      },
+      "pages": [
+        {
+          "geez": "ሳም ኣበይ?",
+          "latin": "Sam abey?",
+          "meaningEn": "Sam, where?",
+          "pictureHint": "child peering around a cozy highland room, soft window light, picture-book search",
+          "familyIds": ["se", "me", "a", "be", "ye"]
+        },
+        {
+          "geez": "ሳም ኣብ ጀበና የለን።",
+          "latin": "Sam ab jebena yellen.",
+          "meaningEn": "Sam is not by the jebena.",
+          "pictureHint": "steaming jebena on a low stove, empty little stool, warm kitchen",
+          "familyIds": ["se", "me", "a", "be", "je", "ne", "ye", "le"]
+        },
+        {
+          "geez": "ሳም ኣብ ማይ የለን።",
+          "latin": "Sam ab may yellen.",
+          "meaningEn": "Sam is not by the water.",
+          "pictureHint": "sparkly wash basin, no child, soft bathroom light",
+          "familyIds": ["se", "me", "a", "be", "ye", "le", "ne"]
+        },
+        {
+          "geez": "ሳም ኣይደቅስን።",
+          "latin": "Sam aydeqsin.",
+          "meaningEn": "Sam is not asleep.",
+          "pictureHint": "empty little bed with a folded blanket, quiet room",
+          "familyIds": ["se", "me", "a", "ye", "de", "qe", "ne"]
+        },
+        {
+          "geez": "ሳም ምስ ከልቢ ኣሎ።",
+          "latin": "Sam mis kelbi alo.",
+          "meaningEn": "Sam is with the dog.",
+          "pictureHint": "child hugging a fluffy puppy on a rug, tiny hearts, cozy ending",
+          "familyIds": ["se", "me", "ke", "le", "be", "a"]
+        }
+      ]
+    },
+    {
+      "id": "walk-to-school",
+      "titleEn": "Walk to School",
+      "titleTi": "ናብ ትምህርቲ",
+      "latinTitle": "Nab timhirti",
+      "unlockAfterUnitId": "u10",
+      "refrain": {
+        "geez": "እንታይ ኣሎ?",
+        "meaningEn": "What is there?",
+        "familyIds": ["a", "ne", "te", "ye", "le"]
+      },
+      "pages": [
+        {
+          "geez": "ቆልዓ ከደ።",
+          "latin": "Qola kede.",
+          "meaningEn": "The child went.",
+          "pictureHint": "child with a small bag on a highland path, morning light",
+          "familyIds": ["qe", "le", "ae", "ke", "de"]
+        },
+        {
+          "geez": "ከልቢ ኣሎ።",
+          "latin": "Kelbi alo.",
+          "meaningEn": "A dog is there.",
+          "pictureHint": "friendly puppy sitting on the path, wagging tail",
+          "familyIds": ["ke", "le", "be", "a"]
+        },
+        {
+          "geez": "ጨሩሩ ኣሎ።",
+          "latin": "Cheruru alo.",
+          "meaningEn": "A little bird is there.",
+          "pictureHint": "tiny bird on a branch above the path, mid-song",
+          "familyIds": ["chhe", "re", "a", "le"]
+        },
+        {
+          "geez": "ገመል ኣሎ።",
+          "latin": "Gemel alo.",
+          "meaningEn": "A camel is there.",
+          "pictureHint": "friendly camel with long lashes beside the path",
+          "familyIds": ["ge", "me", "le", "a"]
+        },
+        {
+          "geez": "ደርሆ ኣሎ።",
+          "latin": "Derho alo.",
+          "meaningEn": "A hen is there.",
+          "pictureHint": "plump hen and one chick at the path edge",
+          "familyIds": ["de", "re", "ha", "a", "le"]
+        },
+        {
+          "geez": "ጤል ኣሎ።",
+          "latin": "Tiel alo.",
+          "meaningEn": "A goat is there.",
+          "pictureHint": "bouncy baby goat on a grassy rise",
+          "familyIds": ["the", "le", "a"]
+        },
+        {
+          "geez": "በለስ በልዐ።",
+          "latin": "Beles belie.",
+          "meaningEn": "He ate a beles.",
+          "pictureHint": "child with purple beles juice on a smile, sunny stall",
+          "familyIds": ["be", "le", "se", "ae"]
+        },
+        {
+          "geez": "ቤት ትምህርቲ።",
+          "latin": "Bet timhirti.",
+          "meaningEn": "School.",
+          "pictureHint": "small highland school gate, child waving, soft flag of light",
+          "familyIds": ["be", "te", "me", "ha", "re"]
+        }
+      ]
+    },
+    {
+      "id": "coffee-with-grandma",
+      "titleEn": "Coffee With Grandma",
+      "titleTi": "ጀበና ምስ ሓበይቲ",
+      "latinTitle": "Jebena mis habeyti",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ጀበና ኣሎ።",
+        "meaningEn": "A jebena is here.",
+        "familyIds": ["je", "be", "ne", "a", "le"]
+      },
+      "pages": [
+        {
+          "geez": "ጀበና ኣሎ።",
+          "latin": "Jebena alo.",
+          "meaningEn": "A jebena is here.",
+          "pictureHint": "cozy glowing jebena with steam curls on a low tray",
+          "familyIds": ["je", "be", "ne", "a", "le"]
+        },
+        {
+          "geez": "ሻሂ ኣሎ።",
+          "latin": "Shahi alo.",
+          "meaningEn": "Tea is here.",
+          "pictureHint": "small glass of amber tea, soft steam, kids-table scale",
+          "familyIds": ["she", "ha", "a", "le"]
+        },
+        {
+          "geez": "ጸባ ኣሎ።",
+          "latin": "Tseba alo.",
+          "meaningEn": "Milk is here.",
+          "pictureHint": "friendly cup of milk beside the jebena",
+          "familyIds": ["tse", "be", "a", "le"]
+        },
+        {
+          "geez": "ሓበይቲ ሰተየ።",
+          "latin": "Habeyti seteye.",
+          "meaningEn": "Grandma drank.",
+          "pictureHint": "grandma in a soft shawl lifting a little cup, warm smile",
+          "familyIds": ["hha", "be", "ye", "te", "se"]
+        },
+        {
+          "geez": "ቆልዓ ሰተየ።",
+          "latin": "Qola seteye.",
+          "meaningEn": "The child drank.",
+          "pictureHint": "child with a milk mustache, grandma smiling beside",
+          "familyIds": ["qe", "le", "ae", "se", "te", "ye"]
+        }
+      ]
+    },
+    {
+      "id": "baby-wont-sleep",
+      "titleEn": "Baby Won't Sleep",
+      "titleTi": "ቆልዓ ኣይደቅስን",
+      "latinTitle": "Qola aydeqsin",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ቆልዓ ኣይደቅስን።",
+        "meaningEn": "The baby will not sleep.",
+        "familyIds": ["qe", "le", "ae", "a", "ye", "de", "se", "ne"]
+      },
+      "pages": [
+        {
+          "geez": "ቆልዓ ኣይደቅስን።",
+          "latin": "Qola aydeqsin.",
+          "meaningEn": "The baby will not sleep.",
+          "pictureHint": "wide-awake baby on a soft blanket, night window, not scary",
+          "familyIds": ["qe", "le", "ae", "a", "ye", "de", "se", "ne"]
+        },
+        {
+          "geez": "ማማ ዘመረ።",
+          "latin": "Mama zemere.",
+          "meaningEn": "Mom sang.",
+          "pictureHint": "mom singing, a few music notes, baby listening",
+          "familyIds": ["me", "ze", "re"]
+        },
+        {
+          "geez": "ማማ ሓዘ።",
+          "latin": "Mama haze.",
+          "meaningEn": "Mom held the baby.",
+          "pictureHint": "mom holding the baby close, soft hearts, indoor glow",
+          "familyIds": ["me", "hha", "ze"]
+        },
+        {
+          "geez": "ቆልዓ ጸባ ሰተየ።",
+          "latin": "Qola tseba seteye.",
+          "meaningEn": "The baby drank milk.",
+          "pictureHint": "baby with a small cup of milk, mom nearby",
+          "familyIds": ["qe", "le", "ae", "tse", "be", "se", "te", "ye"]
+        },
+        {
+          "geez": "ቆልዓ ደቀሰ።",
+          "latin": "Qola deqese.",
+          "meaningEn": "The baby slept.",
+          "pictureHint": "baby asleep, gentle zzz, mom smiling in the doorway",
+          "familyIds": ["qe", "le", "ae", "de", "se"]
+        }
+      ]
+    },
+    {
+      "id": "sun-all-week",
+      "titleEn": "Sun All Week",
+      "titleTi": "ጸሓይ ኩሉ ሰሙን",
+      "latinTitle": "Tsehay kulu semun",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ጸሓይ ኣሎ።",
+        "meaningEn": "The sun is there.",
+        "familyIds": ["tse", "hha", "ye", "a", "le"]
+      },
+      "pages": [
+        {
+          "geez": "ጸሓይ ሰኑይ።",
+          "latin": "Tsehay senuy.",
+          "meaningEn": "Sun on Monday.",
+          "pictureHint": "smiling sun over a highland morning, soft rays",
+          "familyIds": ["tse", "hha", "ye", "se", "ne"]
+        },
+        {
+          "geez": "ጸሓይ ሰሉስ።",
+          "latin": "Tsehay selus.",
+          "meaningEn": "Sun on Tuesday.",
+          "pictureHint": "same friendly sun, a small cloud sliding by",
+          "familyIds": ["tse", "hha", "ye", "se", "le"]
+        },
+        {
+          "geez": "ጸሓይ ረቡዕ።",
+          "latin": "Tsehay rebus.",
+          "meaningEn": "Sun on Wednesday.",
+          "pictureHint": "sun above a short path and one acacia",
+          "familyIds": ["tse", "hha", "ye", "re", "be", "ae"]
+        },
+        {
+          "geez": "ጸሓይ ሓሙስ።",
+          "latin": "Tsehay hamus.",
+          "meaningEn": "Sun on Thursday.",
+          "pictureHint": "sun over a cozy yard, warm gold light",
+          "familyIds": ["tse", "hha", "ye", "me", "se"]
+        },
+        {
+          "geez": "ጸሓይ ዓርቢ።",
+          "latin": "Tsehay arbi.",
+          "meaningEn": "Sun on Friday.",
+          "pictureHint": "sun over a quiet afternoon meadow",
+          "familyIds": ["tse", "hha", "ye", "ae", "re", "be"]
+        },
+        {
+          "geez": "ጸሓይ ቀዳም።",
+          "latin": "Tsehay qedam.",
+          "meaningEn": "Sun on Saturday.",
+          "pictureHint": "sun over a picnic cloth, grapes and bread, weekend glow",
+          "familyIds": ["tse", "hha", "ye", "qe", "de", "me"]
+        },
+        {
+          "geez": "ጸሓይ ሰንበት።",
+          "latin": "Tsehay senbet.",
+          "meaningEn": "Sun on Sunday.",
+          "pictureHint": "sun over a family walking, soft Sunday light",
+          "familyIds": ["tse", "hha", "ye", "se", "ne", "be", "te"]
+        },
+        {
+          "geez": "ጸሓይ ኩሉ ሰሙን።",
+          "latin": "Tsehay kulu semun.",
+          "meaningEn": "The sun, all week.",
+          "pictureHint": "big smiling sun filling a golden sky, seven soft rays",
+          "familyIds": ["tse", "hha", "ye", "ke", "le", "se", "me", "ne"]
+        }
+      ]
+    }
+  ]
+}

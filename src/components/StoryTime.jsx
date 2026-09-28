@@ -427,7 +427,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
         ))}
       </ul>
       <p className="mt-4 text-center text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
-        {t('storyDraftNote', 'Early-reader Amharic, reviewed with love - tell us if a line sounds off!')}
+        {getActivePackId() === 'ti'
+          ? t('storyDraftNoteTi', 'School Path stories — original lines. Tell us if a word sounds off!')
+          : t('storyDraftNote', 'Early-reader Amharic, reviewed with love - tell us if a line sounds off!')}
       </p>
     </div>
   )
