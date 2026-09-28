@@ -161,18 +161,18 @@
           "familyIds": ["tse", "be", "a", "le"]
         },
         {
-          "geez": "ዓባየይ ሰተየት።",
-          "latin": "Abayey seteyet.",
-          "meaningEn": "Grandma drank.",
+          "geez": "ዓባየይ ቡን ሰተየት።",
+          "latin": "Abayey bun seteyet.",
+          "meaningEn": "Grandma drank coffee.",
           "pictureHint": "grandma in a soft shawl lifting a little cup, warm smile",
-          "familyIds": ["ae", "be", "ye", "se", "te"]
+          "familyIds": ["ae", "be", "ye", "ne", "se", "te"]
         },
         {
-          "geez": "ቆልዓ ሰተየ።",
-          "latin": "Qola seteye.",
-          "meaningEn": "The child drank.",
+          "geez": "ቆልዓ ጸባ ሰተየ።",
+          "latin": "Qola tseba seteye.",
+          "meaningEn": "The child drank milk.",
           "pictureHint": "child with a milk mustache, grandma smiling beside",
-          "familyIds": ["qe", "le", "ae", "se", "te", "ye"]
+          "familyIds": ["qe", "le", "ae", "tse", "be", "se", "te", "ye"]
         }
       ]
     },
