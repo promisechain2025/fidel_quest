@@ -48,8 +48,10 @@ export const FEEDBACK_GRACE_DAYS = 4
 /** Display price of the app - one-time, every platform. */
 export const APP_PRICE = (import.meta.env?.VITE_APP_PRICE || '$12.99').trim()
 
-/** Master switch. Purchases (trial, buy, Family Pack, gift) are OFF unless
-    VITE_MONETIZE is explicitly enabled - so the default build is free. */
+/** Web master switch. Purchases on the website and the PWA are OFF unless
+    VITE_MONETIZE is explicitly enabled, so that default build stays free.
+    A native build sells when its RevenueCat key is set, even if this flag
+    is off — see licenseState. */
 export const MONETIZE = /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_MONETIZE ?? ''))
 
 function load() {
@@ -78,15 +80,18 @@ function addDaysStamp(day, n) {
 }
 
 /** The current license picture. Starts the trial clock on first call.
-    - monetization OFF (default): the app is simply free/licensed everywhere.
-    - monetization ON, NATIVE without live IAP (no RevenueCat key): licensed -
-      the free-download build cannot sell yet, so it must not nag (dormant
-      convention).
-    - monetization ON, everywhere else (web, or native with IAP live): the
-      free trial runs, then the once-a-day ask - until `supported` is set by
-      a purchase, a restore, or an EGZ code. */
+    - Web, monetization OFF (default): the app is simply free.
+    - Native without a RevenueCat key: licensed. The build cannot sell, so
+      it must not nag.
+    - Native WITH a RevenueCat key: the trial runs even if VITE_MONETIZE is
+      unset. Keys alone used to leave the paywall compiled out, so the
+      stores never saw a transaction. The IAP runbook says the keys are the
+      switch that turns the purchase sheet on.
+    - Web with VITE_MONETIZE: the same trial, then the once-a-day ask.
+    `supported` (purchase, restore, or an EGZ code) ends the ask. */
 export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform(), storeSellable = iapAvailable()) {
-  if (!monetize || (native && !storeSellable)) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
+  const selling = native ? !!storeSellable : !!monetize
+  if (!selling) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const s = load()
   if (!s.startDay) {
     s.startDay = today

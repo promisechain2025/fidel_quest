@@ -37,7 +37,7 @@ import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadStoriesRead } from './platform/stories'
 import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
-import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack } from './platform/iap'
+import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { dayStamp } from './platform/streak'
@@ -204,6 +204,7 @@ function ProfilesCard() {
     setIapMsg('')
     const r = await buyFamilyPack()
     if (r === 'purchased') refresh()
+    else if (r === 'pending') setIapMsg('pending')
     else if (r === 'error' || r === 'unavailable') setIapMsg('error')
   }
   const doRestore = async () => {
@@ -270,7 +271,7 @@ function ProfilesCard() {
       </ul>
 
       {reg.list.length < MAX_PROFILES &&
-        (unlocked || !MONETIZE ? (
+        (unlocked || (!MONETIZE && !iapAvailable()) ? (
           adding ? (
             <div className="mt-3 space-y-2">
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
@@ -314,6 +315,9 @@ function ProfilesCard() {
                 )}
                 {iapMsg === 'none' && (
                   <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('gpPackIapNone', 'No Family Pack found on this account.')}</span>
+                )}
+                {iapMsg === 'pending' && (
+                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</span>
                 )}
               </div>
             )}
@@ -531,6 +535,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const [confirmUnlock, setConfirmUnlock] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const [importErr, setImportErr] = useState(false)
+  const [appIapMsg, setAppIapMsg] = useState('')
   // Theme + language moved here (behind the gate) so a child cannot flip them
   // mid-task; the grown-up sets them where they set everything else.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -551,6 +556,22 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const progress = loadProgress()
   const runnerBest = loadRunnerBest()
   const stars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
+  const doBuyApp = async () => {
+    setAppIapMsg('')
+    const r = await buyFullApp()
+    if (r === 'purchased') {
+      try { window.location.reload() } catch { /* ignore */ }
+    } else if (r === 'pending') setAppIapMsg('pending')
+    else if (r === 'error' || r === 'unavailable') setAppIapMsg('error')
+  }
+  const doRestoreApp = async () => {
+    setAppIapMsg('')
+    const r = await restorePurchasesAll()
+    if (r === 'restored') {
+      try { window.location.reload() } catch { /* ignore */ }
+    } else if (r === 'none') setAppIapMsg('none')
+    else if (r !== 'unavailable') setAppIapMsg('error')
+  }
 
   return (
     <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
@@ -737,7 +758,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
              buy, ask a relative abroad to gift it, or honest feedback for
              more free days. Mirrors the once-a-day SupportAsk dialog. Hidden
              entirely while monetization is off (the app is simply free). */}
-          {MONETIZE && (() => {
+          {(MONETIZE || iapAvailable()) && (() => {
             const lic = licenseState()
             const buy = buyUrl()
             return (
@@ -755,10 +776,19 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                 {lic.phase !== 'licensed' && (
                   <>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {buy && (
+                      {iapAvailable() ? (
+                        <button type="button" onClick={doBuyApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          {t('payBuy', 'Buy the app')}
+                        </button>
+                      ) : buy ? (
                         <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                           {t('payBuy', 'Buy the app')}
                         </a>
+                      ) : null}
+                      {iapAvailable() && (
+                        <button type="button" onClick={doRestoreApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                          {t('payRestore', 'Restore a previous purchase')}
+                        </button>
                       )}
                       <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                         {t('payFamily', 'Ask family to gift it')}
@@ -777,6 +807,15 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                         </button>
                       )}
                     </div>
+                    {appIapMsg === 'error' && (
+                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('iapError', 'Purchase is unavailable right now - please try again later.')}</p>
+                    )}
+                    {appIapMsg === 'none' && (
+                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('payRestoreNone', 'No previous purchase found on this store account.')}</p>
+                    )}
+                    {appIapMsg === 'pending' && (
+                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</p>
+                    )}
                     <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
                       {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
                       {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}

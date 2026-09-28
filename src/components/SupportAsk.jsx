@@ -9,13 +9,13 @@
    blocked). On native the purchase runs through the in-app purchase (3.1.1),
    not an external link.
    ========================================================================== */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, KeyRound, MessageCircle, RefreshCcw, Share2, ShoppingBag } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { grantFeedbackGrace, licenseState, redeemAppCode, APP_PRICE, FEEDBACK_GRACE_DAYS, TRIAL_DAYS } from '../platform/license'
 import { buyUrl, feedbackMailto, shareWithFamily } from '../platform/support'
-import { iapAvailable, buyFullApp, restorePurchasesAll } from '../platform/iap'
+import { iapAvailable, buyFullApp, restorePurchasesAll, fullAppStorePrice } from '../platform/iap'
 import ParentalGate from './ParentalGate'
 import AnbessaSvg from './AnbessaSvg'
 
@@ -27,7 +27,12 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
   const [iapMsg, setIapMsg] = useState('')
   const [code, setCode] = useState('')
   const [codeMsg, setCodeMsg] = useState('')
+  const [price, setPrice] = useState(APP_PRICE)
   const buy = buyUrl()
+  useEffect(() => {
+    if (!iapAvailable()) return
+    fullAppStorePrice().then((p) => { if (p) setPrice(p) })
+  }, [])
   // the honest-feedback extension is one-time; afterwards buy/gift only
   const [canFeedback] = useState(() => licenseState().feedbackAvailable)
 
@@ -45,6 +50,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
     if (iapAvailable()) {
       const r = await buyFullApp()
       if (r === 'purchased') finishUnlocked()
+      else if (r === 'pending') setIapMsg('pending')
       else if (r === 'error' || r === 'unavailable') setIapMsg('error')
     } else {
       try { window.open(buy, '_blank', 'noopener,noreferrer') } catch { /* no browser */ }
@@ -91,7 +97,7 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
               <>
                 {(iapAvailable() || buy) && (
                   <button type="button" onClick={doBuy} className={`chunk flex items-center justify-center gap-2 rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
-                    <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuyPrice', 'Buy the app - {p} once', { p: APP_PRICE })}
+                    <ShoppingBag className="h-5 w-5" aria-hidden="true" /> {t('payBuyPrice', 'Buy the app - {p} once', { p: price })}
                   </button>
                 )}
                 {iapAvailable() && (
@@ -101,6 +107,9 @@ export default function SupportAsk({ onClose, onFeedbackGranted }) {
                 )}
                 {iapMsg === 'error' && (
                   <p className="text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('iapError', 'Purchase is unavailable right now - please try again later.')}</p>
+                )}
+                {iapMsg === 'pending' && (
+                  <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</p>
                 )}
                 {iapMsg === 'none' && (
                   <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('payRestoreNone', 'No previous purchase found on this store account.')}</p>

@@ -65,3 +65,10 @@ cd ios/App
 retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
+# Vite inlines VITE_* from the environment at `npm run build` above.
+# Xcode Cloud does not set these unless they are workflow environment
+# variables. An archive without the Apple key never configures RevenueCat,
+# so App Store purchases cannot show up for that build.
+if [ -z "$VITE_REVENUECAT_APPLE_KEY" ]; then
+  echo "ci_post_clone: VITE_REVENUECAT_APPLE_KEY is unset; this archive will not record App Store purchases"
+fi

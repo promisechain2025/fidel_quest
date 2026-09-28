@@ -193,7 +193,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
       </div>
 
       {/* play field */}
-      <motion.div ref={areaRef} animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'manipulation' }}>
+      <motion.div ref={areaRef} animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'none' }}>
         <SkyScape reduce={reduce} />
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
         {/* falling letters - tap to shoot */}
