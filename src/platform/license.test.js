@@ -28,6 +28,13 @@ describe('license (honest free trial)', () => {
     expect(licenseState('2026-09-01', true, true, true).phase).toBe('ended')
   })
 
+  it('native build with a RevenueCat key sells even when VITE_MONETIZE is off', () => {
+    const s = licenseState('2026-07-10', false, true, true)
+    expect(s.phase).toBe('trial')
+    expect(s.shouldAsk).toBe(false)
+    expect(licenseState('2026-09-01', false, true, true).phase).toBe('ended')
+  })
+
   it('EGZ codes: mint validates, tampering fails, redeeming licenses forever', () => {
     const code = mintAppCode('ABCD')
     expect(isValidAppCode(code)).toBe(true)

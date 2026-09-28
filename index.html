@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#f59e0b" />
     <!-- The Ethiopic (Ge'ez) font is self-hosted and declared via @font-face in
@@ -36,6 +36,13 @@
   </head>
   <body translate="no" class="notranslate">
     <div id="root" translate="no" class="notranslate"></div>
+    <script>
+      // iOS pinch zoom fires gesture* events. CSS touch-action does not
+      // cancel those. Kids hit this by accident; taps and scrolling stay.
+      ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (type) {
+        document.addEventListener(type, function (e) { e.preventDefault() }, { passive: false })
+      })
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
