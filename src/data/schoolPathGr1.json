@@ -5,8 +5,8 @@
   "source": {
     "driveFolder": "https://drive.google.com/drive/folders/18SRGwtnjNn_m1bwAalptkpDA3hD7Yo7I",
     "book": "MoE Eritrea Mother Tongue GR1 Alphabet (drill shapes + diaspora word choices — not page-order copy; no verbatim MoE text/art)",
-    "copyrightNote": "Encode teaching order + original eGeez art/audio. Do not ship MoE PDF pages or SIL artwork.",
-    "diasporaNote": "Picture words favor diaspora home/culture AND kid-book magnets (cute animals, bright food, cozy jebena, sun, train-as-blend). pictureHint is art direction for premium kids-book style in eGeez highland look — soft, friendly, high color, never dry textbook SIL. Traditional ሀ/ለ free-taste kept; MoE book opens በ/ሰ/ሸ."
+    "copyrightNote": "Encode pedagogy shapes + original eGeez words/art/audio. Do not ship MoE PDF pages or SIL artwork. Do not claim MoE page order.",
+    "diasporaNote": "Picture words favor diaspora home/culture AND kid-book magnets (cute animals, bright food, cozy jebena, sun, train-as-blend). pictureHint is art direction for premium kids-book style in eGeez highland look — soft, friendly, high color, never dry textbook SIL. Traditional ሀ/ለ free-taste kept; the MoE book opens በ/ሰ/ሸ, and this pack does not follow that page order. Action blends, echo lines, and mid-letter targets are original eGeez lines, not MoE Name+Verb lists."
   },
   "chrome": {
     "appName": "eGeez",
@@ -26,6 +26,8 @@
       "trace": "Letter Steps Trace",
       "vowelFamily": "Letter Steps river / Bubble twin-safe drills",
       "blend": "Quiz build-the-word using unit.blendWords (decodable from unlocked families only)",
+      "echo": "Future Echo fluency — unit.echoLines are original two-word lines (not a game yet)",
+      "midLetter": "Future Quiz find-the-fidel — unit.midLetterTargets (not a game yet)",
       "unitQuiz": "existing QUIZ boss node scoped to unit familyIds",
       "arcade": "Runner/Catch letter pool = learnedFamilyIds only (already in journey)"
     }
@@ -66,9 +68,38 @@
             "le",
             "be"
           ]
+        },
+        {
+          "geez": "ሃበ",
+          "meaningEn": "he gave",
+          "kind": "action",
+          "familyIds": [
+            "ha",
+            "be"
+          ]
         }
       ],
-      "note": "Free-taste ሀ/ለ. Kid-book meet art. MoE opens በ/ሰ/ሸ — free-taste intentional."
+      "echoLines": [
+        {
+          "geez": "ሀሎ ልቢ።",
+          "meaningEn": "Hello, heart.",
+          "familyIds": [
+            "ha",
+            "le",
+            "be"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ሀሎ",
+          "meaningEn": "hello",
+          "target": "ሎ",
+          "familyId": "le",
+          "position": "final"
+        }
+      ],
+      "note": "Free-taste ሀ/ለ. Kid-book meet art. MoE opens በ/ሰ/ሸ — free-taste intentional, not page order."
     },
     {
       "id": "u02",
@@ -111,6 +142,52 @@
             "me",
             "ye"
           ]
+        },
+        {
+          "geez": "ሓዘ",
+          "meaningEn": "he held",
+          "kind": "action",
+          "familyIds": [
+            "hha",
+            "ze"
+          ]
+        },
+        {
+          "geez": "መጸ",
+          "meaningEn": "he came",
+          "kind": "action",
+          "familyIds": [
+            "me",
+            "tse"
+          ]
+        }
+      ],
+      "echoLines": [
+        {
+          "geez": "ማማ ማይ።",
+          "meaningEn": "Mom, water.",
+          "familyIds": [
+            "me",
+            "ye"
+          ]
+        },
+        {
+          "geez": "ማማ ሓዊ።",
+          "meaningEn": "Mom, fire.",
+          "familyIds": [
+            "me",
+            "hha",
+            "we"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ሰማይ",
+          "meaningEn": "sky",
+          "target": "ማ",
+          "familyId": "me",
+          "position": "mid"
         }
       ]
     },
@@ -123,6 +200,12 @@
         "se"
       ],
       "pictureWords": [
+        {
+          "familyId": "sse",
+          "geez": "ሠዓሊ",
+          "meaningEn": "painter",
+          "pictureHint": "kid painter with a big brush and a sunny canvas, paint dots on one cheek, picture-book studio"
+        },
         {
           "familyId": "se",
           "geez": "ሰብ",
@@ -160,9 +243,71 @@
             "be",
             "te"
           ]
+        },
+        {
+          "geez": "ስረ",
+          "meaningEn": "trousers",
+          "familyIds": [
+            "se",
+            "re"
+          ]
+        },
+        {
+          "geez": "ሰምዐ",
+          "meaningEn": "he heard",
+          "kind": "action",
+          "familyIds": [
+            "se",
+            "me",
+            "ae"
+          ]
+        },
+        {
+          "geez": "ረኣየ",
+          "meaningEn": "he saw",
+          "kind": "action",
+          "familyIds": [
+            "re",
+            "a",
+            "ye"
+          ]
         }
       ],
-      "note": "sse rare — no forced Meet. Pigeon over abstract calendar for kid-book wow."
+      "echoLines": [
+        {
+          "geez": "ሰላም ሰብ።",
+          "meaningEn": "Hello, person.",
+          "familyIds": [
+            "se",
+            "le",
+            "me",
+            "be"
+          ]
+        },
+        {
+          "geez": "ሰላም ርግቢት።",
+          "meaningEn": "Hello, pigeon.",
+          "familyIds": [
+            "se",
+            "le",
+            "me",
+            "re",
+            "ge",
+            "be",
+            "te"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ርእሲ",
+          "meaningEn": "head",
+          "target": "ሲ",
+          "familyId": "se",
+          "position": "final"
+        }
+      ],
+      "note": "sse Meet is a painter (ሠዓሊ), not an ostrich. Pigeon stays the kid-book re word. Painting for sse is not commissioned yet."
     },
     {
       "id": "u04",
@@ -238,9 +383,60 @@
             "qhe",
             "chhe"
           ]
+        },
+        {
+          "geez": "ቀረበ",
+          "meaningEn": "he came near",
+          "kind": "action",
+          "familyIds": [
+            "qe",
+            "re",
+            "be"
+          ]
         }
       ],
-      "note": "Scissors starts with መ, so it stays a blend. Meet is flatbread, a ቐ-family word."
+      "echoLines": [
+        {
+          "geez": "ቆልዓ ሻሂ።",
+          "meaningEn": "Child, tea.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "she",
+            "ha"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ሸበጥ።",
+          "meaningEn": "Child, flip-flops.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "she",
+            "be",
+            "the"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ቀሺ",
+          "meaningEn": "priest",
+          "target": "ሺ",
+          "familyId": "she",
+          "position": "final"
+        },
+        {
+          "geez": "መቐስ",
+          "meaningEn": "scissors",
+          "target": "ቐ",
+          "familyId": "qhe",
+          "position": "mid"
+        }
+      ],
+      "note": "Scissors starts with መ, so it stays a blend and a mid-letter find for ቐ. Meet is flatbread, a ቐ-family word."
     },
     {
       "id": "u05",
@@ -302,9 +498,71 @@
             "le",
             "te"
           ]
+        },
+        {
+          "geez": "ባባ",
+          "meaningEn": "dad",
+          "familyIds": [
+            "be"
+          ]
+        },
+        {
+          "geez": "በልዐ",
+          "meaningEn": "he ate",
+          "kind": "action",
+          "familyIds": [
+            "be",
+            "le",
+            "ae"
+          ]
+        },
+        {
+          "geez": "ተቀመጠ",
+          "meaningEn": "he sat",
+          "kind": "action",
+          "familyIds": [
+            "te",
+            "qe",
+            "me",
+            "the"
+          ]
         }
       ],
-      "note": "Home stays a blend. Meet is chocolate, a ቸ-family treat. The little bird is ጨ and meets on chhe."
+      "echoLines": [
+        {
+          "geez": "ባባ ቤት።",
+          "meaningEn": "Dad, home.",
+          "familyIds": [
+            "be",
+            "te"
+          ]
+        },
+        {
+          "geez": "ባባ ሃበ።",
+          "meaningEn": "Dad gave.",
+          "familyIds": [
+            "be",
+            "ha"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ልቢ",
+          "meaningEn": "heart",
+          "target": "ቢ",
+          "familyId": "be",
+          "position": "final"
+        },
+        {
+          "geez": "ቤት",
+          "meaningEn": "house",
+          "target": "ት",
+          "familyId": "te",
+          "position": "final"
+        }
+      ],
+      "note": "Home and dad stay blends. Meet is chocolate, a ቸ-family treat. The little bird is ጨ and meets on chhe. ቤት is house; ገዛ is not added, so the two words do not collide."
     },
     {
       "id": "u06",
@@ -316,10 +574,22 @@
       ],
       "pictureWords": [
         {
+          "familyId": "kha",
+          "geez": "ኃይሊ",
+          "meaningEn": "power",
+          "pictureHint": "kid lifting both arms under a soft gold star, cape-like scarf, friendly superhero glow, not a fight"
+        },
+        {
           "familyId": "ne",
           "geez": "ነብሪ",
           "meaningEn": "leopard",
           "pictureHint": "soft spotted leopard cub, big eyes, highland grass, premium animal book"
+        },
+        {
+          "familyId": "nye",
+          "geez": "ኘው",
+          "meaningEn": "meow",
+          "pictureHint": "tiny round kitten with a meow bubble, big eyes, cozy rug, sticker-cute"
         }
       ],
       "blendWords": [
@@ -338,9 +608,71 @@
             "ha",
             "be"
           ]
+        },
+        {
+          "geez": "ቡንባ",
+          "meaningEn": "faucet",
+          "familyIds": [
+            "be",
+            "ne"
+          ]
+        },
+        {
+          "geez": "ኣንበበ",
+          "meaningEn": "he read",
+          "kind": "action",
+          "familyIds": [
+            "a",
+            "ne",
+            "be"
+          ]
+        },
+        {
+          "geez": "ነቕሐ",
+          "meaningEn": "he woke",
+          "kind": "action",
+          "familyIds": [
+            "ne",
+            "qhe",
+            "hha"
+          ]
         }
       ],
-      "note": "kha/nye rare. Bee ንህቢ as blend for later cute bug art."
+      "echoLines": [
+        {
+          "geez": "ቆልዓ ነቕሐ።",
+          "meaningEn": "The child woke.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "ne",
+            "qhe",
+            "hha"
+          ]
+        },
+        {
+          "geez": "ንህቢ ነቕሐ።",
+          "meaningEn": "The bee woke.",
+          "familyIds": [
+            "ne",
+            "ha",
+            "be",
+            "qhe",
+            "hha"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ኣንበሳ",
+          "meaningEn": "lion",
+          "target": "ን",
+          "familyId": "ne",
+          "position": "mid"
+        }
+      ],
+      "note": "kha Meet is power (ኃይሊ). nye Meet is a kitten meow because everyday nouns in ኘ are scarce — native review wanted. Bee and faucet stay blends. Paintings for kha and nye are not commissioned yet."
     },
     {
       "id": "u07",
@@ -411,6 +743,63 @@
             "me",
             "te"
           ]
+        },
+        {
+          "geez": "ከደ",
+          "meaningEn": "he went",
+          "kind": "action",
+          "familyIds": [
+            "ke",
+            "de"
+          ]
+        },
+        {
+          "geez": "ከፈተ",
+          "meaningEn": "he opened",
+          "kind": "action",
+          "familyIds": [
+            "ke",
+            "fe",
+            "te"
+          ]
+        }
+      ],
+      "echoLines": [
+        {
+          "geez": "ኣንበሳ ኣንበበ።",
+          "meaningEn": "The lion read.",
+          "familyIds": [
+            "a",
+            "ne",
+            "be",
+            "se"
+          ]
+        },
+        {
+          "geez": "ከልቢ ሀሎ።",
+          "meaningEn": "Hello, dog.",
+          "familyIds": [
+            "ke",
+            "le",
+            "be",
+            "ha"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "በኣል",
+          "meaningEn": "holiday",
+          "target": "ኣ",
+          "familyId": "a",
+          "position": "mid"
+        },
+        {
+          "geez": "ኮኾብ",
+          "meaningEn": "star",
+          "target": "ኾ",
+          "familyId": "khe",
+          "position": "mid"
         }
       ],
       "note": "Lion cub is the Meet: ኣ is family a. Fish starts with ዓ and blends on ae."
@@ -491,6 +880,74 @@
             "ae",
             "se"
           ]
+        },
+        {
+          "geez": "ሽምዓ",
+          "meaningEn": "candle",
+          "familyIds": [
+            "she",
+            "me",
+            "ae"
+          ]
+        },
+        {
+          "geez": "ዘመረ",
+          "meaningEn": "he sang",
+          "kind": "action",
+          "familyIds": [
+            "ze",
+            "me",
+            "re"
+          ]
+        },
+        {
+          "geez": "ወሰደ",
+          "meaningEn": "he took",
+          "kind": "action",
+          "familyIds": [
+            "we",
+            "se",
+            "de"
+          ]
+        }
+      ],
+      "echoLines": [
+        {
+          "geez": "ባባ በልዐ።",
+          "meaningEn": "Dad ate.",
+          "familyIds": [
+            "be",
+            "le",
+            "ae"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ዘመረ።",
+          "meaningEn": "The child sang.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "ze",
+            "me",
+            "re"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "በልዐ",
+          "meaningEn": "he ate",
+          "target": "ዐ",
+          "familyId": "ae",
+          "position": "final"
+        },
+        {
+          "geez": "ሓዊ",
+          "meaningEn": "fire",
+          "target": "ዊ",
+          "familyId": "we",
+          "position": "final"
         }
       ]
     },
@@ -504,6 +961,12 @@
         "je"
       ],
       "pictureWords": [
+        {
+          "familyId": "zhe",
+          "geez": "ዥዋዥዌ",
+          "meaningEn": "swing",
+          "pictureHint": "playground swing with a smiling kid mid-arc, soft sky, motion dots, picture-book park"
+        },
         {
           "familyId": "de",
           "geez": "ደርሆ",
@@ -547,9 +1010,85 @@
             "me",
             "ne"
           ]
+        },
+        {
+          "geez": "ባጃጅ",
+          "meaningEn": "bajaj (little taxi)",
+          "familyIds": [
+            "be",
+            "je"
+          ]
+        },
+        {
+          "geez": "ደቀሰ",
+          "meaningEn": "he slept",
+          "kind": "action",
+          "familyIds": [
+            "de",
+            "qe",
+            "se"
+          ]
+        },
+        {
+          "geez": "ሰተየ",
+          "meaningEn": "he drank",
+          "kind": "action",
+          "familyIds": [
+            "se",
+            "te",
+            "ye"
+          ]
         }
       ],
-      "note": "zhe rare. ጀበና = cozy culture magnet for diaspora kids books."
+      "echoLines": [
+        {
+          "geez": "ቆልዓ ሰተየ።",
+          "meaningEn": "The child drank.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "se",
+            "te",
+            "ye"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ደቀሰ።",
+          "meaningEn": "The child slept.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "de",
+            "se"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ማይ",
+          "meaningEn": "water",
+          "target": "ይ",
+          "familyId": "ye",
+          "position": "final"
+        },
+        {
+          "geez": "ከደ",
+          "meaningEn": "he went",
+          "target": "ደ",
+          "familyId": "de",
+          "position": "final"
+        },
+        {
+          "geez": "ባጃጅ",
+          "meaningEn": "bajaj (little taxi)",
+          "target": "ጃ",
+          "familyId": "je",
+          "position": "mid"
+        }
+      ],
+      "note": "zhe Meet is a playground swing. ጀበና stays the cozy culture magnet. Painting for zhe is not commissioned yet."
     },
     {
       "id": "u10",
@@ -617,6 +1156,72 @@
             "chhe",
             "re"
           ]
+        },
+        {
+          "geez": "ጎየ",
+          "meaningEn": "he ran",
+          "kind": "action",
+          "familyIds": [
+            "ge",
+            "ye"
+          ]
+        },
+        {
+          "geez": "ጠየቐ",
+          "meaningEn": "he asked",
+          "kind": "action",
+          "familyIds": [
+            "the",
+            "ye",
+            "qhe"
+          ]
+        }
+      ],
+      "echoLines": [
+        {
+          "geez": "ጤል ጎየ።",
+          "meaningEn": "The goat ran.",
+          "familyIds": [
+            "the",
+            "le",
+            "ge",
+            "ye"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ተቀመጠ።",
+          "meaningEn": "The child sat.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "te",
+            "me",
+            "the"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ርግቢት",
+          "meaningEn": "pigeon",
+          "target": "ግ",
+          "familyId": "ge",
+          "position": "mid"
+        },
+        {
+          "geez": "ሸበጥ",
+          "meaningEn": "flip-flops",
+          "target": "ጥ",
+          "familyId": "the",
+          "position": "final"
+        },
+        {
+          "geez": "ቕጫ",
+          "meaningEn": "flatbread",
+          "target": "ጫ",
+          "familyId": "chhe",
+          "position": "final"
         }
       ],
       "note": "Meet is the little bird. Salt and the table stay blends."
@@ -631,10 +1236,22 @@
       ],
       "pictureWords": [
         {
+          "familyId": "ppe",
+          "geez": "ጳጉሜ",
+          "meaningEn": "Pagume (little month)",
+          "pictureHint": "tiny extra calendar page with star stickers and a small sun, cozy not a chart"
+        },
+        {
           "familyId": "tse",
           "geez": "ጸሓይ",
           "meaningEn": "sun",
           "pictureHint": "big smiling sun with soft rays, golden sky, classic preschool book cover"
+        },
+        {
+          "familyId": "ttse",
+          "geez": "ፅዋ",
+          "meaningEn": "cup",
+          "pictureHint": "small friendly golden cup with a soft shine, kids-table scale, not a church diagram"
         }
       ],
       "blendWords": [
@@ -652,9 +1269,70 @@
             "hha",
             "ye"
           ]
+        },
+        {
+          "geez": "ተጻወተ",
+          "meaningEn": "he played",
+          "kind": "action",
+          "familyIds": [
+            "te",
+            "tse",
+            "we"
+          ]
+        },
+        {
+          "geez": "ሓጸበ",
+          "meaningEn": "he washed",
+          "kind": "action",
+          "familyIds": [
+            "hha",
+            "tse",
+            "be"
+          ]
         }
       ],
-      "note": "ጸባ milk = cozy blend. ppe/ttse rare."
+      "echoLines": [
+        {
+          "geez": "ቆልዓ ጸባ።",
+          "meaningEn": "Child, milk.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "tse",
+            "be"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ተጻወተ።",
+          "meaningEn": "The child played.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "te",
+            "tse",
+            "we"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ጠረጴዛ",
+          "meaningEn": "table",
+          "target": "ጴ",
+          "familyId": "ppe",
+          "position": "mid"
+        },
+        {
+          "geez": "ተጻወተ",
+          "meaningEn": "he played",
+          "target": "ጻ",
+          "familyId": "tse",
+          "position": "mid"
+        }
+      ],
+      "note": "ጸባ milk stays a cozy blend. ppe Meet is the little month Pagume. ttse Meet is a small cup (ፅዋ). Paintings for ppe and ttse are not commissioned yet. No natural mid-word ፀ in this pack."
     },
     {
       "id": "u12",
@@ -708,9 +1386,52 @@
             "be",
             "re"
           ]
+        },
+        {
+          "geez": "ፈተወ",
+          "meaningEn": "he loved",
+          "kind": "action",
+          "familyIds": [
+            "fe",
+            "te",
+            "we"
+          ]
         }
       ],
-      "note": "ባቡር (train) is be-family — keep as cross-unit blend when be unlocked; pe Meet uses cute mail. Horse is star Meet."
+      "echoLines": [
+        {
+          "geez": "ባባ ፈተወ።",
+          "meaningEn": "Dad loved.",
+          "familyIds": [
+            "be",
+            "fe",
+            "te",
+            "we"
+          ]
+        },
+        {
+          "geez": "ቆልዓ ፈረስ።",
+          "meaningEn": "Child, horse.",
+          "familyIds": [
+            "qe",
+            "le",
+            "ae",
+            "fe",
+            "re",
+            "se"
+          ]
+        }
+      ],
+      "midLetterTargets": [
+        {
+          "geez": "ኣፍ",
+          "meaningEn": "mouth",
+          "target": "ፍ",
+          "familyId": "fe",
+          "position": "final"
+        }
+      ],
+      "note": "ባቡር (train) is be-family — keep as cross-unit blend when be unlocked; pe Meet uses cute mail. Horse is star Meet. No natural mid-word ፐ in this pack."
     }
   ],
   "artDirection": {

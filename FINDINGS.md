@@ -1,3 +1,65 @@
+# School Path GR1 — findings
+
+Copyright stance: pedagogy shapes only. Words, echo lines, story text, and
+picture hints are original eGeez content. No MoE PDF pages, no SIL art, and
+no claim that the unit list is MoE page order. The free taste stays ሀ / ለ.
+The MoE Alphabet book opens on በ / ሰ / ሸ.
+
+## HAVE
+
+- Alphabet School Path P0 (already merged): twelve units, Letter Steps,
+  unit quizzes, four arcade gateways, Meet paintings for the families that
+  already had gouache.
+- Thickened `src/data/schoolPathGr1.json`:
+  - A Meet `pictureWord` for every family, including the thin ones (sse
+    painter, kha power, nye meow, zhe swing, ppe Pagume, ttse cup).
+  - One or two high-frequency action `blendWords` per unit (gave, held,
+    came, heard, saw, ate, sat, read, woke, went, opened, sang, took,
+    slept, drank, ran, asked, played, washed, loved).
+  - One or two original `echoLines` per unit, with English glosses.
+  - `midLetterTargets` where a natural word hides the fidel mid-word or
+    at the end (heart, sky, priest, scissors, holiday, bajaj, table, mouth).
+  - Kids-book `pictureHint` / `artDirection` kept. English chrome stays
+    eGeez / Jibby.
+- Story Path pack `src/data/schoolPathGr1Stories.json`: five original
+  stories (Where Is Sam?, Walk to School, Coffee With Grandma, Baby Won't
+  Sleep, Sun All Week). Each has an original Tigrinya title, an unlock
+  unit, pages, and a refrain. Lines recycle Meet and blend words.
+- Wiring: Tigrinya Story Time lists those five books. Each page paints a
+  Meet-style scene from `public/art/stories` (the stamp scene is only the
+  fallback). A story node sits on each School Path
+  chapter. Biblical Amharic Story Time is unchanged.
+- Tests cover the new alphabet fields and the story schema. Docs:
+  `docs/school-path.md`.
+- Tigrinya line pass: Story Time lines are full kid sentences. Where Is Sam?
+  asks `ሴም ኣበይ ኣሎ?`, then `ሴም ኣብ ክሽነ የለን።` and `ሴም ኣብ ቤት የለን።` The name
+  is `ሴም` (se family) in every story line, title, and refrain. English
+  glosses still say Sam. Grandma is `ዓባየይ` with `ሰተየት`. The walk bird is `ጭሩ`. Mom sings and
+  holds with feminine verbs. The school walk says the child went and
+  then arrived (`በጽሐ`). Each weekday is `ሰኑይ ጸሓይ ኣሎ።` and the same
+  pattern for the other days. Spelling stays ኣ, not አ.
+
+## Still NEED
+
+- Word Build UI. `blendWords` and `blendWordsForLearned` are ready. Nothing
+  on the path yet builds a word from tiles.
+- Echo UI. `echoLines` are data only.
+- Find-the-fidel quiz. `midLetterTargets` are data only. Unit quizzes are
+  still listen-and-pick.
+- Twin drills (vowel-family and look-alike pairs such as ሰ / ሠ and ጸ / ፀ).
+- Meet gouache for sse, kha, nye, zhe, ppe, and ttse. Until those paintings
+  exist, those Meet cards stay letter bubbles. Hints are in the JSON.
+- Family Voice recordings for the new Meet words, echo lines, and the five
+  stories. Read-to-me falls back to letter spelling when no clip exists.
+- Native-speaker pass on the rare-letter Meets (ኘው meow, ፅዋ cup,
+  ኃይሊ power, ዥዋዥዌ swing, ጳጉሜ, ሠዓሊ). Story lines had a Tigrinya pass;
+  a speaker can still flag a word that sounds off.
+- No natural mid-word target for ttse (ፀ) or pe (ፐ) in this pack.
+- Grade 2 and later harvests (mother tongue, maths, science) are not started.
+- Geez Class (classical Geez slides) stays a separate future track.
+
+---
+
 # IAP findings — why live purchases do not show up
 
 Audited 28 Sep 2026 against this repo (`@revenuecat/purchases-capacitor` 11.3.2). The owner report is that people are not purchasing in real time. That matches the code that ships today: a store build compiled from this repo cannot complete an in-app purchase, so RevenueCat and App Store Connect have nothing to show.

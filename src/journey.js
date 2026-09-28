@@ -23,10 +23,13 @@ import {
   schoolPathActive,
   schoolPathBands,
 } from './data/schoolPathGr1'
+import { SCHOOL_PATH_STORY_COUNT } from './data/schoolPathGr1Stories'
 
 /* Story nodes exist only when that pack ships stories. Pack switching
    reloads the app, so the module-level JOURNEY matches the active pack. */
-const packHasStories = (packId) => STORIES.some((s) => s.pack === packId)
+const packHasStories = (packId) =>
+  STORIES.some((s) => s.pack === packId) ||
+  (packId === SCHOOL_PATH_PACK_ID && SCHOOL_PATH_STORY_COUNT > 0)
 
 export const NodeKind = Object.freeze({
   LEARN: 'learn', // one family, the six-phase Letter Steps lesson
