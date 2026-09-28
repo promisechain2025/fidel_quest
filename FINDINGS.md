@@ -30,6 +30,12 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
   chapter. Biblical Amharic Story Time is unchanged.
 - Tests cover the new alphabet fields and the story schema. Docs:
   `docs/school-path.md`.
+- Tigrinya line pass: Story Time lines are full kid sentences. Where Is Sam?
+  asks `ሳም ኣበይ ኣሎ?` and searches rooms (kitchen, bathroom, bedroom), not
+  inside the jebena. Grandma is `ዓባይ` with `ሰተየት`. Mom sings and holds
+  with feminine verbs. The school walk says the child went and then
+  arrived (`በጽሐ`). Each weekday is `ሰኑይ ጸሓይ ኣሎ።` and the same pattern
+  for the other days. Spelling stays ኣ, not አ.
 
 ## Still NEED
 
@@ -43,8 +49,9 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
   exist, those Meet cards stay letter bubbles. Hints are in the JSON.
 - Family Voice recordings for the new Meet words, echo lines, and the five
   stories. Read-to-me falls back to letter spelling when no clip exists.
-- Native-speaker pass, especially the rare-letter Meets (ኘው meow, ፅዋ cup,
-  ኃይሊ power, ዥዋዥዌ swing, ጳጉሜ, ሠዓሊ) and the story lines.
+- Native-speaker pass on the rare-letter Meets (ኘው meow, ፅዋ cup,
+  ኃይሊ power, ዥዋዥዌ swing, ጳጉሜ, ሠዓሊ). Story lines had a Tigrinya pass;
+  a speaker can still flag a word that sounds off.
 - No natural mid-word target for ttse (ፀ) or pe (ፐ) in this pack.
 - Grade 2 and later harvests (mother tongue, maths, science) are not started.
 - Geez Class (classical Geez slides) stays a separate future track.

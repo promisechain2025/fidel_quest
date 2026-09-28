@@ -89,8 +89,34 @@ describe('school path story pack', () => {
     }
     const sam = SCHOOL_PATH_STORIES.find((s) => s.id === 'where-is-sam')
     expect(sam.unlockAfterUnitId).toBe('u09')
-    expect(SCHOOL_PATH_STORIES.find((s) => s.id === 'walk-to-school').unlockAfterUnitId).toBe('u10')
+    expect(SCHOOL_PATH_STORIES.find((s) => s.id === 'walk-to-school').unlockAfterUnitId).toBe('u11')
     expect(SCHOOL_PATH_STORIES.find((s) => s.id === 'sun-all-week').unlockAfterUnitId).toBe('u11')
+  })
+
+  it('uses natural Tigrinya lines, feminine verbs, and ኣ not አ', () => {
+    const byId = Object.fromEntries(SCHOOL_PATH_STORIES.map((s) => [s.id, s]))
+    const blob = SCHOOL_PATH_STORIES.map((s) => [s.titleTi, s.refrain.geez, ...s.pages.map((p) => p.geez)].join('\n')).join('\n')
+    expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሓበይቲ')).toBe(false)
+    expect(byId['where-is-sam'].titleTi).toBe('ሳም ኣበይ ኣሎ?')
+    expect(byId['where-is-sam'].pages[0].geez).toBe('ሳም ኣበይ ኣሎ?')
+    expect(byId['where-is-sam'].pages[1].geez).toBe('ሳም ኣብ ኩሽና የለን።')
+    expect(byId['where-is-sam'].pages[1].meaningEn).toBe('Sam is not in the kitchen.')
+    expect(byId['walk-to-school'].titleTi).toBe('ናብ ቤት ትምህርቲ')
+    expect(byId['walk-to-school'].pages[0].geez).toBe('ቆልዓ ናብ ቤት ትምህርቲ ከደ።')
+    expect(byId['walk-to-school'].pages.at(-1).geez).toBe('ቆልዓ ናብ ቤት ትምህርቲ በጽሐ።')
+    expect(byId['coffee-with-grandma'].titleTi).toBe('ጀበና ምስ ዓባይ')
+    expect(byId['coffee-with-grandma'].pages[3].geez).toBe('ዓባይ ሰተየት።')
+    expect(byId['baby-wont-sleep'].pages[1].geez).toBe('ማማ ዘመረት።')
+    expect(byId['baby-wont-sleep'].pages[2].geez).toBe('ማማ ቆልዓ ሓዘት።')
+    const sun = byId['sun-all-week']
+    expect(sun.titleTi).toBe('ኩሉ ሰሙን ጸሓይ ኣሎ')
+    expect(sun.pages.slice(0, 7).map((p) => storyWords(p.geez)[0])).toEqual(['ሰኑይ', 'ሰሉስ', 'ረቡዕ', 'ሓሙስ', 'ዓርቢ', 'ቀዳም', 'ሰንበት'])
+    expect(sun.pages.slice(0, 7).every((p) => p.geez.endsWith('ጸሓይ ኣሎ።'))).toBe(true)
+    const tiTitles = storyLibrary([], undefined, 'ti').map((s) => s.title.g)
+    expect(tiTitles).toContain('ሳም ኣበይ ኣሎ?')
+    expect(tiTitles).toContain('ናብ ቤት ትምህርቲ')
+    expect(tiTitles).toContain('ጀበና ምስ ዓባይ')
   })
 
   it('shows the five stories in the Tigrinya library and not in Amharic', () => {
