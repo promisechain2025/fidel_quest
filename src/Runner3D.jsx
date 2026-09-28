@@ -18,9 +18,7 @@ import { ChevronLeft, Sparkles, Volume2, X } from 'lucide-react'
 import {
   Chunky,
   FOCUS,
-  Sprite2D,
   starPath,
-  drawHyena,
   drawZebra,
   formOf,
   runnerReducer,
@@ -47,6 +45,7 @@ import { Runner2D } from './components/ArcadeFallback'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
+import { RUNNER_CAST } from './components/runnerCast'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
@@ -309,16 +308,27 @@ function ringTexture() {
 
 /* ── the runner characters ── */
 
-/* Anbessa and Jibby are cartoon animals: lathed bodies, capsule limbs,
-   and a painted face. Feet at the origin, body running toward -Z. The head
-   looks back so the chase camera sees the face. Legs pivot at the hip. */
+/* Anbessa and Jibby are picture-book paintings (the same warm gouache
+   language as the School Path Meet animals), not stacked primitives.
+   The chase camera looks at their backs while their faces turn toward
+   it. Feet sit on the group origin. Ear, tail, and leg groups stay so
+   the run loop and setMood keep working; the painting is the body.
+   Cast textures are shared by every Jibby, so disposeGroup must not
+   free them. */
 
-function sphAt(parent, r, color, x, y, z, sx = 1, sy = 1, sz = 1) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 12), mat(color))
-  m.position.set(x, y, z)
-  m.scale.set(sx, sy, sz)
-  parent.add(m)
-  return m
+const CAST_TEX = new Set()
+
+function loadCastTexture(url) {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      tex.magFilter = THREE.LinearFilter
+      tex.minFilter = THREE.LinearMipmapLinearFilter
+      tex.generateMipmaps = true
+      CAST_TEX.add(tex)
+      resolve(tex)
+    }, undefined, reject)
+  })
 }
 
 function blobShadow(group, r) {
@@ -331,410 +341,36 @@ function blobShadow(group, r) {
   group.add(m)
 }
 
-/* Soft cel ramp. Shared, so disposeGroup must not free it. */
-let TOON_GRAD = null
-const TOON = new Map()
-function toonGradient() {
-  if (TOON_GRAD) return TOON_GRAD
-  const c = document.createElement('canvas')
-  c.width = 4
-  c.height = 1
-  const g = c.getContext('2d')
-  g.fillStyle = '#b9b9b9'
-  g.fillRect(0, 0, 1, 1)
-  g.fillStyle = '#dedede'
-  g.fillRect(1, 0, 1, 1)
-  g.fillStyle = '#ffffff'
-  g.fillRect(2, 0, 2, 1)
-  const tex = new THREE.CanvasTexture(c)
-  tex.magFilter = THREE.NearestFilter
-  tex.minFilter = THREE.NearestFilter
-  TOON_GRAD = tex
-  return tex
-}
-function toon(color) {
-  if (!TOON.has(color)) {
-    TOON.set(color, new THREE.MeshToonMaterial({ color, gradientMap: toonGradient() }))
-  }
-  return TOON.get(color)
-}
-function painted(draw) {
-  return new THREE.MeshBasicMaterial({ map: canvasTexture(512, draw), transparent: true, depthWrite: false })
-}
-
-/* Chubby body of revolution. Lathe spins around Y; tip it onto the road. */
-function latheBody(profile, color) {
-  const mesh = new THREE.Mesh(new THREE.LatheGeometry(profile, 18), toon(color))
-  mesh.rotation.x = Math.PI / 2
-  return mesh
-}
-function earShape(outer, inner) {
-  const pts = [
-    new THREE.Vector2(0.012, 0),
-    new THREE.Vector2(0.07, 0.05),
-    new THREE.Vector2(0.085, 0.16),
-    new THREE.Vector2(0.045, 0.28),
-    new THREE.Vector2(0.012, 0.32),
-  ]
-  const ear = new THREE.Group()
-  ear.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 10), toon(outer)))
-  const cup = new THREE.Mesh(new THREE.LatheGeometry(pts.map((p) => new THREE.Vector2(p.x * 0.55, p.y * 0.72 + 0.04)), 8), toon(inner))
-  cup.position.z = -0.02
-  ear.add(cup)
-  return ear
-}
-/* Thigh, shin, and a paw with toes. The group origin is the hip. */
-function cartoonLeg(parent, x, y, z, s, fur, paw) {
-  const leg = new THREE.Group()
-  leg.position.set(x, y, z)
-  const thigh = new THREE.Mesh(new THREE.CapsuleGeometry(0.065 * s, 0.1 * s, 3, 8), toon(fur))
-  thigh.position.y = -0.1 * s
-  leg.add(thigh)
-  const shin = new THREE.Mesh(new THREE.CapsuleGeometry(0.048 * s, 0.09 * s, 3, 8), toon(fur))
-  shin.position.y = -0.24 * s
-  leg.add(shin)
-  const foot = new THREE.Mesh(new THREE.SphereGeometry(0.08 * s, 12, 8), toon(paw))
-  foot.scale.set(1.25, 0.5, 1.45)
-  foot.position.set(0, -0.34 * s, 0.03 * s)
-  leg.add(foot)
-  for (const tx of [-1, 0, 1]) {
-    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.026 * s, 8, 6), toon(paw))
-    toe.position.set(tx * 0.038 * s, -0.36 * s, 0.09 * s)
-    leg.add(toe)
-  }
-  parent.add(leg)
-  return leg
-}
-function facePlane(draw, w, h) {
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), painted(draw))
-  mesh.rotation.y = Math.PI
-  return mesh
-}
-
-function drawLionFace(g, s) {
-  const cx = s / 2
-  const cy = s * 0.46
-  g.clearRect(0, 0, s, s)
-  // Soft cheek ruff, a few big overlapping lobes, not a ring of beads.
-  g.fillStyle = '#e0902a'
-  for (const [a, rad, lobe] of [[-2.4, 0.34, 0.16], [-1.2, 0.36, 0.15], [0.2, 0.38, 0.14], [1.5, 0.36, 0.16], [2.6, 0.34, 0.15], [3.4, 0.3, 0.13]]) {
-    g.beginPath()
-    g.arc(cx + Math.cos(a) * s * rad, cy + Math.sin(a) * s * rad * 0.85, s * lobe, 0, 7)
-    g.fill()
-  }
-  g.fillStyle = '#f0b24a'
-  g.beginPath()
-  g.arc(cx, cy, s * 0.3, 0, 7)
-  g.fill()
-  g.fillStyle = '#ffe0b0'
-  g.beginPath()
-  g.ellipse(cx, cy + s * 0.1, s * 0.14, s * 0.1, 0, 0, 7)
-  g.fill()
-  g.fillStyle = '#ffb090'
-  for (const side of [-1, 1]) {
-    g.beginPath()
-    g.ellipse(cx + side * s * 0.16, cy + s * 0.06, s * 0.045, s * 0.028, 0, 0, 7)
-    g.fill()
-  }
-  g.fillStyle = '#6b4424'
-  g.beginPath()
-  g.moveTo(cx, cy + s * 0.06)
-  g.quadraticCurveTo(cx + s * 0.045, cy + s * 0.1, cx + s * 0.02, cy + s * 0.13)
-  g.quadraticCurveTo(cx, cy + s * 0.15, cx - s * 0.02, cy + s * 0.13)
-  g.quadraticCurveTo(cx - s * 0.045, cy + s * 0.1, cx, cy + s * 0.06)
-  g.fill()
-  g.strokeStyle = '#6b4424'
-  g.lineWidth = s * 0.012
-  g.lineCap = 'round'
-  g.beginPath()
-  g.moveTo(cx - s * 0.05, cy + s * 0.15)
-  g.quadraticCurveTo(cx - s * 0.02, cy + s * 0.19, cx, cy + s * 0.15)
-  g.quadraticCurveTo(cx + s * 0.02, cy + s * 0.19, cx + s * 0.05, cy + s * 0.15)
-  g.stroke()
-  g.strokeStyle = '#c4924a'
-  g.lineWidth = s * 0.008
-  for (const side of [-1, 1]) {
-    for (const dy of [-0.01, 0.02, 0.05]) {
-      g.beginPath()
-      g.moveTo(cx + side * s * 0.1, cy + s * (0.08 + dy))
-      g.lineTo(cx + side * s * 0.26, cy + s * (0.05 + dy * 1.4))
-      g.stroke()
-    }
-  }
-  for (const side of [-1, 1]) {
-    const ex = cx + side * s * 0.11
-    const ey = cy - s * 0.02
-    g.fillStyle = '#fff'
-    g.beginPath()
-    g.ellipse(ex, ey, s * 0.07, s * 0.08, 0, 0, 7)
-    g.fill()
-    g.fillStyle = '#4a3018'
-    g.beginPath()
-    g.arc(ex, ey + s * 0.01, s * 0.04, 0, 7)
-    g.fill()
-    g.fillStyle = '#fff'
-    g.beginPath()
-    g.arc(ex - s * 0.015, ey - s * 0.015, s * 0.015, 0, 7)
-    g.fill()
-    g.strokeStyle = '#a86820'
-    g.lineWidth = s * 0.012
-    g.beginPath()
-    g.moveTo(ex - s * 0.07, ey - s * 0.07)
-    g.quadraticCurveTo(ex, ey - s * 0.1, ex + s * 0.07, ey - s * 0.06)
-    g.stroke()
-  }
-}
-
-function buildRunnerLion() {
-  const fur = 0xe8a33a
-  const deep = 0xc47a28
-  const paw = 0xd4923a
+function buildPictureAnimal(tex) {
   const group = new THREE.Group()
-  blobShadow(group, 0.48)
+  blobShadow(group, 0.5)
   const body = new THREE.Group()
   group.add(body)
-  const legs = [
-    [-0.18, 0.16, 1.05],
-    [0.18, 0.16, 1.05],
-    [-0.12, -0.18, 0.82],
-    [0.12, -0.18, 0.82],
-  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.46, lz, s, deep, paw))
-  const torso = latheBody([
-    new THREE.Vector2(0.02, -0.26),
-    new THREE.Vector2(0.16, -0.18),
-    new THREE.Vector2(0.26, 0.0),
-    new THREE.Vector2(0.24, 0.14),
-    new THREE.Vector2(0.12, 0.24),
-    new THREE.Vector2(0.02, 0.28),
-  ], fur)
-  torso.position.y = 0.5
-  body.add(torso)
-  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), toon(0xffe4c0))
-  belly.scale.set(0.7, 0.4, 0.6)
-  belly.position.set(0, 0.38, 0.08)
-  body.add(belly)
-  const star = new THREE.Sprite(new THREE.SpriteMaterial({ map: canvasTexture(128, (g, sz) => {
-    starPath(g, sz / 2, sz / 2, sz * 0.44, sz * 0.19)
-    g.fillStyle = '#ffe14a'
-    g.fill()
-    g.lineWidth = 8
-    g.strokeStyle = '#c98400'
-    g.stroke()
-  }), transparent: true }))
-  star.scale.set(0.28, 0.28, 1)
-  star.position.set(0, 0.62, 0.12)
-  body.add(star)
+  const img = tex.image
+  const aspect = (img && img.width && img.height) ? img.width / img.height : 0.85
+  const h = 1.22
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.04,
+    depthWrite: true,
+  }))
+  // Bottom of the painting (the paws) sits on the ground.
+  sprite.center.set(0.5, 0)
+  sprite.scale.set(h * aspect, h, 1)
+  sprite.position.set(0, 0.02, 0)
+  sprite.renderOrder = 2
+  body.add(sprite)
   const tail = new THREE.Group()
-  tail.position.set(0.02, 0.5, 0.26)
-  tail.rotation.x = 0.35
-  tail.rotation.z = 0.55
-  const curl = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0.06, 0.12, 0.1),
-    new THREE.Vector3(0.14, 0.28, 0.16),
-    new THREE.Vector3(0.06, 0.42, 0.06),
-  ])
-  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curl, 14, 0.032, 7, false), toon(deep)))
-  const puff = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), toon(0x5c3010))
-  puff.scale.set(1.1, 0.9, 0.95)
-  puff.position.set(0.06, 0.44, 0.05)
-  tail.add(puff)
-  body.add(tail)
-  const head = new THREE.Group()
-  head.position.set(0, 0.92, -0.02)
-  head.rotation.y = 2.35
-  head.rotation.x = -0.28
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.26, 18, 14), toon(0xf0b24a))
-  head.add(skull)
-  const ruff = latheBody([
-    new THREE.Vector2(0.24, -0.02),
-    new THREE.Vector2(0.42, 0.04),
-    new THREE.Vector2(0.36, 0.1),
-    new THREE.Vector2(0.22, 0.14),
-  ], 0xe0902a)
-  ruff.position.set(0, 0.02, 0.06)
-  head.add(ruff)
-  const face = facePlane(drawLionFace, 0.62, 0.68)
-  face.position.set(0, 0.05, -0.28)
-  face.renderOrder = 2
-  head.add(face)
-  const ears = [-1, 1].map((side) => {
-    const ear = earShape(0xf3c56e, 0xf4a0ae)
-    ear.position.set(side * 0.16, 0.3, 0.02)
-    ear.rotation.z = side * -0.35
-    ear.scale.setScalar(0.85)
-    head.add(ear)
-    return ear
+  const earL = new THREE.Group()
+  const earR = new THREE.Group()
+  body.add(tail, earL, earR)
+  const legs = [0, 1, 2, 3].map(() => {
+    const leg = new THREE.Group()
+    body.add(leg)
+    return leg
   })
-  body.add(head)
-  return { group, body, legs, tail, earL: ears[0], earR: ears[1] }
-}
-
-function drawHyenaFace(g, s) {
-  const cx = s / 2
-  const cy = s * 0.4
-  g.clearRect(0, 0, s, s)
-  g.fillStyle = '#d7b57a'
-  g.beginPath()
-  g.ellipse(cx, cy, s * 0.28, s * 0.26, 0, 0, 7)
-  g.fill()
-  g.fillStyle = '#f3e0b4'
-  g.beginPath()
-  g.ellipse(cx, cy + s * 0.12, s * 0.16, s * 0.14, 0, 0, 7)
-  g.fill()
-  g.fillStyle = '#3a2e22'
-  g.beginPath()
-  g.ellipse(cx, cy + s * 0.2, s * 0.07, s * 0.045, 0, 0, 7)
-  g.fill()
-  g.fillStyle = '#1c140e'
-  g.beginPath()
-  g.ellipse(cx, cy + s * 0.2, s * 0.035, s * 0.025, 0, 0, 7)
-  g.fill()
-  g.strokeStyle = '#3a2d1c'
-  g.lineWidth = s * 0.012
-  g.lineCap = 'round'
-  g.beginPath()
-  g.moveTo(cx - s * 0.05, cy + s * 0.24)
-  g.quadraticCurveTo(cx, cy + s * 0.28, cx + s * 0.06, cy + s * 0.22)
-  g.stroke()
-  g.fillStyle = '#fff'
-  g.beginPath()
-  g.moveTo(cx + s * 0.03, cy + s * 0.22)
-  g.lineTo(cx + s * 0.055, cy + s * 0.28)
-  g.lineTo(cx + s * 0.07, cy + s * 0.22)
-  g.fill()
-  for (const side of [-1, 1]) {
-    const ex = cx + side * s * 0.11
-    const ey = cy + s * 0.02
-    g.fillStyle = '#fff'
-    g.beginPath()
-    g.ellipse(ex, ey, s * 0.065, s * 0.055, 0, 0, 7)
-    g.fill()
-    g.fillStyle = '#241c12'
-    g.beginPath()
-    g.arc(ex + side * s * 0.01, ey + s * 0.005, s * 0.028, 0, 7)
-    g.fill()
-    g.fillStyle = '#fff'
-    g.beginPath()
-    g.arc(ex, ey - s * 0.01, s * 0.01, 0, 7)
-    g.fill()
-    g.strokeStyle = '#3c322a'
-    g.lineWidth = s * 0.016
-    g.beginPath()
-    g.moveTo(ex - side * s * 0.06, ey - s * 0.07)
-    g.lineTo(ex + side * s * 0.06, ey - s * 0.045)
-    g.stroke()
-  }
-}
-
-function spottedRump() {
-  const map = canvasTexture(256, (g, s) => {
-    const coat = g.createLinearGradient(0, 0, 0, s)
-    coat.addColorStop(0, '#e4c48a')
-    coat.addColorStop(0.55, '#c6a36a')
-    coat.addColorStop(1, '#a8844e')
-    g.fillStyle = coat
-    g.fillRect(0, 0, s, s)
-    g.fillStyle = '#24180f'
-    for (const [u, v, rx, ry] of [[0.28, 0.26, 0.12, 0.075], [0.55, 0.2, 0.11, 0.07], [0.74, 0.36, 0.11, 0.07], [0.38, 0.46, 0.12, 0.075], [0.18, 0.4, 0.09, 0.06], [0.64, 0.55, 0.1, 0.065], [0.46, 0.68, 0.09, 0.06], [0.8, 0.6, 0.08, 0.055]]) {
-      g.beginPath()
-      g.ellipse(u * s, v * s, rx * s, ry * s, 0.5, 0, 7)
-      g.fill()
-    }
-  })
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.26, 20, 14),
-    new THREE.MeshToonMaterial({ map, color: 0xffffff, gradientMap: toonGradient() }),
-  )
-  return mesh
-}
-
-function buildRunnerHyena() {
-  const fur = 0x8d6a40
-  const paw = 0x5c4634
-  const crest = 0x3c322a
-  const group = new THREE.Group()
-  blobShadow(group, 0.46)
-  const body = new THREE.Group()
-  group.add(body)
-  const legs = [
-    [-0.15, 0.14, 0.95],
-    [0.15, 0.14, 0.95],
-    [-0.12, -0.2, 0.8],
-    [0.12, -0.2, 0.8],
-  ].map(([lx, lz, s]) => cartoonLeg(body, lx, 0.42, lz, s, fur, paw))
-  const shoulders = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), toon(0xd7b57a))
-  shoulders.scale.set(1.05, 0.85, 0.9)
-  shoulders.position.set(0, 0.66, -0.22)
-  body.add(shoulders)
-  const rump = spottedRump()
-  rump.scale.set(1.15, 0.78, 1.2)
-  rump.position.set(0, 0.48, 0.12)
-  rump.rotation.x = -0.35
-  body.add(rump)
-  // Flat spots on the side the chase camera sees, so they stay marks and not rods.
-  for (const [x, y, z, rx, ry] of [[0.12, 0.6, 0.4, 0.07, 0.045], [-0.1, 0.52, 0.42, 0.065, 0.04], [0.02, 0.7, 0.3, 0.055, 0.038], [0.16, 0.46, 0.34, 0.05, 0.034]]) {
-    const mark = new THREE.Mesh(
-      new THREE.CircleGeometry(1, 12),
-      new THREE.MeshBasicMaterial({ color: 0x24180f, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -3 }),
-    )
-    mark.scale.set(rx, ry, 1)
-    mark.position.set(x, y, z)
-    mark.lookAt(x, y, z + 1)
-    body.add(mark)
-  }
-  for (let i = 0; i < 5; i++) {
-    const t = i / 4
-    const scruff = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 6), toon(crest))
-    scruff.position.set(0, 0.84 - t * 0.16, -0.18 + t * 0.28)
-    body.add(scruff)
-  }
-  const tail = new THREE.Group()
-  tail.position.set(0, 0.42, 0.32)
-  tail.rotation.x = 0.5
-  const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0.1, 0.08),
-    new THREE.Vector3(0.04, 0.2, 0.12),
-  ])
-  tail.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 8, 0.025, 6, false), toon(crest)))
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(crest))
-  tip.position.set(0.04, 0.22, 0.12)
-  tail.add(tip)
-  body.add(tail)
-  const head = new THREE.Group()
-  head.position.set(0, 0.86, -0.16)
-  head.rotation.y = 2.45
-  head.rotation.x = -0.2
-  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), toon(0xd7b57a))
-  head.add(skull)
-  const snout = latheBody([
-    new THREE.Vector2(0.02, -0.16),
-    new THREE.Vector2(0.08, -0.1),
-    new THREE.Vector2(0.1, 0.0),
-    new THREE.Vector2(0.06, 0.08),
-    new THREE.Vector2(0.02, 0.1),
-  ], 0xf0e2c6)
-  snout.rotation.x = -Math.PI / 2
-  snout.position.set(0, -0.04, -0.18)
-  head.add(snout)
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), toon(0x1c140e))
-  nose.scale.set(1.1, 0.7, 0.8)
-  nose.position.set(0, -0.05, -0.34)
-  head.add(nose)
-  const face = facePlane(drawHyenaFace, 0.52, 0.56)
-  face.position.set(0, 0.05, -0.2)
-  face.renderOrder = 2
-  head.add(face)
-  for (const side of [-1, 1]) {
-    const ear = earShape(0xecd4a6, crest)
-    ear.position.set(side * 0.14, 0.2, 0.02)
-    ear.rotation.z = side * -0.3
-    ear.scale.setScalar(0.7)
-    head.add(ear)
-  }
-  body.add(head)
-  return { group, body, legs, tail }
+  return { group, body, legs, tail, earL, earR }
 }
 
 /* Diagonal leg pairs swing in opposite phase - a simple believable run. */
@@ -790,7 +426,6 @@ function grassTuft(g, x, z) {
 
 const isSharedMat = (m) => {
   for (const v of MATS.values()) if (v === m) return true
-  for (const v of TOON.values()) if (v === m) return true
   return false
 }
 /** Free the GPU resources of a group before dropping it. three.js does NOT
@@ -805,7 +440,7 @@ function disposeGroup(root) {
     const mats = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : []
     for (const m of mats) {
       if (isSharedMat(m)) continue // never dispose the shared colour cache
-      if (m.map && m.map !== ZEBRA_TEX) m.map.dispose() // shared zebra texture stays
+      if (m.map && m.map !== ZEBRA_TEX && !CAST_TEX.has(m.map)) m.map.dispose() // shared zebra + cast paintings stay
       m.dispose()
     }
   })
@@ -959,7 +594,7 @@ const CHUNK_BUILDERS = {
 /* ── the world ── */
 
 class RunnerWorld {
-  constructor(canvas, onGate) {
+  constructor(canvas, onGate, cast) {
     this.onGate = onGate
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOW_END })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
@@ -1000,9 +635,8 @@ class RunnerWorld {
     this.vista = buildHighlandVista()
     this.scene.add(this.vista)
 
-    // Anbessa as a real low-poly mesh (feet at the group origin), seen from
-    // behind running toward the letters.
-    this.playerChar = buildRunnerLion()
+    // Picture-book cub, feet at the group origin, face turned back to the chase camera.
+    this.playerChar = buildPictureAnimal(cast.anbessa)
     this.player = this.playerChar.group
     this.player.scale.setScalar(1.95)
     this.player.position.set(0, 0, 0)
@@ -1026,7 +660,7 @@ class RunnerWorld {
     this.scene.add(this.buddy)
     this.power = 0
 
-    this.munchChar = buildRunnerHyena()
+    this.munchChar = buildPictureAnimal(cast.jibby)
     this.muncher = this.munchChar.group
     // Beside Anbessa at the same depth, so a phone chase frame shows his
     // whole spotted body. z near the camera cropped him to a sliver.
@@ -1040,7 +674,7 @@ class RunnerWorld {
     // when the boss round is lost.
     this.extras = []
     for (let i = 0; i < 3; i++) {
-      const char = buildRunnerHyena()
+      const char = buildPictureAnimal(cast.jibby)
       const sp = char.group
       sp.scale.setScalar(0)
       sp.position.set(0, 0, 7.5)
@@ -1244,6 +878,7 @@ class RunnerWorld {
   }
 
   dispose() {
+    if (this.disposed) return
     this.disposed = true
     // renderer.dispose() alone leaves uploaded geometry/texture buffers; walk
     // the whole scene freeing per-instance resources first (shared MATS + zebra
@@ -1251,6 +886,8 @@ class RunnerWorld {
     if (this.skyMap) { this.skyMap.dispose(); this.skyMap = null }
     this.scene.background = null
     disposeGroup(this.scene)
+    for (const tex of CAST_TEX) tex.dispose()
+    CAST_TEX.clear()
     this.renderer.dispose()
   }
 }
@@ -1267,12 +904,15 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   const [lane, setLane] = useState(1)
   const [speedName, setSpeedName] = useState(loadRunnerSpeed)
   const [webglOk, setWebglOk] = useState(true)
+  const [castReady, setCastReady] = useState(false)
   const [banner, setBanner] = useState(true)
   const [demo, setDemo] = useState(() => !hasOnboarded('runner') && !prefersReducedMotion())
   const demoRef = useRef(demo)
   demoRef.current = demo
   const [hand, setHand] = useState({ x: null, y: null })
   const [yourTurn, setYourTurn] = useState(false)
+  const speedRef = useRef(speedName)
+  speedRef.current = speedName
   const endDemo = useCallback(() => {
     markOnboarded('runner')
     setDemo(false)
@@ -1307,56 +947,106 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     })
   }, [])
 
-  // World lifecycle.
+  // World lifecycle. Paintings load first so the cubs are on the road
+  // before the first frame, then the same place/speed/question the mount
+  // effects would have applied (those run before the textures resolve).
   useEffect(() => {
     let world
-    try {
-      world = new RunnerWorld(canvasRef.current, (laneIdx) => {
-        const q = selectRunnerQuestion(ctxRef.current)
-        if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
-      })
-    } catch {
-      // Remember 3D is not viable so every future arcade entry routes straight
-      // to the 2D fallback instead of re-failing here.
-      savePerf('low')
-      setWebglOk(false)
-      return undefined
-    }
-    worldRef.current = world
-    world.setSpeed(RUNNER_SPEEDS[speedName] ?? 1)
     let raf
-    let last = performance.now()
-    const loop = (now) => {
-      const dt = Math.min(0.05, (now - last) / 1000)
-      last = now
-      const st = ctxRef.current.status
-      try {
-        world.tick(dt, st === RunnerState.RUNNING)
-      } catch {
-        // A mid-run WebGL context loss makes render throw; drop to the 2D
-        // fallback rather than freezing the loop (and the game) silently.
-        savePerf('low')
-        setWebglOk(false)
-        return
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
+    let cancelled = false
     const ro = new ResizeObserver(() => {
       const r = wrapRef.current?.getBoundingClientRect()
-      if (r) world.resize(r.width, r.height)
+      if (r && world) world.resize(r.width, r.height)
     })
-    ro.observe(wrapRef.current)
+    if (wrapRef.current) ro.observe(wrapRef.current)
     const onKey = (e) => {
       if (e.key === 'ArrowLeft') steer(-1)
       if (e.key === 'ArrowRight') steer(1)
     }
     window.addEventListener('keydown', onKey)
+    ;(async () => {
+      let cast
+      try {
+        const [anbessa, jibby] = await Promise.all([
+          loadCastTexture(RUNNER_CAST.anbessaChase),
+          loadCastTexture(RUNNER_CAST.jibbyChase),
+        ])
+        cast = { anbessa, jibby }
+      } catch {
+        savePerf('low')
+        if (!cancelled) setWebglOk(false)
+        return
+      }
+      if (cancelled || !canvasRef.current) {
+        cast.anbessa.dispose()
+        cast.jibby.dispose()
+        CAST_TEX.delete(cast.anbessa)
+        CAST_TEX.delete(cast.jibby)
+        return
+      }
+      try {
+        world = new RunnerWorld(canvasRef.current, (laneIdx) => {
+          const q = selectRunnerQuestion(ctxRef.current)
+          if (q) dispatch({ type: RunnerEvent.FEED, payload: { audioKey: q.options[laneIdx] } })
+        }, cast)
+      } catch {
+        // Remember 3D is not viable so every future arcade entry routes straight
+        // to the 2D fallback instead of re-failing here.
+        savePerf('low')
+        if (!cancelled) setWebglOk(false)
+        return
+      }
+      if (cancelled) {
+        world.dispose()
+        return
+      }
+      const st = ctxRef.current
+      world.setPlace(placeForLevel(st.level))
+      world.setSpeed(RUNNER_SPEEDS[speedRef.current] ?? 1)
+      world.speed = Math.min(30, 16 + (st.level - 1) * 2.2)
+      world.threat = st.wrong
+      world.power = st.correct
+      if (st.status === RunnerState.RUNNING) {
+        const q = selectRunnerQuestion(st)
+        if (q) {
+          world.setQuestion(q.options)
+          // The machine effect ran before the paintings loaded, so the
+          // first call-out happens here instead of being skipped.
+          playForm(formOf(q.target), soundOn)
+        }
+        world.setMood(false)
+      } else if (st.status === RunnerState.BOSS) {
+        world.bossMode = st.survivedBoss ? 'win' : 'lose'
+        world.setMood(!st.survivedBoss)
+      }
+      worldRef.current = world
+      setCastReady(true)
+      const r = wrapRef.current?.getBoundingClientRect()
+      if (r) world.resize(r.width, r.height)
+      let last = performance.now()
+      const loop = (now) => {
+        const dt = Math.min(0.05, (now - last) / 1000)
+        last = now
+        const status = ctxRef.current.status
+        try {
+          world.tick(dt, status === RunnerState.RUNNING)
+        } catch {
+          // A mid-run WebGL context loss makes render throw; drop to the 2D
+          // fallback rather than freezing the loop (and the game) silently.
+          savePerf('low')
+          setWebglOk(false)
+          return
+        }
+        raf = requestAnimationFrame(loop)
+      }
+      raf = requestAnimationFrame(loop)
+    })()
     return () => {
-      cancelAnimationFrame(raf)
+      cancelled = true
+      if (raf) cancelAnimationFrame(raf)
       ro.disconnect()
       window.removeEventListener('keydown', onKey)
-      world.dispose()
+      world?.dispose()
       worldRef.current = null
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1376,7 +1066,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     setBanner(true)
     const t = setTimeout(() => setBanner(false), 1900)
     return () => clearTimeout(t)
-  }, [ctx.level, webglOk]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctx.level, webglOk, castReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Machine-state side effects drive the 3D scene.
   useEffect(() => {
@@ -1562,7 +1252,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
 function Muncher({ size = 56 }) {
   return (
     <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
-      <Sprite2D draw={drawHyena} size={size} />
+      <img src={RUNNER_CAST.jibbyFront} alt="" draggable={false} style={{ height: size, width: 'auto' }} />
     </motion.div>
   )
 }

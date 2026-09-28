@@ -17,9 +17,8 @@ import {
   saveRunnerBest,
   rngNext,
 } from '../FidelQuestApp'
-import AnbessaSvg from './AnbessaSvg'
-import JibbySvg from './JibbySvg'
 import KokebSvg from './KokebSvg'
+import { RUNNER_CAST } from './runnerCast'
 import { LaneVista } from './StepScenery'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
@@ -97,7 +96,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   if (destroyed) {
     return (
       <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
-        <JibbySvg size={120} />
+        <img src={RUNNER_CAST.jibbyFront} alt="Jibby" draggable={false} style={{ height: 140, width: 'auto' }} />
         <h2 className="text-2xl font-black">{t('munched', 'Munched!')}</h2>
         <p className="font-bold" style={{ color: 'var(--muted)' }}>
           {t('bestStreak', 'Best streak')}: {ctx.fed}
@@ -146,14 +145,13 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
           )}
           <div className="relative">
             <span className="absolute bottom-1 left-1/2 h-3 w-16 -translate-x-1/2 rounded-full" style={{ background: 'rgba(20, 16, 8, 0.28)' }} aria-hidden="true" />
-            <AnbessaSvg size={156} mood={goodFeed ? 'eating' : feeding ? 'sad' : 'happy'} pose={boss ? 'stand' : goodFeed ? 'cheer' : 'stand'} />
+            <img src={RUNNER_CAST.anbessaFront} alt="Anbessa" draggable={false} style={{ height: 176, width: 'auto' }} />
             {goodFeed && !reduce && <FeedSparkle key={ctx.fed} />}
           </div>
-          {/* Jibby is always on the chase, the way the 3D runner shows him.
-              A miss or the boss round pulls him up into the agitated maw. */}
+          {/* Jibby is always on the chase, the way the 3D runner shows him. */}
           <div className="relative mb-1">
             <span className="absolute bottom-1 left-1/2 h-2.5 w-12 -translate-x-1/2 rounded-full" style={{ background: 'rgba(20, 16, 8, 0.22)' }} aria-hidden="true" />
-            <JibbySvg size={(boss && !ctx.survivedBoss) || (feeding && !ctx.lastFeed?.good) ? 140 : 124} expression={(feeding && !ctx.lastFeed?.good) || (boss && !ctx.survivedBoss) ? 'agitated' : 'grin'} />
+            <img src={RUNNER_CAST.jibbyFront} alt="Jibby" draggable={false} style={{ height: (boss && !ctx.survivedBoss) || (feeding && !ctx.lastFeed?.good) ? 168 : 152, width: 'auto' }} />
           </div>
         </div>
 

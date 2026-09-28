@@ -21,6 +21,8 @@ describe('Runner2D (P4 fallback)', () => {
     // Three gates, and the meter shows the power pips.
     for (const opt of q.options) expect(screen.getByText(charOf(opt))).toBeInTheDocument()
     expect(screen.getByLabelText(/^Power/)).toBeInTheDocument()
+    expect(screen.getByAltText('Anbessa').getAttribute('src')).toContain('anbessa-front')
+    expect(screen.getByAltText('Jibby').getAttribute('src')).toContain('jibby-front')
   })
 
   it('feeding the correct gate advances to the next question', () => {
