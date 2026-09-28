@@ -14,7 +14,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
-import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { storyLibrary, storyWords, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { speakWord } from '../platform/speakGeez'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
@@ -50,30 +51,6 @@ const FADE_TURN = { enter: { opacity: 0 }, center: { opacity: 1 }, exit: { opaci
 const SCENE_BG =
   'radial-gradient(120% 82% at 50% 16%, rgba(120,190,255,0.22), rgba(120,190,255,0.06) 46%, transparent 62%),' +
   'linear-gradient(180deg, transparent 58%, rgba(122,182,96,0.20))'
-
-/** Speak one Ge'ez word: recorded clip when the pack has one, else spell
-    it letter-by-letter. Returns a cancel fn for the spelling chain. */
-function speakWord(geez, soundOn) {
-  const w = wordAudioFor(geez)
-  if (w && !w.noAudio) {
-    audio.play(`words/${w.latin}`, { enabled: soundOn })
-    return () => {}
-  }
-  const chars = Array.from(geez).filter((ch) => INDEXES.byChar.has(ch))
-  let cancelled = false
-  let cancelStep = () => {}
-  const step = (i) => {
-    if (cancelled || i >= chars.length) return
-    const form = INDEXES.byChar.get(chars[i])
-    audio.play(`letters/${form.audioKey}`, { enabled: soundOn, chime: { familyIndex: form.familyIndex, order: form.order + 1 } })
-    cancelStep = afterVoice(() => step(i + 1), 350)
-  }
-  step(0)
-  return () => {
-    cancelled = true
-    cancelStep()
-  }
-}
 
 export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [library] = useState(() => storyLibrary(learnedFamilyIds(loadJourney()), undefined, getActivePackId()))

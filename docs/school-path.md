@@ -39,8 +39,8 @@ Each unit also carries:
 - `midLetterTargets` where a natural word hides the new fidel in the middle
   or at the end
 
-Word Build and Find-the-fidel play those lists. Echo lines stay data only.
-There is no Echo screen in this pass.
+Word Build, Find-the-fidel, and Echo play those lists. Echo does not invent
+lines and does not use a microphone.
 
 On that first Meet card the picture-word painting (`public/art/meet`,
 original gouache) is the background, and the fidel stays a large centered
@@ -77,7 +77,14 @@ Twelve units, every Tigrinya family once, in unit order:
    or at the end of the word. ፀ (`ttse`) and ፐ (`pe`) have no natural
    mid-word target, so those families are skipped. The unit still plays
    any other target it has (unit 12 still asks for ፍ in ኣፍ).
-5. A QUIZ boss whose questions use only that unit's families. A two-family
+5. An Echo node. The child hears each authored `echoLines` entry (the same
+   speak path as Story Time: a word clip when the pack has one, otherwise
+   the letters spelled aloud). Tap the line's Hear again button to replay.
+   Tap "I said it", then "Next line" or "Keep going!". There is no
+   microphone and no speech check, so a quiet room or a missing clip never
+   blocks the step. Unit 1 stays in the free taste with the other unit-1
+   nodes, even when a line borrows a later letter (ሀሎ ልቢ uses ቢ).
+6. A QUIZ boss whose questions use only that unit's families. A two-family
    unit still runs eight questions; the option count drops to the number of
    distinct sounds so the question stays answerable.
 
@@ -112,8 +119,8 @@ Family Voice clips for these lines are not recorded yet.
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).
-- Echo player for `echoLines`. Word Build and Find-the-fidel already read
-  `blendWords` and `midLetterTargets`.
+- Word Build, Find-the-fidel, and Echo already read `blendWords`,
+  `midLetterTargets`, and `echoLines`.
 - Gouache Meet paintings for sse, kha, nye, zhe, ppe, and ttse.
 - Soft-fail feedback that never blocks a child mid-task.
 - Legacy chapter-quiz stars (`quiz:1` … `quiz:4`) do not map onto the new

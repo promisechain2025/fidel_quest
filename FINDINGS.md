@@ -31,6 +31,11 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
   chapter. Biblical Amharic Story Time is unchanged.
 - Tests cover the new alphabet fields and the story schema. Docs:
   `docs/school-path.md`.
+- Word Build and Find-the-fidel sit on the path after a unit's families
+  and before the quiz. They read `blendWords` and `midLetterTargets`.
+- Echo step on the Tigrinya path, after Find-the-fidel and before the unit
+  quiz. It plays the unit's authored `echoLines` (hear again, then "I said
+  it" / "Keep going"). No microphone. Amharic spine unchanged.
 - Tigrinya line pass: Story Time lines are full kid sentences. Where Is Sam?
   asks `ሴም ኣበይ ኣሎ?`, then `ሴም ኣብ ክሽነ የለን።` and `ሴም ኣብ ቤት የለን።` The name
   is `ሴም` (se family) in every story line, title, and refrain. English
@@ -41,11 +46,6 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
 
 ## Still NEED
 
-- Word Build UI. `blendWords` and `blendWordsForLearned` are ready. Nothing
-  on the path yet builds a word from tiles.
-- Echo UI. `echoLines` are data only.
-- Find-the-fidel quiz. `midLetterTargets` are data only. Unit quizzes are
-  still listen-and-pick.
 - Twin drills (vowel-family and look-alike pairs such as ሰ / ሠ and ጸ / ፀ).
 - Meet gouache for sse, kha, nye, zhe, ppe, and ttse. Until those paintings
   exist, those Meet cards stay letter bubbles. Hints are in the JSON.

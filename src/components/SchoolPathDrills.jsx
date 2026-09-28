@@ -1,11 +1,13 @@
-/* School Path Grade 1 drills: Word Build and Find-the-fidel.
+/* School Path Grade 1 drills: Word Build, Find-the-fidel, and Echo.
    English chrome (eGeez / Jibby stay the app names). Learning words stay
-   Tigrinya. Echo lines are not played here. Tiles are the word's own
-   fidel syllables — no new word list, no invented art. */
-import { useState } from 'react'
+   Tigrinya. Tiles and echo lines are the unit's own authored text.
+   Echo plays the line (Story Time's speak path) and asks the child to
+   tap. No microphone, no invented lines, no new art. */
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft } from 'lucide-react'
-import { playForm, playEffect } from '../platform/audioEngine'
+import { ChevronLeft, Volume2 } from 'lucide-react'
+import { audio, playForm, playEffect } from '../platform/audioEngine'
+import { speakLine } from '../platform/speakGeez'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
@@ -13,10 +15,13 @@ import { schoolPathLabel } from '../data/schoolPathGr1'
 import {
   WordBuildPhase,
   FindPhase,
+  EchoPhase,
   wordBuildInitial,
   wordBuildTransition,
   findFidelInitial,
   findFidelTransition,
+  echoInitial,
+  echoTransition,
 } from '../schoolPathDrillCore'
 import AnbessaSvg from './AnbessaSvg'
 import { KokebSvg } from './KokebSvg'
@@ -284,6 +289,126 @@ export function FindFidelScreen({ targets = [], unitIndex, soundOn = true, onDon
               {ctx.ti + 1 < ctx.targets.length ? t('findFidelNext', 'Next word') : t('keepGoing', 'Keep going!')}
             </GoButton>
           </div>
+        )}
+      </main>
+    </div>
+  )
+}
+
+const BOOK_CARD =
+  'radial-gradient(120% 82% at 50% 12%, rgba(120,190,255,0.28), rgba(120,190,255,0.06) 48%, transparent 64%),' +
+  'linear-gradient(180deg, var(--card) 0%, var(--paper) 100%)'
+
+export function EchoScreen({ lines = [], unitIndex, soundOn = true, onDone, onBack }) {
+  const [ctx, setCtx] = useState(() => echoInitial(lines))
+  const cancelRef = useRef(() => {})
+  const line = ctx.lines[ctx.li]
+  const listening = ctx.phase === EchoPhase.LISTEN
+  const said = ctx.phase === EchoPhase.SAID
+
+  const stop = () => {
+    cancelRef.current()
+    cancelRef.current = () => {}
+    audio.stopVoice()
+  }
+
+  useEffect(() => {
+    if (!listening || !line?.geez) return undefined
+    cancelRef.current = speakLine(line.geez, soundOn)
+    return () => {
+      cancelRef.current()
+      cancelRef.current = () => {}
+      audio.stopVoice()
+    }
+  }, [listening, ctx.li, line?.geez, soundOn])
+
+  useEffect(() => () => {
+    cancelRef.current()
+    audio.stopVoice()
+  }, [])
+
+  const back = () => {
+    stop()
+    onBack?.()
+  }
+
+  const again = () => {
+    if (!line) return
+    const r = echoTransition(ctx, { type: 'AGAIN' })
+    if (!r.correct) return
+    stop()
+    cancelRef.current = speakLine(line.geez, soundOn)
+  }
+
+  const saidIt = () => {
+    const r = echoTransition(ctx, { type: 'SAID' })
+    if (!r.advanced) return
+    stop()
+    playEffect('good', soundOn)
+    setCtx(r.next)
+  }
+
+  const next = () => {
+    const r = echoTransition(ctx, { type: 'NEXT' })
+    if (!r.advanced) return
+    stop()
+    if (r.next.phase === EchoPhase.DONE) {
+      playEffect('win', soundOn)
+      onDone?.()
+      return
+    }
+    setCtx(r.next)
+  }
+
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8 pt-4" data-testid="echo">
+      <DrillHeader
+        title={t('echoTitle', 'Echo')}
+        unitIndex={unitIndex}
+        step={listening ? ctx.li : ctx.li + 1}
+        total={Math.max(ctx.lines.length, 1)}
+        onBack={back}
+      />
+      <main className="flex flex-1 flex-col items-center gap-5 pt-4 text-center" aria-live="polite">
+        {said ? <AnbessaSvg size={96} mood="happy" pose="cheer" /> : <KokebSvg size={72} />}
+        <p className="text-lg font-extrabold" data-testid={listening ? 'echo-listen' : 'echo-said'}>
+          {listening ? t('echoPrompt', 'Listen, then say it') : t('echoSaid', 'You said it!')}
+        </p>
+        {line && (
+          <motion.div
+            className="relative w-full overflow-hidden rounded-[28px] px-6 py-8"
+            style={{ background: BOOK_CARD, border: '2px solid var(--line)', boxShadow: '0 6px 0 var(--line)' }}
+            animate={listening ? { scale: [1, 1.015, 1] } : { scale: 1 }}
+            transition={listening ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+            data-testid="echo-line"
+          >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-[26px]"
+              style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.14), rgba(0,0,0,0.03) 70%, transparent)' }}
+            />
+            <p className="geez text-5xl font-black leading-tight">{line.geez}</p>
+            {line.meaningEn && (
+              <p className="mt-3 text-base font-bold" style={{ color: 'var(--muted)' }}>{line.meaningEn}</p>
+            )}
+          </motion.div>
+        )}
+        <button
+          type="button"
+          onClick={again}
+          className={`chunk flex h-16 w-full max-w-xs items-center justify-center gap-3 rounded-2xl text-lg font-black text-white ${FOCUS}`}
+          style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}
+        >
+          <Volume2 className="h-7 w-7" aria-hidden="true" />
+          {t('echoAgain', 'Hear again')}
+        </button>
+        {listening && (
+          <GoButton onClick={saidIt}>{t('echoSaidIt', 'I said it')}</GoButton>
+        )}
+        {said && (
+          <GoButton onClick={next}>
+            {ctx.li + 1 < ctx.lines.length ? t('echoNext', 'Next line') : t('keepGoing', 'Keep going!')}
+          </GoButton>
         )}
       </main>
     </div>

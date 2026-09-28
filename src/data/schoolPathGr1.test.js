@@ -10,6 +10,7 @@ import {
   blendWordsForLearned,
   blendWordsReadyAtUnit,
   playableMidLetterTargets,
+  echoLinesForUnit,
   WORD_BUILD_CAP,
   MID_LETTER_GAP_FAMILIES,
   meetPictureForFamily,
@@ -184,6 +185,12 @@ describe('word build and find-the-fidel on the spine', () => {
       expect(find.targets.map((t) => t.geez)).toEqual(targets.map((t) => t.geez))
       expect(find.index).toBeGreaterThan(blend.index)
       expect(find.index).toBeLessThan(quizAt)
+      const echo = ti.find((n) => n.id === `echo:${unit.id}`)
+      const lines = echoLinesForUnit(unit)
+      expect(lines.map((l) => l.geez), unit.id).toEqual(unit.echoLines.map((l) => l.geez))
+      expect(echo.lines.map((l) => l.geez)).toEqual(lines.map((l) => l.geez))
+      expect(echo.index).toBeGreaterThan(find.index)
+      expect(echo.index).toBeLessThan(quizAt)
     }
   })
 
@@ -221,10 +228,12 @@ describe('word build and find-the-fidel on the spine', () => {
   it('keeps unit 1 drills in the free taste and leaves the Amharic spine alone', () => {
     expect(isNodeFree(ti.find((n) => n.id === 'blend:u01'))).toBe(true)
     expect(isNodeFree(ti.find((n) => n.id === 'find:u01'))).toBe(true)
+    expect(isNodeFree(ti.find((n) => n.id === 'echo:u01'))).toBe(true)
     expect(isNodeFree(ti.find((n) => n.id === 'blend:u02'))).toBe(false)
+    expect(isNodeFree(ti.find((n) => n.id === 'echo:u02'))).toBe(false)
     const am = buildJourney('am')
-    expect(am.some((n) => n.kind === NodeKind.BLEND || n.kind === NodeKind.FIND)).toBe(false)
-    expect(ti.some((n) => n.kind === 'echo')).toBe(false)
+    expect(am.some((n) => n.kind === NodeKind.BLEND || n.kind === NodeKind.FIND || n.kind === NodeKind.ECHO)).toBe(false)
+    expect(ti.filter((n) => n.kind === NodeKind.ECHO)).toHaveLength(SCHOOL_PATH_UNITS.length)
   })
 })
 

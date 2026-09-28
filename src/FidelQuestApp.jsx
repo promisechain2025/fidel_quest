@@ -59,7 +59,7 @@ import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
-import { WordBuildScreen, FindFidelScreen } from './components/SchoolPathDrills'
+import { WordBuildScreen, FindFidelScreen, EchoScreen } from './components/SchoolPathDrills'
 import WordPicture from './components/Pictures'
 import { useShareGate } from './components/ShareGate'
 import ScopeToggle from './components/ScopeToggle'
@@ -1302,6 +1302,7 @@ export default function FidelQuestApp() {
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
     if (node.kind === NodeKind.BLEND) return setScreen({ name: 'wordbuild', node })
     if (node.kind === NodeKind.FIND) return setScreen({ name: 'findfidel', node })
+    if (node.kind === NodeKind.ECHO) return setScreen({ name: 'echo', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
     if (node.kind === NodeKind.REVIEW) {
@@ -1490,6 +1491,17 @@ export default function FidelQuestApp() {
             <Screen key={`findfidel-${screen.node.id}`}>
               <FindFidelScreen
                 targets={screen.node.targets}
+                unitIndex={screen.node.unitIndex}
+                soundOn={soundOn}
+                onBack={goBack}
+                onDone={() => markNodeDone(screen.node.id)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'echo' && (
+            <Screen key={`echo-${screen.node.id}`}>
+              <EchoScreen
+                lines={screen.node.lines}
                 unitIndex={screen.node.unitIndex}
                 soundOn={soundOn}
                 onBack={goBack}
@@ -2052,6 +2064,7 @@ const nodeGlyph = (node) => {
   }
   if (node.kind === NodeKind.BLEND) return [...(node.words?.[0]?.geez || '?')][0]
   if (node.kind === NodeKind.FIND) return node.targets?.[0]?.target || '?'
+  if (node.kind === NodeKind.ECHO) return [...(node.lines?.[0]?.geez || '?')][0]
   return null
 }
 
@@ -2062,6 +2075,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isReview = node.kind === NodeKind.REVIEW
   const isBlend = node.kind === NodeKind.BLEND
   const isFind = node.kind === NodeKind.FIND
+  const isEcho = node.kind === NodeKind.ECHO
   const big = isBoss || isArcade
   const size = big ? 76 : 60
   const label =
@@ -2073,7 +2087,9 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           ? 'Word Build'
           : isFind
             ? 'Find the letter'
-            : isStory
+            : isEcho
+              ? 'Echo'
+              : isStory
               ? 'Story time'
               : isReview
                 ? 'Letter check-in'
@@ -2088,7 +2104,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   // A LEARN/MIX/REVIEW step reads as the shared gold letter-tile (done or
   // active); the special nodes keep their emblem tones (green arcade, gold
   // boss, lapis story) in the manuscript palette.
-  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX || isBlend || isFind
+  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX || isBlend || isFind || isEcho
   const goldTile = done || (unlocked && (isLetter || isReview))
   const bg = goldTile ? 'var(--tile)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
   // Boss sits on champagne gold, so its glyph must be the dark glyph ink (a
@@ -2194,15 +2210,13 @@ function serpentineRows(nodes, cols) {
 const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
 const SCHOOL_PATH_ON = JOURNEY.some((n) => n.unitId)
 
-/** Unit indexes that begin inside this row (parent label on the path). */
-function unitLabelsForRow(row, prevRow) {
-  const labels = []
-  let prevUnit = prevRow?.length ? prevRow[prevRow.length - 1]?.unitIndex : null
-  for (const node of row) {
-    if (node.unitIndex && node.unitIndex !== prevUnit) labels.push(node.unitIndex)
-    if (node.unitIndex) prevUnit = node.unitIndex
-  }
-  return labels
+/** Unit label for the node that begins a unit. A row can hold the tail of
+    one unit (the quiz) and the head of the next, so the label sits on the
+    node, not above the whole row. */
+function unitLabelForNode(node, prevNode) {
+  if (!SCHOOL_PATH_ON || !node?.unitIndex) return null
+  if (prevNode?.unitIndex === node.unitIndex) return null
+  return node.unitIndex
 }
 
 /* One chip of the Today's-plan strip: number -> check when done. Chips sit
@@ -2553,7 +2567,9 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
           const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
-          const unitLabels = SCHOOL_PATH_ON ? unitLabelsForRow(row, r > 0 ? PATH_ROWS[r - 1] : null) : []
+          const prevRowLast = r > 0 ? PATH_ROWS[r - 1][PATH_ROWS[r - 1].length - 1] : null
+          const unitSlots = row.map((node, i) => unitLabelForNode(node, i === 0 ? prevRowLast : row[i - 1]))
+          const rowHasUnit = unitSlots.some(Boolean)
           return (
             <div key={r}>
               {chapter !== prevChapter && (
@@ -2572,18 +2588,18 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                   </div>
                 </>
               )}
-              {unitLabels.map((unitIndex) => (
-                <p key={unitIndex} className="mb-1 text-center text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
-                  {schoolPathLabel(unitIndex)}
-                </p>
-              ))}
               <div className="grid items-center gap-3 rounded-3xl px-1 py-2" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))`, background: CHAPTER_TINT[chapter]?.band }}>
                 {row.map((node, i) => {
                   const done = !!journey.done[node.id]
                   const isNext = current ? node.id === current.id : false
                   const unlocked = isNext || done
                   return (
-                    <div key={node.id} className="flex justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
+                    <div key={node.id} className="flex flex-col items-center justify-center" style={{ gridRowStart: 1, gridColumnStart: (r % 2 === 1 ? row.length - i : i + 1) }}>
+                      {rowHasUnit && (
+                        <p className="mb-1 h-4 text-center text-[11px] font-bold" style={{ color: 'var(--muted)', visibility: unitSlots[i] ? 'visible' : 'hidden' }}>
+                          {unitSlots[i] ? schoolPathLabel(unitSlots[i]) : '\u00a0'}
+                        </p>
+                      )}
                       <PathNode
                         node={node}
                         done={done}
@@ -3845,6 +3861,8 @@ function NextUpTeaser({ levelId }) {
       t('nextUpBlend', 'build a word!')
     ) : target.kind === NodeKind.FIND ? (
       t('nextUpFind', 'find the letter!')
+    ) : target.kind === NodeKind.ECHO ? (
+      t('nextUpEcho', 'say it with me!')
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (

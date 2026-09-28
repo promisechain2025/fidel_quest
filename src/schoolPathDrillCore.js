@@ -1,14 +1,18 @@
 /* ============================================================================
-   SCHOOL PATH DRILLS — Word Build + Find-the-fidel (pure, seeded)
+   SCHOOL PATH DRILLS — Word Build, Find-the-fidel, Echo (pure)
    ----------------------------------------------------------------------------
-   Two Grade 1 steps that sit on the Tigrinya School Path after a unit's
-   letter families and before its quiz. Word lists come from the unit data
-   (blendWords / midLetterTargets). This file only shuffles and scores.
+   Grade 1 steps that sit on the Tigrinya School Path after a unit's letter
+   families and before its quiz. Word lists and echo lines come from the
+   unit data (blendWords / midLetterTargets / echoLines). This file only
+   shuffles and scores. It does not invent lines.
 
-   Echo lines are not a game here. No microphone, no say-it phase.
+   Echo is listen-then-tap. The child hears the authored line (the screen
+   speaks it) and taps "I said it". There is no microphone and no
+   speech check. Hearing again does not advance.
 
    Ill-timed events are rejected, never absorbed. No Math.random — the
    tile order is a pure function of (words, seed) via the shared PRNG.
+   Echo has no seed: the lines stay in authored order.
    ========================================================================== */
 
 import { rngShuffle } from './platform/rng'
@@ -153,6 +157,50 @@ export function findFidelTransition(ctx, ev) {
     }
     return {
       next: { ...ctx, ti: ctx.ti + 1, phase: FindPhase.HUNT, lastWrong: null },
+      advanced: true,
+      correct: true,
+    }
+  }
+
+  return reject
+}
+
+export const EchoPhase = Object.freeze({
+  LISTEN: 'LISTEN',
+  SAID: 'SAID',
+  DONE: 'DONE',
+})
+
+/** lines: [{ geez, meaningEn, familyIds }]. Blank or missing lines are
+    dropped. Empty → already done, so the path never opens a blank page. */
+export function echoInitial(lines) {
+  const list = (Array.isArray(lines) ? lines : []).filter((line) => line && String(line.geez || '').trim())
+  if (!list.length) return { lines: list, li: 0, phase: EchoPhase.DONE }
+  return { lines: list, li: 0, phase: EchoPhase.LISTEN }
+}
+
+/** Events: {type:'AGAIN'} replays (no advance), {type:'SAID'} while LISTEN,
+    {type:'NEXT'} while SAID. */
+export function echoTransition(ctx, ev) {
+  const reject = { next: ctx, advanced: false, correct: false }
+  if (!ctx || ctx.phase === EchoPhase.DONE) return reject
+  const line = ctx.lines[ctx.li]
+  if (!line) return reject
+
+  if ((ctx.phase === EchoPhase.LISTEN || ctx.phase === EchoPhase.SAID) && ev?.type === 'AGAIN') {
+    return { next: ctx, advanced: false, correct: true }
+  }
+
+  if (ctx.phase === EchoPhase.LISTEN && ev?.type === 'SAID') {
+    return { next: { ...ctx, phase: EchoPhase.SAID }, advanced: true, correct: true }
+  }
+
+  if (ctx.phase === EchoPhase.SAID && ev?.type === 'NEXT') {
+    if (ctx.li + 1 >= ctx.lines.length) {
+      return { next: { ...ctx, phase: EchoPhase.DONE }, advanced: true, correct: true }
+    }
+    return {
+      next: { ...ctx, li: ctx.li + 1, phase: EchoPhase.LISTEN },
       advanced: true,
       correct: true,
     }

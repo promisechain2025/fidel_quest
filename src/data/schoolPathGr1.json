@@ -20,6 +20,7 @@
       "vowelFamily",
       "blend",
       "midLetter",
+      "echo",
       "unitQuiz"
     ],
     "mapToGames": {
@@ -27,7 +28,7 @@
       "trace": "Letter Steps Trace",
       "vowelFamily": "Letter Steps river / Bubble twin-safe drills",
       "blend": "Word Build — tap syllable tiles in order. Uses blend words that become decodable at this unit (capped at 4).",
-      "echo": "Future Echo fluency — unit.echoLines are original two-word lines (not a game yet)",
+      "echo": "Echo — hear each authored echoLine, tap Hear again, then I said it. No microphone. Same speak path as Story Time (word clip, else spell the letters).",
       "midLetter": "Find the letter — tap the fidel in the middle or at the end (midLetterTargets). ttse and pe are skipped when no natural target is authored",
       "unitQuiz": "existing QUIZ boss node scoped to unit familyIds",
       "arcade": "Runner/Catch letter pool = learnedFamilyIds only (already in journey)"

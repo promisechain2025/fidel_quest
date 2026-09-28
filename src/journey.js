@@ -24,6 +24,7 @@ import {
   schoolPathBands,
   blendWordsReadyAtUnit,
   playableMidLetterTargets,
+  echoLinesForUnit,
 } from './data/schoolPathGr1'
 import { SCHOOL_PATH_STORY_COUNT } from './data/schoolPathGr1Stories'
 
@@ -42,6 +43,7 @@ export const NodeKind = Object.freeze({
   REVIEW: 'review', // service the spaced-repetition backlog ON the spine
   BLEND: 'blend', // School Path Word Build — syllable tiles from blend words
   FIND: 'find', // School Path Find-the-fidel — mid or final letter in a word
+  ECHO: 'echo', // School Path Echo — hear an authored line, tap to continue
 })
 
 // One earned 3D gateway per chapter (P1 decision: no free-play menu; a child
@@ -93,7 +95,7 @@ export function isNodeFree(node) {
   if (!node) return false
   if (node.kind === NodeKind.LEARN) return FREE_FAMILIES.includes(node.familyId)
   if (node.kind === NodeKind.MIX) return (node.families || []).every((f) => FREE_FAMILIES.includes(f))
-  if (node.kind === NodeKind.BLEND || node.kind === NodeKind.FIND) {
+  if (node.kind === NodeKind.BLEND || node.kind === NodeKind.FIND || node.kind === NodeKind.ECHO) {
     const ids = node.families || []
     return ids.length > 0 && ids.every((f) => FREE_FAMILIES.includes(f))
   }
@@ -145,8 +147,9 @@ function buildClassicJourney(packId) {
 }
 
 /* Tigrinya School Path. LEARN nodes follow the unit family list (each
-   family once). After the unit's families, Word Build and Find-the-fidel
-   sit before the QUIZ boss (echo lines stay data-only). Units are grouped
+   family once). After the unit's families, Word Build, Find-the-fidel,
+   and Echo sit before the QUIZ boss. Echo plays the unit's authored
+   echoLines and does not run on the Amharic spine. Units are grouped
    into the same four arcade chapters so Runner/Catch gateways stay at
    four — Play practice still uses learned families only. */
 function buildSchoolPathJourney() {
@@ -199,6 +202,18 @@ function buildSchoolPathJourney() {
           unitIndex: unit.index,
           families: fams.slice(),
           targets: findTargets,
+        })
+      }
+      const echoLines = echoLinesForUnit(unit)
+      if (echoLines.length) {
+        pushNode(nodes, {
+          id: `echo:${unit.id}`,
+          kind: NodeKind.ECHO,
+          chapter,
+          unitId: unit.id,
+          unitIndex: unit.index,
+          families: fams.slice(),
+          lines: echoLines,
         })
       }
       const quiz = quizSpecForFamilies(fams, {

@@ -233,6 +233,26 @@ export function playableMidLetterTargets(unit) {
   return out
 }
 
+/**
+ * Authored echo lines for this unit, in file order. Blank lines are dropped.
+ * Nothing is invented, and a line is not held back because it borrows a
+ * letter from a later unit — the unit list is the source of those lines.
+ */
+export function echoLinesForUnit(unit) {
+  if (!unit) return []
+  const out = []
+  for (const line of unit.echoLines || []) {
+    const geez = String(line?.geez || '').trim()
+    if (!geez) continue
+    out.push({
+      geez: line.geez,
+      meaningEn: line.meaningEn || null,
+      familyIds: (line.familyIds || []).slice(),
+    })
+  }
+  return out
+}
+
 function distinctSounds(familyIds) {
   const sounds = new Set()
   for (const id of familyIds) sounds.add(TI_PACK.families[id]?.consonant ?? id)

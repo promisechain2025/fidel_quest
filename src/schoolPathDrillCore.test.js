@@ -2,10 +2,13 @@ import { describe, it, expect } from 'vitest'
 import {
   WordBuildPhase,
   FindPhase,
+  EchoPhase,
   wordBuildInitial,
   wordBuildTransition,
   findFidelInitial,
   findFidelTransition,
+  echoInitial,
+  echoTransition,
 } from './schoolPathDrillCore'
 
 const hello = { geez: 'ሀሎ', meaningEn: 'hello', familyIds: ['ha', 'le'] }
@@ -114,5 +117,43 @@ describe('find the fidel', () => {
 
   it('starts finished when the unit has no target', () => {
     expect(findFidelInitial([]).phase).toBe(FindPhase.DONE)
+  })
+})
+
+describe('echo', () => {
+  const heart = { geez: 'ሀሎ ልቢ።', meaningEn: 'Hello, heart.' }
+  const mom = { geez: 'ማማ ማይ።', meaningEn: 'Mom, water.' }
+
+  it('starts on the first authored line and does not skip ahead', () => {
+    const ctx = echoInitial([heart, mom])
+    expect(ctx.phase).toBe(EchoPhase.LISTEN)
+    expect(ctx.li).toBe(0)
+    expect(ctx.lines.map((l) => l.geez)).toEqual([heart.geez, mom.geez])
+    expect(echoTransition(ctx, { type: 'NEXT' }).next).toBe(ctx)
+    const again = echoTransition(ctx, { type: 'AGAIN' })
+    expect(again.correct).toBe(true)
+    expect(again.advanced).toBe(false)
+    expect(again.next).toBe(ctx)
+  })
+
+  it('takes I said it, then the next line, then finishes', () => {
+    let ctx = echoInitial([heart, mom])
+    const said = echoTransition(ctx, { type: 'SAID' })
+    expect(said.next.phase).toBe(EchoPhase.SAID)
+    expect(echoTransition(said.next, { type: 'SAID' }).advanced).toBe(false)
+    ctx = echoTransition(said.next, { type: 'NEXT' }).next
+    expect(ctx.phase).toBe(EchoPhase.LISTEN)
+    expect(ctx.li).toBe(1)
+    expect(ctx.lines[1].geez).toBe(mom.geez)
+    ctx = echoTransition(ctx, { type: 'SAID' }).next
+    const done = echoTransition(ctx, { type: 'NEXT' })
+    expect(done.next.phase).toBe(EchoPhase.DONE)
+    expect(echoTransition(done.next, { type: 'NEXT' }).next).toBe(done.next)
+    expect(echoTransition(done.next, { type: 'AGAIN' }).advanced).toBe(false)
+  })
+
+  it('starts finished when the unit has no echo line', () => {
+    expect(echoInitial([]).phase).toBe(EchoPhase.DONE)
+    expect(echoInitial([{ geez: '  ' }, null]).phase).toBe(EchoPhase.DONE)
   })
 })
