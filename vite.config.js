@@ -82,6 +82,17 @@ export default defineConfig({
         // precaching files that may not exist yet.
         runtimeCaching: [
           {
+            // School Path Meet paintings. Cached after the first view so a
+            // later offline lesson still has the picture, without putting
+            // the whole set in the atomic install.
+            urlPattern: /\/art\/meet\/.*\.webp$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'meet-heroes-v1',
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 60 },
+            },
+          },
+          {
             // Letter/word audio: once a clip is cached, serve it from cache with
             // NO further network — a replay makes zero requests, which keeps the
             // app light at scale. Rollout of a re-recorded clip is handled by
