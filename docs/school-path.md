@@ -15,6 +15,14 @@ no textbook pages, and no SIL artwork.
 The Drive folder the order was read from is noted on the JSON `source` field.
 Do not ship those PDFs in the app.
 
+The MoE Alphabet book opens on በ, ሰ, and ሸ. School Path keeps ሀ and ለ as the
+free taste. Meet words are an original diaspora and kids-book rewrite —
+cute animals, bright food, a cozy jebena, the sun, friendly pets — and each
+`pictureHint` is a soft highland art brief. They are not copies of textbook
+pages, and the app does not ship MoE or SIL art. A Meet word's first fidel
+is the family it introduces. Blends stay hidden until every family in the
+word is learned.
+
 ## How it turns on
 
 School Path is on whenever the active language pack is Tigrinya (`ti`). That

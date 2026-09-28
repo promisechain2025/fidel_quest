@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { TI_PACK } from '../packs/ti'
+import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds } from '../journey'
 import { learnInitial } from '../LearnLetters'
 import { buildQuestionQueue } from '../FidelQuestApp'
@@ -7,10 +8,27 @@ import {
   SCHOOL_PATH_UNITS,
   blendWordsForLearned,
   meetPictureForFamily,
+  pictureWordForFamily,
   schoolPathFamilyCoverage,
   schoolPathLabel,
   tiPackFamilyIds,
 } from './schoolPathGr1'
+
+function familyOfChar(ch) {
+  for (const family of ETHIOPIC_SCRIPT.families) {
+    if (family.chars.includes(ch) || family.labial === ch) return family.id
+  }
+  return null
+}
+
+function familiesOfWord(geez) {
+  const ids = []
+  for (const ch of geez) {
+    const id = familyOfChar(ch)
+    if (!ids.includes(id)) ids.push(id)
+  }
+  return ids
+}
 
 describe('school path coverage', () => {
   it('lists every Tigrinya family once and adds none', () => {
@@ -133,14 +151,45 @@ describe('school path journey spine', () => {
   })
 })
 
+describe('picture words match their family', () => {
+  it('maps each Meet word’s first fidel to the declared family', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      for (const word of unit.pictureWords) {
+        expect(familyOfChar([...word.geez][0]), word.geez).toBe(word.familyId)
+      }
+    }
+  })
+
+  it('lists every family a blend actually spells', () => {
+    for (const unit of SCHOOL_PATH_UNITS) {
+      for (const word of unit.blendWords) {
+        expect(word.familyIds, word.geez).toEqual(familiesOfWord(word.geez))
+      }
+    }
+  })
+
+  it('keeps the pe Meet on mail, with the train as a be blend', () => {
+    expect(pictureWordForFamily('pe').geez).toBe('ፖስታ')
+    expect(pictureWordForFamily('che').geez).toBe('ቸኮላታ')
+    expect(pictureWordForFamily('qhe').geez).toBe('ቕጫ')
+    expect(pictureWordForFamily('a').geez).toBe('ኣንበሳ')
+    expect(pictureWordForFamily('chhe').geez).toBe('ጨሩሩ')
+    const train = SCHOOL_PATH_UNITS.flatMap((u) => u.blendWords).find((w) => w.geez === 'ባቡር')
+    expect(train.familyIds).toEqual(['be', 're'])
+  })
+})
+
 describe('blend words stay behind their letters', () => {
   it('hides a blend until every family it needs is learned', () => {
     const early = blendWordsForLearned(['ha', 'le']).map((w) => w.geez)
     expect(early).toContain('ሀሎ')
-    expect(early).toContain('ልቢ')
+    expect(early).not.toContain('ልቢ')
     expect(early).not.toContain('ሰላም')
+    const withHeart = blendWordsForLearned(['ha', 'le', 'be']).map((w) => w.geez)
+    expect(withHeart).toContain('ልቢ')
     const later = blendWordsForLearned(['ha', 'le', 'me', 'se']).map((w) => w.geez)
     expect(later).toContain('ሰላም')
+    expect(later).not.toContain('ልቢ')
   })
 })
 

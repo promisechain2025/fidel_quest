@@ -3,7 +3,8 @@
    ----------------------------------------------------------------------------
    MoE Eritrea Mother Tongue GR1 teaching ORDER, encoded as original eGeez
    units. This is not textbook text or art: picture words and blends are
-   eGeez content sequenced the way the Grade 1 alphabet introduces families.
+   an original diaspora kids-book rewrite (pictureHint is the art brief),
+   sequenced the way the Grade 1 alphabet introduces families.
    See docs/school-path.md.
 
    The unit list is the source of truth (src/data/schoolPathGr1.json). When
@@ -33,6 +34,7 @@ export const SCHOOL_PATH_GR1 = Object.freeze({
   label: raw.label,
   packId: raw.packId,
   source: raw.source,
+  artDirection: raw.artDirection || null,
   units,
 })
 
