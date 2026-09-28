@@ -309,12 +309,11 @@ function ringTexture() {
 /* ── the runner characters ── */
 
 /* Anbessa and Jibby are picture-book paintings (the same warm gouache
-   language as the School Path Meet animals), not stacked primitives.
-   The chase camera looks at their backs while their faces turn toward
-   it. Feet sit on the group origin. Ear, tail, and leg groups stay so
-   the run loop and setMood keep working; the painting is the body.
-   Cast textures are shared by every Jibby, so disposeGroup must not
-   free them. */
+   language as the School Path Meet animals). They run away from the
+   chase camera: backs, ears, and gait, feet on the group origin.
+   Ear, tail, and leg groups stay so the run loop and setMood keep
+   working. Cast textures are shared by every Jibby, so disposeGroup
+   must not free them. */
 
 const CAST_TEX = new Set()
 
@@ -352,8 +351,8 @@ function buildPictureAnimal(tex) {
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: tex,
     transparent: true,
-    alphaTest: 0.04,
-    depthWrite: true,
+    alphaTest: 0.08,
+    depthWrite: false,
   }))
   // Bottom of the painting (the paws) sits on the ground.
   sprite.center.set(0.5, 0)
@@ -600,11 +599,9 @@ class RunnerWorld {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_END ? 1.25 : 2))
     this.scene = new THREE.Scene()
     this.camera = new THREE.PerspectiveCamera(64, 1, 0.1, 260)
-    // Classic centered chase camera, straight down the track. The run
-    // sprites are drawn from behind at three-quarter (glancing back over
-    // the shoulder), so Anbessa faces the letter gates by construction and
-    // the lanes line up with the screen: left lane is left of the screen.
-    // Close enough that mane, ears, tail, and Jibby read from the chase view.
+    // Classic centered chase camera, straight down the track. The cubs
+    // are painted from behind, running away toward the gates, so the
+    // lanes line up with the screen: left lane is left of the screen.
     this.camera.position.set(0, 2.75, 4.15)
     this.camera.lookAt(0, 1.0, -7)
 
@@ -736,17 +733,19 @@ class RunnerWorld {
     const g = new THREE.Group()
     for (let lane = 0; lane < 3; lane++) {
       const form = INDEXES.byAudioKey.get(options[lane])
+      // Overhead, above the cubs. A sign at chest height in the center
+      // lane sits on Anbessa in the chase view.
       const sign = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.4, 2.4),
-        new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true }),
+        new THREE.PlaneGeometry(1.55, 1.55),
+        new THREE.MeshBasicMaterial({ map: glyphTexture(form.char), transparent: true, depthWrite: false }),
       )
-      sign.position.set(LANE_X[lane], 1.95, 0)
+      sign.position.set(LANE_X[lane], 3.45, 0)
       g.add(sign)
-      cyl(g, 0.07, 0.07, 1.6, 0x8a6a45, LANE_X[lane], 0.55, 0, 6)
+      cyl(g, 0.07, 0.07, 1.15, 0x8a6a45, LANE_X[lane], 2.55, 0, 6)
     }
-    box(g, 8.4, 0.18, 0.18, 0xc4a36a, 0, 3, 0)
-    cyl(g, 0.09, 0.09, 3, 0x8a6a45, -4.1, 1.5, 0, 6)
-    cyl(g, 0.09, 0.09, 3, 0x8a6a45, 4.1, 1.5, 0, 6)
+    box(g, 8.4, 0.16, 0.16, 0xc4a36a, 0, 4.28, 0)
+    cyl(g, 0.09, 0.09, 4.3, 0x8a6a45, -4.1, 2.15, 0, 6)
+    cyl(g, 0.09, 0.09, 4.3, 0x8a6a45, 4.1, 2.15, 0, 6)
     g.position.z = SIGN_SPAWN_Z
     this.gate = g
     this.gatePassed = false
