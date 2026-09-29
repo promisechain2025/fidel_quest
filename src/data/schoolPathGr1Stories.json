@@ -420,11 +420,11 @@
       },
       "pages": [
         {
-          "geez": "ማማ ጠየቐት።",
-          "latin": "Mama teyeqet.",
-          "meaningEn": "Mom asked.",
-          "pictureHint": "mom in a white shawl with a thin red border kneeling to speak to the child, highland kitchen",
-          "familyIds": ["me", "the", "ye", "qhe", "te"]
+          "geez": "ዓባየይ ሐተተት።",
+          "latin": "Abayey hatetet.",
+          "meaningEn": "Grandma asked.",
+          "pictureHint": "grandma in a soft blue-gray shawl speaking to the child, highland kitchen",
+          "familyIds": ["ae", "be", "ye", "hha", "te"]
         },
         {
           "geez": "ቆልዓ ማይ ወሰደ።",
@@ -437,14 +437,14 @@
           "geez": "ቆልዓ ጀበና ሓዘ።",
           "latin": "Qola jebena hhaze.",
           "meaningEn": "The child held the jebena.",
-          "pictureHint": "child holding a small clay jebena with both hands, mom watching kindly",
+          "pictureHint": "child holding a small clay jebena with both hands, grandma in a blue-gray shawl watching kindly",
           "familyIds": ["qe", "le", "ae", "je", "be", "ne", "hha", "ze"]
         },
         {
           "geez": "ቆልዓ ቕጫ ሃበ።",
           "latin": "Qola qicha habe.",
           "meaningEn": "The child gave flatbread.",
-          "pictureHint": "child offering a piece of thin flatbread to mom, low kitchen table",
+          "pictureHint": "child offering a piece of thin flatbread to grandma in a blue-gray shawl, low kitchen table",
           "familyIds": ["qe", "le", "ae", "qhe", "chhe", "ha", "be"]
         },
         {
@@ -458,7 +458,7 @@
           "geez": "ቆልዓ ሓገዘ።",
           "latin": "Qola hhageze.",
           "meaningEn": "The child helped.",
-          "pictureHint": "mom and child together, mom's hand on the child's shoulder, jebena and bread on a low table",
+          "pictureHint": "grandma in a blue-gray shawl and the child together, her hand on the child's shoulder, jebena and bread on a low table",
           "familyIds": ["qe", "le", "ae", "hha", "ge", "ze"]
         }
       ]
@@ -567,11 +567,11 @@
           "familyIds": ["qe", "le", "ae", "ze", "me", "re"]
         },
         {
-          "geez": "ቆልዓ ደቀሰ።",
-          "latin": "Qola deqese.",
-          "meaningEn": "The child slept.",
-          "pictureHint": "child asleep under a folded blanket, moon and one star in the window",
-          "familyIds": ["qe", "le", "ae", "de", "se"]
+          "geez": "ቆልዓ ኣይደቀሰን።",
+          "latin": "Qola aydeqesen.",
+          "meaningEn": "The child did not sleep.",
+          "pictureHint": "child awake in bed, eyes open, moon and one star in the window, not asleep",
+          "familyIds": ["qe", "le", "ae", "a", "ye", "de", "se", "ne"]
         }
       ]
     }

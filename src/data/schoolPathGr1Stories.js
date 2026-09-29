@@ -130,14 +130,14 @@ const ART = {
     },
   },
   'help-at-home': {
-    pics: ['👩', '💧', '☕', '🍞', '🧼', '🤗'],
+    pics: ['👵', '💧', '☕', '🍞', '🧼', '🤗'],
     scenes: [
-      painted('help-at-home', 1, { bg: 'kitchen', items: [{ ...MOM, x: 0.4, foot: 0.78, s: 0.34 }, { ...KID, x: 0.68, foot: 0.8, s: 0.28 }] }),
+      painted('help-at-home', 1, { bg: 'kitchen', items: [{ ...GRANDMA, x: 0.4, foot: 0.78, s: 0.34 }, { ...KID, x: 0.68, foot: 0.8, s: 0.28 }] }),
       painted('help-at-home', 2, { bg: 'kitchen', items: [{ ...KID, x: 0.46, foot: 0.78, s: 0.3 }] }),
       painted('help-at-home', 3, { bg: 'kitchen', items: [{ ...KID, x: 0.4, foot: 0.78, s: 0.3 }, { k: 'pot', x: 0.68, y: 0.5, s: 0.22 }] }),
-      painted('help-at-home', 4, { bg: 'kitchen', items: [{ ...KID, x: 0.36, foot: 0.78, s: 0.28 }, { ...MOM, x: 0.66, foot: 0.76, s: 0.32 }] }),
+      painted('help-at-home', 4, { bg: 'kitchen', items: [{ ...KID, x: 0.36, foot: 0.78, s: 0.28 }, { ...GRANDMA, x: 0.66, foot: 0.76, s: 0.32 }] }),
       painted('help-at-home', 5, { bg: 'kitchen', items: [{ ...KID, x: 0.48, foot: 0.78, s: 0.3 }] }),
-      painted('help-at-home', 6, { bg: 'indoor', items: [{ ...MOM, x: 0.4, foot: 0.76, s: 0.34 }, { ...KID, x: 0.66, foot: 0.8, s: 0.28 }] }),
+      painted('help-at-home', 6, { bg: 'indoor', items: [{ ...GRANDMA, x: 0.4, foot: 0.76, s: 0.34 }, { ...KID, x: 0.66, foot: 0.8, s: 0.28 }] }),
     ],
     question: {
       en: 'What did the child hold?',
@@ -160,14 +160,14 @@ const ART = {
     },
   },
   'moon-and-stars': {
-    pics: ['🌙', '🌕', '⭐', '🧒', '🎵', '😴'],
+    pics: ['🌙', '🌕', '⭐', '🧒', '🎵', '🧒'],
     scenes: [
       painted('moon-and-stars', 1, { bg: 'night', items: [{ k: 'house', x: 0.55, y: 0.55, s: 0.34 }] }),
       painted('moon-and-stars', 2, { bg: 'night', items: [{ k: 'moon', x: 0.62, y: 0.28, s: 0.22 }] }),
       painted('moon-and-stars', 3, { bg: 'night', items: [{ k: 'moon', x: 0.35, y: 0.3, s: 0.16 }] }),
       painted('moon-and-stars', 4, { bg: 'indoor', items: [{ ...KID, x: 0.42, foot: 0.78, s: 0.3 }] }),
       painted('moon-and-stars', 5, { bg: 'indoor', items: [{ ...KID, x: 0.46, foot: 0.8, s: 0.3 }, { k: 'note', x: 0.7, y: 0.32, s: 0.14 }] }),
-      painted('moon-and-stars', 6, { bg: 'night', items: [{ ...KID, x: 0.46, foot: 0.8, s: 0.28 }, { k: 'zzz', x: 0.68, y: 0.32, s: 0.14 }, { k: 'moon', x: 0.78, y: 0.24, s: 0.14 }] }),
+      painted('moon-and-stars', 6, { bg: 'night', items: [{ ...KID, x: 0.46, foot: 0.8, s: 0.28 }, { k: 'moon', x: 0.78, y: 0.24, s: 0.14 }] }),
     ],
     question: {
       en: 'What did the child see in the sky?',

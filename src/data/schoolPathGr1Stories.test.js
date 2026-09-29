@@ -165,7 +165,9 @@ describe('school path story pack', () => {
     expect(rain.pages[4].geez).toBe('ዝናብ የለን።')
     const help = byId['help-at-home']
     expect(help.titleTi).toBe('ኣብ ቤት ሓገዝ')
-    expect(help.pages[0].geez).toBe('ማማ ጠየቐት።')
+    expect(help.pages[0].geez).toBe('ዓባየይ ሐተተት።')
+    expect(help.pages[0].meaningEn).toBe('Grandma asked.')
+    expect(help.pages[0].familyIds).toEqual(['ae', 'be', 'ye', 'hha', 'te'])
     expect(help.pages[4].geez).toBe('ቆልዓ ኢዱ ሓጸበ።')
     expect(help.refrain.geez).toBe('ቆልዓ ሓገዘ።')
     const bajaj = byId['bajaj-ride']
@@ -177,7 +179,9 @@ describe('school path story pack', () => {
     expect(moon.titleTi).toBe('ወርሒን ኮኾብን')
     expect(moon.pages[1].geez).toBe('ወርሒ ኣሎ።')
     expect(moon.pages[2].geez).toBe('ኮኾብ ኣሎ።')
-    expect(moon.pages.at(-1).geez).toBe('ቆልዓ ደቀሰ።')
+    expect(moon.pages.at(-1).geez).toBe('ቆልዓ ኣይደቀሰን።')
+    expect(moon.pages.at(-1).meaningEn).toBe('The child did not sleep.')
+    expect(moon.pages.at(-1).familyIds).toEqual(['qe', 'le', 'ae', 'a', 'ye', 'de', 'se', 'ne'])
     for (const id of ['market-day', 'rain-came', 'help-at-home', 'bajaj-ride', 'moon-and-stars']) {
       expect(tiTitles).toContain(byId[id].titleTi)
       expect(byId[id].unlockAfterUnitId).toBe('u11')
