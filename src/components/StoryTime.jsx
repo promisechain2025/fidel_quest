@@ -252,6 +252,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
         <AnbessaSvg size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
+        {story.refrain?.geez && (
+          <p className="geez text-lg font-black" data-refrain="">{story.refrain.geez}</p>
+        )}
         <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
           {t('storyDoneBody', 'Anbessa is proud. Real reading, all by yourself!')}
         </p>
@@ -335,7 +338,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
               {/* illustrated picture-book scene (falls back to the plain
                   picture on a page/pack without a scene) */}
               {page.scene ? (
-                <StoryScene scene={page.scene} width={338} height={220} className="shadow-sm" rounded={22} />
+                <StoryScene scene={page.scene} width={338} height={words.length > 9 ? 176 : 220} className="shadow-sm" rounded={22} />
               ) : (
                 <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
                   <WordPicture emoji={page.pic} size={120} />
