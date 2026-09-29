@@ -252,6 +252,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
         <AnbessaSvg size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
+        {story.refrain?.geez && (
+          <p className="geez text-lg font-black" data-refrain="">{story.refrain.geez}</p>
+        )}
         <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
           {t('storyDoneBody', 'Anbessa is proud. Real reading, all by yourself!')}
         </p>

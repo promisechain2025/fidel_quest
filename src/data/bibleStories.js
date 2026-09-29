@@ -17,6 +17,11 @@
    ሰልሰላ, the sister ሓፍቱ, the princess ጓል ፈርኦን, the nurse ሞግዚት,
    the baby ህፃን, and the name ሙሴ. God is not drawn.
 
+   Book 4, ዮናስን ዓሳን: a kid paraphrase of Jonah 1-3. God commands
+   with ኣዘዞ. Jonah runs to ተርሴስ. The storm stops as ማዕበል ደው በለ.
+   A gentle ዓሳ swallows him. Dry land is ንቑጽ ምድሪ. Nineveh is ነነዌ.
+   God is not drawn.
+
    ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
    ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
    ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent
@@ -28,13 +33,17 @@
    Pharaoh ፈርኦን, the basket ሳጹን, and the nurse ሞግዚት, and Pharaoh's
    order is ኣዘዘ. Kid lines keep ኣ, never አ. She saw the basket is
    ረኣየቶ. He was named because he was found in the water, ስለዝተረኽበ.
+   Jonah keeps ትመ15 ዮናስ, ነነዌ, ተርሴስ, and ዓሳ. Dry land stays ንቑጽ
+   ምድሪ. The fish is ውሕጦ. Mercy is ምሕረት and ይቕረ በሎም.
 
    UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
    ordinary band-1 progress gate (the 8th family, the same gate as the
    Amharic band-1 library). Moses uses the next band, band 2 (the 16th
    family). On the Tigrinya pack that family is ኘ, the last family of
-   School Path chapter 2. It does not change Creation, Noah, School
-   Path, or Amharic unlocks, and it is not a Journey story node.
+   School Path chapter 2. Jonah uses the next band, band 3 (the 24th
+   family). On the Tigrinya pack that family is የ. It does not change
+   Creation, Noah, Moses, School Path, or Amharic unlocks, and it is
+   not a Journey story node.
    ========================================================================== */
 
 import raw from './bibleStories.json'
@@ -50,6 +59,10 @@ const PHARAOH = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#c4b496
 const MOTHER_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', blush: true }
 const SISTER = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short', blush: true }
 const PRINCESS_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', blush: true }
+const JONAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const SAILOR = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
+const SAILOR2 = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
+const KING_N = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#a89060', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
 
 function familyOfChar(ch) {
   for (const family of ETHIOPIC_SCRIPT.families) {
@@ -120,6 +133,23 @@ const ART = {
       painted('bible-moses', 10, { bg: 'indoor', items: [{ ...MOTHER_M, x: 0.48, foot: 0.74, s: 0.36 }] }),
       painted('bible-moses', 11, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.42, foot: 0.74, s: 0.34 }] }),
       painted('bible-moses', 12, { bg: 'sea', items: [{ ...MOTHER_M, x: 0.4, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.68, y: 0.6, s: 0.24 }] }),
+    ],
+  },
+  'bible-jonah': {
+    pics: ['🗣️', '🚢', '🌊', '😨', '🗣️', '🌊', '🐟', '🙏', '🌾', '🚶', '🙇', '💛'],
+    scenes: [
+      painted('bible-jonah', 1, { bg: 'field', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.34 }] }),
+      painted('bible-jonah', 2, { bg: 'sea', items: [{ ...JONAH, x: 0.28, foot: 0.78, s: 0.3 }, { k: 'ark', x: 0.7, y: 0.52, s: 0.36 }] }),
+      painted('bible-jonah', 3, { bg: 'sea', items: [{ k: 'ark', x: 0.5, y: 0.48, s: 0.42 }] }),
+      painted('bible-jonah', 4, { bg: 'sea', items: [{ ...SAILOR, x: 0.28, foot: 0.78, s: 0.28 }, { ...SAILOR2, x: 0.48, foot: 0.78, s: 0.26 }, { k: 'ark', x: 0.78, y: 0.55, s: 0.28 }] }),
+      painted('bible-jonah', 5, { bg: 'sea', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.32 }, { ...SAILOR, x: 0.58, foot: 0.78, s: 0.28 }, { ...SAILOR2, x: 0.76, foot: 0.78, s: 0.24 }] }),
+      painted('bible-jonah', 6, { bg: 'sea', items: [{ ...JONAH, x: 0.28, foot: 0.82, s: 0.28 }, { k: 'ark', x: 0.7, y: 0.5, s: 0.32 }] }),
+      painted('bible-jonah', 7, { bg: 'sea', items: [{ k: 'bigFish', x: 0.58, y: 0.6, s: 0.46 }, { ...JONAH, x: 0.22, foot: 0.8, s: 0.24 }] }),
+      painted('bible-jonah', 8, { bg: 'night', items: [{ ...JONAH, x: 0.5, foot: 0.74, s: 0.34 }] }),
+      painted('bible-jonah', 9, { bg: 'field', items: [{ k: 'bigFish', x: 0.72, y: 0.62, s: 0.36 }, { ...JONAH, x: 0.28, foot: 0.8, s: 0.28 }] }),
+      painted('bible-jonah', 10, { bg: 'field', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.32 }] }),
+      painted('bible-jonah', 11, { bg: 'field', items: [{ ...JONAH, x: 0.22, foot: 0.76, s: 0.28 }, { ...KING_N, x: 0.48, foot: 0.74, s: 0.34 }, { ...SAILOR, x: 0.72, foot: 0.78, s: 0.24 }] }),
+      painted('bible-jonah', 12, { bg: 'day', items: [{ ...JONAH, x: 0.28, foot: 0.78, s: 0.26 }, { ...KING_N, x: 0.5, foot: 0.76, s: 0.3 }, { ...SAILOR2, x: 0.74, foot: 0.78, s: 0.24 }] }),
     ],
   },
 }

@@ -150,6 +150,19 @@ Moses, and God watches over him. The book spells Moses `ሙሴ`, Pharaoh
 the Tigrinya pack that family is `nye` (ኘ), the last family of School
 Path chapter 2. Creation stays free. Noah stays on band 1.
 
+The fourth book is `ዮናስን ዓሳን` / Jonah and the Fish, a connected kid
+paraphrase of Jonah 1-3. God commands Jonah to go to Nineveh. Jonah runs
+away and boards a ship to Tarshish. A big storm comes, the sailors are
+afraid, and Jonah tells them to throw him into the sea. The storm stops.
+A gentle big fish swallows him. He prays inside the fish for three days.
+The fish sets him on dry land. God commands him again, and this time
+Jonah listens and goes to Nineveh. The people listen and turn from their
+bad way. God mercifully forgives them. The lesson is to listen to God
+the first time. The book spells Jonah `ዮናስ`, Nineveh `ነነዌ`, Tarshish
+`ተርሴስ`, the fish `ዓሳ`, and dry land `ንቑጽ ምድሪ`. The book is band 3: the
+24th family. On the Tigrinya pack that family is `ye` (የ). Creation stays
+free. Noah stays on band 1. Moses stays on band 2.
+
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).

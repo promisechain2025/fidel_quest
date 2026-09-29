@@ -37,9 +37,9 @@ describe('bible stories shelf', () => {
   ].join('\n')
 
   it('is the Creation book, separate from Story Path and from Amharic', () => {
-    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses'])
-    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
-    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
+    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah'])
+    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
+    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
     expect(STORIES.find((s) => s.id === 'creation').pack).toBe('am')
     expect(STORIES.find((s) => s.id === 'noah').pack).toBe('am')
     expect(entry.shelf).toBe('bible')
@@ -109,13 +109,14 @@ describe('bible stories shelf', () => {
     const shelves = storyShelves(ti)
     expect(shelves.map((s) => s.id)).toEqual(['path', 'bible'])
     expect(shelves[0].stories.every((s) => s.schoolPath && s.shelf !== 'bible')).toBe(true)
-    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses'])
+    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah'])
     expect(shelves[1].stories[0].unlocked).toBe(true)
     expect(shelves[1].stories[1].unlocked).toBe(false)
     expect(shelves[1].stories[2].unlocked).toBe(false)
+    expect(shelves[1].stories[3].unlocked).toBe(false)
     const am = storyLibrary([], undefined, 'am')
     expect(storyShelves(am).map((s) => s.id)).toEqual(['library'])
-    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
+    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
     expect(am.length).toBe(STORIES.length)
   })
 })
@@ -318,5 +319,120 @@ describe('moses bible book', () => {
     expect(amMoses.band).toBe(2)
     expect(amMoses.pack).toBe('am')
     expect(storyUnlocked(amMoses, [])).toBe(false)
+  })
+})
+
+describe('jonah bible book', () => {
+  const book = BIBLE_STORIES[3]
+  const entry = bibleStoryTimeEntries()[3]
+  const chapter1 = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
+  const chapter2 = FIDEL_FAMILIES.slice(0, 16).map((f) => f.id)
+  const chapter3 = FIDEL_FAMILIES.slice(0, 24).map((f) => f.id)
+  const blob = [book.titleTi, book.refrain.geez, book.question.geez, ...book.pages.map((p) => p.geez)].join('\n')
+
+  it('paraphrases Jonah 1-3 as one connected story', () => {
+    expect(book.id).toBe('bible-jonah')
+    expect(book.titleTi).toBe('ዮናስን ዓሳን')
+    expect(book.titleEn).toBe('Jonah and the Fish')
+    expect(book.free).toBe(false)
+    expect(book.band).toBe(3)
+    expect(book.refrain.geez).toBe('ንእግዚኣብሄር ቅድም ሰምዕ።')
+    expect(book.refrain.meaningEn).toBe('Listen to God the first time.')
+    expect(book.pages.map((p) => p.geez)).toEqual([
+      'እግዚኣብሄር ንዮናስ ናብ ነነዌ ክኸይድ ኣዘዞ።',
+      'ዮናስ ግና ካብ እግዚኣብሄር ሃደመ። ናብ ተርሴስ እትኸይድ መርከብ ኣተወ።',
+      'እታ መርከብ ኣብ ባሕሪ ከላ፡ ዓባይ ማዕበል መጸ።',
+      'እቶም መርከበኛታት ነቲ ማዕበል ረኣዩ። ፈርሑ።',
+      'ዮናስ ንመርከበኛታት ናብ ባሕሪ ደርብዩኒ በሎም።',
+      'እቶም መርከበኛታት ንዮናስ ናብ ባሕሪ ደርበይዎ። ማዕበል ደው በለ።',
+      'ሽዑ ዓባይ ዓሳ ንዮናስ ውሕጦ።',
+      'ዮናስ ኣብ ከብዲ እቲ ዓሳ ሰለስተ መዓልቲ ጸለየ።',
+      'እቲ ዓሳ ንዮናስ ኣብ ንቑጽ ምድሪ ኣንበሮ።',
+      'እግዚኣብሄር ዳግማይ ኣዘዞ። ዮናስ ሰሚዑ ናብ ነነዌ ከደ።',
+      'ሰብ ነነዌ ንእግዚኣብሄር ሰምዑ። ካብ ክፉእ መንገዶም ተመለሱ።',
+      'እግዚኣብሄር ብምሕረት ንሰብ ነነዌ ይቕረ በሎም። ንእግዚኣብሄር ቅድም ሰምዕ።',
+    ])
+    expect(book.pages.map((p) => p.meaningEn)).toEqual([
+      'God commanded Jonah to go to Nineveh.',
+      'But Jonah ran away from God. He boarded a ship going to Tarshish.',
+      'While the ship was on the sea, a big storm came.',
+      'The sailors saw the storm. They were afraid.',
+      'Jonah told the sailors, "Throw me into the sea."',
+      'The sailors threw Jonah into the sea. The storm stopped.',
+      'Then a big fish swallowed Jonah.',
+      'Jonah prayed in the belly of the fish for three days.',
+      'The fish set Jonah on dry land.',
+      'God commanded him again. Jonah listened and went to Nineveh.',
+      'The people of Nineveh listened to God. They turned from their bad way.',
+      'God mercifully forgave the people of Nineveh. Listen to God the first time.',
+    ])
+    expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('እግዚኣብሄር')).toBe(true)
+    expect(blob.includes('ዮናስ')).toBe(true)
+    expect(blob.includes('ነነዌ')).toBe(true)
+    expect(blob.includes('ተርሴስ')).toBe(true)
+    expect(blob.includes('ዓሳ')).toBe(true)
+    expect(blob.includes('ዓሣ')).toBe(false)
+    expect(blob.includes('ንቑጽ')).toBe(true)
+    expect(blob.includes('ንቑፅ')).toBe(false)
+    expect(blob.includes('ኣዘዞ')).toBe(true)
+    expect(blob.includes('ማዕበል ደው በለ')).toBe(true)
+    expect(blob.includes('ውሕጦ')).toBe(true)
+    expect(blob.includes('ምሕረት')).toBe(true)
+    expect(blob.includes('ይቕረ')).toBe(true)
+    expect(blob.includes('ቅድም ሰምዕ')).toBe(true)
+    expect(book.pages.length).toBe(12)
+    for (const page of book.pages) {
+      expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)
+      expect(page.latin && page.meaningEn && page.pictureHint).toBeTruthy()
+      expect(page.familyIds).toEqual(familiesOfGeez(page.geez))
+    }
+    expect(book.question.geez).toBe('እንታይ ንዮናስ ውሕጦ?')
+    expect(book.question.meaningEn).toBe('What swallowed Jonah?')
+    expect(book.question.answers.filter((a) => a.ok)).toHaveLength(1)
+    expect(book.question.answers.find((a) => a.ok).pic).toBe('🐟')
+    expect(book.question.answers).toHaveLength(3)
+  })
+
+  it('sits behind the band-3 progress gate and leaves Moses and Amharic Jonah as they are', () => {
+    expect(entry.free).toBe(false)
+    expect(entry.shelf).toBe('bible')
+    expect(entry.pack).toBe('ti')
+    expect(entry.band).toBe(3)
+    expect(entry.schoolPath).toBeUndefined()
+    expect(storyUnlocked(entry, [])).toBe(false)
+    expect(storyUnlocked(entry, chapter1)).toBe(false)
+    expect(storyUnlocked(entry, chapter2)).toBe(false)
+    expect(storyUnlocked(entry, chapter3.slice(0, -1))).toBe(false)
+    expect(storyUnlocked(entry, chapter3)).toBe(true)
+    expect(storyMissingFamilies(entry, chapter2).length).toBeGreaterThan(0)
+    expect(storyMissingFamilies(entry, chapter3)).toEqual([])
+    expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
+    expect(bibleStoryTimeEntries()[1].band).toBe(1)
+    expect(bibleStoryTimeEntries()[2].band).toBe(2)
+    expect(storyUnlocked(bibleStoryTimeEntries()[2], chapter2)).toBe(true)
+    expect(entry.cover).toBe('/art/stories/bible-jonah-cover.webp')
+    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    entry.pages.forEach((page, i) => {
+      const src = `/art/stories/bible-jonah-${i + 1}.webp`
+      expect(page.scene.src).toBe(src)
+      expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
+      expect(BGS.has(page.scene.bg)).toBe(true)
+      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+    })
+    const amJonah = STORIES.find((s) => s.id === 'jonah')
+    expect(amJonah.title.g).toBe('ዮናስና ዓሣ')
+    expect(amJonah.band).toBe(3)
+    expect(amJonah.pack).toBe('am')
+    expect(storyUnlocked(amJonah, [])).toBe(false)
+    expect(amJonah.pages.map((p) => p.g)).toEqual([
+      'ዮናስ ከእግዚአብሔር ሸሸ።',
+      'ትልቅ ማዕበል መጣ።',
+      'ትልቅ ዓሣ ዋጠው።',
+      'ዮናስ ጸለየ።',
+      'ዓሣው መልሶ አወጣው።',
+    ])
   })
 })
