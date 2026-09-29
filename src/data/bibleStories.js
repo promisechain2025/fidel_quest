@@ -22,6 +22,13 @@
    A gentle ዓሳ swallows him. Dry land is ንቑጽ ምድሪ. Nineveh is ነነዌ.
    God is not drawn.
 
+   Book 5, ዳዊትን ጐልያድን: a kid paraphrase of 1 Samuel 17. David tends
+   ኣባጊዕ and saves them from ኣንበሳ ወይ ድቢ. His father sends him with
+   መግቢ to his brothers. ጐልያድ shouts. The soldiers fear. David tells
+   ሳኦል that God will help him. The king's ክዳን is too big. David takes
+   ወንጭፉ and ሓሙሽተ ልሙፃት ኣእማን. One እምኒ, and Goliath falls. No gore.
+   God is not drawn.
+
    ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
    ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
    ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent
@@ -34,16 +41,21 @@
    order is ኣዘዘ. Kid lines keep ኣ, never አ. She saw the basket is
    ረኣየቶ. He was named because he was found in the water, ስለዝተረኽበ.
    Jonah keeps ትመ15 ዮናስ, ነነዌ, ተርሴስ, and ዓሳ. Dry land stays ንቑጽ
-   ምድሪ. The fish is ውሕጦ. Mercy is ምሕረት and ይቕረ በሎም.
+   ምድሪ. The fish is ውሕጦ. Mercy is ምሕረት and ይቕረ በሎም. David keeps
+   ትመ15 ዳዊት, ጐልያድ, ሳኦል, ፍልስጥኤማውያን, and እስራኤል. The sling is
+   ወንጭፍ. Five smooth stones are ሓሙሽተ ልሙፃት ኣእማን. One stone is
+   ሓንቲ እምኒ. The bear is ድቢ. He fell is ወደቐ.
 
    UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
    ordinary band-1 progress gate (the 8th family, the same gate as the
    Amharic band-1 library). Moses uses the next band, band 2 (the 16th
    family). On the Tigrinya pack that family is ኘ, the last family of
    School Path chapter 2. Jonah uses the next band, band 3 (the 24th
-   family). On the Tigrinya pack that family is የ. It does not change
-   Creation, Noah, Moses, School Path, or Amharic unlocks, and it is
-   not a Journey story node.
+   family). On the Tigrinya pack that family is የ. David uses the next
+   band, band 4, the same gate as the Amharic band-4 library: the last
+   family. On the Tigrinya pack that family is ፐ. It does not change
+   Creation, Noah, Moses, Jonah, School Path, or Amharic unlocks, and
+   it is not a Journey story node.
    ========================================================================== */
 
 import raw from './bibleStories.json'
@@ -63,6 +75,11 @@ const JONAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496',
 const SAILOR = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
 const SAILOR2 = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
 const KING_N = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#a89060', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const DAVID = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short' }
+const SAUL = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#a89060', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const GOLIATH = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a7355', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const FATHER_D = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const SOLDIER = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
 
 function familyOfChar(ch) {
   for (const family of ETHIOPIC_SCRIPT.families) {
@@ -150,6 +167,23 @@ const ART = {
       painted('bible-jonah', 10, { bg: 'field', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.32 }] }),
       painted('bible-jonah', 11, { bg: 'field', items: [{ ...JONAH, x: 0.22, foot: 0.76, s: 0.28 }, { ...KING_N, x: 0.48, foot: 0.74, s: 0.34 }, { ...SAILOR, x: 0.72, foot: 0.78, s: 0.24 }] }),
       painted('bible-jonah', 12, { bg: 'day', items: [{ ...JONAH, x: 0.28, foot: 0.78, s: 0.26 }, { ...KING_N, x: 0.5, foot: 0.76, s: 0.3 }, { ...SAILOR2, x: 0.74, foot: 0.78, s: 0.24 }] }),
+    ],
+  },
+  'bible-david': {
+    pics: ['🐑', '🦁', '🍞', '🗣️', '😨', '🗣️', '👑', '🪨', '🧍', '🪨', '🎉', '💛'],
+    scenes: [
+      painted('bible-david', 1, { bg: 'field', items: [{ ...DAVID, x: 0.34, foot: 0.76, s: 0.32 }, { k: 'sheep', x: 0.58, foot: 0.78, s: 0.22 }, { k: 'sheep', x: 0.76, foot: 0.8, s: 0.18 }] }),
+      painted('bible-david', 2, { bg: 'field', items: [{ ...DAVID, x: 0.42, foot: 0.76, s: 0.3 }, { k: 'sheep', x: 0.62, foot: 0.8, s: 0.18 }, { k: 'lion', x: 0.18, foot: 0.78, s: 0.22 }] }),
+      painted('bible-david', 3, { bg: 'field', items: [{ ...FATHER_D, x: 0.32, foot: 0.76, s: 0.32 }, { ...DAVID, x: 0.55, foot: 0.78, s: 0.26 }] }),
+      painted('bible-david', 4, { bg: 'field', items: [{ ...DAVID, x: 0.22, foot: 0.8, s: 0.22 }, { ...GOLIATH, x: 0.72, foot: 0.7, s: 0.46 }] }),
+      painted('bible-david', 5, { bg: 'field', items: [{ ...SOLDIER, x: 0.28, foot: 0.78, s: 0.28 }, { ...SOLDIER, x: 0.48, foot: 0.78, s: 0.26, cloth: '#efe4cf' }, { ...GOLIATH, x: 0.78, foot: 0.72, s: 0.4 }] }),
+      painted('bible-david', 6, { bg: 'field', items: [{ ...DAVID, x: 0.3, foot: 0.78, s: 0.28 }, { ...SAUL, x: 0.62, foot: 0.74, s: 0.36 }] }),
+      painted('bible-david', 7, { bg: 'field', items: [{ ...SAUL, x: 0.36, foot: 0.74, s: 0.34 }, { ...DAVID, x: 0.62, foot: 0.78, s: 0.26 }] }),
+      painted('bible-david', 8, { bg: 'field', items: [{ ...DAVID, x: 0.4, foot: 0.78, s: 0.3 }] }),
+      painted('bible-david', 9, { bg: 'field', items: [{ ...DAVID, x: 0.24, foot: 0.8, s: 0.24 }, { ...GOLIATH, x: 0.7, foot: 0.7, s: 0.46 }] }),
+      painted('bible-david', 10, { bg: 'field', items: [{ ...DAVID, x: 0.28, foot: 0.78, s: 0.26 }, { ...GOLIATH, x: 0.68, foot: 0.82, s: 0.36 }] }),
+      painted('bible-david', 11, { bg: 'day', items: [{ ...DAVID, x: 0.4, foot: 0.76, s: 0.28 }, { ...SOLDIER, x: 0.62, foot: 0.78, s: 0.26 }, { ...FATHER_D, x: 0.22, foot: 0.78, s: 0.26 }] }),
+      painted('bible-david', 12, { bg: 'day', items: [{ ...DAVID, x: 0.4, foot: 0.76, s: 0.3 }, { k: 'sheep', x: 0.66, foot: 0.8, s: 0.2 }] }),
     ],
   },
 }
