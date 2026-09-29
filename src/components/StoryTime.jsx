@@ -338,7 +338,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
               {/* illustrated picture-book scene (falls back to the plain
                   picture on a page/pack without a scene) */}
               {page.scene ? (
-                <StoryScene scene={page.scene} width={338} height={220} className="shadow-sm" rounded={22} />
+                <StoryScene scene={page.scene} width={338} height={words.length > 9 ? 176 : 220} className="shadow-sm" rounded={22} />
               ) : (
                 <div className="flex items-center justify-center rounded-3xl" style={{ width: 190, height: 150, background: SCENE_BG, border: '1.5px solid var(--line)' }} aria-hidden="true">
                   <WordPicture emoji={page.pic} size={120} />

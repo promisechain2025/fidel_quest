@@ -341,30 +341,30 @@ describe('jonah bible book', () => {
     expect(book.pages.map((p) => p.geez)).toEqual([
       'እግዚኣብሄር ንዮናስ ናብ ነነዌ ክኸይድ ኣዘዞ።',
       'ዮናስ ግና ሃደመ። ናብ ተርሴስ መርከብ ኣተወ።',
-      'እታ መርከብ ኣብ ባሕሪ ከላ፡ ዓባይ ማዕበል መጸ።',
-      'እቶም መርከበኛታት ነቲ ማዕበል ረኣዩ። ፈርሑ።',
-      'ዮናስ ንመርከበኛታት ናብ ባሕሪ ደርብዩኒ በሎም።',
+      'እታ መርከብ ኣብ ባሕሪ ከላ፡ ዓቢይ ማዕበል መጸ።',
+      'እቶም መርከበኛታት ነቲ ማዕበል ርእዮም ፈርሑ።',
+      'ዮናስ ንመርከበኛታት፡ እዚ ማዕበል ብሰንከይ ኢዩ፡ ናብዚ ባሕሪ ደርቡይኒ በሎም።',
       'እቶም መርከበኛታት ንዮናስ ናብ ባሕሪ ደርበይዎ። ማዕበል ደው በለ።',
       'ሽዑ ዓባይ ዓሳ ንዮናስ ውሕጦ።',
       'ዮናስ ኣብ ከብዲ እቲ ዓሳ ሰለስተ መዓልቲ ጸለየ።',
       'እቲ ዓሳ ንዮናስ ኣብ ንቑጽ ምድሪ ኣንበሮ።',
       'እግዚኣብሄር ዳግማይ ኣዘዞ። ዮናስ ሰሚዑ ናብ ነነዌ ከደ።',
       'ሰብ ነነዌ ንእግዚኣብሄር ሰምዑ። ካብ ክፉእ መንገዶም ተመለሱ።',
-      'እግዚኣብሄር ብምሕረት ንሰብ ነነዌ ይቕረ በሎም። ንእግዚኣብሄር ቅድም ሰምዕ።',
+      'እግዚኣብሄር ብምሕረት ንሰብ ነነዌ ይቕረ በሎም።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
       'God commanded Jonah to go to Nineveh.',
       'But Jonah ran away. He boarded a ship to Tarshish.',
       'While the ship was on the sea, a big storm came.',
-      'The sailors saw the storm. They were afraid.',
-      'Jonah told the sailors, "Throw me into the sea."',
+      'The sailors saw the storm and were afraid.',
+      'This storm is because of me. Throw me in.',
       'The sailors threw Jonah into the sea. The storm stopped.',
       'Then a big fish swallowed Jonah.',
       'Jonah prayed in the belly of the fish for three days.',
       'The fish set Jonah on dry land.',
       'God commanded him again. Jonah listened and went to Nineveh.',
       'The people of Nineveh listened to God. They turned from their bad way.',
-      'God mercifully forgave the people of Nineveh. Listen to God the first time.',
+      'God mercifully forgave the people of Nineveh.',
     ])
     expect(blob.includes('አ')).toBe(false)
     expect(blob.includes('ሔ')).toBe(false)
@@ -382,6 +382,10 @@ describe('jonah bible book', () => {
     expect(blob.includes('ምሕረት')).toBe(true)
     expect(blob.includes('ይቕረ')).toBe(true)
     expect(blob.includes('ቅድም ሰምዕ')).toBe(true)
+    expect(book.pages[2].geez.includes('ዓቢይ ማዕበል')).toBe(true)
+    expect(book.pages[2].geez.includes('ዓባይ')).toBe(false)
+    expect(book.pages[6].geez.includes('ዓባይ ዓሳ')).toBe(true)
+    expect(book.pages[11].geez.includes('ቅድም ሰምዕ')).toBe(false)
     expect(book.pages.length).toBe(12)
     for (const page of book.pages) {
       expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
