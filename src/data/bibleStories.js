@@ -14,8 +14,8 @@
 
    ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
    ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
-   ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. Genesis 8:7 spells the raven
-   ኳዅ and sends him ሰደዶ. The dove is ርግቢ; he sent her ሰደዳ; she returned
+   ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. The raven is ሳዅ, sent
+   ሰደዶ. The dove is ርግቢ; he sent her ሰደዳ; she returned
    ተመለሰት holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ.
    The promise is ኪዳን (Genesis 9 ኪዳነይ). Rain keeps the pack word ዝናብ;
    ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ.

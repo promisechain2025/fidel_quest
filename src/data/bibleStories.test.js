@@ -141,7 +141,7 @@ describe('noah bible book', () => {
       'እንስሳታት ከኣ ክልተ ክልተ ምስኦም ኣተዉ።',
       'እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።',
       'ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።',
-      'ዝናብ ምስ ደው በለ፡ ኖህ ቅድም ንኳዅ ሰደዶ። ኳዅ ግና ኣይተመለሰን።',
+      'ዝናብ ምስ ደው በለ፡ ኖህ ቅድም ንሳዅ ሰደዶ። ሳዅ ግና ኣይተመለሰን።',
       'ድሕሪኡ ንርግቢ ሰደዳ። ርግቢ ቘፅሊ ኣውሊዕ ሒዛ ናብ ኖህ ተመለሰት።',
       'ኖህን ስድራቤቱን ናብ ንቑጽ ምድሪ ወፁ።',
       'እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።',
@@ -170,7 +170,8 @@ describe('noah bible book', () => {
     expect(blob.includes('ፃድቕ')).toBe(true)
     expect(blob.includes('ኪዳን')).toBe(true)
     expect(book.pages.length).toBe(12)
-    expect(blob.includes('ኳዅ')).toBe(true)
+    expect(blob.includes('ሳዅ')).toBe(true)
+    expect(blob.includes('ኳዅ')).toBe(false)
     expect(blob.includes('ቑራዕ')).toBe(false)
     expect(blob.includes('ንቑጽ')).toBe(true)
     expect(blob.includes('ነቒጣ')).toBe(false)
