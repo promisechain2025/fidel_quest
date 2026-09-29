@@ -17,6 +17,11 @@ const IDS = [
   'coffee-with-grandma',
   'baby-wont-sleep',
   'sun-all-week',
+  'market-day',
+  'rain-came',
+  'help-at-home',
+  'bajaj-ride',
+  'moon-and-stars',
 ]
 
 const MOE_TITLES = ['ሓጋይ', 'ሓወይ ኣበይ ኣሎ']
@@ -44,7 +49,7 @@ const packWords = new Set(
 )
 
 describe('school path story pack', () => {
-  it('ships five original stories and leaves the biblical library alone', () => {
+  it('ships ten original stories and leaves the biblical library alone', () => {
     expect(SCHOOL_PATH_STORIES.map((s) => s.id)).toEqual(IDS)
     for (const id of IDS) expect(STORIES.some((s) => s.id === id)).toBe(false)
     expect(STORIES.every((s) => s.pack === 'am')).toBe(true)
@@ -88,6 +93,10 @@ describe('school path story pack', () => {
       expect(storyUnlocked(entry, gate)).toBe(true)
       expect(storyUnlocked(entry, gate.slice(0, -1))).toBe(false)
       expect(entry.pages.every((p) => p.g && p.lt && p.en && p.pic && BGS.has(p.scene.bg))).toBe(true)
+      const gateSet = new Set(gate)
+      for (const page of story.pages) {
+        for (const id of page.familyIds) expect(gateSet.has(id), `${story.id} ${page.geez} ${id}`).toBe(true)
+      }
     }
     const sam = SCHOOL_PATH_STORIES.find((s) => s.id === 'where-is-sam')
     expect(sam.unlockAfterUnitId).toBe('u09')
@@ -139,9 +148,47 @@ describe('school path story pack', () => {
     expect(tiTitles).toContain('ሴም ኣበይ ኣሎ?')
     expect(tiTitles).toContain('ናብ ቤት ትምህርቲ')
     expect(tiTitles).toContain('ጀበና ምስ ዓባየይ')
+    const market = byId['market-day']
+    expect(market.titleTi).toBe('ኣብ ሱቕ')
+    expect(market.pages.map((p) => p.geez)).toEqual([
+      'ቆልዓ ናብ ሱቕ ከደ።',
+      'ሓደ በለስ ኣሎ።',
+      'ክልተ ወይኒ ኣሎ።',
+      'ሰለስተ ቸኮላታ ኣሎ።',
+      'ቆልዓ ሓደ በለስ ወሰደ።',
+      'ቆልዓ በለስ በልዐ።',
+    ])
+    const rain = byId['rain-came']
+    expect(rain.titleTi).toBe('ዝናብ መጸ')
+    expect(rain.pages[1].geez).toBe('ደበና መጸ።')
+    expect(rain.pages[2].geez).toBe('ዝናብ መጸ።')
+    expect(rain.pages[4].geez).toBe('ዝናብ የለን።')
+    const help = byId['help-at-home']
+    expect(help.titleTi).toBe('ኣብ ቤት ሓገዝ')
+    expect(help.pages[0].geez).toBe('ዓባየይ ሐተተት።')
+    expect(help.pages[0].meaningEn).toBe('Grandma asked.')
+    expect(help.pages[0].familyIds).toEqual(['ae', 'be', 'ye', 'hha', 'te'])
+    expect(help.pages[4].geez).toBe('ቆልዓ ኢዱ ሓጸበ።')
+    expect(help.refrain.geez).toBe('ቆልዓ ሓገዘ።')
+    const bajaj = byId['bajaj-ride']
+    expect(bajaj.titleTi).toBe('ብባጃጅ')
+    expect(bajaj.pages[2].geez).toBe('ባጃጅ ኣብ ሱቕ ደው ኢሉ።')
+    expect(bajaj.pages[4].geez).toBe('ዓባየይ ኣላ።')
+    expect(bajaj.pages[4].meaningEn).toBe('Grandma is there.')
+    const moon = byId['moon-and-stars']
+    expect(moon.titleTi).toBe('ወርሒን ኮኾብን')
+    expect(moon.pages[1].geez).toBe('ወርሒ ኣሎ።')
+    expect(moon.pages[2].geez).toBe('ኮኾብ ኣሎ።')
+    expect(moon.pages.at(-1).geez).toBe('ቆልዓ ኣይደቀሰን።')
+    expect(moon.pages.at(-1).meaningEn).toBe('The child did not sleep.')
+    expect(moon.pages.at(-1).familyIds).toEqual(['qe', 'le', 'ae', 'a', 'ye', 'de', 'se', 'ne'])
+    for (const id of ['market-day', 'rain-came', 'help-at-home', 'bajaj-ride', 'moon-and-stars']) {
+      expect(tiTitles).toContain(byId[id].titleTi)
+      expect(byId[id].unlockAfterUnitId).toBe('u11')
+    }
   })
 
-  it('shows the five stories on the Tigrinya path shelf and not in Amharic', () => {
+  it('shows the ten stories on the Tigrinya path shelf, the Bible shelf beside them, and neither in Amharic', () => {
     const ti = storyLibrary([], undefined, 'ti')
     const path = ti.filter((s) => s.schoolPath)
     expect(path.map((s) => s.id).sort()).toEqual([...IDS].sort())

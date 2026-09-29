@@ -21,16 +21,19 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
     at the end (heart, sky, priest, scissors, holiday, bajaj, table, mouth).
   - Kids-book `pictureHint` / `artDirection` kept. English chrome stays
     eGeez / Jibby.
-- Story Path pack `src/data/schoolPathGr1Stories.json`: five original
-  stories (Where Is Sam?, Walk to School, Coffee With Grandma, Baby Won't
-  Sleep, Sun All Week). Each has an original Tigrinya title, an unlock
-  unit, pages, and a refrain. Lines recycle Meet and blend words.
-- Wiring: Tigrinya Story Time lists those five books on the Story Path
+- Story Path pack `src/data/schoolPathGr1Stories.json`: ten original
+  stories. The first five are Where Is Sam?, Walk to School, Coffee With
+  Grandma, Baby Won't Sleep, and Sun All Week. The next five are Market
+  Day (count-and-buy), The Rain Came (weather change), Helping at Home
+  (chores), The Bajaj Ride (stops), and Moon and Stars (night-sky close).
+  Each has an original Tigrinya title, an unlock unit, pages, and a
+  refrain. Lines recycle Meet and blend words.
+- Wiring: Tigrinya Story Time lists those ten books on the Story Path
   shelf. Each page paints a Meet-style scene from `public/art/stories`
   (the stamp scene is only the fallback). A story node sits on each
   School Path chapter. Biblical Amharic Story Time is unchanged. A
   separate Bible shelf (`መጽሓፍ ቅዱስ`) holds In the Beginning and is not
-  mixed into these five books.
+  mixed into these ten books.
 - Tests cover the new alphabet fields and the story schema. Docs:
   `docs/school-path.md`.
 - Tigrinya line pass: Story Time lines are full kid sentences. Where Is Sam?
@@ -51,7 +54,7 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
 - Twin drills (vowel-family and look-alike pairs such as ሰ / ሠ and ጸ / ፀ).
 - Meet gouache for sse, kha, nye, zhe, ppe, and ttse. Until those paintings
   exist, those Meet cards stay letter bubbles. Hints are in the JSON.
-- Family Voice recordings for the new Meet words, echo lines, and the five
+- Family Voice recordings for the new Meet words, echo lines, and the ten
   stories. Read-to-me falls back to letter spelling when no clip exists.
 - Native-speaker pass on the rare-letter Meets (ኘው meow, ፅዋ cup,
   ኃይሊ power, ዥዋዥዌ swing, ጳጉሜ, ሠዓሊ). Story lines had a Tigrinya pass;

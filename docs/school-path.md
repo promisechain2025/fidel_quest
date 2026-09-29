@@ -95,14 +95,15 @@ translate is blocked for the whole app so those letters are not rewritten
 
 ## Story Path (P2)
 
-`src/data/schoolPathGr1Stories.json` is five original diaspora stories.
+`src/data/schoolPathGr1Stories.json` is ten original diaspora stories.
 They borrow Reading Book shapes only: a room-to-room refrain, a walk that
-recycles Meet animals, coffee with grandma, a baby who will not sleep, and
-the sun through the week. Titles and sentences are eGeez's own. They do
-not copy MoE titles or pages.
+recycles Meet animals, coffee with grandma, a baby who will not sleep, the
+sun through the week, a market count-and-buy, a rain-day weather change,
+helping at home, stops on a bajaj ride, and a moon-and-stars close. Titles
+and sentences are eGeez's own. They do not copy MoE titles or pages.
 
 Each story names `unlockAfterUnitId`. It opens in Story Time once every
-family through that unit is learned. Tigrinya Story Time shows these five
+family through that unit is learned. Tigrinya Story Time shows these ten
 books. The biblical Story Time tracks stay on the Amharic pack and are not
 rewritten. A story node sits on each School Path chapter, the same way
 Amharic already does. Each page paints a Meet-style scene from
@@ -112,7 +113,7 @@ Family Voice clips for these lines are not recorded yet.
 ## Bible Stories (separate shelf)
 
 Tigrinya Story Time also has a Bible shelf, `መጽሓፍ ቅዱስ`, under the Story
-Path list. It is not part of the five Story Path books and it does not
+Path list. It is not part of the ten Story Path books and it does not
 rewrite the Amharic biblical tracks.
 
 The first book is `ኣብ መጀመርታ` / In the Beginning, a kid paraphrase of
