@@ -4,12 +4,12 @@
   "packId": "ti",
   "shelf": "bible",
   "source": {
-    "book": "Original kid paraphrase of Genesis 1-2. Not a copyrighted Bible translation.",
+    "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees.",
-    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Trees follow that chapter's ኣእዋም. Grass keeps the pack word ሳዕሪ. Good stays ጽቡቕ, matching the rest of eGeez Tigrinya; ትመ15 writes ፅቡቕ.",
-    "unlockNote": "This first book is a free taste. It opens in Tigrinya Story Time before any School Path unit is finished, so a family can read it on day one and a reviewer can open it without grinding the alphabet. Later Bible books can name a gate. It is not a School Path story, it does not sit in that pack, and it does not change those unlocks.",
-    "artNote": "God is not drawn. Each painting shows the thing the line names, in highland Horn light. The rest page is a quiet finished world, not a picture of God."
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the raven, the dove, then dry land, then the rainbow promise.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. God commanded ኣዘዞ. Shut is ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent ሰደዶ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
+    "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
+    "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
   },
   "stories": [
     {
@@ -80,6 +80,101 @@
           { "pic": "🧒", "ok": true, "alt": "people" },
           { "pic": "🐟", "ok": false, "alt": "a fish" },
           { "pic": "☀️", "ok": false, "alt": "the sun" }
+        ]
+      }
+    },
+    {
+      "id": "bible-noah",
+      "titleEn": "Noah's Ark",
+      "titleTi": "መርከብ ኖህ",
+      "latinTitle": "Merkeb Noh",
+      "free": false,
+      "refrain": {
+        "geez": "ኖህ ንእግዚኣብሄር ሰምዖ።",
+        "latin": "Noh ni-Igziabher sem'o.",
+        "meaningEn": "Noah obeyed God."
+      },
+      "pages": [
+        {
+          "geez": "እግዚኣብሄር ሰብ ኣብ ምድሪ ክፋእ ከም ዝገብር ረኣየ።",
+          "latin": "Igziabher seb ab mdri kfa' kem zigebr re'aye.",
+          "meaningEn": "God saw that people were doing evil on the earth.",
+          "pictureHint": "A few adults with deep brown skin in sand and sage cloth, turned away from each other, unkind but not violent, no Noah, no God"
+        },
+        {
+          "geez": "ኖህ ግና ፃድቕ ሰብ ነበረ። ንእግዚኣብሄር ድማ ይስምዖ ነበረ።",
+          "latin": "Noh gna tsadq seb nebere. Ni-Igziabher dma yism'o nebere.",
+          "meaningEn": "But Noah was a righteous man. He obeyed God.",
+          "pictureHint": "Noah alone, deep brown skin, sand linen tunic, calm, looking toward an empty sky, no divine figure"
+        },
+        {
+          "geez": "ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ ኣዘዞ።",
+          "latin": "May bzux sle zimetsi', Igziabher ni-Noh abay merkeb kiserh azzezo.",
+          "meaningEn": "Because a lot of water was coming, God commanded Noah to build a big ark.",
+          "pictureHint": "Noah beside timber and the frame of a big wooden ark, a soft cloud on the horizon, empty sky, no God"
+        },
+        {
+          "geez": "ኖህን ሰበይቱን ደቁን ነታ መርከብ ሰርሑ።",
+          "latin": "Nohn sebeytun dequn neta merkeb serhu.",
+          "meaningEn": "Noah, his wife, and his children built the ark.",
+          "pictureHint": "Noah, his wife, and two children building a wooden ark, sand linen and sage clothes, braided hair, no red, no animals"
+        },
+        {
+          "geez": "ድሕሪኡ ኖህን ሰበይቱን ደቁን ናብታ መርከብ ኣተዉ።",
+          "latin": "Dhr'u Nohn sebeytun dequn nabta merkeb atewu.",
+          "meaningEn": "After that, Noah, his wife, and his children went into the ark.",
+          "pictureHint": "Noah, his wife, and two children walking into the open door of the wooden ark, no animals"
+        },
+        {
+          "geez": "እንስሳታት ከኣ ክልተ ክልተ ምስኦም ኣተዉ።",
+          "latin": "Insisatat ke'a kilte kilte msom atewu.",
+          "meaningEn": "And the animals went in with them, two by two.",
+          "pictureHint": "Clear pairs of lions, giraffes, elephants, and birds walking into the ark, calm, family small in the doorway"
+        },
+        {
+          "geez": "እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።",
+          "latin": "Igziabher nayta merkeb ma'tso 'ats'o. Shyu znab metse.",
+          "meaningEn": "God shut the door of the ark. Then the rain came.",
+          "pictureHint": "The ark door shut, gentle rain beginning, no hand, no face, no people in distress"
+        },
+        {
+          "geez": "ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።",
+          "latin": "May neta mdri shefene. Ita merkeb gna ab l'liu selam neberet.",
+          "meaningEn": "Water covered the land. But the ark was safe on the water.",
+          "pictureHint": "Calm water over highland hills, the wooden ark floating safely, no storm, no people"
+        },
+        {
+          "geez": "ዝናብ ደው ምስ በለ፡ ኖህ ቅድም ንኳዅ ሰደዶ። ኳዅ ግና ኣይተመለሰን።",
+          "latin": "Znab dew ms bele, Noh qdm n-kwakh sededo. Kwakh gna aytemelesen.",
+          "meaningEn": "When the rain stopped, Noah first sent the raven. But the raven did not come back.",
+          "pictureHint": "Noah at the ark window watching a black raven fly away over calm water, no dove, no olive leaf, no rainbow"
+        },
+        {
+          "geez": "ድሕሪኡ ንርግቢ ሰደዳ። ርግቢ ቘፅሊ ኣውሊዕ ሒዛ ናብ ኖህ ተመለሰት።",
+          "latin": "Dhr'u n-rgbi sededa. Rgbi qotsli awli' hiza nab Noh temeleset.",
+          "meaningEn": "Then he sent the dove. The dove came back to Noah holding an olive leaf.",
+          "pictureHint": "Clear sky, Noah at the ark window, one dove arriving with a clear olive sprig, no rainbow"
+        },
+        {
+          "geez": "ኖህን ስድራቤቱን ናብ ንቑጽ ምድሪ ወፁ።",
+          "latin": "Nohn sdrabetun nab nquts mdri wetsu.",
+          "meaningEn": "Noah and his family went out onto dry land.",
+          "pictureHint": "Noah, his wife, and two children stepping onto dry ochre land from the ark, clear sky, no rainbow"
+        },
+        {
+          "geez": "እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።",
+          "latin": "Igziabher qesti ab semay anbere. Izi kidan iyu.",
+          "meaningEn": "God set a rainbow in the sky. This is his promise.",
+          "pictureHint": "The same family on dry land, a soft rainbow across the sky, the ark on the shore, no divine figure"
+        }
+      ],
+      "question": {
+        "geez": "እግዚኣብሄር ኣብ ሰማይ እንታይ ኣንበረ?",
+        "meaningEn": "What did God set in the sky?",
+        "answers": [
+          { "pic": "🌈", "ok": true, "alt": "a rainbow" },
+          { "pic": "🌙", "ok": false, "alt": "the moon" },
+          { "pic": "🐟", "ok": false, "alt": "a fish" }
         ]
       }
     }
