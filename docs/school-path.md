@@ -134,7 +134,7 @@ door and the rain came. The water covered the land, and the ark was
 safe. Noah sent the raven, then the dove came back with an olive leaf.
 They went out onto dry land, and God set a rainbow as his promise.
 ትመ15 spells Noah `ኖህ`, the ark `መርከብ`, righteous `ፃድቕ`, and the
-promise `ኪዳን`. The raven is `ሳዅ`. The book is not
+promise `ኪዳን`. The raven is `ኳዅ`. The book is not
 free. It uses the ordinary band-1 progress gate and does not change the
 Creation unlock or the School Path unlocks.
 
