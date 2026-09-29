@@ -12,10 +12,10 @@
    connected lines. People do ክፋእ. Noah is ፃድቕ and obeys. God is not
    drawn. "They built" is ሰርሑ, so the line does not use ሔ.
 
-   Book 3, ሳፁን ሙሴ: a kid paraphrase of Exodus 1:22 and 2:1-10. Pharaoh
-   commands with ኣዘዞ. The basket is ሳፁን, the river ሩባ, the reeds
-   ሰልሰላ, the sister ሓፍቱ, the princess ጓል ፈርዖን, the baby ህፃን,
-   and the name ሙሴ. God is not drawn.
+   Book 3, ሳጹን ሙሴ: a kid paraphrase of Exodus 1:22 and 2:1-10. Pharaoh
+   commands with ኣዘዘ. The basket is ሳጹን, the river ሩባ, the reeds
+   ሰልሰላ, the sister ሓፍቱ, the princess ጓል ፈርኦን, the nurse ሞግዚት,
+   the baby ህፃን, and the name ሙሴ. God is not drawn.
 
    ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
    ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
@@ -23,9 +23,11 @@
    ሰደዶ. The dove is ርግቢ; he sent her ሰደዳ; she returned
    ተመለሰት holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ.
    The promise is ኪዳን (Genesis 9 ኪዳነይ). Rain keeps the pack word ዝናብ;
-   ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ. Exodus 2 spells
-   Moses ሙሴ, Pharaoh ፈርዖን, the basket ሳፁን, and the river ሩባ.
-   Kid lines keep ኣ, never አ, so "she saw" is ረኣየት.
+   ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ. Moses keeps
+   ሙሴ, the river ሩባ, and the sister ሓፍቱ. Yosief's line pass spells
+   Pharaoh ፈርኦን, the basket ሳጹን, and the nurse ሞግዚት, and Pharaoh's
+   order is ኣዘዘ. Kid lines keep ኣ, never አ. She saw the basket is
+   ረኣየቶ. He was named because he was found in the water, ስለዝተረኽበ.
 
    UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
    ordinary band-1 progress gate (the 8th family, the same gate as the

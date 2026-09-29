@@ -224,24 +224,24 @@ describe('moses bible book', () => {
 
   it('paraphrases Exodus 2 as one connected story', () => {
     expect(book.id).toBe('bible-moses')
-    expect(book.titleTi).toBe('ሳፁን ሙሴ')
+    expect(book.titleTi).toBe('ሳጹን ሙሴ')
     expect(book.titleEn).toBe('Baby Moses')
     expect(book.free).toBe(false)
     expect(book.band).toBe(2)
     expect(book.refrain.geez).toBe('እግዚኣብሄር ነቲ ህፃን ሓለዎ።')
     expect(book.refrain.meaningEn).toBe('God watched over the baby.')
     expect(book.pages.map((p) => p.geez)).toEqual([
-      'ፈርዖን ንህዝቡ ነቶም ንእሽቶ ኣወዳት ክጎድእዎም ኣዘዞ።',
+      'ፈርኦን ንህዝቡ ነቶም ንእሽቶ ኣወዳት ክጎድእዎም ኣዘዘ።',
       'እታ ኣደ ግና ንህፃና ሰለስተ ወርሒ ኣብ ቤት ዓቒባቶ።',
-      'ምሕብኡ ምስ ሰኣነት፡ ብሻምብቆ ሳፁን ሰርሐት።',
-      'ነቲ ህፃን ኣብቲ ሳፁን ኣእትያ፡ ኣብ ሰልሰላ ሩባ ኣንበረቶ።',
-      'ሓፍቱ ርሕቕ ኢላ ደው በለት። ነቲ ሳፁን ትርኢ ነበረት።',
-      'ጓል ፈርዖን ናብ ሩባ ወረደት። ነቲ ሳፁን ኣብ ሰልሰላ ረኣየት።',
-      'እቲ ህፃን ምስ በኸየ፡ ጓል ፈርዖን ራህርሀትሉ።',
-      'ሓፍቱ መጕዚት ክትረክብ በለታ።',
-      'እታ መጕዚት ናይቲ ህፃን ኣደ እያ። ሓፍቱ ወሰደታ።',
+      'ምሕብኡ ምስ ሰኣነት፡ ብሻምብቆ ሳጹን ሰርሐት።',
+      'ነቲ ህፃን ኣብቲ ሳጹን ኣእትያ፡ ኣብ ሰልሰላ ሩባ ኣንበረቶ።',
+      'ሓፍቱ ርሕቕ ኢላ ደው በለት። ነቲ ሳጹን ውን ትርኢ ነበረት።',
+      'ጓል ፈርኦን ናብ ሩባ ወረደት። ነቲ ሳጹን ኣብ ሰልሰላ ረኣየቶ።',
+      'እቲ ህፃን ምስ በኸየ፡ ጓል ፈርኦን ራህርሀትሉ።',
+      'ሓፍቱ ሞግዚት ክረኽበልኪ በለታ።',
+      'እታ ሞግዚት ናይቲ ህፃን ኣደ እያ። ሓፍቱ ናብ ጓል ፈርኦን ወሰደታ።',
       'እታ ኣደ ነቲ ህፃን ኣጥበወቶ። እቲ ህፃን ድማ ዓብየ።',
-      'ጓል ፈርዖን ሙሴ ኢላ ፀውዐቶ። ካብ ማይ ወፂኡ እዩ።',
+      'ጓል ፈርኦን ካብ ማይ ስለዝተረኽበ ሙሴ ኢላ ሴመቶ።',
       'እግዚኣብሄር ነቲ ህፃን ሙሴ ሓለዎ። ሰላም ረኸበ።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
@@ -249,27 +249,31 @@ describe('moses bible book', () => {
       'But the mother kept her baby safe at home for three months.',
       'When she could no longer hide him, she made a papyrus basket.',
       'She put the baby in the basket and set it among the reeds of the river.',
-      'His sister stood far away. She was watching the basket.',
+      'His sister stood far away. She was watching the basket too.',
       "Pharaoh's daughter went down to the river. She saw the basket in the reeds.",
       "When the baby cried, Pharaoh's daughter felt pity for him.",
-      'His sister told her she would find a nurse.',
-      "The nurse was the baby's mother. His sister brought her.",
+      'His sister told her, "I will find a nurse for you."',
+      "The nurse was the baby's mother. His sister took her to Pharaoh's daughter.",
       'The mother nursed the baby. And the baby grew.',
-      "Pharaoh's daughter named him Moses. He came out of the water.",
+      'Because he was found in the water, Pharaoh\'s daughter named him Moses.',
       'God watched over baby Moses. He was safe.',
     ])
     expect(blob.includes('አ')).toBe(false)
     expect(blob.includes('ሔ')).toBe(false)
     expect(blob.includes('እግዚኣብሄር')).toBe(true)
     expect(blob.includes('ሙሴ')).toBe(true)
-    expect(blob.includes('ፈርዖን')).toBe(true)
-    expect(blob.includes('ፈርኦን')).toBe(false)
-    expect(blob.includes('ሳፁን')).toBe(true)
+    expect(blob.includes('ፈርኦን')).toBe(true)
+    expect(blob.includes('\u12D6')).toBe(false)
+    expect(blob.includes('ሳጹን')).toBe(true)
+    expect(blob.includes('\u1341')).toBe(false)
+    expect(blob.includes('ሞግዚት')).toBe(true)
+    expect(blob.includes('\u1315')).toBe(false)
     expect(blob.includes('ሩባ')).toBe(true)
     expect(blob.includes('ሰልሰላ')).toBe(true)
     expect(blob.includes('ሓፍቱ')).toBe(true)
     expect(blob.includes('ጓል')).toBe(true)
-    expect(blob.includes('ኣዘዞ')).toBe(true)
+    expect(blob.includes('ኣዘዘ')).toBe(true)
+    expect(blob.includes('ኣዘዞ')).toBe(false)
     expect(blob.includes('በሎ')).toBe(false)
     expect(book.pages.length).toBe(12)
     for (const page of book.pages) {
