@@ -6,8 +6,8 @@
   "source": {
     "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah uses the same short repeated sentence shape, eight beats from Genesis 6-9.",
-    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ in that same text (ህ, not ሕ). The ark is መርከብ, the dove is ርግቢ, and the olive leaf keeps ቘፅሊ ኣውሊዕ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም and the verb ዘነመ. The bow is ቀስቲ, matching the app, though ትመ15 also writes ቐስቲ. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the dove, then dry land and the rainbow promise.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. Shut is ዓፀዎ. They went out ወፁ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ነቒጣ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
     "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
     "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
   },
@@ -90,63 +90,75 @@
       "latinTitle": "Merkeb Noh",
       "free": false,
       "refrain": {
-        "geez": "ኖህ መርከብ ሰርሐ።",
-        "latin": "Noh merkeb serha.",
-        "meaningEn": "Noah built an ark."
+        "geez": "ኖህ ንእግዚኣብሄር ሰምዖ።",
+        "latin": "Noh ni-Igziabher sem'o.",
+        "meaningEn": "Noah obeyed God."
       },
       "pages": [
         {
-          "geez": "ሰባት ጽቡቕ ኣይነበሩን። ኖህ ጽቡቕ ነበረ።",
-          "latin": "Sebat tsbuq ayneberun. Noh tsbuq nebere.",
-          "meaningEn": "People were not good. Noah was good.",
-          "pictureHint": "Noah calm in sand linen, a few people in sage and earth cloth turned away, no ark, no animals"
+          "geez": "እግዚኣብሄር ሰብ ኣብ ምድሪ ክፋእ ከም ዝገብር ረኣየ።",
+          "latin": "Igziabher seb ab mdri kfa' kem zigebr re'aye.",
+          "meaningEn": "God saw that people were doing evil on the earth.",
+          "pictureHint": "A few adults with deep brown skin in sand and sage cloth, turned away from each other, unkind but not violent, no Noah, no God"
         },
         {
-          "geez": "እግዚኣብሄር ንኖህ መርከብ ስራሕ በሎ።",
-          "latin": "Igziabher ni-Noh merkeb srah belo.",
-          "meaningEn": "God told Noah to build an ark.",
-          "pictureHint": "Noah beside timber and a boat frame, looking up at an empty sky, no divine figure"
+          "geez": "ኖህ ግና ፃድቕ ሰብ ነበረ። ንእግዚኣብሄር ድማ ይስምዖ ነበረ።",
+          "latin": "Noh gna tsadq seb nebere. Ni-Igziabher dma yism'o nebere.",
+          "meaningEn": "But Noah was a righteous man. He obeyed God.",
+          "pictureHint": "Noah alone, deep brown skin, sand linen tunic, calm, looking toward an empty sky, no divine figure"
         },
         {
-          "geez": "ኖህ ዓባይ መርከብ ሰርሐ።",
-          "latin": "Noh abay merkeb serha.",
-          "meaningEn": "Noah built a big ark.",
-          "pictureHint": "Noah building a large wooden ark on dry highland ground, no animals, no rain"
+          "geez": "ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ በሎ።",
+          "latin": "May bzux sle zimetsi', Igziabher ni-Noh abay merkeb kiserh belo.",
+          "meaningEn": "Because a lot of water was coming, God told Noah to build a big ark.",
+          "pictureHint": "Noah beside timber and the frame of a big wooden ark, a soft cloud on the horizon, empty sky, no God"
         },
         {
-          "geez": "እንስሳታት ክልተ ክልተ ናብ መርከብ ኣተዉ።",
-          "latin": "Insisatat kilte kilte nab merkeb atewu.",
-          "meaningEn": "Animals went into the ark two by two.",
-          "pictureHint": "Calm pairs of goats, oxen, and doves walking into the ark, no people"
+          "geez": "ኖህን ሰበይቱን ደቁን ነታ መርከብ ሰርሑ።",
+          "latin": "Nohn sebeytun dequn neta merkeb serhu.",
+          "meaningEn": "Noah, his wife, and his children built the ark.",
+          "pictureHint": "Noah, his wife, and two children building a wooden ark, sand linen and sage clothes, braided hair, no red, no animals"
         },
         {
-          "geez": "ዝናብ ንብዙሕ መዓልቲ ዘነመ።",
-          "latin": "Znab ni-bzux mealti zeneme.",
-          "meaningEn": "Rain fell for many days.",
-          "pictureHint": "Gentle rain over the ark on quiet water, no storm, no people"
+          "geez": "ድሕሪኡ ኖህን ሰበይቱን ደቁን ናብታ መርከብ ኣተዉ።",
+          "latin": "Dhr'u Nohn sebeytun dequn nabta merkeb atewu.",
+          "meaningEn": "After that, Noah, his wife, and his children went into the ark.",
+          "pictureHint": "Noah, his wife, and two children walking into the open door of the wooden ark, no animals"
         },
         {
-          "geez": "ማይ ንምድሪ ሸፈነ።",
-          "latin": "May ni-mdri shefene.",
-          "meaningEn": "Water covered the land.",
-          "pictureHint": "Calm water over highland hills, the ark floating safely, no people, no rainbow"
+          "geez": "እንስሳታት ከኣ ክልተ ክልተ ምስኦም ኣተዉ።",
+          "latin": "Insisatat ke'a kilte kilte msom atewu.",
+          "meaningEn": "And the animals went in with them, two by two.",
+          "pictureHint": "Clear pairs of lions, giraffes, elephants, and birds walking into the ark, calm, family small in the doorway"
         },
         {
-          "geez": "እታ ርግቢ ቘፅሊ ኣውሊዕ ኣምጺኣ።",
-          "latin": "Ita rgbi qotsli awli' amtsi'a.",
-          "meaningEn": "The dove brought an olive leaf.",
-          "pictureHint": "One dove with a green olive sprig in her beak, clearing sky, no rainbow"
+          "geez": "እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።",
+          "latin": "Igziabher nayta merkeb ma'tso 'ats'o. Shyu znab metse.",
+          "meaningEn": "God shut the door of the ark. Then the rain came.",
+          "pictureHint": "The ark door shut, gentle rain beginning, no hand, no face, no people in distress"
         },
         {
-          "geez": "እግዚኣብሄር ቀስቲ ኪዳን ገበረ።",
-          "latin": "Igziabher qesti kidan gebere.",
-          "meaningEn": "God made a rainbow promise.",
-          "pictureHint": "A soft rainbow over the quiet highland and the ark on the shore, no divine figure"
+          "geez": "ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።",
+          "latin": "May neta mdri shefene. Ita merkeb gna ab l'liu selam neberet.",
+          "meaningEn": "Water covered the land. But the ark was safe on the water.",
+          "pictureHint": "Calm water over highland hills, the wooden ark floating safely, no storm, no people"
+        },
+        {
+          "geez": "ዝናብ ምስ ደው በለ፡ ኖህ ንርግቢ ሰደዳ። ቘፅሊ ኣውሊዕ ሒዛ ተመለሰት።",
+          "latin": "Znab ms dew bele, Noh n-rgbi sededa. Qotsli awli' hiza temeleset.",
+          "meaningEn": "When the rain stopped, Noah sent the dove. She came back holding an olive leaf.",
+          "pictureHint": "Clear sky, Noah at the ark window, one dove arriving with a clear olive sprig, no rainbow"
+        },
+        {
+          "geez": "ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ። እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።",
+          "latin": "Nohn sdrabetun nab neqitta mdri wetsu. Igziabher qesti ab semay anbere. Izi kidan iyu.",
+          "meaningEn": "Noah and his family went out onto dry land. God set a rainbow in the sky. This is his promise.",
+          "pictureHint": "Noah, his wife, and two children on dry ochre land beside the ark, a soft rainbow, no divine figure"
         }
       ],
       "question": {
-        "geez": "ኣብ መወዳእታ እንታይ ኣሎ?",
-        "meaningEn": "What is there at the end?",
+        "geez": "እግዚኣብሄር ኣብ ሰማይ እንታይ ኣንበረ?",
+        "meaningEn": "What did God set in the sky?",
         "answers": [
           { "pic": "🌈", "ok": true, "alt": "a rainbow" },
           { "pic": "🌙", "ok": false, "alt": "the moon" },

@@ -125,47 +125,56 @@ describe('noah bible book', () => {
   const chapter1 = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
   const blob = [book.titleTi, book.refrain.geez, book.question.geez, ...book.pages.map((p) => p.geez)].join('\n')
 
-  it('paraphrases Genesis 6-9 in eight short lines', () => {
+  it('paraphrases Genesis 6-9 as one connected story', () => {
     expect(book.id).toBe('bible-noah')
     expect(book.titleTi).toBe('መርከብ ኖህ')
     expect(book.titleEn).toBe("Noah's Ark")
     expect(book.free).toBe(false)
-    expect(book.refrain.geez).toBe('ኖህ መርከብ ሰርሐ።')
-    expect(book.refrain.meaningEn).toBe('Noah built an ark.')
+    expect(book.refrain.geez).toBe('ኖህ ንእግዚኣብሄር ሰምዖ።')
+    expect(book.refrain.meaningEn).toBe('Noah obeyed God.')
     expect(book.pages.map((p) => p.geez)).toEqual([
-      'ሰባት ጽቡቕ ኣይነበሩን። ኖህ ጽቡቕ ነበረ።',
-      'እግዚኣብሄር ንኖህ መርከብ ስራሕ በሎ።',
-      'ኖህ ዓባይ መርከብ ሰርሐ።',
-      'እንስሳታት ክልተ ክልተ ናብ መርከብ ኣተዉ።',
-      'ዝናብ ንብዙሕ መዓልቲ ዘነመ።',
-      'ማይ ንምድሪ ሸፈነ።',
-      'እታ ርግቢ ቘፅሊ ኣውሊዕ ኣምጺኣ።',
-      'እግዚኣብሄር ቀስቲ ኪዳን ገበረ።',
+      'እግዚኣብሄር ሰብ ኣብ ምድሪ ክፋእ ከም ዝገብር ረኣየ።',
+      'ኖህ ግና ፃድቕ ሰብ ነበረ። ንእግዚኣብሄር ድማ ይስምዖ ነበረ።',
+      'ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ በሎ።',
+      'ኖህን ሰበይቱን ደቁን ነታ መርከብ ሰርሑ።',
+      'ድሕሪኡ ኖህን ሰበይቱን ደቁን ናብታ መርከብ ኣተዉ።',
+      'እንስሳታት ከኣ ክልተ ክልተ ምስኦም ኣተዉ።',
+      'እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።',
+      'ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።',
+      'ዝናብ ምስ ደው በለ፡ ኖህ ንርግቢ ሰደዳ። ቘፅሊ ኣውሊዕ ሒዛ ተመለሰት።',
+      'ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ። እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
-      'People were not good. Noah was good.',
-      'God told Noah to build an ark.',
-      'Noah built a big ark.',
-      'Animals went into the ark two by two.',
-      'Rain fell for many days.',
-      'Water covered the land.',
-      'The dove brought an olive leaf.',
-      'God made a rainbow promise.',
+      'God saw that people were doing evil on the earth.',
+      'But Noah was a righteous man. He obeyed God.',
+      'Because a lot of water was coming, God told Noah to build a big ark.',
+      'Noah, his wife, and his children built the ark.',
+      'After that, Noah, his wife, and his children went into the ark.',
+      'And the animals went in with them, two by two.',
+      'God shut the door of the ark. Then the rain came.',
+      'Water covered the land. But the ark was safe on the water.',
+      'When the rain stopped, Noah sent the dove. She came back holding an olive leaf.',
+      'Noah and his family went out onto dry land. God set a rainbow in the sky. This is his promise.',
     ])
     expect(blob.includes('አ')).toBe(false)
     expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('ኣይነበሩን')).toBe(false)
     expect(blob.includes('እግዚኣብሄር')).toBe(true)
     expect(blob.includes('ኖህ')).toBe(true)
     expect(blob.includes('ኖሕ')).toBe(false)
-    expect(book.pages).toHaveLength(8)
+    expect(blob.includes('ክፋእ')).toBe(true)
+    expect(blob.includes('ፃድቕ')).toBe(true)
+    expect(blob.includes('ኪዳን')).toBe(true)
+    expect(book.pages.length).toBeGreaterThanOrEqual(8)
+    expect(book.pages.length).toBeLessThanOrEqual(10)
     for (const page of book.pages) {
       expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
-      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(6)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)
       expect(page.latin && page.meaningEn && page.pictureHint).toBeTruthy()
       expect(page.familyIds).toEqual(familiesOfGeez(page.geez))
     }
-    expect(book.question.geez).toBe('ኣብ መወዳእታ እንታይ ኣሎ?')
-    expect(book.question.meaningEn).toBe('What is there at the end?')
+    expect(book.question.geez).toBe('እግዚኣብሄር ኣብ ሰማይ እንታይ ኣንበረ?')
+    expect(book.question.meaningEn).toBe('What did God set in the sky?')
     expect(book.question.answers.filter((a) => a.ok)).toHaveLength(1)
     expect(book.question.answers.find((a) => a.ok).pic).toBe('🌈')
   })
