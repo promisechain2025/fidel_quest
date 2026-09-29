@@ -142,7 +142,8 @@ describe('noah bible book', () => {
       'እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።',
       'ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።',
       'ዝናብ ምስ ደው በለ፡ ኖህ ንርግቢ ሰደዳ። ቘፅሊ ኣውሊዕ ሒዛ ተመለሰት።',
-      'ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ። እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።',
+      'ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ።',
+      'እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
       'God saw that people were doing evil on the earth.',
@@ -154,7 +155,8 @@ describe('noah bible book', () => {
       'God shut the door of the ark. Then the rain came.',
       'Water covered the land. But the ark was safe on the water.',
       'When the rain stopped, Noah sent the dove. She came back holding an olive leaf.',
-      'Noah and his family went out onto dry land. God set a rainbow in the sky. This is his promise.',
+      'Noah and his family went out onto dry land.',
+      'God set a rainbow in the sky. This is his promise.',
     ])
     expect(blob.includes('አ')).toBe(false)
     expect(blob.includes('ሔ')).toBe(false)
@@ -165,8 +167,7 @@ describe('noah bible book', () => {
     expect(blob.includes('ክፋእ')).toBe(true)
     expect(blob.includes('ፃድቕ')).toBe(true)
     expect(blob.includes('ኪዳን')).toBe(true)
-    expect(book.pages.length).toBeGreaterThanOrEqual(8)
-    expect(book.pages.length).toBeLessThanOrEqual(10)
+    expect(book.pages.length).toBe(11)
     for (const page of book.pages) {
       expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
       expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)

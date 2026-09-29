@@ -6,7 +6,7 @@
   "source": {
     "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the dove, then dry land and the rainbow promise.",
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the dove, then dry land, then the rainbow promise.",
     "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. Shut is ዓፀዎ. They went out ወፁ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ነቒጣ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
     "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
     "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
@@ -150,10 +150,16 @@
           "pictureHint": "Clear sky, Noah at the ark window, one dove arriving with a clear olive sprig, no rainbow"
         },
         {
-          "geez": "ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ። እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።",
-          "latin": "Nohn sdrabetun nab neqitta mdri wetsu. Igziabher qesti ab semay anbere. Izi kidan iyu.",
-          "meaningEn": "Noah and his family went out onto dry land. God set a rainbow in the sky. This is his promise.",
-          "pictureHint": "Noah, his wife, and two children on dry ochre land beside the ark, a soft rainbow, no divine figure"
+          "geez": "ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ።",
+          "latin": "Nohn sdrabetun nab neqitta mdri wetsu.",
+          "meaningEn": "Noah and his family went out onto dry land.",
+          "pictureHint": "Noah, his wife, and two children stepping onto dry ochre land from the ark, clear sky, no rainbow"
+        },
+        {
+          "geez": "እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።",
+          "latin": "Igziabher qesti ab semay anbere. Izi kidan iyu.",
+          "meaningEn": "God set a rainbow in the sky. This is his promise.",
+          "pictureHint": "The same family on dry land, a soft rainbow across the sky, the ark on the shore, no divine figure"
         }
       ],
       "question": {

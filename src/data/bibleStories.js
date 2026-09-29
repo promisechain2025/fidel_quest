@@ -8,7 +8,7 @@
    Each line names the weekday. Sunday starts the work, Friday is the
    people, Saturday is the rest. Land and plants share Tuesday.
 
-   Book 2, መርከብ ኖህ: a kid paraphrase of Noah (Genesis 6-9). Ten
+   Book 2, መርከብ ኖህ: a kid paraphrase of Noah (Genesis 6-9). Eleven
    connected lines. People do ክፋእ. Noah is ፃድቕ and obeys. God is not
    drawn. "They built" is ሰርሑ, so the line does not use ሔ.
 
@@ -73,7 +73,7 @@ const ART = {
     ],
   },
   'bible-noah': {
-    pics: ['🚶', '🙏', '🪵', '👨‍👩‍👧', '🚪', '🦁', '🌧️', '🌊', '🕊️', '🌈'],
+    pics: ['🚶', '🙏', '🪵', '👨‍👩‍👧', '🚪', '🦁', '🌧️', '🌊', '🕊️', '👨‍👩‍👧', '🌈'],
     scenes: [
       painted('bible-noah', 1, { bg: 'field', items: [{ ...KIN, x: 0.3, foot: 0.76, s: 0.32 }, { ...KIN, x: 0.55, foot: 0.76, s: 0.3, cloth: '#c4b496' }] }),
       painted('bible-noah', 2, { bg: 'field', items: [{ ...NOAH, x: 0.48, foot: 0.74, s: 0.36 }] }),
@@ -84,7 +84,8 @@ const ART = {
       painted('bible-noah', 7, { bg: 'sea', items: [{ k: 'ark', x: 0.5, y: 0.48, s: 0.44 }] }),
       painted('bible-noah', 8, { bg: 'sea', items: [{ k: 'ark', x: 0.55, y: 0.46, s: 0.36 }] }),
       painted('bible-noah', 9, { bg: 'day', items: [{ ...NOAH, x: 0.62, foot: 0.78, s: 0.28 }, { k: 'bird', x: 0.38, y: 0.34, s: 0.18 }] }),
-      painted('bible-noah', 10, { bg: 'day', items: [{ k: 'rainbow', x: 0.5, y: 0.48, s: 0.7 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.24 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.22 }, { k: 'ark', x: 0.78, y: 0.62, s: 0.24 }] }),
+      painted('bible-noah', 10, { bg: 'field', items: [{ k: 'ark', x: 0.78, y: 0.55, s: 0.28 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.26 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.24 }, { ...CHILD, x: 0.58, foot: 0.82, s: 0.16 }] }),
+      painted('bible-noah', 11, { bg: 'day', items: [{ k: 'rainbow', x: 0.5, y: 0.42, s: 0.72 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.24 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.22 }, { k: 'ark', x: 0.78, y: 0.62, s: 0.24 }] }),
     ],
   },
 }
