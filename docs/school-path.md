@@ -138,6 +138,18 @@ promise `ኪዳን`. The raven is `ኳዅ`. The book is not
 free. It uses the ordinary band-1 progress gate and does not change the
 Creation unlock or the School Path unlocks.
 
+The third book is `ሳፁን ሙሴ` / Baby Moses, a connected kid paraphrase
+of Exodus 1:22 and 2:1-10. Pharaoh commands his people about the little
+boys. A mother keeps her baby safe, then makes a papyrus basket and sets
+it in the reeds of the river. His sister watches. Pharaoh's daughter
+finds him, pities him, and the sister brings the baby's own mother to
+nurse him. The princess names him Moses, drawn out of the water, and
+God watches over him. ትመ15 spells Moses `ሙሴ`, Pharaoh `ፈርዖን`, the
+basket `ሳፁን`, the river `ሩባ`, the reeds `ሰልሰላ`, and the sister
+`ሓፍቱ`. The book is band 2: the 16th family. On the Tigrinya pack that
+family is `nye` (ኘ), the last family of School Path chapter 2. Creation
+stays free. Noah stays on band 1.
+
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).

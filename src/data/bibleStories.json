@@ -4,12 +4,12 @@
   "packId": "ti",
   "shelf": "bible",
   "source": {
-    "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
+    "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Book 3 is Exodus 1:22 and 2:1-10. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the raven, the dove, then dry land, then the rainbow promise.",
-    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. God commanded ኣዘዞ. Shut is ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent ሰደዶ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
-    "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
-    "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the raven, the dove, then dry land, then the rainbow promise. Moses is one connected paraphrase of the basket story: Pharaoh's order, the mother keeping the baby, the papyrus basket in the reeds, the sister watching, the princess finding him, her pity, the sister bringing the mother as nurse, the nursing, the name Moses, and God keeping the baby safe.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. God commanded ኣዘዞ. Shut is ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent ሰደዶ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ. Exodus 2 spells Moses ሙሴ, Pharaoh ፈርዖን, the princess ጓል ፈርዖን, the basket ሳፁን, the river ሩባ, the reeds ሰልሰላ, and the sister ሓፍቱ. Kid lines use ኣ, never አ, so she saw is ረኣየት where ትመ15 writes ረአየት. Drawn out of the water is ካብ ማይ ወፂኡ, because ትመ15 ኣውፂአዮ contains አ.",
+    "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. Baby Moses uses the next band, band 2 (learned the 16th family). On the Tigrinya pack that family is nye, the last family of School Path chapter 2. It does not change the Creation unlock, the Noah unlock, the School Path unlocks, or the Amharic tracks.",
+    "artNote": "God is not drawn. Each painting shows the thing that page names. Creation and Noah stay in highland light. Moses is the Nile: papyrus reeds, the river, and a mudbrick palace for Pharaoh and his daughter. People have deep brown skin and wear sand, linen, or sage. No bright red, no modern dress, no headscarf. The order stays gentle: no harm is shown."
   },
   "stories": [
     {
@@ -18,6 +18,7 @@
       "titleTi": "ኣብ መጀመርታ",
       "latinTitle": "Ab mejemerta",
       "free": true,
+      "band": 1,
       "refrain": {
         "geez": "እግዚኣብሄር ፈጠረ።",
         "latin": "Igziabher fetere.",
@@ -89,6 +90,7 @@
       "titleTi": "መርከብ ኖህ",
       "latinTitle": "Merkeb Noh",
       "free": false,
+      "band": 1,
       "refrain": {
         "geez": "ኖህ ንእግዚኣብሄር ሰምዖ።",
         "latin": "Noh ni-Igziabher sem'o.",
@@ -175,6 +177,102 @@
           { "pic": "🌈", "ok": true, "alt": "a rainbow" },
           { "pic": "🌙", "ok": false, "alt": "the moon" },
           { "pic": "🐟", "ok": false, "alt": "a fish" }
+        ]
+      }
+    },
+    {
+      "id": "bible-moses",
+      "titleEn": "Baby Moses",
+      "titleTi": "ሳፁን ሙሴ",
+      "latinTitle": "Satsun Muse",
+      "free": false,
+      "band": 2,
+      "refrain": {
+        "geez": "እግዚኣብሄር ነቲ ህፃን ሓለዎ።",
+        "latin": "Igziabher neti htsan halewo.",
+        "meaningEn": "God watched over the baby."
+      },
+      "pages": [
+        {
+          "geez": "ፈርዖን ንህዝቡ ነቶም ንእሽቶ ኣወዳት ክጎድእዎም ኣዘዞ።",
+          "latin": "Fer'on n-hzbu netom n'ishto awedat kgod'wom azzezo.",
+          "meaningEn": "Pharaoh commanded his people to harm the little boys.",
+          "pictureHint": "Pharaoh in a mudbrick Egyptian hall with lotus columns, deep brown skin, sand linen, one hand raised in an order, two officials in sage and undyed linen looking down, worried, no children, no violence, no God"
+        },
+        {
+          "geez": "እታ ኣደ ግና ንህፃና ሰለስተ ወርሒ ኣብ ቤት ዓቒባቶ።",
+          "latin": "Ita ade gna n-htsana seleste werhi ab bet 'aqibato.",
+          "meaningEn": "But the mother kept her baby safe at home for three months.",
+          "pictureHint": "A mother with deep brown skin in undyed linen holding a tiny baby close inside a simple mudbrick room, a woven mat, warm quiet light, no basket, no river, no palace"
+        },
+        {
+          "geez": "ምሕብኡ ምስ ሰኣነት፡ ብሻምብቆ ሳፁን ሰርሐት።",
+          "latin": "Mhba'u ms se'anet, b-shambqo satsun serhet.",
+          "meaningEn": "When she could no longer hide him, she made a papyrus basket.",
+          "pictureHint": "The same mother weaving a small tight papyrus basket, cut papyrus stalks beside her, the baby wrapped nearby but not in the basket yet, earth linen, no river, no palace"
+        },
+        {
+          "geez": "ነቲ ህፃን ኣብቲ ሳፁን ኣእትያ፡ ኣብ ሰልሰላ ሩባ ኣንበረቶ።",
+          "latin": "Neti htsan abti satsun a'tiya, ab selsela ruba anbereto.",
+          "meaningEn": "She put the baby in the basket and set it among the reeds of the river.",
+          "pictureHint": "The mother kneeling at a calm Nile edge, setting a small papyrus basket with the baby among tall green papyrus reeds, deep brown skin, sand linen, no sister, no princess"
+        },
+        {
+          "geez": "ሓፍቱ ርሕቕ ኢላ ደው በለት። ነቲ ሳፁን ትርኢ ነበረት።",
+          "latin": "Haftu rhq ila dew belet. Neti satsun tri neberet.",
+          "meaningEn": "His sister stood far away. She was watching the basket.",
+          "pictureHint": "A young girl with deep brown skin and braided hair, sage linen, standing still at a distance among papyrus, watching a small basket in the reeds, no princess, no mother in the foreground"
+        },
+        {
+          "geez": "ጓል ፈርዖን ናብ ሩባ ወረደት። ነቲ ሳፁን ኣብ ሰልሰላ ረኣየት።",
+          "latin": "Gwal Fer'on nab ruba weredet. Neti satsun ab selsela re'ayet.",
+          "meaningEn": "Pharaoh's daughter went down to the river. She saw the basket in the reeds.",
+          "pictureHint": "Pharaoh's daughter at the Nile among papyrus, sand linen sheath and a muted earth collar, braided hair with no headscarf, looking at a closed papyrus basket in the reeds, no crying baby visible, no sister"
+        },
+        {
+          "geez": "እቲ ህፃን ምስ በኸየ፡ ጓል ፈርዖን ራህርሀትሉ።",
+          "latin": "Iti htsan ms bekheye, gwal Fer'on raherhatlu.",
+          "meaningEn": "When the baby cried, Pharaoh's daughter felt pity for him.",
+          "pictureHint": "The papyrus basket open among reeds, a crying baby, Pharaoh's daughter leaning close with a tender worried face, sand linen, no sister, no mother"
+        },
+        {
+          "geez": "ሓፍቱ መጕዚት ክትረክብ በለታ።",
+          "latin": "Haftu megzit ktrekheb belet.",
+          "meaningEn": "His sister told her she would find a nurse.",
+          "pictureHint": "The young sister speaking to Pharaoh's daughter beside the basket in the reeds, the sister's hand open in an offer, both in linen and sage, no mother yet"
+        },
+        {
+          "geez": "እታ መጕዚት ናይቲ ህፃን ኣደ እያ። ሓፍቱ ወሰደታ።",
+          "latin": "Ita megzit nayti htsan ade iya. Haftu wesedetta.",
+          "meaningEn": "The nurse was the baby's mother. His sister brought her.",
+          "pictureHint": "The sister leading the mother toward the princess and the basket at the river, three people, deep brown skin, linen and sage, the mother clearly the one being brought"
+        },
+        {
+          "geez": "እታ ኣደ ነቲ ህፃን ኣጥበወቶ። እቲ ህፃን ድማ ዓብየ።",
+          "latin": "Ita ade neti htsan atbeweto. Iti htsan dma abye.",
+          "meaningEn": "The mother nursed the baby. And the baby grew.",
+          "pictureHint": "The mother nursing a content baby in a quiet shaded reed shelter, sand linen, peaceful, no palace crowd, no God"
+        },
+        {
+          "geez": "ጓል ፈርዖን ሙሴ ኢላ ፀውዐቶ። ካብ ማይ ወፂኡ እዩ።",
+          "latin": "Gwal Fer'on Muse ila tsew'eto. Kab may wetsi'u iyu.",
+          "meaningEn": "Pharaoh's daughter named him Moses. He came out of the water.",
+          "pictureHint": "Pharaoh's daughter holding a small healthy child at the river's edge, calm water and papyrus behind them, sand linen, a naming moment, no God, no text"
+        },
+        {
+          "geez": "እግዚኣብሄር ነቲ ህፃን ሙሴ ሓለዎ። ሰላም ረኸበ።",
+          "latin": "Igziabher neti htsan Muse halewo. Selam rekhebe.",
+          "meaningEn": "God watched over baby Moses. He was safe.",
+          "pictureHint": "The baby safe and asleep in his mother's arms among quiet papyrus at dawn, soft empty sky, no person in the clouds, no hand, no face of God, warm and still"
+        }
+      ],
+      "question": {
+        "geez": "እታ ኣደ ነቲ ህፃን ኣበይ ኣንበረቶ?",
+        "meaningEn": "Where did the mother set the baby?",
+        "answers": [
+          { "pic": "🧺", "ok": true, "alt": "a basket" },
+          { "pic": "🏠", "ok": false, "alt": "a house" },
+          { "pic": "🚢", "ok": false, "alt": "a boat" }
         ]
       }
     }

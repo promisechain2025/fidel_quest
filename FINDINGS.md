@@ -32,9 +32,10 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
   shelf. Each page paints a Meet-style scene from `public/art/stories`
   (the stamp scene is only the fallback). A story node sits on each
   School Path chapter. Biblical Amharic Story Time is unchanged. A
-  separate Bible shelf (`መጽሓፍ ቅዱስ`) holds In the Beginning and Noah's
-  Ark. They are not mixed into these ten books. Creation stays the free
-  taste. Noah waits on the ordinary band-1 progress gate.
+  separate Bible shelf (`መጽሓፍ ቅዱስ`) holds In the Beginning, Noah's
+  Ark, and Baby Moses. They are not mixed into these ten books. Creation
+  stays the free taste. Noah waits on the ordinary band-1 progress gate.
+  Baby Moses waits on band 2, the next letter-family band.
 - Tests cover the new alphabet fields and the story schema. Docs:
   `docs/school-path.md`.
 - Tigrinya line pass: Story Time lines are full kid sentences. Where Is Sam?
