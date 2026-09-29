@@ -1,0 +1,86 @@
+{
+  "id": "bible-stories",
+  "label": "Bible Stories",
+  "packId": "ti",
+  "shelf": "bible",
+  "source": {
+    "book": "Original kid paraphrase of Genesis 1-2. Not a copyrighted Bible translation.",
+    "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
+    "shape": "Day-by-day refrain: God made the light, the sky, the land and the sea, the grass and the trees, the sun and the moon, the birds and the fish, a man and a woman, then rest.",
+    "unlockNote": "This first book is a free taste. It opens in Tigrinya Story Time before any School Path unit is finished, so a family can read it on day one and a reviewer can open it without grinding the alphabet. Later Bible books can name a gate. It is not a School Path story, it does not sit in that pack, and it does not change those unlocks.",
+    "artNote": "God is not drawn. Each painting shows the thing the line names. The rest page is a quiet world, not a picture of God."
+  },
+  "stories": [
+    {
+      "id": "bible-creation",
+      "titleEn": "In the Beginning",
+      "titleTi": "ኣብ መጀመርታ",
+      "latinTitle": "Ab mejemerta",
+      "free": true,
+      "refrain": {
+        "geez": "እግዚኣብሔር ፈጠረ።",
+        "latin": "Igziabher fetere.",
+        "meaningEn": "God made it."
+      },
+      "pages": [
+        {
+          "geez": "እግዚኣብሔር ብርሃን ፈጠረ።",
+          "latin": "Igziabher brhan fetere.",
+          "meaningEn": "God made the light.",
+          "pictureHint": "Dark soft sky opening into warm golden light, no sun disk yet, no people"
+        },
+        {
+          "geez": "እግዚኣብሔር ሰማይ ፈጠረ።",
+          "latin": "Igziabher semay fetere.",
+          "meaningEn": "God made the sky.",
+          "pictureHint": "A vast blue sky with a few soft clouds and only a thin horizon"
+        },
+        {
+          "geez": "እግዚኣብሔር ምድሪን ባሕሪን ፈጠረ።",
+          "latin": "Igziabher midrin bahrin fetere.",
+          "meaningEn": "God made the land and the sea.",
+          "pictureHint": "Green land on one side, calm blue sea on the other, a clear shore"
+        },
+        {
+          "geez": "እግዚኣብሔር ሳዕሪን ኦምን ፈጠረ።",
+          "latin": "Igziabher sarin omn fetere.",
+          "meaningEn": "God made the grass and the trees.",
+          "pictureHint": "Lush grass, leafy trees, and a few flowers, plants only"
+        },
+        {
+          "geez": "እግዚኣብሔር ጸሓይን ወርሒን ፈጠረ።",
+          "latin": "Igziabher tsehayin werhin fetere.",
+          "meaningEn": "God made the sun and the moon.",
+          "pictureHint": "A large sun and a large crescent moon together in one sky"
+        },
+        {
+          "geez": "እግዚኣብሔር ኣዕዋፍን ዓሳን ፈጠረ።",
+          "latin": "Igziabher aawafin asan fetere.",
+          "meaningEn": "God made the birds and the fish.",
+          "pictureHint": "Birds flying in the sky and large friendly fish in clear water"
+        },
+        {
+          "geez": "እግዚኣብሔር ሰብኣይን ሰበይቲን ፈጠረ።",
+          "latin": "Igziabher sebayin sebeytin fetere.",
+          "meaningEn": "God made a man and a woman.",
+          "pictureHint": "A man and a woman in modest long linen clothes, standing in a garden"
+        },
+        {
+          "geez": "እግዚኣብሔር ዓረፈ። ኩሉ ጽቡቕ ነበረ።",
+          "latin": "Igziabher arefe. Kullu tsbuq nebere.",
+          "meaningEn": "God rested. Everything was good.",
+          "pictureHint": "Quiet evening, the man and woman resting under a tree, a lamb lying down"
+        }
+      ],
+      "question": {
+        "geez": "መን ሰብኣይን ሰበይቲን ፈጠረ?",
+        "meaningEn": "Who made the man and the woman?",
+        "answers": [
+          { "pic": "✨", "ok": true, "alt": "God" },
+          { "pic": "🐄", "ok": false, "alt": "a cow" },
+          { "pic": "🌧️", "ok": false, "alt": "rain" }
+        ]
+      }
+    }
+  ]
+}

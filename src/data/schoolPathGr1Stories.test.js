@@ -141,13 +141,15 @@ describe('school path story pack', () => {
     expect(tiTitles).toContain('ጀበና ምስ ዓባየይ')
   })
 
-  it('shows the five stories in the Tigrinya library and not in Amharic', () => {
+  it('shows the five stories on the Tigrinya path shelf and not in Amharic', () => {
     const ti = storyLibrary([], undefined, 'ti')
-    expect(ti.map((s) => s.id).sort()).toEqual([...IDS].sort())
-    expect(ti[0].id).toBe('where-is-sam')
-    expect(ti.every((s) => s.pack === 'ti' && s.unlocked === false)).toBe(true)
+    const path = ti.filter((s) => s.schoolPath)
+    expect(path.map((s) => s.id).sort()).toEqual([...IDS].sort())
+    expect(path[0].id).toBe('where-is-sam')
+    expect(path.every((s) => s.pack === 'ti' && s.unlocked === false && s.shelf !== 'bible')).toBe(true)
+    expect(ti.some((s) => s.shelf === 'bible')).toBe(true)
     const am = storyLibrary([], undefined, 'am')
-    expect(am.some((s) => IDS.includes(s.id))).toBe(false)
+    expect(am.some((s) => IDS.includes(s.id) || s.shelf === 'bible')).toBe(false)
     expect(am.length).toBe(STORIES.length)
   })
 

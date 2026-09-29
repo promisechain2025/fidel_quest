@@ -14,7 +14,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
-import { storyLibrary, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { storyLibrary, storyShelves, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { BIBLE_SHELF } from '../data/bibleStories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
@@ -401,41 +402,71 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
           </p>
         </div>
       )}
-      <ul className="mt-4 space-y-2.5">
-        {library.map((s) => (
-          <li key={s.id}>
-            {s.unlocked ? (
-              <button type="button" onClick={() => openStory(s)} className={`chunk flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left ${FOCUS}`} style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }}>
-                <LetterTile glyph={Array.from(s.title.g)[0]} size={44} className="shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="geez block truncate text-lg font-black">{s.title.g}</span>
-                  {showGloss && <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>}
-                </span>
-                {readCounts[s.id] > 0 && (
-                  <span className="rounded-lg px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--star)' }}>
-                    {t('storyReadN', `Read x${readCounts[s.id]}`, { n: readCounts[s.id] })}
-                  </span>
+      {storyShelves(library).map((shelf) => (
+        <section
+          key={shelf.id}
+          data-shelf={shelf.id}
+          aria-label={shelf.id === 'bible' ? t('storyShelfBible', 'Bible Stories') : shelf.id === 'path' ? t('storyShelfPath', 'Story Path') : undefined}
+          className={shelf.id === 'bible' ? 'mt-5 rounded-3xl border-2 px-3 py-3' : 'mt-4'}
+          style={shelf.id === 'bible' ? { borderColor: 'var(--accent)', background: 'var(--card)' } : undefined}
+        >
+          {shelf.id === 'path' && (
+            <h2 className="mb-2 text-sm font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+              {t('storyShelfPath', 'Story Path')}
+            </h2>
+          )}
+          {shelf.id === 'bible' && (
+            <div className="mb-2">
+              <h2 className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--accent-deep)' }}>
+                {t('storyShelfBible', 'Bible Stories')}
+              </h2>
+              <p className="geez text-base font-black">{BIBLE_SHELF.titleTi}</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                {t('storyShelfBibleNote', 'A separate book, from the beginning. Open now — the Story Path can wait.')}
+              </p>
+            </div>
+          )}
+          <ul className="space-y-2.5">
+            {shelf.stories.map((s) => (
+              <li key={s.id}>
+                {s.unlocked ? (
+                  <button type="button" data-story-id={s.id} onClick={() => openStory(s)} className={`chunk flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left ${FOCUS}`} style={{ background: 'var(--card)', borderColor: shelf.id === 'bible' ? 'var(--accent)' : 'var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }}>
+                    {s.cover ? (
+                      <img src={s.cover} alt="" className="h-16 w-12 shrink-0 rounded-lg object-cover" style={{ border: '2px solid var(--line)' }} />
+                    ) : (
+                      <LetterTile glyph={Array.from(s.title.g)[0]} size={44} className="shrink-0" />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="geez block truncate text-lg font-black">{s.title.g}</span>
+                      {showGloss && <span className="block truncate text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.title.en}</span>}
+                    </span>
+                    {readCounts[s.id] > 0 && (
+                      <span className="rounded-lg px-2 py-0.5 text-[11px] font-black text-white" style={{ background: 'var(--star)' }}>
+                        {t('storyReadN', `Read x${readCounts[s.id]}`, { n: readCounts[s.id] })}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 opacity-80" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
+                    <Lock className="h-5 w-5 shrink-0" style={{ color: 'var(--muted)' }} aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="geez block truncate text-lg font-black" style={{ color: 'var(--muted)' }}>{s.title.g}</span>
+                      <span className="block text-xs font-bold" style={{ color: 'var(--muted)' }}>
+                        {t('storyLocked', 'Learn these letters to open:')}{' '}
+                        <span className="geez">{s.missing.slice(0, 3).map(famGlyph).join(' ')}</span>
+                        {s.missing.length > 3 ? ` +${s.missing.length - 3}` : ''}
+                      </span>
+                    </span>
+                  </div>
                 )}
-              </button>
-            ) : (
-              <div className="flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 opacity-80" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
-                <Lock className="h-5 w-5 shrink-0" style={{ color: 'var(--muted)' }} aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="geez block truncate text-lg font-black" style={{ color: 'var(--muted)' }}>{s.title.g}</span>
-                  <span className="block text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                    {t('storyLocked', 'Learn these letters to open:')}{' '}
-                    <span className="geez">{s.missing.slice(0, 3).map(famGlyph).join(' ')}</span>
-                    {s.missing.length > 3 ? ` +${s.missing.length - 3}` : ''}
-                  </span>
-                </span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
       <p className="mt-4 text-center text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
         {getActivePackId() === 'ti'
-          ? t('storyDraftNoteTi', 'School Path stories — original lines. Tell us if a word sounds off!')
+          ? t('storyDraftNoteTi', 'Story Path is its own shelf. Bible Stories are a separate book — original child lines, not a translation. Tell us if a word sounds off!')
           : t('storyDraftNote', 'Early-reader Amharic, reviewed with love - tell us if a line sounds off!')}
       </p>
     </div>
