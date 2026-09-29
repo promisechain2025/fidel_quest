@@ -116,10 +116,14 @@ Path list. It is not part of the five Story Path books and it does not
 rewrite the Amharic biblical tracks.
 
 The first book is `ኣብ መጀመርታ` / In the Beginning, a kid paraphrase of
-Genesis 1-2 (eight pages, "God made…" then rest). Lines are original.
-The book is a free taste: `free: true`, so it opens before any School
-Path unit is finished. Later Bible books can name a gate. God is not
-drawn; each painting shows what that page's line names.
+Genesis 1-2. Each line names the weekday: Sunday light, Monday sky,
+Tuesday land and sea, Tuesday grass and trees, Wednesday sun and moon,
+Thursday birds and fish, Friday a man and a woman, Saturday rest.
+Tuesday is one creation day, so it has two pages. Saturday is the
+seventh-day rest. Lines are original. God's name follows ትመ15,
+`እግዚኣብሄር`. The book is a free taste: `free: true`, so it opens before
+any School Path unit is finished. Later Bible books can name a gate.
+God is not drawn; each painting shows what that page's line names.
 
 ## P1 follow-ups
 

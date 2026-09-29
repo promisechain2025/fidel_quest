@@ -3,8 +3,14 @@
    ----------------------------------------------------------------------------
    The School Path pack (schoolPathGr1Stories) is the everyday diaspora
    shelf. This module is the Bible shelf. The first book is a kid-level
-   paraphrase of the beginning (Genesis 1-2): eight short original lines,
-   one "God made…" refrain, then rest. Amharic Story Time is untouched.
+   paraphrase of the beginning (Genesis 1-2): eight short original lines.
+   Each line names the weekday. Sunday starts the work, Friday is the
+   people, Saturday is the rest. Land and plants share Tuesday, the
+   third day. Amharic Story Time is untouched.
+
+   ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ. Genesis 1
+   calls the trees ኣእዋም. The grass line keeps the pack word ሳዕሪ.
+   "Good" stays ጽቡቕ, the spelling the rest of eGeez Tigrinya uses.
 
    UNLOCK: `free: true`. The book opens with no families learned, so a
    family can read it on the first day and a reviewer can open it without
@@ -15,8 +21,8 @@
 import raw from './bibleStories.json'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 
-const MAN = { k: 'person', skin: '#a56a38', hair: '#241812', cloth: '#efe7d4', hairStyle: 'short' }
-const WOMAN = { k: 'person', skin: '#c98a5a', hair: '#241812', cloth: '#8aaa72', blush: true }
+const MAN = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
+const WOMAN = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8e3d45', blush: true }
 
 function familyOfChar(ch) {
   for (const family of ETHIOPIC_SCRIPT.families) {

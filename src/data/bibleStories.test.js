@@ -46,46 +46,48 @@ describe('bible stories shelf', () => {
     expect(entry.free).toBe(true)
   })
 
-  it('uses eight original Tigrinya lines with ኣ, not አ', () => {
+  it('names each creation weekday, with Friday for people and Saturday for rest', () => {
     expect(book.titleTi).toBe('ኣብ መጀመርታ')
     expect(book.titleEn).toBe('In the Beginning')
-    expect(book.refrain.geez).toBe('እግዚኣብሔር ፈጠረ።')
+    expect(book.refrain.geez).toBe('እግዚኣብሄር ፈጠረ።')
     expect(book.refrain.meaningEn).toBe('God made it.')
     expect(book.pages.map((p) => p.geez)).toEqual([
-      'እግዚኣብሔር ብርሃን ፈጠረ።',
-      'እግዚኣብሔር ሰማይ ፈጠረ።',
-      'እግዚኣብሔር ምድሪን ባሕሪን ፈጠረ።',
-      'እግዚኣብሔር ሳዕሪን ኦምን ፈጠረ።',
-      'እግዚኣብሔር ጸሓይን ወርሒን ፈጠረ።',
-      'እግዚኣብሔር ኣዕዋፍን ዓሳን ፈጠረ።',
-      'እግዚኣብሔር ሰብኣይን ሰበይቲን ፈጠረ።',
-      'እግዚኣብሔር ዓረፈ። ኩሉ ጽቡቕ ነበረ።',
+      'እግዚኣብሄር ብዕለት ሰንበት ብርሃን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ሰኑይ ሰማይ ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ሰሉስ ምድሪን ባሕሪን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ሰሉስ ሳዕሪን ኣእዋምን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ረቡዕ ጸሓይን ወርሒን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ሓሙስ ኣዕዋፍን ዓሳን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ዓርቢ ሰብኣይን ሰበይቲን ፈጠረ።',
+      'እግዚኣብሄር ብዕለት ቀዳም ዓረፈ። ኩሉ ጽቡቕ።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
-      'God made the light.',
-      'God made the sky.',
-      'God made the land and the sea.',
-      'God made the grass and the trees.',
-      'God made the sun and the moon.',
-      'God made the birds and the fish.',
-      'God made a man and a woman.',
-      'God rested. Everything was good.',
+      'On Sunday God made the light.',
+      'On Monday God made the sky.',
+      'On Tuesday God made the land and the sea.',
+      'On Tuesday God made the grass and the trees.',
+      'On Wednesday God made the sun and the moon.',
+      'On Thursday God made the birds and the fish.',
+      'On Friday God made a man and a woman.',
+      'On Saturday God rested. Everything was good.',
     ])
     expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('እግዚኣብሄር')).toBe(true)
     expect(book.pages.length).toBeGreaterThanOrEqual(6)
     expect(book.pages.length).toBeLessThanOrEqual(8)
     const amharicLines = new Set(STORIES.flatMap((s) => s.pages.map((p) => p.g)))
     for (const page of book.pages) {
       expect(amharicLines.has(page.geez), page.geez).toBe(false)
       expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
-      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(5)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(6)
       expect(page.latin, page.geez).toBeTruthy()
       expect(page.meaningEn, page.geez).toBeTruthy()
       expect(page.pictureHint, page.geez).toBeTruthy()
       expect(page.familyIds, page.geez).toEqual(familiesOfGeez(page.geez))
     }
-    expect(book.question.geez).toBe('መን ሰብኣይን ሰበይቲን ፈጠረ?')
-    expect(book.question.meaningEn).toBe('Who made the man and the woman?')
+    expect(book.question.geez).toBe('እግዚኣብሄር ብዓርቢ እንታይ ፈጠረ?')
+    expect(book.question.meaningEn).toBe('What did God make on Friday?')
   })
 
   it('is a free taste on the Tigrinya Bible shelf only', () => {
