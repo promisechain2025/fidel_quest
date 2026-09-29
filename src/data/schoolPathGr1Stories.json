@@ -5,7 +5,7 @@
   "source": {
     "book": "MoE Eritrea Reading Books GR1 (pedagogy shapes only — refrain, rooms, animals, care, week — not titles or sentences)",
     "copyrightNote": "Original eGeez diaspora stories. Do not ship MoE PDF pages, MoE titles, or SIL art. Do not claim MoE page order.",
-    "shapeNote": "Five stories borrow Reading Book shapes (room refrain, walk recycle, coffee ritual, care verbs, sun-through-the-week) and rewrite them with School Path Meet words."
+    "shapeNote": "Ten stories borrow Reading Book shapes only (room refrain, walk recycle, coffee ritual, care verbs, sun-through-the-week, market count, weather change, home chores, ride stops, night-sky close) and rewrite them with School Path Meet words. Titles and sentences are original."
   },
   "stories": [
     {
@@ -292,6 +292,286 @@
           "meaningEn": "The sun is there all week.",
           "pictureHint": "big smiling sun filling a golden sky, seven soft rays",
           "familyIds": ["ke", "le", "se", "me", "ne", "tse", "hha", "ye", "a"]
+        }
+      ]
+    },
+    {
+      "id": "market-day",
+      "titleEn": "Market Day",
+      "titleTi": "ኣብ ሱቕ",
+      "latinTitle": "Ab suq",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "በለስ ኣሎ።",
+        "meaningEn": "A beles is there.",
+        "familyIds": ["be", "le", "se", "a"]
+      },
+      "pages": [
+        {
+          "geez": "ቆልዓ ናብ ሱቕ ከደ።",
+          "latin": "Qola nab suq kede.",
+          "meaningEn": "The child went to the market.",
+          "pictureHint": "child with a small bag walking toward a bright highland market, morning light",
+          "familyIds": ["qe", "le", "ae", "ne", "be", "se", "qhe", "ke", "de"]
+        },
+        {
+          "geez": "ሓደ በለስ ኣሎ።",
+          "latin": "Hhade beles alo.",
+          "meaningEn": "One beles is there.",
+          "pictureHint": "one purple beles on a woven market tray, soft stall light",
+          "familyIds": ["hha", "de", "be", "le", "se", "a"]
+        },
+        {
+          "geez": "ክልተ ወይኒ ኣሎ።",
+          "latin": "Kilte weyni alo.",
+          "meaningEn": "Two grapes are there.",
+          "pictureHint": "two small bunches of purple grapes on a market cloth",
+          "familyIds": ["ke", "le", "te", "we", "ye", "ne", "a"]
+        },
+        {
+          "geez": "ሰለስተ ቸኮላታ ኣሎ።",
+          "latin": "Seleste chekolata alo.",
+          "meaningEn": "Three chocolates are there.",
+          "pictureHint": "three small chocolate pieces on a wooden market board, kid scale",
+          "familyIds": ["se", "le", "te", "che", "ke", "a"]
+        },
+        {
+          "geez": "ቆልዓ ሓደ በለስ ወሰደ።",
+          "latin": "Qola hhade beles wesede.",
+          "meaningEn": "The child took one beles.",
+          "pictureHint": "child lifting one beles from the tray, sunny stall, kind vendor hands at the edge",
+          "familyIds": ["qe", "le", "ae", "hha", "de", "be", "se", "we"]
+        },
+        {
+          "geez": "ቆልዓ በለስ በልዐ።",
+          "latin": "Qola beles belie.",
+          "meaningEn": "The child ate the beles.",
+          "pictureHint": "child with a happy purple-stained smile holding a bitten beles, market edge",
+          "familyIds": ["qe", "le", "ae", "be", "se"]
+        }
+      ]
+    },
+    {
+      "id": "rain-came",
+      "titleEn": "The Rain Came",
+      "titleTi": "ዝናብ መጸ",
+      "latinTitle": "Zinab metse",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ዝናብ መጸ።",
+        "meaningEn": "The rain came.",
+        "familyIds": ["ze", "ne", "be", "me", "tse"]
+      },
+      "pages": [
+        {
+          "geez": "ጸሓይ ኣሎ።",
+          "latin": "Tsehay alo.",
+          "meaningEn": "The sun is there.",
+          "pictureHint": "bright dry highland morning, sun over a stone house and a small yard",
+          "familyIds": ["tse", "hha", "ye", "a", "le"]
+        },
+        {
+          "geez": "ደበና መጸ።",
+          "latin": "Debena metse.",
+          "meaningEn": "A cloud came.",
+          "pictureHint": "one soft cloud sliding over the same highland yard, sun partly behind it",
+          "familyIds": ["de", "be", "ne", "me", "tse"]
+        },
+        {
+          "geez": "ዝናብ መጸ።",
+          "latin": "Zinab metse.",
+          "meaningEn": "The rain came.",
+          "pictureHint": "gentle rain over a stone highland house, child in the doorway, not scary",
+          "familyIds": ["ze", "ne", "be", "me", "tse"]
+        },
+        {
+          "geez": "ቆልዓ ናብ ቤት ጎየ።",
+          "latin": "Qola nab bet goye.",
+          "meaningEn": "The child ran to the house.",
+          "pictureHint": "child running toward a warm doorway, rain behind, bag bouncing",
+          "familyIds": ["qe", "le", "ae", "ne", "be", "te", "ge", "ye"]
+        },
+        {
+          "geez": "ዝናብ የለን።",
+          "latin": "Zinab yellen.",
+          "meaningEn": "The rain is not there.",
+          "pictureHint": "rain stopped, wet stones and one puddle, sky clearing over the yard",
+          "familyIds": ["ze", "ne", "be", "ye", "le"]
+        },
+        {
+          "geez": "ጸሓይ ኣሎ።",
+          "latin": "Tsehay alo.",
+          "meaningEn": "The sun is there.",
+          "pictureHint": "sun back after rain, golden light, child in the doorway, wet stones shining",
+          "familyIds": ["tse", "hha", "ye", "a", "le"]
+        }
+      ]
+    },
+    {
+      "id": "help-at-home",
+      "titleEn": "Helping at Home",
+      "titleTi": "ኣብ ቤት ሓገዝ",
+      "latinTitle": "Ab bet hhagez",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ቆልዓ ሓገዘ።",
+        "meaningEn": "The child helped.",
+        "familyIds": ["qe", "le", "ae", "hha", "ge", "ze"]
+      },
+      "pages": [
+        {
+          "geez": "ዓባየይ ሐተተት።",
+          "latin": "Abayey hatetet.",
+          "meaningEn": "Grandma asked.",
+          "pictureHint": "grandma in a soft blue-gray shawl speaking to the child, highland kitchen",
+          "familyIds": ["ae", "be", "ye", "hha", "te"]
+        },
+        {
+          "geez": "ቆልዓ ማይ ወሰደ።",
+          "latin": "Qola may wesede.",
+          "meaningEn": "The child took water.",
+          "pictureHint": "child carrying a small water jug with both hands, careful steps, indoor glow",
+          "familyIds": ["qe", "le", "ae", "me", "ye", "we", "se", "de"]
+        },
+        {
+          "geez": "ቆልዓ ጀበና ሓዘ።",
+          "latin": "Qola jebena hhaze.",
+          "meaningEn": "The child held the jebena.",
+          "pictureHint": "child holding a small clay jebena with both hands, grandma in a blue-gray shawl watching kindly",
+          "familyIds": ["qe", "le", "ae", "je", "be", "ne", "hha", "ze"]
+        },
+        {
+          "geez": "ቆልዓ ቕጫ ሃበ።",
+          "latin": "Qola qicha habe.",
+          "meaningEn": "The child gave flatbread.",
+          "pictureHint": "child offering a piece of thin flatbread to grandma in a blue-gray shawl, low kitchen table",
+          "familyIds": ["qe", "le", "ae", "qhe", "chhe", "ha", "be"]
+        },
+        {
+          "geez": "ቆልዓ ኢዱ ሓጸበ።",
+          "latin": "Qola idu hhatsebe.",
+          "meaningEn": "The child washed his hand.",
+          "pictureHint": "child washing one hand at a simple basin, water and a small soap, highland kitchen",
+          "familyIds": ["qe", "le", "ae", "a", "de", "hha", "tse", "be"]
+        },
+        {
+          "geez": "ቆልዓ ሓገዘ።",
+          "latin": "Qola hhageze.",
+          "meaningEn": "The child helped.",
+          "pictureHint": "grandma in a blue-gray shawl and the child together, her hand on the child's shoulder, jebena and bread on a low table",
+          "familyIds": ["qe", "le", "ae", "hha", "ge", "ze"]
+        }
+      ]
+    },
+    {
+      "id": "bajaj-ride",
+      "titleEn": "The Bajaj Ride",
+      "titleTi": "ብባጃጅ",
+      "latinTitle": "Bibajaj",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ባጃጅ መጸ።",
+        "meaningEn": "The bajaj came.",
+        "familyIds": ["be", "je", "me", "tse"]
+      },
+      "pages": [
+        {
+          "geez": "ባጃጅ መጸ።",
+          "latin": "Bajaj metse.",
+          "meaningEn": "The bajaj came.",
+          "pictureHint": "bright blue three-wheel bajaj on a highland street, morning, plain panels, no letters",
+          "familyIds": ["be", "je", "me", "tse"]
+        },
+        {
+          "geez": "ቆልዓ ባጃጅ ወሰደ።",
+          "latin": "Qola bajaj wesede.",
+          "meaningEn": "The child took the bajaj.",
+          "pictureHint": "child climbing into the blue bajaj with a small bag, a parent waving from the curb",
+          "familyIds": ["qe", "le", "ae", "be", "je", "we", "se", "de"]
+        },
+        {
+          "geez": "ባጃጅ ኣብ ሱቕ ደው ኢሉ።",
+          "latin": "Bajaj ab suq dew ilu.",
+          "meaningEn": "The bajaj stopped at the market.",
+          "pictureHint": "blue bajaj stopped beside fruit stalls, highland market, no readable signs",
+          "familyIds": ["be", "je", "a", "se", "qhe", "de", "we", "le"]
+        },
+        {
+          "geez": "ባጃጅ ኣብ ቤት ደው ኢሉ።",
+          "latin": "Bajaj ab bet dew ilu.",
+          "meaningEn": "The bajaj stopped at the house.",
+          "pictureHint": "blue bajaj stopped at a stone highland house with a blue door",
+          "familyIds": ["be", "je", "a", "te", "de", "we", "le"]
+        },
+        {
+          "geez": "ዓባየይ ኣላ።",
+          "latin": "Abayey ala.",
+          "meaningEn": "Grandma is there.",
+          "pictureHint": "grandma in a blue-gray shawl smiling in the doorway, bajaj soft behind her",
+          "familyIds": ["ae", "be", "ye", "a", "le"]
+        },
+        {
+          "geez": "ቆልዓ በጽሐ።",
+          "latin": "Qola betseha.",
+          "meaningEn": "The child arrived.",
+          "pictureHint": "child hugging grandma at the blue door, bajaj quiet at the curb",
+          "familyIds": ["qe", "le", "ae", "be", "tse", "hha"]
+        }
+      ]
+    },
+    {
+      "id": "moon-and-stars",
+      "titleEn": "Moon and Stars",
+      "titleTi": "ወርሒን ኮኾብን",
+      "latinTitle": "Werhin kokobn",
+      "unlockAfterUnitId": "u11",
+      "refrain": {
+        "geez": "ኮኾብ ኣሎ።",
+        "meaningEn": "A star is there.",
+        "familyIds": ["ke", "khe", "be", "a", "le"]
+      },
+      "pages": [
+        {
+          "geez": "ለይቲ ኣሎ።",
+          "latin": "Leyti alo.",
+          "meaningEn": "It is night.",
+          "pictureHint": "soft night over a highland stone house, one window glowing, not scary",
+          "familyIds": ["le", "ye", "te", "a"]
+        },
+        {
+          "geez": "ወርሒ ኣሎ።",
+          "latin": "Werhi alo.",
+          "meaningEn": "The moon is there.",
+          "pictureHint": "large gentle moon over the highland roof, quiet sky",
+          "familyIds": ["we", "re", "hha", "a", "le"]
+        },
+        {
+          "geez": "ኮኾብ ኣሎ።",
+          "latin": "Kokob alo.",
+          "meaningEn": "A star is there.",
+          "pictureHint": "one bright star beside a smaller moon over the same roof",
+          "familyIds": ["ke", "khe", "be", "a", "le"]
+        },
+        {
+          "geez": "ቆልዓ ሰማይ ረኣየ።",
+          "latin": "Qola semay reaye.",
+          "meaningEn": "The child saw the sky.",
+          "pictureHint": "child at a window looking up at the moon, wonder, cozy room",
+          "familyIds": ["qe", "le", "ae", "se", "me", "ye", "re", "a"]
+        },
+        {
+          "geez": "ቆልዓ ዘመረ።",
+          "latin": "Qola zemere.",
+          "meaningEn": "The child sang.",
+          "pictureHint": "child sitting up in bed singing softly, moon in the window, a few notes of quiet",
+          "familyIds": ["qe", "le", "ae", "ze", "me", "re"]
+        },
+        {
+          "geez": "ቆልዓ ኣይደቀሰን።",
+          "latin": "Qola aydeqesen.",
+          "meaningEn": "The child did not sleep.",
+          "pictureHint": "child awake in bed, eyes open, moon and one star in the window, not asleep",
+          "familyIds": ["qe", "le", "ae", "a", "ye", "de", "se", "ne"]
         }
       ]
     }
