@@ -123,8 +123,16 @@ Thursday birds and fish, Friday a man and a woman, Saturday rest.
 Tuesday is one creation day, so it has two pages. Saturday is the
 seventh-day rest. Lines are original. God's name follows ትመ15,
 `እግዚኣብሄር`. The book is a free taste: `free: true`, so it opens before
-any School Path unit is finished. Later Bible books can name a gate.
-God is not drawn; each painting shows what that page's line names.
+any School Path unit is finished. God is not drawn; each painting shows
+what that page's line names.
+
+The second book is `መርከብ ኖህ` / Noah's Ark, a kid paraphrase of Genesis
+6-9: people were not good and Noah was good, God told Noah to build an
+ark, Noah built it, animals went in two by two, rain fell many days,
+water covered the land, the dove brought an olive leaf, and the rainbow
+is a promise. ትመ15 spells Noah `ኖህ` and the ark `መርከብ`. The book is not
+free. It uses the ordinary band-1 progress gate and does not change the
+Creation unlock or the School Path unlocks.
 
 ## P1 follow-ups
 

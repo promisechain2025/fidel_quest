@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
+import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { STORIES, storyLibrary, storyMissingFamilies, storyShelves, storyUnlocked, storyWords } from '../platform/stories'
 import { SCHOOL_PATH_STORIES } from './schoolPathGr1Stories'
 import { BIBLE_SHELF, BIBLE_STORIES, bibleStoryTimeEntries } from './bibleStories'
@@ -35,11 +36,12 @@ describe('bible stories shelf', () => {
     ...book.pages.map((p) => p.geez),
   ].join('\n')
 
-  it('is one Creation book, separate from Story Path and from Amharic', () => {
-    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation'])
-    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation')).toBe(false)
-    expect(STORIES.some((s) => s.id === 'bible-creation')).toBe(false)
+  it('is the Creation book, separate from Story Path and from Amharic', () => {
+    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah'])
+    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
+    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
     expect(STORIES.find((s) => s.id === 'creation').pack).toBe('am')
+    expect(STORIES.find((s) => s.id === 'noah').pack).toBe('am')
     expect(entry.shelf).toBe('bible')
     expect(entry.pack).toBe('ti')
     expect(entry.schoolPath).toBeUndefined()
@@ -107,11 +109,90 @@ describe('bible stories shelf', () => {
     const shelves = storyShelves(ti)
     expect(shelves.map((s) => s.id)).toEqual(['path', 'bible'])
     expect(shelves[0].stories.every((s) => s.schoolPath && s.shelf !== 'bible')).toBe(true)
-    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation'])
+    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah'])
     expect(shelves[1].stories[0].unlocked).toBe(true)
+    expect(shelves[1].stories[1].unlocked).toBe(false)
     const am = storyLibrary([], undefined, 'am')
     expect(storyShelves(am).map((s) => s.id)).toEqual(['library'])
-    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation')).toBe(false)
+    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
     expect(am.length).toBe(STORIES.length)
+  })
+})
+
+describe('noah bible book', () => {
+  const book = BIBLE_STORIES[1]
+  const entry = bibleStoryTimeEntries()[1]
+  const chapter1 = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
+  const blob = [book.titleTi, book.refrain.geez, book.question.geez, ...book.pages.map((p) => p.geez)].join('\n')
+
+  it('paraphrases Genesis 6-9 in eight short lines', () => {
+    expect(book.id).toBe('bible-noah')
+    expect(book.titleTi).toBe('መርከብ ኖህ')
+    expect(book.titleEn).toBe("Noah's Ark")
+    expect(book.free).toBe(false)
+    expect(book.refrain.geez).toBe('ኖህ መርከብ ሰርሐ።')
+    expect(book.refrain.meaningEn).toBe('Noah built an ark.')
+    expect(book.pages.map((p) => p.geez)).toEqual([
+      'ሰባት ጽቡቕ ኣይነበሩን። ኖህ ጽቡቕ ነበረ።',
+      'እግዚኣብሄር ንኖህ መርከብ ስራሕ በሎ።',
+      'ኖህ ዓባይ መርከብ ሰርሐ።',
+      'እንስሳታት ክልተ ክልተ ናብ መርከብ ኣተዉ።',
+      'ዝናብ ንብዙሕ መዓልቲ ዘነመ።',
+      'ማይ ንምድሪ ሸፈነ።',
+      'እታ ርግቢ ቘፅሊ ኣውሊዕ ኣምጺኣ።',
+      'እግዚኣብሄር ቀስቲ ኪዳን ገበረ።',
+    ])
+    expect(book.pages.map((p) => p.meaningEn)).toEqual([
+      'People were not good. Noah was good.',
+      'God told Noah to build an ark.',
+      'Noah built a big ark.',
+      'Animals went into the ark two by two.',
+      'Rain fell for many days.',
+      'Water covered the land.',
+      'The dove brought an olive leaf.',
+      'God made a rainbow promise.',
+    ])
+    expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('እግዚኣብሄር')).toBe(true)
+    expect(blob.includes('ኖህ')).toBe(true)
+    expect(blob.includes('ኖሕ')).toBe(false)
+    expect(book.pages).toHaveLength(8)
+    for (const page of book.pages) {
+      expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(6)
+      expect(page.latin && page.meaningEn && page.pictureHint).toBeTruthy()
+      expect(page.familyIds).toEqual(familiesOfGeez(page.geez))
+    }
+    expect(book.question.geez).toBe('ኣብ መወዳእታ እንታይ ኣሎ?')
+    expect(book.question.meaningEn).toBe('What is there at the end?')
+    expect(book.question.answers.filter((a) => a.ok)).toHaveLength(1)
+    expect(book.question.answers.find((a) => a.ok).pic).toBe('🌈')
+  })
+
+  it('sits behind the band-1 progress gate and does not open the Amharic ark', () => {
+    expect(entry.free).toBe(false)
+    expect(entry.shelf).toBe('bible')
+    expect(entry.pack).toBe('ti')
+    expect(entry.band).toBe(1)
+    expect(entry.schoolPath).toBeUndefined()
+    expect(storyUnlocked(entry, [])).toBe(false)
+    expect(storyUnlocked(entry, chapter1.slice(0, -1))).toBe(false)
+    expect(storyUnlocked(entry, chapter1)).toBe(true)
+    expect(storyMissingFamilies(entry, []).length).toBeGreaterThan(0)
+    expect(storyMissingFamilies(entry, chapter1)).toEqual([])
+    expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
+    expect(entry.cover).toBe('/art/stories/bible-noah-cover.webp')
+    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    entry.pages.forEach((page, i) => {
+      const src = `/art/stories/bible-noah-${i + 1}.webp`
+      expect(page.scene.src).toBe(src)
+      expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
+      expect(BGS.has(page.scene.bg)).toBe(true)
+      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+    })
+    const amNoah = STORIES.find((s) => s.id === 'noah')
+    expect(amNoah.title.g).toBe('የኖኅ መርከብ')
+    expect(storyUnlocked(amNoah, [])).toBe(false)
   })
 })

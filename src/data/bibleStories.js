@@ -1,21 +1,26 @@
 /* ============================================================================
-   BIBLE STORIES — a separate Tigrinya book, not the Story Path
+   BIBLE STORIES — a separate Tigrinya shelf, not the Story Path
    ----------------------------------------------------------------------------
    The School Path pack (schoolPathGr1Stories) is the everyday diaspora
-   shelf. This module is the Bible shelf. The first book is a kid-level
-   paraphrase of the beginning (Genesis 1-2): eight short original lines.
+   shelf. This module is the Bible shelf. Amharic Story Time is untouched.
+
+   Book 1, ኣብ መጀመርታ: a kid paraphrase of the beginning (Genesis 1-2).
    Each line names the weekday. Sunday starts the work, Friday is the
-   people, Saturday is the rest. Land and plants share Tuesday, the
-   third day. Amharic Story Time is untouched.
+   people, Saturday is the rest. Land and plants share Tuesday.
 
-   ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ. Genesis 1
-   calls the trees ኣእዋም. The grass line keeps the pack word ሳዕሪ.
-   "Good" stays ጽቡቕ, the spelling the rest of eGeez Tigrinya uses.
+   Book 2, መርከብ ኖህ: a kid paraphrase of Noah (Genesis 6-9). Eight short
+   original lines. God is not drawn. "He built" follows ትመ15 ሰርሐ, so the
+   line does not use ሔ.
 
-   UNLOCK: `free: true`. The book opens with no families learned, so a
-   family can read it on the first day and a reviewer can open it without
-   finishing School Path units. Later books can name a gate. This book
-   does not change School Path unlocks and is not a Journey story node.
+   ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
+   ኖህ (ህ, not ሕ). The ark is መርከብ. The dove is ርግቢ. The olive leaf keeps
+   the ትመ15 words ቘፅሊ ኣውሊዕ. Rain keeps the pack word ዝናብ (ትመ15 writes
+   ዝናም). "Good" stays ጽቡቕ. The bow is ቀስቲ, the app's spelling.
+
+   UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
+   ordinary band-1 progress gate (the 8th family, the same gate as the
+   Amharic band-1 library). It does not change Creation, School Path, or
+   Amharic unlocks, and it is not a Journey story node.
    ========================================================================== */
 
 import raw from './bibleStories.json'
@@ -23,6 +28,8 @@ import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 
 const MAN = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
 const WOMAN = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8e3d45', blush: true }
+const NOAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const KIN = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
 
 function familyOfChar(ch) {
   for (const family of ETHIOPIC_SCRIPT.families) {
@@ -59,6 +66,19 @@ const ART = {
       painted('bible-creation', 6, { bg: 'sea', items: [{ k: 'bird', x: 0.3, y: 0.28, s: 0.16 }, { k: 'bigFish', x: 0.62, y: 0.66, s: 0.32 }] }),
       painted('bible-creation', 7, { bg: 'garden', items: [{ ...MAN, x: 0.38, foot: 0.74, s: 0.34 }, { ...WOMAN, x: 0.64, foot: 0.74, s: 0.32 }] }),
       painted('bible-creation', 8, { bg: 'garden', items: [{ ...MAN, x: 0.36, foot: 0.76, s: 0.3 }, { ...WOMAN, x: 0.58, foot: 0.76, s: 0.28 }] }),
+    ],
+  },
+  'bible-noah': {
+    pics: ['🧒', '🪵', '🚢', '🐐', '🌧️', '🌊', '🕊️', '🌈'],
+    scenes: [
+      painted('bible-noah', 1, { bg: 'field', items: [{ ...KIN, x: 0.28, foot: 0.76, s: 0.3 }, { ...NOAH, x: 0.64, foot: 0.74, s: 0.34 }] }),
+      painted('bible-noah', 2, { bg: 'field', items: [{ ...NOAH, x: 0.32, foot: 0.76, s: 0.34 }, { k: 'ark', x: 0.7, y: 0.52, s: 0.36 }] }),
+      painted('bible-noah', 3, { bg: 'field', items: [{ ...NOAH, x: 0.26, foot: 0.76, s: 0.32 }, { k: 'ark', x: 0.64, y: 0.5, s: 0.44 }] }),
+      painted('bible-noah', 4, { bg: 'field', items: [{ k: 'ark', x: 0.68, y: 0.5, s: 0.4 }, { k: 'cow', x: 0.22, y: 0.58, s: 0.22 }, { k: 'sheep', x: 0.4, foot: 0.78, s: 0.2 }] }),
+      painted('bible-noah', 5, { bg: 'sea', items: [{ k: 'ark', x: 0.5, y: 0.48, s: 0.42 }] }),
+      painted('bible-noah', 6, { bg: 'sea', items: [{ k: 'ark', x: 0.55, y: 0.46, s: 0.36 }] }),
+      painted('bible-noah', 7, { bg: 'day', items: [{ k: 'bird', x: 0.48, y: 0.36, s: 0.22 }] }),
+      painted('bible-noah', 8, { bg: 'day', items: [{ k: 'rainbow', x: 0.5, y: 0.55, s: 0.72 }, { k: 'ark', x: 0.62, y: 0.62, s: 0.28 }] }),
     ],
   },
 }

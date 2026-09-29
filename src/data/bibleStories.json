@@ -4,12 +4,12 @@
   "packId": "ti",
   "shelf": "bible",
   "source": {
-    "book": "Original kid paraphrase of Genesis 1-2. Not a copyrighted Bible translation.",
+    "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees.",
-    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Trees follow that chapter's ኣእዋም. Grass keeps the pack word ሳዕሪ. Good stays ጽቡቕ, matching the rest of eGeez Tigrinya; ትመ15 writes ፅቡቕ.",
-    "unlockNote": "This first book is a free taste. It opens in Tigrinya Story Time before any School Path unit is finished, so a family can read it on day one and a reviewer can open it without grinding the alphabet. Later Bible books can name a gate. It is not a School Path story, it does not sit in that pack, and it does not change those unlocks.",
-    "artNote": "God is not drawn. Each painting shows the thing the line names, in highland Horn light. The rest page is a quiet finished world, not a picture of God."
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah uses the same short repeated sentence shape, eight beats from Genesis 6-9.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ in that same text (ህ, not ሕ). The ark is መርከብ, the dove is ርግቢ, and the olive leaf keeps ቘፅሊ ኣውሊዕ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም and the verb ዘነመ. The bow is ቀስቲ, matching the app, though ትመ15 also writes ቐስቲ. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
+    "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
+    "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
   },
   "stories": [
     {
@@ -80,6 +80,77 @@
           { "pic": "🧒", "ok": true, "alt": "people" },
           { "pic": "🐟", "ok": false, "alt": "a fish" },
           { "pic": "☀️", "ok": false, "alt": "the sun" }
+        ]
+      }
+    },
+    {
+      "id": "bible-noah",
+      "titleEn": "Noah's Ark",
+      "titleTi": "መርከብ ኖህ",
+      "latinTitle": "Merkeb Noh",
+      "free": false,
+      "refrain": {
+        "geez": "ኖህ መርከብ ሰርሐ።",
+        "latin": "Noh merkeb serha.",
+        "meaningEn": "Noah built an ark."
+      },
+      "pages": [
+        {
+          "geez": "ሰባት ጽቡቕ ኣይነበሩን። ኖህ ጽቡቕ ነበረ።",
+          "latin": "Sebat tsbuq ayneberun. Noh tsbuq nebere.",
+          "meaningEn": "People were not good. Noah was good.",
+          "pictureHint": "Noah calm in sand linen, a few people in sage and earth cloth turned away, no ark, no animals"
+        },
+        {
+          "geez": "እግዚኣብሄር ንኖህ መርከብ ስራሕ በሎ።",
+          "latin": "Igziabher ni-Noh merkeb srah belo.",
+          "meaningEn": "God told Noah to build an ark.",
+          "pictureHint": "Noah beside timber and a boat frame, looking up at an empty sky, no divine figure"
+        },
+        {
+          "geez": "ኖህ ዓባይ መርከብ ሰርሐ።",
+          "latin": "Noh abay merkeb serha.",
+          "meaningEn": "Noah built a big ark.",
+          "pictureHint": "Noah building a large wooden ark on dry highland ground, no animals, no rain"
+        },
+        {
+          "geez": "እንስሳታት ክልተ ክልተ ናብ መርከብ ኣተዉ።",
+          "latin": "Insisatat kilte kilte nab merkeb atewu.",
+          "meaningEn": "Animals went into the ark two by two.",
+          "pictureHint": "Calm pairs of goats, oxen, and doves walking into the ark, no people"
+        },
+        {
+          "geez": "ዝናብ ንብዙሕ መዓልቲ ዘነመ።",
+          "latin": "Znab ni-bzux mealti zeneme.",
+          "meaningEn": "Rain fell for many days.",
+          "pictureHint": "Gentle rain over the ark on quiet water, no storm, no people"
+        },
+        {
+          "geez": "ማይ ንምድሪ ሸፈነ።",
+          "latin": "May ni-mdri shefene.",
+          "meaningEn": "Water covered the land.",
+          "pictureHint": "Calm water over highland hills, the ark floating safely, no people, no rainbow"
+        },
+        {
+          "geez": "እታ ርግቢ ቘፅሊ ኣውሊዕ ኣምጺኣ።",
+          "latin": "Ita rgbi qotsli awli' amtsi'a.",
+          "meaningEn": "The dove brought an olive leaf.",
+          "pictureHint": "One dove with a green olive sprig in her beak, clearing sky, no rainbow"
+        },
+        {
+          "geez": "እግዚኣብሄር ቀስቲ ኪዳን ገበረ።",
+          "latin": "Igziabher qesti kidan gebere.",
+          "meaningEn": "God made a rainbow promise.",
+          "pictureHint": "A soft rainbow over the quiet highland and the ark on the shore, no divine figure"
+        }
+      ],
+      "question": {
+        "geez": "ኣብ መወዳእታ እንታይ ኣሎ?",
+        "meaningEn": "What is there at the end?",
+        "answers": [
+          { "pic": "🌈", "ok": true, "alt": "a rainbow" },
+          { "pic": "🌙", "ok": false, "alt": "the moon" },
+          { "pic": "🐟", "ok": false, "alt": "a fish" }
         ]
       }
     }
