@@ -135,26 +135,28 @@ describe('noah bible book', () => {
     expect(book.pages.map((p) => p.geez)).toEqual([
       'እግዚኣብሄር ሰብ ኣብ ምድሪ ክፋእ ከም ዝገብር ረኣየ።',
       'ኖህ ግና ፃድቕ ሰብ ነበረ። ንእግዚኣብሄር ድማ ይስምዖ ነበረ።',
-      'ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ በሎ።',
+      'ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ ኣዘዞ።',
       'ኖህን ሰበይቱን ደቁን ነታ መርከብ ሰርሑ።',
       'ድሕሪኡ ኖህን ሰበይቱን ደቁን ናብታ መርከብ ኣተዉ።',
       'እንስሳታት ከኣ ክልተ ክልተ ምስኦም ኣተዉ።',
       'እግዚኣብሄር ናይታ መርከብ ማዕጾ ዓፀዎ። ሽዑ ዝናብ መጸ።',
       'ማይ ነታ ምድሪ ሸፈነ። እታ መርከብ ግና ኣብ ልዕሊኡ ሰላም ነበረት።',
-      'ዝናብ ምስ ደው በለ፡ ኖህ ንርግቢ ሰደዳ። ቘፅሊ ኣውሊዕ ሒዛ ተመለሰት።',
-      'ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ።',
+      'ዝናብ ምስ ደው በለ፡ ኖህ ቅድም ንኳዅ ሰደዶ። ኳዅ ግና ኣይተመለሰን።',
+      'ድሕሪኡ ንርግቢ ሰደዳ። ርግቢ ቘፅሊ ኣውሊዕ ሒዛ ናብ ኖህ ተመለሰት።',
+      'ኖህን ስድራቤቱን ናብ ንቑጽ ምድሪ ወፁ።',
       'እግዚኣብሄር ቀስቲ ኣብ ሰማይ ኣንበረ። እዚ ኪዳን እዩ።',
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
       'God saw that people were doing evil on the earth.',
       'But Noah was a righteous man. He obeyed God.',
-      'Because a lot of water was coming, God told Noah to build a big ark.',
+      'Because a lot of water was coming, God commanded Noah to build a big ark.',
       'Noah, his wife, and his children built the ark.',
       'After that, Noah, his wife, and his children went into the ark.',
       'And the animals went in with them, two by two.',
       'God shut the door of the ark. Then the rain came.',
       'Water covered the land. But the ark was safe on the water.',
-      'When the rain stopped, Noah sent the dove. She came back holding an olive leaf.',
+      'When the rain stopped, Noah first sent the raven. But the raven did not come back.',
+      'Then he sent the dove. The dove came back to Noah holding an olive leaf.',
       'Noah and his family went out onto dry land.',
       'God set a rainbow in the sky. This is his promise.',
     ])
@@ -167,7 +169,12 @@ describe('noah bible book', () => {
     expect(blob.includes('ክፋእ')).toBe(true)
     expect(blob.includes('ፃድቕ')).toBe(true)
     expect(blob.includes('ኪዳን')).toBe(true)
-    expect(book.pages.length).toBe(11)
+    expect(book.pages.length).toBe(12)
+    expect(blob.includes('ኳዅ')).toBe(true)
+    expect(blob.includes('ቑራዕ')).toBe(false)
+    expect(blob.includes('ንቑጽ')).toBe(true)
+    expect(blob.includes('ነቒጣ')).toBe(false)
+    expect(blob.includes('ኣዘዞ')).toBe(true)
     for (const page of book.pages) {
       expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
       expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)

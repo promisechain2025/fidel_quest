@@ -6,8 +6,8 @@
   "source": {
     "book": "Original kid paraphrases. Book 1 is Genesis 1-2. Book 2 is Genesis 6-9. Not a copyrighted Bible translation.",
     "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
-    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the dove, then dry land, then the rainbow promise.",
-    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. Shut is ዓፀዎ. They went out ወፁ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ነቒጣ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
+    "shape": "Creation uses a weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees. Noah is one connected paraphrase of Genesis 6-9: evil on the earth, Noah righteous and obedient, the ark, the family, the animals two by two, the shut door and the rain, the water, the raven, the dove, then dry land, then the rainbow promise.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Noah is ኖህ. Evil is ክፋእ. Righteous is ፃድቕ, as in Genesis 6:9. The ark is መርከብ. God commanded ኣዘዞ. Shut is ዓፀዎ. They went out ወፁ. The raven is ኳዅ, as in Genesis 8:7 ንኳዅ ሰደዶ. The dove is ርግቢ, sent ሰደዳ, returned ተመለሰት, holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ. The promise is ኪዳን, as in Genesis 9 ኪዳነይ. Rain keeps the pack word ዝናብ; ትመ15 writes ዝናም. Trees in Creation follow ኣእዋም. Grass keeps ሳዕሪ. Creation's good stays ጽቡቕ; ትመ15 writes ፅቡቕ.",
     "unlockNote": "In the Beginning is the free taste. It opens before any School Path unit is finished. Noah's Ark is not free: it uses the ordinary band-1 progress gate (learned the 8th family), the same gate the Amharic band-1 library uses. It does not change the Creation unlock, the School Path unlocks, or the Amharic tracks.",
     "artNote": "God is not drawn. Each painting shows the thing that page names, in highland Horn light. People wear sand, linen, or sage. The flood stays gentle."
   },
@@ -108,9 +108,9 @@
           "pictureHint": "Noah alone, deep brown skin, sand linen tunic, calm, looking toward an empty sky, no divine figure"
         },
         {
-          "geez": "ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ በሎ።",
-          "latin": "May bzux sle zimetsi', Igziabher ni-Noh abay merkeb kiserh belo.",
-          "meaningEn": "Because a lot of water was coming, God told Noah to build a big ark.",
+          "geez": "ማይ ብዙሕ ስለ ዝመጽእ፡ እግዚኣብሄር ንኖህ ዓባይ መርከብ ክሰርሕ ኣዘዞ።",
+          "latin": "May bzux sle zimetsi', Igziabher ni-Noh abay merkeb kiserh azzezo.",
+          "meaningEn": "Because a lot of water was coming, God commanded Noah to build a big ark.",
           "pictureHint": "Noah beside timber and the frame of a big wooden ark, a soft cloud on the horizon, empty sky, no God"
         },
         {
@@ -144,14 +144,20 @@
           "pictureHint": "Calm water over highland hills, the wooden ark floating safely, no storm, no people"
         },
         {
-          "geez": "ዝናብ ምስ ደው በለ፡ ኖህ ንርግቢ ሰደዳ። ቘፅሊ ኣውሊዕ ሒዛ ተመለሰት።",
-          "latin": "Znab ms dew bele, Noh n-rgbi sededa. Qotsli awli' hiza temeleset.",
-          "meaningEn": "When the rain stopped, Noah sent the dove. She came back holding an olive leaf.",
+          "geez": "ዝናብ ምስ ደው በለ፡ ኖህ ቅድም ንኳዅ ሰደዶ። ኳዅ ግና ኣይተመለሰን።",
+          "latin": "Znab ms dew bele, Noh qdm n-kwakh sededo. Kwakh gna aytemelesen.",
+          "meaningEn": "When the rain stopped, Noah first sent the raven. But the raven did not come back.",
+          "pictureHint": "Noah at the ark window watching a black raven fly away over calm water, no dove, no olive leaf, no rainbow"
+        },
+        {
+          "geez": "ድሕሪኡ ንርግቢ ሰደዳ። ርግቢ ቘፅሊ ኣውሊዕ ሒዛ ናብ ኖህ ተመለሰት።",
+          "latin": "Dhr'u n-rgbi sededa. Rgbi qotsli awli' hiza nab Noh temeleset.",
+          "meaningEn": "Then he sent the dove. The dove came back to Noah holding an olive leaf.",
           "pictureHint": "Clear sky, Noah at the ark window, one dove arriving with a clear olive sprig, no rainbow"
         },
         {
-          "geez": "ኖህን ስድራቤቱን ናብ ነቒጣ ምድሪ ወፁ።",
-          "latin": "Nohn sdrabetun nab neqitta mdri wetsu.",
+          "geez": "ኖህን ስድራቤቱን ናብ ንቑጽ ምድሪ ወፁ።",
+          "latin": "Nohn sdrabetun nab nquts mdri wetsu.",
           "meaningEn": "Noah and his family went out onto dry land.",
           "pictureHint": "Noah, his wife, and two children stepping onto dry ochre land from the ark, clear sky, no rainbow"
         },

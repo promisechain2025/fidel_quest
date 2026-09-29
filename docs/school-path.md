@@ -128,12 +128,13 @@ what that page's line names.
 
 The second book is `መርከብ ኖህ` / Noah's Ark, a connected kid paraphrase
 of Genesis 6-9. People were doing evil. Noah was righteous and obeyed.
-God told him to build a big ark because water was coming. His family
+God commanded him to build a big ark because water was coming. His family
 built it and went in. The animals went in two by two. God shut the
 door and the rain came. The water covered the land, and the ark was
-safe. The dove came back with an olive leaf. They went out onto dry
-land, and God set a rainbow as his promise. ትመ15 spells Noah `ኖህ`,
-the ark `መርከብ`, righteous `ፃድቕ`, and the promise `ኪዳን`. The book is not
+safe. Noah sent the raven, then the dove came back with an olive leaf.
+They went out onto dry land, and God set a rainbow as his promise.
+ትመ15 spells Noah `ኖህ`, the ark `መርከብ`, righteous `ፃድቕ`, the raven
+`ኳዅ`, and the promise `ኪዳን`. The book is not
 free. It uses the ordinary band-1 progress gate and does not change the
 Creation unlock or the School Path unlocks.
 
