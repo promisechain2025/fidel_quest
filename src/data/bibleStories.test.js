@@ -37,9 +37,9 @@ describe('bible stories shelf', () => {
   ].join('\n')
 
   it('is the Creation book, separate from Story Path and from Amharic', () => {
-    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah'])
-    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
-    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
+    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses'])
+    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
+    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
     expect(STORIES.find((s) => s.id === 'creation').pack).toBe('am')
     expect(STORIES.find((s) => s.id === 'noah').pack).toBe('am')
     expect(entry.shelf).toBe('bible')
@@ -109,12 +109,13 @@ describe('bible stories shelf', () => {
     const shelves = storyShelves(ti)
     expect(shelves.map((s) => s.id)).toEqual(['path', 'bible'])
     expect(shelves[0].stories.every((s) => s.schoolPath && s.shelf !== 'bible')).toBe(true)
-    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah'])
+    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses'])
     expect(shelves[1].stories[0].unlocked).toBe(true)
     expect(shelves[1].stories[1].unlocked).toBe(false)
+    expect(shelves[1].stories[2].unlocked).toBe(false)
     const am = storyLibrary([], undefined, 'am')
     expect(storyShelves(am).map((s) => s.id)).toEqual(['library'])
-    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah')).toBe(false)
+    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses')).toBe(false)
     expect(am.length).toBe(STORIES.length)
   })
 })
@@ -211,5 +212,111 @@ describe('noah bible book', () => {
     const amNoah = STORIES.find((s) => s.id === 'noah')
     expect(amNoah.title.g).toBe('የኖኅ መርከብ')
     expect(storyUnlocked(amNoah, [])).toBe(false)
+  })
+})
+
+describe('moses bible book', () => {
+  const book = BIBLE_STORIES[2]
+  const entry = bibleStoryTimeEntries()[2]
+  const chapter1 = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
+  const chapter2 = FIDEL_FAMILIES.slice(0, 16).map((f) => f.id)
+  const blob = [book.titleTi, book.refrain.geez, book.question.geez, ...book.pages.map((p) => p.geez)].join('\n')
+
+  it('paraphrases Exodus 2 as one connected story', () => {
+    expect(book.id).toBe('bible-moses')
+    expect(book.titleTi).toBe('ሳጹን ሙሴ')
+    expect(book.titleEn).toBe('Baby Moses')
+    expect(book.free).toBe(false)
+    expect(book.band).toBe(2)
+    expect(book.refrain.geez).toBe('እግዚኣብሄር ነቲ ህፃን ሓለዎ።')
+    expect(book.refrain.meaningEn).toBe('God watched over the baby.')
+    expect(book.pages.map((p) => p.geez)).toEqual([
+      'ፈርኦን ንህዝቡ ነቶም ንእሽቶ ኣወዳት ክጎድእዎም ኣዘዘ።',
+      'እታ ኣደ ግና ንህፃና ሰለስተ ወርሒ ኣብ ቤት ዓቒባቶ።',
+      'ምሕብኡ ምስ ሰኣነት፡ ብሻምብቆ ሳጹን ሰርሐት።',
+      'ነቲ ህፃን ኣብቲ ሳጹን ኣእትያ፡ ኣብ ሰልሰላ ሩባ ኣንበረቶ።',
+      'ሓፍቱ ርሕቕ ኢላ ደው በለት። ነቲ ሳጹን ውን ትርኢ ነበረት።',
+      'ጓል ፈርኦን ናብ ሩባ ወረደት። ነቲ ሳጹን ኣብ ሰልሰላ ረኣየቶ።',
+      'እቲ ህፃን ምስ በኸየ፡ ጓል ፈርኦን ራህርሀትሉ።',
+      'ሓፍቱ ሞግዚት ክረኽበልኪ በለታ።',
+      'እታ ሞግዚት ናይቲ ህፃን ኣደ እያ። ሓፍቱ ናብ ጓል ፈርኦን ወሰደታ።',
+      'እታ ኣደ ነቲ ህፃን ኣጥበወቶ። እቲ ህፃን ድማ ዓብየ።',
+      'ጓል ፈርኦን ካብ ማይ ስለዝተረኽበ ሙሴ ኢላ ሴመቶ።',
+      'እግዚኣብሄር ነቲ ህፃን ሙሴ ሓለዎ። ሰላም ረኸበ።',
+    ])
+    expect(book.pages.map((p) => p.meaningEn)).toEqual([
+      'Pharaoh commanded his people to harm the little boys.',
+      'But the mother kept her baby safe at home for three months.',
+      'When she could no longer hide him, she made a papyrus basket.',
+      'She put the baby in the basket and set it among the reeds of the river.',
+      'His sister stood far away. She was watching the basket too.',
+      "Pharaoh's daughter went down to the river. She saw the basket in the reeds.",
+      "When the baby cried, Pharaoh's daughter felt pity for him.",
+      'His sister told her, "I will find a nurse for you."',
+      "The nurse was the baby's mother. His sister took her to Pharaoh's daughter.",
+      'The mother nursed the baby. And the baby grew.',
+      'Because he was found in the water, Pharaoh\'s daughter named him Moses.',
+      'God watched over baby Moses. He was safe.',
+    ])
+    expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('እግዚኣብሄር')).toBe(true)
+    expect(blob.includes('ሙሴ')).toBe(true)
+    expect(blob.includes('ፈርኦን')).toBe(true)
+    expect(blob.includes('\u12D6')).toBe(false)
+    expect(blob.includes('ሳጹን')).toBe(true)
+    expect(blob.includes('\u1341')).toBe(false)
+    expect(blob.includes('ሞግዚት')).toBe(true)
+    expect(blob.includes('\u1315')).toBe(false)
+    expect(blob.includes('ሩባ')).toBe(true)
+    expect(blob.includes('ሰልሰላ')).toBe(true)
+    expect(blob.includes('ሓፍቱ')).toBe(true)
+    expect(blob.includes('ጓል')).toBe(true)
+    expect(blob.includes('ኣዘዘ')).toBe(true)
+    expect(blob.includes('ኣዘዞ')).toBe(false)
+    expect(blob.includes('በሎ')).toBe(false)
+    expect(book.pages.length).toBe(12)
+    for (const page of book.pages) {
+      expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)
+      expect(page.latin && page.meaningEn && page.pictureHint).toBeTruthy()
+      expect(page.familyIds).toEqual(familiesOfGeez(page.geez))
+    }
+    expect(book.question.geez).toBe('እታ ኣደ ነቲ ህፃን ኣበይ ኣንበረቶ?')
+    expect(book.question.meaningEn).toBe('Where did the mother set the baby?')
+    expect(book.question.answers.filter((a) => a.ok)).toHaveLength(1)
+    expect(book.question.answers.find((a) => a.ok).pic).toBe('🧺')
+    expect(book.question.answers).toHaveLength(3)
+  })
+
+  it('sits behind the band-2 progress gate and leaves Noah and Amharic Moses as they are', () => {
+    expect(entry.free).toBe(false)
+    expect(entry.shelf).toBe('bible')
+    expect(entry.pack).toBe('ti')
+    expect(entry.band).toBe(2)
+    expect(entry.schoolPath).toBeUndefined()
+    expect(storyUnlocked(entry, [])).toBe(false)
+    expect(storyUnlocked(entry, chapter1)).toBe(false)
+    expect(storyUnlocked(entry, chapter2.slice(0, -1))).toBe(false)
+    expect(storyUnlocked(entry, chapter2)).toBe(true)
+    expect(storyMissingFamilies(entry, chapter1).length).toBeGreaterThan(0)
+    expect(storyMissingFamilies(entry, chapter2)).toEqual([])
+    expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
+    expect(bibleStoryTimeEntries()[1].band).toBe(1)
+    expect(storyUnlocked(bibleStoryTimeEntries()[1], chapter1)).toBe(true)
+    expect(entry.cover).toBe('/art/stories/bible-moses-cover.webp')
+    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    entry.pages.forEach((page, i) => {
+      const src = `/art/stories/bible-moses-${i + 1}.webp`
+      expect(page.scene.src).toBe(src)
+      expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
+      expect(BGS.has(page.scene.bg)).toBe(true)
+      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+    })
+    const amMoses = STORIES.find((s) => s.id === 'baby-moses')
+    expect(amMoses.title.g).toBe('ሕፃኑ ሙሴ')
+    expect(amMoses.band).toBe(2)
+    expect(amMoses.pack).toBe('am')
+    expect(storyUnlocked(amMoses, [])).toBe(false)
   })
 })

@@ -12,18 +12,29 @@
    connected lines. People do ክፋእ. Noah is ፃድቕ and obeys. God is not
    drawn. "They built" is ሰርሑ, so the line does not use ሔ.
 
+   Book 3, ሳጹን ሙሴ: a kid paraphrase of Exodus 1:22 and 2:1-10. Pharaoh
+   commands with ኣዘዘ. The basket is ሳጹን, the river ሩባ, the reeds
+   ሰልሰላ, the sister ሓፍቱ, the princess ጓል ፈርኦን, the nurse ሞግዚት,
+   the baby ህፃን, and the name ሙሴ. God is not drawn.
+
    ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
    ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
    ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent
    ሰደዶ. The dove is ርግቢ; he sent her ሰደዳ; she returned
    ተመለሰት holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ.
    The promise is ኪዳን (Genesis 9 ኪዳነይ). Rain keeps the pack word ዝናብ;
-   ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ.
+   ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ. Moses keeps
+   ሙሴ, the river ሩባ, and the sister ሓፍቱ. Yosief's line pass spells
+   Pharaoh ፈርኦን, the basket ሳጹን, and the nurse ሞግዚት, and Pharaoh's
+   order is ኣዘዘ. Kid lines keep ኣ, never አ. She saw the basket is
+   ረኣየቶ. He was named because he was found in the water, ስለዝተረኽበ.
 
    UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
    ordinary band-1 progress gate (the 8th family, the same gate as the
-   Amharic band-1 library). It does not change Creation, School Path, or
-   Amharic unlocks, and it is not a Journey story node.
+   Amharic band-1 library). Moses uses the next band, band 2 (the 16th
+   family). On the Tigrinya pack that family is ኘ, the last family of
+   School Path chapter 2. It does not change Creation, Noah, School
+   Path, or Amharic unlocks, and it is not a Journey story node.
    ========================================================================== */
 
 import raw from './bibleStories.json'
@@ -35,6 +46,10 @@ const NOAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', 
 const WIFE = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', blush: true }
 const CHILD = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
 const KIN = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
+const PHARAOH = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const MOTHER_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', blush: true }
+const SISTER = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short', blush: true }
+const PRINCESS_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', blush: true }
 
 function familyOfChar(ch) {
   for (const family of ETHIOPIC_SCRIPT.families) {
@@ -90,6 +105,23 @@ const ART = {
       painted('bible-noah', 12, { bg: 'day', items: [{ k: 'rainbow', x: 0.5, y: 0.42, s: 0.72 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.24 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.22 }, { k: 'ark', x: 0.78, y: 0.62, s: 0.24 }] }),
     ],
   },
+  'bible-moses': {
+    pics: ['👑', '🤱', '🧺', '🌊', '👧', '👸', '👶', '🗣️', '👩', '🍼', '👶', '💛'],
+    scenes: [
+      painted('bible-moses', 1, { bg: 'indoor', items: [{ ...PHARAOH, x: 0.62, foot: 0.76, s: 0.36 }, { ...KIN, x: 0.28, foot: 0.78, s: 0.28 }] }),
+      painted('bible-moses', 2, { bg: 'indoor', items: [{ ...MOTHER_M, x: 0.48, foot: 0.74, s: 0.36 }] }),
+      painted('bible-moses', 3, { bg: 'field', items: [{ ...MOTHER_M, x: 0.32, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 4, { bg: 'sea', items: [{ ...MOTHER_M, x: 0.24, foot: 0.78, s: 0.3 }, { k: 'basket', x: 0.62, y: 0.58, s: 0.3 }] }),
+      painted('bible-moses', 5, { bg: 'sea', items: [{ ...SISTER, x: 0.28, foot: 0.78, s: 0.28 }, { k: 'basket', x: 0.7, y: 0.6, s: 0.24 }] }),
+      painted('bible-moses', 6, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.3, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 7, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.32, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 8, { bg: 'sea', items: [{ ...SISTER, x: 0.28, foot: 0.78, s: 0.26 }, { ...PRINCESS_M, x: 0.5, foot: 0.76, s: 0.3 }, { k: 'basket', x: 0.74, y: 0.6, s: 0.22 }] }),
+      painted('bible-moses', 9, { bg: 'sea', items: [{ ...SISTER, x: 0.22, foot: 0.78, s: 0.24 }, { ...MOTHER_M, x: 0.42, foot: 0.76, s: 0.3 }, { ...PRINCESS_M, x: 0.68, foot: 0.76, s: 0.28 }] }),
+      painted('bible-moses', 10, { bg: 'indoor', items: [{ ...MOTHER_M, x: 0.48, foot: 0.74, s: 0.36 }] }),
+      painted('bible-moses', 11, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.42, foot: 0.74, s: 0.34 }] }),
+      painted('bible-moses', 12, { bg: 'sea', items: [{ ...MOTHER_M, x: 0.4, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.68, y: 0.6, s: 0.24 }] }),
+    ],
+  },
 }
 
 function freezePage(page) {
@@ -108,6 +140,7 @@ const stories = (raw.stories || []).map((story) => Object.freeze({
   titleTi: story.titleTi,
   latinTitle: story.latinTitle || '',
   free: !!story.free,
+  band: story.band || 1,
   refrain: story.refrain
     ? Object.freeze({
       ...story.refrain,
@@ -151,7 +184,7 @@ export function bibleStoryTimeEntries() {
       pack: 'ti',
       shelf: 'bible',
       free: story.free,
-      band: 1,
+      band: story.band || 1,
       title: { g: story.titleTi, lt: story.latinTitle, en: story.titleEn },
       refrain: story.refrain,
       cover: `/art/stories/${story.id}-cover.webp`,
