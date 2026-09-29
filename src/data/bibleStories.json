@@ -1,0 +1,87 @@
+{
+  "id": "bible-stories",
+  "label": "Bible Stories",
+  "packId": "ti",
+  "shelf": "bible",
+  "source": {
+    "book": "Original kid paraphrase of Genesis 1-2. Not a copyrighted Bible translation.",
+    "copyrightNote": "Short original Tigrinya lines and English glosses for young children. Do not paste a published translation.",
+    "shape": "Weekday refrain. Sunday is the first day. Friday is the sixth day, when the people are made. Saturday is the seventh-day rest. Tuesday, the third day, has two pages: land and sea, then grass and trees.",
+    "orthographyNote": "God's name is እግዚኣብሄር with ሄ, the spelling in ትመ15 (YouVersion Bible 2998). Trees follow that chapter's ኣእዋም. Grass keeps the pack word ሳዕሪ. Good stays ጽቡቕ, matching the rest of eGeez Tigrinya; ትመ15 writes ፅቡቕ.",
+    "unlockNote": "This first book is a free taste. It opens in Tigrinya Story Time before any School Path unit is finished, so a family can read it on day one and a reviewer can open it without grinding the alphabet. Later Bible books can name a gate. It is not a School Path story, it does not sit in that pack, and it does not change those unlocks.",
+    "artNote": "God is not drawn. Each painting shows the thing the line names, in highland Horn light. The rest page is a quiet finished world, not a picture of God."
+  },
+  "stories": [
+    {
+      "id": "bible-creation",
+      "titleEn": "In the Beginning",
+      "titleTi": "ኣብ መጀመርታ",
+      "latinTitle": "Ab mejemerta",
+      "free": true,
+      "refrain": {
+        "geez": "እግዚኣብሄር ፈጠረ።",
+        "latin": "Igziabher fetere.",
+        "meaningEn": "God made it."
+      },
+      "pages": [
+        {
+          "geez": "እግዚኣብሄር ብዕለት ሰንበት ብርሃን ፈጠረ።",
+          "latin": "Igziabher b-ilet senbet brhan fetere.",
+          "meaningEn": "On Sunday God made the light.",
+          "pictureHint": "Highland dawn, gold light breaking over dry ridges, no sun disk yet, no people"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ሰኑይ ሰማይ ፈጠረ።",
+          "latin": "Igziabher b-ilet senuy semay fetere.",
+          "meaningEn": "On Monday God made the sky.",
+          "pictureHint": "A vast highland blue sky, a few high clouds, only a thin escarpment"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ሰሉስ ምድሪን ባሕሪን ፈጠረ።",
+          "latin": "Igziabher b-ilet selus midrin bahrin fetere.",
+          "meaningEn": "On Tuesday God made the land and the sea.",
+          "pictureHint": "Ochre highland hills meeting a clear turquoise Red Sea, no people, no boats"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ሰሉስ ሳዕሪን ኣእዋምን ፈጠረ።",
+          "latin": "Igziabher b-ilet selus sarin aawamin fetere.",
+          "meaningEn": "On Tuesday God made the grass and the trees.",
+          "pictureHint": "Short highland grass, a baobab and acacias, plants only"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ረቡዕ ጸሓይን ወርሒን ፈጠረ።",
+          "latin": "Igziabher b-ilet rebu tsehayin werhin fetere.",
+          "meaningEn": "On Wednesday God made the sun and the moon.",
+          "pictureHint": "Highland sky with a large warm sun and a large silver moon"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ሓሙስ ኣዕዋፍን ዓሳን ፈጠረ።",
+          "latin": "Igziabher b-ilet hamus aawafin asan fetere.",
+          "meaningEn": "On Thursday God made the birds and the fish.",
+          "pictureHint": "Horn birds in a highland sky and large friendly fish in clear sea water"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ዓርቢ ሰብኣይን ሰበይቲን ፈጠረ።",
+          "latin": "Igziabher b-ilet arbi sebayin sebeytin fetere.",
+          "meaningEn": "On Friday God made a man and a woman.",
+          "pictureHint": "A man and a woman with deep brown skin, modest long cotton clothes, standing by a baobab"
+        },
+        {
+          "geez": "እግዚኣብሄር ብዕለት ቀዳም ዓረፈ። ኩሉ ጽቡቕ።",
+          "latin": "Igziabher b-ilet qedam arefe. Kullu tsbuq.",
+          "meaningEn": "On Saturday God rested. Everything was good.",
+          "pictureHint": "Quiet highland evening, the same two people resting under a baobab, a goat lying down, sea still"
+        }
+      ],
+      "question": {
+        "geez": "እግዚኣብሄር ብዓርቢ እንታይ ፈጠረ?",
+        "meaningEn": "What did God make on Friday?",
+        "answers": [
+          { "pic": "🧒", "ok": true, "alt": "people" },
+          { "pic": "🐟", "ok": false, "alt": "a fish" },
+          { "pic": "☀️", "ok": false, "alt": "the sun" }
+        ]
+      }
+    }
+  ]
+}
