@@ -340,7 +340,7 @@ describe('jonah bible book', () => {
     expect(book.refrain.meaningEn).toBe('Listen to God the first time.')
     expect(book.pages.map((p) => p.geez)).toEqual([
       'እግዚኣብሄር ንዮናስ ናብ ነነዌ ክኸይድ ኣዘዞ።',
-      'ዮናስ ግና ካብ እግዚኣብሄር ሃደመ። ናብ ተርሴስ እትኸይድ መርከብ ኣተወ።',
+      'ዮናስ ግና ሃደመ። ናብ ተርሴስ መርከብ ኣተወ።',
       'እታ መርከብ ኣብ ባሕሪ ከላ፡ ዓባይ ማዕበል መጸ።',
       'እቶም መርከበኛታት ነቲ ማዕበል ረኣዩ። ፈርሑ።',
       'ዮናስ ንመርከበኛታት ናብ ባሕሪ ደርብዩኒ በሎም።',
@@ -354,7 +354,7 @@ describe('jonah bible book', () => {
     ])
     expect(book.pages.map((p) => p.meaningEn)).toEqual([
       'God commanded Jonah to go to Nineveh.',
-      'But Jonah ran away from God. He boarded a ship going to Tarshish.',
+      'But Jonah ran away. He boarded a ship to Tarshish.',
       'While the ship was on the sea, a big storm came.',
       'The sailors saw the storm. They were afraid.',
       'Jonah told the sailors, "Throw me into the sea."',
