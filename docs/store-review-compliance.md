@@ -109,13 +109,15 @@ metadata / build-flags / console forms.**
 - [ ] **Unset** `VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`,
       `VITE_BUY_URL`, `VITE_ERROR_REPORT_URL` (provably no data / no external
       purchase link).
-- [ ] **Set** `VITE_REVENUECAT_APPLE_KEY` / `VITE_REVENUECAT_GOOGLE_KEY` and
-      create the Family Pack IAP in both consoles so the reviewer can test it.
+- [ ] **Paid upfront (v1.3.0):** do **not** set `VITE_STORE_IAP`. RevenueCat
+      keys may stay in the Xcode Cloud env; without `VITE_STORE_IAP=true` they
+      are ignored, so the build has no IAP, no trial, and no Buy/Restore UI.
+      Set the **$12.99** price in App Store Connect (Pricing and Availability).
 - [ ] Mic: build with `VITE_FAMILY_VOICE_RECORD=false`, **or** ship the
       recorder and add the iOS `NSMicrophoneUsageDescription` + Android
       `RECORD_AUDIO` declaration.
-- [ ] Version bumped (currently **1.2.0**, iOS build **5** / Android
-      versionCode **5**).
+- [ ] Version bumped (currently **1.3.0**, iOS build **6** / Android
+      versionCode **6**).
 - [ ] Apple **App Privacy** = *Data Not Collected*; Google **Data safety** =
       *no data collected/shared*.
 - [ ] Host the **privacy policy** (template in `APP-STORE.md §8`); set

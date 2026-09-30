@@ -22,7 +22,7 @@ const NOT_OWNED = { customerInfo: { entitlements: { active: {} } } }
 const FAMILY_PKG = { identifier: 'family', product: { identifier: 'family_pack', priceString: '$4.99' }, presentedOfferingContext: { offeringIdentifier: 'default' } }
 const APP_PKG = { identifier: 'lifetime', product: { identifier: 'full_app', priceString: '$12.99' }, presentedOfferingContext: { offeringIdentifier: 'default' } }
 
-async function fresh(env = { VITE_REVENUECAT_APPLE_KEY: 'appl_test' }) {
+async function fresh(env = { VITE_STORE_IAP: 'true', VITE_REVENUECAT_APPLE_KEY: 'appl_test' }) {
   vi.resetModules()
   vi.stubGlobal('__viteEnvOverride', null)
   for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v)
@@ -42,12 +42,23 @@ describe('iap wrapper (dormant-until-keys store purchases)', () => {
     let iap = await fresh()
     expect(iap.iapAvailable()).toBe(false)
     mockNative = true
-    iap = await fresh({ VITE_REVENUECAT_APPLE_KEY: '' })
+    iap = await fresh({ VITE_STORE_IAP: 'true', VITE_REVENUECAT_APPLE_KEY: '' })
     expect(iap.iapAvailable()).toBe(false)
     expect(await iap.buyFamilyPack()).toBe('unavailable')
     expect(await iap.restoreFamilyPack()).toBe('unavailable')
     expect(await iap.familyPackStorePrice()).toBe('')
     expect(purchasesMock.configure).not.toHaveBeenCalled()
+  })
+
+  it('stays dormant in the paid-upfront build even with a RevenueCat key set', async () => {
+    const iap = await fresh({ VITE_STORE_IAP: '', VITE_REVENUECAT_APPLE_KEY: 'appl_live' })
+    expect(iap.iapAvailable()).toBe(false)
+    await iap.initIap()
+    expect(await iap.buyFullApp()).toBe('unavailable')
+    expect(await iap.restorePurchasesAll()).toBe('unavailable')
+    expect(purchasesMock.configure).not.toHaveBeenCalled()
+    const { licenseState } = await import('./license')
+    expect(licenseState('2026-12-31').phase).toBe('licensed')
   })
 
   it('initIap unlocks silently when the entitlement is already owned', async () => {
