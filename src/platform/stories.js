@@ -19,11 +19,16 @@
    reader UI and read-count persistence live elsewhere (fq.stories.v1 is in
    the progress registry).
 
-   CONTENT NOTE: the starter library is Amharic. Tigrinya stories are a TODO
-   gated on a native speaker; the engine is pack-aware (filters by s.pack).
+   CONTENT NOTE: the starter library is Amharic (biblical Story Time).
+   Tigrinya School Path stories live in src/data/schoolPathGr1Stories.js.
+   Tigrinya Bible stories live in src/data/bibleStories.js, on their own
+   shelf. Both join the library only when the pack is `ti`. They are not
+   mixed into this array, so the Amharic tracks stay as they are.
    ========================================================================== */
 
 import { FIDEL_FAMILIES, getActivePackId } from './ethiopic'
+import { schoolPathStoryTimeEntries } from '../data/schoolPathGr1Stories'
+import { bibleStoryTimeEntries } from '../data/bibleStories'
 
 /* Ethiopic punctuation, quotes + whitespace a page may carry around its words. */
 const STRIP = /[፡-፨!?,.\s"'«»“”‘’]+/g
@@ -39,7 +44,10 @@ const CHAPTER_SIZE = 8
  * child should never be offered a door that opens on an empty room.
  */
 export function packHasStories(packId = getActivePackId()) {
-  return STORIES.some((s) => s.pack === packId)
+  if (STORIES.some((s) => s.pack === packId)) return true
+  // Tigrinya also gets the School Path stories and the Bible shelf
+  // (appended in storyLibrary), so its Story Time is never empty.
+  return packId === 'ti' && schoolPathStoryTimeEntries().length + bibleStoryTimeEntries().length > 0
 }
 
 export function storyWords(text) {
@@ -61,17 +69,24 @@ export function storyStage(story, families = FIDEL_FAMILIES) {
 }
 
 /** A story is unlocked once the child has learned its gate family - i.e.
-    finished the chapter the story's band belongs to. */
+    finished the chapter the story's band belongs to. School Path stories
+    instead wait until every family through unlockAfterUnitId is learned. */
 export function storyUnlocked(story, learnedIds, families = FIDEL_FAMILIES) {
+  // A free taste (the first Bible book) opens before any family is learned.
+  if (story.free) return true
   const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds)
+  if (story.gateFamilyIds?.length) return story.gateFamilyIds.every((id) => learned.has(id))
   const gate = families[storyStage(story, families)]?.id
   return gate ? learned.has(gate) : true
 }
 
 /** Families the child still needs to reach a locked story's band, in
-    journey order (the "learn these to open" hint). */
+    journey order (the "learn these to open" hint). School Path stories
+    list the School Path families still missing, in unit order. */
 export function storyMissingFamilies(story, learnedIds, families = FIDEL_FAMILIES) {
+  if (story.free) return []
   const learned = learnedIds instanceof Set ? learnedIds : new Set(learnedIds)
+  if (story.gateFamilyIds?.length) return story.gateFamilyIds.filter((id) => !learned.has(id))
   const idx = storyStage(story, families)
   return families.slice(0, idx + 1).filter((f) => !learned.has(f.id)).map((f) => f.id)
 }
@@ -81,13 +96,31 @@ export function storyMissingFamilies(story, learnedIds, families = FIDEL_FAMILIE
 export function storyLibrary(learnedIds, stories = STORIES, packId = null) {
   // Stories are written in a LANGUAGE, not just a script: a Tigrinya
   // learner must not be handed Amharic sentences as "reading practice".
-  const inPack = packId ? stories.filter((s) => s.pack === packId) : stories
+  // School Path stories and the Bible shelf are appended only for `ti`.
+  let inPack = packId ? stories.filter((s) => s.pack === packId) : stories.slice()
+  if (packId === 'ti') {
+    const extra = [...schoolPathStoryTimeEntries(), ...bibleStoryTimeEntries()]
+      .filter((s) => !inPack.some((x) => x.id === s.id))
+    inPack = [...inPack, ...extra]
+  }
   return inPack
     .map((s) => {
       const unlocked = storyUnlocked(s, learnedIds)
       return { ...s, unlocked, stage: storyStage(s), missing: unlocked ? [] : storyMissingFamilies(s, learnedIds) }
     })
     .sort((a, b) => a.stage - b.stage || a.id.localeCompare(b.id))
+}
+
+/** Shelves for the library. One list when every story is the same shelf
+    (Amharic). Tigrinya keeps Story Path and Bible Stories apart. */
+export function storyShelves(library) {
+  const bible = library.filter((s) => s.shelf === 'bible')
+  if (!bible.length) return [{ id: 'library', stories: library }]
+  const path = library.filter((s) => s.shelf !== 'bible')
+  const shelves = []
+  if (path.length) shelves.push({ id: 'path', stories: path })
+  shelves.push({ id: 'bible', stories: bible })
+  return shelves
 }
 
 /* ── word audio lookup ────────────────────────────────────────────────── */

@@ -1,3 +1,4 @@
+import './devDrillPreview.js'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -8,7 +9,7 @@ import { applyUrlUnlock } from './utils/devUnlock'
 import { initVoice } from './platform/voicePack'
 import { warmAudioCache } from './platform/audioEngine'
 import { initReminder } from './platform/notify'
-import { t } from './platform/i18n'
+import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
 
 // Kick the bundled Ethiopic font loading immediately. The 3D games and the
@@ -31,6 +32,9 @@ if (typeof document !== 'undefined' && document.fonts?.load) {
 // `.dark` in lockstep so Classic mode's dark: styles match the resolved theme
 // rather than the OS. Doing it here, ahead of render, avoids a theme flash.
 initTheme()
+// Before first paint: html lang="am" used to invite Chrome to translate the
+// fidel. The lock keeps translate off while lang stays the UI language.
+lockDocumentTranslate()
 
 // Testing: ?unlock opens all content, ?reset wipes it. No-op without the param.
 applyUrlUnlock()

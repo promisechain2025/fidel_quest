@@ -16,28 +16,35 @@ import { ChevronLeft } from 'lucide-react'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
-import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { FidelCard } from './FidelCard'
 import { initMatch, matchTransition, levelForCount, Phase, MatchEvent } from '../memoryCore'
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const glyphOf = (k) => formOf(k)?.char || ''
 
+// A memory match is only a game with a few DIFFERENT letters to pair - one
+// learned letter would build a nonsensical two-identical-cards board. Below
+// this many distinct letters the child is gently sent back to learn more.
+const MIN_DISTINCT = 3
+
 export default function FidelMatch({ soundOn, onBack, pool = [] }) {
-  const keys = useMemo(() => (pool.length ? [...new Set(pool)] : ['ha-1']), [pool])
+  const keys = useMemo(() => [...new Set(pool)], [pool])
+  const enough = keys.length >= MIN_DISTINCT
   const level = levelForCount(keys.length)
   const startRef = useRef(Math.floor(Math.random() * 997) + 1) // cosmetic seed
   const [round, setRound] = useState(0)
-  const [ctx, setCtx] = useState(() => initMatch(level, startRef.current, keys))
+  const [ctx, setCtx] = useState(() => initMatch(level, startRef.current, keys.length ? keys : ['ha-1']))
   const reduce = useReducedMotion()
   const resolveTimer = useRef(null)
 
-  // New round -> fresh board, and a one-time spoken hint.
+  // New round -> fresh board. Flipping a card voices its letter (the whole
+  // point of a memory game), so no extra spoken prompt on top.
   useEffect(() => {
-    setCtx(initMatch(level, (round + 1) * 131 + startRef.current, keys))
-    sayPrompt('matchFind', soundOn)
+    if (enough) setCtx(initMatch(level, (round + 1) * 131 + startRef.current, keys))
     return () => { if (resolveTimer.current) clearTimeout(resolveTimer.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round])
@@ -84,9 +91,18 @@ export default function FidelMatch({ soundOn, onBack, pool = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-5">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 100 : 72} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={100} mood="happy" pose="cheer" /> : <KokebSvg size={72} />}
 
-        {!won ? (
+        {!enough ? (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <p className="max-w-xs text-base font-black" style={{ color: 'var(--muted)' }}>
+              {t('matchNeedMore', 'Learn a few more letters, then come back to match them!')}
+            </p>
+            <button type="button" onClick={onBack} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', color: '#fff', '--chunk-depth': '4px' }}>
+              {t('orderDone', 'Done')}
+            </button>
+          </div>
+        ) : !won ? (
           <div
             className="grid justify-center gap-2.5"
             style={{ gridTemplateColumns: `repeat(${cols}, ${cardW}px)` }}

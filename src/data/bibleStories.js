@@ -1,0 +1,237 @@
+/* ============================================================================
+   BIBLE STORIES — a separate Tigrinya shelf, not the Story Path
+   ----------------------------------------------------------------------------
+   The School Path pack (schoolPathGr1Stories) is the everyday diaspora
+   shelf. This module is the Bible shelf. Amharic Story Time is untouched.
+
+   Book 1, ኣብ መጀመርታ: a kid paraphrase of the beginning (Genesis 1-2).
+   Each line names the weekday. Sunday starts the work, Friday is the
+   people, Saturday is the rest. Land and plants share Tuesday.
+
+   Book 2, መርከብ ኖህ: a kid paraphrase of Noah (Genesis 6-9). Twelve
+   connected lines. People do ክፋእ. Noah is ፃድቕ and obeys. God is not
+   drawn. "They built" is ሰርሑ, so the line does not use ሔ.
+
+   Book 3, ሳጹን ሙሴ: a kid paraphrase of Exodus 1:22 and 2:1-10. Pharaoh
+   commands with ኣዘዘ. The basket is ሳጹን, the river ሩባ, the reeds
+   ሰልሰላ, the sister ሓፍቱ, the princess ጓል ፈርኦን, the nurse ሞግዚት,
+   the baby ህፃን, and the name ሙሴ. God is not drawn.
+
+   Book 4, ዮናስን ዓሳን: a kid paraphrase of Jonah 1-3. God commands
+   with ኣዘዞ. Jonah runs to ተርሴስ. The storm stops as ማዕበል ደው በለ.
+   A gentle ዓሳ swallows him. Dry land is ንቑጽ ምድሪ. Nineveh is ነነዌ.
+   God is not drawn.
+
+   ORTHOGRAPHY: ትመ15 spells God እግዚኣብሄር with ሄ, not ሔ, and spells Noah
+   ኖህ (ህ, not ሕ). Righteous is ፃድቕ. The ark is መርከብ. God commanded
+   ኣዘዞ. He shut it ዓፀዎ. They went out ወፁ. The raven is ኳዅ, sent
+   ሰደዶ. The dove is ርግቢ; he sent her ሰደዳ; she returned
+   ተመለሰት holding ቘፅሊ ኣውሊዕ. Dry land is ንቑጽ. The bow is ቀስቲ.
+   The promise is ኪዳን (Genesis 9 ኪዳነይ). Rain keeps the pack word ዝናብ;
+   ትመ15 writes ዝናም. Creation's "good" stays ጽቡቕ. Moses keeps
+   ሙሴ, the river ሩባ, and the sister ሓፍቱ. Yosief's line pass spells
+   Pharaoh ፈርኦን, the basket ሳጹን, and the nurse ሞግዚት, and Pharaoh's
+   order is ኣዘዘ. Kid lines keep ኣ, never አ. She saw the basket is
+   ረኣየቶ. He was named because he was found in the water, ስለዝተረኽበ.
+   Jonah keeps ትመ15 ዮናስ, ነነዌ, ተርሴስ, and ዓሳ. Dry land stays ንቑጽ
+   ምድሪ. The fish is ውሕጦ. Mercy is ምሕረት and ይቕረ በሎም.
+
+   UNLOCK: the Creation book is `free: true`. Noah is not. It uses the
+   ordinary band-1 progress gate (the 8th family, the same gate as the
+   Amharic band-1 library). Moses uses the next band, band 2 (the 16th
+   family). On the Tigrinya pack that family is ኘ, the last family of
+   School Path chapter 2. Jonah uses the next band, band 3 (the 24th
+   family). On the Tigrinya pack that family is የ. It does not change
+   Creation, Noah, Moses, School Path, or Amharic unlocks, and it is
+   not a Journey story node.
+   ========================================================================== */
+
+import raw from './bibleStories.json'
+import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
+
+const MAN = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
+const WOMAN = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8e3d45', blush: true }
+const NOAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const WIFE = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', blush: true }
+const CHILD = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
+const KIN = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
+const PHARAOH = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const MOTHER_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', blush: true }
+const SISTER = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short', blush: true }
+const PRINCESS_M = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', blush: true }
+const JONAH = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#c4b496', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+const SAILOR = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#8a9a78', hairStyle: 'short' }
+const SAILOR2 = { k: 'person', skin: '#7a4030', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
+const KING_N = { k: 'person', skin: '#5c3318', hair: '#1a100c', cloth: '#a89060', hairStyle: 'short', beard: true, beardColor: '#3a2a22' }
+
+function familyOfChar(ch) {
+  for (const family of ETHIOPIC_SCRIPT.families) {
+    if (family.chars.includes(ch) || family.labial === ch) return family.id
+  }
+  return null
+}
+
+function familiesOfGeez(geez) {
+  const ids = []
+  for (const ch of geez) {
+    const id = familyOfChar(ch)
+    if (!id || ids.includes(id)) continue
+    ids.push(id)
+  }
+  return ids
+}
+
+/* Stamp scenes are the fallback if a painting file does not load.
+   scene.src is the Meet-style painting. */
+function painted(id, n, scene) {
+  return { ...scene, src: `/art/stories/${id}-${n}.webp` }
+}
+
+const ART = {
+  'bible-creation': {
+    pics: ['✨', '☀️', '🌊', '🌳', '🌙', '🐦', '🧒', '🐑'],
+    scenes: [
+      painted('bible-creation', 1, { bg: 'night', items: [{ k: 'rays', x: 0.62, y: 0.4, s: 0.34 }] }),
+      painted('bible-creation', 2, { bg: 'day', items: [] }),
+      painted('bible-creation', 3, { bg: 'sea', items: [] }),
+      painted('bible-creation', 4, { bg: 'garden', items: [{ k: 'fruitTree', x: 0.58, foot: 0.74, s: 0.42 }] }),
+      painted('bible-creation', 5, { bg: 'day', items: [{ k: 'moon', x: 0.72, y: 0.28, s: 0.18 }] }),
+      painted('bible-creation', 6, { bg: 'sea', items: [{ k: 'bird', x: 0.3, y: 0.28, s: 0.16 }, { k: 'bigFish', x: 0.62, y: 0.66, s: 0.32 }] }),
+      painted('bible-creation', 7, { bg: 'garden', items: [{ ...MAN, x: 0.38, foot: 0.74, s: 0.34 }, { ...WOMAN, x: 0.64, foot: 0.74, s: 0.32 }] }),
+      painted('bible-creation', 8, { bg: 'garden', items: [{ ...MAN, x: 0.36, foot: 0.76, s: 0.3 }, { ...WOMAN, x: 0.58, foot: 0.76, s: 0.28 }] }),
+    ],
+  },
+  'bible-noah': {
+    pics: ['🚶', '🙏', '🪵', '👨‍👩‍👧', '🚪', '🦁', '🌧️', '🌊', '🐦', '🕊️', '👨‍👩‍👧', '🌈'],
+    scenes: [
+      painted('bible-noah', 1, { bg: 'field', items: [{ ...KIN, x: 0.3, foot: 0.76, s: 0.32 }, { ...KIN, x: 0.55, foot: 0.76, s: 0.3, cloth: '#c4b496' }] }),
+      painted('bible-noah', 2, { bg: 'field', items: [{ ...NOAH, x: 0.48, foot: 0.74, s: 0.36 }] }),
+      painted('bible-noah', 3, { bg: 'field', items: [{ ...NOAH, x: 0.3, foot: 0.76, s: 0.32 }, { k: 'ark', x: 0.68, y: 0.5, s: 0.4 }] }),
+      painted('bible-noah', 4, { bg: 'field', items: [{ ...NOAH, x: 0.22, foot: 0.76, s: 0.3 }, { ...WIFE, x: 0.4, foot: 0.76, s: 0.28 }, { ...CHILD, x: 0.56, foot: 0.78, s: 0.2 }, { k: 'ark', x: 0.78, y: 0.5, s: 0.34 }] }),
+      painted('bible-noah', 5, { bg: 'field', items: [{ k: 'ark', x: 0.72, y: 0.5, s: 0.36 }, { ...NOAH, x: 0.28, foot: 0.76, s: 0.28 }, { ...WIFE, x: 0.42, foot: 0.76, s: 0.26 }, { ...CHILD, x: 0.54, foot: 0.78, s: 0.18 }] }),
+      painted('bible-noah', 6, { bg: 'field', items: [{ k: 'ark', x: 0.78, y: 0.5, s: 0.32 }, { k: 'lion', x: 0.18, foot: 0.76, s: 0.22 }, { k: 'lion', x: 0.34, foot: 0.76, s: 0.2 }, { k: 'bird', x: 0.5, y: 0.28, s: 0.14 }] }),
+      painted('bible-noah', 7, { bg: 'sea', items: [{ k: 'ark', x: 0.5, y: 0.48, s: 0.44 }] }),
+      painted('bible-noah', 8, { bg: 'sea', items: [{ k: 'ark', x: 0.55, y: 0.46, s: 0.36 }] }),
+      painted('bible-noah', 9, { bg: 'sea', items: [{ ...NOAH, x: 0.62, foot: 0.78, s: 0.28 }, { k: 'bird', x: 0.32, y: 0.3, s: 0.16 }] }),
+      painted('bible-noah', 10, { bg: 'day', items: [{ ...NOAH, x: 0.62, foot: 0.78, s: 0.28 }, { k: 'bird', x: 0.38, y: 0.34, s: 0.18 }] }),
+      painted('bible-noah', 11, { bg: 'field', items: [{ k: 'ark', x: 0.78, y: 0.55, s: 0.28 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.26 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.24 }, { ...CHILD, x: 0.58, foot: 0.82, s: 0.16 }] }),
+      painted('bible-noah', 12, { bg: 'day', items: [{ k: 'rainbow', x: 0.5, y: 0.42, s: 0.72 }, { ...NOAH, x: 0.28, foot: 0.8, s: 0.24 }, { ...WIFE, x: 0.44, foot: 0.8, s: 0.22 }, { k: 'ark', x: 0.78, y: 0.62, s: 0.24 }] }),
+    ],
+  },
+  'bible-moses': {
+    pics: ['👑', '🤱', '🧺', '🌊', '👧', '👸', '👶', '🗣️', '👩', '🍼', '👶', '💛'],
+    scenes: [
+      painted('bible-moses', 1, { bg: 'indoor', items: [{ ...PHARAOH, x: 0.62, foot: 0.76, s: 0.36 }, { ...KIN, x: 0.28, foot: 0.78, s: 0.28 }] }),
+      painted('bible-moses', 2, { bg: 'indoor', items: [{ ...MOTHER_M, x: 0.48, foot: 0.74, s: 0.36 }] }),
+      painted('bible-moses', 3, { bg: 'field', items: [{ ...MOTHER_M, x: 0.32, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 4, { bg: 'sea', items: [{ ...MOTHER_M, x: 0.24, foot: 0.78, s: 0.3 }, { k: 'basket', x: 0.62, y: 0.58, s: 0.3 }] }),
+      painted('bible-moses', 5, { bg: 'sea', items: [{ ...SISTER, x: 0.28, foot: 0.78, s: 0.28 }, { k: 'basket', x: 0.7, y: 0.6, s: 0.24 }] }),
+      painted('bible-moses', 6, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.3, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 7, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.32, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.66, y: 0.58, s: 0.28 }] }),
+      painted('bible-moses', 8, { bg: 'sea', items: [{ ...SISTER, x: 0.28, foot: 0.78, s: 0.26 }, { ...PRINCESS_M, x: 0.5, foot: 0.76, s: 0.3 }, { k: 'basket', x: 0.74, y: 0.6, s: 0.22 }] }),
+      painted('bible-moses', 9, { bg: 'sea', items: [{ ...SISTER, x: 0.22, foot: 0.78, s: 0.24 }, { ...MOTHER_M, x: 0.42, foot: 0.76, s: 0.3 }, { ...PRINCESS_M, x: 0.68, foot: 0.76, s: 0.28 }] }),
+      painted('bible-moses', 10, { bg: 'indoor', items: [{ ...MOTHER_M, x: 0.48, foot: 0.74, s: 0.36 }] }),
+      painted('bible-moses', 11, { bg: 'sea', items: [{ ...PRINCESS_M, x: 0.42, foot: 0.74, s: 0.34 }] }),
+      painted('bible-moses', 12, { bg: 'sea', items: [{ ...MOTHER_M, x: 0.4, foot: 0.76, s: 0.32 }, { k: 'basket', x: 0.68, y: 0.6, s: 0.24 }] }),
+    ],
+  },
+  'bible-jonah': {
+    pics: ['🗣️', '🚢', '🌊', '😨', '🗣️', '🌊', '🐟', '🙏', '🌾', '🚶', '🙇', '💛'],
+    scenes: [
+      painted('bible-jonah', 1, { bg: 'field', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.34 }] }),
+      painted('bible-jonah', 2, { bg: 'sea', items: [{ ...JONAH, x: 0.28, foot: 0.78, s: 0.3 }, { k: 'ark', x: 0.7, y: 0.52, s: 0.36 }] }),
+      painted('bible-jonah', 3, { bg: 'sea', items: [{ k: 'ark', x: 0.5, y: 0.48, s: 0.42 }] }),
+      painted('bible-jonah', 4, { bg: 'sea', items: [{ ...SAILOR, x: 0.28, foot: 0.78, s: 0.28 }, { ...SAILOR2, x: 0.48, foot: 0.78, s: 0.26 }, { k: 'ark', x: 0.78, y: 0.55, s: 0.28 }] }),
+      painted('bible-jonah', 5, { bg: 'sea', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.32 }, { ...SAILOR, x: 0.58, foot: 0.78, s: 0.28 }, { ...SAILOR2, x: 0.76, foot: 0.78, s: 0.24 }] }),
+      painted('bible-jonah', 6, { bg: 'sea', items: [{ ...JONAH, x: 0.28, foot: 0.82, s: 0.28 }, { k: 'ark', x: 0.7, y: 0.5, s: 0.32 }] }),
+      painted('bible-jonah', 7, { bg: 'sea', items: [{ k: 'bigFish', x: 0.58, y: 0.6, s: 0.46 }, { ...JONAH, x: 0.22, foot: 0.8, s: 0.24 }] }),
+      painted('bible-jonah', 8, { bg: 'night', items: [{ ...JONAH, x: 0.5, foot: 0.74, s: 0.34 }] }),
+      painted('bible-jonah', 9, { bg: 'field', items: [{ k: 'bigFish', x: 0.72, y: 0.62, s: 0.36 }, { ...JONAH, x: 0.28, foot: 0.8, s: 0.28 }] }),
+      painted('bible-jonah', 10, { bg: 'field', items: [{ ...JONAH, x: 0.32, foot: 0.76, s: 0.32 }] }),
+      painted('bible-jonah', 11, { bg: 'field', items: [{ ...JONAH, x: 0.22, foot: 0.76, s: 0.28 }, { ...KING_N, x: 0.48, foot: 0.74, s: 0.34 }, { ...SAILOR, x: 0.72, foot: 0.78, s: 0.24 }] }),
+      painted('bible-jonah', 12, { bg: 'day', items: [{ ...JONAH, x: 0.28, foot: 0.78, s: 0.26 }, { ...KING_N, x: 0.5, foot: 0.76, s: 0.3 }, { ...SAILOR2, x: 0.74, foot: 0.78, s: 0.24 }] }),
+    ],
+  },
+}
+
+function freezePage(page) {
+  return Object.freeze({
+    geez: page.geez,
+    latin: page.latin,
+    meaningEn: page.meaningEn,
+    pictureHint: page.pictureHint,
+    familyIds: Object.freeze(familiesOfGeez(page.geez)),
+  })
+}
+
+const stories = (raw.stories || []).map((story) => Object.freeze({
+  id: story.id,
+  titleEn: story.titleEn,
+  titleTi: story.titleTi,
+  latinTitle: story.latinTitle || '',
+  free: !!story.free,
+  band: story.band || 1,
+  refrain: story.refrain
+    ? Object.freeze({
+      ...story.refrain,
+      familyIds: Object.freeze(familiesOfGeez(story.refrain.geez)),
+    })
+    : null,
+  question: story.question ? Object.freeze({
+    geez: story.question.geez,
+    meaningEn: story.question.meaningEn,
+    answers: Object.freeze((story.question.answers || []).map((a) => Object.freeze({ ...a }))),
+  }) : null,
+  pages: Object.freeze((story.pages || []).map(freezePage)),
+}))
+
+export const BIBLE_SHELF = Object.freeze({
+  id: 'bible',
+  titleTi: 'መጽሓፍ ቅዱስ',
+  titleEn: 'Bible Stories',
+})
+
+export const BIBLE_STORIES_PACK = Object.freeze({
+  id: raw.id,
+  label: raw.label,
+  packId: raw.packId,
+  shelf: raw.shelf,
+  source: raw.source,
+  stories,
+})
+
+export const BIBLE_STORIES = BIBLE_STORIES_PACK.stories
+
+/**
+ * Story Time shape for the Tigrinya Bible shelf. School Path stories stay
+ * in schoolPathGr1Stories.js. Amharic biblical tracks stay in platform/stories.js.
+ */
+export function bibleStoryTimeEntries() {
+  return BIBLE_STORIES.map((story) => {
+    const art = ART[story.id] || { pics: [], scenes: [] }
+    return {
+      id: story.id,
+      pack: 'ti',
+      shelf: 'bible',
+      free: story.free,
+      band: story.band || 1,
+      title: { g: story.titleTi, lt: story.latinTitle, en: story.titleEn },
+      refrain: story.refrain,
+      cover: `/art/stories/${story.id}-cover.webp`,
+      pages: story.pages.map((page, i) => ({
+        g: page.geez,
+        lt: page.latin,
+        en: page.meaningEn,
+        pic: art.pics[i] || '📖',
+        pictureHint: page.pictureHint,
+        familyIds: page.familyIds,
+        scene: art.scenes[i] || { bg: 'day', items: [] },
+      })),
+      q: story.question ? {
+        g: story.question.geez,
+        en: story.question.meaningEn,
+        a: story.question.answers.map((a) => ({ pic: a.pic, ok: !!a.ok, alt: a.alt })),
+      } : null,
+    }
+  })
+}

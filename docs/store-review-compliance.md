@@ -46,6 +46,14 @@ metadata / build-flags / console forms.**
 > the IAP rows stay N/A for a keyless build and become live the moment a key and
 > a `full_app` product exist.
 >
+> **Changed again for 1.3.0 (September 2026): PAID UPFRONT, $12.99.** The 1.2
+> trial / daily-window model is switched OFF: `.env` no longer sets
+> `VITE_MONETIZE`, `MONETIZE` is forced false in native builds (even if a CI env
+> sets it), and store IAP needs an explicit `VITE_STORE_IAP=true`. Every build is
+> fully unlocked - no trial, no daily window, no paywall, no Buy/Restore/Family
+> Pack purchase UI. The IAP rows (2.1(b), 2.3.2, 3.1.1 trial) are N/A again.
+> The notes below on the trial and daily window describe the dormant 1.2 flow.
+>
 > **The daily window.** Once the trial ends, one tap opens the whole app for
 > `DAILY_PASS_MINUTES` (5) per calendar day, forever. It is deliberately the one
 > control **outside** the parental gate in SupportAsk: it is not a purchase, it
@@ -138,13 +146,15 @@ until you do.
 - [ ] **Unset** `VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`,
       `VITE_BUY_URL`, `VITE_ERROR_REPORT_URL` (provably no data / no external
       purchase link).
-- [ ] **Set** `VITE_REVENUECAT_APPLE_KEY` / `VITE_REVENUECAT_GOOGLE_KEY` and
-      create the Family Pack IAP in both consoles so the reviewer can test it.
+- [ ] **Paid upfront (v1.3.0):** do **not** set `VITE_STORE_IAP`. RevenueCat
+      keys may stay in the Xcode Cloud env; without `VITE_STORE_IAP=true` they
+      are ignored, so the build has no IAP, no trial, and no Buy/Restore UI.
+      Set the **$12.99** price in App Store Connect (Pricing and Availability).
 - [ ] Mic: build with `VITE_FAMILY_VOICE_RECORD=false`, **or** ship the
       recorder and add the iOS `NSMicrophoneUsageDescription` + Android
       `RECORD_AUDIO` declaration.
-- [ ] Version bumped (currently **1.2.0**, iOS build **5** / Android
-      versionCode **5**).
+- [ ] Version bumped (currently **1.3.0**, iOS build **7** (Xcode Cloud assigns its own) / Android
+      versionCode **7**).
 - [ ] Apple **App Privacy** = *Data Not Collected*; Google **Data safety** =
       *no data collected/shared*.
 - [ ] Host the **privacy policy** (template in `APP-STORE.md §8`); set

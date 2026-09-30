@@ -1,8 +1,19 @@
 # eGeez
 
-An Amharic alphabet (Fidel) learning game for kids. Fully client-side: no
-backend, no accounts — progress lives in `localStorage`. Installable as a
-PWA and works offline.
+An Amharic and Tigrinya alphabet (Fidel) learning game for kids. Fully
+client-side: no backend, no accounts — progress lives in `localStorage`.
+Installable as a PWA and works offline.
+
+Tigrinya uses a **School Path**: Grade 1 alphabet families in teaching
+order, on the same Journey as Letter Steps and the quizzes. Amharic keeps
+chapters of eight. See `docs/school-path.md`. The path follows pedagogy
+order with original eGeez words.
+
+Chrome and Google Translate are blocked on the learning app (`translate="no"`,
+`class="notranslate"`, and `<meta name="google" content="notranslate">`).
+The document language stays the UI language (English, or the diaspora
+language a parent picks) so screen readers voice the menus. Amharic and
+Tigrinya letters stay on screen as authored.
 
 ## Five modes, one home screen
 

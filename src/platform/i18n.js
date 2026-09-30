@@ -10,6 +10,9 @@
    ========================================================================== */
 
 import { LANGPACKS, LANG_IDS, REINFORCE } from './langpacks'
+import { APP_NAME, HYENA_NAME } from './brand'
+
+export { APP_NAME, HYENA_NAME }
 
 const LANG_KEY = 'fq.lang'
 
@@ -29,6 +32,29 @@ export function getLang() {
     return LANG_IDS.includes(l) ? l : 'en'
   } catch {
     return 'en'
+  }
+}
+
+/** Keep Chrome/Google Translate from rewriting fidel or chrome.
+    `lang` stays the UI language (getLang: en, or a diaspora pack) so a
+    screen reader voices the menus correctly. Amharic and Tigrinya are the
+    learn pack, not the document language. Idempotent. */
+export function lockDocumentTranslate(lang = getLang()) {
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
+  root.lang = LANG_IDS.includes(lang) ? lang : 'en'
+  root.setAttribute('translate', 'no')
+  root.classList.add('notranslate')
+  for (const el of [document.body, document.getElementById('root')]) {
+    if (!el) continue
+    el.setAttribute('translate', 'no')
+    el.classList.add('notranslate')
+  }
+  if (document.head && !document.querySelector('meta[name="google"][content="notranslate"]')) {
+    const meta = document.createElement('meta')
+    meta.name = 'google'
+    meta.content = 'notranslate'
+    document.head.appendChild(meta)
   }
 }
 

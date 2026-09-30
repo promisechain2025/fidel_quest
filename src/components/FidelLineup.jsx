@@ -30,7 +30,9 @@ import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { FidelCard, GEEZ_DIGITS } from './FidelCard'
 import { initLineup, lineupTransition, Phase, LineupEvent } from '../lineupCore'
 
@@ -140,7 +142,7 @@ export default function FidelLineup({ soundOn, onBack, families = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-4 pt-2">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 92 : 64} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={92} mood="happy" pose="cheer" /> : <KokebSvg size={64} />}
 
         {/* The seven home slots: empty ones show the Arabic + Ge'ez numeral
            and TAKE A TAP once a card is in hand; filled ones show the landed

@@ -1,5 +1,33 @@
 import UIKit
 import Capacitor
+import WebKit
+
+/// Kids double-tap and pinch the WebView by accident. The viewport meta and
+/// CSS cover the page; this locks the WKWebView scroll view the same way.
+class NoZoomBridgeViewController: CAPBridgeViewController {
+    override func capacitorDidLoad() {
+        super.capacitorDidLoad()
+        lockZoom()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        lockZoom()
+    }
+
+    private func lockZoom() {
+        guard let scroll = webView?.scrollView else { return }
+        scroll.pinchGestureRecognizer?.isEnabled = false
+        scroll.minimumZoomScale = 1
+        scroll.maximumZoomScale = 1
+        scroll.bouncesZoom = false
+        scroll.gestureRecognizers?.forEach { recognizer in
+            if let tap = recognizer as? UITapGestureRecognizer, tap.numberOfTapsRequired > 1 {
+                tap.isEnabled = false
+            }
+        }
+    }
+}
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {

@@ -1,5 +1,12 @@
 # Store purchases (in-app) — owner setup runbook
 
+> **1.3.0+: NOT IN USE. eGeez ships PAID UPFRONT at $12.99.** Set the price
+> in App Store Connect / Play Console (Pricing and Availability) - the app's
+> own price is **$12.99, not Free**. Do **not** set `VITE_STORE_IAP`; without
+> it RevenueCat keys are ignored and every build is fully unlocked (no trial,
+> no daily window, no Buy/Restore). Everything below documents the dormant
+> free-download + in-app-purchase flow, kept for a possible v2.
+
 The app code is DONE and dormant. Store builds show the native purchase
 sheet as soon as the platform's RevenueCat key is set at build time.
 Until then a native build deliberately stays FREE: `iapAvailable()` is
