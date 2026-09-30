@@ -1,9 +1,14 @@
 /* ============================================================================
    LICENSE — the honest paid-app engine
    ----------------------------------------------------------------------------
-   MONETIZATION SWITCH. By default eGeez is FULLY FREE: no trial, no asks, no
-   purchase UI anywhere (VITE_MONETIZE unset). This is the mode to ship while
-   purchases are not ready.
+   SHIPPING MODEL (v1.3.0+): PAID UPFRONT. The App Store / Play listing
+   charges $12.99 at download, so every build is FULLY UNLOCKED: no trial,
+   no asks, no purchase UI anywhere. licenseState() returns 'licensed' unless
+   one of the dormant flows below is explicitly switched back on:
+     - web: VITE_MONETIZE=true
+     - native store IAP: VITE_STORE_IAP=true plus a RevenueCat key
+       (storeEnv.js). A RevenueCat key on its own no longer sells.
+   Everything below documents that DORMANT flow, kept for a possible v2.
 
    Set VITE_MONETIZE=true to turn on the PAID-APP flow: eGeez costs APP_PRICE
    (default $12.99) ONCE, on every platform, and add-on packs (Family Pack,
@@ -83,10 +88,8 @@ function addDaysStamp(day, n) {
     - Web, monetization OFF (default): the app is simply free.
     - Native without a RevenueCat key: licensed. The build cannot sell, so
       it must not nag.
-    - Native WITH a RevenueCat key: the trial runs even if VITE_MONETIZE is
-      unset. Keys alone used to leave the paywall compiled out, so the
-      stores never saw a transaction. The IAP runbook says the keys are the
-      switch that turns the purchase sheet on.
+    - Native: sells only when iapAvailable() - i.e. VITE_STORE_IAP=true AND
+      a RevenueCat key. Default store builds are paid upfront, so licensed.
     - Web with VITE_MONETIZE: the same trial, then the once-a-day ask.
     `supported` (purchase, restore, or an EGZ code) ends the ask. */
 export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform(), storeSellable = iapAvailable()) {

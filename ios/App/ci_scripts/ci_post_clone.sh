@@ -66,9 +66,10 @@ retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
 # Vite inlines VITE_* from the environment at `npm run build` above.
-# Xcode Cloud does not set these unless they are workflow environment
-# variables. An archive without the Apple key never configures RevenueCat,
-# so App Store purchases cannot show up for that build.
-if [ -z "$VITE_REVENUECAT_APPLE_KEY" ]; then
-  echo "ci_post_clone: VITE_REVENUECAT_APPLE_KEY is unset; this archive will not record App Store purchases"
+# eGeez ships PAID UPFRONT (v1.3.0+): in-app purchases are dormant unless the
+# workflow sets VITE_STORE_IAP=true. A RevenueCat key on its own is ignored.
+if [ -n "$VITE_STORE_IAP" ]; then
+  echo "ci_post_clone: WARNING VITE_STORE_IAP is set; the dormant IAP/trial flow may be enabled in this archive"
+else
+  echo "ci_post_clone: paid-upfront build (no in-app purchases, fully unlocked)"
 fi
