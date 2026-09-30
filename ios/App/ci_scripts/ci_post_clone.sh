@@ -68,8 +68,12 @@ echo "ci_post_clone: web assets, capacitor config, and Pods ready"
 # Vite inlines VITE_* from the environment at `npm run build` above.
 # eGeez ships PAID UPFRONT (v1.3.0+): in-app purchases are dormant unless the
 # workflow sets VITE_STORE_IAP=true. A RevenueCat key on its own is ignored.
+# The RevenueCat plugin is NOT bundled any more (its pod does not compile on
+# Xcode 26/27 with Capacitor 7), so an IAP-enabled archive would show buy
+# buttons that can only fail. Refuse to build one.
 if [ -n "$VITE_STORE_IAP" ]; then
-  echo "ci_post_clone: WARNING VITE_STORE_IAP is set; the dormant IAP/trial flow may be enabled in this archive"
+  echo "ci_post_clone: ERROR VITE_STORE_IAP is set but no RevenueCat plugin is bundled; unset it in the Xcode Cloud workflow (see src/platform/iap.js)" >&2
+  exit 1
 else
   echo "ci_post_clone: paid-upfront build (no in-app purchases, fully unlocked)"
 fi

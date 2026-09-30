@@ -32,8 +32,18 @@
    full_app was not granted).
    Setup runbook: docs/store-purchases-iap.md. Diagnosis: FINDINGS.md.
 
-   The plugin is loaded via dynamic import so the web bundle never carries
-   it and a plugin failure can never break app start.
+   NO PLUGIN BUNDLED (1.3.0): @revenuecat/purchases-capacitor was removed
+   from the app. Its iOS pod (RevenueCat via PurchasesHybridCommon 17.x) no
+   longer compiles on Xcode 26/27 ("Ambiguous use of
+   'init(stringRepresentation:)'"; fixed only in purchases-ios >= 5.78.0,
+   which needs purchases-capacitor >= 12 and therefore Capacitor 8). The
+   paid-upfront app never calls the SDK, so it was dead weight that broke the
+   Xcode Cloud archive. This wrapper stays so the dormant flow can come back:
+   to revive IAP, upgrade to Capacitor 8, `npm i @revenuecat/purchases-capacitor`,
+   `npx cap sync`, and make loadPurchasesPlugin() below return
+   `(await import('@revenuecat/purchases-capacitor')).Purchases`.
+   Until then every call degrades to 'unavailable' / 'error' / '' and never
+   throws, even if VITE_STORE_IAP=true is set by mistake.
    ========================================================================== */
 import { revenueCatKey, iapAvailable } from './storeEnv'
 import { unlockFamilyPack, familyPackUnlocked } from './familyPack'
@@ -98,6 +108,20 @@ function currentOffering(result) {
   return offerings.current || null
 }
 
+/** Resolves the RevenueCat `Purchases` plugin object. No plugin ships in
+    this build, so the default loader rejects (callers catch and log). Tests
+    inject a mock through __setPurchasesLoaderForTests. */
+async function defaultPurchasesLoader() {
+  throw new Error('RevenueCat plugin is not bundled in this build')
+}
+let loadPurchasesPlugin = defaultPurchasesLoader
+
+/** Test seam: swap the plugin loader (pass nothing to restore the default). */
+export function __setPurchasesLoaderForTests(loader) {
+  loadPurchasesPlugin = typeof loader === 'function' ? loader : defaultPurchasesLoader
+  ready = null
+}
+
 let ready = null
 async function purchases() {
   if (!ready) {
@@ -106,7 +130,7 @@ async function purchases() {
       if (/^test_/i.test(key)) {
         console.warn('[iap] RevenueCat Test Store key is set. Purchases from this build do not appear as live App Store or Play sales.')
       }
-      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      const Purchases = await loadPurchasesPlugin()
       await Purchases.configure({ apiKey: key })
       try {
         await Purchases.addCustomerInfoUpdateListener((info) => {

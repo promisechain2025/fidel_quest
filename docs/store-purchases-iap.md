@@ -6,6 +6,13 @@
 > it RevenueCat keys are ignored and every build is fully unlocked (no trial,
 > no daily window, no Buy/Restore). Everything below documents the dormant
 > free-download + in-app-purchase flow, kept for a possible v2.
+>
+> **The RevenueCat Capacitor plugin was removed from the app** (its iOS pod
+> no longer compiles on Xcode 26/27; the fix, purchases-ios 5.78.0+, needs
+> `@revenuecat/purchases-capacitor` 12+, which needs Capacitor 8). Reviving
+> this flow means: upgrade to Capacitor 8, reinstall the plugin, `npx cap sync`,
+> and restore the plugin loader in `src/platform/iap.js`. Xcode Cloud's
+> `ci_post_clone.sh` now refuses to archive with `VITE_STORE_IAP` set.
 
 The app code is DONE and dormant. Store builds show the native purchase
 sheet as soon as the platform's RevenueCat key is set at build time.
