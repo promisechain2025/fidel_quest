@@ -1,9 +1,14 @@
 /* ============================================================================
    LICENSE — the honest paid-app engine
    ----------------------------------------------------------------------------
-   MONETIZATION SWITCH. By default eGeez is FULLY FREE: no trial, no asks, no
-   purchase UI anywhere (VITE_MONETIZE unset). This is the mode to ship while
-   purchases are not ready.
+   SHIPPING MODEL (v1.3.0+): PAID UPFRONT. The App Store / Play listing
+   charges $12.99 at download, so every build is FULLY UNLOCKED: no trial,
+   no asks, no purchase UI anywhere. licenseState() returns 'licensed' unless
+   one of the dormant flows below is explicitly switched back on:
+     - web: VITE_MONETIZE=true
+     - native store IAP: VITE_STORE_IAP=true plus a RevenueCat key
+       (storeEnv.js). A RevenueCat key on its own no longer sells.
+   Everything below documents that DORMANT flow, kept for a possible v2.
 
    Set VITE_MONETIZE=true to turn on the PAID-APP flow: eGeez costs APP_PRICE
    (default $12.99) ONCE, on every platform, and add-on packs (Family Pack,
@@ -59,9 +64,16 @@ export const DAILY_PASS_MINUTES = envInt(import.meta.env?.VITE_DAILY_PASS_MINUTE
 /** Display price of the app - one-time, every platform. */
 export const APP_PRICE = (import.meta.env?.VITE_APP_PRICE || '$12.99').trim()
 
-/** Master switch. Purchases (trial, buy, Family Pack, gift) are OFF unless
-    VITE_MONETIZE is explicitly enabled - so the default build is free. */
-export const MONETIZE = /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_MONETIZE ?? ''))
+/** Web master switch. Purchases on the website and the PWA are OFF unless
+    VITE_MONETIZE is explicitly enabled, so that default build stays free.
+    Always false in a native build (see below); native sells only via
+    iapAvailable() — see licenseState. */
+// PAID UPFRONT (v1.3.0+): VITE_MONETIZE is honoured on the WEB only. A store
+// build is paid at download, so even if a CI workflow (e.g. Xcode Cloud env)
+// sets VITE_MONETIZE, native never shows the trial, the Family Pack shop
+// hint, the Support/Buy card, or the Gift tile. Native selling is solely
+// storeEnv.iapAvailable() (VITE_STORE_IAP=true + a RevenueCat key).
+export const MONETIZE = !isNativePlatform() && /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_MONETIZE ?? ''))
 
 function load() {
   try {
@@ -89,15 +101,16 @@ function addDaysStamp(day, n) {
 }
 
 /** The current license picture. Starts the trial clock on first call.
-    - monetization OFF (default): the app is simply free/licensed everywhere.
-    - monetization ON, NATIVE without live IAP (no RevenueCat key): licensed -
-      the free-download build cannot sell yet, so it must not nag (dormant
-      convention).
-    - monetization ON, everywhere else (web, or native with IAP live): the
-      free trial runs, then the once-a-day ask - until `supported` is set by
-      a purchase, a restore, or an EGZ code. */
+    - Web, monetization OFF (default): the app is simply free.
+    - Native without a RevenueCat key: licensed. The build cannot sell, so
+      it must not nag.
+    - Native: sells only when iapAvailable() - i.e. VITE_STORE_IAP=true AND
+      a RevenueCat key. Default store builds are paid upfront, so licensed.
+    - Web with VITE_MONETIZE: the same trial, then the once-a-day ask.
+    `supported` (purchase, restore, or an EGZ code) ends the ask. */
 export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform(), storeSellable = iapAvailable()) {
-  if (!monetize || (native && !storeSellable)) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
+  const selling = native ? !!storeSellable : !!monetize
+  if (!selling) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
   const s = load()
   if (!s.startDay) {
     s.startDay = today

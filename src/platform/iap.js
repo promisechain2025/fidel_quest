@@ -12,15 +12,25 @@
    and a family that bought on the web redeems their EGZ code here instead
    of paying again (license.js redeemAppCode).
 
-   Dormant by default (repo pattern): every function no-ops unless the app
-   runs natively AND the platform's RevenueCat key is configured:
+   PAID UPFRONT (v1.3.0+): dormant unless VITE_STORE_IAP=true AND the app
+   runs natively AND that platform's RevenueCat public SDK key is set at
+   build time (storeEnv.js iapAvailable):
      VITE_REVENUECAT_APPLE_KEY   (appl_...)
      VITE_REVENUECAT_GOOGLE_KEY  (goog_...)
+   A test_ key talks only to RevenueCat's Test Store. It never creates an
+   App Store or Play sale. Web and PWA builds never call the SDK.
+
    Product/entitlement names expected in the RevenueCat dashboard:
-     entitlements: full_app, family_pack (attached to the store products;
-     put both packages in the current offering - packages are matched by
-     product identifier substring 'family' vs anything else).
-   Setup runbook for the owner: docs/store-purchases-iap.md.
+     entitlements: full_app, family_pack (attached to the store products).
+     Both packages must be in the current offering. A package is the Family
+     Pack when its store product id contains "family" (the documented id is
+     family_pack); every other package is the app unlock. There is no
+     separate store product id constant for the app — the entitlement
+     checked after purchase is exactly full_app.
+   The buy path never falls back to "the only package". Buying the app
+   must not charge the Family Pack (and then report an error because
+   full_app was not granted).
+   Setup runbook: docs/store-purchases-iap.md. Diagnosis: FINDINGS.md.
 
    The plugin is loaded via dynamic import so the web bundle never carries
    it and a plugin failure can never break app start.
@@ -34,14 +44,84 @@ export const FULL_APP_ENTITLEMENT = 'full_app'
 
 export { iapAvailable }
 
-let configured = false
-async function purchases() {
-  const { Purchases } = await import('@revenuecat/purchases-capacitor')
-  if (!configured) {
-    await Purchases.configure({ apiKey: revenueCatKey() })
-    configured = true
+function iapWarn(where, err) {
+  const code = err?.code || err?.readableErrorCode || err?.data?.readableErrorCode || ''
+  const message = typeof err?.message === 'string' ? err.message : ''
+  console.warn(`[iap] ${where} failed${code ? ` (${code})` : ''}${message ? `: ${message}` : ''}`)
+}
+
+function errorBlob(e) {
+  return [e?.message, e?.readableErrorCode, e?.code, e?.data?.readableErrorCode, e?.underlyingErrorMessage, e?.data?.underlyingErrorMessage]
+    .filter((v) => v != null && v !== '')
+    .join(' ')
+}
+
+function isUserCancel(e) {
+  if (e?.userCancelled === true || e?.data?.userCancelled === true) return true
+  const blob = errorBlob(e)
+  return /cancell?ed/i.test(blob) && !/pending/i.test(blob)
+}
+
+function isPaymentPending(e) {
+  return /pending|deferred|ask to buy/i.test(errorBlob(e))
+}
+
+function isAlreadyPurchased(e) {
+  return /already purchased|already owned|receipt already/i.test(errorBlob(e))
+}
+
+/** Customer info arrives wrapped ({ customerInfo }) from get/purchase/restore
+    and unwrapped from the update listener. */
+function unwrapCustomerInfo(payload) {
+  if (!payload || typeof payload !== 'object') return null
+  if (payload.customerInfo && typeof payload.customerInfo === 'object') return payload.customerInfo
+  if (payload.entitlements) return payload
+  return null
+}
+
+/** Offerings are { current, all }. purchases-capacitor 11.3.2 has an open
+    report that some runtimes wrap that as { offerings: { current, all } }
+    (revenuecat/purchases-capacitor#657). Reading only `.current` then makes
+    every buy return unavailable and the store never sees a transaction. */
+function currentOffering(result) {
+  if (!result || typeof result !== 'object') return null
+  const offerings = result.offerings && typeof result.offerings === 'object'
+    && ('current' in result.offerings || 'all' in result.offerings)
+    ? result.offerings
+    : result
+  if (offerings.current?.availablePackages?.length) return offerings.current
+  const all = offerings.all
+  if (all && typeof all === 'object') {
+    const list = Object.values(all).filter((o) => o?.availablePackages?.length)
+    if (list.length === 1) return list[0]
   }
-  return Purchases
+  return offerings.current || null
+}
+
+let ready = null
+async function purchases() {
+  if (!ready) {
+    ready = (async () => {
+      const key = revenueCatKey()
+      if (/^test_/i.test(key)) {
+        console.warn('[iap] RevenueCat Test Store key is set. Purchases from this build do not appear as live App Store or Play sales.')
+      }
+      const { Purchases } = await import('@revenuecat/purchases-capacitor')
+      await Purchases.configure({ apiKey: key })
+      try {
+        await Purchases.addCustomerInfoUpdateListener((info) => {
+          syncEntitlements(unwrapCustomerInfo(info))
+        })
+      } catch (e) {
+        iapWarn('listener', e)
+      }
+      return Purchases
+    })().catch((e) => {
+      ready = null
+      throw e
+    })
+  }
+  return ready
 }
 
 const entitledTo = (customerInfo, ent) => !!customerInfo?.entitlements?.active?.[ent]
@@ -60,34 +140,42 @@ function syncEntitlements(customerInfo) {
   return owned
 }
 
+async function readCustomerInfo(P) {
+  return unwrapCustomerInfo(await P.getCustomerInfo())
+}
+
 /** Called once at app start (native only). Syncs already-owned purchases -
     e.g. after a reinstall - without any user action. Never throws. */
 export async function initIap() {
   if (!iapAvailable()) return
   try {
     const P = await purchases()
-    const { customerInfo } = await P.getCustomerInfo()
-    syncEntitlements(customerInfo)
-  } catch {
-    /* offline or store hiccup - the buy/restore buttons still work later */
+    syncEntitlements(await readCustomerInfo(P))
+  } catch (e) {
+    iapWarn('init', e)
   }
 }
 
-/** Pick the offering package for a product kind ('app' | 'family_pack'). */
+function packageId(p) {
+  return String(p?.product?.identifier || p?.identifier || '')
+}
+
+/** Pick the offering package for a product kind ('app' | 'family_pack').
+    Never substitutes the other product when this one is missing. */
 function pickPackage(current, kind) {
   const pkgs = current?.availablePackages || []
-  const isFamily = (p) => /family/i.test(p?.product?.identifier || p?.identifier || '')
-  const match = pkgs.find((p) => (kind === 'family_pack' ? isFamily(p) : !isFamily(p)))
-  return match || (pkgs.length === 1 ? pkgs[0] : null)
+  const isFamily = (p) => /family/i.test(packageId(p))
+  return pkgs.find((p) => (kind === 'family_pack' ? isFamily(p) : !isFamily(p))) || null
 }
 
 async function storePrice(kind) {
   if (!iapAvailable()) return ''
   try {
     const P = await purchases()
-    const { current } = await P.getOfferings()
-    return pickPackage(current, kind)?.product?.priceString || ''
-  } catch {
+    const offering = currentOffering(await P.getOfferings())
+    return pickPackage(offering, kind)?.product?.priceString || ''
+  } catch (e) {
+    iapWarn('price', e)
     return ''
   }
 }
@@ -95,23 +183,44 @@ async function storePrice(kind) {
 export const fullAppStorePrice = () => storePrice('app')
 export const familyPackStorePrice = () => storePrice('family_pack')
 
+async function ownedKind(P, kind) {
+  const owned = syncEntitlements(await readCustomerInfo(P))
+  return kind === 'family_pack' ? owned.familyPack : owned.app
+}
+
 async function buy(kind) {
   if (!iapAvailable()) return 'unavailable'
   try {
     const P = await purchases()
-    const { current } = await P.getOfferings()
-    const pkg = pickPackage(current, kind)
+    const offering = currentOffering(await P.getOfferings())
+    const pkg = pickPackage(offering, kind)
     if (!pkg) return 'unavailable'
-    const { customerInfo } = await P.purchasePackage({ aPackage: pkg })
-    const owned = syncEntitlements(customerInfo)
-    return (kind === 'family_pack' ? owned.familyPack : owned.app) ? 'purchased' : 'error'
+    const result = await P.purchasePackage({ aPackage: pkg })
+    let owned = syncEntitlements(unwrapCustomerInfo(result))
+    let got = kind === 'family_pack' ? owned.familyPack : owned.app
+    if (!got) got = await ownedKind(P, kind)
+    return got ? 'purchased' : 'error'
   } catch (e) {
-    return e?.userCancelled || /cancell?ed/i.test(String(e?.message || '')) ? 'cancelled' : 'error'
+    if (isUserCancel(e)) return 'cancelled'
+    if (isPaymentPending(e)) return 'pending'
+    if (isAlreadyPurchased(e)) {
+      try {
+        const P = await purchases()
+        return (await ownedKind(P, kind)) ? 'purchased' : 'error'
+      } catch (e2) {
+        iapWarn('already-owned', e2)
+        return 'error'
+      }
+    }
+    iapWarn('purchase', e)
+    return 'error'
   }
 }
 /**
  * Run the native purchase sheet. Resolves to:
- *   'purchased' | 'cancelled' | 'unavailable' | 'error'
+ *   'purchased' | 'cancelled' | 'pending' | 'unavailable' | 'error'
+ * 'pending' is Ask to Buy: a grown-up still has to approve. The customer
+ * info listener unlocks the app when they do.
  */
 export const buyFullApp = () => buy('app')
 export const buyFamilyPack = () => buy('family_pack')
@@ -123,10 +232,10 @@ export async function restorePurchasesAll() {
   if (!iapAvailable()) return 'unavailable'
   try {
     const P = await purchases()
-    const { customerInfo } = await P.restorePurchases()
-    const owned = syncEntitlements(customerInfo)
+    const owned = syncEntitlements(unwrapCustomerInfo(await P.restorePurchases()))
     return owned.app || owned.familyPack ? 'restored' : 'none'
-  } catch {
+  } catch (e) {
+    iapWarn('restore', e)
     return 'error'
   }
 }

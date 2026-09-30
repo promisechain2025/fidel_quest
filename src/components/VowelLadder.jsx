@@ -18,9 +18,10 @@ import { ChevronLeft } from 'lucide-react'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
-import { sayPrompt } from '../platform/prompts'
 import { t } from '../platform/i18n'
-import { Sprite2D, drawAnbessa, drawKokeb, FOCUS } from '../FidelQuestApp'
+import { FOCUS } from '../FidelQuestApp'
+import AnbessaSvg from './AnbessaSvg'
+import KokebSvg from './KokebSvg'
 import { FidelCard, GEEZ_DIGITS } from './FidelCard'
 import { initLadder, ladderTransition, Phase, LadderEvent } from '../ladderCore'
 
@@ -35,10 +36,10 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
   const [ctx, setCtx] = useState(() => initLadder(family, (round + 1) * 97 + startRef.current))
   const reduce = useReducedMotion()
 
-  // New round -> fresh family + tray, and cue the first form.
+  // New round -> fresh family + tray. Kokeb then calls the first form via the
+  // announce effect below - one voice per step, like Bingo (no extra prompt).
   useEffect(() => {
     setCtx(initLadder(family, (round + 1) * 97 + startRef.current))
-    sayPrompt('orderFind', soundOn)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round])
 
@@ -59,7 +60,9 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
     recordAnswer(want, key, 'ladder')
     const r = ladderTransition(ctx, { type: LadderEvent.TAP, payload: { key } })
     if (r.accepted) {
-      // Chime only - the effect above speaks the next wanted form.
+      // A soft chime only - do NOT re-voice the tapped letter. The announce
+      // effect then calls the NEXT form, so the child hears one voice per step
+      // (matching Bingo), never the placed letter and the next one at once.
       playEffect('good', soundOn)
       setCtx(r.next)
       if (r.next.phase === Phase.WIN) setTimeout(() => playEffect('win', soundOn), 200)
@@ -83,7 +86,7 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-6">
-        <Sprite2D draw={won ? drawAnbessa : drawKokeb} size={won ? 108 : 84} mood="happy" pose={won ? 'cheer' : 'stand'} />
+        {won ? <AnbessaSvg size={108} mood="happy" pose="cheer" /> : <KokebSvg size={84} />}
 
         {/* the seven rungs */}
         <div role="img" aria-label={t('orderProgress', `${ctx.placed} of 7 in order`, { n: ctx.placed })} className="flex items-end justify-center gap-1.5">

@@ -12,11 +12,12 @@ import { recordAnswer } from '../platform/telemetry'
 import { buildHunt, huntTransition, huntTarget } from '../platform/hunt'
 import AnbessaSvg from './AnbessaSvg'
 import JibbySvg from './JibbySvg'
+import { HighlandMeadow, CoverArt } from './HighlandScenery'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-/* The six hiding places: position (percent of the scene) plus a cover shape
-   drawn with plain CSS blobs, so the meadow needs no image assets. */
+/* The six hiding places: position (percent of the scene) plus an authored
+   cover (cloud, tree, bush, rock, grass) drawn in HighlandScenery. */
 const SPOTS = [
   { left: 14, top: 26, cover: 'cloud' },
   { left: 66, top: 20, cover: 'tree' },
@@ -28,48 +29,7 @@ const SPOTS = [
 
 const FRUIT_TONES = ['#ff7a59', '#ffc24b', '#8ed069', '#5db7ff', '#e6459a']
 
-function Cover({ kind }) {
-  if (kind === 'cloud') {
-    return (
-      <div className="relative h-10 w-20" aria-hidden="true">
-        <span className="absolute bottom-0 left-0 h-8 w-9 rounded-full bg-white/95" />
-        <span className="absolute bottom-0 left-5 h-10 w-11 rounded-full bg-white/95" />
-        <span className="absolute bottom-0 right-0 h-7 w-8 rounded-full bg-white/95" />
-      </div>
-    )
-  }
-  if (kind === 'tree') {
-    return (
-      <div className="relative flex h-16 w-16 flex-col items-center" aria-hidden="true">
-        <span className="h-11 w-14 rounded-full" style={{ background: '#4f9a44' }} />
-        <span className="-mt-1 h-6 w-3 rounded-b-md" style={{ background: '#7a4a26' }} />
-      </div>
-    )
-  }
-  if (kind === 'rock') {
-    return <div className="h-9 w-14 rounded-t-full rounded-b-xl" style={{ background: '#a9a4ad', boxShadow: 'inset -6px -4px 0 #8d8894' }} aria-hidden="true" />
-  }
-  if (kind === 'grass') {
-    return (
-      <div className="flex h-8 items-end gap-0.5" aria-hidden="true">
-        {[10, 16, 12, 18, 11].map((h, i) => (
-          <span key={i} className="w-1.5 rounded-t-full" style={{ height: h * 1.6, background: i % 2 ? '#5faa52' : '#4c9944' }} />
-        ))}
-      </div>
-    )
-  }
-  // bush
-  return (
-    <div className="relative h-10 w-20" aria-hidden="true">
-      <span className="absolute bottom-0 left-0 h-8 w-9 rounded-full" style={{ background: '#57a24b' }} />
-      <span className="absolute bottom-0 left-6 h-10 w-10 rounded-full" style={{ background: '#4c9944' }} />
-      <span className="absolute bottom-0 right-0 h-7 w-8 rounded-full" style={{ background: '#5faa52' }} />
-    </div>
-  )
-}
-
-/* Character sprites use the shared Sprite2D (same renderer as every other
-   screen), so art fixes reach the hunt too. */
+/* Character sprites are the authored SVGs (AnbessaSvg / JibbySvg). */
 
 /* Holiday dressing for the meadow (from the Ethiopian calendar): adey abeba
    daisies for Enkutatash/Meskel, stars for Genna, water drops for Timkat,
@@ -192,9 +152,8 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
       </header>
 
       {/* The meadow */}
-      <motion.div animate={meadowCtl} className="relative mt-4 w-full flex-1 overflow-hidden rounded-3xl border-2" style={{ minHeight: 380, borderColor: 'var(--line)', background: 'linear-gradient(#bfe3ff 0%, #d8efff 44%, #8fc86a 44%, #7ab857 100%)' }}>
-        {/* sun */}
-        <span className="absolute right-5 top-4 h-10 w-10 rounded-full" style={{ background: '#ffd34d', boxShadow: '0 0 24px 6px rgba(255,211,77,0.55)' }} aria-hidden="true" />
+      <motion.div animate={meadowCtl} className="relative mt-4 w-full flex-1 overflow-hidden rounded-3xl border-2" style={{ minHeight: 380, borderColor: 'var(--accent)', boxShadow: 'inset 0 0 0 1px rgba(169,131,47,0.45)' }}>
+        <HighlandMeadow className="pointer-events-none absolute inset-0 h-full w-full" />
         <Dressing kind={dress} />
         {/* Jibby peeks from the corner, cheekier while a letter is ducking */}
         <motion.div className="absolute -right-2 bottom-1" animate={feedback === 'bad' ? { y: [8, -4, 8] } : { y: 8 }} transition={{ duration: 0.7 }} aria-hidden="true">
@@ -230,7 +189,7 @@ export default function DailyHunt({ seed, forms, soundOn = true, treasureReady =
                  pointer-events-none so tapping the bush still taps the letter
                  (little fingers get the whole mound as the hit target) */}
               <div className="pointer-events-none z-10 -mt-3">
-                <Cover kind={spot.cover} />
+                <CoverArt kind={spot.cover} />
               </div>
             </div>
           )

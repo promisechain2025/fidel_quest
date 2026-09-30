@@ -131,7 +131,14 @@ body {
 }
 
 /* A kids' game, not a document: tapping letters must never select text or
-   pop the copy/lookup callout (iOS long-press). Typing fields opt back in. */
+   pop the copy/lookup callout (iOS long-press). Typing fields opt back in.
+   pan-x / pan-y keeps scrolling and taps, and turns off double-tap zoom
+   and pinch zoom. Inline touch-action on a game surface still wins, so
+   tracing and dragging are unchanged. The viewport meta and the native
+   shells say the same thing. */
+html, body, #root, #root * {
+  touch-action: pan-x pan-y;
+}
 body {
   user-select: none;
   -webkit-user-select: none;

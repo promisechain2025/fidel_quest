@@ -44,8 +44,12 @@ import { daySeed, huntDoneToday, markHuntDone } from './platform/hunt'
 import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaStamp, PACES } from './platform/coach'
 import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
-import { Harag } from './components/Manuscript'
+import { Harag, JewelRim } from './components/Manuscript'
+import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
+import { ChapterVista } from './components/HighlandScenery'
+import ZebraSvg from './components/ZebraSvg'
 import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
+import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
@@ -56,6 +60,7 @@ import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
 import WordSteps from './components/WordSteps'
+import { WordBuildScreen, FindFidelScreen } from './components/SchoolPathDrills'
 import WordPicture from './components/Pictures'
 import { useShareGate } from './components/ShareGate'
 import ScopeToggle from './components/ScopeToggle'
@@ -71,7 +76,7 @@ import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
 import { shareCtaLabel } from './platform/experiments'
 import GhostHand from './GhostHand'
-import { t, getLang, setLang } from './platform/i18n'
+import { t, getLang, setLang, lockDocumentTranslate, APP_NAME } from './platform/i18n'
 import { LANG_META } from './platform/langpacks'
 import { LOW_END, isDegraded, usePerfDegrade } from './platform/quality'
 import { Runner2D } from './components/ArcadeFallback'
@@ -141,6 +146,7 @@ const StoryTime = lazyRetry(() => import('./components/StoryTime'))
 const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const FidelMatch = lazyRetry(() => import('./components/FidelMatch'))
+const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const FidelLineup = lazyRetry(() => import('./components/FidelLineup'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
 const MerkatoMarket = lazyRetry(() => import('./components/MerkatoMarket'))
@@ -159,27 +165,15 @@ import {
   Pause,
   BookOpen,
   Check,
-  RotateCcw,
-  Pencil,
-  Shirt,
   Share2,
   Gift,
-  Mic,
-  Backpack as BackpackIcon,
   ClipboardCheck,
   Users,
   Globe,
   ArrowDown,
   Send,
-  Search,
   Sun,
   Moon,
-  ListOrdered,
-  Grid2x2,
-  Grid3x3,
-  Layers,
-  Blocks,
-  Store,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -264,7 +258,7 @@ export function initialContext(seed = 1) {
 
 const TRANSITIONS = {
   [GameState.IDLE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue, level }) => startLevel(ctx, levelId, seed, queue, level),
   },
   [GameState.PRESENTATION]: {
     [GameEvent.PRESENTATION_DONE]: (ctx) => ({ ...ctx, status: GameState.AWAITING_INPUT }),
@@ -309,7 +303,7 @@ const TRANSITIONS = {
     [GameEvent.EXIT]: exitToIdle,
   },
   [GameState.LEVEL_COMPLETE]: {
-    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue }) => startLevel(ctx, levelId, seed, queue),
+    [GameEvent.START_LEVEL]: (ctx, { levelId, seed, queue, level }) => startLevel(ctx, levelId, seed, queue, level),
     [GameEvent.EXIT]: exitToIdle,
   },
 }
@@ -318,14 +312,16 @@ function exitToIdle(ctx) {
   return { ...initialContext(ctx.seed), status: GameState.IDLE }
 }
 
-function startLevel(ctx, levelId, seed, presetQueue) {
+function startLevel(ctx, levelId, seed, presetQueue, levelSpec) {
   const effectiveSeed = seed ?? ctx.seed
   // A preset queue (adaptive practice) bypasses the level table; it is
   // still pure - the caller built it from ledger + seed.
   if (presetQueue && presetQueue.length) {
     return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState: effectiveSeed, queue: presetQueue }
   }
-  const level = LEVELS.find((l) => l.id === levelId)
+  // School Path bosses carry their own family scope (a unit, or a vowel
+  // band). Classic levels still resolve through the LEVELS table.
+  const level = levelSpec || LEVELS.find((l) => l.id === levelId)
   if (!level) return null
   const [queue, rngState] = buildQuestionQueue(level, effectiveSeed)
   return { ...initialContext(effectiveSeed), status: GameState.PRESENTATION, levelId, rngState, queue }
@@ -1052,7 +1048,7 @@ export default function FidelQuestApp() {
   const goBackOrHome = useCallback(() => setStack((s) => { if (s.length <= 1) return [{ name: 'home' }]; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   useEffect(() => {
     try {
-      document.documentElement.lang = getLang()
+      lockDocumentTranslate(getLang())
       // Strip deep-link tokens from the address bar once we've captured them,
       // so a refresh or a shared-back link starts from a clean URL. An opened
       // assignment also becomes the pending one (surfaces in Today's plan).
@@ -1327,6 +1323,8 @@ export default function FidelQuestApp() {
     }
     setRunSeed((Date.now() % 1000000) | 1)
     if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
+    if (node.kind === NodeKind.BLEND) return setScreen({ name: 'wordbuild', node })
+    if (node.kind === NodeKind.FIND) return setScreen({ name: 'findfidel', node })
     if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
     if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
     if (node.kind === NodeKind.REVIEW) {
@@ -1503,6 +1501,29 @@ export default function FidelQuestApp() {
               />
             </Screen>
           )}
+          {screen.name === 'wordbuild' && (
+            <Screen key={`wordbuild-${screen.node.id}-${runSeed}`}>
+              <WordBuildScreen
+                words={screen.node.words}
+                unitIndex={screen.node.unitIndex}
+                seed={runSeed}
+                soundOn={soundOn}
+                onBack={goBack}
+                onDone={() => markNodeDone(screen.node.id)}
+              />
+            </Screen>
+          )}
+          {screen.name === 'findfidel' && (
+            <Screen key={`findfidel-${screen.node.id}`}>
+              <FindFidelScreen
+                targets={screen.node.targets}
+                unitIndex={screen.node.unitIndex}
+                soundOn={soundOn}
+                onBack={goBack}
+                onDone={() => markNodeDone(screen.node.id)}
+              />
+            </Screen>
+          )}
           {screen.name === 'arcade' && (
             <Screen key={`arcade-${screen.node.id}-${runSeed}`}>
               <ArcadeGateway
@@ -1559,6 +1580,17 @@ export default function FidelQuestApp() {
             <Screen key="match">
               <Suspense fallback={null}>
                 <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'traffic' && (
+            <Screen key="traffic">
+              <Suspense fallback={null}>
+                <FidelTraffic
+                  soundOn={soundOn}
+                  onBack={goBack}
+                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                />
               </Suspense>
             </Screen>
           )}
@@ -1702,7 +1734,7 @@ export default function FidelQuestApp() {
           {screen.name === 'lesson' && (
             <Screen key={`lesson-${screen.levelId}-${runSeed}`}>
               <Lesson
-                level={LEVELS.find((l) => l.id === screen.levelId)}
+                level={(screen.nodeId && NODE_BY_ID.get(screen.nodeId)?.quiz) || LEVELS.find((l) => l.id === screen.levelId)}
                 seed={runSeed}
                 soundOn={soundOn}
                 onFinish={(levelId, result) => {
@@ -1721,7 +1753,10 @@ export default function FidelQuestApp() {
                     finishLevel(levelId, result)
                   }
                 }}
-                onReplay={() => startLesson(screen.levelId)}
+                onReplay={() => {
+                  setRunSeed((Date.now() % 1000000) | 1)
+                  setScreen({ name: 'lesson', levelId: screen.levelId, nodeId: screen.nodeId })
+                }}
               />
             </Screen>
           )}
@@ -1829,6 +1864,7 @@ export default function FidelQuestApp() {
               onTwins={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startTwins()); return } startTwins() }}
               onLadder={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'ladder' })); return } setScreen({ name: 'ladder' }) }}
               onMatch={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'match' })); return } setScreen({ name: 'match' }) }}
+              onTraffic={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'traffic' })); return } setScreen({ name: 'traffic' }) }}
               onLineup={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'lineup' })); return } setScreen({ name: 'lineup' }) }}
               onWorkshop={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'workshop' })); return } setScreen({ name: 'workshop' }) }}
               onMarket={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'market' })); return } setScreen({ name: 'market' }) }}
@@ -2021,17 +2057,24 @@ export function drawWearables(g, s, worn) {
 /** Anbessa the lion cub, in his current wardrobe, with Kokeb bobbing along. */
 export function Hero({ size = 104, mood = 'happy', worn = [], pose = 'stand' }) {
   const wornKey = worn.map((w) => w.id).join(',')
+  const dressed = worn.length > 0
   return (
     <div className="relative inline-block" style={{ width: size, height: size }} aria-hidden="true">
-      <Sprite2D draw={drawAnbessa} mood={mood} size={size} pose={pose} />
-      {worn.length > 0 && <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />}
+      {dressed ? (
+        <>
+          <Sprite2D draw={drawAnbessa} mood={mood} size={size} pose={pose} />
+          <Sprite2D key={wornKey} draw={(g, sz) => drawWearables(g, sz, worn)} size={size} className="absolute left-0 top-0" />
+        </>
+      ) : (
+        <AnbessaSvg size={size} mood={mood} pose={pose} />
+      )}
       <motion.div
         className="absolute"
         style={{ right: -size * 0.14, top: -size * 0.06 }}
         animate={{ y: [0, -size * 0.05, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <Sprite2D draw={drawKokeb} size={size * 0.34} />
+        <KokebSvg size={Math.round(size * 0.34)} />
       </motion.div>
     </div>
   )
@@ -2053,6 +2096,8 @@ const nodeGlyph = (node) => {
     const b = formOf(`${node.families[node.families.length - 1]}-1`)?.char ?? ''
     return `${a}${b}`
   }
+  if (node.kind === NodeKind.BLEND) return [...(node.words?.[0]?.geez || '?')][0]
+  if (node.kind === NodeKind.FIND) return node.targets?.[0]?.target || '?'
   return null
 }
 
@@ -2061,6 +2106,8 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
   const isArcade = node.kind === NodeKind.ARCADE
   const isStory = node.kind === NodeKind.STORY
   const isReview = node.kind === NodeKind.REVIEW
+  const isBlend = node.kind === NodeKind.BLEND
+  const isFind = node.kind === NodeKind.FIND
   const big = isBoss || isArcade
   const size = big ? 76 : 60
   const label =
@@ -2068,22 +2115,26 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
       ? `Learn ${node.familyId}`
       : node.kind === NodeKind.MIX
         ? 'Mix challenge'
-        : isStory
-          ? 'Story time'
-          : isReview
-            ? 'Letter check-in'
-            : isBoss
-            ? `Quiz level ${node.levelId?.split('-')[1]}`
-            : node.gateway.mode === 'runner'
-              ? 'Letter Runner'
-              : 'Letter Catch'
+        : isBlend
+          ? 'Word Build'
+          : isFind
+            ? 'Find the letter'
+            : isStory
+              ? 'Story time'
+              : isReview
+                ? 'Letter check-in'
+                : isBoss
+                  ? (node.unitIndex && !node.vowel ? schoolPathLabel(node.unitIndex) : `Quiz level ${node.levelId?.split('-')[1]}`)
+                  : node.gateway?.mode === 'runner'
+                    ? 'Letter Runner'
+                    : 'Letter Catch'
   // Locked nodes keep the original muted tile colour, but now show WHAT they
   // are (the letter, or the game icon) with a small lock badge instead of only
   // a lock, so kids can preview what is coming.
   // A LEARN/MIX/REVIEW step reads as the shared gold letter-tile (done or
   // active); the special nodes keep their emblem tones (green arcade, gold
   // boss, lapis story) in the manuscript palette.
-  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX
+  const isLetter = node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX || isBlend || isFind
   const goldTile = done || (unlocked && (isLetter || isReview))
   const bg = goldTile ? 'var(--tile)' : unlocked ? (isArcade ? 'var(--go)' : isBoss ? 'var(--accent)' : isStory ? 'var(--sky)' : 'var(--card)') : 'var(--line)'
   // Boss sits on champagne gold, so its glyph must be the dark glyph ink (a
@@ -2128,16 +2179,17 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           aria-label={`${label}${done ? ', done' : unlocked ? '' : ', locked'}`}
           aria-current={highlight ? 'step' : undefined}
         >
+          {(goldTile || (isBoss && unlocked)) && <JewelRim />}
           {isArcade ? (
-            node.gateway.mode === 'runner' ? <Flame className="h-7 w-7" aria-hidden="true" /> : <Sparkles className="h-7 w-7" aria-hidden="true" />
+            <NodeEmblem kind={node.gateway.mode === 'runner' ? 'runner' : 'catch'} />
           ) : isBoss ? (
-            <Star className="h-7 w-7" fill="currentColor" aria-hidden="true" />
+            <NodeEmblem kind="boss" />
           ) : isStory ? (
-            <BookOpen className="h-7 w-7" aria-hidden="true" />
+            <NodeEmblem kind="story" />
           ) : isReview ? (
-            <RotateCcw className="h-6 w-6" aria-hidden="true" />
+            <NodeEmblem kind="review" />
           ) : (
-            nodeGlyph(node)
+            <span className="relative">{nodeGlyph(node)}</span>
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
           {!unlocked && (
@@ -2186,6 +2238,18 @@ function serpentineRows(nodes, cols) {
   return rows
 }
 const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
+const SCHOOL_PATH_ON = JOURNEY.some((n) => n.unitId)
+
+/** Unit indexes that begin inside this row (parent label on the path). */
+function unitLabelsForRow(row, prevRow) {
+  const labels = []
+  let prevUnit = prevRow?.length ? prevRow[prevRow.length - 1]?.unitIndex : null
+  for (const node of row) {
+    if (node.unitIndex && node.unitIndex !== prevUnit) labels.push(node.unitIndex)
+    if (node.unitIndex) prevUnit = node.unitIndex
+  }
+  return labels
+}
 
 /* One chip of the Today's-plan strip: number -> check when done. Chips sit
    in a single horizontal row so the coach guides without burying the path
@@ -2195,7 +2259,7 @@ const PATH_ROWS = serpentineRows(JOURNEY, PATH_COLS)
    soft green = done, plain card = later. Each pill sizes to its label and the
    row wraps whole pills to a second line, so a long translation never breaks
    mid-word or forces a sideways scroll. */
-function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
+function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
   const active = pulse && !done
   return (
     <motion.button
@@ -2211,7 +2275,7 @@ function PlanChip({ icon: Icon, done, label, onClick, pulse }) {
           ? { background: 'var(--sky)', color: '#fff', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }
           : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--ink)', boxShadow: '0 2px 0 var(--line)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }}
     >
-      {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+      {done ? <Check className="h-4 w-4 shrink-0" aria-hidden="true" /> : art ? <SpecialtyIcon name={art} bare size={20} /> : Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
       <span className="whitespace-nowrap">{label}</span>
     </motion.button>
   )
@@ -2348,7 +2412,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             <Hero size={48} worn={worn} />
           </button>
           <div className="min-w-0 text-left">
-            <h1 className="text-base font-black leading-none">eGeez</h1>
+            <h1 className="text-base font-black leading-none">{APP_NAME}</h1>
             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
               <span className="mono shrink-0 text-xs font-bold" style={{ color: 'var(--muted)' }}>
                 {doneCount}/{JOURNEY.length}
@@ -2367,6 +2431,11 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
+            {SCHOOL_PATH_ON && (
+              <p className="truncate text-[11px] font-bold leading-tight" style={{ color: 'var(--muted)' }}>
+                {schoolPathLabel(current?.unitIndex)}
+              </p>
+            )}
           </div>
         </div>
         {/* Header stays minimal: the streak lives in the bottom power bar and
@@ -2402,7 +2471,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`}
             style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
           >
-            <BackpackIcon className="h-5 w-5" />
+            <SpecialtyIcon name="backpack" bare size={26} />
           </button>
         </div>
       </header>
@@ -2502,7 +2571,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             />
           )}
           <PlanChip
-            icon={Search}
+            art="hunt"
             done={huntDone}
             label={t('huntShort', 'Daily Hunt')}
             onClick={onHunt}
@@ -2530,19 +2599,30 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
           const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
+          const unitLabels = SCHOOL_PATH_ON ? unitLabelsForRow(row, r > 0 ? PATH_ROWS[r - 1] : null) : []
           return (
             <div key={r}>
               {chapter !== prevChapter && (
-                <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
-                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                  {/* Place names are proper nouns from the active pack's
-                     geography - never translated. */}
-                  <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
-                    {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
-                  </span>
-                  <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                </div>
+                <>
+                  <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
+                    <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                    {/* Place names are proper nouns from the active pack's
+                       geography - never translated. */}
+                    <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
+                      {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
+                    </span>
+                    <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
+                  </div>
+                  <div className="mb-2 overflow-hidden rounded-2xl" style={{ boxShadow: '0 0 0 1px rgba(169,131,47,0.45)' }}>
+                    <ChapterVista chapter={chapter} />
+                  </div>
+                </>
               )}
+              {unitLabels.map((unitIndex) => (
+                <p key={unitIndex} className="mb-1 text-center text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+                  {schoolPathLabel(unitIndex)}
+                </p>
+              ))}
               <div className="grid items-center gap-3 rounded-3xl px-1 py-2" style={{ gridTemplateColumns: `repeat(${PATH_COLS}, minmax(0, 1fr))`, background: CHAPTER_TINT[chapter]?.band }}>
                 {row.map((node, i) => {
                   const done = !!journey.done[node.id]
@@ -2625,7 +2705,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
 // whole toolkit on one screen so nothing (Classic, Review...) gets buried.
-function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) {
+function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
       type="button"
@@ -2633,9 +2713,13 @@ function BackpackTile({ icon, title, onClick, tone = 'var(--sky)', badge = 0 }) 
       className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
-        {icon}
-      </span>
+      {art ? (
+        <SpecialtyIcon name={art} size={72} />
+      ) : (
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: tone }} aria-hidden="true">
+          {icon}
+        </span>
+      )}
       <span className="text-xs font-extrabold leading-tight">{title}</span>
       {badge > 0 && (
         <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
@@ -2766,7 +2850,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onTraffic, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2804,7 +2888,10 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex shrink-0 items-center justify-between">
-          <h2 className="text-lg font-black">{t('backpack', 'Backpack')}</h2>
+          <h2 className="min-w-0 leading-tight">
+            <span className="block text-lg font-black">{APP_NAME}</span>
+            <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>{t('backpack', 'Backpack')}</span>
+          </h2>
           <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
@@ -2816,22 +2903,21 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             {profileReg.list.length > 1 && (
               <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={() => setWhoOpen(true)} />
             )}
-            <BackpackTile icon={<Shirt className="h-6 w-6" />} tone="var(--go)" title={t('closetShort', 'Closet')} onClick={onCloset} />
+            <BackpackTile art="closet" title={t('closetShort', 'Closet')} onClick={onCloset} />
             {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
                sell - the screen, unlock logic, and tests all stay wired, so
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
-            <BackpackTile icon={<span className="geez text-lg font-black">ቀለ</span>} tone="var(--go)" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            {ready('workshop') && <BackpackTile icon={<Blocks className="h-6 w-6" />} tone="var(--go)" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
-            {ready('ladder') && <BackpackTile icon={<ListOrdered className="h-6 w-6" />} tone="var(--go)" title={t('ladderShort', 'Order')} onClick={onLadder} />}
-            {ready('lineup') && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="var(--sky)" title={t('lineupShort', 'Line Up')} onClick={onLineup} />}
-            {ready('match') && <BackpackTile icon={<Grid2x2 className="h-6 w-6" />} tone="var(--accent)" title={t('matchShort', 'Match')} onClick={onMatch} />}
-            {ready('market') && <BackpackTile icon={<Store className="h-6 w-6" />} tone="var(--star)" title={t('marketShort', 'Market')} onClick={onMarket} />}
-            {ready('bingo') && <BackpackTile icon={<Grid3x3 className="h-6 w-6" />} tone="var(--sky)" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
+            <BackpackTile art="words" title={t('wordsShort', 'First Words')} onClick={onWords} />
+            {ready('workshop') && <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
+            {ready('ladder') && <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />}
+            {ready('lineup') && <BackpackTile art="lineup" title={t('lineupShort', 'Line Up')} onClick={onLineup} />}
+            {ready('match') && <BackpackTile art="match" title={t('matchShort', 'Match')} onClick={onMatch} />}
+            {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
+            {ready('market') && <BackpackTile art="market" title={t('marketShort', 'Market')} onClick={onMarket} />}
+            {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
-            {packHasStories() && (
-              <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--accent)" title={t('storiesShort', 'Stories')} onClick={onStories} />
-            )}
+            {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {
@@ -2840,19 +2926,19 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                 const s = twinSiblingOf(f)
                 return s && learned.has(f.id) && learned.has(s.id)
               })
-              return ready ? <BackpackTile icon={<span className="geez text-lg font-black">ሀሐ</span>} tone="var(--sky)" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
+              return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
-            <BackpackTile icon={<BookOpen className="h-6 w-6" />} tone="var(--sky)" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            <BackpackTile icon={<Pencil className="h-6 w-6" />} tone="var(--star)" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
+            <BackpackTile art="classic" title={t('classicShort', 'Classic')} onClick={onClassic} />
             {troubleCount > 0 && (
-              <BackpackTile icon={<Star className="h-6 w-6" fill="currentColor" />} tone="var(--star)" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
+              <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
             {isSocialEnabled() && (
-              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--sky)" title={t('familyShort', 'Family')} onClick={onFamily} />
+              <BackpackTile art="family" title={t('familyShort', 'Family')} onClick={onFamily} />
             )}
-            <BackpackTile icon={<Mic className="h-6 w-6" />} tone="var(--go)" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
-            <BackpackTile icon={<span className="geez text-lg font-black">ስም</span>} tone="var(--sky)" title={t('nameShort', 'My Name')} onClick={onName} />
-            <BackpackTile icon={<Send className="h-6 w-6" />} tone="var(--accent)" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
+            <BackpackTile art="voice" title={t('fvShort', 'Family Voice')} onClick={onFamilyVoice} />
+            <BackpackTile art="name" title={t('nameShort', 'My Name')} onClick={onName} />
+            <BackpackTile art="postcard" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
           </div>
           {/* Say WHY the grid is short, so a hidden game reads as "not yet"
              rather than "missing". */}
@@ -3328,7 +3414,8 @@ function machineReducer(ctx, event) {
 }
 
 function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, practiceQueue = null, noDemo = false, incoming = null }) {
-  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined } }).next)
+  const schoolLevel = level?.schoolPath ? level : undefined
+  const [ctx, dispatch] = useReducer(machineReducer, undefined, () => transition(initialContext(seed), { type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed, queue: practiceQueue ?? undefined, level: schoolLevel } }).next)
   // Spoken instruction for pre-readers, once per session; the engine's
   // wait-queue lets it finish before the first target letter plays.
   useEffect(() => { sayPrompt('whichLetter', soundOn) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -3339,7 +3426,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   // letters runs, then the quiz re-offers - at most FIXIT_MAX_CYCLES per
   // sitting, then the child leaves with encouragement and the node stays
   // open (tomorrow's warm-up picks the same letters up from the ledger).
-  const isRealLevel = !practiceQueue && !isChallenge && LEVELS.some((l) => l.id === level.id)
+  const isRealLevel = !practiceQueue && !isChallenge && (LEVELS.some((l) => l.id === level.id) || !!level.schoolPath)
   const drilling = ctx.levelId === 'fixit'
   const [fixit, setFixit] = useState({ cycle: 0 })
 
@@ -3362,8 +3449,8 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
     // Preset-queue levels (warm-up, Star Practice) are NOT in the LEVELS
     // table - restarting them without their queue would be rejected and leave
     // an empty machine (a dead "says ''" screen). Thread the queue through.
-    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined } })
-  }, [level.id, seed, practiceQueue])
+    dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: ((seed * 7919 + 13) % 1000000) | 1, queue: practiceQueue ?? undefined, level: schoolLevel } })
+  }, [level.id, seed, practiceQueue, schoolLevel])
   useEffect(() => {
     if (!hasOnboarded('lesson') && prefersReducedMotion()) markOnboarded('lesson')
   }, [])
@@ -3445,7 +3532,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         <FixItReady
           onRetry={() => {
             const qseed = ((seed * 7919 + fixit.cycle * 131 + 17) % 1000000) | 1
-            dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed } })
+            dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: qseed, level: schoolLevel } })
           }}
           onHome={() => (onQuit || onFinish)(level.id, null)}
         />
@@ -3477,7 +3564,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
               const queue = buildFixItQueue(loadLedger(), result.missed, solid, dseed)
               setFixit((f) => ({ cycle: f.cycle + 1 }))
               if (queue.length) dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: 'fixit', seed: dseed, queue } })
-              else dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: dseed } })
+              else dispatch({ type: GameEvent.START_LEVEL, payload: { levelId: level.id, seed: dseed, level: schoolLevel } })
             }}
             onHome={goHome}
           />
@@ -3608,6 +3695,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
                 aria-label={`Choose the letter that says ${form.sound}`}
                 data-tut={`opt-${key}`}
               >
+                {!showAsCorrect && !showAsWrong && <JewelRim />}
                 {form.char}
                 {/* Shape + color, not color alone: a check/cross so a
                    colorblind child gets the same right/wrong signal. */}
@@ -3813,6 +3901,10 @@ function NextUpTeaser({ levelId }) {
       t('nextUpStory', 'a story to read!')
     ) : target.kind === NodeKind.REVIEW ? (
       t('nextUpReview', 'a letter check-in!')
+    ) : target.kind === NodeKind.BLEND ? (
+      t('nextUpBlend', 'build a word!')
+    ) : target.kind === NodeKind.FIND ? (
+      t('nextUpFind', 'find the letter!')
     ) : target.gateway?.mode === 'runner' ? (
       t('nextUpRunner', 'the Letter Runner!')
     ) : (
@@ -3853,7 +3945,7 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           animate={{ y: [0, -10, 0] }}
           transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
         >
-          <Sprite2D draw={drawZebra} size={84} />
+          <ZebraSvg size={84} />
           <Hero size={124} pose="cheer" />
         </motion.span>
       </motion.div>
@@ -4430,76 +4522,105 @@ export function drawKokeb(g, s) {
   }
 }
 
-/** Jibby the hyena — the Letter Muncher. Mischievous, not scary. */
+/** Jibby the hyena — the Letter Muncher. Mischievous, not scary.
+    Sandy coat, round ears, long muzzle, spots. The 3D mesh is the in-race
+    body; this portrait is the munched card. */
 export function drawHyena(g, s, mood = 'grin') {
   const cx = s / 2
+  g.fillStyle = 'rgba(20,16,8,0.12)'
+  g.beginPath()
+  g.ellipse(cx, s * 0.9, s * 0.22, s * 0.035, 0, 0, 7)
+  g.fill()
+  // shoulders
+  g.fillStyle = '#c6a15e'
+  g.beginPath()
+  g.ellipse(cx, s * 0.78, s * 0.26, s * 0.16, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f0ddb4'
+  g.beginPath()
+  g.ellipse(cx, s * 0.82, s * 0.12, s * 0.08, 0, 0, 7)
+  g.fill()
   // big rounded ears
   for (const side of [-1, 1]) {
-    g.fillStyle = '#8a7d6a'
+    g.fillStyle = '#e2c48a'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.18, s * 0.17, s * 0.08, s * 0.115, side * 0.25, 0, 7)
+    g.ellipse(cx + side * s * 0.2, s * 0.16, s * 0.09, s * 0.13, side * 0.3, 0, 7)
     g.fill()
-    g.fillStyle = '#57493a'
+    g.fillStyle = '#5c4632'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.18, s * 0.185, s * 0.045, s * 0.07, side * 0.25, 0, 7)
+    g.ellipse(cx + side * s * 0.2, s * 0.175, s * 0.048, s * 0.075, side * 0.3, 0, 7)
     g.fill()
   }
   // scruffy crest
-  g.fillStyle = '#57493a'
-  for (let i = -2; i <= 2; i++) {
+  g.fillStyle = '#4a3a2c'
+  for (let i = -3; i <= 3; i++) {
+    const h = 0.1 + (3 - Math.abs(i)) * 0.012
     g.beginPath()
-    g.moveTo(cx + i * s * 0.055 - s * 0.03, s * 0.185)
-    g.lineTo(cx + i * s * 0.055, s * 0.1)
-    g.lineTo(cx + i * s * 0.055 + s * 0.03, s * 0.185)
+    g.moveTo(cx + i * s * 0.045 - s * 0.028, s * 0.2)
+    g.lineTo(cx + i * s * 0.045, s * h)
+    g.lineTo(cx + i * s * 0.045 + s * 0.028, s * 0.2)
     g.closePath()
     g.fill()
   }
   // head
-  g.fillStyle = '#9a8b76'
+  g.fillStyle = '#d7b56e'
   g.beginPath()
-  g.arc(cx, s * 0.43, s * 0.28, 0, 7)
+  g.ellipse(cx, s * 0.4, s * 0.26, s * 0.24, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#f3e2bc'
+  g.beginPath()
+  g.ellipse(cx - s * 0.06, s * 0.32, s * 0.08, s * 0.04, -0.4, 0, 7)
   g.fill()
   // spots
-  g.fillStyle = '#6e614f'
-  for (const [px, py, pr] of [[0.3, 0.3, 0.028], [0.68, 0.27, 0.024], [0.74, 0.42, 0.02], [0.26, 0.46, 0.022]]) {
+  g.fillStyle = '#5c4632'
+  for (const [px, py, pr] of [[0.28, 0.28, 0.03], [0.72, 0.26, 0.026], [0.76, 0.44, 0.022], [0.24, 0.48, 0.024], [0.62, 0.72, 0.028]]) {
     g.beginPath()
-    g.arc(px * s, py * s, pr * s, 0, 7)
+    g.ellipse(px * s, py * s, pr * s, pr * s * 0.75, 0, 0, 7)
     g.fill()
   }
   // heavy brow
-  g.strokeStyle = '#57493a'
-  g.lineWidth = s * 0.03
+  g.strokeStyle = '#4a3a2c'
+  g.lineWidth = s * 0.028
   g.lineCap = 'round'
   g.beginPath()
-  g.moveTo(cx - s * 0.16, s * 0.3)
-  g.quadraticCurveTo(cx, s * 0.27, cx + s * 0.16, s * 0.3)
+  g.moveTo(cx - s * 0.18, s * 0.3)
+  g.quadraticCurveTo(cx - s * 0.08, s * 0.26, cx - s * 0.02, s * 0.32)
+  g.moveTo(cx + s * 0.18, s * 0.3)
+  g.quadraticCurveTo(cx + s * 0.08, s * 0.26, cx + s * 0.02, s * 0.32)
   g.stroke()
-  // mischievous eyes
+  // mischievous eyes, glancing to one side
   for (const side of [-1, 1]) {
     g.fillStyle = '#fff'
     g.beginPath()
-    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.05, s * 0.042, 0, 0, 7)
+    g.ellipse(cx + side * s * 0.1, s * 0.36, s * 0.055, s * 0.04, 0, 0, 7)
     g.fill()
     g.fillStyle = '#241c12'
     g.beginPath()
-    g.arc(cx + side * s * 0.085, s * 0.372, s * 0.02, 0, 7)
+    g.arc(cx + side * s * 0.08 + s * 0.012, s * 0.372, s * 0.02, 0, 7)
+    g.fill()
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.arc(cx + side * s * 0.074, s * 0.362, s * 0.008, 0, 7)
     g.fill()
   }
-  // muzzle
-  g.fillStyle = '#c9b99d'
+  // long muzzle
+  g.fillStyle = '#f6e6c4'
   g.beginPath()
-  g.ellipse(cx, s * 0.55, s * 0.165, s * 0.125, 0, 0, 7)
+  g.ellipse(cx, s * 0.54, s * 0.15, s * 0.12, 0, 0, 7)
   g.fill()
-  // nose
-  g.fillStyle = '#3a2d1c'
+  g.fillStyle = '#2c2418'
   g.beginPath()
-  g.ellipse(cx, s * 0.485, s * 0.045, s * 0.03, 0, 0, 7)
+  g.ellipse(cx, s * 0.48, s * 0.05, s * 0.032, 0, 0, 7)
+  g.fill()
+  g.fillStyle = '#6a5840'
+  g.beginPath()
+  g.ellipse(cx - s * 0.018, s * 0.472, s * 0.012, s * 0.008, 0, 0, 7)
   g.fill()
   // the letter-munching grin
   if (mood === 'agitated') {
     g.fillStyle = '#3a2216'
     g.beginPath()
-    g.ellipse(cx, s * 0.6, s * 0.11, s * 0.075, 0, 0, 7)
+    g.ellipse(cx, s * 0.6, s * 0.11, s * 0.08, 0, 0, 7)
     g.fill()
     g.fillStyle = '#fff'
     for (let i = 0; i < 3; i++) {
@@ -4511,24 +4632,24 @@ export function drawHyena(g, s, mood = 'grin') {
       g.closePath()
       g.fill()
     }
+    g.fillStyle = '#e58aa0'
+    g.beginPath()
+    g.ellipse(cx, s * 0.64, s * 0.04, s * 0.025, 0, 0, 7)
+    g.fill()
   } else {
     g.strokeStyle = '#3a2d1c'
     g.lineWidth = s * 0.016
     g.beginPath()
-    g.moveTo(cx - s * 0.12, s * 0.575)
-    g.quadraticCurveTo(cx, s * 0.655, cx + s * 0.12, s * 0.575)
+    g.moveTo(cx - s * 0.1, s * 0.56)
+    g.quadraticCurveTo(cx + s * 0.02, s * 0.64, cx + s * 0.12, s * 0.55)
     g.stroke()
     g.fillStyle = '#fff'
-    for (let i = 0; i < 4; i++) {
-      const x = cx - s * 0.105 + i * s * 0.056
-      const y = s * (0.585 + Math.sin((i / 3) * Math.PI) * 0.028)
-      g.beginPath()
-      g.moveTo(x, y)
-      g.lineTo(x + s * 0.028, y + s * 0.05)
-      g.lineTo(x + s * 0.056, y)
-      g.closePath()
-      g.fill()
-    }
+    g.beginPath()
+    g.moveTo(cx + s * 0.04, s * 0.56)
+    g.lineTo(cx + s * 0.07, s * 0.62)
+    g.lineTo(cx + s * 0.1, s * 0.55)
+    g.closePath()
+    g.fill()
   }
 }
 
