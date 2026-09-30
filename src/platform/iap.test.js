@@ -12,7 +12,6 @@ const purchasesMock = {
   purchasePackage: vi.fn(),
   restorePurchases: vi.fn(),
 }
-vi.mock('@revenuecat/purchases-capacitor', () => ({ Purchases: purchasesMock }))
 vi.mock('./native', () => ({ isNativePlatform: () => mockNative, isApplePlatform: () => true }))
 
 let mockNative = true
@@ -22,11 +21,13 @@ const NOT_OWNED = { customerInfo: { entitlements: { active: {} } } }
 const FAMILY_PKG = { identifier: 'family', product: { identifier: 'family_pack', priceString: '$4.99' }, presentedOfferingContext: { offeringIdentifier: 'default' } }
 const APP_PKG = { identifier: 'lifetime', product: { identifier: 'full_app', priceString: '$12.99' }, presentedOfferingContext: { offeringIdentifier: 'default' } }
 
-async function fresh(env = { VITE_STORE_IAP: 'true', VITE_REVENUECAT_APPLE_KEY: 'appl_test' }) {
+async function fresh(env = { VITE_STORE_IAP: 'true', VITE_REVENUECAT_APPLE_KEY: 'appl_test' }, withPlugin = true) {
   vi.resetModules()
   vi.stubGlobal('__viteEnvOverride', null)
   for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v)
-  return import('./iap')
+  const iap = await import('./iap')
+  if (withPlugin) iap.__setPurchasesLoaderForTests(async () => purchasesMock)
+  return iap
 }
 
 beforeEach(() => {
@@ -147,5 +148,19 @@ describe('iap wrapper (dormant-until-keys store purchases)', () => {
     const iap = await fresh()
     purchasesMock.getOfferings.mockResolvedValueOnce({ current: { availablePackages: [{ product: { identifier: 'family_pack', priceString: '4,99 US$' } }] } })
     expect(await iap.familyPackStorePrice()).toBe('4,99 US$')
+  })
+
+  it('degrades without throwing when no RevenueCat plugin is bundled (this build), even with IAP forced on', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const iap = await fresh(undefined, false)
+    expect(iap.iapAvailable()).toBe(true)
+    await expect(iap.initIap()).resolves.toBeUndefined()
+    expect(await iap.buyFullApp()).toBe('error')
+    expect(await iap.buyFamilyPack()).toBe('error')
+    expect(await iap.restorePurchasesAll()).toBe('error')
+    expect(await iap.fullAppStorePrice()).toBe('')
+    expect(purchasesMock.configure).not.toHaveBeenCalled()
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('not bundled'))
+    warn.mockRestore()
   })
 })
