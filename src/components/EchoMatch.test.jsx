@@ -89,7 +89,7 @@ describe('Echo Match screen', () => {
     fireEvent.click(byFace('voice', k0))
     fireEvent.click(byFace('letter', k0))
     expect(byFace('letter', k0).dataset.state).toBe('matched')
-    expect(screen.getByTestId('echo-example')).toBeInTheDocument()
+    expect(screen.getByTestId('game-example')).toBeInTheDocument()
     expect(ledger).toEqual([{ k: k0, p: k0, m: 'echo' }])
     played.length = 0
     flush()
