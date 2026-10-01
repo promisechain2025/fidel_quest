@@ -1145,9 +1145,9 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4">
+    <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4 md:max-w-2xl">
       <header className="flex items-center gap-2">
-        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
@@ -1188,7 +1188,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
               type="button"
               onClick={() => setSpeedName(s)}
               aria-pressed={speedName === s}
-              className={`rounded-full px-2.5 py-1 text-xs font-black ${FOCUS}`}
+              className={`min-h-[44px] rounded-full px-3 py-1 text-xs font-black ${FOCUS}`}
               style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
             >
               {t(`speed_${s}`, s)}

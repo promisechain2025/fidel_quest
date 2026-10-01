@@ -28,7 +28,7 @@ export default function RunnerSummary({ ctx, onRetry, onExit, placeName }) {
   const isBest = ctx.fed >= best.fed && ctx.fed > 0
   const levelsBeaten = finished ? RUNNER_LEVELS : ctx.level - 1
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-10 text-center" data-testid="runner-summary">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-5 py-10 text-center" data-testid="runner-summary">
       <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 240, damping: 14 }}>
         <img src={finished ? RUNNER_CAST.anbessaFront : RUNNER_CAST.jibbyFront} alt="" draggable={false} style={{ height: 120, width: 'auto' }} />
       </motion.div>

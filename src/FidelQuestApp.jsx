@@ -1704,7 +1704,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'placement-done' && (
             <Screen key="placement-done">
-              <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+              <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
                 <AnbessaSvg size={110} mood="happy" />
                 <h1 className="text-2xl font-black">
                   {screen.families > 0 ? t('placeDoneTitle', 'Placed!') : t('placeFreshTitle', 'Starting fresh!')}
@@ -2191,12 +2191,14 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           onClick={onClick}
           whileTap={unlocked ? { scale: 0.92 } : {}}
           animate={highlight ? { scale: [1, 1.08, 1], transition: { duration: 1.3, repeat: Infinity } } : { scale: 1 }}
-          className={`geez relative flex items-center justify-center border-2 font-black ${FOCUS}`}
+          className={`geez relative flex items-center justify-center border-2 font-black md:[--node-scale:1.3] ${FOCUS}`}
           style={{
-            width: size,
-            height: size,
+            // Tablets scale the tiles up (--node-scale, set at md) so the
+            // wider path is not a row of phone-sized tiles.
+            width: `calc(${size}px * var(--node-scale, 1))`,
+            height: `calc(${size}px * var(--node-scale, 1))`,
             borderRadius: radius,
-            fontSize: big ? 22 : node.kind === NodeKind.MIX ? 17 : 26,
+            fontSize: `calc(${big ? 22 : node.kind === NodeKind.MIX ? 17 : 26}px * var(--node-scale, 1))`,
             background: bg,
             color: fg,
             borderColor: goldTile ? 'var(--tile-deep)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
@@ -2295,7 +2297,7 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
       aria-current={active ? 'step' : undefined}
       animate={active ? { scale: [1, 1.04, 1] } : {}}
       transition={{ duration: 1.6, repeat: Infinity }}
-      className={`chunk flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
+      className={`chunk flex min-h-[44px] items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
       style={done
         ? { background: 'var(--go-soft)', color: 'var(--go-ink)', boxShadow: '0 2px 0 rgba(0,0,0,0.05)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }
         : active
@@ -2365,7 +2367,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
   const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
   const eta = formatDual(etaStamp(today, learned, per), getLang())
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-6">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -2450,7 +2452,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-28 pt-3">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-0 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
@@ -2469,7 +2471,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 type="button"
                 onClick={() => setLangOpen(true)}
                 aria-label={t('langTitle', 'Language')}
-                className={`flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black ${FOCUS}`}
+                className={`relative flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black before:absolute before:-inset-x-1 before:-inset-y-[11px] before:content-[''] ${FOCUS}`}
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -2549,7 +2551,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto mt-3 w-full max-w-md rounded-3xl px-4 py-3 text-center text-white"
+          className="mx-auto mt-3 w-full max-w-md md:max-w-2xl rounded-3xl px-4 py-3 text-center text-white"
           style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)' }}
           role="status"
         >
@@ -2567,15 +2569,15 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
          pace's finish date (or the make-a-plan invite) as a small tail
          line. Deliberately compact: the Journey path is the hero and must
          stay above the fold even on a small phone. */}
-      <div className="mx-auto mt-3 w-full max-w-md">
-        <div className="flex items-baseline justify-between gap-2 px-1">
+      <div className="mx-auto mt-3 w-full max-w-md md:max-w-2xl">
+        <div className="-mb-2 flex items-center justify-between gap-2 px-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
           {coach?.hasPlan && coach?.eta ? (
-            <button type="button" onClick={onPlanSetup} className={`truncate text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onPlanSetup} className={`min-h-[44px] truncate px-1 text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
               {t('planEta', 'Whole Fidel by {date}', { date: coach.eta })}
             </button>
           ) : (
-            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+            <button type="button" onClick={onPlanSetup} className={`min-h-[44px] px-1 text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
               {t('planMake', 'Make my learning plan')}
             </button>
           )}
@@ -2626,21 +2628,21 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
       </div>
 
       {placeOfferOpen && onPlacement && (
-        <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
+        <div className="mx-auto mt-3 flex w-full max-w-md md:max-w-2xl items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
           <KokebSvg size={36} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black">{t('placeOfferTitle', 'Already knows some letters?')}</p>
             <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('placeOfferBody', 'A quick listening check skips what you already know.')}</p>
           </div>
-          <button type="button" onClick={() => { dismissPlaceOffer(); onPlacement() }} className={`chunk shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+          <button type="button" onClick={() => { dismissPlaceOffer(); onPlacement() }} className={`chunk min-h-[44px] shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
             {t('placeOfferCta', 'Skip ahead')}
           </button>
-          <button type="button" onClick={dismissPlaceOffer} aria-label={t('placeOfferSkip', 'Not now')} className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)' }}>
+          <button type="button" onClick={dismissPlaceOffer} aria-label={t('placeOfferSkip', 'Not now')} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)' }}>
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
-      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-3 px-2">
+      <div className="mx-auto mt-4 flex w-full max-w-md md:max-w-2xl flex-col gap-3 px-2">
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
           const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
@@ -2718,9 +2720,9 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             className="fixed inset-x-0 bottom-0 z-30"
             style={{ background: 'var(--paper)', borderTop: '2px solid var(--accent)', boxShadow: '0 -6px 20px var(--overlay)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="mx-auto flex w-full max-w-md items-center gap-2 px-7 py-2.5">
+            <div className="mx-auto flex w-full max-w-md md:max-w-2xl items-center gap-2 px-7 py-2.5">
               {/* Kokeb power = the streak; tap it for the streak detail. */}
-              <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
+              <button type="button" onClick={() => setStreakOpen(true)} className={`flex min-h-[44px] shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
                 <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
@@ -2882,7 +2884,7 @@ export function LanguageSheet({ onClose }) {
             <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
             {t('langTitle', 'Language')}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -2937,7 +2939,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <span className="block text-lg font-black">{APP_NAME}</span>
             <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>{t('backpack', 'Backpack')}</span>
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -3107,7 +3109,7 @@ function InstallBanner() {
         >
           {state === 'prompt' ? t('installCta', 'Add') : t('installHow', 'How?')}
         </button>
-        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`shrink-0 rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-5 w-5" />
         </button>
       </motion.div>
@@ -3280,7 +3282,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   }, [playing, playIdx, order, pace, family, soundOn])
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); family ? setOpenFamily(null) : onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -3662,7 +3664,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   const presenting = ctx.status === GameState.PRESENTATION
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col overflow-hidden px-7 pb-32 pt-5">
+    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col overflow-hidden px-7 pb-32 pt-5">
       {/* Scene framing: a soft ground swell with Anbessa watching from the
          corner, so the quiz floats in a place instead of empty paper. Purely
          decorative - zero pointer events, behind everything. */}
@@ -3675,7 +3677,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         </div>
       </div>
       <header className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
-        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">
@@ -3883,7 +3885,7 @@ function ChallengeShareButton({ payload, label }) {
 
 function FixItGate({ missedCount, onPractice, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixTitle', 'Almost!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3892,7 +3894,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
       <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onPractice}>
         {t('fixCta', 'Practice the tricky ones')}
       </Chunky>
-      <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
         {t('home', 'Home')}
       </button>
     </div>
@@ -3901,7 +3903,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
 
 function FixItReady({ onRetry, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixReady', 'Nice practice!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3913,7 +3915,7 @@ function FixItReady({ onRetry, onHome }) {
       {/* Always leave a way back to the path - a tired child must not be forced
          into another full quiz to escape (same exit the fix-it gate/cap give). */}
       {onHome && (
-        <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           {t('backToPath', 'Back to the path')}
         </button>
       )}
@@ -3923,7 +3925,7 @@ function FixItReady({ onRetry, onHome }) {
 
 function FixItCap({ onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixCapTitle', 'Great practice today!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3998,7 +4000,7 @@ function NextUpTeaser({ levelId }) {
 function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
   const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-7 py-10 text-center">
+    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center overflow-hidden px-7 py-10 text-center">
       <Confetti />
       <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <motion.span
@@ -4132,7 +4134,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
   const who = challenge.by || t('aFriend', 'A friend')
   const levelTitle = t(`${level.id}.title`, level.title)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4159,7 +4161,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
 
 function ChallengeMissing({ onHome }) {
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <Hero size={112} mood="worried" />
       <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
         {t('challengeGone', 'This challenge is not available.')}
@@ -4187,7 +4189,7 @@ function JoinClassIntro({ invite, onHome }) {
     setJoined(true)
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4265,7 +4267,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
 function AssignmentIntro({ assignment, count, onStart, onHome }) {
   useEscapeKey(onHome)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4330,7 +4332,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     } catch { /* clipboard blocked */ }
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4924,9 +4926,9 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
   const busy = ctx.status !== GameState.AWAITING_INPUT
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Words progress">

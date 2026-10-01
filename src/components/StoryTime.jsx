@@ -248,7 +248,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── celebration ── */
   if (story && finished) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
         <AnbessaSvg size={120} mood="happy" />
         <h1 className="text-2xl font-black">{t('storyDoneTitle', 'You read a whole story!')}</h1>
         <p className="geez text-xl font-black">{story.title.g}</p>
@@ -273,10 +273,10 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── comprehension question ── */
   if (story && (quiz === 'asking' || quiz === 'missed')) {
     return (
-      <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
+      <div className="relative mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col items-center justify-center gap-6 px-7 text-center" aria-live="polite">
         {/* A way out must always exist: without this the child is confined to
            guessing among the pictures with no back/exit (breaks the #1 rule). */}
-        <button type="button" onClick={leaveReader} aria-label={t('back', 'Back')} className={`absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={leaveReader} aria-label={t('back', 'Back')} className={`absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
         <AnbessaSvg size={90} mood={quiz === 'missed' ? 'worried' : 'happy'} />
@@ -302,7 +302,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── reader ── */
   if (story) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4">
         <header className="flex items-center gap-2">
           <button type="button" onClick={prevPage} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <ChevronLeft className="h-6 w-6" />
@@ -383,7 +383,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   /* ── library ── */
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-7 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4">
       <header className="flex items-center gap-2">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />

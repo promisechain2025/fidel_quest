@@ -144,7 +144,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
 
   if (phase === 'micgate') {
     return (
-      <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
+      <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pt-5">
         <button type="button" onClick={() => setPhase('idle')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
@@ -158,7 +158,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
 
   if (phase === 'gate') {
     return (
-      <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
+      <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pt-5">
         <button type="button" onClick={() => setPhase('ready')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </button>
@@ -168,7 +168,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-6">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
