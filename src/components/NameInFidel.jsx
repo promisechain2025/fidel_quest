@@ -6,11 +6,13 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, Volume2, Delete, Eraser, Share2 } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'
-import { playForm } from '../platform/audioEngine'
+import { playForm, afterVoice } from '../platform/audioEngine'
 import { shareName } from './ShareCard'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
+// Small breath between syllables, after each clip has finished.
+const NAME_GAP_MS = 120
 
 export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
   const [order, setOrder] = useState(1) // the selected vowel order (1-7)
@@ -19,8 +21,11 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
 
   // The hear-the-name playback chain, cancellable so it stops on Clear /
   // Back / a re-tap instead of playing over whatever screen comes next.
-  const playTimers = useRef([])
-  const stopPlayback = () => { playTimers.current.forEach(clearTimeout); playTimers.current = [] }
+  // Each syllable waits for the previous clip to END (afterVoice), instead
+  // of a fixed 620ms beat that clipped long syllables - and, because the
+  // engine keeps only the LAST queued voice, silently dropped middle ones.
+  const playCancel = useRef(null)
+  const stopPlayback = () => { playCancel.current?.(); playCancel.current = null }
   useEffect(() => stopPlayback, [])
 
   const append = (fam) => {
@@ -33,7 +38,16 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
   const clearAll = () => { stopPlayback(); setLetters([]) }
   const playAll = () => {
     stopPlayback()
-    playTimers.current = letters.map((f, i) => setTimeout(() => playForm(f, soundOn), i * 620))
+    const seq = letters.slice()
+    let cancelWait = null
+    let stopped = false
+    const step = (i) => {
+      if (stopped || i >= seq.length) return
+      playForm(seq[i], soundOn)
+      cancelWait = afterVoice(() => step(i + 1), NAME_GAP_MS)
+    }
+    playCancel.current = () => { stopped = true; cancelWait?.() }
+    step(0)
   }
 
   const nameGeez = letters.map((f) => f.char).join('')
@@ -68,13 +82,13 @@ export default function NameInFidel({ onBack, soundOn = true, worn = [] }) {
           <p className="py-2 text-base font-bold" style={{ color: 'var(--muted)' }}>{t('nameHint', 'Pick a vowel sound below, then tap letters to spell your name.')}</p>
         )}
         <div className="mt-3 flex justify-center gap-2">
-          <button type="button" onClick={playAll} disabled={!letters.length} aria-label={t('namePlay', 'Hear the name')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--accent)' }}>
+          <button type="button" onClick={playAll} disabled={!letters.length} aria-label={t('namePlay', 'Hear the name')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--accent)' }}>
             <Volume2 className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button type="button" onClick={backspace} disabled={!letters.length} aria-label={t('nameBackspace', 'Remove last letter')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={backspace} disabled={!letters.length} aria-label={t('nameBackspace', 'Remove last letter')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             <Delete className="h-5 w-5" aria-hidden="true" />
           </button>
-          <button type="button" onClick={clearAll} disabled={!letters.length} aria-label={t('nameClear', 'Clear')} className={`chunk flex h-10 w-10 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={clearAll} disabled={!letters.length} aria-label={t('nameClear', 'Clear')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl disabled:opacity-40 ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             <Eraser className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
