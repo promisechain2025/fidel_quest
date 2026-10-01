@@ -34,7 +34,8 @@ accounts). This guide is the end-to-end runbook.
 - [ ] Host the **privacy policy** and paste its URL into both stores **and set
       `VITE_PRIVACY_URL`** to it, so the in-app "Privacy policy" link (in the
       gated Grown-Ups area) points at the real page — required by Apple 5.1.1(i).
-      Unset, the link falls back to `VITE_APP_URL`. See §8 and
+      Unset, the link falls back to https://www.easygeez.com/privacy (the
+      site's published policy, `DEFAULT_PRIVACY_URL` in `src/platform/support.js`). See §8 and
       `docs/store-review-compliance.md`.
 - [ ] Microphone: the only mic use is the optional **Family Voice** recorder
       (adult flow). For the simplest kids review build with

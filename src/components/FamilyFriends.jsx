@@ -86,7 +86,7 @@ export default function FamilyFriends({ onBack, lettersLearned = 0, nickname = '
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="mb-5 flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -176,7 +176,7 @@ function GroupView({ membership, lettersLearned, nickname }) {
         <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>Group code — share with family</p>
         <div className="mt-2 flex items-center gap-3">
           <span className="mono text-3xl font-black tracking-[0.2em]" style={{ color: 'var(--ink)' }}>{membership.code}</span>
-          <button type="button" onClick={copyCode} aria-label="Copy code" className={`chunk flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+          <button type="button" onClick={copyCode} aria-label="Copy code" className={`chunk flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
             {copied ? <Check className="h-5 w-5 text-white" /> : <Copy className="h-5 w-5 text-white" />}
           </button>
         </div>

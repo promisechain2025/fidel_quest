@@ -55,3 +55,13 @@ export function workshopTransition(ctx, event) {
   const placed = ctx.placed + 1
   return ok({ ...ctx, placed, phase: placed >= ctx.target.length ? Phase.WIN : Phase.PLAY })
 }
+
+/** Words a child can build from the PICTURE alone. A word with no recording
+    (noAudio: "Say the word" is only a chime) whose picture is shared by
+    another word in the list is ambiguous - 🌳 is both ሾላ and ዛፍ - so it is
+    dropped. Voiced words always stay: the clip tells them apart. Pure. */
+export function unambiguousWords(words) {
+  const byPicture = new Map()
+  for (const w of words) byPicture.set(w.picture, (byPicture.get(w.picture) || 0) + 1)
+  return words.filter((w) => !w.noAudio || byPicture.get(w.picture) === 1)
+}

@@ -180,6 +180,13 @@ describe('question generation', () => {
   })
 })
 
+describe('trace scribble copy', () => {
+  it('Classic has an English scribble message (its t() has no inline fallback)', async () => {
+    const { UI_STRINGS } = await import('../data/fidelGameData')
+    expect(UI_STRINGS.en.traceScribble).toMatch(/not all over the pad/)
+  })
+})
+
 describe('trace scoring', () => {
   // A 10x10 grid mask around (50,50)..(95,95).
   const mask = []
@@ -337,6 +344,25 @@ describe('<AmharicFidelGame />', () => {
     expect(Object.values(stored.missCounts)).toContain(1)
   })
 
+  it('counts only first-try answers toward accuracy (a rescued answer is not 100%)', async () => {
+    vi.useFakeTimers()
+    render(<AmharicFidelGame />)
+    fireEvent.click(screen.getByText('First Letters').closest('button'))
+    const formOf = (b) => FIDEL_FAMILIES.flatMap((f) => f.forms).find((f) => f.char === b.getAttribute('aria-label').replace('Letter ', ''))
+    const total = LEVELS[0].questionCount
+    for (let qi = 0; qi < total; qi++) {
+      const sound = screen.getByRole('button', { name: /Play the sound .+ again/ }).getAttribute('aria-label').match(/Play the sound (.+) again/)[1]
+      const opts = screen.getAllByRole('button', { name: /^Letter / })
+      if (qi === 0) fireEvent.click(opts.find((b) => formOf(b).sound !== sound)) // a slip first
+      fireEvent.click(opts.find((b) => formOf(b).sound === sound))
+      await act(async () => { await vi.advanceTimersByTimeAsync(7000) })
+    }
+    const pct = Math.round(((total - 1) / total) * 100)
+    expect(screen.getByText(new RegExp(`${pct}\\s*%`))).toBeInTheDocument()
+    expect(screen.queryByText(/100\s*%/)).toBeNull()
+    vi.useRealTimers()
+  })
+
   it('answers via number key shortcuts', () => {
     render(<AmharicFidelGame />)
     fireEvent.click(screen.getByText('First Letters').closest('button'))
@@ -400,11 +426,25 @@ describe('<AmharicFidelGame />', () => {
     expect(screen.getByText(/canvas support/)).toBeInTheDocument()
   })
 
-  it('shows nickname, labialized bonus form, and word card in the family view', () => {
+  it('hides the labialized bonus button when it has no real recording (chime only)', async () => {
+    const spy = vi.spyOn(platformAudio, 'hasClip').mockResolvedValue(false)
     render(<AmharicFidelGame />)
     fireEvent.click(screen.getByText(/Explore Mode/))
     fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
-    expect(screen.getByRole('button', { name: /Letter ሏ, sounds like lwa/ })).toBeInTheDocument()
+    await act(async () => {})
+    expect(spy).toHaveBeenCalledWith('letters/le-8')
+    expect(screen.queryByRole('button', { name: /Letter ሏ/ })).toBeNull()
+    expect(screen.getByText('ልጅ')).toBeInTheDocument()
+    spy.mockRestore()
+  })
+
+  it('shows nickname, labialized bonus form, and word card in the family view', async () => {
+    const spy = vi.spyOn(platformAudio, 'hasClip').mockResolvedValue(true)
+    render(<AmharicFidelGame />)
+    fireEvent.click(screen.getByText(/Explore Mode/))
+    fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
+    expect(await screen.findByRole('button', { name: /Letter ሏ, sounds like lwa/ })).toBeInTheDocument()
+    spy.mockRestore()
     expect(screen.getByText('ልጅ')).toBeInTheDocument()
     expect(screen.getByText(/lij — child/)).toBeInTheDocument()
   })

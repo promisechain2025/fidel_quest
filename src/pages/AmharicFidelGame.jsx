@@ -711,6 +711,18 @@ export default function AmharicFidelGame() {
 
   // Explore mode
   const [exploreFamilyIndex, setExploreFamilyIndex] = useState(null)
+  // Bonus labialized form (e.g. ሏ): shown only when a real recording exists.
+  // There are no -8 clips yet, so tapping it used to play just a chime.
+  const [labialVoiced, setLabialVoiced] = useState({})
+  useEffect(() => {
+    const lf = exploreFamilyIndex !== null ? FIDEL_FAMILIES[exploreFamilyIndex]?.labialForm : null
+    if (!lf || lf.audioKey in labialVoiced) return undefined
+    let live = true
+    platformAudio.hasClip(`letters/${lf.audioKey}`).then((ok) => {
+      if (live) setLabialVoiced((m) => ({ ...m, [lf.audioKey]: ok }))
+    })
+    return () => { live = false }
+  }, [exploreFamilyIndex]) // eslint-disable-line react-hooks/exhaustive-deps
   const [glowingChar, setGlowingChar] = useState(null)
 
   // Trace mode
@@ -852,7 +864,10 @@ export default function AmharicFidelGame() {
         setScore((s) => s + gained)
         setStreak(nextStreak)
         setBestStreakInRun((b) => Math.max(b, nextStreak))
-        setCorrectCount((c) => c + 1)
+        // Accuracy counts FIRST-TRY answers only: a letter found after a wrong
+        // tap is still learned (and scored +5) but is not a correct answer, so
+        // a round with slips can no longer show 8/8 and 100%.
+        if (cleanFirstTry) setCorrectCount((c) => c + 1)
         setLastGain({ amount: gained, key: `${questionIndex}-${optionIndex}` })
         const isStreakMilestone = cleanFirstTry && nextStreak % 5 === 0
         const praise = praiseWords()
@@ -1417,7 +1432,7 @@ export default function AmharicFidelGame() {
                   </button>
                 )
               })}
-              {family.labialForm && (
+              {family.labialForm && labialVoiced[family.labialForm.audioKey] && (
                 <button
                   type="button"
                   onClick={() => handleExploreTap(family.labialForm)}
@@ -1849,6 +1864,7 @@ export default function AmharicFidelGame() {
                 check: t('traceCheck'),
                 instruction: t('traceInstruction'),
                 unsupported: t('traceUnsupported'),
+                scribble: t('traceScribble'),
               }}
               onScored={handleTraceScored}
             />

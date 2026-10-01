@@ -22,17 +22,19 @@ import AnbessaSvg from './AnbessaSvg'
 import KokebSvg from './KokebSvg'
 import WordPicture, { DRAWN_PICTURES } from './Pictures'
 import { FidelCard } from './FidelCard'
-import { initWorkshop, workshopTransition, wordToKeys, Phase, WorkshopEvent } from '../workshopCore'
+import { initWorkshop, workshopTransition, wordToKeys, unambiguousWords, Phase, WorkshopEvent } from '../workshopCore'
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const glyphOf = (k) => formOf(k)?.char || ''
 
 // Short words that have an owned drawn picture and are fully spelled from real
 // forms, so the cue is a real illustration (never a bare emoji).
-const BUILDABLE = ALL_WORDS.filter((w) => {
+// A silent (noAudio) word whose picture another word shares is left out, so
+// the picture is never ambiguous when there is no voice to tell them apart.
+export const BUILDABLE = unambiguousWords(ALL_WORDS.filter((w) => {
   const chars = Array.from(w.geez)
   return DRAWN_PICTURES.includes(w.picture) && chars.length >= 2 && chars.length <= 4 && wordToKeys(w.geez).length === chars.length
-})
+}))
 
 // The family ids a word is spelled from (used to gate by learned letters).
 const wordFamilies = (w) => Array.from(w.geez).map((ch) => INDEXES.byChar.get(ch)?.familyId)
@@ -98,7 +100,7 @@ export default function WordWorkshop({ soundOn, onBack, families = [] }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
       <header className="flex items-center gap-2">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

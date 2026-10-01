@@ -174,3 +174,43 @@ describe('the path', () => {
     expect(groupMastered({ mastered: g1families, mixes: [] }, 2)).toBe(false)
   })
 })
+
+describe('same-sound answers in listen-and-pick phases (Amharic)', () => {
+  const at = (phase, extra) => ({ ...learnInitial('ha', 7), phase, ...extra })
+
+  it('ECHO/SHUFFLE: the target ሀ (ha-1) is answered by ሃ (ha-4), which sounds identical', () => {
+    for (const phase of [LearnPhase.ECHO, LearnPhase.SHUFFLE]) {
+      const r = learnTransition(at(phase, { target: 'ha-1', round: 0 }), 'ha-4')
+      expect(r.correct).toBe(true)
+      expect(r.next.wrongs).toBe(0)
+    }
+  })
+
+  it('FORWARD/BACKWARD: a same-sound pick advances the stones', () => {
+    const f = learnTransition(at(LearnPhase.FORWARD, { idx: 0 }), 'ha-4')
+    expect(f.correct).toBe(true)
+    expect(f.next.idx).toBe(1)
+    const b = learnTransition(at(LearnPhase.BACKWARD, { idx: 3 }), 'ha-1')
+    expect(b.correct).toBe(true)
+    expect(b.next.idx).toBe(2)
+  })
+
+  it('twins across families count too (ጸ/ፀ, ሰ/ሠ, አ/ዐ, ሐ/ኀ/ሀ) in a mix', () => {
+    const mix = { ...mixInitial(['tse', 'ttse'], 3), round: 0 }
+    for (const [target, tapped] of [['tse-1', 'ttse-1'], ['se-2', 'sse-2'], ['a-3', 'ae-3'], ['hha-5', 'kha-5'], ['ha-1', 'hha-1']]) {
+      expect(learnTransition({ ...mix, target }, tapped).correct).toBe(true)
+    }
+  })
+
+  it('a genuinely different letter is still wrong, and MEET stays exact', () => {
+    expect(learnTransition(at(LearnPhase.ECHO, { target: 'ha-1' }), 'ha-2').correct).toBe(false)
+    expect(learnTransition(at(LearnPhase.MEET, { idx: 0 }), 'ha-4').correct).toBe(false)
+  })
+
+  it('mix trays never hold two forms that sound the same', async () => {
+    const { soundKeyOf } = await import('./platform/sameSound')
+    const ctx = mixInitial(['ha', 'hha', 'kha', 'a', 'ae', 'ke', 'khe', 'se', 'sse'], 11)
+    const sounds = ctx.forms.map((k) => soundKeyOf(k))
+    expect(new Set(sounds).size).toBe(sounds.length)
+  })
+})

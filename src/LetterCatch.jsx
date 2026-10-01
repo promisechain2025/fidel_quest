@@ -146,7 +146,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
   if (ctx.phase === Phase.LOSE) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#12182a,#24362a)', color: '#fdf4e2' }}>
+      <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#12182a,#24362a)', color: '#fdf4e2' }}>
         <JibbySvg size={120} />
         <h2 className="text-2xl font-black">{t('catchLose', 'Out of hearts!')}</h2>
         <p className="font-bold" style={{ color: '#c9bfe6' }}>{t('caughtCount', `Shot ${ctx.caught}`, { n: ctx.caught })}</p>
@@ -163,9 +163,9 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col" style={{ background: 'linear-gradient(180deg,#12182a 0%,#1a2340 46%,#24362a 100%)', color: '#fdf4e2' }}>
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col" style={{ background: 'linear-gradient(180deg,#12182a 0%,#1a2340 46%,#24362a 100%)', color: '#fdf4e2' }}>
       <header className="flex items-center gap-2 px-4 pt-3">
-        <button type="button" onClick={() => onExit({ won: false })} aria-label={t('quit', 'Quit')} className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: '#c9bfe6', outlineColor: '#ffd25a' }}>
+        <button type="button" onClick={() => onExit({ won: false })} aria-label={t('quit', 'Quit')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: '#c9bfe6', outlineColor: '#ffd25a' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex items-center gap-1" aria-label={t('lives', 'Lives')}>

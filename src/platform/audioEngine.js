@@ -231,6 +231,16 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Is there a REAL recording for `key` (not just the chime fallback)? Used to
+   * hide buttons whose only sound would be a chime. Optimistic when coverage
+   * is unknown (no manifest and no memory pack), matching resolveSource.
+   */
+  async hasClip(key) {
+    await this.ensureManifest()
+    return this.resolve(key).type !== 'chime'
+  }
+
   /** Point playback at a family voice pack (map of logical key -> object URL),
      or null to fall back to the built-in voice. Clears decoded buffers so the
      new clips are used immediately. */

@@ -145,6 +145,17 @@ describe('AudioEngine', () => {
     expect(engine.resolve('letters/zz-9').type).toBe('chime')
   })
 
+  it('hasClip: true only for keys with a real recording (optimistic without a manifest)', async () => {
+    const covered = new AudioEngine({
+      fetchImpl: vi.fn().mockResolvedValue({ ok: true, json: async () => ({ coverage: ['letters/le-1'] }) }),
+      getMemory: () => null,
+    })
+    expect(await covered.hasClip('letters/le-1')).toBe(true)
+    expect(await covered.hasClip('letters/le-8')).toBe(false) // labial: chime only
+    const unknown = new AudioEngine({ fetchImpl: vi.fn().mockRejectedValue(new Error('offline')), getMemory: () => null })
+    expect(await unknown.hasClip('letters/le-8')).toBe(true)
+  })
+
   // A minimal AudioContext: enough for ensureBuffer to reach the fetch and
   // for the chime fallback to run without throwing.
   class FakeCtx {

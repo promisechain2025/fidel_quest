@@ -68,7 +68,7 @@ export default function TeeShop({ stats, collection, onBack }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-12 pt-5">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-12 pt-5">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -121,7 +121,7 @@ export default function TeeShop({ stats, collection, onBack }) {
             <motion.div role="dialog" aria-modal="true" aria-label={teeName(preview, lang)} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {preview.am}</span>}</h2>
-                <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
                   <X className="h-6 w-6" />
                 </button>
               </div>

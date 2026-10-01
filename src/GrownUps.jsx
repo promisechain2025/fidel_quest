@@ -17,7 +17,7 @@ import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFo
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel, progressChanged } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
-import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
+import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl, qaUnlockEnabled } from './platform/support'
 import { shareProgressSnapshot } from './platform/progress'
 import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
@@ -122,7 +122,7 @@ function ReminderCard() {
           <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
         </div>
       </div>
-      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
         <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
       </button>
     </section>
@@ -148,7 +148,7 @@ function PlanCard() {
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('gpPlanTitle', 'Learning plan')}</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {PACES.map((p) => (
-          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
+          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`min-h-[44px] rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
             ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
             : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             {paceLabels[p.id]}
@@ -168,7 +168,7 @@ function PlanCard() {
             <p className="text-sm font-black">{t('gpRequireWarmup', 'Require warm-up before games')}</p>
             <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpRequireHint', "When on, the child must finish the day's review before the games open.")}</p>
           </div>
-          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
             <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: plan.requireWarmup ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
           </button>
         </div>
@@ -257,7 +257,7 @@ function ProfilesCard() {
               </span>
             ) : (
               <>
-                <button type="button" onClick={() => doSwitch(p.id)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                <button type="button" onClick={() => doSwitch(p.id)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
                   {t('gpSwitchTo', 'Switch')}
                 </button>
                 <button
@@ -269,7 +269,7 @@ function ProfilesCard() {
                       refresh()
                     }
                   }}
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl ${FOCUS}`}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`}
                   style={{ color: 'var(--bad-ink)' }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -504,7 +504,7 @@ function CrashCard() {
           clearCrashes()
           setCrashes([])
         }}
-        className="chunk mt-3 rounded-xl px-3 py-1.5 text-xs font-extrabold"
+        className="min-h-[44px] chunk mt-3 rounded-xl px-3 py-1.5 text-xs font-extrabold"
         style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}
       >
         {t('gpCrashClear', 'Clear the notes')}
@@ -594,7 +594,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -670,7 +670,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   {soundOn ? <Volume2 className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" /> : <VolumeX className="h-5 w-5" style={{ color: 'var(--muted)' }} aria-hidden="true" />}
                   {t('gpSound', 'Sound')}
                 </span>
-                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
                   <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: soundOn ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
                 </button>
               </div>
@@ -759,10 +759,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                           {tip.text}
                         </p>
                         <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                             {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
-                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                             {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
@@ -797,20 +797,20 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   <>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {iapAvailable() ? (
-                        <button type="button" onClick={doBuyApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                        <button type="button" onClick={doBuyApp} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                           {t('payBuy', 'Buy the app')}
                         </button>
                       ) : buy ? (
-                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                           {t('payBuy', 'Buy the app')}
                         </a>
                       ) : null}
                       {iapAvailable() && (
-                        <button type="button" onClick={doRestoreApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
+                        <button type="button" onClick={doRestoreApp} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
                           {t('payRestore', 'Restore a previous purchase')}
                         </button>
                       )}
-                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                      <button type="button" onClick={shareWithFamily} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                         {t('payFamily', 'Ask family to gift it')}
                       </button>
                       {lic.feedbackAvailable && (
@@ -820,7 +820,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                             grantFeedbackGrace()
                             try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
                           }}
-                          className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
+                          className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
                           style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
                         >
                           {t('payFeedback', 'Not buying? Tell us honestly why')}
@@ -860,10 +860,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                 {t('gpExport', 'Save progress file')}
               </button>
-              <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
+              <label className={`min-h-[44px] chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
                 {t('gpImport', 'Load progress file')}
                 <input
                   type="file"
@@ -890,7 +890,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.
-             Reversible with the reset right below. */}
+             Reversible with the reset right below. Dev/QA builds only. */}
+          {qaUnlockEnabled() && (
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmUnlock ? (
               <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
@@ -910,7 +911,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     // state hides (and then re-persists over) the unlock.
                     try { window.location.reload() } catch { setConfirmUnlock(false) }
                   }}
-                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
                   {t('gpUnlockYes', 'Yes, open all')}
@@ -921,6 +922,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
+          )}
 
           {/* reset */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -949,7 +951,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     // itself and the reset appears to do nothing.
                     try { window.location.reload() } catch { setConfirmReset(false) }
                   }}
-                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
                   {t('gpResetYes', 'Yes, erase')}
@@ -964,13 +966,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* In-app privacy-policy link (Apple 5.1.1(i)) + contact, in the
               gated grown-ups area. eGeez collects no data; the policy says so. */}
           <p className="mt-6 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-            {privacyUrl() && (
-              <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--sky)' }}>
-                {t('gpPrivacy', 'Privacy policy')}
-              </a>
-            )}
-            {privacyUrl() && <span aria-hidden="true"> · </span>}
-            {t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}
+            <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center px-2 text-sm font-extrabold underline ${FOCUS}`} style={{ color: 'var(--sky)' }}>
+              {t('gpPrivacy', 'Privacy policy')}
+            </a>
+            <span className="block">{t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}</span>
           </p>
         </div>
       )}

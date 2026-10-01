@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { initWorkshop, workshopTransition, wordToKeys, Phase, WorkshopEvent } from './workshopCore'
+import { initWorkshop, workshopTransition, wordToKeys, unambiguousWords, Phase, WorkshopEvent } from './workshopCore'
 import { INDEXES } from './platform/ethiopic'
 
 const tap = (ctx, key) => workshopTransition(ctx, { type: WorkshopEvent.TAP, payload: { key } })
@@ -49,5 +49,27 @@ describe('word workshop core', () => {
     expect(reset.next.word.latin).toBe('selam')
     expect(reset.next.phase).toBe(Phase.PLAY)
     expect(reset.next.placed).toBe(0)
+  })
+})
+
+describe('unambiguousWords (Build without audio)', () => {
+  it('drops a silent word whose picture another word shares, keeps voiced ones', () => {
+    const words = [
+      { geez: 'ዛፍ', picture: '🌳' },
+      { geez: 'ሾላ', picture: '🌳', noAudio: true },
+      { geez: 'ሌሊት', picture: '🌙', noAudio: true },
+      { geez: 'ጨረቃ', picture: '🌙', noAudio: true },
+      { geez: 'ማር', picture: '🍯' },
+      { geez: 'ሻማ', picture: '🕯️', noAudio: true },
+    ]
+    expect(unambiguousWords(words).map((w) => w.geez)).toEqual(['ዛፍ', 'ማር', 'ሻማ'])
+  })
+
+  it('the real Build pool never shows a silent word with a shared picture', async () => {
+    const { BUILDABLE } = await import('./components/WordWorkshop')
+    const count = new Map()
+    for (const w of BUILDABLE) count.set(w.picture, (count.get(w.picture) || 0) + 1)
+    expect(BUILDABLE.length).toBeGreaterThan(10)
+    expect(BUILDABLE.filter((w) => w.noAudio && count.get(w.picture) > 1)).toEqual([])
   })
 })

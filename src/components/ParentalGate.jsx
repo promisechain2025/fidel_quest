@@ -1,27 +1,54 @@
-/* A light "are you a grown-up?" gate: hold a button for two seconds, then match
-   a written number word to its digits. Two steps a pre-reading child won't pass
-   by accident, without being an annoying password. Shared by the Grown-ups
-   dashboard and the Family Voice recorder (which opens the mic). */
-import { useMemo, useRef, useState } from 'react'
+/* A "are you a grown-up?" gate: hold a button for two seconds, then answer a
+   random arithmetic question on a keypad (e.g. 7 × 6, 27 + 38). Two wrong
+   answers lock the gate for a cooldown that doubles each time (see
+   platform/gateCore.js). Shared by Grown-ups, Teacher, Family Voice, Voice
+   Postcard, Support and every share sheet. */
+import { useEffect, useRef, useState } from 'react'
+import { Delete } from 'lucide-react'
 import { t } from '../platform/i18n'
+import { makeChallenge, lockRemaining, recordMiss, recordPass } from '../platform/gateCore'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
-
-const GATE_NUMBERS = [
-  { word: 'thirty-five', value: 35, decoys: [53, 45] },
-  { word: 'twenty-eight', value: 28, decoys: [82, 38] },
-  { word: 'forty-one', value: 41, decoys: [14, 47] },
-]
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok']
 
 export default function ParentalGate({ onOpen, intro }) {
   const [held, setHeld] = useState(false)
   const [progress, setProgress] = useState(0)
   const timer = useRef(null)
-  const challenge = useMemo(() => GATE_NUMBERS[(new Date().getDate() || 1) % GATE_NUMBERS.length], [])
-  const options = useMemo(
-    () => [challenge.value, ...challenge.decoys].sort((a, b) => (a % 7) - (b % 7)),
-    [challenge],
-  )
+  const [challenge, setChallenge] = useState(() => makeChallenge())
+  const [entry, setEntry] = useState('')
+  const [missed, setMissed] = useState(false)
+  const [lockMs, setLockMs] = useState(() => lockRemaining())
+  // Count a lockout down; the gate reopens (hold step) when it ends.
+  useEffect(() => {
+    if (lockMs <= 0) return undefined
+    const id = setInterval(() => {
+      const left = lockRemaining()
+      setLockMs(left)
+      if (left <= 0) { setHeld(false); setProgress(0) }
+    }, 500)
+    return () => clearInterval(id)
+  }, [lockMs > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearInterval(timer.current), [])
+
+  const submit = () => {
+    if (!entry) return
+    if (Number(entry) === challenge.answer) {
+      recordPass()
+      onOpen()
+      return
+    }
+    const locked = recordMiss()
+    setEntry('')
+    setChallenge(makeChallenge())
+    setMissed(true)
+    if (locked) setLockMs(locked)
+  }
+  const press = (k) => {
+    if (k === 'del') setEntry((e) => e.slice(0, -1))
+    else if (k === 'ok') submit()
+    else setEntry((e) => (e.length >= 3 ? e : e + k))
+  }
 
   const startHold = () => {
     const startedAt = performance.now()
@@ -44,7 +71,14 @@ export default function ParentalGate({ onOpen, intro }) {
       <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
         {intro || t('gpIntro', 'This area is for grown-ups: progress details and practice tips.')}
       </p>
-      {!held ? (
+      {lockMs > 0 ? (
+        <div role="status" className="flex flex-col items-center gap-2">
+          <p className="text-lg font-extrabold">{t('gateLocked', 'Too many tries.')}</p>
+          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+            {t('gateLockedWait', 'Ask a grown-up, or try again in {s} seconds.', { s: Math.ceil(lockMs / 1000) })}
+          </p>
+        </div>
+      ) : !held ? (
         <>
           <button
             type="button"
@@ -72,17 +106,29 @@ export default function ParentalGate({ onOpen, intro }) {
         </>
       ) : (
         <>
-          <p className="text-lg font-extrabold">{t('gpTapNumber', `Tap the number ${challenge.word}`, { word: t(`gpNum${challenge.value}`, challenge.word) })}</p>
-          <div className="flex gap-3">
-            {options.map((n) => (
+          <p className="text-lg font-extrabold" aria-live="polite">
+            {t('gateQuestion', 'What is {q}?', { q: challenge.text })}
+          </p>
+          {missed && (
+            <p className="-mt-3 text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
+              {t('gateMissed', 'Not quite - here is a new one.')}
+            </p>
+          )}
+          <output aria-label={t('gateAnswer', 'Your answer')} className="mono flex h-14 w-40 items-center justify-center rounded-2xl border-2 text-3xl font-black" style={{ background: 'var(--paper)', borderColor: 'var(--line)' }}>
+            {entry || '\u00a0'}
+          </output>
+          <div className="grid grid-cols-3 gap-2.5">
+            {KEYS.map((k) => (
               <button
-                key={n}
+                key={k}
                 type="button"
-                onClick={() => (n === challenge.value ? onOpen() : setHeld(false) || setProgress(0))}
-                className={`chunk mono h-16 w-20 rounded-2xl border-2 text-2xl font-black ${FOCUS}`}
-                style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
+                onClick={() => press(k)}
+                disabled={k === 'ok' && !entry}
+                aria-label={k === 'del' ? t('gateDelete', 'Delete') : k === 'ok' ? t('gateOk', 'OK') : k}
+                className={`chunk mono flex h-14 w-16 items-center justify-center rounded-2xl border-2 text-2xl font-black disabled:opacity-40 ${FOCUS}`}
+                style={{ background: k === 'ok' ? 'var(--go)' : 'var(--card)', color: k === 'ok' ? '#fff' : undefined, borderColor: k === 'ok' ? 'var(--go-deep)' : 'var(--line)', boxShadow: `0 4px 0 ${k === 'ok' ? 'var(--go-deep)' : 'var(--line)'}`, outlineColor: 'var(--sky)' }}
               >
-                {n}
+                {k === 'del' ? <Delete className="h-6 w-6" aria-hidden="true" /> : k === 'ok' ? t('gateOk', 'OK') : k}
               </button>
             ))}
           </div>

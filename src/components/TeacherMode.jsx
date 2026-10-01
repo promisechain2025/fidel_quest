@@ -110,7 +110,7 @@ function SectionCard({ icon, title, children, collapsible = false, defaultOpen =
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       {collapsible ? (
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex w-full items-center justify-between gap-2 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex min-h-[44px] w-full items-center justify-between gap-2 ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
           {heading}
           <ChevronDown className={`h-5 w-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--muted)' }} aria-hidden="true" />
         </button>
@@ -222,7 +222,7 @@ function PerWeekInput({ current = null, onSet }) {
         style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
       />
       <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('tmPerWeekUnit', 'families a week')}</span>
-      <button type="submit" disabled={!ok} className={`chunk rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
+      <button type="submit" disabled={!ok} className={`chunk min-h-[44px] rounded-2xl px-4 py-2 text-xs font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', opacity: ok ? 1 : 0.5, outlineColor: 'var(--sky)' }}>
         {t('tmPerWeekSet', 'Set')}
       </button>
     </form>
@@ -266,7 +266,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
         <div className="mt-3 flex flex-wrap gap-2">
           {[1, 2, 3].map((n) => (
             <button key={n} type="button" onClick={() => { saveTermPlan(code, n); track('teacher_term_plan'); refresh() }} className={`chunk rounded-2xl px-4 py-2.5 text-sm font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-              {t('tmPerWeek', '{n} families a week', { n })}
+              {(n === 1 ? t('tmPerWeekOne', '1 family a week') : t('tmPerWeek', '{n} families a week', { n }))}
             </button>
           ))}
         </div>
@@ -276,7 +276,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
   }
 
   return (
-    <SectionCard collapsible defaultOpen icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={`${t('tmPlanTitle', 'Term plan')} · ${t('tmPerWeek', '{n} families a week', { n: plan.perWeek })}`}>
+    <SectionCard collapsible defaultOpen icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} title={`${t('tmPlanTitle', 'Term plan')} · ${(plan.perWeek === 1 ? t('tmPerWeekOne', '1 family a week') : t('tmPerWeek', '{n} families a week', { n: plan.perWeek }))}`}>
       <div ref={listRef} className="mt-3 flex max-h-[45vh] flex-col gap-2 overflow-y-auto pr-1">
         {weeks.map((familyIds, i) => {
           const a = weekAssignment(i)
@@ -315,7 +315,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
               <button key={n} type="button" aria-pressed={plan.perWeek === n} onClick={() => { saveTermPlan(code, n, plan.startDay); setChanging(false); refresh() }} className={`chunk rounded-2xl px-4 py-2 text-sm font-black ${FOCUS}`} style={plan.perWeek === n
                 ? { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', color: '#fff', outlineColor: 'var(--sky)' }
                 : { background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-                {t('tmPerWeek', '{n} families a week', { n })}
+                {(n === 1 ? t('tmPerWeekOne', '1 family a week') : t('tmPerWeek', '{n} families a week', { n }))}
               </button>
             ))}
           </div>
@@ -399,7 +399,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <p className="text-xs font-black">{t('tmQuestions', 'Questions')}</p>
           <div className="mt-1 flex gap-1.5">
             {[5, 8, 12, 20].map((n) => (
-              <button key={n} type="button" aria-pressed={count === n} onClick={() => { setCount(n); setMade(null) }} className={`mono rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={count === n
+              <button key={n} type="button" aria-pressed={count === n} onClick={() => { setCount(n); setMade(null) }} className={`min-h-[44px] mono rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={count === n
                 ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
                 : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
                 {n}
@@ -411,7 +411,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
           <p className="text-xs font-black">{t('tmForms', 'Letter forms')}</p>
           <div className="mt-1 flex gap-1.5">
             {[[false, t('tmOrdersBase', 'Base letters')], [true, t('tmOrdersAll', 'All 7 forms')]].map(([v, label]) => (
-              <button key={String(v)} type="button" aria-pressed={allOrders === v} onClick={() => { setAllOrders(v); setMade(null) }} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={allOrders === v
+              <button key={String(v)} type="button" aria-pressed={allOrders === v} onClick={() => { setAllOrders(v); setMade(null) }} className={`min-h-[44px] rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={allOrders === v
                 ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
                 : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
                 {label}
@@ -612,7 +612,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher }, appShareUrl()) : null), [code, cls?.teacher])
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-5 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -630,7 +630,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
         // own key); before that, the parental gate covers class creation.
         codes.length > 0
           ? <CodeLock onOpen={() => setOpen(true)} />
-          : <ParentalGate onOpen={() => setOpen(true)} />
+          : <ParentalGate intro={t('tmGateIntro', 'Teacher tools are for grown-ups: class links, assignments and results.')} onOpen={() => setOpen(true)} />
       ) : (
       <div className="mt-6 flex flex-col gap-5">
         {/* An opened receipt link lands here with the filing outcome. */}
@@ -693,7 +693,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               ) : (
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>{t('tmRemoveConfirm', 'Erase this class and all its results from this device?')}</p>
-                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); refresh() }} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                  <button type="button" onClick={() => { removeClass(code); setConfirmRemove(false); refresh() }} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                     {t('gpResetYes', 'Yes, erase')}
                   </button>
                   <button type="button" onClick={() => setConfirmRemove(false)} className={`text-xs font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
