@@ -1849,6 +1849,7 @@ export default function AmharicFidelGame() {
                 check: t('traceCheck'),
                 instruction: t('traceInstruction'),
                 unsupported: t('traceUnsupported'),
+                scribble: t('traceScribble'),
               }}
               onScored={handleTraceScored}
             />

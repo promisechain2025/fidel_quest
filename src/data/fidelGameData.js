@@ -302,6 +302,7 @@ export const UI_STRINGS = {
     traceGreat: 'Beautiful tracing!',
     traceGood: 'Good! A little more of the letter next time.',
     traceTry: 'Give it one more try — cover more of the gray letter.',
+    traceScribble: 'Trace on the gray letter, not all over the pad. Clear and try again!',
     traceDone: 'Family traced — gobez!',
     traceUnsupported: 'Tracing needs a browser with canvas support.',
     praise: ['Gobez! (Great job!)', 'Wonderful!', 'You are a star!', 'Betam gobez! (Very well done!)', 'Brilliant!', 'Keep shining!', 'Amazing!', 'Fantastic!', 'You did it!', 'Way to go!', 'Superb!', 'Tebarek! (Bless you!)', 'Girum! (Wonderful!)', 'Arif! (Great!)', 'Kokeb neh! (You are a star!)', 'Woohoo!'],

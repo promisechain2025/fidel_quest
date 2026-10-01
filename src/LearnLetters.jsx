@@ -1294,6 +1294,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                     check: t('traceCheck', 'Check'),
                     instruction: '',
                     unsupported: '-',
+                    scribble: t('traceScribble', 'Trace on the gray letter, not all over the pad. Clear and try again!'),
                   }}
                   onScored={(r) => {
                     // Celebration-grade acceptance: covering the letter always
@@ -1305,7 +1306,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                     // still advances - assessment without a wall.
                     const key = traceForms[ctx.traceIdx ?? 0]
                     if (key) recordAnswer(key, r.pass ? key : `trace:${key}`, 'trace')
-                    if (r.pass || r.coverage >= 0.5) touch('__traced__')
+                    // ...but a scribble over the whole pad is not a trace: it
+                    // never advances (the pad shows why and lets them retry).
+                    if (r.pass || (r.coverage >= 0.5 && !r.scribble)) touch('__traced__')
                     else playEffect('bad', soundOn)
                   }}
                 />

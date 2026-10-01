@@ -180,6 +180,13 @@ describe('question generation', () => {
   })
 })
 
+describe('trace scribble copy', () => {
+  it('Classic has an English scribble message (its t() has no inline fallback)', async () => {
+    const { UI_STRINGS } = await import('../data/fidelGameData')
+    expect(UI_STRINGS.en.traceScribble).toMatch(/not all over the pad/)
+  })
+})
+
 describe('trace scoring', () => {
   // A 10x10 grid mask around (50,50)..(95,95).
   const mask = []

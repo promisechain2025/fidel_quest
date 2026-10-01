@@ -23,9 +23,9 @@ const STROKE_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6']
    coverage: fraction of glyph-mask points with drawn ink within coverRadius.
    stray:    fraction of drawn points with no glyph within strayRadius.
    Kid-lenient star bands — the goal is encouragement, not calligraphy.      */
-export function computeTraceResult(maskPoints, drawnPoints, { coverRadius = 18, strayRadius = 34 } = {}) {
+export function computeTraceResult(maskPoints, drawnPoints, { coverRadius = 18, strayRadius = 34, outsideMax = OUTSIDE_MAX } = {}) {
   if (maskPoints.length === 0 || drawnPoints.length === 0) {
-    return { coverage: 0, stray: drawnPoints.length ? 1 : 0, stars: 0 }
+    return { coverage: 0, stray: drawnPoints.length ? 1 : 0, outside: drawnPoints.length ? 1 : 0, scribble: drawnPoints.length > 0, stars: 0 }
   }
   const coverR2 = coverRadius * coverRadius
   const strayR2 = strayRadius * strayRadius
@@ -55,11 +55,77 @@ export function computeTraceResult(maskPoints, drawnPoints, { coverRadius = 18, 
   }
   const coverage = covered / maskPoints.length
   const stray = strays / drawnPoints.length
+  // Coverage alone rewards scrubbing: a zig-zag over the whole pad covers
+  // every glyph point. `outside` measures how much of the pad AWAY from the
+  // letter got inked; past outsideMax the attempt is a scribble and earns
+  // nothing, however much of the letter it happened to cover.
+  const outside = outsideInk(maskPoints, drawnPoints, strayRadius)
+  const scribble = outside > outsideMax
   let stars = 0
-  if (coverage >= 0.85 && stray <= 0.2) stars = 3
+  if (scribble) stars = 0
+  else if (coverage >= 0.85 && stray <= 0.2) stars = 3
   else if (coverage >= 0.6 && stray <= 0.35) stars = 2
   else if (coverage >= 0.35) stars = 1
-  return { coverage, stray, stars }
+  return { coverage, stray, outside, scribble, stars }
+}
+
+// A genuine trace (even a wobbly one) keeps outside-ink well under this;
+// filling the pad pushes it toward 1.
+export const OUTSIDE_MAX = 0.25
+const INK_RADIUS = 13 // half the pad's 26px stroke
+
+/** Fraction of the pad's "far from the letter" area (cells more than `gap`
+    px from any glyph point) that carries ink. Grid-rasterized at MASK_STEP,
+    so it stays instant. Pure. */
+export function outsideInk(maskPoints, drawnPoints, gap, size = CANVAS_SIZE) {
+  const n = Math.ceil(size / MASK_STEP)
+  const near = new Uint8Array(n * n)
+  const ink = new Uint8Array(n * n)
+  const stamp = (grid, x, y, r) => {
+    const r2 = r * r
+    const c0 = Math.max(0, Math.floor((x - r) / MASK_STEP))
+    const c1 = Math.min(n - 1, Math.ceil((x + r) / MASK_STEP))
+    const r0 = Math.max(0, Math.floor((y - r) / MASK_STEP))
+    const r1 = Math.min(n - 1, Math.ceil((y + r) / MASK_STEP))
+    for (let row = r0; row <= r1; row++) {
+      for (let col = c0; col <= c1; col++) {
+        const dx = col * MASK_STEP - x
+        const dy = row * MASK_STEP - y
+        if (dx * dx + dy * dy <= r2) grid[row * n + col] = 1
+      }
+    }
+  }
+  for (const [x, y] of maskPoints) stamp(near, x, y, gap)
+  for (const [x, y] of drawnPoints) stamp(ink, x, y, INK_RADIUS)
+  let far = 0
+  let inked = 0
+  for (let i = 0; i < n * n; i++) {
+    if (near[i]) continue
+    far++
+    if (ink[i]) inked++
+  }
+  return far ? inked / far : 0
+}
+
+/** Fill the gaps between pointer samples (a fast finger moves 30px+ per
+    event) so scoring sees the line the child actually drew. Pure. */
+export function densifyStrokes(strokes, step = 4) {
+  const out = []
+  for (const stroke of strokes) {
+    for (let i = 0; i < stroke.length; i++) {
+      const p = stroke[i]
+      if (i > 0) {
+        const q = stroke[i - 1]
+        const d = Math.hypot(p[0] - q[0], p[1] - q[1])
+        for (let k = 1; k < Math.floor(d / step); k++) {
+          const t = (k * step) / d
+          out.push([q[0] + (p[0] - q[0]) * t, q[1] + (p[1] - q[1]) * t])
+        }
+      }
+      out.push(p)
+    }
+  }
+  return out
 }
 
 /* ── Directional tracing (Pillar 6) ──────────────────────────────────────
@@ -126,7 +192,8 @@ export function computeTraceResultV2(maskPoints, drawnPoints, chapter = 1, famil
   let cue = null
   if (!originOk) cue = 'origin'
   else if (tol.needDir && !dirOk) cue = 'direction'
-  const pass = base.coverage >= 0.5 && originOk && (!tol.needDir || dirOk || base.stars >= 2)
+  const pass = !base.scribble && base.coverage >= 0.5 && originOk && (!tol.needDir || dirOk || base.stars >= 2)
+  if (base.scribble) cue = 'scribble'
   return { ...base, originOk, dirOk, originPoint: spec.origin, dir: spec.dir, cue, pass }
 }
 
@@ -175,6 +242,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
   const canvasRef = useRef(null)
   const maskRef = useRef([])
   const drawnRef = useRef([])
+  const strokesRef = useRef([])
   const drawingRef = useRef(false)
   const strokeCountRef = useRef(0)
   const [supported, setSupported] = useState(true)
@@ -186,6 +254,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
     const ctx = get2d(canvasRef.current)
     if (!ctx) return
     drawnRef.current = []
+    strokesRef.current = []
     strokeCountRef.current = 0
     setHasInk(false)
     setCue(null)
@@ -225,6 +294,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
     strokeCountRef.current += 1
     const point = toCanvasPoint(event)
     drawnRef.current.push(point)
+    strokesRef.current.push([point])
     const ctx = get2d(canvasRef.current)
     if (!ctx) return
     ctx.beginPath()
@@ -240,6 +310,7 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
     if (!drawingRef.current || !supported) return
     const point = toCanvasPoint(event)
     drawnRef.current.push(point)
+    strokesRef.current[strokesRef.current.length - 1]?.push(point)
     const ctx = get2d(canvasRef.current)
     if (!ctx) return
     ctx.lineTo(point[0], point[1])
@@ -251,12 +322,15 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
   }
 
   const handleCheck = () => {
+    const drawn = strokesRef.current.length ? densifyStrokes(strokesRef.current) : drawnRef.current
     if (chapter) {
-      const r = computeTraceResultV2(maskRef.current, drawnRef.current, chapter, familyId)
+      const r = computeTraceResultV2(maskRef.current, drawn, chapter, familyId)
       setCue(r.cue ?? null)
       onScored(r)
     } else {
-      onScored(computeTraceResult(maskRef.current, drawnRef.current))
+      const r = computeTraceResult(maskRef.current, drawn)
+      setCue(r.scribble ? 'scribble' : null)
+      onScored(r)
     }
   }
 
@@ -318,6 +392,11 @@ export default function FidelTracePad({ char, labels, onScored, chapter = null, 
           </motion.span>
         )}
       </div>
+      {cue === 'scribble' && (
+        <p role="status" className="-mt-1 text-center text-sm font-extrabold" style={{ color: '#be123c' }}>
+          {labels.scribble || 'Trace on the gray letter, not all over the pad. Clear and try again!'}
+        </p>
+      )}
       <div className="flex items-center gap-3">
         <button
           type="button"
