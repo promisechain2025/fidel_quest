@@ -20,6 +20,12 @@ import { loadFromStorage } from '../utils/loadFromStorage'
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const MAX_SECONDS = 20
 const RECORD_ENABLED = import.meta.env?.VITE_FAMILY_VOICE_RECORD !== 'false'
+/* The first Record tap would raise the system microphone prompt in front of
+   the child, so a grown-up approves the mic once (behind the parental gate)
+   and that approval is remembered on this device. */
+const MIC_OK_KEY = 'fq.postcard.micOk'
+const micApproved = () => { try { return localStorage.getItem(MIC_OK_KEY) === '1' } catch { return false } }
+const rememberMic = () => { try { localStorage.setItem(MIC_OK_KEY, '1') } catch { /* session-only */ } }
 
 /* What the RECIPIENT reads is written in the family's heritage language -
    the learning pack (Amharic or Tigrinya) - regardless of the child's UI
@@ -45,7 +51,7 @@ const SHARE_INVITE = 'Share this app with others:'
    (platform/gift.js) - closing the loop in both directions. */
 
 export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
-  const [phase, setPhase] = useState('idle') // idle | recording | ready | gate | sending | sent
+  const [phase, setPhase] = useState('idle') // idle | micgate | recording | ready | gate | sending | sent
   const [clip, setClip] = useState(null) // WAV blob
   const [seconds, setSeconds] = useState(0)
   const [toast, setToast] = useState(null)
@@ -131,6 +137,25 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
     else setPhase('ready')
   }
 
+  const tapRecord = () => {
+    if (micApproved()) begin()
+    else setPhase('micgate')
+  }
+
+  if (phase === 'micgate') {
+    return (
+      <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
+        <button type="button" onClick={() => setPhase('idle')} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
+        </button>
+        <ParentalGate
+          intro={t('pcMicGateIntro', 'Recording uses the microphone. A grown-up says yes first, then the child can record.')}
+          onOpen={() => { rememberMic(); setPhase('idle'); begin() }}
+        />
+      </div>
+    )
+  }
+
   if (phase === 'gate') {
     return (
       <div className="mx-auto min-h-screen max-w-xl px-7 pt-5">
@@ -168,7 +193,7 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
           {(phase === 'idle' || phase === 'recording') && (
             <motion.button
               type="button"
-              onClick={phase === 'recording' ? finish : begin}
+              onClick={phase === 'recording' ? finish : tapRecord}
               animate={phase === 'recording' ? { scale: [1, 1.06, 1] } : {}}
               transition={{ duration: 0.9, repeat: Infinity }}
               className={`flex h-32 w-32 flex-col items-center justify-center gap-1 rounded-full font-black text-white ${FOCUS}`}
