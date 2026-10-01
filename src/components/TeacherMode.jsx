@@ -630,7 +630,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
         // own key); before that, the parental gate covers class creation.
         codes.length > 0
           ? <CodeLock onOpen={() => setOpen(true)} />
-          : <ParentalGate onOpen={() => setOpen(true)} />
+          : <ParentalGate intro={t('tmGateIntro', 'Teacher tools are for grown-ups: class links, assignments and results.')} onOpen={() => setOpen(true)} />
       ) : (
       <div className="mt-6 flex flex-col gap-5">
         {/* An opened receipt link lands here with the filing outcome. */}
