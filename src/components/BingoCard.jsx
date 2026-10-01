@@ -22,6 +22,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import QRCode from 'qrcode'
 import { ChevronLeft, Volume2, Star, Users, User, Megaphone, ScanLine, Check, Eye, EyeOff } from 'lucide-react'
 import { rngShuffle } from '../platform/rng'
+import { uniqueBySound } from '../platform/sameSound'
+import { soloPool } from '../bingoPool'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
@@ -35,7 +37,9 @@ import { initBingo, bingoTransition, currentCall, dealCard, toggleMark, initCall
 const BASE_FORMS = ALL_FORMS.filter((f) => f.order === 1)
 const ID_TO_INDEX = new Map(BASE_FORMS.map((f) => [f.familyId, f.familyIndex]))
 const INDEX_TO_FORM = new Map(BASE_FORMS.map((f) => [f.familyIndex, f]))
-const poolFromFamilies = (indices) => indices.map((i) => INDEX_TO_FORM.get(i)?.audioKey).filter(Boolean)
+// One key per SOUND: if a teacher picks both twins (e.g. ጸ and ፀ) only the first
+// is dealt and called, so every call has exactly one matching cell.
+const poolFromFamilies = (indices) => uniqueBySound(indices.map((i) => INDEX_TO_FORM.get(i)?.audioKey).filter(Boolean))
 
 // Illustrative cells for each winning pattern (a 3x3 picture, not the detector).
 const PATTERN_ART = { line: [0, 1, 2], diagonal: [0, 4, 8], x: [0, 2, 4, 6, 8], corners: [0, 2, 6, 8], blackout: [0, 1, 2, 3, 4, 5, 6, 7, 8] }
@@ -111,14 +115,12 @@ function WinButtons({ onAgain, onBack }) {
 
 /* --- SOLO ------------------------------------------------------------------- */
 function SoloBingo({ soundOn, onBack, families, reduce }) {
-  const pool = useMemo(() => {
-    const inScope = families && families.length ? ALL_FORMS.filter((f) => families.includes(f.familyId)) : ALL_FORMS
-    const src = inScope.length ? inScope : ALL_FORMS
-    const bases = src.filter((f) => f.order === 1).map((f) => f.audioKey)
-    if (bases.length >= 9) return bases
-    const more = [...new Set([...bases, ...src.map((f) => f.audioKey)])]
-    return more.length >= 9 ? more : [...new Set([...more, ...BASE_FORMS.map((f) => f.audioKey)])]
-  }, [families])
+  // The parent rebuilds `families` as a NEW array on every render (and every
+  // correct daub re-renders it via recordAnswer -> progressChanged), so key the
+  // pool on the CONTENT, not the array identity - otherwise the card re-deals
+  // after each correct answer and the game can never be won.
+  const familiesKey = families && families.length ? families.join(',') : ''
+  const pool = useMemo(() => soloPool(familiesKey ? familiesKey.split(',') : []), [familiesKey])
   const startRef = useRef(Math.floor(Math.random() * 997) + 1)
   const [round, setRound] = useState(0)
   const [ctx, setCtx] = useState(() => initBingo((round + 1) * 191 + startRef.current, pool, 3))
@@ -270,7 +272,7 @@ function HostCaller({ soundOn, onBack, config }) {
 /* --- JOIN / PLAY: a kid's unique card from the teacher's config ------------- */
 function PlayBingo({ soundOn, onBack, code, reduce }) {
   const config = useMemo(() => decodeBingoConfig(code), [code])
-  const pool = useMemo(() => (config ? poolFromFamilies(config.families) : BASE_FORMS.map((f) => f.audioKey)), [config])
+  const pool = useMemo(() => (config ? poolFromFamilies(config.families) : uniqueBySound(BASE_FORMS.map((f) => f.audioKey))), [config])
   const pattern = config?.pattern || 'line'
   const seedRef = useRef(Math.floor(Math.random() * 1e6) + 1)
   const [state, setState] = useState(() => dealCard(pool, seedRef.current, 3, pattern))

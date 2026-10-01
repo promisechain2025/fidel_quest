@@ -65,4 +65,10 @@ export const AM_PACK = Object.freeze({
   // the 4th order (the "-a" vowel): ሀ is said "ha" (like ሃ), አ is said "a".
   // Tigrinya keeps the plain 1st order, so its pack has no such remap.
   audioOverride: { orderRemap: { ids: ['ha', 'hha', 'kha', 'a', 'ae'], from: 1, to: 4 } },
+  // Families whose clips are currently the SAME recording (see
+  // public/audio/fidel/SOURCE.txt: "khe <- ke"). ኸ is a distinct letter, but
+  // until a distinct ኸ is recorded the child cannot tell it from ከ by ear, so
+  // listen-and-pick games treat them as same-sound (platform/sameSound.js).
+  // Remove the entry once letters/khe-*.mp3 are re-recorded.
+  audioAlias: { khe: 'ke' },
 })
