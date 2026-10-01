@@ -23,7 +23,7 @@ import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
 import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
-import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
+import { LEVELS, loadProgress, loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import { Harag } from './components/Manuscript'
@@ -40,7 +40,7 @@ import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, 
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
-import { echoStore, trainStore } from './platform/gameStores'
+import { echoStore, trainStore, marketStore } from './platform/gameStores'
 import { dueList } from './platform/roundProgress'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
@@ -419,16 +419,23 @@ function ReadingCard({ events }) {
 const GAME_CARDS = [
   { mode: 'echo', title: () => t('gpEchoTitle', 'Echo Match: hear it, find it'), load: echoStore.load },
   { mode: 'train', title: () => t('gpTrainTitle', 'Vowel Train: the vowel orders'), load: trainStore.load },
+  // Word Market logs whole words (word:<id>) plus the letter a decoy exposed;
+  // the card counts the words.
+  {
+    mode: 'market', title: () => t('gpMarketTitle', 'Word Market: reading words'), load: marketStore.load,
+    only: (e) => String(e.k).startsWith('word:'), label: (id) => ALL_WORDS.find((w) => w.latin === id)?.geez || null,
+    triedLabel: () => t('gpWordsTried', 'Words tried'),
+  },
 ]
 const dueLabel = (id) => INDEXES.byAudioKey.get(id)?.char || null
 
-function GameCard({ events, mode, title, load }) {
-  const mine = events.filter((e) => e.m === mode)
+function GameCard({ events, mode, title, load, only = () => true, label = dueLabel, triedLabel = () => t('gpEchoLetters', 'Letters tried') }) {
+  const mine = events.filter((e) => e.m === mode && only(e))
   if (!mine.length) return null
   const right = mine.filter((e) => e.p === e.k).length
   const tried = new Set(mine.map((e) => e.k)).size
   const st = load()
-  const due = dueList(st.due).map(dueLabel).filter(Boolean)
+  const due = dueList(st.due).map(label).filter(Boolean)
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} data-testid={`gp-game-${mode}`}>
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
@@ -441,7 +448,7 @@ function GameCard({ events, mode, title, load }) {
         </div>
         <div>
           <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{tried}</p>
-          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoLetters', 'Letters tried')}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{triedLabel()}</p>
         </div>
         <div>
           <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>{st.unlocked}</p>

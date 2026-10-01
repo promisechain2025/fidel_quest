@@ -149,7 +149,7 @@ const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const VowelTrain = lazyRetry(() => import('./components/VowelTrain'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
-const MerkatoMarket = lazyRetry(() => import('./components/MerkatoMarket'))
+const WordMarket = lazyRetry(() => import('./components/WordMarket'))
 const BingoCard = lazyRetry(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
@@ -1645,7 +1645,7 @@ export default function FidelQuestApp() {
           {screen.name === 'market' && (
             <Screen key="market">
               <Suspense fallback={null}>
-                <MerkatoMarket soundOn={soundOn} onBack={goBack} />
+                <WordMarket soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
               </Suspense>
             </Screen>
           )}
@@ -2962,7 +2962,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             {ready('train') && <BackpackTile art="train" title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
             {ready('echo') && <BackpackTile art="match" title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
             {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
-            {ready('market') && <BackpackTile art="market" title={t('marketShort', 'Market')} onClick={onMarket} />}
+            {ready('market') && <BackpackTile art="market" title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
             {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
             {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
