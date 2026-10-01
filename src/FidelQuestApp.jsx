@@ -3382,9 +3382,21 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   )
 }
 
-function FamilyDetail({ family, soundOn }) {
+export function FamilyDetail({ family, soundOn }) {
   const forms = useMemo(() => ALL_FORMS.filter((f) => f.familyId === family.id), [family.id])
   const [active, setActive] = useState(null)
+  // The bonus labialized form (e.g. ሏ "lwa") plays its own recording when one
+  // exists; with none (today: no -8 clips are recorded) the tile is hidden
+  // rather than answering a tap with a generic "good" sound effect.
+  const labialKey = family.labial ? `letters/${family.id}-8` : null
+  const [labialVoiced, setLabialVoiced] = useState(false)
+  useEffect(() => {
+    if (!labialKey) return undefined
+    let live = true
+    setLabialVoiced(false)
+    audio.hasClip(labialKey).then((ok) => { if (live) setLabialVoiced(ok) })
+    return () => { live = false }
+  }, [labialKey])
 
   return (
     <div className="flex flex-col gap-4">
@@ -3411,15 +3423,19 @@ function FamilyDetail({ family, soundOn }) {
             </span>
           </motion.button>
         ))}
-        {family.labial && (
+        {family.labial && labialVoiced && (
           <button
             type="button"
-            onClick={() => playEffect('good', soundOn)}
+            onClick={() => audio.play(labialKey, { enabled: soundOn })}
+            aria-label={`Bonus form ${family.labial}, sounds like ${family.consonant}wa`}
             className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 border-dashed py-4 ${FOCUS}`}
             style={{ background: 'var(--card)', borderColor: 'var(--accent)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
           >
             <span className="geez text-5xl font-black" style={{ color: 'var(--accent)' }}>
               {family.labial}
+            </span>
+            <span className="mono text-sm font-bold" style={{ color: 'var(--sky)' }}>
+              {family.consonant}wa
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
               Bonus form

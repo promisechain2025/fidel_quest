@@ -426,11 +426,25 @@ describe('<AmharicFidelGame />', () => {
     expect(screen.getByText(/canvas support/)).toBeInTheDocument()
   })
 
-  it('shows nickname, labialized bonus form, and word card in the family view', () => {
+  it('hides the labialized bonus button when it has no real recording (chime only)', async () => {
+    const spy = vi.spyOn(platformAudio, 'hasClip').mockResolvedValue(false)
     render(<AmharicFidelGame />)
     fireEvent.click(screen.getByText(/Explore Mode/))
     fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
-    expect(screen.getByRole('button', { name: /Letter ሏ, sounds like lwa/ })).toBeInTheDocument()
+    await act(async () => {})
+    expect(spy).toHaveBeenCalledWith('letters/le-8')
+    expect(screen.queryByRole('button', { name: /Letter ሏ/ })).toBeNull()
+    expect(screen.getByText('ልጅ')).toBeInTheDocument()
+    spy.mockRestore()
+  })
+
+  it('shows nickname, labialized bonus form, and word card in the family view', async () => {
+    const spy = vi.spyOn(platformAudio, 'hasClip').mockResolvedValue(true)
+    render(<AmharicFidelGame />)
+    fireEvent.click(screen.getByText(/Explore Mode/))
+    fireEvent.click(screen.getByRole('button', { name: 'Open the Le family' }))
+    expect(await screen.findByRole('button', { name: /Letter ሏ, sounds like lwa/ })).toBeInTheDocument()
+    spy.mockRestore()
     expect(screen.getByText('ልጅ')).toBeInTheDocument()
     expect(screen.getByText(/lij — child/)).toBeInTheDocument()
   })
