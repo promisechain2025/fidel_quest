@@ -36,6 +36,7 @@ import { meetPictureForFamily } from './data/schoolPathGr1'
 import { meetHeroSrc } from './data/meetHeroes'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
+import { sameSound, soundKeyOf } from './platform/sameSound'
 import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
 import AnbessaSvg from './components/AnbessaSvg'
@@ -122,8 +123,8 @@ export function mixInitial(familyIds, seed) {
   for (const fid of familyIds) {
     const key = `${fid}-1`
     const form = formOf(key)
-    if (form && !usedSounds.has(form.sound)) {
-      usedSounds.add(form.sound)
+    if (form && !usedSounds.has(soundKeyOf(key))) {
+      usedSounds.add(soundKeyOf(key))
       pool.push(key)
     }
   }
@@ -135,8 +136,11 @@ export function mixInitial(familyIds, seed) {
   for (const key of extras) {
     if (pool.length >= MIX_POOL_SIZE) break
     const form = formOf(key)
-    if (form && !usedSounds.has(form.sound)) {
-      usedSounds.add(form.sound)
+    // Dedupe on the clip actually HEARD (twins, aliases and order remaps
+    // folded), not the sound label: Amharic ሀ ("ha") and ሃ ("haa") share a
+    // clip, so a round offering both would be unanswerable by ear.
+    if (form && !usedSounds.has(soundKeyOf(key))) {
+      usedSounds.add(soundKeyOf(key))
       pool.push(key)
     }
   }
@@ -162,6 +166,12 @@ export function mixInitial(familyIds, seed) {
   }
 }
 
+/** In the listen-and-pick phases the child only HEARS the target, so any
+    form that sounds identical in this pack (ሀ/ሃ, ጸ/ፀ, ሰ/ሠ, አ/ዐ, ሐ/ኀ/ሀ ...)
+    is a correct answer - marking it wrong would punish a child who heard
+    right. MEET stays exact: there the letter is shown, not just spoken. */
+export const heardAs = (key, expected) => key === expected || sameSound(key, expected)
+
 /**
  * The only event: TOUCH(key). Every touch is accepted as a *sound* (letters
  * always speak when touched - that is the point) but only the expected
@@ -178,14 +188,14 @@ export function learnTransition(ctx, key) {
       return { next: { ...touched, phase: LearnPhase.FORWARD, idx: 0 }, advanced: true, correct: true }
     }
     case LearnPhase.FORWARD: {
-      if (key !== ctx.forms[ctx.idx]) return { next: touched, advanced: false, correct: false }
+      if (!heardAs(key, ctx.forms[ctx.idx])) return { next: touched, advanced: false, correct: false }
       if (ctx.idx + 1 < ctx.forms.length) {
         return { next: { ...touched, idx: ctx.idx + 1 }, advanced: true, correct: true }
       }
       return { next: { ...touched, phase: LearnPhase.BACKWARD, idx: ctx.forms.length - 1 }, advanced: true, correct: true }
     }
     case LearnPhase.BACKWARD: {
-      if (key !== ctx.forms[ctx.idx]) return { next: touched, advanced: false, correct: false }
+      if (!heardAs(key, ctx.forms[ctx.idx])) return { next: touched, advanced: false, correct: false }
       if (ctx.idx > 0) {
         return { next: { ...touched, idx: ctx.idx - 1 }, advanced: true, correct: true }
       }
@@ -199,7 +209,7 @@ export function learnTransition(ctx, key) {
     }
     case LearnPhase.ECHO:
     case LearnPhase.SHUFFLE: {
-      if (key !== ctx.target) {
+      if (!heardAs(key, ctx.target)) {
         return { next: { ...touched, wrongs: ctx.wrongs + 1 }, advanced: false, correct: false }
       }
       const round = ctx.round + 1
@@ -1097,7 +1107,8 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // pick lands in the trouble ledger so the warm-up coach later recommends
       // reviewing the letters that sank Anbessa.
       if (stones) {
-        recordAnswer(ctx.forms[ctx.idx], key, 'learn')
+        // A same-sound pick is a correct answer: log it as one.
+        recordAnswer(ctx.forms[ctx.idx], correct ? ctx.forms[ctx.idx] : key, 'learn')
         if (!correct) {
           playEffect('bad', soundOn)
           clearTimeout(retargetTimer.current)
@@ -1113,7 +1124,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // a wrong pick is deliberately NOT voiced (see the wrong branch below).
       if (!spoken) playForm(formOf(key), soundOn)
       if (spoken) {
-        recordAnswer(ctx.target, key, 'learn')
+        recordAnswer(ctx.target, correct ? ctx.target : key, 'learn')
         if (correct) {
           setBurst((b) => b + 1)
           playEffect('good', soundOn)
