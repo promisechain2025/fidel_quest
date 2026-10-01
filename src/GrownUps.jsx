@@ -17,7 +17,7 @@ import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFo
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel, progressChanged } from './platform/childModel'
 import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
-import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
+import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl, qaUnlockEnabled } from './platform/support'
 import { shareProgressSnapshot } from './platform/progress'
 import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
@@ -890,7 +890,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.
-             Reversible with the reset right below. */}
+             Reversible with the reset right below. Dev/QA builds only. */}
+          {qaUnlockEnabled() && (
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmUnlock ? (
               <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
@@ -921,6 +922,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
+          )}
 
           {/* reset */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -964,13 +966,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* In-app privacy-policy link (Apple 5.1.1(i)) + contact, in the
               gated grown-ups area. eGeez collects no data; the policy says so. */}
           <p className="mt-6 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-            {privacyUrl() && (
-              <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--sky)' }}>
-                {t('gpPrivacy', 'Privacy policy')}
-              </a>
-            )}
-            {privacyUrl() && <span aria-hidden="true"> · </span>}
-            {t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}
+            <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center px-2 text-sm font-extrabold underline ${FOCUS}`} style={{ color: 'var(--sky)' }}>
+              {t('gpPrivacy', 'Privacy policy')}
+            </a>
+            <span className="block">{t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}</span>
           </p>
         </div>
       )}
