@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { audio, afterVoice, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
-import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
@@ -2378,7 +2378,14 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
     markOnboarded('placeoffer')
     setPlaceOfferOpen(false)
   }
-  const [langOpen, setLangOpen] = useState(false)
+  // First launch on a device that is neither Amharic nor Tigrinya: the app
+  // starts in Amharic, and offers the language sheet once so a Tigrinya family
+  // can switch before the child starts. Dismissing keeps Amharic.
+  const [langOpen, setLangOpen] = useState(() => doneCount === 0 && !hasOnboarded('langpick') && needsLanguageChoice())
+  const closeLang = () => {
+    markOnboarded('langpick')
+    setLangOpen(false)
+  }
   const [streakOpen, setStreakOpen] = useState(false)
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
@@ -2477,7 +2484,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
       </header>
 
       <AnimatePresence>
-        {langOpen && <LanguageSheet key="lang-sheet" onClose={() => setLangOpen(false)} />}
+        {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
       </AnimatePresence>
 

@@ -23,12 +23,9 @@ import { audio } from './audioEngine'
 export const PACKS = Object.freeze({ am: AM_PACK, ti: TI_PACK })
 const PACK_KEY = 'fq.pack'
 
-/**
- * First-visit default: Tigrinya, unless the device language is explicitly
- * Amharic. A soft default only — never persisted here, so an explicit choice
- * (setActivePack) always wins and a locale change can still be reflected.
- */
-export function detectPreferredPack() {
+/** The pack named by the device language list, or null when the device is
+    in neither Amharic nor Tigrinya (e.g. an en-US diaspora parent). */
+export function localePack() {
   try {
     const langs = navigator.languages?.length ? navigator.languages : [navigator.language || '']
     for (const l of langs) {
@@ -38,7 +35,30 @@ export function detectPreferredPack() {
   } catch {
     /* no navigator (SSR/tests) */
   }
-  return 'ti'
+  return null
+}
+
+/**
+ * First-visit default: the device language when it is Amharic or Tigrinya,
+ * otherwise AMHARIC - the language the App Store listing sells. (It used to
+ * fall back to Tigrinya, so an English-language device opened the Tigrinya
+ * School Path.) A soft default only - never persisted here, so an explicit
+ * choice (setActivePack) always wins. Home also offers the language sheet once
+ * on first launch when the locale did not decide (needsLanguageChoice).
+ */
+export function detectPreferredPack() {
+  return localePack() || 'am'
+}
+
+/** True on a first launch where nobody has chosen a pack and the device
+    language did not pick one - the moment to show the language sheet. */
+export function needsLanguageChoice() {
+  try {
+    if (PACKS[localStorage.getItem(PACK_KEY)]) return false
+  } catch {
+    return false
+  }
+  return localePack() === null
 }
 
 export function getActivePackId() {

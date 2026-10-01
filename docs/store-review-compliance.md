@@ -21,12 +21,13 @@ metadata / build-flags / console forms.**
    student→teacher assignment receipt (`AssignmentDone`) is left ungated on
    purpose: it is a directed submission inside the adult-initiated Teacher
    flow, not a child-facing social share.
-2. 🟠 **Default pack vs. stories.** `detectPreferredPack()` returns Tigrinya on
-   non-Amharic locales, but the 10 stories are Amharic-only, so Story Time is
-   empty on those devices until Tigrinya stories ship. **Decision (owner):**
-   waiting for the Tigrinya story translations rather than flipping the default.
-   Make sure the reviewer/test device locale is Amharic so the feature is
-   exercised.
+2. ✅ **Default pack.** `detectPreferredPack()` used to return Tigrinya on
+   non-Amharic locales, so an en-US reviewer or diaspora parent opened the
+   Tigrinya School Path of an app listed as Amharic. It now returns Amharic
+   unless the device language is Tigrinya, and on a first launch where the
+   locale decided nothing Home offers the language sheet once
+   (`needsLanguageChoice`). (This supersedes the earlier owner note to keep
+   Tigrinya as the default until Tigrinya stories shipped.)
 3. **Religious content is undisclosed (Apple 2.3.1 / IARC).** All 10 Story
    Time stories are gentle Bible stories. The IARC questionnaire asks about
    religious references, and the listing markets only "games, stories and
