@@ -1217,6 +1217,16 @@ export default function FidelQuestApp() {
     setScreen({ name: 'placement', window: 0, placed: [] })
   }, [setScreen])
 
+  // applyPlacement writes the credited nodes to storage; the home map renders
+  // the in-memory journey, so pull it back in now - otherwise "Placed! 33
+  // families credited" lands on a home that still shows 0 and every node
+  // locked until the app is restarted.
+  const finishPlacement = useCallback((placed) => {
+    const credited = applyPlacement(placed)
+    if (credited > 0) setJourney(loadJourney())
+    setScreen({ name: 'placement-done', credited, families: placed.length })
+  }, [setScreen])
+
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
     const queue = buildPracticeQueue(loadLedger(), seed)
@@ -1669,10 +1679,10 @@ export default function FidelQuestApp() {
                   if (passed && screen.window + 1 < windows.length) {
                     setScreen({ name: 'placement', window: screen.window + 1, placed })
                   } else {
-                    setScreen({ name: 'placement-done', credited: applyPlacement(placed), families: placed.length })
+                    finishPlacement(placed)
                   }
                 }}
-                onQuit={() => setScreen({ name: 'placement-done', credited: applyPlacement(screen.placed), families: screen.placed.length })}
+                onQuit={() => finishPlacement(screen.placed)}
                 onReplay={startPlacement}
               />
             </Screen>
