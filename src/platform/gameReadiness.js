@@ -22,6 +22,10 @@
                          appears in the Amharic pack (ላም, ሎሚ). Locked to the
                          word data by gameReadiness.test.js rather than
                          trusted as a constant.
+     beats            2  Kebero Beats L1 counts beats in ANY recorded word
+                         (listening); L2/L3 only ask about learned letters.
+                         2 families is where both packs fill L1-L3
+                         (keberoCore.maxPlayableLevel; asserted in the test).
      bingo            9  a 3x3 card needs 9 distinct letters or initBingo
                          fills it by repeating the pool.
      market           4  Word Market targets words the child can READ (all
@@ -45,6 +49,7 @@ export const GAME_MIN_FAMILIES = Object.freeze({
   train: 4,
   echo: 4,
   workshop: 4,
+  beats: 2,
   bingo: 9,
   market: 4,
 })

@@ -206,7 +206,9 @@ describe('app shell', () => {
     fireEvent.click(screen.getByLabelText('Open backpack'))
     // Compact tile grid uses short labels
     expect(screen.getByText('Explorer')).toBeInTheDocument()
-    expect(screen.getByText('Classic')).toBeInTheDocument()
+    // Classic was replaced by Kebero Beats (gated until 2 families) and its
+    // tracing/chart tools moved into Explorer.
+    expect(screen.queryByText('Classic')).toBeNull()
     expect(screen.getByText('First Words')).toBeInTheDocument()
   })
 })

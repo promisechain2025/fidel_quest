@@ -676,6 +676,22 @@ export function playPluck(order, enabled = true) {
   audio.note(freq * 1.005, t, 0.35, 0.06, 'triangle')
   audio.note(freq * 2, t, 0.18, 0.03, 'sine')
 }
+/* The kebero: a synthesized hand-drum hit (no audio file). `rim` is the
+   higher, drier slap used for "done"/accents. */
+export function playDrum(rim = false, enabled = true) {
+  if (!enabled) return
+  const ctx = audio.getCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  if (rim) {
+    audio.note(330, t, 0.12, 0.12, 'triangle')
+    audio.note(660, t, 0.06, 0.04, 'square')
+  } else {
+    audio.note(92, t, 0.32, 0.3, 'sine')
+    audio.note(138, t, 0.16, 0.12, 'sine')
+    audio.note(240, t, 0.05, 0.05, 'triangle')
+  }
+}
 export function preloadForms(forms) {
   audio.preload(forms.filter(Boolean).map((f) => `letters/${f.audioKey}`))
 }

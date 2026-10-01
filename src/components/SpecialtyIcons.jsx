@@ -7,7 +7,7 @@ import { useId } from 'react'
 
 export const SPECIALTY_NAMES = [
   'closet', 'words', 'build', 'ladder', 'train', 'match', 'traffic',
-  'market', 'bingo', 'stories', 'twins', 'explorer', 'classic', 'practice',
+  'market', 'bingo', 'stories', 'twins', 'explorer', 'kebero', 'practice',
   'family', 'voice', 'name', 'postcard', 'backpack', 'hunt',
 ]
 
@@ -24,7 +24,7 @@ const PLATE_STOPS = {
   stories: ['#e08a80', '#8a3830'],
   twins: ['#9ab6e6', '#35548e'],
   explorer: ['#7ecf86', '#2f7a40'],
-  classic: ['#efd09a', '#a87430'],
+  kebero: ['#efb07a', '#a8502a'],
   practice: ['#f6e08a', '#c9962a'],
   family: ['#a0c0ec', '#3a5c96'],
   voice: ['#8ed67a', '#3c8e32'],
@@ -245,13 +245,17 @@ const OBJECTS = {
       <circle cx="32" cy="32" r="2.2" fill="#e2c069" />
     </g>
   ),
-  classic: () => (
+  kebero: () => (
     <g>
       <Shadow />
-      <path d="M14 20 h28 c6 2 8 8 6 16 l-2 10 H18 c-4-6-6-12-4-26 z" fill="#fff6e0" stroke="#a9832f" strokeWidth="1.2" />
-      <path d="M20 28 h16 M20 33 h12 M20 38 h8" stroke="#7c4f00" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M40 18 c8 2 12 10 8 20" fill="none" stroke="#3f63a0" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M46 16 l4 2 -6 4 z" fill="#e2c069" />
+      {/* a kebero: barrel drum, red/green bands, zig-zag lacing */}
+      <path d="M14 22 q-3 12 0 24 h36 q3-12 0-24 z" fill="#9b5a2a" stroke="#5a2f12" strokeWidth="1.2" />
+      <path d="M14 22 h36 v4 H14 z" fill="#d8553f" />
+      <path d="M14 42 h36 v4 H14 z" fill="#3b8a3a" />
+      <path d="M16 26 l6 16 6-16 6 16 6-16 6 16" fill="none" stroke="#f3e2b3" strokeWidth="1.4" strokeLinejoin="round" />
+      <ellipse cx="32" cy="22" rx="18" ry="5" fill="#f3e2b3" stroke="#5a2f12" strokeWidth="1.2" />
+      <path d="M44 8 l-6 11" stroke="#7c4f00" strokeWidth="2.4" strokeLinecap="round" />
+      <circle cx="44.5" cy="7.5" r="2.6" fill="#e2c069" />
     </g>
   ),
   practice: () => (

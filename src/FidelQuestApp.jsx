@@ -128,9 +128,10 @@ function lazyRetry(factory, tries = 3) {
   })
 }
 
-// The original eGeez game (chant mode, tracing pad, first words) lives
-// on as the Classic mode; lazy so the heavy page stays out of the home chunk.
-const AmharicFidelGame = lazyRetry(() => import('./pages/AmharicFidelGame'))
+// Classic mode's two unique tools - trace any family, and Fidel Master's
+// chart/chant - now live in Letter Explorer, lazy so Explorer stays light.
+const ExplorerTrace = lazyRetry(() => import('./components/ExplorerTrace'))
+const FidelMaster = lazyRetry(() => import('./components/FidelMaster'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
 // encoder, so they stay out of the child-facing home chunk too.
 const TeacherMode = lazyRetry(() => import('./components/TeacherMode'))
@@ -150,6 +151,7 @@ const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const VowelTrain = lazyRetry(() => import('./components/VowelTrain'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
 const WordMarket = lazyRetry(() => import('./components/WordMarket'))
+const KeberoBeats = lazyRetry(() => import('./components/KeberoBeats'))
 const BingoCard = lazyRetry(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
@@ -174,6 +176,8 @@ import {
   Send,
   Sun,
   Moon,
+  Pencil,
+  Music,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -1470,23 +1474,6 @@ export default function FidelQuestApp() {
               <VoicePostcard onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
             </Screen>
           )}
-          {screen.name === 'classic' && (
-            <Screen key="classic">
-              <div className="relative">
-                <Suspense fallback={null}>
-                  <AmharicFidelGame />
-                </Suspense>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="chunk fixed bottom-4 left-4 z-50 rounded-2xl px-4 py-2 font-extrabold text-white"
-                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
-                >
-                  Home
-                </button>
-              </div>
-            </Screen>
-          )}
           {screen.name === 'stone' && (
             <Screen key={`stone-${screen.node.id}`}>
               <StoneLessonForNode
@@ -1646,6 +1633,13 @@ export default function FidelQuestApp() {
             <Screen key="market">
               <Suspense fallback={null}>
                 <WordMarket soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'beats' && (
+            <Screen key="beats">
+              <Suspense fallback={null}>
+                <KeberoBeats soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
               </Suspense>
             </Screen>
           )}
@@ -1897,7 +1891,7 @@ export default function FidelQuestApp() {
               onBingo={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'bingo' })); return } setScreen({ name: 'bingo' }) }}
               onPractice={startPractice}
               onExplore={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'explore' })); return } setScreen({ name: 'explore' }) }}
-              onClassic={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'classic' })); return } setScreen({ name: 'classic' }) }}
+              onBeats={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'beats' })); return } setScreen({ name: 'beats' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
@@ -2752,7 +2746,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
 }
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
-// whole toolkit on one screen so nothing (Classic, Review...) gets buried.
+// whole toolkit on one screen so nothing (Explorer, Review...) gets buried.
 function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
@@ -2898,7 +2892,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2977,7 +2971,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
               return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
             <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            <BackpackTile art="classic" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            {ready('beats') && <BackpackTile art="kebero" title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
             {troubleCount > 0 && (
               <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
@@ -3249,6 +3243,9 @@ const EXPLORE_PACE = { slow: 2300, normal: 1700, fast: 850 }
 
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
+  // Rehomed from Classic: trace any family, and Fidel Master's chart/chant.
+  const [tracing, setTracing] = useState(false)
+  const [master, setMaster] = useState(false)
   const [order, setOrder] = useState(1) // which vowel order the grid shows
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
@@ -3282,10 +3279,18 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
     return cancel
   }, [playing, playIdx, order, pace, family, soundOn])
 
+  if (master) {
+    return (
+      <Suspense fallback={null}>
+        <FidelMaster onBack={() => setMaster(false)} soundOn={soundOn} />
+      </Suspense>
+    )
+  }
+
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); family ? setOpenFamily(null) : onBack() }} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
@@ -3326,6 +3331,10 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
           </Chunky>
+          <Chunky tone="card" className="ml-auto flex min-h-[44px] items-center gap-2 px-3 py-2 text-sm" onClick={() => { stopPlay(); setMaster(true) }} depth={3} aria-label={t('masterOpen', 'Fidel Master: chart and chant')} data-testid="explore-master">
+            <Music className="h-5 w-5" aria-hidden="true" />
+            {t('masterShort', 'Chant')}
+          </Chunky>
           <div className="flex gap-1">
             {['slow', 'normal', 'fast'].map((p) => (
               <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
@@ -3353,7 +3362,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
                   onClick={() => {
                     stopPlay()
                     playForm(cell, soundOn)
-                    setOpenFamily(f.id)
+                    setOpenFamily(f.id); setTracing(false)
                   }}
                   animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
                   transition={{ duration: 0.4 }}
@@ -3377,7 +3386,19 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           </motion.div>
         ) : (
           <motion.div key={family.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }} className="mt-6">
-            <FamilyDetail family={family} soundOn={soundOn} />
+            <div className="mb-4 flex justify-center">
+              <Chunky tone={tracing ? 'sky' : 'card'} className="flex min-h-[44px] items-center gap-2 px-4 py-2 text-sm" onClick={() => setTracing((v) => !v)} depth={3} aria-pressed={tracing} data-testid="explore-trace">
+                {tracing ? <Volume2 className="h-5 w-5" aria-hidden="true" /> : <Pencil className="h-5 w-5" aria-hidden="true" />}
+                {tracing ? t('traceListen', 'Listen') : t('traceShort', 'Trace')}
+              </Chunky>
+            </div>
+            {tracing ? (
+              <Suspense fallback={null}>
+                <ExplorerTrace family={family} soundOn={soundOn} />
+              </Suspense>
+            ) : (
+              <FamilyDetail family={family} soundOn={soundOn} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
