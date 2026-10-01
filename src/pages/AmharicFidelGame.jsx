@@ -852,7 +852,10 @@ export default function AmharicFidelGame() {
         setScore((s) => s + gained)
         setStreak(nextStreak)
         setBestStreakInRun((b) => Math.max(b, nextStreak))
-        setCorrectCount((c) => c + 1)
+        // Accuracy counts FIRST-TRY answers only: a letter found after a wrong
+        // tap is still learned (and scored +5) but is not a correct answer, so
+        // a round with slips can no longer show 8/8 and 100%.
+        if (cleanFirstTry) setCorrectCount((c) => c + 1)
         setLastGain({ amount: gained, key: `${questionIndex}-${optionIndex}` })
         const isStreakMilestone = cleanFirstTry && nextStreak % 5 === 0
         const praise = praiseWords()

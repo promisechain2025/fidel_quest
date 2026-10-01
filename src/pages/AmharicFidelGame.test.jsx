@@ -344,6 +344,25 @@ describe('<AmharicFidelGame />', () => {
     expect(Object.values(stored.missCounts)).toContain(1)
   })
 
+  it('counts only first-try answers toward accuracy (a rescued answer is not 100%)', async () => {
+    vi.useFakeTimers()
+    render(<AmharicFidelGame />)
+    fireEvent.click(screen.getByText('First Letters').closest('button'))
+    const formOf = (b) => FIDEL_FAMILIES.flatMap((f) => f.forms).find((f) => f.char === b.getAttribute('aria-label').replace('Letter ', ''))
+    const total = LEVELS[0].questionCount
+    for (let qi = 0; qi < total; qi++) {
+      const sound = screen.getByRole('button', { name: /Play the sound .+ again/ }).getAttribute('aria-label').match(/Play the sound (.+) again/)[1]
+      const opts = screen.getAllByRole('button', { name: /^Letter / })
+      if (qi === 0) fireEvent.click(opts.find((b) => formOf(b).sound !== sound)) // a slip first
+      fireEvent.click(opts.find((b) => formOf(b).sound === sound))
+      await act(async () => { await vi.advanceTimersByTimeAsync(7000) })
+    }
+    const pct = Math.round(((total - 1) / total) * 100)
+    expect(screen.getByText(new RegExp(`${pct}\\s*%`))).toBeInTheDocument()
+    expect(screen.queryByText(/100\s*%/)).toBeNull()
+    vi.useRealTimers()
+  })
+
   it('answers via number key shortcuts', () => {
     render(<AmharicFidelGame />)
     fireEvent.click(screen.getByText('First Letters').closest('button'))
