@@ -40,6 +40,7 @@ import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, 
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
+import { loadEcho, dueList } from './echoMatchCore'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
@@ -411,6 +412,44 @@ function ReadingCard({ events }) {
   )
 }
 
+/* Echo Match (sound -> letter recall): first-try accuracy from the ledger
+   (mode 'echo' logs only each letter's first INFORMED attempt per round),
+   the level reached, and the letters it is re-dealing. */
+function EchoCard({ events }) {
+  const echo = events.filter((e) => e.m === 'echo')
+  if (!echo.length) return null
+  const right = echo.filter((e) => e.p === e.k).length
+  const letters = new Set(echo.map((e) => e.k)).size
+  const st = loadEcho()
+  const due = dueList(st.due).map((k) => INDEXES.byAudioKey.get(k)?.char).filter(Boolean)
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {t('gpEchoTitle', 'Echo Match: hear it, find it')}
+      </h2>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{Math.round((right / echo.length) * 100)}%</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoFirstTry', 'First try')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{letters}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoLetters', 'Letters tried')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>{st.unlocked}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoLevel', 'Level reached')}</p>
+        </div>
+      </div>
+      {due.length > 0 && (
+        <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+          {t('gpEchoDue', 'Coming back for practice:')} <span className="geez text-base font-black" style={{ color: 'var(--ink)' }}>{due.join(' ')}</span>
+        </p>
+      )}
+    </section>
+  )
+}
+
 /* Native only: appears when the daily on-device backup file exists, so a
    family recovering from storage eviction or a reinstall has one tap back. */
 /* Share a reviewable progress report: a link (URL fragment only - nothing
@@ -703,6 +742,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           <CommunityCard />
 
           <ReadingCard events={events} />
+          <EchoCard events={events} />
 
           <ProgressReportCard />
 

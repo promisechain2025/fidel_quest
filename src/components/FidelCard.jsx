@@ -1,7 +1,7 @@
 /* ============================================================================
    FIDEL CARD — a code-drawn Ethiopian playing card
    ----------------------------------------------------------------------------
-   The shared card object for the Fidel card games (Line Up, Match). A portrait
+   The shared card object for the Fidel card games (Line Up, Echo Match, Build). A portrait
    ivory card with an ornate gold inset frame, mirrored corner glyph indices
    (the "rank" corners of a real playing card), and one big centered Ge'ez
    letter over a soft gold halo. `variant='back'` is the face-down card: a
@@ -22,7 +22,10 @@ const GOLD_SOFT = '#e2c069'  // brand champagne gold
 // existing importers are unchanged.
 export { GEEZ_DIGITS } from '../data/numerals'
 
-export function FidelCard({ glyph, size = 60, variant = 'face', done = false, className = '', style = {} }) {
+// `icon` (optional) replaces the big centre glyph with a node - Echo Match's
+// voice card (a speaker) and picture card (a word picture). The corner index
+// still shows `glyph` when given (e.g. a matched voice card reveals its letter).
+export function FidelCard({ glyph, size = 60, variant = 'face', done = false, icon = null, className = '', style = {} }) {
   const w = size
   const h = Math.round(size * 1.4)
   const r = Math.round(size * 0.14)
@@ -82,7 +85,9 @@ export function FidelCard({ glyph, size = 60, variant = 'face', done = false, cl
       {/* center figure over a soft gold halo */}
       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ position: 'absolute', width: size * 0.72, height: size * 0.72, borderRadius: '50%', background: 'radial-gradient(circle, rgba(226,192,105,.38), rgba(226,192,105,0) 70%)' }} />
-        <span className="geez" style={{ position: 'relative', fontSize: size * 0.52, fontWeight: 900, color: INK, lineHeight: 1 }}>{glyph}</span>
+        {icon
+          ? <span style={{ position: 'relative', display: 'flex', color: INK }}>{icon}</span>
+          : <span className="geez" style={{ position: 'relative', fontSize: size * 0.52, fontWeight: 900, color: INK, lineHeight: 1 }}>{glyph}</span>}
       </div>
       {done && (
         <Check className="absolute -right-1.5 -top-1.5 rounded-full bg-white p-0.5" style={{ width: size * 0.3, height: size * 0.3, color: 'var(--go)' }} />

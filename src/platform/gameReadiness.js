@@ -3,7 +3,7 @@
    ----------------------------------------------------------------------------
    The Backpack used to show every game from the very first letter, and the
    games dutifully dealt boards they could not fill. With one family learned,
-   Match deals a "pair" of the same letter twice, Bingo repeats that letter
+   Match dealt a "pair" of the same letter twice, Bingo repeats that letter
    across nine cells (so "daub the one Kokeb called" becomes a coin flip), and
    Build silently falls back to words spelled from letters the child has never
    met. A game that cannot be played honestly is worse than a game that is not
@@ -13,8 +13,8 @@
    The thresholds are derived, not felt:
 
      ladder / lineup  1  one family IS the board - its seven vowel orders.
-     match            4  the gentlest board is 4 pairs (memoryCore's 'easy'),
-                         which needs 4 distinct letters.
+     echo             4  Echo Match's gentlest board (L1) is 4 voice/letter
+                         pairs of first-order letters: 4 distinct families.
      workshop         4  where the first fully decodable illustrated word
                          appears in the Amharic pack (ላም, ሎሚ). Locked to the
                          word data by gameReadiness.test.js rather than
@@ -36,7 +36,7 @@ import { loadJourney, learnedFamilyIds } from '../journey'
 export const GAME_MIN_FAMILIES = Object.freeze({
   ladder: 1,
   lineup: 1,
-  match: 4,
+  echo: 4,
   workshop: 4,
   bingo: 9,
   market: 0,

@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { GAME_MIN_FAMILIES, gameReady, gamesPending } from './gameReadiness'
 import { SCOPES } from './letterScope'
-import { MATCH_CONFIGS } from '../memoryCore'
+import { ECHO_LEVELS } from '../echoMatchCore'
 import { FIDEL_FAMILIES, INDEXES } from './ethiopic'
 import { wordToKeys } from '../workshopCore'
 import { ALL_WORDS } from '../FidelQuestApp'
@@ -26,8 +26,8 @@ describe('game readiness', () => {
   beforeEach(() => localStorage.clear())
 
   it('gates until the pool can fill the board', () => {
-    expect(gameReady('match', { learned: 3 })).toBe(false)
-    expect(gameReady('match', { learned: 4 })).toBe(true)
+    expect(gameReady('echo', { learned: 3 })).toBe(false)
+    expect(gameReady('echo', { learned: 4 })).toBe(true)
     expect(gameReady('bingo', { learned: 8 })).toBe(false)
     expect(gameReady('bingo', { learned: 9 })).toBe(true)
   })
@@ -52,8 +52,8 @@ describe('game readiness', () => {
     expect(gamesPending({ scope: SCOPES.LEARNED, learned: 9 })).toBe(false)
   })
 
-  it("match's threshold is the gentlest board's pair count", () => {
-    expect(GAME_MIN_FAMILIES.match).toBe(MATCH_CONFIGS.easy.pairs)
+  it("Echo Match's threshold is its L1 board's pair count", () => {
+    expect(GAME_MIN_FAMILIES.echo).toBe(ECHO_LEVELS[1].pairs)
   })
 
   it('bingo needs a full 3x3 of distinct letters', () => {
