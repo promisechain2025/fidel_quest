@@ -6,7 +6,7 @@
 import { useId } from 'react'
 
 export const SPECIALTY_NAMES = [
-  'closet', 'words', 'build', 'ladder', 'lineup', 'match', 'traffic',
+  'closet', 'words', 'build', 'ladder', 'train', 'match', 'traffic',
   'market', 'bingo', 'stories', 'twins', 'explorer', 'classic', 'practice',
   'family', 'voice', 'name', 'postcard', 'backpack', 'hunt',
 ]
@@ -16,7 +16,7 @@ const PLATE_STOPS = {
   words: ['#8ed06a', '#3d8a28'],
   build: ['#f3d078', '#c4922a'],
   ladder: ['#8eb0ea', '#2c4c86'],
-  lineup: ['#7eaaea', '#2a568f'],
+  train: ['#7eaaea', '#2a568f'],
   match: ['#f3c05e', '#c4841c'],
   traffic: ['#8eaeE6', '#2e508c'],
   market: ['#f6d078', '#d08a28'],
@@ -139,14 +139,16 @@ const OBJECTS = {
       ))}
     </g>
   ),
-  lineup: () => (
+  train: () => (
     <g>
       <Shadow />
-      <rect x="12" y="34" width="12" height="14" rx="2.5" fill="#ffe08a" stroke="#a9832f" strokeWidth="1" />
-      <rect x="26" y="26" width="12" height="22" rx="2.5" fill="#ffd24a" stroke="#a9832f" strokeWidth="1" />
-      <rect x="40" y="16" width="12" height="32" rx="2.5" fill="#ffcb33" stroke="#8a6420" strokeWidth="1" />
-      <path d="M43 22 h6 M43 26 h6" stroke="#7c4f00" strokeWidth="1.3" strokeLinecap="round" />
-      <path d="M15 40 h6 M29 34 h6" stroke="#7c4f00" strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
+      {/* engine + two cars, each car window holding a fidel-like mark */}
+      <rect x="8" y="24" width="16" height="20" rx="3" fill="#d8553f" stroke="#6b2417" strokeWidth="1" />
+      <rect x="11" y="18" width="6" height="7" rx="1.5" fill="#6b2417" />
+      <rect x="26" y="28" width="13" height="16" rx="2.5" fill="#ffd24a" stroke="#8a6420" strokeWidth="1" />
+      <rect x="41" y="28" width="13" height="16" rx="2.5" fill="#ffcb33" stroke="#8a6420" strokeWidth="1" />
+      <path d="M30 33 v6 M30 33 h4 M45 33 v6 M45 36 h4 M49 36 v3" stroke="#7c4f00" strokeWidth="1.4" strokeLinecap="round" fill="none" />
+      {[13, 21, 30, 36, 45, 51].map((x) => <circle key={x} cx={x} cy="46" r="2.6" fill="#2b2b2b" stroke="#9aa0a6" strokeWidth="1" />)}
     </g>
   ),
   match: () => (

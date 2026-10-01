@@ -1,7 +1,7 @@
 /* ============================================================================
    FIDEL CARD — a code-drawn Ethiopian playing card
    ----------------------------------------------------------------------------
-   The shared card object for the Fidel card games (Line Up, Echo Match, Build). A portrait
+   The shared card object for the Fidel card games (Echo Match, Build). A portrait
    ivory card with an ornate gold inset frame, mirrored corner glyph indices
    (the "rank" corners of a real playing card), and one big centered Ge'ez
    letter over a soft gold halo. `variant='back'` is the face-down card: a

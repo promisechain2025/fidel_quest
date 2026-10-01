@@ -43,6 +43,7 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.stories.v1', // decodable stories read counts
   'fq.traffic.v1', // Fidel Traffic best shift + totals
   'fq.echo.v1', // Echo Match highest unlocked level
+  'fq.train.v1', // Vowel Train level, re-deal schedule, best stars
 ])
 // Additive only: restoreProgress ignores unknown keys, so snapshots made
 // before these five keys existed import cleanly, and old app versions

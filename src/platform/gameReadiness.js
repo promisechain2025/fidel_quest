@@ -12,7 +12,10 @@
 
    The thresholds are derived, not felt:
 
-     ladder / lineup  1  one family IS the board - its seven vowel orders.
+     ladder           1  one family IS the board - its seven vowel orders.
+     train            4  an anchor family plus cargo families; with Amharic's
+                         early twins (ሀ/ሐ) folded, 4 families is the first
+                         pool that fills an L1 round (trainCore.maxPlayableLevel).
      echo             4  Echo Match's gentlest board (L1) is 4 voice/letter
                          pairs of first-order letters: 4 distinct families.
      workshop         4  where the first fully decodable illustrated word
@@ -35,7 +38,7 @@ import { loadJourney, learnedFamilyIds } from '../journey'
 /** Smallest learned-family count at which each game deals an honest board. */
 export const GAME_MIN_FAMILIES = Object.freeze({
   ladder: 1,
-  lineup: 1,
+  train: 4,
   echo: 4,
   workshop: 4,
   bingo: 9,

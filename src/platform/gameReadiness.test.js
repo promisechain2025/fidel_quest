@@ -34,7 +34,8 @@ describe('game readiness', () => {
 
   it('offers the one-family games from the first family, and market always', () => {
     expect(gameReady('ladder', { learned: 1 })).toBe(true)
-    expect(gameReady('lineup', { learned: 1 })).toBe(true)
+    expect(gameReady('train', { learned: 3 })).toBe(false)
+    expect(gameReady('train', { learned: 4 })).toBe(true)
     expect(gameReady('market', { learned: 0 })).toBe(true)
   })
 

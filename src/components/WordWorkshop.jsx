@@ -8,7 +8,7 @@
    word + its meaning are revealed.
 
    Thin shell over the pure workshopCore; letter cards reuse FidelCard so it
-   sits in the same deck as Order / Line Up / Match.
+   sits in the same deck as Echo Match.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
