@@ -39,15 +39,14 @@ export function localePack() {
 }
 
 /**
- * First-visit default: the device language when it is Amharic or Tigrinya,
- * otherwise AMHARIC - the language the App Store listing sells. (It used to
- * fall back to Tigrinya, so an English-language device opened the Tigrinya
- * School Path.) A soft default only - never persisted here, so an explicit
- * choice (setActivePack) always wins. Home also offers the language sheet once
- * on first launch when the locale did not decide (needsLanguageChoice).
+ * First-visit default: Tigrinya, unless the device language is explicitly
+ * Amharic (owner decision). A soft default only - never persisted here, so an
+ * explicit choice (setActivePack) always wins and a locale change can still be
+ * reflected. Home also offers the language sheet once on first launch when the
+ * locale did not decide (needsLanguageChoice).
  */
 export function detectPreferredPack() {
-  return localePack() || 'am'
+  return localePack() || 'ti'
 }
 
 /** True on a first launch where nobody has chosen a pack and the device

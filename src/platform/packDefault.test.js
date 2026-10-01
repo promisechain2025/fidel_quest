@@ -8,10 +8,10 @@ const setLangs = (langs) => {
 afterEach(() => { vi.restoreAllMocks(); localStorage.setItem('fq.pack', 'am') })
 
 describe('first-visit language pack', () => {
-  it('defaults to Amharic on a device that is neither Amharic nor Tigrinya', () => {
+  it('defaults to Tigrinya (owner decision) on a device that is neither Amharic nor Tigrinya', () => {
     setLangs(['en-US', 'en'])
     expect(localePack()).toBe(null)
-    expect(detectPreferredPack()).toBe('am')
+    expect(detectPreferredPack()).toBe('ti')
   })
   it('follows an Amharic or Tigrinya device language', () => {
     setLangs(['ti-ER'])

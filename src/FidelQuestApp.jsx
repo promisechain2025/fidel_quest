@@ -2419,8 +2419,8 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
     setPlaceOfferOpen(false)
   }
   // First launch on a device that is neither Amharic nor Tigrinya: the app
-  // starts in Amharic, and offers the language sheet once so a Tigrinya family
-  // can switch before the child starts. Dismissing keeps Amharic.
+  // starts in Tigrinya (the default), and offers the language sheet once so an
+  // Amharic family can switch before the child starts. Dismissing keeps it.
   const [langOpen, setLangOpen] = useState(() => doneCount === 0 && !hasOnboarded('langpick') && needsLanguageChoice())
   const closeLang = () => {
     markOnboarded('langpick')
