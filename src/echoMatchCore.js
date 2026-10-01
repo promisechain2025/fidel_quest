@@ -43,8 +43,12 @@
    animation and ledger writes. Tests headless.
    ========================================================================== */
 import { rngShuffle } from './platform/rng'
-import { ACTIVE_PACK, INDEXES } from './platform/ethiopic'
+import { ACTIVE_PACK } from './platform/ethiopic'
 import { sameSound, soundKeyOf } from './platform/sameSound'
+import { UNLOCK_ACCURACY, REDEAL_ROUNDS, starsFor, nextDue, dueList, applyRound as applyRoundShared } from './platform/roundProgress'
+import { ECHO_KEY, echoStore } from './platform/gameStores'
+export { exampleWord } from './platform/exampleWord'
+export { UNLOCK_ACCURACY, REDEAL_ROUNDS, nextDue, dueList }
 
 export const Phase = Object.freeze({ PLAY: 'PLAY', WIN: 'WIN', TIMEUP: 'TIMEUP' })
 export const MatchEvent = Object.freeze({ FLIP: 'FLIP', RESOLVE: 'RESOLVE', TIMEUP: 'TIMEUP', RESET: 'RESET' })
@@ -58,10 +62,6 @@ export const ECHO_LEVELS = Object.freeze({
   4: { pairs: 8, allOrders: true, decoyFamilies: 2, hint: false, markedBacks: false, seconds: 120 },
 })
 export const MAX_LEVEL = 4
-/** First-try accuracy needed to unlock the next level. */
-export const UNLOCK_ACCURACY = 0.75
-/** How many following rounds a missed letter is re-dealt in. */
-export const REDEAL_ROUNDS = 2
 /** Forms per decoy family (ለ ሉ ሊ). */
 const DECOY_SIZE = 3
 
@@ -236,30 +236,11 @@ export function roundSummary(ctx) {
   const practice = dealt.filter((k) => !mastered.includes(k))
   const accuracy = dealt.length ? mastered.length / dealt.length : 0
   const expert = !!ECHO_LEVELS[ctx.level]?.seconds
-  let stars = accuracy >= 1 ? 3 : accuracy >= UNLOCK_ACCURACY ? 2 : accuracy > 0 ? 1 : 0
+  let stars = starsFor(accuracy)
   if (expert && (ctx.phase !== Phase.WIN || ctx.bestStreak < Math.ceil(ctx.pairs / 2))) stars = Math.min(stars, 2)
   const passed = ctx.phase === Phase.WIN && accuracy >= UNLOCK_ACCURACY
   const missed = dealt.filter((k) => ctx.missed.includes(k))
   return { dealt, mastered, practice, missed, accuracy, stars, passed, bestStreak: ctx.bestStreak }
-}
-
-/** Adaptive schedule after a round: letters with an informed miss become due
-    for REDEAL_ROUNDS rounds (a pair merely left unmatched when the expert
-    clock ran out is not a miss); a due letter dealt and mastered counts one
-    down; a due letter not dealt keeps its count. Pure; returns a new map. */
-export function nextDue(due, summary) {
-  const out = { ...due }
-  for (const k of summary.missed) out[k] = REDEAL_ROUNDS
-  for (const k of summary.mastered) {
-    if (out[k] > 0) out[k] -= 1
-    if (!out[k]) delete out[k]
-  }
-  return out
-}
-
-/** Due keys, most urgent first (stable by key for determinism). */
-export function dueList(due) {
-  return Object.entries(due || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([k]) => k)
 }
 
 /** Highest level the pool can honestly fill (L1/L2 count first-order
@@ -276,53 +257,10 @@ export function maxPlayableLevel(keys, pack = ACTIVE_PACK) {
   return best
 }
 
-/* ── per-child progress: local only, never sent ── */
-export const ECHO_KEY = 'fq.echo.v1'
-const blank = () => ({ unlocked: 1, due: {}, best: {} })
-
-export function loadEcho() {
-  try {
-    const v = JSON.parse(localStorage.getItem(ECHO_KEY) || 'null')
-    if (!v || typeof v !== 'object') return blank()
-    const n = Number(v.unlocked)
-    const due = {}
-    for (const [k, c] of Object.entries(v.due || {})) if (/^[a-z]+-\d$/.test(k) && Number(c) > 0) due[k] = Math.min(REDEAL_ROUNDS, Math.floor(Number(c)))
-    const best = {}
-    for (const [lv, s] of Object.entries(v.best || {})) if (ECHO_LEVELS[lv]) best[lv] = Math.max(0, Math.min(3, Math.floor(Number(s) || 0)))
-    return { unlocked: n >= 1 && n <= MAX_LEVEL ? Math.floor(n) : 1, due, best }
-  } catch {
-    return blank()
-  }
-}
-
-/** Fold a finished round into the stored progress: unlock the next level
-    only when the round PASSED (finished at UNLOCK_ACCURACY first-try
-    accuracy), update the re-deal schedule and the level's best stars.
-    Returns { state, unlockedNew }. */
-export function applyRound(state, level, summary) {
-  const unlocked = summary.passed ? Math.min(MAX_LEVEL, Math.max(state.unlocked, level + 1)) : state.unlocked
-  const best = { ...state.best, [level]: Math.max(state.best[level] || 0, summary.stars) }
-  const next = { unlocked, due: nextDue(state.due, summary), best }
-  return { state: next, unlockedNew: unlocked > state.unlocked }
-}
-
-export function saveEcho(state) {
-  try {
-    localStorage.setItem(ECHO_KEY, JSON.stringify(state))
-  } catch {
-    /* session-only */
-  }
-}
-
-/** An example word for a letter, for the after-match moment: one that STARTS
-    with that exact form, preferring a recorded one; else one starting with
-    its family; else null. Pure. */
-export function exampleWord(key, words) {
-  const f = INDEXES.byAudioKey.get(key)
-  if (!f || !words) return null
-  const first = (w) => INDEXES.byChar.get(Array.from(w.geez)[0])
-  const exact = words.filter((w) => first(w)?.audioKey === key)
-  const fam = words.filter((w) => first(w)?.familyId === f.familyId)
-  const pick = (list) => list.find((w) => !w.noAudio) || list[0] || null
-  return pick(exact) || pick(fam)
-}
+/* ── per-child progress: local only, never sent (platform/roundProgress) ── */
+export { ECHO_KEY }
+const store = echoStore
+export const loadEcho = () => store.load()
+export const saveEcho = (state) => store.save(state)
+/** Fold a finished round in: the next level opens only when it PASSED. */
+export const applyRound = (state, level, summary) => applyRoundShared(state, level, summary, MAX_LEVEL)

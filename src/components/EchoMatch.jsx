@@ -22,20 +22,20 @@
    shows a ghost of the letter on the voice card, so it is not scored there.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Volume2, Lock, LockOpen, Star, RotateCcw, ArrowRight, Check, Flame, Timer } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Volume2 } from 'lucide-react'
 import { audio, afterVoice, playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { FOCUS, ALL_WORDS } from '../FidelQuestApp'
-import AnbessaSvg from './AnbessaSvg'
 import KokebSvg from './KokebSvg'
-import WordPicture from './Pictures'
+import { useWide } from '../platform/gameUi'
+import { GameHeader, LevelPills, StreakStars, ExampleSlot, RoundSummary, NeedMore } from './gameKit'
 import { FidelCard } from './FidelCard'
 import {
   initEcho, echoTransition, exampleWord, roundSummary, applyRound, loadEcho, saveEcho, dueList, maxPlayableLevel,
-  ECHO_LEVELS, MAX_LEVEL, UNLOCK_ACCURACY, Phase, MatchEvent, Face, Outcome,
+  ECHO_LEVELS, MAX_LEVEL, Phase, MatchEvent, Face, Outcome,
 } from '../echoMatchCore'
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
@@ -44,21 +44,6 @@ const glyphOf = (k) => formOf(k)?.char || ''
 // A board needs a few DIFFERENT families to be a game at all.
 const MIN_FAMILIES = 3
 
-function useWide() {
-  const q = '(min-width: 768px)'
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(q).matches)
-  useEffect(() => {
-    const m = window.matchMedia?.(q)
-    if (!m) return undefined
-    const on = () => setWide(m.matches)
-    m.addEventListener?.('change', on)
-    return () => m.removeEventListener?.('change', on)
-  }, [])
-  return wide
-}
-
-const GO_BTN = { background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', color: '#fff', '--chunk-depth': '4px' }
-const PLAIN_BTN = { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }
 
 export default function EchoMatch({ soundOn, onBack, pool = [] }) {
   // Callers pass a fresh array each render; key on its contents so a parent
@@ -214,34 +199,7 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
   const cardH = Math.round(cardW * 1.4)
 
   const levelPills = (
-    <div className="flex items-center justify-center gap-2" role="group" aria-label={t('echoLevels', 'Levels')}>
-      {Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map((lv) => {
-        const open = lv <= progress.unlocked && lv <= playable
-        const on = lv === effLevel
-        const best = progress.best[lv] || 0
-        return (
-          <button
-            key={lv}
-            type="button"
-            disabled={!open}
-            aria-pressed={on}
-            aria-label={`${t('echoLevel', 'Level')} ${lv}${open ? '' : ` (${t('echoLocked', 'locked')})`}`}
-            onClick={() => { setLevel(lv); setRound((r) => r + 1) }}
-            className={`flex h-11 min-w-[52px] flex-col items-center justify-center rounded-xl px-2 leading-none ${FOCUS}`}
-            style={{ background: on ? 'var(--sky)' : 'var(--card)', color: on ? '#fff' : 'var(--muted)', border: `2px solid ${on ? 'var(--sky)' : 'var(--line)'}`, opacity: open ? 1 : 0.5, outlineColor: 'var(--sky)' }}
-          >
-            {open ? (
-              <>
-                <span className="flex items-center gap-0.5 text-base font-black">{lv === MAX_LEVEL ? <Timer className="h-4 w-4" aria-hidden="true" /> : null}{lv}</span>
-                <span className="mt-0.5 flex" aria-hidden="true">
-                  {[0, 1, 2].map((i) => <Star key={i} className="h-2.5 w-2.5" fill={i < best ? 'currentColor' : 'none'} />)}
-                </span>
-              </>
-            ) : <Lock className="h-4 w-4" aria-hidden="true" />}
-          </button>
-        )
-      })}
-    </div>
+    <LevelPills max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} timed={[MAX_LEVEL]} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />
   )
 
   const back = (card) => (
@@ -317,113 +275,31 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
     )
   }
 
-  const streakRow = ctx && (
-    <div className="flex h-8 items-center justify-center gap-1" aria-label={`${t('echoStreak', 'Streak')} ${ctx.streak}`} role="status">
-      {Array.from({ length: Math.min(ctx.streak, 8) }, (_, i) => (
-        <motion.span key={i} initial={reduce ? false : { scale: 0, rotate: -40 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 14 }}>
-          <Star className="h-6 w-6" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />
-        </motion.span>
-      ))}
-      {ctx.streak >= 3 && (
-        <motion.span key={`combo-${ctx.streak}`} initial={reduce ? false : { scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="ml-1 flex items-center rounded-full px-2 text-sm font-black text-white" style={{ background: 'var(--accent)' }}>
-          <Flame className="h-4 w-4" aria-hidden="true" />×{ctx.streak}
-        </motion.span>
-      )}
-    </div>
+  const summaryView = result && ctx && (
+    <RoundSummary
+      testId="echo-summary"
+      summary={result.summary}
+      unlockedNew={result.unlockedNew}
+      canNext={effLevel < Math.min(progress.unlocked, playable)}
+      atMax={effLevel >= MAX_LEVEL}
+      belowUnlock={effLevel >= progress.unlocked}
+      timeUp={ctx.phase === Phase.TIMEUP}
+      item={(k) => ({ label: glyphOf(k) })}
+      onHear={(k) => voiceOf(k)}
+      onNext={() => { setLevel(effLevel + 1); setRound((r) => r + 1) }}
+      onAgain={() => setRound((r) => r + 1)}
+      onDone={onBack}
+      wide={wide}
+    />
   )
-
-  const chip = (k, good) => (
-    <button
-      key={k}
-      type="button"
-      onClick={() => voiceOf(k)}
-      aria-label={`${glyphOf(k)}. ${t('echoTapHear', 'Tap to hear')}`}
-      className={`geez relative flex h-14 w-14 items-center justify-center rounded-2xl text-3xl font-black ${FOCUS}`}
-      style={{ background: 'var(--card)', border: `3px solid ${good ? 'var(--go)' : 'var(--accent)'}`, outlineColor: 'var(--sky)' }}
-    >
-      {glyphOf(k)}
-      <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full text-white" style={{ background: good ? 'var(--go)' : 'var(--accent)' }} aria-hidden="true">
-        {good ? <Check className="h-3.5 w-3.5" /> : <Volume2 className="h-3 w-3" />}
-      </span>
-    </button>
-  )
-
-  const summaryView = result && ctx && (() => {
-    const { summary, unlockedNew } = result
-    const pct = Math.round(summary.accuracy * 100)
-    const canNext = effLevel < Math.min(progress.unlocked, playable)
-    return (
-      <div className="flex w-full flex-col items-center gap-4" data-testid="echo-summary">
-        <AnbessaSvg size={wide ? 130 : 96} mood="happy" pose={summary.passed ? 'cheer' : undefined} />
-        <div className="flex gap-1" aria-label={`${summary.stars} / 3`} role="img">
-          {[0, 1, 2].map((i) => (
-            <motion.span key={i} initial={reduce ? false : { scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: reduce ? 0 : 0.2 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
-              <Star className="h-12 w-12 md:h-16 md:w-16" style={{ color: i < summary.stars ? 'var(--accent)' : 'var(--line)' }} fill="currentColor" aria-hidden="true" />
-            </motion.span>
-          ))}
-        </div>
-        <p className="text-center text-sm font-extrabold" style={{ color: 'var(--muted)' }}>
-          {ctx.phase === Phase.TIMEUP ? `${t('echoTimeUp', 'Time!')} · ` : ''}{pct}% {t('echoFirstTry', 'right first time')} · <Flame className="inline h-4 w-4" aria-hidden="true" /> {summary.bestStreak}
-        </p>
-        {summary.mastered.length > 0 && (
-          <section className="flex w-full flex-col items-center gap-2">
-            <h2 className="flex items-center gap-1 text-sm font-black" style={{ color: 'var(--go)' }}><Check className="h-4 w-4" aria-hidden="true" />{t('echoMastered', 'You know these')}</h2>
-            <div className="flex flex-wrap justify-center gap-3">{summary.mastered.map((k) => chip(k, true))}</div>
-          </section>
-        )}
-        {summary.practice.length > 0 && (
-          <section className="flex w-full flex-col items-center gap-2">
-            <h2 className="flex items-center gap-1 text-sm font-black" style={{ color: 'var(--accent)' }}><RotateCcw className="h-4 w-4" aria-hidden="true" />{t('echoPractice', 'Practise these - they come back next round')}</h2>
-            <div className="flex flex-wrap justify-center gap-3">{summary.practice.map((k) => chip(k, false))}</div>
-          </section>
-        )}
-        {unlockedNew ? (
-          <motion.p initial={reduce ? false : { scale: 0.6 }} animate={{ scale: 1 }} className="flex items-center gap-2 text-base font-black" style={{ color: 'var(--go)' }}>
-            <LockOpen className="h-6 w-6" aria-hidden="true" />{t('echoUnlocked', 'New level unlocked!')}
-          </motion.p>
-        ) : !summary.passed && effLevel < MAX_LEVEL && effLevel >= progress.unlocked ? (
-          <p className="flex max-w-xs items-center gap-2 text-center text-sm font-extrabold" style={{ color: 'var(--muted)' }}>
-            <Lock className="h-5 w-5 shrink-0" aria-hidden="true" />{t('echoNeed', 'Get {pct}% right first time to open the next level').replace('{pct}', String(Math.round(UNLOCK_ACCURACY * 100)))}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap justify-center gap-3">
-          {canNext && (
-            <button type="button" onClick={() => { setLevel(effLevel + 1); setRound((r) => r + 1) }} className={`chunk flex min-h-[48px] items-center gap-2 rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={GO_BTN}>
-              <ArrowRight className="h-5 w-5" aria-hidden="true" />{t('echoNext', 'Next level')}
-            </button>
-          )}
-          <button type="button" onClick={() => setRound((r) => r + 1)} className={`chunk flex min-h-[48px] items-center gap-2 rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={canNext ? PLAIN_BTN : GO_BTN}>
-            <RotateCcw className="h-5 w-5" aria-hidden="true" />{t('matchAgain', 'Again!')}
-          </button>
-          <button type="button" onClick={onBack} className={`chunk flex min-h-[48px] items-center gap-2 rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={PLAIN_BTN}>
-            <Check className="h-5 w-5" aria-hidden="true" />{t('orderDone', 'Done')}
-          </button>
-        </div>
-      </div>
-    )
-  })()
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-6 pt-4">
-      <header className="flex items-center gap-2">
-        <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-          <ChevronLeft className="h-6 w-6" aria-hidden="true" />
-        </button>
-        <h1 className="flex-1 text-center text-lg font-black">{t('echoTitle', 'Echo Match')}</h1>
-        <div className="w-11" />
-      </header>
+      <GameHeader title={t('echoTitle', 'Echo Match')} onBack={onBack} />
 
       <main className="flex flex-1 flex-col items-center justify-center gap-3">
         {voiced === null ? null : !enough ? (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <KokebSvg size={72} />
-            <p className="max-w-xs text-base font-black" style={{ color: 'var(--muted)' }}>
-              {t('matchNeedMore', 'Learn a few more letters, then come back to match them!')}
-            </p>
-            <button type="button" onClick={onBack} className={`chunk min-h-[48px] rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={GO_BTN}>
-              {t('orderDone', 'Done')}
-            </button>
-          </div>
+          <NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore>
         ) : !ctx ? null : result ? summaryView : (
           <>
             {levelPills}
@@ -432,33 +308,8 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
                 <div className="h-full rounded-full" style={{ width: `${(timeLeft / cfg.seconds) * 100}%`, background: timeLeft <= 15 ? 'var(--accent)' : 'var(--sky)', transition: reduce ? 'none' : 'width 250ms linear' }} />
               </div>
             )}
-            {streakRow}
-            <div className="flex min-h-[64px] items-center justify-center md:min-h-[80px]">
-                <AnimatePresence>
-                  {example && (
-                    <motion.button
-                      type="button"
-                      key={example.key}
-                      onClick={() => { voiceOf(example.key); later(afterVoice(() => sayWord(example.word), 300, 3000)) }}
-                      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      aria-label={`${glyphOf(example.key)}${example.word ? ` - ${example.word.geez}` : ''}`}
-                      data-testid="echo-example"
-                      className={`flex min-h-[44px] items-center gap-3 rounded-3xl px-4 py-1.5 ${FOCUS}`}
-                      style={{ background: 'var(--card)', border: '3px solid var(--go)', outlineColor: 'var(--sky)' }}
-                    >
-                      <span className="geez text-4xl font-black" style={{ color: 'var(--go)' }}>{glyphOf(example.key)}</span>
-                      {example.word && (
-                        <>
-                          <WordPicture emoji={example.word.picture} size={wide ? 64 : 48} />
-                          <span className="geez text-2xl font-black">{example.word.geez}</span>
-                        </>
-                      )}
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-            </div>
+            <StreakStars streak={ctx.streak} />
+            <ExampleSlot wide={wide} example={example && { id: example.key, glyph: glyphOf(example.key), word: example.word }} onTap={() => { voiceOf(example.key); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
             <div>
               <div className="grid justify-center gap-2.5 md:gap-4" style={{ gridTemplateColumns: `repeat(${cols}, ${cardW}px)` }} data-testid="echo-grid">
                 {ctx.cards.map((card) => {
