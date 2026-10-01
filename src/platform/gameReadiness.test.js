@@ -10,6 +10,8 @@ import { FIDEL_FAMILIES, INDEXES } from './ethiopic'
 import { wordToKeys } from '../workshopCore'
 import { ALL_WORDS } from '../FidelQuestApp'
 import { DRAWN_PICTURES } from '../components/Pictures'
+import { marketStock, readableIds, maxPlayableLevel } from '../wordMarketCore'
+import { ALL_FORMS } from './ethiopic'
 
 /* The same filter WordWorkshop applies to pick a round. */
 const buildable = ALL_WORDS.filter((w) => {
@@ -32,11 +34,12 @@ describe('game readiness', () => {
     expect(gameReady('bingo', { learned: 9 })).toBe(true)
   })
 
-  it('offers the one-family games from the first family, and market always', () => {
+  it('offers the one-family games from the first family', () => {
     expect(gameReady('ladder', { learned: 1 })).toBe(true)
     expect(gameReady('train', { learned: 3 })).toBe(false)
     expect(gameReady('train', { learned: 4 })).toBe(true)
-    expect(gameReady('market', { learned: 0 })).toBe(true)
+    expect(gameReady('market', { learned: 3 })).toBe(false)
+    expect(gameReady('market', { learned: 4 })).toBe(true)
   })
 
   it('treats an unknown game as ready (opt-in thresholds)', () => {
@@ -65,5 +68,16 @@ describe('game readiness', () => {
     const min = GAME_MIN_FAMILIES.workshop
     expect(buildableWithin(min).length).toBeGreaterThan(0)
     expect(buildableWithin(min - 1)).toHaveLength(0)
+  })
+
+  it("market's threshold is where the first L1 round can be dealt", () => {
+    const stock = marketStock(ALL_WORDS)
+    const readableWithin = (n) => {
+      const set = new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+      return readableIds(stock, ALL_FORMS.filter((f) => set.has(f.familyId)).map((f) => f.audioKey))
+    }
+    const min = GAME_MIN_FAMILIES.market
+    expect(maxPlayableLevel(stock, readableWithin(min))).toBeGreaterThanOrEqual(1)
+    expect(maxPlayableLevel(stock, readableWithin(min - 1))).toBe(0)
   })
 })

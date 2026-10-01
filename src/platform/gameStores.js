@@ -12,3 +12,6 @@ export const TRAIN_KEY = 'fq.train.v1'
 
 export const echoStore = roundStore(ECHO_KEY, GAME_MAX_LEVEL, isLetterKey)
 export const trainStore = roundStore(TRAIN_KEY, GAME_MAX_LEVEL, isLetterKey)
+export const MARKET_KEY = 'fq.market.v1'
+/* Word Market re-deals WORDS (by their latin id), not letters. */
+export const marketStore = roundStore(MARKET_KEY, GAME_MAX_LEVEL, (id) => typeof id === 'string' && /^[a-z0-9'_-]{1,40}$/i.test(id))

@@ -83,7 +83,8 @@ First math track (smallest shippable slice), mirroring the fidel arc:
    table in `src/data/`, the single source of truth, test-verified exactly
    like `fidelGameData.js`. **STARTED:** `src/data/numerals.js` is that table
    (glyphs 1..100, `toGeez`/`fromGeez`, exhaustively round-trip tested); the
-   existing `MerkatoMarket` counting game already teaches 1..9 recognition.
+   Word Market game's L3+ shopping quantities (፩..፫) keep a small numeral
+   recognition moment inside a reading task.
    Remaining: spoken number names (native-speaker review) and the journey
    nodes that string counting -> number sense -> arithmetic together.
 2. Counting and number sense (MIX nodes).

@@ -24,7 +24,11 @@
                          trusted as a constant.
      bingo            9  a 3x3 card needs 9 distinct letters or initBingo
                          fills it by repeating the pool.
-     market           0  Ge'ez numerals and coins, no letters at all.
+     market           4  Word Market targets words the child can READ (all
+                         letters learned and voiced, concrete picture). 4
+                         families is where both packs first fill an L1 round
+                         (2+ readable words; am 3, ti 2 - ti gains variety
+                         from 8 families). Asserted in gameReadiness.test.js.
 
    The ALL letter-scope is the deliberate override: a grown-up who switches
    the games to the whole abugida (or a child using an app that already knows
@@ -42,7 +46,7 @@ export const GAME_MIN_FAMILIES = Object.freeze({
   echo: 4,
   workshop: 4,
   bingo: 9,
-  market: 0,
+  market: 4,
 })
 
 /** Whether `game` should be offered. Unknown games are always ready - a new
