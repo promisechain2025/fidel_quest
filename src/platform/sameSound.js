@@ -53,3 +53,10 @@ export function uniqueBySound(keys, pack = ACTIVE_PACK) {
   }
   return out
 }
+
+/** Is `key` heard as its OWN vowel order in this pack? (false for order-
+    remapped forms such as Amharic ሀ, voiced with the ሃ clip). */
+export function heardAsOwnOrder(key, pack = ACTIVE_PACK) {
+  const order = (k) => Number(/-(\d+)$/.exec(String(k || ''))?.[1] || 0)
+  return order(soundKeyOf(key, pack)) === order(key)
+}

@@ -29,7 +29,7 @@
    ========================================================================== */
 import { rngShuffle } from './platform/rng'
 import { ACTIVE_PACK } from './platform/ethiopic'
-import { soundKeyOf, uniqueBySound } from './platform/sameSound'
+import { soundKeyOf, uniqueBySound, heardAsOwnOrder } from './platform/sameSound'
 import { UNLOCK_ACCURACY, starsFor, applyRound as applyRoundShared } from './platform/roundProgress'
 import { TRAIN_KEY, trainStore } from './platform/gameStores'
 
@@ -50,11 +50,7 @@ export const HINT_AFTER = 2
 const orderOf = (key) => Number(/-(\d+)$/.exec(key)?.[1] || 0)
 const familyOf = (key) => /^([a-z]+)-/.exec(key)?.[1] || key
 
-/** Is `key` heard as its own vowel order in this pack? (false for order-
-    remapped forms such as Amharic ሀ, voiced with the ሃ clip). */
-export function heardAsOwnOrder(key, pack = ACTIVE_PACK) {
-  return orderOf(soundKeyOf(key, pack)) === orderOf(key)
-}
+export { heardAsOwnOrder }
 
 /** The anchor family: all seven orders present, each heard as itself and
     distinct. Prefers ለ (regular, early in both packs), else the first

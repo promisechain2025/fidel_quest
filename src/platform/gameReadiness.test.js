@@ -11,6 +11,7 @@ import { wordToKeys } from '../workshopCore'
 import { ALL_WORDS } from '../FidelQuestApp'
 import { DRAWN_PICTURES } from '../components/Pictures'
 import { marketStock, readableIds, maxPlayableLevel } from '../wordMarketCore'
+import { beatStock, playableIds, maxPlayableLevel as beatsLevel } from '../keberoCore'
 import { ALL_FORMS } from './ethiopic'
 
 /* The same filter WordWorkshop applies to pick a round. */
@@ -79,5 +80,18 @@ describe('game readiness', () => {
     const min = GAME_MIN_FAMILIES.market
     expect(maxPlayableLevel(stock, readableWithin(min))).toBeGreaterThanOrEqual(1)
     expect(maxPlayableLevel(stock, readableWithin(min - 1))).toBe(0)
+  })
+
+  it("beats' threshold is where L1-L3 (count / which / missing) can be dealt", () => {
+    const stock = beatStock(ALL_WORDS)
+    const all = stock.map((w) => w.id)
+    const lv = (n) => {
+      const set = new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+      const keys = ALL_FORMS.filter((f) => set.has(f.familyId)).map((f) => f.audioKey)
+      return beatsLevel(stock, playableIds(stock, keys), all, keys)
+    }
+    // am reaches L3 at 1 family, ti at 2: the threshold is the later one
+    expect(lv(GAME_MIN_FAMILIES.beats)).toBeGreaterThanOrEqual(3)
+    expect(GAME_MIN_FAMILIES.beats).toBeLessThanOrEqual(2)
   })
 })

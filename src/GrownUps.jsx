@@ -40,7 +40,7 @@ import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, 
 import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
-import { echoStore, trainStore, marketStore } from './platform/gameStores'
+import { echoStore, trainStore, marketStore, beatsStore } from './platform/gameStores'
 import { dueList } from './platform/roundProgress'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
@@ -425,6 +425,12 @@ const GAME_CARDS = [
     mode: 'market', title: () => t('gpMarketTitle', 'Word Market: reading words'), load: marketStore.load,
     only: (e) => String(e.k).startsWith('word:'), label: (id) => ALL_WORDS.find((w) => w.latin === id)?.geez || null,
     triedLabel: () => t('gpWordsTried', 'Words tried'),
+  },
+  // Kebero Beats: letters found in words (L2-L4) plus L1 beat-counting
+  // (logged as beats:<word>); practice list shows letters or words.
+  {
+    mode: 'beats', title: () => t('gpBeatsTitle', 'Kebero Beats: letters in words'), load: beatsStore.load,
+    label: (id) => INDEXES.byAudioKey.get(id)?.char || ALL_WORDS.find((w) => w.latin === id)?.geez || null,
   },
 ]
 const dueLabel = (id) => INDEXES.byAudioKey.get(id)?.char || null
