@@ -1326,8 +1326,9 @@ export default function FidelQuestApp() {
       node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
       learnedFamilyIds(journeyRef.current).length > 0
     ) {
-      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
-      setWarmupNudge({ node, enforced })
+      const parentRule = !!loadPlan()?.requireWarmup
+      const enforced = parentRule || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
+      setWarmupNudge({ node, enforced, parentRule })
       return
     }
     // NEW letters also wait when the ledger holds unresolved trouble letters:
@@ -1942,7 +1943,9 @@ export default function FidelQuestApp() {
               enforced={warmupNudge.enforced}
               onStart={() => { setWarmupNudge(null); startWarmup() }}
               onSkip={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
+              parentRule={!!warmupNudge.parentRule}
               onClose={() => setWarmupNudge(null)}
+              onNotNow={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
             />
           )}
         </AnimatePresence>
@@ -2308,7 +2311,12 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
 /* The arcade gateway's gentle gate: warm up before the game. When the plan
    enforces it there is no "Play anyway" - but that is a Grown-ups choice;
    the default is a nudge, matching the app's never-block philosophy. */
-function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
+/* "Not now" opens the node the child tapped (the warm-up is offered again
+   next time) - it used to just close the dialog, so the tap did nothing.
+   Under a Grown-ups "require warm-up" rule, and in the optional nudge (where
+   "Play anyway" already opens the node), the quiet button is "Back to the
+   path", which closes. */
+function WarmupNudge({ enforced, parentRule = false, onStart, onSkip, onClose, onNotNow = onClose }) {
   useEscapeKey(onClose)
   return (
     <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -2329,9 +2337,15 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
               {t('warmSkip', 'Play anyway')}
             </button>
           )}
-          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-            {t('dismiss', 'Not now')}
-          </button>
+          {enforced && !parentRule ? (
+            <button type="button" onClick={onNotNow} className={`min-h-[44px] rounded-xl px-4 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+              {t('dismiss', 'Not now')}
+            </button>
+          ) : (
+            <button type="button" onClick={onClose} className={`min-h-[44px] rounded-xl px-4 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+              {t('warmBackToPath', 'Back to the path')}
+            </button>
+          )}
         </div>
       </motion.div>
     </motion.div>
