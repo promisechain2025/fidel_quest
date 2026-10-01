@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { Runner2D } from './ArcadeFallback'
-import { runnerInitial, selectRunnerQuestion, INDEXES } from '../FidelQuestApp'
+import { runnerInitial, runnerTransition, selectRunnerQuestion, INDEXES, RunnerEvent, RunnerState, RUNNER_LEVELS } from '../FidelQuestApp'
 
 const charOf = (key) => INDEXES.byAudioKey.get(key).char
 
@@ -34,5 +34,30 @@ describe('Runner2D (P4 fallback)', () => {
     act(() => { vi.advanceTimersByTime(900) })
     const q1 = run.queue[1]
     for (const opt of q1.options) expect(screen.getByText(charOf(opt))).toBeInTheDocument()
+  })
+
+  it('a perfect run ends after the fixed number of levels with a summary, and Home reports the win', () => {
+    const onExit = vi.fn()
+    render(<Runner2D seed={7} soundOn={false} onExit={onExit} />)
+    let run = runnerInitial(7)
+    let guard = 0
+    while (run.status !== RunnerState.FINISHED && guard++ < 100) {
+      const q = selectRunnerQuestion(run)
+      act(() => { fireEvent.click(screen.getByLabelText(`Gate ${INDEXES.byAudioKey.get(q.target).sound}`)) })
+      run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: q.target } }).next
+      act(() => { vi.advanceTimersByTime(900) })
+      run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+      if (run.status === RunnerState.BOSS) {
+        act(() => { vi.advanceTimersByTime(1900) })
+        run = runnerTransition(run, { type: RunnerEvent.BOSS_DONE }).next
+      }
+    }
+    expect(run.status).toBe(RunnerState.FINISHED)
+    expect(screen.getByTestId('runner-summary')).toBeInTheDocument()
+    expect(screen.getByText('Run complete!')).toBeInTheDocument()
+    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(screen.getByText(`${RUNNER_LEVELS}/${RUNNER_LEVELS}`)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Home'))
+    expect(onExit).toHaveBeenCalledWith(expect.objectContaining({ level: RUNNER_LEVELS, survivedBoss: true, finished: true }))
   })
 })

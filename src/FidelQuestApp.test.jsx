@@ -13,6 +13,9 @@ import FidelQuestApp, {
   RunnerState,
   RunnerEvent,
   runnerInitial,
+  runnerAccuracy,
+  RUNNER_LEVELS,
+  RUNNER_QPL,
   runnerTransition,
   selectRunnerQuestion,
   INDEXES,
@@ -137,6 +140,41 @@ describe('runner machine', () => {
     }
     doomed = runnerTransition(doomed, { type: RunnerEvent.BOSS_DONE }).next
     expect(doomed.status).toBe(RunnerState.DESTROYED)
+  })
+})
+
+describe('runner fixed-length run', () => {
+  const playLevel = (run, good = true) => {
+    for (let i = 0; i < RUNNER_QPL; i++) {
+      const q = selectRunnerQuestion(run)
+      const key = good ? q.target : q.options.find((o) => o !== q.target)
+      run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: key } }).next
+      run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+    }
+    return runnerTransition(run, { type: RunnerEvent.BOSS_DONE }).next
+  }
+  it(`ends FINISHED after ${RUNNER_LEVELS} beaten levels and is terminal`, () => {
+    let run = runnerInitial(5)
+    for (let l = 1; l < RUNNER_LEVELS; l++) {
+      run = playLevel(run)
+      expect(run.status).toBe(RunnerState.RUNNING)
+    }
+    run = playLevel(run)
+    expect(run.status).toBe(RunnerState.FINISHED)
+    expect(run.level).toBe(RUNNER_LEVELS)
+    expect(run.fed).toBe(RUNNER_LEVELS * RUNNER_QPL)
+    expect(runnerAccuracy(run)).toBe(100)
+    expect(runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: 'ha-1' } }).accepted).toBe(false)
+  })
+  it('counts misses across the run for the summary accuracy', () => {
+    let run = runnerInitial(5)
+    const q = selectRunnerQuestion(run)
+    run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: q.options.find((o) => o !== q.target) } }).next
+    run = runnerTransition(run, { type: RunnerEvent.FEED_DONE }).next
+    const q2 = selectRunnerQuestion(run)
+    run = runnerTransition(run, { type: RunnerEvent.FEED, payload: { audioKey: q2.target } }).next
+    expect(run.missed).toBe(1)
+    expect(runnerAccuracy(run)).toBe(50)
   })
 })
 

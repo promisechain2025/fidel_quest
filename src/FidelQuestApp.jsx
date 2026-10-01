@@ -48,7 +48,7 @@ import { Harag, JewelRim } from './components/Manuscript'
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
 import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
@@ -656,6 +656,7 @@ export const RunnerState = Object.freeze({
   FEEDING: 'FEEDING',
   BOSS: 'BOSS',
   DESTROYED: 'DESTROYED',
+  FINISHED: 'FINISHED', // survived the last level of a fixed-length run
 })
 
 export const RunnerEvent = Object.freeze({
@@ -665,6 +666,9 @@ export const RunnerEvent = Object.freeze({
 })
 
 export const RUNNER_QPL = 5 // questions ("meals") per level
+// A run is a fixed number of levels, then it ends with a summary - it used to
+// keep levelling up until the child lost or quit, so it never ended on a win.
+export const RUNNER_LEVELS = 3
 
 // Runner pace. Signs spawn at SIGN_SPAWN_Z and glide in at RUNNER_BASE_SPEED *
 // scale. Slower base + a closer spawn than before, so the letters are readable
@@ -720,6 +724,7 @@ export function runnerInitial(seed = 1, pool = RUNNER_DEFAULT_POOL) {
     correct: 0, // power this level
     wrong: 0, // Muncher strength this level
     fed: 0, // total correct feeds this run (the score)
+    missed: 0, // total wrong feeds this run (for the end summary)
     survivedBoss: false,
     lastFeed: null, // { audioKey, good }
   }
@@ -737,6 +742,7 @@ const RUNNER_TRANSITIONS = {
         correct: ctx.correct + (good ? 1 : 0),
         wrong: ctx.wrong + (good ? 0 : 1),
         fed: ctx.fed + (good ? 1 : 0),
+        missed: (ctx.missed ?? 0) + (good ? 0 : 1),
         lastFeed: { audioKey, good },
       }
     },
@@ -750,6 +756,7 @@ const RUNNER_TRANSITIONS = {
   [RunnerState.BOSS]: {
     [RunnerEvent.BOSS_DONE]: (ctx) => {
       if (!ctx.survivedBoss) return { ...ctx, status: RunnerState.DESTROYED }
+      if (ctx.level >= RUNNER_LEVELS) return { ...ctx, status: RunnerState.FINISHED }
       const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.pool), ctx.rngState)
       return {
         ...ctx,
@@ -766,6 +773,13 @@ const RUNNER_TRANSITIONS = {
     },
   },
   [RunnerState.DESTROYED]: {},
+  [RunnerState.FINISHED]: {},
+}
+
+/** Run accuracy for the end summary: correct feeds over all feeds, 0-100. */
+export function runnerAccuracy(ctx) {
+  const total = (ctx.fed ?? 0) + (ctx.missed ?? 0)
+  return total ? Math.round(((ctx.fed ?? 0) / total) * 100) : 0
 }
 
 export function runnerTransition(ctx, event) {
@@ -1240,18 +1254,18 @@ export default function FidelQuestApp() {
   // Surface a newly-earned wearable as a celebratory chip on the path.
   const markNodeDone = useCallback((nodeId, stars = 3) => {
     const j = journeyRef.current
-    const node = NODE_BY_ID.get(nodeId)
-    const isNew = node?.reward && !(j.collection?.owned ?? []).includes(node.reward.id)
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
     track('lesson_complete')
-    const chapter = chapterComplete(next, nodeId)
-    if (chapter) {
+    // Replaying a done node must not re-run the chapter party or re-announce
+    // a reward the child already owns - only newly earned things celebrate.
+    const party = nodeDoneCelebration(j, next, nodeId)
+    if (party?.chapter) {
       // Peak pride: a full celebration that also asks for a share.
       track('chapter_complete')
-      setCelebration({ chapter, rewardName: node?.reward?.name || null })
-    } else if (isNew) {
-      setJustEarned(node.reward)
+      setCelebration({ chapter: party.chapter, rewardName: party.reward?.name || null })
+    } else if (party?.reward) {
+      setJustEarned(party.reward)
     }
     goBack()
   }, [goBack])

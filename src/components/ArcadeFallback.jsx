@@ -12,6 +12,7 @@ import {
   RunnerState,
   RunnerEvent,
   RUNNER_QPL,
+  RUNNER_LEVELS,
   INDEXES,
   loadRunnerBest,
   saveRunnerBest,
@@ -19,6 +20,7 @@ import {
 } from '../FidelQuestApp'
 import KokebSvg from './KokebSvg'
 import { RUNNER_CAST } from './runnerCast'
+import RunnerSummary from './RunnerSummary'
 import { LaneVista } from './StepScenery'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
@@ -60,6 +62,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   const feeding = ctx.status === RunnerState.FEEDING
   const boss = ctx.status === RunnerState.BOSS
   const destroyed = ctx.status === RunnerState.DESTROYED
+  const over = destroyed || ctx.status === RunnerState.FINISHED
   const reduce = useReducedMotion()
   const goodFeed = feeding && ctx.lastFeed?.good
 
@@ -88,29 +91,13 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   }, [ctx.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!destroyed) return
+    if (!over) return
     const best = loadRunnerBest()
     if (ctx.fed > best.fed) saveRunnerBest({ fed: ctx.fed, level: ctx.level })
-  }, [destroyed]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [over]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (destroyed) {
-    return (
-      <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-5 px-6 text-center">
-        <img src={RUNNER_CAST.jibbyFront} alt="Jibby" draggable={false} style={{ height: 140, width: 'auto' }} />
-        <h2 className="text-2xl font-black">{t('munched', 'Munched!')}</h2>
-        <p className="font-bold" style={{ color: 'var(--muted)' }}>
-          {t('bestStreak', 'Best streak')}: {ctx.fed}
-        </p>
-        <div className="flex gap-3">
-          <button type="button" onClick={() => dispatch({ type: '__reset__' })} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)', '--chunk-depth': '4px' }}>
-            {t('runAgain', 'Run again')}
-          </button>
-          <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}>
-            {t('home', 'Home')}
-          </button>
-        </div>
-      </div>
-    )
+  if (over) {
+    return <RunnerSummary ctx={ctx} onRetry={() => dispatch({ type: '__reset__' })} onExit={onExit} />
   }
 
   return (
@@ -120,7 +107,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
-          L{ctx.level}
+          L{ctx.level}/{RUNNER_LEVELS}
         </span>
         <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={`Power ${ctx.correct}, Muncher ${ctx.wrong}`}>
           {Array.from({ length: RUNNER_QPL }, (_, i) => {

@@ -390,6 +390,20 @@ export function chapterComplete(p, nodeId) {
   return chapterNodes.every((n) => p.done[n.id]) ? node.chapter : null
 }
 
+/** What finishing nodeId should celebrate, comparing progress before (prev)
+    and after (next). Only NEW things count: a chapter that just became
+    complete (not a replay of an already-done node) and a reward the child
+    did not own yet. Returns { chapter, reward } or null. */
+export function nodeDoneCelebration(prev, next, nodeId) {
+  const node = NODE_BY_ID.get(nodeId)
+  if (!node) return null
+  const reward = node.reward && !(prev.collection?.owned ?? []).includes(node.reward.id) ? node.reward : null
+  const wasDone = !!prev.done?.[nodeId]
+  const chapter = !wasDone && !chapterComplete(prev, nodeId) ? chapterComplete(next, nodeId) : null
+  if (chapter) return { chapter, reward }
+  return reward ? { chapter: null, reward } : null
+}
+
 /** Child-facing progress for the share card and Closet. */
 export function progressStats(p) {
   const families = JOURNEY.filter((n) => n.kind === NodeKind.LEARN && p.done[n.id]).length

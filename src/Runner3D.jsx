@@ -27,6 +27,7 @@ import {
   RunnerEvent,
   RunnerState,
   RUNNER_QPL,
+  RUNNER_LEVELS,
   RUNNER_BASE_SPEED,
   RUNNER_SPEEDS,
   RUNNER_SPEED_ORDER,
@@ -46,6 +47,7 @@ import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } fr
 import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
 import { RUNNER_CAST } from './components/runnerCast'
+import RunnerSummary from './components/RunnerSummary'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
@@ -934,6 +936,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   const feeding = ctx.status === RunnerState.FEEDING
   const boss = ctx.status === RunnerState.BOSS
   const destroyed = ctx.status === RunnerState.DESTROYED
+  const over = destroyed || ctx.status === RunnerState.FINISHED
 
   const steerTo = useCallback((target) => {
     setLane(() => {
@@ -1122,14 +1125,16 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     return () => clearInterval(t)
   }, [demo, ctx.status, ctx.qIndex, lane]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The summary reads the stored best first, so it saves after paint.
   useEffect(() => {
-    if (!destroyed) return
+    if (!over) return
     const best = loadRunnerBest()
     if (ctx.fed > best.fed) saveRunnerBest({ fed: ctx.fed, level: ctx.level })
-  }, [destroyed]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [over]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (destroyed) {
-    return <RunnerDestroyed ctx={ctx} onRetry={onRetry} onExit={onExit} />
+  if (over) {
+    const p = placeForLevel(ctx.level)
+    return <RunnerSummary ctx={ctx} onRetry={onRetry} onExit={onExit} placeName={`${p.name}, ${p.country}`} />
   }
 
   // WebGL unavailable (context creation failed, or lost mid-run): fall to the
@@ -1146,7 +1151,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
           <X className="h-6 w-6" />
         </button>
         <span className="rounded-xl px-2.5 py-1 text-xs font-black text-white" style={{ background: 'var(--sky)' }}>
-          L{ctx.level} · {place.name}
+          L{ctx.level}/{RUNNER_LEVELS} · {place.name}
         </span>
         <div className="flex flex-1 items-center justify-center gap-1.5" aria-label={`Power ${ctx.correct}, Muncher ${ctx.wrong}, of ${RUNNER_QPL} meals`}>
           {Array.from({ length: RUNNER_QPL }, (_, i) => {
@@ -1250,60 +1255,3 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
     </div>
   )
 }
-
-/** Jibby the hyena, drawn from the same art as his 3D sprite. */
-function Muncher({ size = 56 }) {
-  return (
-    <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}>
-      <img src={RUNNER_CAST.jibbyFront} alt="" draggable={false} style={{ height: size, width: 'auto' }} />
-    </motion.div>
-  )
-}
-
-function RunnerDestroyed({ ctx, onRetry, onExit }) {
-  const best = loadRunnerBest()
-  const isBest = ctx.fed >= best.fed && ctx.fed > 0
-  return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-10 text-center">
-      <motion.div initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 240, damping: 14 }}>
-        <Muncher size={96} />
-      </motion.div>
-      <h1 className="mt-5 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--bad-ink)' }}>
-        {t('munched', 'Munched!')}
-      </h1>
-      <p className="mt-2 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-        Jibby the hyena caught Anbessa in {placeForLevel(ctx.level).name}, {placeForLevel(ctx.level).country} (level {ctx.level}). Feed him more correct letters to keep him strong!
-      </p>
-
-      <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
-        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            Letters fed
-          </p>
-          <p className="mono flex items-center justify-center gap-1 text-2xl font-black" style={{ color: 'var(--go-ink)' }}>
-            <Sparkles className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />
-            {ctx.fed}
-          </p>
-        </div>
-        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {isBest ? t('runNewBest', 'New best!') : t('runBest', 'Best')}
-          </p>
-          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>
-            {Math.max(best.fed, ctx.fed)}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
-        <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
-          {t('runAgain', 'Run again')}
-        </Chunky>
-        <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })}>
-          {t('home', 'Home')}
-        </Chunky>
-      </div>
-    </div>
-  )
-}
-
