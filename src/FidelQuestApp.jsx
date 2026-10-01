@@ -54,7 +54,7 @@ import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
-import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import { getScope, setScope, scopedBaseForms, scopedForms, SCOPES } from './platform/letterScope'
 import { gameReady, gamesPending } from './platform/gameReadiness'
 import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
@@ -145,7 +145,7 @@ const TvClass = lazyRetry(() => import('./components/TvClass'))
 const StoryTime = lazyRetry(() => import('./components/StoryTime'))
 const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
-const FidelMatch = lazyRetry(() => import('./components/FidelMatch'))
+const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const FidelLineup = lazyRetry(() => import('./components/FidelLineup'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
@@ -1601,10 +1601,10 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
-          {screen.name === 'match' && (
-            <Screen key="match">
+          {screen.name === 'echo' && (
+            <Screen key="echo">
               <Suspense fallback={null}>
-                <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
+                <EchoMatch soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
               </Suspense>
             </Screen>
           )}
@@ -1888,7 +1888,7 @@ export default function FidelQuestApp() {
               onStories={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startStories()); return } startStories() }}
               onTwins={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startTwins()); return } startTwins() }}
               onLadder={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'ladder' })); return } setScreen({ name: 'ladder' }) }}
-              onMatch={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'match' })); return } setScreen({ name: 'match' }) }}
+              onEcho={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'echo' })); return } setScreen({ name: 'echo' }) }}
               onTraffic={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'traffic' })); return } setScreen({ name: 'traffic' }) }}
               onLineup={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'lineup' })); return } setScreen({ name: 'lineup' }) }}
               onWorkshop={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'workshop' })); return } setScreen({ name: 'workshop' }) }}
@@ -2897,7 +2897,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onTraffic, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -2959,7 +2959,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             {ready('workshop') && <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
             {ready('ladder') && <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />}
             {ready('lineup') && <BackpackTile art="lineup" title={t('lineupShort', 'Line Up')} onClick={onLineup} />}
-            {ready('match') && <BackpackTile art="match" title={t('matchShort', 'Match')} onClick={onMatch} />}
+            {ready('echo') && <BackpackTile art="match" title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
             {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
             {ready('market') && <BackpackTile art="market" title={t('marketShort', 'Market')} onClick={onMarket} />}
             {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
