@@ -4,8 +4,11 @@
 > in App Store Connect / Play Console (Pricing and Availability) - the app's
 > own price is **$12.99, not Free**. Do **not** set `VITE_STORE_IAP`; without
 > it RevenueCat keys are ignored and every build is fully unlocked (no trial,
-> no daily window, no Buy/Restore). Everything below documents the dormant
-> free-download + in-app-purchase flow, kept for a possible v2.
+> no daily window, no Buy/Restore). Everything below documents the old
+> free-download + in-app-purchase flow for reference only. The trial engine,
+> Family Pack, unlock codes and all Buy / Restore UI were **deleted** in
+> 1.3.0; only the fail-closed `iap.js` guard remains. Do not create IAP
+> products in App Store Connect or Play Console for 1.3.0.
 >
 > **The RevenueCat Capacitor plugin was removed from the app** (its iOS pod
 > no longer compiles on Xcode 26/27; the fix, purchases-ios 5.78.0+, needs

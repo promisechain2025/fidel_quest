@@ -3,7 +3,6 @@ import { Printer, X } from 'lucide-react'
 import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
 import GuideLinks from '../components/GuideLinks.jsx'
 import { FAMILIES, ORDER_NAMES, GEEZ_ORDER_NAMES, ORDER_VOWELS } from '../fidelData.js'
-import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
 
@@ -131,7 +130,7 @@ export default function Alphabet() {
               </p>
             )}
             <div className="mt-5">
-              <CtaButton href={APP_URL} tone="green">{t('alLearn', 'Learn it properly - with sound')}</CtaButton>
+              <CtaButton to="/pricing" tone="green">{t('alLearn', 'Learn it properly - with sound')}</CtaButton>
             </div>
           </div>
         </div>
@@ -144,7 +143,7 @@ export default function Alphabet() {
           <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
             {t('alCtaB', 'Every one of these letters is voiced, traced, played, and reviewed inside the eGeez journey - ten joyful minutes a day.')}
           </p>
-          <div className="mt-5"><CtaButton href={APP_URL} tone="gold">{t('alCtaBtn', 'Start the free try-out')}</CtaButton></div>
+          <div className="mt-5"><CtaButton to="/pricing" tone="gold">{t('alCtaBtn', 'Get eGeez')}</CtaButton></div>
         </Card>
       </Section>
 

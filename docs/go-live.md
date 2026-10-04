@@ -15,8 +15,6 @@ Legend: **[blocker]** = onboarding silently breaks without it.
   unset (logs `[mail:skipped]` and returns ok). That means verification links
   and introduction notifications never arrive and the whole loop dead-ends
   while looking healthy. Configure a real sender and send one test message.
-- **Stripe** account (only if selling on the web at launch), test + live keys,
-  and a webhook endpoint (step 3).
 - **Hosting**: API on Render (`render.yaml` now defines the `egeez-hub-api`
   service alongside the analytics `fidel-quest-server` - `JWT_SECRET` and
   `ADMIN_TOKEN` are generated for you, the rest are set in the dashboard) or
@@ -34,9 +32,8 @@ Legend: **[blocker]** = onboarding silently breaks without it.
 | `ADMIN_TOKEN` | **yes** | Owner panel (`/admin`) - approving teachers, moderating reviews. |
 | `EMAIL_USER` / `EMAIL_PASS` | **yes** | SMTP sender (Gmail-service transporter). No email = broken verification/intros. |
 | `NOTIFY_EMAIL` | recommended | Where owner notifications go (defaults to `EMAIL_USER`). |
-| `SITE_URL` | **yes** | Public site origin, e.g. `https://easygeez.com`. Used in emailed links and Stripe redirects. |
+| `SITE_URL` | **yes** | Public site origin, e.g. `https://easygeez.com`. Used in emailed links. |
 | `CORS_ORIGIN` | recommended | The website origin(s), comma-separated. Defaults to `*`. |
-| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | if selling on web | Payments. Absent = pay endpoints return 503 (dormant, safe). |
 | `JWT_EXPIRES_IN` | optional | Session length (default `7d`). |
 | `PORT` | optional | Default `8788`. |
 | `NODE_ENV` | **yes** | Set to `production`. |
@@ -49,14 +46,9 @@ Legend: **[blocker]** = onboarding silently breaks without it.
 | `VITE_APP_URL` | recommended | "Open the app" links. Default `https://easygeez.com`. |
 | `VITE_CONTACT_EMAIL` | recommended | Shown on legal pages and contact. |
 
-## 3. Stripe webhook (if selling on web)
+## 3. (removed) Stripe webhook
 
-1. Create a webhook endpoint pointing at `POST {API}/api/pay/webhook`, event
-   `checkout.session.completed`.
-2. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
-3. Verify with a Stripe test-mode purchase that an order + unlock code is minted
-   exactly once (the poll fallback at `/api/pay/order/:id` covers a missed
-   webhook).
+No web payments since 1.3.0 - eGeez is sold only in the App Store and Google Play.
 
 ## 4. Run the Mongo smoke test against staging
 
@@ -123,8 +115,6 @@ were a user:
    sides receive the contact email.
 6. As the parent, link the child to the teacher; submit a rating.
 7. Open the app, produce a Progress Card, save it on `/progress` to the child.
-8. (If selling on web) buy in Stripe test mode; confirm the code redeems in the
-   app.
 
 If every step works with real infrastructure, you are ready to onboard.
 
@@ -133,6 +123,6 @@ If every step works with real infrastructure, you are ready to onboard.
 - Privacy-policy URL: `{SITE_URL}/privacy`.
 - Enroll in the reduced-commission programs (Apple Small Business, Google Play
   reduced service fee) - 15% instead of 30% under ~$1M/yr.
-- IAP scaffold (RevenueCat) is in place but dormant until keys; web-bought
-  EGZ/FAM codes already redeem in-app for the cross-platform "never pay twice"
-  path.
+- eGeez is **paid upfront**: set the price to $12.99 in both consoles and
+  create no in-app products. The website and API sell nothing (the old
+  Stripe / EGZ / FAM code path was removed in 1.3.0).

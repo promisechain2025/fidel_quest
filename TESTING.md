@@ -239,47 +239,30 @@ journey, islands, classic stars, streak, hunt.
       button appears at the bottom; tapping it swaps to the new build
       immediately. No more silently-stale builds on test phones.
 
-## Paid app / free trial (web + PWA builds)
-- [ ] **Full free trial** — a fresh install runs EVERYTHING free for 7 days
-      (`VITE_TRIAL_DAYS` to change). Grown-ups shows "Free try-out: N days
-      left" in the Support card.
-- [ ] **The ask** — after the trial ends, opening the app shows the friendly
-      dialog at most ONCE PER DAY: Buy the app (needs `VITE_BUY_URL` or
-      `VITE_APPLE_APP_ID`, hidden otherwise), Ask family to gift it (shares
-      a ready message + the store/app link - for families with no way to
-      pay locally, a relative anywhere pays through the store), and "Not
-      buying? Tell us honestly why" (opens a feedback email AND adds 4 more
-      free days - ONE TIME ONLY; afterwards the dialog offers only buy or
-      gift). "Not now" closes it for the day; the app stays fully usable
-      and the ask returns the next day - the child is never blocked
-      mid-lesson.
-- [ ] **Relative's gift** — the shared link lands on the store page where
-      the relative buys/gifts it (Apple's Gift App flow; Play gift cards on
-      Android - see the Backpack Gift guide). Once the family has the store
-      app, it is licensed automatically (native builds never show the ask).
-      On web, Grown-ups -> "My family already bought it" marks it supported.
-- [ ] **After expiry the app narrows to a free taste** — only the first two
-      letter families (ሀ ለ and their mix) and the chapter-1 arcade gateway
-      still open; tapping ANY other step (including the third family, all
-      quizzes, later arcades) pops the buy-or-gift dialog instead. The
-      full-alphabet surfaces (Letter Explorer, Classic, First Words) pop it
-      too. Practice over already-learned letters stays open: warm-up, Star
-      Practice, Daily Hunt, Closet - we never confiscate what the child
-      earned.
-- [ ] **Reset does not restart the trial** — "Reset all progress" wipes the
-      child's progress but the trial clock keeps its start date.
+## Paid upfront (1.3.0+, every build)
+- [ ] **Everything is open on first launch** — a fresh install opens every
+      step on every path (all letter families, quizzes, arcades, Bible
+      books, Letter Explorer, Classic, First Words) with no countdown, no
+      buy/gift dialog and no "try-out" wording anywhere.
+- [ ] **Grown-ups has no purchase UI** — no Buy, Restore, Family Pack,
+      code entry, or trial line. Kids profiles (up to 6) are available
+      without unlocking anything.
+- [ ] **Backpack has no Gift tile.**
+- [ ] **An old 1.2 install upgrades cleanly** — a device that had an
+      expired trial opens fully unlocked after updating to 1.3.0.
 
 ## Move to another phone
 - [ ] Grown-ups → **Move to another phone** → "Save progress file" shares or
       downloads one small .json (the whole learning state: journey, islands,
       runner, classic, streak, hunt, plan, mastery ledger - NOT settings,
-      teacher data, or the trial clock).
+      or teacher data).
 - [ ] On the other device: "Load progress file" → pick the file → the app
       reloads with the child exactly where they left off. A random .json is
       refused (nothing is written).
 
 ## Store readiness (once paid)
-- [ ] **Gift** (Apple) — Backpack → Gift walks through Apple's "Gift App";
-      needs `VITE_APPLE_APP_ID` set and the app published. See `APP-STORE.md`.
+- [ ] **No in-app purchase hooks** — the build has no `VITE_STORE_IAP` set
+      (Xcode Cloud fails in `ci_post_clone.sh` if it is), no BILLING
+      permission, and no StoreKit configuration.
 - [ ] Build the store version with the optional URLs unset and the mic decision
       made (`VITE_FAMILY_VOICE_RECORD`) — see `APP-STORE.md` checklist.

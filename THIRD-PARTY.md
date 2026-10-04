@@ -14,7 +14,6 @@ authoritative license text for each ships inside its package under
 - lucide-react — ISC
 - Express, helmet, cors, jsonwebtoken, bcryptjs, dotenv, nodemailer — MIT
 - mongoose — MIT
-- stripe (server SDK) — MIT
 - three, @react-three/fiber, @react-three/drei, @react-spring/three — MIT
 
 All of the above permit commercial use and embedding; obligations are limited to

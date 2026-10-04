@@ -15,7 +15,7 @@ export default function Privacy() {
     <div className="mx-auto max-w-2xl px-5 pb-16 pt-12 sm:px-6">
       <Seo title="Privacy Policy - eGeez" description="How eGeez handles your data: minimal collection, no ads, no selling, parent-controlled child profiles." path="/privacy" />
       <h1 className="display-2">Privacy Policy</h1>
-      <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>Last updated: July 2026</p>
+      <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>Last updated: October 2026</p>
 
       <P>
         eGeez ("we", "us") is a learning home for the Amharic and Tigrinya
@@ -35,6 +35,14 @@ export default function Privacy() {
         trackers inside the app.
       </P>
 
+      <H2>Purchases</H2>
+      <P>
+        eGeez is paid for once, when you download it from the Apple App Store or
+        Google Play. The store handles the payment under its own privacy policy;
+        we never receive your card or payment details. There are no in-app
+        purchases, so the app itself never handles payments.
+      </P>
+
       <H2>The website and hub (accounts) - what we collect</H2>
       <P>The rest of this policy covers this website and its hub service, used only if you create an account or submit a form:</P>
       <ul className="mt-2 list-disc space-y-1.5 pl-5">
@@ -43,7 +51,6 @@ export default function Privacy() {
         <LI><b>Introductions:</b> the message and optional child first name you send a teacher. Contact details are shared with the other party only when a teacher accepts a request.</LI>
         <LI><b>Ratings and reviews</b> you submit about a teacher you are linked to.</LI>
         <LI><b>Waitlist and contact forms:</b> your email (and name/message where provided).</LI>
-        <LI><b>Payments:</b> processed by Stripe. We never receive your full card details. We keep an order record (email, the product, and the unlock code issued).</LI>
       </ul>
 
       <H2>Children's data</H2>
@@ -60,15 +67,13 @@ export default function Privacy() {
       <P>
         To run the service: sign you in, save the profiles and progress you
         choose to keep, introduce families and teachers, and send you
-        transactional email (email confirmation, introduction notifications,
-        and purchase receipts). That is all. We do not use your data for
+        transactional email (email confirmation and introduction notifications). That is all. We do not use your data for
         advertising and we do not sell or rent it.
       </P>
 
       <H2>Who we share it with</H2>
       <P>
-        Only the service providers needed to operate: Stripe (payment
-        processing), our email delivery provider (transactional email), and our
+        Only the service providers needed to operate: our email delivery provider (transactional email), and our
         hosting provider [hosting region / provider]. They process data on our
         behalf under their own terms. We share your contact details with a
         teacher (or a teacher's with you) only at the moment an introduction is

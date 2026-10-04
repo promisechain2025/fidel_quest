@@ -207,15 +207,18 @@ user-visible claim on the site must be checkable against app code:
 - **Features that are pack-conditional must say so.** Stories are
   Amharic-only (`platform/stories.js`, every entry `pack: 'am'`), and the
   Tigrinya journey has no STORY nodes at all.
-- **Prices and trial terms live in the app** (`platform/license.js`
-  `APP_PRICE` / `TRIAL_DAYS` / `DAILY_PASS_MINUTES`,
-  `platform/familyPack.js`). The site, the JSON-LD and `api/routes/pay.js`
-  must agree with them, and JSON-LD `availability` must follow the same
-  signal as the buy button - never advertise a live price on a page that
-  cannot take money.
-- **Never advertise a purchase path that does not exist yet.** Store
-  buying needs a RevenueCat key (`platform/storeEnv.js`); without one the
-  native build is deliberately free and silent.
+- **eGeez is PAID UPFRONT** (1.3.0+): a one-time $12.99 set in App Store
+  Connect / Play Console, everything unlocked (`platform/license.js`
+  `fullAccess()` is always true). There is no trial, no daily pass, no
+  unlock code, no Family Pack, no in-app purchase and no subscription, and
+  neither the app nor the site may suggest buying anything inside the app.
+  The site's price lives in `website/src/config.js` (`APP_PRICE`) and must
+  match the stores; `src/platform/paidUpfront.test.js` guards the app, the
+  site and the native config.
+- **Never advertise a purchase path that does not exist.** `platform/iap.js`
+  is a dormant, fail-closed guard (needs `VITE_STORE_IAP=true` plus a
+  RevenueCat key, and no plugin is bundled); `ios/App/ci_scripts/ci_post_clone.sh`
+  fails Xcode Cloud if `VITE_STORE_IAP` is set. Keep both.
 - **No invented proof.** No user counts, awards, testimonials or test
   totals unless they are real and sourced.
 - **A promise on a sales page must match the Terms page**, and no
@@ -274,7 +277,7 @@ user-visible claim on the site must be checkable against app code:
 - Anything an anonymous caller supplies is allow-listed before it reaches
   an email subject, a query, or the store.
 - Fail fast at boot on config that would silently corrupt production
-  (`JWT_SECRET`, `SITE_URL` when Stripe is live). Do not gate those checks
+  (e.g. `JWT_SECRET`). Do not gate those checks
   on `NODE_ENV` - hosts often leave it unset.
 - Client-caused body errors are 4xx, not 500.
 - Destructive scripts refuse to run without an explicit confirm env var.

@@ -1,36 +1,19 @@
 /* ============================================================================
-   IAP — native in-app purchases (RevenueCat): the app + the Family Pack
+   IAP - DORMANT native store wrapper (RevenueCat), fail-closed
    ----------------------------------------------------------------------------
-   Store builds must sell digital things through StoreKit / Play Billing.
-   Under the paid-app model the store download is FREE and there are two
-   one-time products:
-     entitlement full_app     - the app itself (APP_PRICE, default $12.99);
-                                writes the same `supported` flag the web
-                                flow sets (license.js markSupported)
-     entitlement family_pack  - the add-on pack (familyPack.js)
-   so the rest of the app never knows which platform took the payment -
-   and a family that bought on the web redeems their EGZ code here instead
-   of paying again (license.js redeemAppCode).
-
-   PAID UPFRONT (v1.3.0+): dormant unless VITE_STORE_IAP=true AND the app
-   runs natively AND that platform's RevenueCat public SDK key is set at
-   build time (storeEnv.js iapAvailable):
-     VITE_REVENUECAT_APPLE_KEY   (appl_...)
-     VITE_REVENUECAT_GOOGLE_KEY  (goog_...)
-   A test_ key talks only to RevenueCat's Test Store. It never creates an
-   App Store or Play sale. Web and PWA builds never call the SDK.
-
-   Product/entitlement names expected in the RevenueCat dashboard:
-     entitlements: full_app, family_pack (attached to the store products).
-     Both packages must be in the current offering. A package is the Family
-     Pack when its store product id contains "family" (the documented id is
-     family_pack); every other package is the app unlock. There is no
-     separate store product id constant for the app — the entitlement
-     checked after purchase is exactly full_app.
-   The buy path never falls back to "the only package". Buying the app
-   must not charge the Family Pack (and then report an error because
-   full_app was not granted).
-   Setup runbook: docs/store-purchases-iap.md. Diagnosis: FINDINGS.md.
+   eGeez 1.3.0 is PAID UPFRONT: $12.99 at download on the App Store and
+   Google Play, everything unlocked, NO in-app purchases, NO subscriptions.
+   Nothing in the app calls buyFullApp/restorePurchasesAll any more - no
+   screen shows a Buy or Restore button. This wrapper is kept only as a
+   fail-closed shell for a possible future model:
+     - dormant unless VITE_STORE_IAP=true AND native AND a RevenueCat key
+       (storeEnv.js iapAvailable);
+     - even then no plugin is bundled, so every call resolves 'unavailable'
+       / 'error' / '' and never throws;
+     - ios/App/ci_scripts/ci_post_clone.sh refuses to archive a build with
+       VITE_STORE_IAP set.
+   One entitlement is understood: full_app (license.js markSupported).
+   Runbook if it is ever revived: docs/store-purchases-iap.md.
 
    NO PLUGIN BUNDLED (1.3.0): @revenuecat/purchases-capacitor was removed
    from the app. Its iOS pod (RevenueCat via PurchasesHybridCommon 17.x) no
@@ -46,10 +29,8 @@
    throws, even if VITE_STORE_IAP=true is set by mistake.
    ========================================================================== */
 import { revenueCatKey, iapAvailable } from './storeEnv'
-import { unlockFamilyPack, familyPackUnlocked } from './familyPack'
 import { markSupported } from './license'
 
-export const FAMILY_PACK_ENTITLEMENT = 'family_pack'
 export const FULL_APP_ENTITLEMENT = 'full_app'
 
 export { iapAvailable }
@@ -152,14 +133,10 @@ const entitledTo = (customerInfo, ent) => !!customerInfo?.entitlements?.active?.
 
 /** Apply whatever the store says this customer owns. Returns what changed. */
 function syncEntitlements(customerInfo) {
-  const owned = { app: false, familyPack: false }
+  const owned = { app: false }
   if (entitledTo(customerInfo, FULL_APP_ENTITLEMENT)) {
     owned.app = true
     markSupported('store') // idempotent
-  }
-  if (entitledTo(customerInfo, FAMILY_PACK_ENTITLEMENT)) {
-    owned.familyPack = true
-    unlockFamilyPack('store')
   }
   return owned
 }
@@ -180,49 +157,39 @@ export async function initIap() {
   }
 }
 
-function packageId(p) {
-  return String(p?.product?.identifier || p?.identifier || '')
+/** The app package: the first one in the offering. */
+function pickPackage(current) {
+  return current?.availablePackages?.[0] || null
 }
 
-/** Pick the offering package for a product kind ('app' | 'family_pack').
-    Never substitutes the other product when this one is missing. */
-function pickPackage(current, kind) {
-  const pkgs = current?.availablePackages || []
-  const isFamily = (p) => /family/i.test(packageId(p))
-  return pkgs.find((p) => (kind === 'family_pack' ? isFamily(p) : !isFamily(p))) || null
-}
-
-async function storePrice(kind) {
+async function storePrice() {
   if (!iapAvailable()) return ''
   try {
     const P = await purchases()
     const offering = currentOffering(await P.getOfferings())
-    return pickPackage(offering, kind)?.product?.priceString || ''
+    return pickPackage(offering)?.product?.priceString || ''
   } catch (e) {
     iapWarn('price', e)
     return ''
   }
 }
 /** Localized store price strings ("$12.99", "12,99 US$", ...) or ''. */
-export const fullAppStorePrice = () => storePrice('app')
-export const familyPackStorePrice = () => storePrice('family_pack')
+export const fullAppStorePrice = () => storePrice()
 
-async function ownedKind(P, kind) {
-  const owned = syncEntitlements(await readCustomerInfo(P))
-  return kind === 'family_pack' ? owned.familyPack : owned.app
+async function ownsApp(P) {
+  return syncEntitlements(await readCustomerInfo(P)).app
 }
 
-async function buy(kind) {
+async function buy() {
   if (!iapAvailable()) return 'unavailable'
   try {
     const P = await purchases()
     const offering = currentOffering(await P.getOfferings())
-    const pkg = pickPackage(offering, kind)
+    const pkg = pickPackage(offering)
     if (!pkg) return 'unavailable'
     const result = await P.purchasePackage({ aPackage: pkg })
-    let owned = syncEntitlements(unwrapCustomerInfo(result))
-    let got = kind === 'family_pack' ? owned.familyPack : owned.app
-    if (!got) got = await ownedKind(P, kind)
+    let got = syncEntitlements(unwrapCustomerInfo(result)).app
+    if (!got) got = await ownsApp(P)
     return got ? 'purchased' : 'error'
   } catch (e) {
     if (isUserCancel(e)) return 'cancelled'
@@ -230,7 +197,7 @@ async function buy(kind) {
     if (isAlreadyPurchased(e)) {
       try {
         const P = await purchases()
-        return (await ownedKind(P, kind)) ? 'purchased' : 'error'
+        return (await ownsApp(P)) ? 'purchased' : 'error'
       } catch (e2) {
         iapWarn('already-owned', e2)
         return 'error'
@@ -246,27 +213,18 @@ async function buy(kind) {
  * 'pending' is Ask to Buy: a grown-up still has to approve. The customer
  * info listener unlocks the app when they do.
  */
-export const buyFullApp = () => buy('app')
-export const buyFamilyPack = () => buy('family_pack')
+export const buyFullApp = () => buy()
 
-/** Restore purchases made on another device / after reinstall. Syncs BOTH
-    entitlements; resolves 'restored' (anything owned) | 'none' |
+/** Restore purchases made on another device / after reinstall; resolves 'restored' (anything owned) | 'none' |
     'unavailable' | 'error'. */
 export async function restorePurchasesAll() {
   if (!iapAvailable()) return 'unavailable'
   try {
     const P = await purchases()
     const owned = syncEntitlements(unwrapCustomerInfo(await P.restorePurchases()))
-    return owned.app || owned.familyPack ? 'restored' : 'none'
+    return owned.app ? 'restored' : 'none'
   } catch (e) {
     iapWarn('restore', e)
     return 'error'
   }
-}
-
-/** Back-compat name used by the Grown-Ups profiles card. */
-export async function restoreFamilyPack() {
-  const r = await restorePurchasesAll()
-  if (r !== 'restored') return r
-  return familyPackUnlocked() ? 'restored' : 'none'
 }

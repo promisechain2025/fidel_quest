@@ -48,7 +48,7 @@ import { Harag, JewelRim } from './components/Manuscript'
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds } from './journey'
 import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
@@ -69,7 +69,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
-import { licenseState, markAsked, dailyPass, startDailyPass, fullAccess, DAILY_PASS_MINUTES, MONETIZE } from './platform/license'
 import { activeProfile, profileLabel, shouldAskWhoOnLaunch } from './platform/profiles'
 import ProfilePicker from './components/ProfilePicker'
 import ProfileAvatar from './components/ProfileAvatar'
@@ -105,20 +104,13 @@ import { packHasStories } from './platform/stories'
 import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
-import { isNativePlatform, isApplePlatform } from './platform/native'
-import GiftAppModal from './components/GiftModal'
+import { isNativePlatform } from './platform/native'
 import Dropdown from './components/Dropdown'
 
 // Wrap React.lazy so a TRANSIENT chunk-fetch failure (a blip on a flaky
 // first-load network, before the SW has cached the chunk) retries a few times
 // with backoff instead of throwing straight to the ErrorBoundary and leaving
 // that feature unreachable until the app is restarted.
-/** ms -> "4:07" for the daily-window countdown. */
-function fmtClock(ms) {
-  const s = Math.max(0, Math.ceil(ms / 1000))
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
-}
-
 function lazyRetry(factory, tries = 3) {
   return lazy(() => {
     let n = 0
@@ -146,7 +138,6 @@ const TvClass = lazyRetry(() => import('./components/TvClass'))
 // The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
 // most sessions never open it, so keep it out of the boot chunk like the rest.
 const StoryTime = lazyRetry(() => import('./components/StoryTime'))
-const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
@@ -1125,7 +1116,6 @@ export default function FidelQuestApp() {
   useEffect(() => { audio.stopVoice() }, [screen])
   const [backpackOpen, setBackpackOpen] = useState(false)
   useEffect(() => { backpackOpenRef.current = backpackOpen }, [backpackOpen])
-  const [giftOpen, setGiftOpen] = useState(false)
   // Daily streak: count each day's visit (re-bumps if the day rolls over).
   const [streak, setStreak] = useState(0)
   useEffect(() => { setStreak(bumpStreak().count) }, [dayKey])
@@ -1141,28 +1131,6 @@ export default function FidelQuestApp() {
   // Session coach: the daily warm-up review + the registered learning plan.
   const [plan, setPlan] = useState(loadPlan)
   const warmupDone = useMemo(() => warmupDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
-  // The honest free-trial ask: at most once per calendar day, after the
-  // trial ends (platform/license.js). Never blocks - always dismissible.
-  const [askSupport, setAskSupport] = useState(false)
-  useEffect(() => {
-    const lic = licenseState(dayKey)
-    if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
-  }, [dayKey, childVer])
-  // Whatever the child reached for when the gate stopped them. Taking the
-  // daily 5 minutes runs it straight away, so the ask never costs a tap.
-  const pendingPaidRef = useRef(null)
-  const askToBuy = useCallback((retry) => {
-    pendingPaidRef.current = typeof retry === 'function' ? retry : null
-    setAskSupport(true)
-  }, [])
-  // Today's free window: a live countdown while it runs, so nobody is
-  // surprised by it closing. Only ticks while open - no idle timer.
-  const [pass, setPass] = useState(() => dailyPass())
-  useEffect(() => {
-    if (!pass.active) return undefined
-    const id = setInterval(() => setPass(dailyPass()), 1000)
-    return () => clearInterval(id)
-  }, [pass.active])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
   // Teacher assignments opened from links wait in fq.assign.v1 until done -
   // several can be pending at once (two teachers, or a make-up plus this week).
@@ -1185,7 +1153,6 @@ export default function FidelQuestApp() {
   useEffect(() => {
     const onBack = (e) => {
       if (whoOpen) { setWhoOpen(false); e.preventDefault(); return }
-      if (giftOpen) { setGiftOpen(false); e.preventDefault(); return }
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
       if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
@@ -1193,7 +1160,7 @@ export default function FidelQuestApp() {
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, whoOpen, goBackOrHome])
+  }, [screen.name, backpackOpen, celebration, giftOpened, whoOpen, goBackOrHome])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1324,12 +1291,6 @@ export default function FidelQuestApp() {
   }, [setScreen])
 
   const openNode = useCallback((node, opts = {}) => {
-    // Paid app: after the trial ends, only the free taste opens (first two
-    // families + the chapter-1 gateway). Anything else asks to buy or gift.
-    if (!fullAccess() && !isNodeFree(node)) {
-      askToBuy(() => openNodeRef.current?.(node, opts))
-      return
-    }
     // Games come AFTER the day's warm-up: kids rush to the arcade, so the
     // gateway nudges (or, if the plan enforces it, requires) a quick review
     // of yesterday's letters first. Reads storage fresh - the plan may have
@@ -1376,7 +1337,7 @@ export default function FidelQuestApp() {
       })
     }
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
-  }, [setScreen, askToBuy])
+  }, [setScreen])
   // Lets the gate above retry itself once the daily window opens, without
   // openNode having to depend on (and re-create) itself.
   const openNodeRef = useRef(null)
@@ -1892,58 +1853,28 @@ export default function FidelQuestApp() {
               teeBadge={newTeeCount(progressStats(journey).families)}
               onTees={openTeeShop}
               onCloset={openCloset}
-              onWords={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startWords()); return } startWords() }}
-              onStories={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startStories()); return } startStories() }}
-              onTwins={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => startTwins()); return } startTwins() }}
-              onLadder={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'ladder' })); return } setScreen({ name: 'ladder' }) }}
-              onEcho={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'echo' })); return } setScreen({ name: 'echo' }) }}
-              onTraffic={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'traffic' })); return } setScreen({ name: 'traffic' }) }}
-              onTrain={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'train' })); return } setScreen({ name: 'train' }) }}
-              onWorkshop={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'workshop' })); return } setScreen({ name: 'workshop' }) }}
-              onMarket={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'market' })); return } setScreen({ name: 'market' }) }}
-              onBingo={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'bingo' })); return } setScreen({ name: 'bingo' }) }}
+              onWords={() => { setBackpackOpen(false); startWords() }}
+              onStories={() => { setBackpackOpen(false); startStories() }}
+              onTwins={() => { setBackpackOpen(false); startTwins() }}
+              onLadder={() => { setBackpackOpen(false); setScreen({ name: 'ladder' }) }}
+              onEcho={() => { setBackpackOpen(false); setScreen({ name: 'echo' }) }}
+              onTraffic={() => { setBackpackOpen(false); setScreen({ name: 'traffic' }) }}
+              onTrain={() => { setBackpackOpen(false); setScreen({ name: 'train' }) }}
+              onWorkshop={() => { setBackpackOpen(false); setScreen({ name: 'workshop' }) }}
+              onMarket={() => { setBackpackOpen(false); setScreen({ name: 'market' }) }}
+              onBingo={() => { setBackpackOpen(false); setScreen({ name: 'bingo' }) }}
               onPractice={startPractice}
-              onExplore={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'explore' })); return } setScreen({ name: 'explore' }) }}
-              onBeats={() => { setBackpackOpen(false); if (!fullAccess()) { askToBuy(() => setScreen({ name: 'beats' })); return } setScreen({ name: 'beats' }) }}
+              onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
+              onBeats={() => { setBackpackOpen(false); setScreen({ name: 'beats' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
               onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
               onPostcard={() => { setBackpackOpen(false); setScreen({ name: 'postcard' }) }}
-              onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
               onTeacher={() => { setBackpackOpen(false); setScreen({ name: 'teacher', gate: true }) }}
             />
           )}
         </AnimatePresence>
-        <AnimatePresence>
-          {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
-        </AnimatePresence>
-        <AnimatePresence>
-          {askSupport && (
-            <Suspense fallback={null}>
-              <SupportAsk
-                key="support"
-                onClose={() => { pendingPaidRef.current = null; setAskSupport(false) }}
-                onPass={() => {
-                  setPass(startDailyPass())
-                  setAskSupport(false)
-                  const go = pendingPaidRef.current
-                  pendingPaidRef.current = null
-                  go?.()
-                }}
-              />
-            </Suspense>
-          )}
-        </AnimatePresence>
-        {/* The window is open: say so, and say how long is left. Home only -
-            a ticking clock over a lesson would rush a child. */}
-        {pass.active && screen.name === 'home' && (
-          <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex justify-center px-4">
-            <div className="rounded-full px-4 py-1.5 text-sm font-black" style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)' }}>
-              {t('passLeft', 'Everything open - {m} left', { m: fmtClock(pass.msLeft) })}
-            </div>
-          </div>
-        )}
         <AnimatePresence>
           {warmupNudge && (
             <WarmupNudge
@@ -2921,7 +2852,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -3023,12 +2954,6 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
           <div className="mt-1.5 grid grid-cols-3 gap-2.5 opacity-90">
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--muted)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
             <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--muted)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
-            {/* Gift entry: Apple only, since App Store "Gift App" is the one
-               store path for gifting a paid app. Hidden on Android/Play, and
-               while monetization is off (the app is free - nothing to gift). */}
-            {MONETIZE && isApplePlatform() && (
-              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--muted)" title={t('giftShort', 'Gift')} onClick={onGift} />
-            )}
             {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
                category store build has no un-gated external link. */}
             {!isNativePlatform() && (

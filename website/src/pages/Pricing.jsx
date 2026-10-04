@@ -1,131 +1,107 @@
-import { useState } from 'react'
-import { Users, KeyRound, WifiOff, RefreshCcw, Check, Sparkles } from 'lucide-react'
+import { Check, Apple, Play, Ban } from 'lucide-react'
 import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
-import { API_URL, CONTACT_EMAIL, APP_URL } from '../config.js'
+import { APP_PRICE, APP_STORE_URL, PLAY_STORE_URL, CONTACT_EMAIL } from '../config.js'
 import Seo from '../Seo.jsx'
 import { t } from '../i18n.js'
 
-export const APP_PRICE = '$12.99'
-export const PACK_PRICE = '$4.99'
+/* eGeez is PAID UPFRONT: one purchase in the App Store or Google Play, and
+   everything is included. There is nothing to buy inside the app - no
+   in-app purchases, no subscriptions, no add-on packs, no unlock codes. The
+   price itself is set in App Store Connect / Play Console; APP_PRICE must
+   match it. */
+export { APP_PRICE }
 
-const PRICING_LD = {
+const INCLUDED = [
+  'Every learning path - all 231 fidel, first words, read-along stories, tracing, chants and games',
+  'The Bible books and every story, unlocked from day one',
+  'Kids profiles for up to 6 children, each with their own journey, streak and closet',
+  'The grown-ups corner: progress reports, pace settings and family voice recordings',
+  'Fully offline, with no account needed',
+]
+
+const NEVER = [
+  'No ads',
+  'No subscriptions',
+  'No in-app purchases',
+  'No child data collected',
+]
+
+const offer = (url) => ({
+  '@type': 'Offer',
+  price: '12.99',
+  priceCurrency: 'USD',
+  url,
+  availability: 'https://schema.org/InStock',
+})
+
+/* Structured data: ONE product, one price, sold only through the two stores.
+   No add-on products. */
+export const PRICING_LD = {
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Product', name: 'eGeez - the whole journey', image: 'https://easygeez.com/og.png', description: 'One-time unlock of the full Amharic learning journey on web and mobile.', offers: { '@type': 'Offer', price: '12.99', priceCurrency: 'USD', url: 'https://easygeez.com/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
-    { '@type': 'Product', name: 'eGeez Family Pack', image: 'https://easygeez.com/og.png', description: 'One-time add-on: separate profiles for up to 6 children on one device.', offers: { '@type': 'Offer', price: '4.99', priceCurrency: 'USD', url: 'https://easygeez.com/pricing', availability: API_URL ? 'https://schema.org/InStock' : 'https://schema.org/PreOrder' } },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'eGeez',
+      image: 'https://easygeez.com/og.png',
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'iOS, Android',
+      description: 'A one-time $12.99 purchase on the App Store and Google Play. Everything included: all learning paths, the Bible books, and kids profiles for up to 6 children. No ads, no subscriptions, no in-app purchases.',
+      offers: [offer(APP_STORE_URL), offer(PLAY_STORE_URL)],
+    },
   ],
 }
 
-function BuyButton({ product, label, dormantSetter, dormant }) {
-  const [state, setState] = useState({ status: 'idle', error: '' })
-  const buy = async () => {
-    setState({ status: 'busy', error: '' })
-    try {
-      const res = await fetch(`${API_URL}/api/pay/checkout`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ product }),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (res.status === 503 && json.dormant) { dormantSetter(true); setState({ status: 'idle', error: '' }); return }
-      if (!res.ok || !json.url) throw new Error(json.error || 'Could not start checkout. Please try again.')
-      window.location.href = json.url
-    } catch (err) {
-      setState({ status: 'idle', error: err.message })
-    }
-  }
-  if (dormant) {
-    return (
-      <div className="rounded-2xl p-4 text-center text-sm font-bold" style={{ background: 'var(--paper)', border: '2px dashed var(--line)', color: 'var(--muted)' }}>
-        {t('prSoon', 'Web checkout opens very soon.')}{' '}
-        <a className="underline" href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('eGeez - notify me when checkout opens')}`}>{t('prNotify', 'Email us to be notified')}</a>
-      </div>
-    )
-  }
-  return (
-    <>
-      <CtaButton onClick={buy} tone="green" className="w-full" disabled={state.status === 'busy'}>
-        {state.status === 'busy' ? t('prStarting', 'Opening secure checkout…') : label}
-      </CtaButton>
-      {state.error && <p className="mt-2 text-center text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
-    </>
-  )
-}
-
 export default function Pricing() {
-  const [dormant, setDormant] = useState(!API_URL)
-
   return (
     <>
-      <Seo title="Pricing - eGeez" description="Try free, then $12.99 once for the whole journey - on web and in the stores, never pay twice. Family Pack add-on $4.99." path="/pricing" jsonLd={PRICING_LD} />
+      <Seo title="Pricing - eGeez" description="One-time $12.99 on the App Store and Google Play. Everything included, kids profiles for up to 6 children. No ads, no subscriptions, no in-app purchases." path="/pricing" jsonLd={PRICING_LD} />
       <div className="mx-auto max-w-5xl px-5 pt-12 text-center sm:px-6 md:pt-16">
         <Reveal>
           <Picture src="/art/anbessa-cheer.png" width={110} height={110} alt="" aria-hidden="true" className="mx-auto" />
-          <h1 className="display-1 mx-auto mt-4 max-w-2xl">{t('prTitle', 'Pay once. Learn everywhere. Never twice.')}</h1>
+          <h1 className="display-1 mx-auto mt-4 max-w-2xl">{t('prTitle', 'One price. Everything included.')}</h1>
           <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-            {t('prLede', 'Try eGeez free. Then one purchase unlocks the whole journey - on the web and in the mobile apps, delivered as a code that works on every platform. Add-on packs sit on top, the same way.')}
+            {t('prLede', `eGeez is a one-time ${APP_PRICE} purchase on the App Store and Google Play. Pay once when you download, and the whole app is yours - nothing more to buy, ever.`)}
           </p>
         </Reveal>
       </div>
 
       <Section mark="ገ" className="pt-8">
-        <div className="mx-auto grid max-w-4xl items-stretch gap-5 md:grid-cols-2">
+        <div className="mx-auto max-w-2xl">
           <Reveal>
-            <Card wash className="flex h-full flex-col" >
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--accent-text)' }}>
-                <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('prAppTag', 'The app')}
-              </div>
-              <h2 className="display-3 mt-2">{t('prAppName', 'eGeez - the whole journey')}</h2>
+            <Card wash className="flex flex-col">
+              <h2 className="display-3">{t('prAppName', 'eGeez - the whole journey')}</h2>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="display-2">{APP_PRICE}</span>
-                <span className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('prOnce', 'once - no subscription')}</span>
+                <span className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('prOnce', 'one time, on the App Store and Google Play')}</span>
               </div>
-              <ul className="mt-5 space-y-3 text-sm leading-relaxed">
-                {[
-                  t('prA1', 'All 231 letters, words, stories, games, streaks, and the daily coach'),
-                  t('prA2', 'Free for 3 days, then 5 free minutes of everything every day - forever'),
-                  t('prA3', 'One code unlocks web AND the store apps - never pay twice'),
-                  t('prA4', '100% offline, no ads, no accounts, no child data'),
-                ].map((s, i) => (
+              <h3 className="mt-5 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--accent-text)' }}>{t('prIncl', 'Everything included')}</h3>
+              <ul className="mt-3 space-y-3 text-sm leading-relaxed">
+                {INCLUDED.map((s, i) => (
                   <li key={i} className="flex gap-3">
                     <Check className="mt-0.5 h-5 w-5 shrink-0" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
-                    <span>{s}</span>
+                    <span>{t(`prI${i}`, s)}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 flex-1" />
-              <BuyButton product="app" label={t('prBuyApp', `Get eGeez - ${APP_PRICE}`)} dormant={dormant} dormantSetter={setDormant} />
-              <p className="mt-2.5 text-center text-xs" style={{ color: 'var(--muted)' }}>{t('prStripe', 'Secure payment by Stripe - cards, Apple Pay, Google Pay.')}</p>
-            </Card>
-          </Reveal>
-
-          <Reveal delay={0.08}>
-            <Card className="flex h-full flex-col">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--muted)' }}>
-                <Users className="h-4 w-4" aria-hidden="true" /> {t('prPackTag', 'Add-on pack')}
-              </div>
-              <h2 className="display-3 mt-2">{t('prPackName', 'Family Pack')}</h2>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="display-2">{PACK_PRICE}</span>
-                <span className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('prOnce', 'once - no subscription')}</span>
-              </div>
-              <ul className="mt-5 space-y-3 text-sm leading-relaxed">
-                {[
-                  [Users, t('prP1', 'Up to 6 child profiles - each with their own journey, streak, and closet')],
-                  [KeyRound, t('prP2', 'Its own code (FAM), redeemed once in the Grown-ups corner')],
-                  [WifiOff, t('prP3', 'Still fully offline after unlock')],
-                  [RefreshCcw, t('prP4', 'Survives reinstalls - keep the email, reuse the code')],
-                ].map(([Icon, s], i) => (
-                  <li key={i} className="flex gap-3">
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
-                    <span>{s}</span>
+              <ul className="mt-5 grid grid-cols-2 gap-2 text-sm font-bold">
+                {NEVER.map((s, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <Ban className="h-4 w-4 shrink-0" style={{ color: 'var(--muted)' }} aria-hidden="true" />
+                    <span>{t(`prN${i}`, s)}</span>
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-xs font-bold" style={{ color: 'var(--muted)' }}>
-                {t('prPackNote', 'More packs are coming the same way - the Tigrinya course among them. Own the app once; add what your family needs.')}
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <CtaButton href={APP_STORE_URL} tone="green" external>
+                  <Apple className="h-5 w-5" aria-hidden="true" /> {t('prIos', 'App Store')}
+                </CtaButton>
+                <CtaButton href={PLAY_STORE_URL} tone="green" external>
+                  <Play className="h-5 w-5" aria-hidden="true" /> {t('prAndroid', 'Google Play')}
+                </CtaButton>
+              </div>
+              <p className="mt-3 text-center text-xs" style={{ color: 'var(--muted)' }}>
+                {t('prStoreNote', 'Paid and refunded through your App Store or Google Play account.')}
               </p>
-              <div className="mt-4 flex-1" />
-              <BuyButton product="family_pack" label={t('prBuyPack', `Add the Family Pack - ${PACK_PRICE}`)} dormant={dormant} dormantSetter={setDormant} />
             </Card>
           </Reveal>
         </div>
@@ -134,11 +110,11 @@ export default function Pricing() {
       <Section eyebrow={t('prFaqE', 'Questions')} title={t('prFaqT', 'Fair questions, straight answers')} center mark="ጥ">
         <div className="mx-auto grid max-w-3xl gap-4">
           {[
-            [t('prQ0', 'Can we try it before paying?'), t('prA0', `Yes - the app is a free download and the whole journey is open for 3 days, no account needed. After that the first two letter families and the first arcade game stay free forever, and one tap opens the WHOLE app for 5 more free minutes every single day. The buy prompt appears at most once a day, behind a grown-up gate, and always has a "Not now". Kids are never blocked mid-lesson.`)],
-            [t('prQ1', 'Will I ever pay twice - web and app store?'), t('prA1x', 'No. Buying here gives you an EGZ code that unlocks the app on the web AND in the iOS/Android builds - redeem it in the app, on any device. If you buy inside the mobile app instead, it restores through your store account. One family, one payment, either way.')],
-            [t('prQ2', 'What exactly costs extra?'), t('prA2x', `Only add-on packs. ${APP_PRICE} buys the entire Amharic journey for one learner. The Family Pack (${PACK_PRICE}) adds sibling profiles; future language packs will be add-ons too.`)],
-            [t('prQ3', 'Does it work offline?'), t('prA3x', 'Completely. Codes are checked on the device; after unlock nothing ever needs a connection.')],
-            [t('prQ4', 'Refunds?'), t('prA4x', `If it does not work for your family, email ${CONTACT_EMAIL} within 14 days and we will refund you - no forms, no fuss.`)],
+            [t('prQ1', 'Is there anything to buy inside the app?'), t('prA1x', `No. ${APP_PRICE} at download is the whole price. There are no in-app purchases, no subscriptions, no add-on packs and no ads - every path, every Bible book and every game is unlocked from the start.`)],
+            [t('prQ2', 'How many children can use it?'), t('prA2x', 'Up to 6 kids profiles on one device are included, each with their own journey, streak and closet. A child picks their profile when the app opens.')],
+            [t('prQ3', 'Does it work offline?'), t('prA3x', 'Completely. Once it is downloaded, nothing ever needs a connection and there is no account to create.')],
+            [t('prQ4', 'Do I pay again on a new phone?'), t('prA4x', 'Not on the same store account: the App Store and Google Play let you download a purchased app again for free. Each store sells its own copy, so an iPhone and an Android phone are bought separately.')],
+            [t('prQ5', 'Refunds?'), t('prA5x', `Purchases are made through Apple or Google, so refunds follow their policy - request one from your App Store or Google Play account. If something is not working, email ${CONTACT_EMAIL} and we will help.`)],
           ].map(([q, a], i) => (
             <Reveal key={i} delay={i * 0.05}>
               <Card>
@@ -147,9 +123,6 @@ export default function Pricing() {
               </Card>
             </Reveal>
           ))}
-        </div>
-        <div className="mt-8 text-center">
-          <CtaButton href={APP_URL} tone="ghost">{t('prTry', 'Start the free try-out')}</CtaButton>
         </div>
       </Section>
     </>

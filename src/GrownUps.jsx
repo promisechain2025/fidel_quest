@@ -16,8 +16,7 @@ import { ChevronLeft, Star, Flame, Sparkles, Trash2, Pencil, Sun, Moon, Globe, V
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel, progressChanged } from './platform/childModel'
-import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
-import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl, qaUnlockEnabled } from './platform/support'
+import { privacyUrl, qaUnlockEnabled } from './platform/support'
 import { shareProgressSnapshot } from './platform/progress'
 import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
@@ -38,7 +37,6 @@ import { loadStoriesRead } from './platform/stories'
 import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, updateProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
 import ProfileAvatar from './components/ProfileAvatar'
 import { ProfileForm } from './components/ProfilePicker'
-import { iapAvailable, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { echoStore, trainStore, marketStore, beatsStore } from './platform/gameStores'
@@ -521,7 +519,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const [confirmUnlock, setConfirmUnlock] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const [importErr, setImportErr] = useState(false)
-  const [appIapMsg, setAppIapMsg] = useState('')
   // Theme + language moved here (behind the gate) so a child cannot flip them
   // mid-task; the grown-up sets them where they set everything else.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -542,22 +539,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const progress = loadProgress()
   const runnerBest = loadRunnerBest()
   const stars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
-  const doBuyApp = async () => {
-    setAppIapMsg('')
-    const r = await buyFullApp()
-    if (r === 'purchased') {
-      try { window.location.reload() } catch { /* ignore */ }
-    } else if (r === 'pending') setAppIapMsg('pending')
-    else if (r === 'error' || r === 'unavailable') setAppIapMsg('error')
-  }
-  const doRestoreApp = async () => {
-    setAppIapMsg('')
-    const r = await restorePurchasesAll()
-    if (r === 'restored') {
-      try { window.location.reload() } catch { /* ignore */ }
-    } else if (r === 'none') setAppIapMsg('none')
-    else if (r !== 'unavailable') setAppIapMsg('error')
-  }
 
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
@@ -740,81 +721,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
-
-          {/* support / license: the paid-app picture and every way to help -
-             buy, ask a relative abroad to gift it, or honest feedback for
-             more free days. Mirrors the once-a-day SupportAsk dialog. Hidden
-             entirely while monetization is off (the app is simply free). */}
-          {(MONETIZE || iapAvailable()) && (() => {
-            const lic = licenseState()
-            const buy = buyUrl()
-            return (
-              <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-                <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support eGeez')}
-                </h2>
-                <p className="mt-2 text-sm font-bold" style={{ color: lic.phase === 'ended' ? 'var(--bad-ink)' : 'var(--go-ink)' }}>
-                  {lic.phase === 'licensed'
-                    ? t('payThanks', 'Thank you for supporting eGeez!')
-                    : lic.phase === 'trial'
-                      ? t('payLeft', 'Free try-out: {n} days left', { n: lic.daysLeft })
-                      : t('payEnded', 'Your free try-out has ended.')}
-                </p>
-                {lic.phase !== 'licensed' && (
-                  <>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {iapAvailable() ? (
-                        <button type="button" onClick={doBuyApp} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                          {t('payBuy', 'Buy the app')}
-                        </button>
-                      ) : buy ? (
-                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                          {t('payBuy', 'Buy the app')}
-                        </a>
-                      ) : null}
-                      {iapAvailable() && (
-                        <button type="button" onClick={doRestoreApp} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-                          {t('payRestore', 'Restore a previous purchase')}
-                        </button>
-                      )}
-                      <button type="button" onClick={shareWithFamily} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-                        {t('payFamily', 'Ask family to gift it')}
-                      </button>
-                      {lic.feedbackAvailable && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            grantFeedbackGrace()
-                            try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
-                          }}
-                          className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
-                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
-                        >
-                          {t('payFeedback', 'Not buying? Tell us honestly why')}
-                        </button>
-                      )}
-                    </div>
-                    {appIapMsg === 'error' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('iapError', 'Purchase is unavailable right now - please try again later.')}</p>
-                    )}
-                    {appIapMsg === 'none' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('payRestoreNone', 'No previous purchase found on this store account.')}</p>
-                    )}
-                    {appIapMsg === 'pending' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</p>
-                    )}
-                    <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
-                      {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
-                    </p>
-                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
-                      {t('payOwned', 'My family already bought it')}
-                    </button>
-                  </>
-                )}
-              </section>
-            )
-          })()}
 
           {/* move to another phone: the child's whole progress as one small
              file (platform/progress.js) - share it out, load it on the new

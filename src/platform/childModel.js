@@ -48,7 +48,7 @@ export function useChildModel() {
 }
 
 /* ── the app day ─────────────────────────────────────────────────────────
-   Everything daily (hunt, gift, streak, Ethiopic date, holiday, trial ask)
+   Everything daily (hunt, gift, streak, Ethiopic date, holiday)
    derives from one calendar-day value owned here. An installed PWA commonly
    stays resident past midnight, so the watcher refreshes on focus and
    visibility and once a minute; a rollover is announced exactly like any

@@ -36,7 +36,7 @@ services:
         generateValue: true
       - key: MONGO_URI        # persistent store (unset = in-memory, data lost on restart)
         sync: false
-      - key: SITE_URL         # public site origin, e.g. https://easygeez.com (emailed links, Stripe redirects)
+      - key: SITE_URL         # public site origin, e.g. https://easygeez.com (emailed links)
         sync: false
       - key: CORS_ORIGIN      # the website origin(s), comma-separated
         sync: false
@@ -45,8 +45,4 @@ services:
       - key: EMAIL_PASS
         sync: false
       - key: NOTIFY_EMAIL     # where owner notifications go
-        sync: false
-      - key: STRIPE_SECRET_KEY      # optional: payments (absent = pay endpoints 503, dormant)
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
         sync: false

@@ -19,7 +19,7 @@ import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
 
 /** Every key that together IS the child's progress. Settings (language,
-    sound), teacher/classroom data and the trial clock are deliberately NOT
+    sound), teacher/classroom data and the license record are deliberately NOT
     progress - they belong to the device/adult, not the learner. */
 export const PROGRESS_KEYS = Object.freeze([
   'fq.journey.v1', // the Journey path + wearables collection

@@ -15,7 +15,8 @@ boring answer.
 
 "This kind of app" = a kids' learning game: offline-first PWA + store
 builds, pre-reader audience, low-end Android devices, 8 languages, paid
-with a free trial, no backend, no accounts.
+upfront in the stores (1.3.0+; earlier versions used a free trial), no
+backend, no accounts.
 
 In priority order:
 
@@ -47,9 +48,9 @@ In priority order:
 9. **Complete localization.** A single English string leaking into an
    Amharic UI breaks trust. Every key exists in every pack, audited by
    script, not by eyeball.
-10. **Honest monetization that never blocks a child mid-task.** Trial →
-    ask → narrow to a free taste. The ask targets the adult; the child
-    keeps what they earned.
+10. **Honest monetization that never blocks a child mid-task.** Since
+    1.3.0 that means paid upfront in the stores with everything unlocked -
+    nothing inside the app ever asks to buy.
 11. **Update hygiene.** A PWA that serves a stale service-worker build
     "still shows the old bug" and burns tester trust. Updates must be
     visible and promptly applied.
@@ -76,7 +77,7 @@ throughout. An invariant suite runs at module load.
 | 7. Kid safety | **A** | No accounts/PII; hold+number parental gate; teacher area code-locked; shares are explicit adult actions. |
 | 8. Pre-reader UX | **A-** | One pulsing next step, audio everywhere, never-block philosophy. Recent device passes keep finding small papercuts — normal, keep testing. |
 | 9. Localization | **A** | 8 packs, script-audited to zero missing keys. Native review of machine-assisted packs still pending (user task). |
-| 10. Monetization | **B+** | Trial + one-time feedback grace + free taste + gift-by-family all live. Honor-system unlock is a known, accepted limitation of no-backend. |
+| 10. Monetization | **B+** | *(At review time: trial + feedback grace + free taste + gift-by-family.)* Superseded in 1.3.0: paid upfront in the stores, everything unlocked, no in-app purchases. |
 | 11. Update hygiene | **C** | `generateSW` auto-updates silently on second visit — testers repeatedly saw stale builds this week. No "new version, tap to refresh" prompt. Weakest point in the table. |
 | 12. Telemetry | **B+** | Local ledger always; remote strictly opt-in via env. |
 

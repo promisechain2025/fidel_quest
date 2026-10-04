@@ -1,5 +1,5 @@
 /* ============================================================================
-   PROFILES — per-child progress on one device (the Family Pack feature)
+   PROFILES — per-child progress on one device (kids profiles, up to 6, included)
    ----------------------------------------------------------------------------
    Design rule: the ACTIVE child always plays directly on the canonical
    storage keys, so no game module knows profiles exist. A profile is just a
@@ -23,8 +23,7 @@
 
    The first profile is created by migration from whatever the device
    already holds, so an existing child loses nothing. Profiles are free on
-   every build (v1.3.0 is paid upfront with everything unlocked); the old
-   Family Pack module stays dormant and nothing here consults it. Nothing
+   every build (v1.3.0 is paid upfront with everything unlocked). Nothing
    in a profile leaves the device - no account, no network, no analytics.
    ========================================================================== */
 import { PROGRESS_KEYS } from './progress'

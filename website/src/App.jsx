@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
 import { CtaButton, Footer, Header, Picture } from './components.jsx'
 import Seo from './Seo.jsx'
 import Home from './pages/Home.jsx'
@@ -18,7 +18,6 @@ const Teach = lazy(() => import('./pages/Teach.jsx'))
 const Pricing = lazy(() => import('./pages/Pricing.jsx'))
 const Guide = lazy(() => import('./pages/Guides.jsx'))
 const GuidesIndex = lazy(() => import('./pages/Guides.jsx').then((m) => ({ default: m.GuidesIndex })))
-const PricingSuccess = lazy(() => import('./pages/PricingSuccess.jsx'))
 const Verify = lazy(() => import('./pages/Verify.jsx'))
 const Privacy = lazy(() => import('./pages/Privacy.jsx'))
 const Terms = lazy(() => import('./pages/Terms.jsx'))
@@ -57,10 +56,11 @@ export default function App() {
       <Route path="/guides" element={<GuidesIndex />} />
       <Route path="/guides/:slug" element={<Guide />} />
       <Route path="/pricing" element={<Pricing />} />
-      <Route path="/pricing/success" element={<PricingSuccess />} />
+      {/* Legacy web-checkout routes: eGeez is sold only in the stores now. */}
+      <Route path="/pricing/success" element={<Navigate to="/pricing" replace />} />
       {/* legacy aliases from the first launch */}
-      <Route path="/family-pack" element={<Pricing />} />
-      <Route path="/family-pack/success" element={<PricingSuccess />} />
+      <Route path="/family-pack" element={<Navigate to="/pricing" replace />} />
+      <Route path="/family-pack/success" element={<Navigate to="/pricing" replace />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />

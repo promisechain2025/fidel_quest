@@ -1,203 +1,34 @@
 /* ============================================================================
-   LICENSE — the honest paid-app engine
+   LICENSE - paid upfront, fully unlocked
    ----------------------------------------------------------------------------
-   SHIPPING MODEL (v1.3.0+): PAID UPFRONT. The App Store / Play listing
-   charges $12.99 at download, so every build is FULLY UNLOCKED: no trial,
-   no asks, no purchase UI anywhere. licenseState() returns 'licensed' unless
-   one of the dormant flows below is explicitly switched back on:
-     - web: VITE_MONETIZE=true
-     - native store IAP: VITE_STORE_IAP=true plus a RevenueCat key
-       (storeEnv.js). A RevenueCat key on its own no longer sells.
-   Everything below documents that DORMANT flow, kept for a possible v2.
+   eGeez 1.3.0 is sold once at download ($12.99 on the App Store and Google
+   Play). Every build is fully unlocked: no trial, no daily pass, no asks, no
+   unlock codes, no Family Pack, no in-app purchases, no subscriptions. The
+   old honest-trial engine (VITE_MONETIZE, EGZ/FAM codes, SupportAsk) was
+   removed in the paid-upfront cleanup.
 
-   Set VITE_MONETIZE=true to turn on the PAID-APP flow: eGeez costs APP_PRICE
-   (default $12.99) ONCE, on every platform, and add-on packs (Family Pack,
-   future language packs) sit on top. The store apps are FREE downloads with a
-   full_app in-app unlock (RevenueCat, platform/iap.js); the web sells through
-   the website (Stripe) which delivers an EGZ unlock code (appCodes.js).
-   BUY ONCE, NEVER TWICE: an EGZ code redeems on web AND in the store builds,
-   and a store purchase restores through the store - the same family never
-   pays for the app twice. Everyone gets a free TRIAL first (VITE_TRIAL_DAYS,
-   default 3) so they can fall in love before paying.
+   What remains is the one hook the dormant store wrapper (iap.js) writes
+   to if it is ever revived behind VITE_STORE_IAP - and iap.js fails closed:
+   no RevenueCat plugin is bundled, and ios/App/ci_scripts/ci_post_clone.sh
+   refuses to archive a build with VITE_STORE_IAP set.
 
-   There is no server and no account, so nothing here is enforcement - it is
-   an honest daily ask around three truths:
-     1. A parent who can pay gets a one-tap purchase (store IAP or web).
-     2. A parent who will not pay is still valuable: ask for honest feedback,
-        thanked with more free days.
-     3. A family with no way to pay locally can ask a relative abroad to gift
-        it (the diaspora gift loop / a code bought on the website).
-
-   The child is never blocked mid-lesson: the ask appears at most once per
-   calendar day, on the home screen, and always has a "Not now".
-
-   And the ask is never a dead end. Every day after the trial, one tap opens
-   the WHOLE app for DAILY_PASS_MINUTES (dailyPass/startDailyPass). A family
-   that cannot pay still gets something real each day, and anyone can show
-   the full app to a friend on the spot - the cheapest marketing there is.
-
-   fq.license.v1: { startDay, graceUntil, supported, askedDay,
-                    passDay, passStart }
-   Deliberately NOT part of the progress keys: "Reset all progress" gives a
-   fresh player, not a fresh trial.
+   fq.license.v1: { supported } - device-level, never a progress key.
    ========================================================================== */
 import { progressChanged } from './childModel'
-import { dayStamp } from './streak'
-import { isNativePlatform } from './native'
-import { iapAvailable } from './storeEnv'
-import { isValidAppCode } from './appCodes'
 
 const KEY = 'fq.license.v1'
 
-const envInt = (v, fallback) => {
-  const n = Math.round(Number(v))
-  return Number.isFinite(n) && n > 0 ? n : fallback
-}
-export const TRIAL_DAYS = envInt(import.meta.env?.VITE_TRIAL_DAYS, 3)
-export const FEEDBACK_GRACE_DAYS = 4
-/** Minutes of FULL access, once every day, forever, after the trial ends.
-    A family that will not (or cannot) buy still gets a real daily taste, and
-    - the reason this exists - can still SHOW the whole app to a neighbour,
-    a cousin, a teacher. Word of mouth is the only marketing this app has. */
-export const DAILY_PASS_MINUTES = envInt(import.meta.env?.VITE_DAILY_PASS_MINUTES, 5)
+/** Always true: every build is the whole app. Kept as the single question
+    a future model would answer, so no screen needs a paywall branch. */
+export const fullAccess = () => true
 
-/** Display price of the app - one-time, every platform. */
-export const APP_PRICE = (import.meta.env?.VITE_APP_PRICE || '$12.99').trim()
-
-/** Web master switch. Purchases on the website and the PWA are OFF unless
-    VITE_MONETIZE is explicitly enabled, so that default build stays free.
-    Always false in a native build (see below); native sells only via
-    iapAvailable() — see licenseState. */
-// PAID UPFRONT (v1.3.0+): VITE_MONETIZE is honoured on the WEB only. A store
-// build is paid at download, so even if a CI workflow (e.g. Xcode Cloud env)
-// sets VITE_MONETIZE, native never shows the trial, the Family Pack shop
-// hint, the Support/Buy card, or the Gift tile. Native selling is solely
-// storeEnv.iapAvailable() (VITE_STORE_IAP=true + a RevenueCat key).
-export const MONETIZE = !isNativePlatform() && /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_MONETIZE ?? ''))
-
-function load() {
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY))
-    return s && typeof s === 'object' ? s : {}
-  } catch {
-    return {}
-  }
-}
-function save(s) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* session-only */ }
-  progressChanged()
-}
-
-/** Whole days from a to b ('YYYY-MM-DD' stamps; UTC parse keeps it stable). */
-export function daysSince(a, b) {
-  const ms = new Date(b) - new Date(a)
-  return Number.isFinite(ms) ? Math.floor(ms / 86400000) : 0
-}
-
-function addDaysStamp(day, n) {
-  const d = new Date(day)
-  d.setUTCDate(d.getUTCDate() + n)
-  return d.toISOString().slice(0, 10)
-}
-
-/** The current license picture. Starts the trial clock on first call.
-    - Web, monetization OFF (default): the app is simply free.
-    - Native without a RevenueCat key: licensed. The build cannot sell, so
-      it must not nag.
-    - Native: sells only when iapAvailable() - i.e. VITE_STORE_IAP=true AND
-      a RevenueCat key. Default store builds are paid upfront, so licensed.
-    - Web with VITE_MONETIZE: the same trial, then the once-a-day ask.
-    `supported` (purchase, restore, or an EGZ code) ends the ask. */
-export function licenseState(today = dayStamp(), monetize = MONETIZE, native = isNativePlatform(), storeSellable = iapAvailable()) {
-  const selling = native ? !!storeSellable : !!monetize
-  if (!selling) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
-  const s = load()
-  if (!s.startDay) {
-    s.startDay = today
-    save(s)
-  }
-  if (s.supported) return { phase: 'licensed', daysLeft: Infinity, shouldAsk: false, feedbackAvailable: false }
-  const trialEnd = addDaysStamp(s.startDay, TRIAL_DAYS)
-  const until = s.graceUntil && s.graceUntil > trialEnd ? s.graceUntil : trialEnd
-  const daysLeft = Math.max(0, daysSince(today, until))
-  const feedbackAvailable = !s.feedbackUsed
-  if (daysLeft > 0) return { phase: 'trial', daysLeft, shouldAsk: false, feedbackAvailable }
-  return { phase: 'ended', daysLeft: 0, shouldAsk: s.askedDay !== today, feedbackAvailable }
-}
-
-/* ── the daily 5 minutes ─────────────────────────────────────────────────
-   Once the trial is over, the app is not a wall - it is a shop window that
-   opens for DAILY_PASS_MINUTES every single day. Enough to play, enough to
-   demo the whole thing to someone else, not enough to replace buying it.
-   The window is wall-clock based (passStart), so it survives a reload and
-   cannot be reset by closing the app. */
-
-/** { active, msLeft, available } - `available` means today's pass is unused. */
-export function dailyPass(today = dayStamp(), now = Date.now()) {
-  const s = load()
-  const span = DAILY_PASS_MINUTES * 60000
-  if (s.passDay !== today) return { active: false, msLeft: 0, available: true }
-  // Clamp to the span: a device clock pushed backwards cannot stretch it.
-  const msLeft = Math.max(0, Math.min(span, (s.passStart || 0) + span - now))
-  return { active: msLeft > 0, msLeft, available: false }
-}
-
-/** Open today's window. Idempotent within the day - a second tap does NOT
-    buy more time, it just reports what is left. */
-export function startDailyPass(today = dayStamp(), now = Date.now()) {
-  const s = load()
-  if (s.passDay !== today) {
-    s.passDay = today
-    s.passStart = now
-    save(s)
-  }
-  return dailyPass(today, now)
-}
-
-/** The single question every screen asks before opening paid content:
-    licensed, still in the trial, or inside today's free window. */
-export function fullAccess(today = dayStamp(), now = Date.now(), lic = licenseState(today)) {
-  return lic.phase !== 'ended' || dailyPass(today, now).active
-}
-
-/** Remember that today's ask was shown - at most one per calendar day. */
-export function markAsked(today = dayStamp()) {
-  const s = load()
-  s.askedDay = today
-  save(s)
-}
-
-/** Honest feedback earns more free days - ONCE. After that the only paths
-    are buying it or a relative gifting it. Returns the days granted (0 if
-    the one extension was already used). */
-export function grantFeedbackGrace(today = dayStamp()) {
-  const s = load()
-  if (s.feedbackUsed) return 0
-  s.feedbackUsed = true
-  // Add the grace to the END of the current free window, not an absolute
-  // today+N. Redeeming mid-trial must genuinely add FEEDBACK_GRACE_DAYS (the
-  // "N more free days" promise) instead of only stretching the window to
-  // today+N - which, during an active trial, could be a gain of one day.
-  const trialEnd = s.startDay ? addDaysStamp(s.startDay, TRIAL_DAYS) : today
-  const currentEnd = s.graceUntil && s.graceUntil > trialEnd ? s.graceUntil : trialEnd
-  const base = currentEnd > today ? currentEnd : today
-  s.graceUntil = addDaysStamp(base, FEEDBACK_GRACE_DAYS)
-  save(s)
-  return FEEDBACK_GRACE_DAYS
-}
-
-/** The family says they bought it (store purchase, or a relative's gift).
-    Honor system by design - there is no server to check against. */
+/** Record that a store purchase was seen (only the dormant iap.js calls
+    this). Has no effect on access - everything is already open. */
 export function markSupported(source = 'unknown') {
-  const s = load()
-  s.supported = source || true
-  save(s)
-}
-
-/** Redeem an EGZ unlock code (bought on the website, or gifted). Works on
-    every platform - this is the "never pay twice" bridge. */
-export function redeemAppCode(raw) {
-  if (!isValidAppCode(raw)) return false
-  markSupported('code')
-  return true
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ supported: source || true }))
+  } catch {
+    /* session-only */
+  }
+  progressChanged()
 }

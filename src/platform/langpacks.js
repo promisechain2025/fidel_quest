@@ -74,7 +74,7 @@ export const LANGPACKS = {
     back: 'Zurück', playAll: 'Alle abspielen', stop: 'Stopp', pace_slow: 'Langsam', pace_normal: 'Normal', pace_fast: 'Schnell',
     exploreHeader: 'Buchstaben-Entdecker', exploreHeaderSub: 'Wähle einen Vokal und tippe eine Familie, um sie zu hören',
     exploreFamilyTitle: 'Die {name}-Familie', exploreFamilySub: 'Sieben Formen, ein Buchstabe — tippe, um jede zu hören',
-    closetShort: 'Kleiderschrank', teeShort: 'T-Shirt-Shop', wordsShort: 'Erste Wörter', explorerShort: 'Entdecker', practiceShort: 'Üben', familyShort: 'Familie', fvShort: 'Familienstimme', nameShort: 'Mein Name', grownupsShort: 'Erwachsene', giftShort: 'Geschenk', reviewShort: 'Rezension',
+    closetShort: 'Kleiderschrank', teeShort: 'T-Shirt-Shop', wordsShort: 'Erste Wörter', explorerShort: 'Entdecker', practiceShort: 'Üben', familyShort: 'Familie', fvShort: 'Familienstimme', nameShort: 'Mein Name', grownupsShort: 'Erwachsene', reviewShort: 'Rezension',
     nameTitle: 'Schreib deinen Namen', nameSub: 'Buchstabiere ihn im Fidel, Laut für Laut',
     nameHint: 'Wähle unten einen Vokal, tippe dann Buchstaben, um deinen Namen zu schreiben.',
     namePlay: 'Namen anhören', nameBackspace: 'Letzten Buchstaben entfernen', nameClear: 'Löschen', nameVowel: 'Vokal', nameLetters: 'Buchstaben', nameShare: 'Meinen Namen teilen',
@@ -101,7 +101,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} fordert dich heraus!', challengeScored: '{who} hat {score}% bei {level} erreicht. Schaffst du mehr?',
     giftGot: 'Neu: {item}!', gpMastery: 'Buchstabenbeherrschung · {n} Antworten erfasst', gpReplayLevel: 'Level {n} wiederholen',
     lettersLearned: '{n} / {total} Buchstaben gelernt', 
-    
     teeLockedAt: 'Lerne {n} Buchstaben', teeNext: 'Lerne noch {n} Familien, um das nächste Shirt freizuschalten!',
     aFriend: 'Ein Freund',
     bestStreak: 'Beste Serie',
@@ -164,7 +163,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Alles freischalten (zum Testen)…',
     gpUnlockConfirm: 'Zum Testen alle Level, Inseln und Buchstaben oeffnen?',
     gpUnlockYes: 'Ja, alles oeffnen',
-    paySupport: 'eGeez unterstützen', payTitle: 'Weiterlernen mit eGeez', payBody: 'Eure {n}-tägige Gratis-Probe ist vorbei. Der Kauf hält die App für euer Kind am Laufen - und lässt sie weiter wachsen.', payLeft: 'Gratis-Probe: noch {n} Tage', payEnded: 'Eure Gratis-Probe ist vorbei.', payBuy: 'App kaufen', payFamily: 'Familie um ein Geschenk bitten', payFamilyHint: 'Keine Zahlungsmöglichkeit bei euch? Verwandte überall auf der Welt können sie schenken - teilt das mit ihnen.', payShareText: 'Unsere Kinder lernen mit eGeez das äthiopische Alphabet. Könntet ihr uns die App schenken?', payFeedback: 'Kein Kauf? Sagt uns ehrlich warum', payFeedbackHint: 'Ehrliches Feedback bringt {n} weitere Gratis-Tage.', payFeedbackBody: 'Was uns gefallen hat:\n\nWas besser werden sollte:\n\nWarum wir nicht gekauft haben:\n', payFeedbackDone: 'Danke! {n} weitere Gratis-Tage hinzugefügt.', payOwned: 'Meine Familie hat sie schon gekauft', payThanks: 'Danke, dass ihr eGeez unterstützt!', gpMoveTitle: 'Auf ein anderes Handy umziehen', gpMoveHint: 'Speichert den ganzen Lernfortschritt als eine kleine Datei, schickt sie ans neue Handy (WhatsApp geht) und ladet sie dort.', gpExport: 'Fortschrittsdatei speichern', gpImport: 'Fortschrittsdatei laden', swUpdate: 'Neue Version bereit - zum Aktualisieren tippen',
+    gpMoveTitle: 'Auf ein anderes Handy umziehen', gpMoveHint: 'Speichert den ganzen Lernfortschritt als eine kleine Datei, schickt sie ans neue Handy (WhatsApp geht) und ladet sie dort.', gpExport: 'Fortschrittsdatei speichern', gpImport: 'Fortschrittsdatei laden', swUpdate: 'Neue Version bereit - zum Aktualisieren tippen',
     gpResetYes: 'Ja, löschen',
     gpRunnerBest: 'Runner-Bestwert',
     gpTrouble: 'Schwierige Buchstaben',
@@ -217,10 +216,6 @@ export const LANGPACKS = {
     
     
     
-    
-    
-    
-    
         steerInto: 'Lenke Anbessa in',
     teeGrownup: 'Bestellen öffnet einen Shop – frag einen Erwachsenen.',
     teeIntro: 'Verdiene in jedem Kapitel ein neues T-Shirt-Design – Anbessa trägt dein Alphabet! Speichere das Bild oder bitte einen Erwachsenen, ein echtes Shirt zu bestellen.',
@@ -244,7 +239,7 @@ export const LANGPACKS = {
     back: 'Indietro', playAll: 'Riproduci tutto', stop: 'Ferma', pace_slow: 'Lento', pace_normal: 'Normale', pace_fast: 'Veloce',
     exploreHeader: 'Esploratore di Lettere', exploreHeaderSub: 'Scegli una vocale, poi tocca una famiglia per ascoltarla',
     exploreFamilyTitle: 'La famiglia {name}', exploreFamilySub: 'Sette forme, una lettera — tocca per ascoltare ognuna',
-    closetShort: 'Armadio', teeShort: 'Negozio T-shirt', wordsShort: 'Prime Parole', explorerShort: 'Esplora', practiceShort: 'Pratica', familyShort: 'Famiglia', fvShort: 'Voce di Famiglia', nameShort: 'Il mio nome', grownupsShort: 'Adulti', giftShort: 'Regalo', reviewShort: 'Recensione',
+    closetShort: 'Armadio', teeShort: 'Negozio T-shirt', wordsShort: 'Prime Parole', explorerShort: 'Esplora', practiceShort: 'Pratica', familyShort: 'Famiglia', fvShort: 'Voce di Famiglia', nameShort: 'Il mio nome', grownupsShort: 'Adulti', reviewShort: 'Recensione',
     nameTitle: 'Scrivi il tuo nome', nameSub: 'Scrivilo in Fidel, un suono alla volta',
     nameHint: 'Scegli una vocale qui sotto, poi tocca le lettere per scrivere il tuo nome.',
     namePlay: 'Ascolta il nome', nameBackspace: 'Togli l’ultima lettera', nameClear: 'Cancella', nameVowel: 'Vocale', nameLetters: 'Lettere', nameShare: 'Condividi il mio nome',
@@ -271,7 +266,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} ti sfida!', challengeScored: '{who} ha fatto {score}% in {level}. Riesci a batterlo?',
     giftGot: 'Novità: {item}!', gpMastery: 'Padronanza delle lettere · {n} risposte registrate', gpReplayLevel: 'Rigioca il livello {n}',
     lettersLearned: '{n} / {total} lettere imparate', 
-    
     teeLockedAt: 'Impara {n} lettere', teeNext: 'Impara altre {n} famiglie per sbloccare la prossima maglietta!',
     aFriend: 'Un amico',
     bestStreak: 'Serie migliore',
@@ -334,7 +328,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Sblocca tutto (per i test)…',
     gpUnlockConfirm: 'Aprire tutti i livelli, le isole e le lettere per i test?',
     gpUnlockYes: 'Si, apri tutto',
-    paySupport: 'Sostieni eGeez', payTitle: 'Continua a imparare con eGeez', payBody: 'La vostra prova gratuita di {n} giorni è finita. Comprare l\u2019app la tiene attiva per il vostro bambino - e la fa crescere.', payLeft: 'Prova gratuita: {n} giorni rimasti', payEnded: 'La vostra prova gratuita è finita.', payBuy: 'Compra l\u2019app', payFamily: 'Chiedi alla famiglia di regalarla', payFamilyHint: 'Nessun modo di pagare dove vivete? Un parente ovunque nel mondo può regalarla - condividete questo con lui.', payShareText: 'I nostri bambini imparano l\u2019alfabeto etiope con eGeez. Potreste regalarci l\u2019app?', payFeedback: 'Non comprate? Diteci onestamente perché', payFeedbackHint: 'Un parere onesto vale {n} giorni gratis in più.', payFeedbackBody: 'Cosa ci è piaciuto:\n\nCosa migliorare:\n\nPerché non l\u2019abbiamo comprata:\n', payFeedbackDone: 'Grazie! Aggiunti altri {n} giorni gratis.', payOwned: 'La mia famiglia l\u2019ha già comprata', payThanks: 'Grazie per sostenere eGeez!', gpMoveTitle: 'Passa a un altro telefono', gpMoveHint: 'Salva tutti i progressi come un piccolo file, invialo al nuovo telefono (WhatsApp va bene), poi caricalo lì.', gpExport: 'Salva file dei progressi', gpImport: 'Carica file dei progressi', swUpdate: 'Nuova versione pronta - tocca per aggiornare',
+    gpMoveTitle: 'Passa a un altro telefono', gpMoveHint: 'Salva tutti i progressi come un piccolo file, invialo al nuovo telefono (WhatsApp va bene), poi caricalo lì.', gpExport: 'Salva file dei progressi', gpImport: 'Carica file dei progressi', swUpdate: 'Nuova versione pronta - tocca per aggiornare',
     gpResetYes: 'Sì, cancella',
     gpRunnerBest: 'Record Corsa',
     gpTrouble: 'Lettere difficili',
@@ -387,10 +381,6 @@ export const LANGPACKS = {
     
     
     
-    
-    
-    
-    
         steerInto: 'Guida Anbessa verso',
     teeGrownup: 'Ordinare apre un negozio — chiedi a un grande.',
     teeIntro: 'Guadagna un nuovo disegno di maglietta a ogni capitolo — Anbessa indossa il tuo alfabeto! Salva l\'immagine o chiedi a un grande di ordinare una maglietta vera.',
@@ -414,7 +404,7 @@ export const LANGPACKS = {
     back: 'Tillbaka', playAll: 'Spela alla', stop: 'Stopp', pace_slow: 'Långsam', pace_normal: 'Normal', pace_fast: 'Snabb',
     exploreHeader: 'Bokstavsutforskaren', exploreHeaderSub: 'Välj en vokal och tryck på en familj för att höra den',
     exploreFamilyTitle: 'Familjen {name}', exploreFamilySub: 'Sju former, en bokstav — tryck för att höra var och en',
-    closetShort: 'Garderob', teeShort: 'T-shirtbutik', wordsShort: 'Första orden', explorerShort: 'Utforska', practiceShort: 'Öva', familyShort: 'Familj', fvShort: 'Familjeröst', nameShort: 'Mitt namn', grownupsShort: 'Vuxna', giftShort: 'Present', reviewShort: 'Recension',
+    closetShort: 'Garderob', teeShort: 'T-shirtbutik', wordsShort: 'Första orden', explorerShort: 'Utforska', practiceShort: 'Öva', familyShort: 'Familj', fvShort: 'Familjeröst', nameShort: 'Mitt namn', grownupsShort: 'Vuxna', reviewShort: 'Recension',
     nameTitle: 'Skriv ditt namn', nameSub: 'Stava det i Fidel, ett ljud i taget',
     nameHint: 'Välj ett vokalljud nedan, tryck sedan på bokstäver för att stava ditt namn.',
     namePlay: 'Hör namnet', nameBackspace: 'Ta bort sista bokstaven', nameClear: 'Rensa', nameVowel: 'Vokalljud', nameLetters: 'Bokstäver', nameShare: 'Dela mitt namn',
@@ -441,7 +431,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} utmanar dig!', challengeScored: '{who} fick {score}% på {level}. Kan du slå det?',
     giftGot: 'Nytt: {item}!', gpMastery: 'Bokstavskoll · {n} svar registrerade', gpReplayLevel: 'Spela nivå {n} igen',
     lettersLearned: '{n} / {total} bokstäver lärda', 
-    
     teeLockedAt: 'Lär dig {n} bokstäver', teeNext: 'Lär dig {n} familjer till för att låsa upp nästa tröja!',
     aFriend: 'En kompis',
     bestStreak: 'Bästa svit',
@@ -504,7 +493,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Lås upp allt (för test)…',
     gpUnlockConfirm: 'Öppna alla nivåer, öar och bokstäver för test?',
     gpUnlockYes: 'Ja, öppna allt',
-    paySupport: 'Stöd eGeez', payTitle: 'Fortsätt lära med eGeez', payBody: 'Er gratisprov på {n} dagar är slut. Att köpa appen håller den igång för ert barn - och låter den växa.', payLeft: 'Gratisprov: {n} dagar kvar', payEnded: 'Ert gratisprov är slut.', payBuy: 'Köp appen', payFamily: 'Be familjen ge den i gåva', payFamilyHint: 'Inget sätt att betala där ni bor? En släkting var som helst i världen kan ge den i gåva - dela detta med dem.', payShareText: 'Våra barn lär sig det etiopiska alfabetet med eGeez. Kan ni ge oss appen i gåva?', payFeedback: 'Köper ni inte? Berätta ärligt varför', payFeedbackHint: 'Ärlig feedback ger {n} gratisdagar till.', payFeedbackBody: 'Vad vi gillade:\n\nVad som borde bli bättre:\n\nVarför vi inte köpte:\n', payFeedbackDone: 'Tack! {n} gratisdagar till har lagts till.', payOwned: 'Min familj har redan köpt den', payThanks: 'Tack för att ni stöder eGeez!', gpMoveTitle: 'Flytta till en annan telefon', gpMoveHint: 'Spara alla framsteg som en liten fil, skicka den till den nya telefonen (WhatsApp funkar) och ladda den där.', gpExport: 'Spara framstegsfil', gpImport: 'Ladda framstegsfil', swUpdate: 'Ny version klar - tryck för att uppdatera',
+    gpMoveTitle: 'Flytta till en annan telefon', gpMoveHint: 'Spara alla framsteg som en liten fil, skicka den till den nya telefonen (WhatsApp funkar) och ladda den där.', gpExport: 'Spara framstegsfil', gpImport: 'Ladda framstegsfil', swUpdate: 'Ny version klar - tryck för att uppdatera',
     gpResetYes: 'Ja, radera',
     gpRunnerBest: 'Löprekord',
     gpTrouble: 'Kluriga bokstäver',
@@ -557,10 +546,6 @@ export const LANGPACKS = {
     
     
     
-    
-    
-    
-    
         steerInto: 'Styr Anbessa in i',
     teeGrownup: 'Beställning öppnar en butik — fråga en vuxen.',
     teeIntro: 'Vinn en ny tröjdesign varje kapitel — Anbessa bär ditt alfabet! Spara bilden eller be en vuxen beställa en riktig tröja.',
@@ -584,7 +569,7 @@ export const LANGPACKS = {
     back: 'Terug', playAll: 'Alles afspelen', stop: 'Stop', pace_slow: 'Langzaam', pace_normal: 'Normaal', pace_fast: 'Snel',
     exploreHeader: 'Letterontdekker', exploreHeaderSub: 'Kies een klinker en tik op een familie om te horen',
     exploreFamilyTitle: 'De {name}-familie', exploreFamilySub: 'Zeven vormen, één letter — tik om elke te horen',
-    closetShort: 'Kledingkast', teeShort: 'T-shirtwinkel', wordsShort: 'Eerste woorden', explorerShort: 'Ontdek', practiceShort: 'Oefenen', familyShort: 'Familie', fvShort: 'Familiestem', nameShort: 'Mijn naam', grownupsShort: 'Volwassenen', giftShort: 'Cadeau', reviewShort: 'Beoordeling',
+    closetShort: 'Kledingkast', teeShort: 'T-shirtwinkel', wordsShort: 'Eerste woorden', explorerShort: 'Ontdek', practiceShort: 'Oefenen', familyShort: 'Familie', fvShort: 'Familiestem', nameShort: 'Mijn naam', grownupsShort: 'Volwassenen', reviewShort: 'Beoordeling',
     nameTitle: 'Schrijf je naam', nameSub: 'Spel hem in Fidel, één klank per keer',
     nameHint: 'Kies hieronder een klinker, tik dan op letters om je naam te spellen.',
     namePlay: 'Hoor de naam', nameBackspace: 'Laatste letter verwijderen', nameClear: 'Wissen', nameVowel: 'Klinker', nameLetters: 'Letters', nameShare: 'Mijn naam delen',
@@ -611,7 +596,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} daagt je uit!', challengeScored: '{who} haalde {score}% op {level}. Kun jij dat verslaan?',
     giftGot: 'Nieuw: {item}!', gpMastery: 'Letterbeheersing · {n} antwoorden vastgelegd', gpReplayLevel: 'Level {n} opnieuw spelen',
     lettersLearned: '{n} / {total} letters geleerd', 
-    
     teeLockedAt: 'Leer {n} letters', teeNext: 'Leer nog {n} families om het volgende shirt te openen!',
     aFriend: 'Een vriend',
     bestStreak: 'Beste reeks',
@@ -674,7 +658,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Alles ontgrendelen (om te testen)…',
     gpUnlockConfirm: 'Alle levels, eilanden en letters openen om te testen?',
     gpUnlockYes: 'Ja, alles openen',
-    paySupport: 'Steun eGeez', payTitle: 'Blijf leren met eGeez', payBody: 'Jullie gratis proef van {n} dagen is voorbij. De app kopen houdt hem werkend voor je kind - en laat hem groeien.', payLeft: 'Gratis proef: nog {n} dagen', payEnded: 'Jullie gratis proef is voorbij.', payBuy: 'Koop de app', payFamily: 'Vraag familie om hem cadeau te doen', payFamilyHint: 'Geen manier om te betalen waar je woont? Een familielid waar ook ter wereld kan hem cadeau doen - deel dit met hen.', payShareText: 'Onze kinderen leren het Ethiopische alfabet met eGeez. Kunnen jullie ons de app cadeau doen?', payFeedback: 'Niet kopen? Vertel ons eerlijk waarom', payFeedbackHint: 'Eerlijke feedback levert {n} extra gratis dagen op.', payFeedbackBody: 'Wat we leuk vonden:\n\nWat beter moet:\n\nWaarom we niet kochten:\n', payFeedbackDone: 'Dank je! {n} extra gratis dagen toegevoegd.', payOwned: 'Mijn familie heeft hem al gekocht', payThanks: 'Bedankt voor het steunen van eGeez!', gpMoveTitle: 'Verhuizen naar een andere telefoon', gpMoveHint: 'Bewaar alle voortgang als één klein bestand, stuur het naar de nieuwe telefoon (WhatsApp werkt) en laad het daar.', gpExport: 'Voortgangsbestand opslaan', gpImport: 'Voortgangsbestand laden', swUpdate: 'Nieuwe versie klaar - tik om bij te werken',
+    gpMoveTitle: 'Verhuizen naar een andere telefoon', gpMoveHint: 'Bewaar alle voortgang als één klein bestand, stuur het naar de nieuwe telefoon (WhatsApp werkt) en laad het daar.', gpExport: 'Voortgangsbestand opslaan', gpImport: 'Voortgangsbestand laden', swUpdate: 'Nieuwe versie klaar - tik om bij te werken',
     gpResetYes: 'Ja, wissen',
     gpRunnerBest: 'Runner-record',
     gpTrouble: 'Lastige letters',
@@ -727,10 +711,6 @@ export const LANGPACKS = {
     
     
     
-    
-    
-    
-    
         steerInto: 'Stuur Anbessa naar',
     teeGrownup: 'Bestellen opent een winkel — vraag een volwassene.',
     teeIntro: 'Verdien elk hoofdstuk een nieuw shirtontwerp — Anbessa draagt jouw alfabet! Bewaar de foto of vraag een volwassene om een echt shirt te bestellen.',
@@ -754,7 +734,7 @@ export const LANGPACKS = {
     back: 'Tilbake', playAll: 'Spill alle', stop: 'Stopp', pace_slow: 'Sakte', pace_normal: 'Normal', pace_fast: 'Rask',
     exploreHeader: 'Bokstavutforskeren', exploreHeaderSub: 'Velg en vokal og trykk på en familie for å høre den',
     exploreFamilyTitle: '{name}-familien', exploreFamilySub: 'Sju former, én bokstav — trykk for å høre hver',
-    closetShort: 'Garderobe', teeShort: 'T-skjortebutikk', wordsShort: 'Første ord', explorerShort: 'Utforsk', practiceShort: 'Øv', familyShort: 'Familie', fvShort: 'Familiestemme', nameShort: 'Mitt navn', grownupsShort: 'Voksne', giftShort: 'Gave', reviewShort: 'Vurdering',
+    closetShort: 'Garderobe', teeShort: 'T-skjortebutikk', wordsShort: 'Første ord', explorerShort: 'Utforsk', practiceShort: 'Øv', familyShort: 'Familie', fvShort: 'Familiestemme', nameShort: 'Mitt navn', grownupsShort: 'Voksne', reviewShort: 'Vurdering',
     nameTitle: 'Skriv navnet ditt', nameSub: 'Stav det i Fidel, én lyd om gangen',
     nameHint: 'Velg en vokallyd nedenfor, trykk så på bokstaver for å stave navnet ditt.',
     namePlay: 'Hør navnet', nameBackspace: 'Fjern siste bokstav', nameClear: 'Tøm', nameVowel: 'Vokallyd', nameLetters: 'Bokstaver', nameShare: 'Del navnet mitt',
@@ -781,7 +761,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} utfordrer deg!', challengeScored: '{who} fikk {score}% på {level}. Klarer du bedre?',
     giftGot: 'Nytt: {item}!', gpMastery: 'Bokstavmestring · {n} svar registrert', gpReplayLevel: 'Spill nivå {n} igjen',
     lettersLearned: '{n} / {total} bokstaver lært', 
-    
     teeLockedAt: 'Lær {n} bokstaver', teeNext: 'Lær {n} familier til for å låse opp neste t-skjorte!',
     aFriend: 'En venn',
     bestStreak: 'Beste rekke',
@@ -844,7 +823,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Lås opp alt (for testing)…',
     gpUnlockConfirm: 'Åpne alle nivåer, øyer og bokstaver for testing?',
     gpUnlockYes: 'Ja, åpne alt',
-    paySupport: 'Støtt eGeez', payTitle: 'Fortsett å lære med eGeez', payBody: 'Gratisprøven deres på {n} dager er over. Å kjøpe appen holder den i gang for barnet ditt - og lar den vokse.', payLeft: 'Gratisprøve: {n} dager igjen', payEnded: 'Gratisprøven deres er over.', payBuy: 'Kjøp appen', payFamily: 'Be familien gi den i gave', payFamilyHint: 'Ingen måte å betale der dere bor? En slektning hvor som helst i verden kan gi den i gave - del dette med dem.', payShareText: 'Barna våre lærer det etiopiske alfabetet med eGeez. Kan dere gi oss appen i gave?', payFeedback: 'Kjøper dere ikke? Fortell oss ærlig hvorfor', payFeedbackHint: 'Ærlig tilbakemelding gir {n} gratisdager til.', payFeedbackBody: 'Hva vi likte:\n\nHva som bør bli bedre:\n\nHvorfor vi ikke kjøpte:\n', payFeedbackDone: 'Takk! {n} gratisdager til er lagt til.', payOwned: 'Familien min har allerede kjøpt den', payThanks: 'Takk for at dere støtter eGeez!', gpMoveTitle: 'Flytt til en annen telefon', gpMoveHint: 'Lagre all fremgang som en liten fil, send den til den nye telefonen (WhatsApp funker) og last den inn der.', gpExport: 'Lagre fremgangsfil', gpImport: 'Last inn fremgangsfil', swUpdate: 'Ny versjon klar - trykk for å oppdatere',
+    gpMoveTitle: 'Flytt til en annen telefon', gpMoveHint: 'Lagre all fremgang som en liten fil, send den til den nye telefonen (WhatsApp funker) og last den inn der.', gpExport: 'Lagre fremgangsfil', gpImport: 'Last inn fremgangsfil', swUpdate: 'Ny versjon klar - trykk for å oppdatere',
     gpResetYes: 'Ja, slett',
     gpRunnerBest: 'Løper-rekord',
     gpTrouble: 'Vanskelige bokstaver',
@@ -897,10 +876,6 @@ export const LANGPACKS = {
     
     
     
-    
-    
-    
-    
         steerInto: 'Styr Anbessa inn i',
     teeGrownup: 'Bestilling åpner en butikk — spør en voksen.',
     teeIntro: 'Tjen et nytt skjortedesign hvert kapittel — Anbessa har på seg alfabetet ditt! Lagre bildet eller be en voksen bestille en ekte skjorte.',
@@ -924,7 +899,7 @@ export const LANGPACKS = {
     back: 'Retour', playAll: 'Tout jouer', stop: 'Stop', pace_slow: 'Lent', pace_normal: 'Normal', pace_fast: 'Rapide',
     exploreHeader: 'Explorateur de Lettres', exploreHeaderSub: 'Choisis une voyelle, puis touche une famille pour l’entendre',
     exploreFamilyTitle: 'La famille {name}', exploreFamilySub: 'Sept formes, une lettre — touche pour entendre chacune',
-    closetShort: 'Armoire', teeShort: 'Boutique T-shirt', wordsShort: 'Premiers Mots', explorerShort: 'Explorer', practiceShort: 'Entraînement', familyShort: 'Famille', fvShort: 'Voix de Famille', nameShort: 'Mon nom', grownupsShort: 'Adultes', giftShort: 'Cadeau', reviewShort: 'Avis',
+    closetShort: 'Armoire', teeShort: 'Boutique T-shirt', wordsShort: 'Premiers Mots', explorerShort: 'Explorer', practiceShort: 'Entraînement', familyShort: 'Famille', fvShort: 'Voix de Famille', nameShort: 'Mon nom', grownupsShort: 'Adultes', reviewShort: 'Avis',
     nameTitle: 'Écris ton nom', nameSub: 'Épelle-le en Fidel, un son à la fois',
     nameHint: 'Choisis un son de voyelle ci-dessous, puis touche les lettres pour écrire ton nom.',
     namePlay: 'Entendre le nom', nameBackspace: 'Enlever la dernière lettre', nameClear: 'Effacer', nameVowel: 'Voyelle', nameLetters: 'Lettres', nameShare: 'Partager mon nom',
@@ -951,7 +926,6 @@ export const LANGPACKS = {
     challengeFrom: '{who} te défie !', challengeScored: '{who} a fait {score} % sur {level}. Peux-tu faire mieux ?',
     giftGot: 'Nouveau : {item} !', gpMastery: 'Maîtrise des lettres · {n} réponses enregistrées', gpReplayLevel: 'Rejouer le niveau {n}',
     lettersLearned: '{n} / {total} lettres apprises', 
-    
     teeLockedAt: 'Apprends {n} lettres', teeNext: 'Apprends encore {n} familles pour débloquer le prochain t-shirt !',
     aFriend: 'Un ami',
     bestStreak: 'Meilleure série',
@@ -1014,7 +988,7 @@ export const LANGPACKS = {
     gpUnlockAll: 'Tout debloquer (pour tester)…',
     gpUnlockConfirm: 'Ouvrir tous les niveaux, iles et lettres pour tester ?',
     gpUnlockYes: 'Oui, tout ouvrir',
-    paySupport: 'Soutenir eGeez', payTitle: 'Continuez à apprendre avec eGeez', payBody: 'Votre essai gratuit de {n} jours est terminé. Acheter l\u2019appli la garde active pour votre enfant - et la fait grandir.', payLeft: 'Essai gratuit : {n} jours restants', payEnded: 'Votre essai gratuit est terminé.', payBuy: 'Acheter l\u2019appli', payFamily: 'Demander à la famille de l\u2019offrir', payFamilyHint: 'Aucun moyen de payer là où vous vivez ? Un proche n\u2019importe où dans le monde peut l\u2019offrir - partagez ceci avec lui.', payShareText: 'Nos enfants apprennent l\u2019alphabet éthiopien avec eGeez. Pourriez-vous nous offrir l\u2019appli ?', payFeedback: 'Vous n\u2019achetez pas ? Dites-nous franchement pourquoi', payFeedbackHint: 'Un avis honnête donne {n} jours gratuits de plus.', payFeedbackBody: 'Ce qu\u2019on a aimé :\n\nCe qui devrait être mieux :\n\nPourquoi on n\u2019a pas acheté :\n', payFeedbackDone: 'Merci ! {n} jours gratuits ajoutés.', payOwned: 'Ma famille l\u2019a déjà achetée', payThanks: 'Merci de soutenir eGeez !', gpMoveTitle: 'Passer sur un autre téléphone', gpMoveHint: 'Enregistrez toute la progression dans un petit fichier, envoyez-le au nouveau téléphone (WhatsApp fonctionne), puis chargez-le là-bas.', gpExport: 'Enregistrer le fichier de progression', gpImport: 'Charger le fichier de progression', swUpdate: 'Nouvelle version prête - touchez pour mettre à jour',
+    gpMoveTitle: 'Passer sur un autre téléphone', gpMoveHint: 'Enregistrez toute la progression dans un petit fichier, envoyez-le au nouveau téléphone (WhatsApp fonctionne), puis chargez-le là-bas.', gpExport: 'Enregistrer le fichier de progression', gpImport: 'Charger le fichier de progression', swUpdate: 'Nouvelle version prête - touchez pour mettre à jour',
     gpResetYes: 'Oui, effacer',
     gpRunnerBest: 'Record du Runner',
     gpTrouble: 'Lettres difficiles',
@@ -1064,10 +1038,6 @@ export const LANGPACKS = {
     shareSaved: 'Enregistré ! Partage-le partout.',
     shareShowOff: 'Montre à tout le monde !',
     shareThanks: 'Merci d\'avoir partagé !',
-    
-    
-    
-    
     
     
     

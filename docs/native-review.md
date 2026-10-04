@@ -173,7 +173,6 @@
 | 139 | `familyShort` | Family | ቤተሰብ |  |
 | 140 | `grownupsShort` | Grown-ups | ለወላጆች |  |
 | 141 | `reviewShort` | Review | ግምገማ |  |
-| 142 | `giftShort` | Gift | ስጦታ |  |
 | 143 | `myStep` | My step | የኔ ደረጃ |  |
 | 144 | `jumpToStep` | Go to my next step | ወደ ቀጣይ ደረጃዬ ሂድ |  |
 | 145 | `goHome` | Home | መነሻ |  |
@@ -233,21 +232,6 @@
 | 199 | `gpUnlockAll` | Open everything (for testing)… | ሁሉንም ክፈት (ለሙከራ)… |  |
 | 200 | `gpUnlockConfirm` | Open every level, island and letter for testing? | ለሙከራ ሁሉም ደረጃዎች፣ ደሴቶች እና ፊደላት ይከፈቱ? |  |
 | 201 | `gpUnlockYes` | Yes, open all | አዎ፣ ሁሉንም ክፈት |  |
-| 202 | `paySupport` | Support eGeez | ፊደል ኩዌስትን ደግፉ |  |
-| 203 | `payTitle` | Keep learning with eGeez | መማሩ ይቀጥል! |  |
-| 204 | `payBody` | Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing. | የ{n} ቀን ነፃ ሙከራችሁ አልቋል። መተግበሪያውን መግዛት ለልጅዎ መስራቱን እና ማደጉን ያስቀጥላል። |  |
-| 205 | `payLeft` | Free try-out: {n} days left | ነፃ ሙከራ · {n} ቀን ቀርቷል |  |
-| 206 | `payEnded` | Your free try-out has ended. | ነፃ ሙከራችሁ አልቋል። |  |
-| 207 | `payBuy` | Buy the app | መተግበሪያውን ግዙ |  |
-| 208 | `payFamily` | Ask family to gift it | ቤተሰብ በስጦታ እንዲገዛ ጠይቁ |  |
-| 209 | `payFamilyHint` | No way to pay where you live? A relative anywhere in the world can gift it - share this with them. | እርስዎ ዘንድ መክፈያ መንገድ ከሌለ በየትም ያለ ዘመድ በስጦታ ሊገዛላችሁ ይችላል - ይህን ያጋሩት። |  |
-| 210 | `payShareText` | Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app? | ልጆቻችን በፊደል ኩዌስት ፊደል እየተማሩ ነው። እባካችሁ መተግበሪያውን በስጦታ ልትገዙልን ትችላላችሁ? |  |
-| 211 | `payFeedback` | Not buying? Tell us honestly why | አልገዙም? ለምን እንደሆነ በግልጽ ንገሩን |  |
-| 212 | `payFeedbackHint` | Honest feedback earns {n} more free days. | ግልጽ አስተያየት ተጨማሪ {n} ነፃ ቀናት ያስገኛል። |  |
-| 213 | `payFeedbackBody` | What we liked:nnWhat should be better:nnWhy we did not buy it:n | የወደድነው:\n\nመሻሻል ያለበት:\n\nያልገዛንበት ምክንያት:\n |  |
-| 214 | `payFeedbackDone` | Thank you! {n} more free days added. | እናመሰግናለን! ተጨማሪ {n} ነፃ ቀናት ተጨምረዋል። |  |
-| 215 | `payOwned` | My family already bought it | ቤተሰቤ ገዝቶታል |  |
-| 216 | `payThanks` | Thank you for supporting eGeez! | ፊደል ኩዌስትን ስለደገፋችሁ እናመሰግናለን! |  |
 | 217 | `gpMoveTitle` | Move to another phone | ወደ ሌላ ስልክ ማዛወር |  |
 | 218 | `gpMoveHint` | Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there. | ሁሉንም የመማር ሂደት እንደ አንድ ትንሽ ፋይል ያስቀምጡ፣ ወደ አዲሱ ስልክ ይላኩት (ዋትስአፕ ይሰራል)፣ ከዚያ እዚያ ይጫኑት። |  |
 | 219 | `gpExport` | Save progress file | የሂደት ፋይል አስቀምጥ |  |
@@ -641,7 +625,6 @@
 | 142 | `familyShort` | Family | ስድራ |  |
 | 143 | `grownupsShort` | Grown-ups | ንወለዲ |  |
 | 144 | `reviewShort` | Review | ገምጋም |  |
-| 145 | `giftShort` | Gift | ህያብ |  |
 | 146 | `myStep` | My step | ናተይ ደረጃ |  |
 | 147 | `jumpToStep` | Go to my next step | ናብ ዝቕጽል ደረጃይ ኺድ |  |
 | 148 | `goHome` | Home | መበገሲ |  |
@@ -702,21 +685,6 @@
 | 203 | `gpUnlockAll` | Open everything (for testing)… | ኩሉ ክፈት (ንፈተና)… |  |
 | 204 | `gpUnlockConfirm` | Open every level, island and letter for testing? | ንፈተና ኩሉ ደረጃታት፣ ደሴታትን ፊደላትን ክኽፈቱ? |  |
 | 205 | `gpUnlockYes` | Yes, open all | እወ፣ ኩሉ ክፈት |  |
-| 206 | `paySupport` | Support eGeez | ንፊደል ኩዌስት ደግፉ |  |
-| 207 | `payTitle` | Keep learning with eGeez | ትምህርቲ ይቀጽል! |  |
-| 208 | `payBody` | Your {n}-day free try-out is finished. Buying the app keeps it working for your child - and keeps it growing. | ናይ {n} መዓልቲ ነጻ ፈተነኹም ወዲኡ። ነቲ መተግበሪ ምግዛእ ንውላድኩም ምስራሑን ምዕባዩን የቐጽሎ። |  |
-| 209 | `payLeft` | Free try-out: {n} days left | ነጻ ፈተነ · {n} መዓልቲ ተሪፉ |  |
-| 210 | `payEnded` | Your free try-out has ended. | ነጻ ፈተነኹም ወዲኡ። |  |
-| 211 | `payBuy` | Buy the app | ነቲ መተግበሪ ግዝኡ |  |
-| 212 | `payFamily` | Ask family to gift it | ስድራቤት ብህያብ ክገዝኡ ሕተቱ |  |
-| 213 | `payFamilyHint` | No way to pay where you live? A relative anywhere in the world can gift it - share this with them. | ኣብ ቦታኹም መኽፈሊ መንገዲ እንተዘየለ፣ ኣብ ዝኾነ ቦታ ዘሎ ዘመድ ብህያብ ክገዝኣልኩም ይኽእል - ነዚ ኣካፍሉዎ። |  |
-| 214 | `payShareText` | Our kids are learning the Ethiopian alphabet with eGeez. Could you gift us the app? | ደቅና ብፊደል ኩዌስት ፊደል ይመሃሩ ኣለዉ። በጃኹም ነቲ መተግበሪ ብህያብ ክትገዝኡልና ትኽእሉ ዶ? |  |
-| 215 | `payFeedback` | Not buying? Tell us honestly why | ኣይገዛእኩምን? ስለምንታይ ብቕንዕና ንገሩና |  |
-| 216 | `payFeedbackHint` | Honest feedback earns {n} more free days. | ቅኑዕ ርእይቶ ተወሳኺ {n} ነጻ መዓልታት የውህብ። |  |
-| 217 | `payFeedbackBody` | What we liked:nnWhat should be better:nnWhy we did not buy it:n | ዝፈተናዮ:\n\nክመሓየሽ ዘለዎ:\n\nዘይገዛእናሉ ምኽንያት:\n |  |
-| 218 | `payFeedbackDone` | Thank you! {n} more free days added. | የቐንየልና! ተወሳኺ {n} ነጻ መዓልታት ተወሲኹ። |  |
-| 219 | `payOwned` | My family already bought it | ስድራቤተይ ገዚኦሞ |  |
-| 220 | `payThanks` | Thank you for supporting eGeez! | ንፊደል ኩዌስት ስለ ዝደገፍኩም የቐንየልና! |  |
 | 221 | `gpMoveTitle` | Move to another phone | ናብ ካልእ ስልኪ ምስግጋር |  |
 | 222 | `gpMoveHint` | Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there. | ኩሉ ናይ ትምህርቲ ኣካይዳ ከም ሓደ ንእሽቶ ፋይል ኣቐምጡ፣ ናብቲ ሓድሽ ስልኪ ስደዱዎ (ዋትስኣፕ ይሰርሕ)፣ ድሕሪኡ ኣብኡ ጽዓኑዎ። |  |
 | 223 | `gpExport` | Save progress file | ፋይል ኣካይዳ ኣቐምጥ |  |

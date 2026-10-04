@@ -10,9 +10,9 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 | App name | **eGeez** |
 | Bundle / package id | `net.promisechain.fidelquest` |
 | Category | Education (Apple: Kids > Education; Play: Education + Designed for Families) |
-| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). The free web trial lives at the PWA URL; the stores sell the full app. Per-child profiles (up to 6 kids, each with their own progress) are included free on every build; the old $4.99 Family Pack unlock is dormant in the app (the website Pricing page still lists it - see the kids-profiles PR). |
+| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). Everything is included: all paths, the Bible books, and kids profiles for up to 6 children. **No in-app purchases, no subscriptions, no ads** - do not create any IAP products in either console. |
 | Age band | Apple Kids Category: **6–8** (also fits 5 and under). Play target audience: **5 & under + 6–8** (mixed audience). |
-| Version | 1.0.0 (Android versionCode 1) |
+| Version | 1.3.0 (Android versionCode 7, iOS build 7) |
 
 ## Apple App Store (English)
 
@@ -56,6 +56,11 @@ FOR PARENTS AND TEACHERS
   trouble letters and practice tips
 - A full teacher mode: term plans, homework links over WhatsApp, a TV
   chant board for the classroom - no accounts needed
+
+ONE PRICE, EVERYTHING INCLUDED
+- Every path, every Bible book and kids profiles for up to 6 children,
+  all unlocked from the first launch. No in-app purchases, no
+  subscriptions, no ads.
 
 PRIVACY FIRST
 - No ads. No accounts. No data collection. Everything stays on the
@@ -163,10 +168,10 @@ graphics; reuse the English set for the small locales).
 
 ## After the listings exist
 
-1. Copy the Apple numeric app id into `VITE_APPLE_APP_ID` and rebuild
-   (`npm run sync:native`) so the in-app Gift flow links to the store.
-2. Set `VITE_BUY_URL` for the WEB build to the store landing you prefer
-   (smart link or the Play/App Store page) so the web trial's "Buy the
-   app" button points at a real checkout.
-3. Keep the PWA running: it is the free-trial funnel and the teacher/
-   classroom surface; the stores are the paid, kid-owned installs.
+1. Keep the Apple numeric app id in `VITE_APPLE_APP_ID` (`.env`) so iOS
+   share cards link to the store page.
+2. Point the website's store buttons at the live listings
+   (`VITE_APP_STORE_URL` / `VITE_PLAY_STORE_URL`, defaults in
+   `website/src/config.js`).
+3. In App Store Connect, the app has no In-App Purchases; in Play Console,
+   declare no in-app products. The stores are the only place eGeez is sold.
