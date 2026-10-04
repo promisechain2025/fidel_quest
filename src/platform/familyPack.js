@@ -43,6 +43,27 @@ export function familyPackUnlocked() {
   return !!load().unlocked
 }
 
+/** eGeez includes ONE child profile; the Family Pack raises the cap to
+    MAX_PROFILES (6, platform/profiles.js). */
+export const FREE_PROFILES = 1
+
+/** True when adding another child needs the Family Pack first. `count` is
+    the number of profiles already on the device. Children who already have
+    a profile are never taken away - only ADDING is gated. */
+export function needsFamilyPack(count) {
+  return count >= FREE_PROFILES && !familyPackUnlocked()
+}
+
+/** Drop a STORE unlock (the store reported no family_pack, e.g. a refund).
+    Legacy unlocks from older versions (method code / web / dev) are kept:
+    those families paid outside the store and the store cannot know. */
+export function revokeStoreFamilyPack() {
+  const s = load()
+  if (!s.unlocked || s.method !== 'store') return false
+  try { localStorage.removeItem(KEY) } catch { /* storage blocked */ }
+  return true
+}
+
 export function unlockFamilyPack(method) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ unlocked: true, method: String(method || 'web'), day: new Date().toISOString().slice(0, 10) }))

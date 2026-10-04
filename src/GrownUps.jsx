@@ -12,7 +12,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe, Volume2, VolumeX } from 'lucide-react'
+import { ChevronLeft, Star, Flame, Sparkles, Trash2, Pencil, Sun, Moon, Globe, Volume2, VolumeX } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel, progressChanged } from './platform/childModel'
@@ -26,6 +26,8 @@ import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import FamilyPackOffer from './components/FamilyPackOffer'
+import { needsFamilyPack, familyPackUnlocked } from './platform/familyPack'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
 import { getTheme, toggleTheme } from './platform/theme'
@@ -35,9 +37,10 @@ import { reminderOn, setReminder } from './platform/notify'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadStoriesRead } from './platform/stories'
-import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
-import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
-import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
+import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, updateProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
+import ProfileAvatar from './components/ProfileAvatar'
+import { ProfileForm } from './components/ProfilePicker'
+import { iapAvailable, buyFullApp, restorePurchasesAll } from './platform/iap'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
 import { learnedFamilyIds, loadJourney } from './journey'
 import { echoStore, trainStore, marketStore, beatsStore } from './platform/gameStores'
@@ -180,200 +183,117 @@ function PlanCard() {
 }
 
 /** Community / affiliate code: credit a church, school, or community group. */
-/* One device, several children: each child gets their own path, streak,
-   rewards, and trouble letters. Adding a second child is the paid Family
-   Pack; on native store builds only a redeem code is offered (store rules
-   forbid pointing at outside payment). Switching reloads the app - every
-   screen holds the active child's state. */
+/* One device, several children: each child gets their own path, stars,
+   streak, rewards and trouble letters. The paid app includes ONE child
+   profile; the Family Pack in-app purchase (FamilyPackOffer: Buy + Restore
+   purchases) unlocks up to 6. Grown-Ups is already behind the parental
+   gate, so the offer can show here directly. Profiles live only on this
+   device. The kid-facing picker (components/ProfilePicker) offers the same
+   actions; this card is the grown-up view of it. Switching reloads the app
+   - every screen holds the active child's state. */
 function ProfilesCard() {
   const [reg, setReg] = useState(loadProfiles)
-  const [adding, setAdding] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [code, setCode] = useState('')
-  const [codeState, setCodeState] = useState('') // '' | 'bad'
-  const [unlocked, setUnlocked] = useState(familyPackUnlocked)
-  // Native store price for the IAP button; '' until fetched (or unavailable).
-  const [storePrice, setStorePrice] = useState('')
-  const [iapMsg, setIapMsg] = useState('') // '' | 'error' | 'none'
-  useEffect(() => {
-    if (!unlocked && iapAvailable()) familyPackStorePrice().then(setStorePrice)
-  }, [unlocked])
-  const refresh = () => {
-    setReg(loadProfiles())
-    setUnlocked(familyPackUnlocked())
-  }
-  const doBuyNative = async () => {
-    setIapMsg('')
-    const r = await buyFamilyPack()
-    if (r === 'purchased') refresh()
-    else if (r === 'pending') setIapMsg('pending')
-    else if (r === 'error' || r === 'unavailable') setIapMsg('error')
-  }
-  const doRestore = async () => {
-    setIapMsg('')
-    const r = await restoreFamilyPack()
-    if (r === 'restored') refresh()
-    else if (r === 'none') setIapMsg('none')
-    else if (r === 'error') setIapMsg('error')
-  }
+  const [form, setForm] = useState(null) // null | { mode: 'add' } | { mode: 'edit', id }
+  const [packTick, setPackTick] = useState(0) // re-render after a purchase / restore
+  const refresh = () => setReg(loadProfiles())
+  const locked = reg.list.length < MAX_PROFILES && needsFamilyPack(reg.list.length)
 
   const doSwitch = (id) => {
     if (switchProfile(id)) window.location.reload()
   }
-  const doAdd = () => {
-    if (addProfile(newName)) window.location.reload()
-  }
-  const doRedeem = () => {
-    if (redeemFamilyCode(code)) {
-      setCodeState('')
-      refresh()
-    } else setCodeState('bad')
-  }
-
-  const inputCls = `w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`
-  const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }
-  // ONLY the Family Pack's own shop. buyUrl() falls back to the App Store
-  // product page, which sells the APP and has no add-on and no FAM code on
-  // it - linking "Get the Family Pack" there, or naming it as where codes
-  // come from, sends the parent somewhere they cannot buy what they want.
-  // With no shop configured the card falls back to the code box plus a
-  // generic sentence, which is the honest state of "we cannot sell you this
-  // here yet".
-  const buyLink = familyPackUrl()
-  const shopHost = (() => {
-    try { return new URL(buyLink).host.replace(/^www\./, '') } catch { return '' }
-  })()
+  const editing = form?.mode === 'edit' ? reg.list.find((p) => p.id === form.id) : null
 
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
         {t('gpProfilesTitle', 'Children on this device')}
       </h2>
-      <ul className="mt-3 space-y-2">
-        {reg.list.map((p) => (
-          <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
-            <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
-            {p.id === reg.active ? (
-              <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>
-                {t('gpActiveNow', 'Playing')}
-              </span>
-            ) : (
-              <>
-                <button type="button" onClick={() => doSwitch(p.id)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-                  {t('gpSwitchTo', 'Switch')}
-                </button>
+      {form ? (
+        <div className="mt-3">
+          <ProfileForm
+            initial={editing}
+            takenAvatars={reg.list.map((p) => p.avatar)}
+            saveLabel={form.mode === 'add' ? t('gpAddStart', 'Add and start fresh') : undefined}
+            onCancel={() => setForm(null)}
+            onSave={(f) => {
+              if (form.mode === 'add') {
+                if (addProfile(f.name, f)) window.location.reload()
+                return
+              }
+              updateProfile(form.id, f)
+              setForm(null)
+              refresh()
+            }}
+          />
+          {form.mode === 'add' && (
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('gpAddHint', 'The child playing now keeps everything; the new child starts at the first letter.')}
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <ul className="mt-3 space-y-2">
+            {reg.list.map((p) => (
+              <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
+                <ProfileAvatar avatar={p.avatar} size={40} />
+                <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
                 <button
                   type="button"
-                  aria-label={t('gpDeleteChild', `Delete ${profileLabel(p)}`, { name: profileLabel(p) })}
-                  onClick={() => {
-                    if (window.confirm(t('gpDeleteConfirm', `Delete ${profileLabel(p)} and all their progress? This cannot be undone.`, { name: profileLabel(p) }))) {
-                      deleteProfile(p.id)
-                      refresh()
-                    }
-                  }}
+                  onClick={() => setForm({ mode: 'edit', id: p.id })}
+                  aria-label={t('kpEditChild', 'Edit {name}', { name: profileLabel(p, t('gpChild', 'Child')) })}
                   className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`}
-                  style={{ color: 'var(--bad-ink)' }}
+                  style={{ color: 'var(--muted)' }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {reg.list.length < MAX_PROFILES &&
-        (unlocked || (!MONETIZE && !iapAvailable()) ? (
-          adding ? (
-            <div className="mt-3 space-y-2">
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
-              <div className="flex gap-2">
-                <button type="button" onClick={doAdd} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                  {t('gpAddStart', 'Add and start fresh')}
-                </button>
-                <button type="button" onClick={() => setAdding(false)} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpCancel', 'Cancel')}
-                </button>
-              </div>
-              <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                {t('gpAddHint', 'The child playing now keeps everything; the new child starts at the first letter.')}
-              </p>
+                {p.id === reg.active ? (
+                  <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go-deep)' }}>
+                    {t('gpActiveNow', 'Playing')}
+                  </span>
+                ) : (
+                  <>
+                    <button type="button" onClick={() => doSwitch(p.id)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                      {t('gpSwitchTo', 'Switch')}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t('gpDeleteChild', `Delete ${profileLabel(p)}`, { name: profileLabel(p) })}
+                      onClick={() => {
+                        if (window.confirm(t('gpDeleteConfirm', `Delete ${profileLabel(p)} and all their progress? This cannot be undone.`, { name: profileLabel(p) }))) {
+                          deleteProfile(p.id)
+                          refresh()
+                        }
+                      }}
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`}
+                      style={{ color: 'var(--bad-ink)' }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+          {locked ? (
+            <div className="mt-3">
+              <FamilyPackOffer key={packTick} onUnlocked={() => setPackTick((n) => n + 1)} />
             </div>
-          ) : (
-            <button type="button" onClick={() => setAdding(true)} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+          ) : reg.list.length < MAX_PROFILES ? (
+            <button type="button" onClick={() => setForm({ mode: 'add' })} className={`chunk mt-3 min-h-[44px] rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
               {t('gpAddChild', 'Add another child')}
             </button>
-          )
-        ) : (
-          <div className="mt-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}>
-            <p className="text-sm font-extrabold">{t('gpPackTitle', 'Family Pack — profiles for every child')}</p>
-            <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              {isNativePlatform() && !iapAvailable()
-                ? t('gpPackNative', 'Each child gets their own path, streak, and rewards on this device. Have a Family Pack code? Enter it below.')
-                : t('gpPackWeb', `One ${FAMILY_PACK_PRICE} unlock gives every child in the family their own path, streak, and rewards on this device — instead of buying the app again.`, { price: FAMILY_PACK_PRICE })}
-            </p>
-            {/* A code field with no answer to "where do I get one?" is a dead
-               end - and on a store build with no in-app purchase configured
-               yet, the code IS the only way in. Say where it comes from. */}
-            {!iapAvailable() && (
-              <p className="mt-1.5 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                {shopHost
-                  ? t('gpPackWhereSite', 'A Family Pack code comes with a purchase at {host} — or from a relative or teacher who bought one for your family.', { host: shopHost })
-                  : t('gpPackWhere', 'A Family Pack code comes with a purchase on our website — or from a relative or teacher who bought one for your family.')}
-              </p>
-            )}
-            {iapAvailable() && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                  {storePrice
-                    ? t('gpPackBuyStore', `Get the Family Pack (${storePrice})`, { price: storePrice })
-                    : t('gpPackBuyStoreNoPrice', 'Get the Family Pack')}
-                </button>
-                <button type="button" onClick={doRestore} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpPackRestore', 'Restore purchase')}
-                </button>
-                {iapMsg === 'error' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackIapError', 'The store did not respond — try again in a moment.')}</span>
-                )}
-                {iapMsg === 'none' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('gpPackIapNone', 'No Family Pack found on this account.')}</span>
-                )}
-                {iapMsg === 'pending' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</span>
-                )}
-              </div>
-            )}
-            {!isNativePlatform() && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {buyLink ? (
-                  <a href={buyLink} target="_blank" rel="noreferrer" className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                    {t('gpPackBuy', `Get the Family Pack (${FAMILY_PACK_PRICE})`, { price: FAMILY_PACK_PRICE })}
-                  </a>
-                ) : null}
-                <button type="button" onClick={() => { unlockFamilyPack('web'); refresh() }} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpPackPaid', 'I already paid')}
-                </button>
-              </div>
-            )}
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => { setCode(e.target.value); setCodeState('') }}
-                placeholder={t('gpPackCodePh', 'FAM code')}
-                aria-label={t('gpPackCodePh', 'FAM code')}
-                className={inputCls}
-                style={{ ...inputStyle, ...(codeState === 'bad' ? { borderColor: 'var(--bad)' } : null) }}
-              />
-              <button type="button" onClick={doRedeem} className={`chunk shrink-0 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-                {t('gpPackRedeem', 'Redeem')}
-              </button>
-            </div>
-            {codeState === 'bad' && (
-              <p className="mt-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackCodeBad', 'That code does not look right — check it and try again.')}</p>
-            )}
-          </div>
-        ))}
+          ) : (
+            <p className="mt-3 text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('kpFull', 'Six children is the most one device can hold.')}</p>
+          )}
+          {!locked && familyPackUnlocked() && (
+            <div className="mt-2"><FamilyPackOffer /></div>
+          )}
+          <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            {t('kpLocalOnly', 'Profiles live only on this device. Nothing is sent anywhere.')}
+          </p>
+        </>
+      )}
     </section>
   )
 }
