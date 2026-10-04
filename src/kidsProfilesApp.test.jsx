@@ -25,6 +25,7 @@ describe('kids profiles in the app', () => {
 
   it('two children: the picker greets the launch, and not again this session', async () => {
     localStorage.setItem('fq.nickname', 'Selam')
+    localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'store' }))
     loadProfiles()
     addProfile('Abel', { avatar: 'zebra' })
     render(<FidelQuestApp />)

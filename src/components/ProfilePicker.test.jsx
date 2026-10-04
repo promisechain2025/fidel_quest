@@ -23,7 +23,11 @@ const passGate = () => {
   fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 }
 
-beforeEach(() => { localStorage.removeItem('fq.gate.v1') })
+beforeEach(() => {
+  localStorage.removeItem('fq.gate.v1')
+  // Several children: the Family Pack is owned (the locked flow: familyPackGate.test.jsx).
+  localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'store' }))
+})
 afterEach(() => vi.useRealTimers())
 
 describe('ProfilePicker', () => {

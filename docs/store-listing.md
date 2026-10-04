@@ -10,9 +10,9 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 | App name | **eGeez** |
 | Bundle / package id | `net.promisechain.fidelquest` |
 | Category | Education (Apple: Kids > Education; Play: Education + Designed for Families) |
-| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). Everything is included: all paths, the Bible books, and kids profiles for up to 6 children. **No in-app purchases, no subscriptions, no ads** - do not create any IAP products in either console. |
+| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). Includes all paths, the Bible books and **1 kid profile**. **In-app purchases: extra kids profiles only** (non-consumable, bought in order): `profile_slot_2` $4.99, `profile_slot_3`..`profile_slot_6` $2.49 each, up to 6 children. No subscriptions, no ads. Setup: `docs/store-purchases-iap.md`. |
 | Age band | Apple Kids Category: **6–8** (also fits 5 and under). Play target audience: **5 & under + 6–8** (mixed audience). |
-| Version | 1.3.0 (Android versionCode 7, iOS build 7) |
+| Version | 1.3.1 (Android versionCode 8, iOS build 8) |
 
 ## Apple App Store (English)
 
@@ -57,10 +57,12 @@ FOR PARENTS AND TEACHERS
 - A full teacher mode: term plans, homework links over WhatsApp, a TV
   chant board for the classroom - no accounts needed
 
-ONE PRICE, EVERYTHING INCLUDED
-- Every path, every Bible book and kids profiles for up to 6 children,
-  all unlocked from the first launch. No in-app purchases, no
-  subscriptions, no ads.
+ONE PRICE FOR THE WHOLE JOURNEY
+- Every path and every Bible book, unlocked from the first launch, with
+  1 kid profile. No subscriptions, no ads.
+- More children on the same device? Extra kids profiles are optional
+  in-app purchases: $4.99 for a 2nd child, $2.49 for each child after,
+  up to 6. Bought by a grown-up behind the parental gate.
 
 PRIVACY FIRST
 - No ads. No accounts. No data collection. Everything stays on the
@@ -92,7 +94,13 @@ login exists. Notes for review:
    audio stays on-device and is only exported as a file the adult
    explicitly shares. (If this build ships with the recorder disabled,
    no microphone permission is requested at all.)
-4. The app is paid up front; there are no in-app purchases and no ads.
+4. The app is paid up front. The ONLY in-app purchases are extra kids
+   profiles (non-consumable, bought in order: profile_slot_2, then
+   profile_slot_3..6). To see them: tap the player name / "+" on the
+   "Who is playing?" screen, or Grown-Ups (gate) -> Children ->
+   "Unlock profile 2". The child-facing screen shows no price; the buy
+   card and "Restore purchases" are only shown after the parental gate.
+   No subscriptions, no ads.
 ```
 
 ## Google Play (English)
@@ -111,7 +119,8 @@ login exists. Notes for review:
 - **IARC content rating questionnaire:** no violence, no sexuality, no
   language, no controlled substances, no gambling; no user interaction
   features (no chat, no data sharing between users inside the app); no
-  location sharing; no purchases inside the app.
+  location sharing; in-app purchases: yes (extra kids profiles, behind a
+  parental gate, via Google Play Billing).
 - **Ads declaration:** contains no ads.
 
 ## Amharic listing (Play supports am; use for the Ethiopian storefront)
@@ -173,5 +182,8 @@ graphics; reuse the English set for the small locales).
 2. Point the website's store buttons at the live listings
    (`VITE_APP_STORE_URL` / `VITE_PLAY_STORE_URL`, defaults in
    `website/src/config.js`).
-3. In App Store Connect, the app has no In-App Purchases; in Play Console,
-   declare no in-app products. The stores are the only place eGeez is sold.
+3. Create the five extra-profile products in App Store Connect (attach
+   them to the version) and Play Console (Active): `profile_slot_2` $4.99,
+   `profile_slot_3`..`profile_slot_6` $2.49 each. Keep the 1.2
+   `family_pack` removed from sale / inactive. The stores are the only
+   place eGeez or its add-ons are sold.

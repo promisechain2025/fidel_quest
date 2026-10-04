@@ -14,6 +14,8 @@ import {
 beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
+  // Several children per test: the Family Pack is owned (gate tests: familyPackGate.test.jsx).
+  localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'store' }))
 })
 
 const journeyWith = (ids, stars = 3) => JSON.stringify({ version: 1, done: Object.fromEntries(ids.map((id) => [id, { stars }])), collection: { owned: [], worn: {} } })
@@ -187,7 +189,7 @@ describe('"who is playing?" on launch', () => {
 const DEVICE_KEYS = new Set([
   'fq.profiles.v1', 'fq.profile.', 'fq.pack', 'fq.lang', 'fq-theme', 'fq.theme.v1', 'fq-update-toast',
   'fq.sound.v1', 'fq2.sound', 'fq3.sound', 'fidel-quest-sound', 'fq.voice', 'fq.voice.active',
-  'fq.license.v1', 'fq.gate.v1', 'fq.perf.v1', 'fq.quality', 'fq.install.v1',
+  'fq.license.v1', 'fq.familypack.v1', 'fq.profileslots.v1', 'fq.gate.v1', 'fq.perf.v1', 'fq.quality', 'fq.install.v1',
   'fq.reminder.v1', 'fq.uid.v1', 'fq.crashlog.v1', 'fq.community.v1', 'fq.social.v1', 'fq.class.v1',
   'fq.teacher.v1', 'fq.backup.day', 'fq.postcard.micOk', 'fq.whoPicked',
 ])

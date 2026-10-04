@@ -1,5 +1,5 @@
 /* ============================================================================
-   PROFILES — per-child progress on one device (kids profiles, up to 6, included)
+   PROFILES — per-child progress on one device (1 included, up to 6 bought per child)
    ----------------------------------------------------------------------------
    Design rule: the ACTIVE child always plays directly on the canonical
    storage keys, so no game module knows profiles exist. A profile is just a
@@ -22,12 +22,17 @@
    user-imported, so no validation gate is needed.
 
    The first profile is created by migration from whatever the device
-   already holds, so an existing child loses nothing. Profiles are free on
-   every build (v1.3.0 is paid upfront with everything unlocked). Nothing
-   in a profile leaves the device - no account, no network, no analytics.
+   already holds, so an existing child loses nothing. The paid app includes
+   ONE child profile; each further child (2nd-6th) is a one-time in-app
+   purchase bought in order (platform/profileSlots.js needsSlot: $4.99 for
+   the 2nd, $2.49 each after). addProfile enforces that here,
+   at the single choke point, so no screen can bypass it. Children who
+   already have a profile are never removed. Nothing in a profile leaves
+   the device - no account, no network, no analytics.
    ========================================================================== */
 import { PROGRESS_KEYS } from './progress'
 import { progressChanged } from './childModel'
+import { needsSlot } from './profileSlots'
 
 const KEY = 'fq.profiles.v1'
 const SLOT_PREFIX = 'fq.profile.'
@@ -196,11 +201,13 @@ export function switchProfile(toId) {
 }
 
 /** Add a child and make them active with a FRESH start. Returns the new
-    profile, or null (cap reached, or the current child could not be parked).
+    profile, or null (cap reached, no purchased slot for this child,
+    or the current child could not be parked).
     opts: { avatar, age, grade } - all optional. */
 export function addProfile(name, opts = {}) {
   const reg = loadProfiles()
   if (reg.list.length >= MAX_PROFILES) return null
+  if (needsSlot(reg.list.length)) return null
   // Park the current child before wiping the canonical keys for the new one;
   // if that park fails (storage full) abort so we never erase a child we could
   // not save first.

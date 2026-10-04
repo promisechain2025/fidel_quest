@@ -95,7 +95,7 @@ export default function Guide() {
           <div className="mt-12 rounded-2xl p-6 text-center" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
             <p className="font-black">{t('gdCtaT', 'Want the ten minutes handled for you?')}</p>
             <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('gdCtaB', 'eGeez walks a child through the whole fidel one step at a time, voiced and offline - a one-time $12.99 on the App Store and Google Play, with nothing to buy inside.')}
+              {t('gdCtaB', 'eGeez walks a child through the whole fidel one step at a time, voiced and offline - a one-time $12.99 on the App Store and Google Play, every path and Bible book included.')}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <CtaButton to="/pricing" tone="green">{t('gdCtaA', 'Get eGeez')}</CtaButton>

@@ -8,7 +8,7 @@ import Seo from '../Seo.jsx'
 export default function Amharic() {
   return (
     <>
-      <Seo title="The Amharic journey - eGeez" description="All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. One-time $12.99 on the App Store and Google Play, everything included." path="/amharic" />
+      <Seo title="The Amharic journey - eGeez" description="All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. One-time $12.99 on the App Store and Google Play: every path and Bible book included." path="/amharic" />
       <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
         <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
           {['አ', 'ማ', 'ር', 'ኛ'].map((ch, i) => <LetterTile key={i} ch={ch} size={48} />)}
@@ -55,13 +55,13 @@ export default function Amharic() {
           <Card wash>
             <h3 className="font-black">{t('amOwn', 'The app - $12.99 once')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('amOwnB', 'One purchase on the App Store or Google Play owns the entire journey - every letter, game, story and Bible book. No ads, no subscriptions, no in-app purchases, no child data, and it works offline with no account.')}
+              {t('amOwnB2', 'One purchase on the App Store or Google Play owns the entire journey - every letter, game, story and Bible book, with 1 kid profile. No ads, no subscriptions, no child data, and it works offline with no account.')}
             </p>
           </Card>
           <Card>
-            <h3 className="font-black">{t('amKids', 'Kids profiles included')}</h3>
+            <h3 className="font-black">{t('amKids2', 'Room for up to 6 children')}</h3>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('amKidsB', 'Up to 6 children can each have their own profile, journey, streak and closet on one device - included in the price, nothing extra to buy.')}
+              {t('amKidsB2', 'Each child gets their own profile, journey, streak and closet on one device. The first is included; add a 2nd child for $4.99 and each child after for $2.49 (one-time in-app purchases), up to 6.')}
             </p>
           </Card>
         </div>

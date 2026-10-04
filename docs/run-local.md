@@ -40,6 +40,10 @@ npm install
 npm run dev
 ```
 
-Every build is fully unlocked (eGeez 1.3.0+ is paid upfront in the stores:
-no trial, no codes, no in-app purchases). Use `?unlock` in the URL to jump
+Every learning path is unlocked in every build (eGeez 1.3.1+ is paid upfront
+in the stores: no trial, no codes). The only in-app purchases are extra kids
+profiles (1 included; `profile_slot_2..6` through the store, native builds
+only). For local multi-profile testing in a browser, run
+`localStorage.setItem('fq.profileslots.v1', JSON.stringify({ owned: ['profile_slot_2','profile_slot_3','profile_slot_4','profile_slot_5','profile_slot_6'] }))`
+in the console. Use `?unlock` in the URL to jump
 past the learning progression while testing.

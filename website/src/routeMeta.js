@@ -28,7 +28,7 @@ export const ROUTE_META = Object.freeze({
   },
   '/amharic': {
     title: 'The Amharic journey - eGeez',
-    description: 'All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. One-time $12.99, everything included.',
+    description: 'All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. One-time $12.99: every path and Bible book included.',
   },
   '/tigrinya': {
     title: 'Tigrinya - eGeez',
@@ -48,7 +48,7 @@ export const ROUTE_META = Object.freeze({
   },
   '/pricing': {
     title: 'Pricing - eGeez',
-    description: 'One-time $12.99 on the App Store and Google Play. Everything included, kids profiles for up to 6 children. No ads, no subscriptions, no in-app purchases.',
+    description: 'One-time $12.99 with 1 kid profile. More children: $4.99 for a 2nd child, $2.49 for each child after, up to 6. No ads, no subscriptions.',
   },
   '/about': {
     title: 'About eGeez',

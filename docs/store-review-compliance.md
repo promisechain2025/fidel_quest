@@ -2,7 +2,7 @@
 
 A guideline-by-guideline check for submitting **eGeez** (a children's, offline,
 no-ads, no-data Fidel learning app; Capacitor iOS + Android; **paid upfront
-$12.99, everything included, no in-app purchases** since 1.3.0). Cross-references the current **Apple App Store Review
+$12.99 with 1 kid profile; extra kids profiles are the only in-app purchases** since 1.3.1). Cross-references the current **Apple App Store Review
 Guidelines** and **Google Play Families** policy against what's actually in the
 code. Pair this with the submission runbook in `APP-STORE.md` and the listing
 copy in `docs/store-listing.md`.
@@ -33,18 +33,23 @@ metadata / build-flags / console forms.**
    rewards". **Decision needed:** add a line to the description ("gentle Bible
    stories") and answer the IARC religion question truthfully. No code change.
 
-> **1.3.0 model (October 2026): PAID UPFRONT, $12.99, everything included.**
-> The store takes payment at download; every build is fully unlocked
-> (`platform/license.js` `fullAccess()` is always true). There is **no trial,
-> no daily window, no unlock code, no Family Pack, no in-app purchase, no
-> subscription, and no Buy / Restore / Gift UI** anywhere in the app. The
-> old trial engine, SupportAsk dialog, gift flow and EGZ/FAM code system were
-> deleted, the Android BILLING permission was removed, and there is no
-> StoreKit configuration. `platform/iap.js` remains only as a dormant,
-> fail-closed guard (needs `VITE_STORE_IAP=true` plus a RevenueCat key, and no
-> plugin is bundled); `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud
-> if `VITE_STORE_IAP` is set. So every IAP row below (2.1(b), 2.3.2, 3.1.1) is
-> **N/A**, and **"Data Not Collected" is accurate**.
+> **1.3.1 model (October 2026): PAID UPFRONT $12.99 + per-child profile
+> slots.** The store takes payment at download; every learning path and Bible
+> book is open (`platform/license.js` `fullAccess()` is always true) with
+> **one** kid profile. The **only** in-app purchases are extra kids profiles:
+> non-consumables bought in order, `profile_slot_2` $4.99 and
+> `profile_slot_3`..`profile_slot_6` $2.49 each (max 6), via StoreKit 2 /
+> Play Billing (`@capgo/native-purchases`, no third-party server). The buy
+> card (`components/ProfileSlotOffer.jsx`) is only rendered behind the
+> parental gate (Grown-Ups, or the picker after "I'm a grown-up" + gate); a
+> child sees "ask a grown-up" with no price. **Restore purchases** sits next
+> to Buy and stays in Grown-Ups. 1.2 `family_pack` owners restore all 6.
+> No trial, no daily window, no unlock code, no subscription, no gift / web
+> checkout. Android declares `com.android.vending.BILLING`.
+> `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud if `VITE_STORE_IAP`
+> / `VITE_MONETIZE` is set, if `full_app` is in the bundle, or if
+> `profile_slot_` is missing. Purchases are handled by Apple / Google, so
+> **"Data Not Collected" stays accurate**.
 > `src/platform/paidUpfront.test.js` guards all of this.
 
 - ✅ **Fixed (Apple 5.1.1(i)):** an **in-app privacy-policy link** + a
@@ -59,12 +64,12 @@ metadata / build-flags / console forms.**
 | --- | --- | --- |
 | **1.3** Kids Category | No links out, purchase opportunities, or distractions to kids **unless behind a parental gate**. | 🟢 There are no purchase opportunities in the app at all (paid upfront). Grown-Ups, settings and every outside link sit behind the parental gate. |
 | **2.1(a)** Completeness | Final build, no placeholder, tested on device. | 🟢 Real build. Scrub any placeholder listing text. |
-| **2.1(b)** IAP works for reviewer | IAPs must be visible + functional in review. | ⚪ **N/A** - no in-app purchases. Create no IAP products in App Store Connect. Gate-passing steps are in Review Notes (`store-listing.md`). |
+| **2.1(b)** IAP works for reviewer | IAPs must be visible + functional in review. | 🟠 Create `profile_slot_2`..`profile_slot_6` (non-consumable) and **attach them to the 1.3.1 submission**; review notes say where they are (Grown-Ups -> Children -> Unlock profile 2). Gate-passing steps are in Review Notes (`store-listing.md`). |
 | **2.3.1** No hidden/dormant/undocumented features | Everything must be documented + reachable. | 🟠 Several env-gated integrations (analytics, social, shop, error-report) ship **inert** with env unset — fine, but keep them unset (§ build flags). The dormant `iap.js` guard has no UI and no plugin; keep `VITE_STORE_IAP` unset. |
-| **2.3.2** Disclose IAP in metadata | Description/screenshots must indicate paid items. | ⚪ **N/A** - no paid items inside the app. The listing says "no in-app purchases, no subscriptions". |
+| **2.3.2** Disclose IAP in metadata | Description/screenshots must indicate paid items. | 🟢 The listing says "includes 1 kid profile; extra kids profiles are in-app purchases ($4.99 for a 2nd child, $2.49 each after, up to 6)" and the stores show the IAP list. |
 | **2.3.6** Honest age rating | Answer age questions truthfully. | 🟢 Education, age band 6–8 (also 5&under). Answer IARC honestly (no violence/ads/data). |
 | **2.3.8** Metadata 4+ | Icons/screenshots 4+. | 🟢 Anbessa art is 4+. |
-| **3.1.1** In-App Purchase | Unlocking features must use **IAP**, not license keys or external purchase. | ⚪ **N/A** - nothing is unlocked after download; no license keys, no codes, no external purchase links. |
+| **3.1.1** In-App Purchase | Unlocking features must use **IAP**, not license keys or external purchase. | 🟢 Extra kids profiles are sold only through StoreKit / Play Billing; no codes, no web checkout, no external link. Restore purchases provided (3.1.1 non-consumables). |
 | **3.1.1** Free-trial rule | A non-subscription trial should be a Price-Tier-0 **"XX-day Trial"** non-consumable, with the duration + what's lost + downstream cost disclosed up front. | ⚪ **N/A** - no trial (removed in 1.3.0). |
 | **4.1(a,b,c)** Copycats | Original ideas, no impersonation, no others' brands. | 🟢 Original characters (Anbessa/Kokeb/Jibby), original name, all art drawn in code. |
 | **4.2** Minimum functionality | More than a repackaged website. | 🟢 Rich offline game (games, tracing, TTS-optional audio, dashboards) — clearly app-like. |
@@ -94,14 +99,16 @@ metadata / build-flags / console forms.**
 
 ## Must-do before you submit
 
-1. ✅ **Done — removed every in-app purchase surface** (1.3.0 paid upfront):
-   no trial dialog, no Buy / Restore / Gift / Family Pack UI. *(Apple 1.3,
-   5.1.4, 3.1.1)*
+1. ✅ **Done — only per-child profile slots are sold in-app** (1.3.1), behind
+   the parental gate, with Restore purchases; no trial dialog, no gift, no
+   codes. *(Apple 1.3, 5.1.4, 3.1.1)*
 2. ✅ **Done — in-app privacy-policy link** added in gated Grown-Ups.
    *(Apple 5.1.1(i))* — remember to **set `VITE_PRIVACY_URL`** at build.
-3. 🟠 **Set the price to $12.99** in App Store Connect and Play Console, and
-   make sure **no IAP products** exist in either console (remove or leave
-   unsubmitted any old `full_app` / `family_pack` products). *(metadata, not code)*
+3. 🟠 **Set the price to $12.99** in App Store Connect and Play Console;
+   create `profile_slot_2` ($4.99) and `profile_slot_3`..`profile_slot_6`
+   ($2.49 each) in both consoles, attach them to the 1.3.1 submission / make
+   them Active, and keep `family_pack` / `full_app` removed from sale /
+   inactive. Steps: `docs/store-purchases-iap.md`. *(metadata, not code)*
 
 ## Platform minimums
 
@@ -126,22 +133,25 @@ until you do.
 - [ ] **Unset** `VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`,
       `VITE_BUY_URL`, `VITE_ERROR_REPORT_URL` (provably no data / no external
       purchase link).
-- [ ] **Paid upfront (v1.3.0):** do **not** set `VITE_STORE_IAP` (Xcode Cloud
-      fails in `ci_post_clone.sh` if it is). Remove any leftover RevenueCat keys
+- [ ] **Paid upfront + profile slots (v1.3.1):** do **not** set
+      `VITE_STORE_IAP` / `VITE_MONETIZE` (Xcode Cloud fails in
+      `ci_post_clone.sh` if either is). Remove any leftover RevenueCat keys
       from the Xcode Cloud env; they are ignored, but nothing needs them.
-      Set the **$12.99** price in App Store Connect (Pricing and Availability).
+      Set the **$12.99** price in App Store Connect (Pricing and Availability)
+      and attach the five `profile_slot_*` IAPs to the version.
 - [ ] Mic: build with `VITE_FAMILY_VOICE_RECORD=false`, **or** ship the
       recorder and add the iOS `NSMicrophoneUsageDescription` + Android
       `RECORD_AUDIO` declaration.
-- [ ] Version bumped (currently **1.3.0**, iOS build **7** (Xcode Cloud assigns its own) / Android
-      versionCode **7**).
+- [ ] Version bumped (currently **1.3.1**, iOS build **8** (Xcode Cloud assigns its own) / Android
+      versionCode **8**).
 - [ ] Apple **App Privacy** = *Data Not Collected*; Google **Data safety** =
       *no data collected/shared*.
 - [ ] Host the **privacy policy** (template in `APP-STORE.md §8`); set
       **`VITE_PRIVACY_URL`** so the in-app link points at it, and paste the URL
       into both stores.
 - [ ] **Review Notes**: how to pass the parental gate (hold 2s, tap the spoken
-      number), that the app has no in-app purchases (paid upfront, everything unlocked), and that dormant server
+      number), that the app is paid upfront and the only in-app purchases are extra kids
+      profiles (Grown-Ups -> Children -> Unlock profile 2, behind the gate, Restore purchases next to it), and that dormant server
       features are disabled in this build. (Draft in `docs/store-listing.md`.)
 - [ ] Content rating (IARC) + age bands answered honestly on both stores.
 

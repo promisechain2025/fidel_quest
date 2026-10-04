@@ -72,9 +72,12 @@ export default function Terms() {
       <H2>Purchases</H2>
       <P>
         The eGeez app is a one-time, paid-upfront purchase made through the Apple
-        App Store or Google Play. The price includes everything in the app; there
-        are no in-app purchases, subscriptions, add-on packs, or unlock codes. Your
-        purchase is governed by that store's terms, and refunds are requested
+        App Store or Google Play. The price includes every learning path and Bible
+        book and one kid profile. The only in-app purchases are optional extra kids
+        profiles (one-time, one per additional child, up to six), also sold only
+        through the App Store or Google Play and restorable with Restore purchases.
+        There are no subscriptions, unlock codes, or purchases on this website. All
+        purchases are governed by the store's terms, and refunds are requested
         through the store under its refund policy. If something is not working,
         contact us and we will help.
       </P>

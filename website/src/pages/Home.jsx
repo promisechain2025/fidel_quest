@@ -68,7 +68,7 @@ export default function Home() {
               <CtaButton to="/pricing" tone="green">{t('heroCta', 'Get eGeez - $12.99')}</CtaButton>
               <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
             </div>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', '$12.99 once on the App Store and Google Play. Everything included - no ads, no subscriptions, no in-app purchases. Works offline. Ages 3-9.')}</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote2', '$12.99 once on the App Store and Google Play, with every path and 1 kid profile. No ads, no subscriptions. Works offline. Ages 3-9.')}</p>
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
@@ -196,7 +196,8 @@ export default function Home() {
       {/* The objections that actually stop a parent. Every answer here is
           checkable against the app: the pace numbers come from the plan
           settings (1/2/4 letter families a week), the price from
-          the store listings (paid upfront, no in-app purchases). */}
+          the store listings (paid upfront; extra kids profiles are the only
+          in-app purchases). */}
       <Section eyebrow={t('faqE', 'Before you start')} title={t('faqT', 'The questions parents actually ask')} center mark="ጥ">
         <div className="mx-auto grid max-w-3xl gap-4">
           {[
@@ -205,7 +206,7 @@ export default function Home() {
             [t('hqQ2', 'How long does it take to learn all of it?'),
              t('hqA2', 'You choose the pace in the app: one letter family a week is a gentle school year, two a week gets through all 33 Amharic families in about four months, and four a week in about two. Ten minutes a day is the whole ask - the daily warm-up reviews exactly what is starting to fade, so nothing needs cramming.')],
             [t('hqQ3', 'What does it cost?'),
-             t('hqA3', 'eGeez is a one-time $12.99 purchase on the App Store and Google Play, and everything is included: every learning path, the Bible books, and kids profiles for up to 6 children. There are no ads, no subscriptions and no in-app purchases, so nothing inside the app ever asks your child to buy anything.')],
+             t('hqA3b', 'eGeez is a one-time $12.99 purchase on the App Store and Google Play: every learning path, the Bible books and 1 kid profile. If more children share the device, a grown-up can add a 2nd child for $4.99 and each child after for $2.49, up to 6 - one-time in-app purchases behind a parental gate. There are no ads and no subscriptions, and nothing inside the app ever asks your child to buy anything.')],
             [t('hqQ4', 'Does my child need to speak Amharic or Tigrinya already?'),
              t('hqA4', 'No. It starts at the sound of a single letter and builds up - first letters, then first words with pictures, then short stories read along with the voice. Children who speak only English at home start at exactly the same place as children who hear Amharic every day.')],
             [t('hqQ5', 'Is it safe to hand my child the phone with this open?'),

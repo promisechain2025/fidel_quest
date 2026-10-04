@@ -38,9 +38,10 @@ export default function Privacy() {
       <H2>Purchases</H2>
       <P>
         eGeez is paid for once, when you download it from the Apple App Store or
-        Google Play. The store handles the payment under its own privacy policy;
-        we never receive your card or payment details. There are no in-app
-        purchases, so the app itself never handles payments.
+        Google Play. Optional extra kids profiles are in-app purchases made through
+        the same store. The store handles every payment under its own privacy
+        policy; we never receive your card or payment details, and the app keeps
+        only a record on the device of which profiles are unlocked.
       </P>
 
       <H2>The website and hub (accounts) - what we collect</H2>

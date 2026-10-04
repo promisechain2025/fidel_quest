@@ -239,17 +239,30 @@ journey, islands, classic stars, streak, hunt.
       button appears at the bottom; tapping it swaps to the new build
       immediately. No more silently-stale builds on test phones.
 
-## Paid upfront (1.3.0+, every build)
+## Paid upfront + profile slots (1.3.1+, every build)
 - [ ] **Everything is open on first launch** — a fresh install opens every
       step on every path (all letter families, quizzes, arcades, Bible
       books, Letter Explorer, Classic, First Words) with no countdown, no
       buy/gift dialog and no "try-out" wording anywhere.
-- [ ] **Grown-ups has no purchase UI** — no Buy, Restore, Family Pack,
-      code entry, or trial line. Kids profiles (up to 6) are available
-      without unlocking anything.
+- [ ] **1 kid profile included** — on "Who is playing?" the "+" tile shows
+      a lock. A child tapping it sees "ask a grown-up" with no price and no
+      Buy button.
+- [ ] **Profile purchase behind the gate** — "I'm a grown-up" → hold +
+      sum gate → "Add child 2" → **Unlock profile 2 ($4.99)** (store
+      price) + **Restore purchases**. After buying, the new-player form
+      opens. With 2 children the offer is **Unlock profile 3 ($2.49)**; slots
+      are only ever offered in order, max 6.
+- [ ] **Grown-ups → Children** — shows the same offer when the next child
+      needs a slot, otherwise "Kids profiles unlocked: N of 6" + Restore
+      purchases (until all 6 are owned). No code entry, no trial line.
+- [ ] **Restore** — reinstall (same store account) → Restore purchases →
+      every slot is back. A 1.2 `family_pack` owner gets all 6.
+- [ ] **Web / PWA** — the offer says profiles are in-app purchases in the
+      iPhone / iPad / Android app; no dead Buy button.
 - [ ] **Backpack has no Gift tile.**
 - [ ] **An old 1.2 install upgrades cleanly** — a device that had an
-      expired trial opens fully unlocked after updating to 1.3.0.
+      expired trial opens fully unlocked after updating; a device with a
+      Family Pack unlock keeps 6 profiles.
 
 ## Move to another phone
 - [ ] Grown-ups → **Move to another phone** → "Save progress file" shares or
@@ -261,8 +274,9 @@ journey, islands, classic stars, streak, hunt.
       refused (nothing is written).
 
 ## Store readiness (once paid)
-- [ ] **No in-app purchase hooks** — the build has no `VITE_STORE_IAP` set
-      (Xcode Cloud fails in `ci_post_clone.sh` if it is), no BILLING
-      permission, and no StoreKit configuration.
+- [ ] **Only profile-slot purchases** — the build has no `VITE_STORE_IAP` /
+      `VITE_MONETIZE` set (Xcode Cloud fails in `ci_post_clone.sh` if it
+      is); Android declares BILLING; `profile_slot_2..6` exist in both
+      consoles (see `docs/store-purchases-iap.md`).
 - [ ] Build the store version with the optional URLs unset and the mic decision
       made (`VITE_FAMILY_VOICE_RECORD`) — see `APP-STORE.md` checklist.

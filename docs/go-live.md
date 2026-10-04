@@ -123,6 +123,8 @@ If every step works with real infrastructure, you are ready to onboard.
 - Privacy-policy URL: `{SITE_URL}/privacy`.
 - Enroll in the reduced-commission programs (Apple Small Business, Google Play
   reduced service fee) - 15% instead of 30% under ~$1M/yr.
-- eGeez is **paid upfront**: set the price to $12.99 in both consoles and
-  create no in-app products. The website and API sell nothing (the old
-  Stripe / EGZ / FAM code path was removed in 1.3.0).
+- eGeez is **paid upfront**: set the price to $12.99 in both consoles. The
+  only in-app products are extra kids profiles: `profile_slot_2` $4.99,
+  `profile_slot_3`..`profile_slot_6` $2.49 each (`docs/store-purchases-iap.md`).
+  The website and API sell nothing (the old Stripe / EGZ / FAM code path was
+  removed in 1.3.0).

@@ -10,16 +10,20 @@ accounts). This guide is the end-to-end runbook.
 
 ## Before you submit — quick checklist
 
-- [ ] **Pricing — PAID UPFRONT, $12.99, everything included (1.3.0+).** Set
-      the app's price to **$12.99** in App Store Connect (Pricing and
-      Availability) and Play Console (Monetize > App pricing). The store takes
-      payment at download and every build is fully unlocked: there is **no
-      trial, no unlock code, no Family Pack, no in-app purchase and no
-      subscription** in the app, so "Data Not Collected" stays true and the
-      kids-category rules are trivially met. Create **no** In-App Purchase
-      products, and leave `VITE_STORE_IAP` and any RevenueCat key **unset**
-      (Xcode Cloud's `ci_post_clone.sh` fails the build if `VITE_STORE_IAP`
-      is set).
+- [ ] **Pricing — PAID UPFRONT, $12.99 + per-child profile slots (1.3.1+).**
+      Set the app's price to **$12.99** in App Store Connect (Pricing and
+      Availability) and Play Console (Monetize > App pricing). That buys every
+      path and Bible book and **1 kid profile**; there is no trial, no unlock
+      code and no subscription. The **only** in-app purchases are extra kids
+      profiles, non-consumable, bought in order behind the parental gate:
+      `profile_slot_2` **$4.99**, `profile_slot_3`..`profile_slot_6` **$2.49**
+      each (up to 6 children). Create all five products in both consoles and
+      **attach them to the 1.3.1 submission**; keep the 1.2 `family_pack`
+      removed from sale / inactive (its owners restore all 6). Full steps:
+      `docs/store-purchases-iap.md`. Leave `VITE_STORE_IAP`, `VITE_MONETIZE`
+      and any RevenueCat key **unset** (Xcode Cloud's `ci_post_clone.sh`
+      fails the build if either `VITE_*` flag is set, if `full_app` is in the
+      bundle, or if `profile_slot_` is missing).
 - [ ] Build the store release with **no optional server env vars** set
       (`VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`) so the app
       provably collects nothing — see §5.
@@ -84,7 +88,7 @@ with no network after install.
 
 `android/` and `ios/` are generated and committed, with app icons, splash
 screens and the adaptive-icon background already baked in (from
-`resources/`), and versions currently set to 1.3.0 / build 7 on both platforms. On your Mac:
+`resources/`), and versions currently set to 1.3.1 / build 8 on both platforms. On your Mac:
 
 ```bash
 npm install
@@ -148,9 +152,9 @@ You have two store options:
 ### App name / version
 - **iOS**: `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
   `ios/App/App.xcodeproj/project.pbxproj` (Xcode → target **App** → General →
-  Version / Build). 1.3.0 ships as Version `1.3.0`, Build `7`. Signing → your Team.
+  Version / Build). 1.3.1 ships as Version `1.3.1`, Build `8`. Signing → your Team.
 - **Android**: `android/app/build.gradle` → `versionCode` (integer, bump every
-  upload) and `versionName`. 1.3.0 ships as `versionCode 7`, `versionName "1.3.0"`.
+  upload) and `versionName`. 1.3.1 ships as `versionCode 8`, `versionName "1.3.1"`.
 - Keep `package.json` `version` in step; `src/platform/paidUpfront.test.js`
   fails if the three disagree.
 
@@ -227,7 +231,8 @@ kids/families programs — plan for it.
 
 ## 7b. Gifting & recommending the app
 
-The app itself has **no gift or purchase entry** (removed in 1.3.0). Families
+The app itself has **no gift entry** (removed in 1.3.0); its only purchases
+are extra kids profiles, behind the parental gate (1.3.1). Families
 can still use the stores' own features outside the app:
 
 - **Apple — Gift App:** on the App Store page, the share **(...)** button →

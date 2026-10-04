@@ -207,18 +207,25 @@ user-visible claim on the site must be checkable against app code:
 - **Features that are pack-conditional must say so.** Stories are
   Amharic-only (`platform/stories.js`, every entry `pack: 'am'`), and the
   Tigrinya journey has no STORY nodes at all.
-- **eGeez is PAID UPFRONT** (1.3.0+): a one-time $12.99 set in App Store
-  Connect / Play Console, everything unlocked (`platform/license.js`
-  `fullAccess()` is always true). There is no trial, no daily pass, no
-  unlock code, no Family Pack, no in-app purchase and no subscription, and
-  neither the app nor the site may suggest buying anything inside the app.
-  The site's price lives in `website/src/config.js` (`APP_PRICE`) and must
-  match the stores; `src/platform/paidUpfront.test.js` guards the app, the
-  site and the native config.
-- **Never advertise a purchase path that does not exist.** `platform/iap.js`
-  is a dormant, fail-closed guard (needs `VITE_STORE_IAP=true` plus a
-  RevenueCat key, and no plugin is bundled); `ios/App/ci_scripts/ci_post_clone.sh`
-  fails Xcode Cloud if `VITE_STORE_IAP` is set. Keep both.
+- **eGeez is PAID UPFRONT** (1.3.1+): a one-time $12.99 set in App Store
+  Connect / Play Console unlocks every path and Bible book
+  (`platform/license.js` `fullAccess()` is always true) with **1 kid
+  profile**. The ONLY in-app purchases are extra kids profiles
+  (`platform/profileSlots.js`): non-consumables bought in order,
+  `profile_slot_2` $4.99, `profile_slot_3`..`profile_slot_6` $2.49 each, max
+  6; 1.2 `family_pack` owners keep all 6. No trial, no daily pass, no unlock
+  code, no subscription, no web checkout; learning content is never gated.
+  The site's prices live in `website/src/config.js` (`APP_PRICE`,
+  `SECOND_PROFILE_PRICE`, `EXTRA_PROFILE_PRICE`) and must match the stores;
+  `src/platform/paidUpfront.test.js` guards the app, the site and the
+  native config.
+- **Purchases only behind the parental gate, only through the store.**
+  `platform/iap.js` (`@capgo/native-purchases`, StoreKit 2 / Play Billing)
+  can only sell the next `profile_slot_N`; `components/ProfileSlotOffer.jsx`
+  is the only buy UI, always with Restore purchases, and is only rendered
+  behind the gate. `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud
+  if `VITE_STORE_IAP` / `VITE_MONETIZE` is set, if `full_app` is in the
+  bundle or if `profile_slot_` is missing. Keep both.
 - **No invented proof.** No user counts, awards, testimonials or test
   totals unless they are real and sourced.
 - **A promise on a sales page must match the Terms page**, and no

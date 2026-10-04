@@ -41,12 +41,15 @@ persists a choice in `egz.site.theme` (set before paint in `index.html`).
 ## Pricing (/pricing)
 
 eGeez is PAID UPFRONT: a one-time $12.99 in the App Store and Google Play,
-everything included (all paths, the Bible books, kids profiles for up to 6
-children), with no ads, no subscriptions and no in-app purchases. `/pricing`
-only explains that and links to the two store listings (`APP_STORE_URL` /
+with every path, the Bible books and 1 kid profile, no ads and no
+subscriptions. The only in-app purchases are extra kids profiles, one per
+child, bought in order up to 6: $4.99 for a 2nd child, $2.49 for each child
+after (`SECOND_PROFILE_PRICE` / `EXTRA_PROFILE_PRICE`). `/pricing` only
+explains that and links to the two store listings (`APP_STORE_URL` /
 `PLAY_STORE_URL` in `src/config.js`, overridable with `VITE_APP_STORE_URL` /
 `VITE_PLAY_STORE_URL`). The site sells nothing itself: there is no web
-checkout, no unlock code and no Family Pack. Legacy `/pricing/success`,
+checkout and no unlock code; 1.2 Family Pack owners keep all 6 profiles in
+the app. Legacy `/pricing/success`,
 `/family-pack` and `/family-pack/success` URLs redirect to `/pricing`.
 Keep `APP_PRICE` in `src/config.js` in step with the store price.
 

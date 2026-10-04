@@ -49,8 +49,9 @@ In priority order:
    Amharic UI breaks trust. Every key exists in every pack, audited by
    script, not by eyeball.
 10. **Honest monetization that never blocks a child mid-task.** Since
-    1.3.0 that means paid upfront in the stores with everything unlocked -
-    nothing inside the app ever asks to buy.
+    1.3.0 that means paid upfront in the stores with all content unlocked;
+    the only in-app purchases (1.3.1) are extra kids profiles, offered only
+    to a grown-up behind the gate - nothing ever asks a child to buy.
 11. **Update hygiene.** A PWA that serves a stale service-worker build
     "still shows the old bug" and burns tester trust. Updates must be
     visible and promptly applied.
@@ -77,7 +78,7 @@ throughout. An invariant suite runs at module load.
 | 7. Kid safety | **A** | No accounts/PII; hold+number parental gate; teacher area code-locked; shares are explicit adult actions. |
 | 8. Pre-reader UX | **A-** | One pulsing next step, audio everywhere, never-block philosophy. Recent device passes keep finding small papercuts — normal, keep testing. |
 | 9. Localization | **A** | 8 packs, script-audited to zero missing keys. Native review of machine-assisted packs still pending (user task). |
-| 10. Monetization | **B+** | *(At review time: trial + feedback grace + free taste + gift-by-family.)* Superseded in 1.3.0: paid upfront in the stores, everything unlocked, no in-app purchases. |
+| 10. Monetization | **B+** | *(At review time: trial + feedback grace + free taste + gift-by-family.)* Superseded in 1.3.x: paid upfront in the stores, all content unlocked; extra kids profiles (2nd $4.99, 3rd-6th $2.49) are the only in-app purchases (1.3.1). |
 | 11. Update hygiene | **C** | `generateSW` auto-updates silently on second visit — testers repeatedly saw stale builds this week. No "new version, tap to refresh" prompt. Weakest point in the table. |
 | 12. Telemetry | **B+** | Local ledger always; remote strictly opt-in via env. |
 

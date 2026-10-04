@@ -6,11 +6,18 @@
              tapping another child switches (platform/profiles.js parks the
              current child and reloads); "+" adds a child (up to MAX_PROFILES)
      add     name + avatar (+ optional age / grade); the new child starts fresh
+     locked  each child after the first needs a profile slot purchase: a
+             kid-safe "ask a grown-up" screen (no price, no Buy button), then
+             the parental gate, then the grown-up-facing ProfileSlotOffer
+             (buy the next slot / Restore purchases)
      gate    the shared ParentalGate (hold two seconds, then answer a sum on the keypad)
      manage  edit or delete any child - only reachable through the gate
      confirm "Delete <name>?" with Keep as the big default
-   Adding is not gated (it never touches another child's progress, and the
-   cap is six); editing and deleting are. Everything stays on this device:
+   The first child is included; each further child (2nd-6th) is a one-time
+   in-app purchase bought in order (platform/profileSlots.js) and the
+   purchase sits behind the parental gate. With a free slot, adding is not
+   gated (it never touches another
+   child's progress, and the cap is six); editing and deleting always are. Everything stays on this device:
    no account, no network, nothing collected.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react'
@@ -18,12 +25,14 @@ import { ArrowLeft, Check, Lock, Pencil, Plus, Star, Trash2, X } from 'lucide-re
 import ProfileAvatar from './ProfileAvatar'
 import { avatarName } from './avatarNames'
 import ParentalGate from './ParentalGate'
+import ProfileSlotOffer from './ProfileSlotOffer'
 import { t } from '../platform/i18n'
 import { getActivePackId } from '../platform/ethiopic'
 import {
   loadProfiles, switchProfile, addProfile, updateProfile, deleteProfile, profileLabel, profileStats,
   markWhoPicked, nextFreeAvatar, AVATARS, AGES, GRADES, MAX_PROFILES, MAX_NAME,
 } from '../platform/profiles'
+import { needsSlot } from '../platform/profileSlots'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -36,6 +45,8 @@ const GEEZ = {
   name: { ti: 'ስም', am: 'ስም' },
   age: { ti: 'ዕድመ', am: 'ዕድሜ' },
   grade: { ti: 'ክፍሊ', am: 'ክፍል' },
+  slot: { ti: 'ተወሳኺ ተጻዋታይ', am: 'ተጨማሪ ተጫዋች' },
+  ask: { ti: 'ንዓቢ ሰብ ሕተት', am: 'ትልቅ ሰው ጠይቅ' },
 }
 function Geez({ k, className = '' }) {
   const pack = getActivePackId()
@@ -202,6 +213,7 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
     if (!el.contains(document.activeElement) || view.name !== 'confirm') el.focus({ preventScroll: true })
   }, [view.name])
   const full = reg.list.length >= MAX_PROFILES
+  const locked = !full && needsSlot(reg.list.length)
 
   const pick = (p) => {
     markWhoPicked()
@@ -211,7 +223,40 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
   const close = () => { markWhoPicked(); onClose?.() }
 
   let body
-  if (view.name === 'add') {
+  if (view.name === 'locked') {
+    body = (
+      <div className="flex flex-col items-center gap-3 text-center" data-testid="pack-locked">
+        <div className="self-stretch"><TopBar title={t('kpPackTitle', 'More players')} geez="slot" onBack={() => setView({ name: 'pick' })} /></div>
+        <span className="mt-4 flex h-28 w-28 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '3px solid var(--line)' }}>
+          <Lock className="h-12 w-12" style={{ color: 'var(--accent-deep)' }} aria-hidden="true" />
+        </span>
+        <p className="max-w-xs text-lg font-black">{t('kpSlotBody', 'A new player needs a grown-up to unlock a new profile. Ask a grown-up to help.')}</p>
+        <Geez k="ask" className="text-base" />
+        <button type="button" onClick={() => setView({ name: 'packGate' })} className={`chunk mt-2 min-h-[60px] w-full max-w-xs rounded-2xl px-4 text-xl font-black text-white ${FOCUS}`} style={chunk('var(--sky)', 'var(--sky-deep)')}>
+          {t('kpPackAsk', "I'm a grown-up")}
+        </button>
+        <button type="button" onClick={() => setView({ name: 'pick' })} className={`chunk min-h-[52px] w-full max-w-xs rounded-2xl px-4 text-lg font-black ${FOCUS}`} style={ghost}>
+          {t('kpPackBack', 'Back to players')}
+        </button>
+      </div>
+    )
+  } else if (view.name === 'packGate') {
+    body = (
+      <>
+        <TopBar title={t('kpGrownups', 'Grown-ups')} onBack={() => setView({ name: 'locked' })} />
+        <ParentalGate intro={t('kpSlotGateIntro', 'Grown-ups only: a new profile is a purchase. Hold the button, then answer the question.')} onOpen={() => setView({ name: 'pack' })} />
+      </>
+    )
+  } else if (view.name === 'pack') {
+    body = (
+      <>
+        <TopBar title={t('kpSlotShopTitle', 'New profile')} onBack={() => setView({ name: 'pick' })} />
+        <div className="mt-4">
+          <ProfileSlotOffer onUnlocked={() => { refresh(); setView({ name: 'add' }) }} />
+        </div>
+      </>
+    )
+  } else if (view.name === 'add') {
     body = (
       <>
         <TopBar title={t('kpAddTitle', 'New player')} geez="add" onBack={() => setView({ name: 'pick' })} />
@@ -353,12 +398,18 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
           {!full && (
             <button
               type="button"
-              onClick={() => setView({ name: 'add' })}
+              onClick={() => setView({ name: locked ? 'locked' : 'add' })}
+              aria-label={locked ? t('kpAddChildLocked', 'Add a child (needs a grown-up to unlock)') : undefined}
               className={`chunk flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-3xl border-[3px] border-dashed p-3 ${FOCUS}`}
               style={{ background: 'transparent', borderColor: 'var(--line)', outlineColor: 'var(--sky)' }}
             >
-              <span className="flex h-[84px] w-[84px] items-center justify-center rounded-full text-white" style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)' }}>
+              <span className="relative flex h-[84px] w-[84px] items-center justify-center rounded-full text-white" style={{ background: locked ? 'var(--muted)' : 'var(--go)', boxShadow: `0 4px 0 ${locked ? 'var(--line)' : 'var(--go-deep)'}` }}>
                 <Plus className="h-10 w-10" aria-hidden="true" />
+                {locked && (
+                  <span className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full" style={{ background: 'var(--accent)', border: '3px solid var(--card)' }}>
+                    <Lock className="h-4 w-4" style={{ color: '#241a05' }} aria-hidden="true" />
+                  </span>
+                )}
               </span>
               <span className="text-xl font-black">{t('kpAddChild', 'Add a child')}</span>
             </button>
