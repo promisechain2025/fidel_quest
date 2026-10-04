@@ -14,6 +14,8 @@ import {
 beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
+  // Several children per test: the Family Pack is owned (gate tests: familyPackGate.test.jsx).
+  localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'store' }))
 })
 
 const journeyWith = (ids, stars = 3) => JSON.stringify({ version: 1, done: Object.fromEntries(ids.map((id) => [id, { stars }])), collection: { owned: [], worn: {} } })

@@ -26,6 +26,8 @@ import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
 import { LEVELS, loadProgress, loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import FamilyPackOffer from './components/FamilyPackOffer'
+import { needsFamilyPack, familyPackUnlocked } from './platform/familyPack'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
 import { getTheme, toggleTheme } from './platform/theme'
@@ -182,15 +184,19 @@ function PlanCard() {
 
 /** Community / affiliate code: credit a church, school, or community group. */
 /* One device, several children: each child gets their own path, stars,
-   streak, rewards and trouble letters. Profiles are free on every build
-   (the app is paid upfront with everything unlocked) and live only on this
+   streak, rewards and trouble letters. The paid app includes ONE child
+   profile; the Family Pack in-app purchase (FamilyPackOffer: Buy + Restore
+   purchases) unlocks up to 6. Grown-Ups is already behind the parental
+   gate, so the offer can show here directly. Profiles live only on this
    device. The kid-facing picker (components/ProfilePicker) offers the same
    actions; this card is the grown-up view of it. Switching reloads the app
    - every screen holds the active child's state. */
 function ProfilesCard() {
   const [reg, setReg] = useState(loadProfiles)
   const [form, setForm] = useState(null) // null | { mode: 'add' } | { mode: 'edit', id }
+  const [packTick, setPackTick] = useState(0) // re-render after a purchase / restore
   const refresh = () => setReg(loadProfiles())
+  const locked = reg.list.length < MAX_PROFILES && needsFamilyPack(reg.list.length)
 
   const doSwitch = (id) => {
     if (switchProfile(id)) window.location.reload()
@@ -269,12 +275,19 @@ function ProfilesCard() {
               </li>
             ))}
           </ul>
-          {reg.list.length < MAX_PROFILES ? (
+          {locked ? (
+            <div className="mt-3">
+              <FamilyPackOffer key={packTick} onUnlocked={() => setPackTick((n) => n + 1)} />
+            </div>
+          ) : reg.list.length < MAX_PROFILES ? (
             <button type="button" onClick={() => setForm({ mode: 'add' })} className={`chunk mt-3 min-h-[44px] rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
               {t('gpAddChild', 'Add another child')}
             </button>
           ) : (
             <p className="mt-3 text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('kpFull', 'Six children is the most one device can hold.')}</p>
+          )}
+          {!locked && familyPackUnlocked() && (
+            <div className="mt-2"><FamilyPackOffer /></div>
           )}
           <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
             {t('kpLocalOnly', 'Profiles live only on this device. Nothing is sent anywhere.')}
