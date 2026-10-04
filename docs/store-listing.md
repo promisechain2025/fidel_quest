@@ -10,7 +10,7 @@ Process steps live in APP-STORE.md; this file is the CONTENT.
 | App name | **eGeez** |
 | Bundle / package id | `net.promisechain.fidelquest` |
 | Category | Education (Apple: Kids > Education; Play: Education + Designed for Families) |
-| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). The free web trial lives at the PWA URL; the stores sell the full app. Family Pack (per-child profiles) is a separate **$4.99** web unlock. |
+| Price | Paid up front: **$12.99** (Apple price point $12.99 / Play equivalent per country). The free web trial lives at the PWA URL; the stores sell the full app. Per-child profiles (up to 6 kids, each with their own progress) are included free on every build; the old $4.99 Family Pack unlock is dormant in the app (the website Pricing page still lists it - see the kids-profiles PR). |
 | Age band | Apple Kids Category: **6–8** (also fits 5 and under). Play target audience: **5 & under + 6–8** (mixed audience). |
 | Version | 1.0.0 (Android versionCode 1) |
 

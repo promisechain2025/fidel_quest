@@ -70,7 +70,9 @@ import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
 import { licenseState, markAsked, dailyPass, startDailyPass, fullAccess, DAILY_PASS_MINUTES, MONETIZE } from './platform/license'
-import { loadProfiles, switchProfile, profileLabel } from './platform/profiles'
+import { activeProfile, profileLabel, shouldAskWhoOnLaunch } from './platform/profiles'
+import ProfilePicker from './components/ProfilePicker'
+import ProfileAvatar from './components/ProfileAvatar'
 import { useChildModel, useAppDay } from './platform/childModel'
 import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
@@ -1046,6 +1048,10 @@ export default function FidelQuestApp() {
     return [{ name: 'home' }]
   })
   const screen = stack[stack.length - 1]
+  // "Who is playing?": greets a shared device (2+ children) once per app
+  // session when the app opens on the path - never over a deep link. Also
+  // opened from the home kid chip and the Backpack.
+  const [whoOpen, setWhoOpen] = useState(() => stack.length === 1 && stack[0].name === 'home' && shouldAskWhoOnLaunch())
   // A screen opened from the Backpack remembers that origin (fromBackpack), so
   // Back returns to the Backpack instead of straight home. The ref lets
   // setScreen see the Backpack's open state at push time without re-creating
@@ -1128,6 +1134,9 @@ export default function FidelQuestApp() {
   // state is written (platform/childModel.js). Everything below derives
   // fresh from the pure selectors instead of holding copies.
   const childVer = useChildModel()
+  // The child playing now (name + avatar for the home chip). Re-read when
+  // a grown-up edits the card - updateProfile announces through the model.
+  const kid = useMemo(() => activeProfile(), [childVer, whoOpen]) // eslint-disable-line react-hooks/exhaustive-deps
   const huntDone = useMemo(() => huntDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
   // Session coach: the daily warm-up review + the registered learning plan.
   const [plan, setPlan] = useState(loadPlan)
@@ -1175,6 +1184,7 @@ export default function FidelQuestApp() {
   // preventDefault, so the native layer exits the app.
   useEffect(() => {
     const onBack = (e) => {
+      if (whoOpen) { setWhoOpen(false); e.preventDefault(); return }
       if (giftOpen) { setGiftOpen(false); e.preventDefault(); return }
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
@@ -1183,7 +1193,7 @@ export default function FidelQuestApp() {
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBackOrHome])
+  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, whoOpen, goBackOrHome])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1378,7 +1388,7 @@ export default function FidelQuestApp() {
           the manuscript ground gradient, glow, lattice and watermark live on
           that canvas, and body already paints var(--paper) behind it as the
           fallback. An opaque background here would occlude the whole ground. */}
-      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }}>
+      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
         <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
@@ -1388,6 +1398,8 @@ export default function FidelQuestApp() {
                 onOpen={openNode}
                 onPlacement={startPlacement}
                 onBackpack={() => setBackpackOpen(true)}
+                kid={kid}
+                onWho={() => setWhoOpen(true)}
                 onCloset={openCloset}
                 giftReady={giftAvailable(gift, today)}
                 onGift={openGift}
@@ -1875,6 +1887,7 @@ export default function FidelQuestApp() {
             <Backpack
               key="backpack"
               onClose={() => setBackpackOpen(false)}
+              onWho={() => { setBackpackOpen(false); setWhoOpen(true) }}
               troubleCount={troubleCount}
               teeBadge={newTeeCount(progressStats(journey).families)}
               onTees={openTeeShop}
@@ -1945,6 +1958,8 @@ export default function FidelQuestApp() {
           )}
         </AnimatePresence>
       </div>
+      {/* Outside the inert app shell, so it is the only live surface. */}
+      {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
     </MotionConfig>
   )
 }
@@ -2402,7 +2417,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2483,6 +2498,20 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         {/* Header stays minimal: the streak lives in the bottom power bar and
             sound is a device-level control, so neither clutters the header. */}
         <div className="flex items-center gap-2">
+          {/* Who is playing: the active child's friend + name. Tapping it
+              opens the picker (switch, add, or - behind the gate - edit). */}
+          {kid && onWho && (
+            <button
+              type="button"
+              onClick={onWho}
+              aria-label={t('kpWhoChip', 'Playing: {name}. Change player', { name: profileLabel(kid, t('gpChild', 'Child')) })}
+              className={`chunk flex h-11 min-w-11 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-0.5 ${kid.name ? 'min-[400px]:pr-2.5' : ''} ${FOCUS}`}
+              style={{ background: 'var(--card)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go-deep)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+            >
+              <ProfileAvatar avatar={kid.avatar} size={36} />
+              {kid.name && <span className="hidden max-w-[4.5rem] truncate text-sm font-black min-[400px]:inline">{kid.name}</span>}
+            </button>
+          )}
           {giftReady && (
             <motion.button
               type="button"
@@ -2892,17 +2921,14 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
   const [scope, setScopeState] = useState(getScope)
   const changeScope = (s) => { setScopeState(s); setScope(s) }
-  // Sibling switcher: only exists once a grown-up has added a second child
-  // (Family Pack). Switching is safe (all progress is parked, nothing is
-  // lost), so the child-facing surface needs no parental gate.
-  const [profileReg] = useState(loadProfiles)
-  const [whoOpen, setWhoOpen] = useState(false)
+  // "Who plays?" opens the app-level profile picker (switch / add; edit and
+  // delete sit behind the parental gate inside it).
   // A game whose board cannot be filled from what the child knows is hidden
   // rather than dealt half-empty (platform/gameReadiness.js). `scope` is
   // state, so flipping the letter-scope toggle brings the tiles straight
@@ -2942,8 +2968,8 @@ function Backpack({ onClose, onExplore, onBeats, onGrownUps, onFamily, onFamilyV
            panel can still scroll on a very short device as a safety net. */}
         <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
           <div className="grid grid-cols-3 gap-2.5">
-            {profileReg.list.length > 1 && (
-              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={() => setWhoOpen(true)} />
+            {onWho && (
+              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={onWho} />
             )}
             <BackpackTile art="closet" title={t('closetShort', 'Closet')} onClick={onCloset} />
             {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
@@ -3018,59 +3044,6 @@ function Backpack({ onClose, onExplore, onBeats, onGrownUps, onFamily, onFamilyV
         </div>
         {/* Language moved to the home-screen pill (header) - one home for
             the choice instead of two competing ones. */}
-        <AnimatePresence>
-          {whoOpen && (
-            <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-6"
-              style={{ background: 'rgba(0,0,0,0.45)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setWhoOpen(false)}
-            >
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                aria-label={t('whoTitle', 'Who is playing?')}
-                className="w-full max-w-sm rounded-3xl p-5"
-                style={{ background: 'var(--paper)' }}
-                initial={{ scale: 0.92 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.92 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h2 className="text-center text-xl font-black">{t('whoTitle', 'Who is playing?')}</h2>
-                <div className="mt-4 space-y-2.5">
-                  {profileReg.list.map((p) => {
-                    const active = p.id === profileReg.active
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        disabled={active}
-                        onClick={() => {
-                          if (switchProfile(p.id)) window.location.reload()
-                        }}
-                        className={`chunk flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-lg font-black ${FOCUS}`}
-                        style={
-                          active
-                            ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
-                            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }
-                        }
-                      >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full text-base" style={{ background: active ? 'rgba(255,255,255,0.25)' : 'var(--accent)', color: '#fff' }}>
-                          {(profileLabel(p, t('gpChild', 'Child'))[0] || '?').toUpperCase()}
-                        </span>
-                        <span className="flex-1 truncate text-left">{profileLabel(p, t('gpChild', 'Child'))}</span>
-                        {active && <span className="text-xs font-black uppercase">{t('whoNow', 'Now')}</span>}
-                      </button>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     </motion.div>
   )

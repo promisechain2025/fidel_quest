@@ -107,6 +107,12 @@ src/
   Runner3D.jsx                 # the WebGL Letter Runner scene (three.js);
                                # lazy-loaded with FidelSkylands so the 3D
                                # stack stays off the home path
+  components/ProfilePicker.jsx # "Who is playing?": kid profiles - pick/switch,
+                               # add (name + avatar + optional age/grade), and
+                               # edit/delete behind the ParentalGate. Mechanics
+                               # (swap slots, migration, 6-child cap) live in
+                               # platform/profiles.js; every child-progress key
+                               # must be in SWAP_KEYS or profilesKids.test.js fails
   journey.js                   # unified Journey model: nodes, fq.journey.v1
                                # progress, rewards, legacy migration (pure)
   journey.test.js
