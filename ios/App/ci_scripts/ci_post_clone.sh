@@ -47,9 +47,46 @@ npm --version
 # capacitor.config.json but runs NO pod install (cap sync would, and its
 # embedded install failing on a CDN reset is exactly what killed archives);
 # the pods get their own retry/fallback below instead.
+# In-app purchase guard, part 1 (before the build): eGeez is paid upfront
+# and sells only kids-profile slots in-app (profile_slot_2..profile_slot_6,
+# one per extra child, bought in order). The
+# variables below belonged to the retired "buy the app in the app" model
+# (full_app via RevenueCat). Nothing reads them any more, but a workflow
+# that still sets them was configured for the wrong model - stop and say so.
+set +x # do not echo env values into the log
+for v in VITE_STORE_IAP VITE_MONETIZE; do
+  eval "_val=\${$v:-}"
+  if [ -n "$_val" ]; then
+    echo "ci_post_clone: ERROR $v is set; eGeez sells only kids-profile slots in-app (no full_app). Remove $v from the Xcode Cloud workflow." >&2
+    exit 1
+  fi
+done
+if [ -n "${VITE_REVENUECAT_APPLE_KEY:-}${VITE_REVENUECAT_GOOGLE_KEY:-}" ]; then
+  echo "ci_post_clone: WARNING RevenueCat keys are set but unused (purchases use StoreKit directly); remove them from the workflow." >&2
+fi
+set -x
+
 retry 3 npm ci --no-audit --no-fund
 npm run build
 retry 3 npx cap copy ios
+
+# In-app purchase guard, part 2 (after the build): the shipped bundle must
+# offer kids-profile slots and NOTHING else. The only store products the app
+# can sell are profile_slot_2..6 (src/platform/iap.js SELLABLE_PRODUCTS;
+# family_pack is only recognised on restore, for 1.2 buyers); the retired
+# full_app id must not appear anywhere in the compiled web app.
+if grep -rqE "full_app|FULL_APP_ENTITLEMENT|buyFullApp" dist; then
+  echo "ci_post_clone: ERROR the built app references full_app; only kids-profile slots (profile_slot_N) may be sold in-app." >&2
+  exit 1
+fi
+if ! grep -rq "profile_slot_" dist; then
+  echo "ci_post_clone: ERROR the built app has no profile_slot purchase; extra kids profiles and Restore purchases would be missing." >&2
+  exit 1
+fi
+if ! grep -q "CapgoNativePurchases" ios/App/Podfile; then
+  echo "ci_post_clone: ERROR the StoreKit plugin (CapgoNativePurchases) is not in ios/App/Podfile; run npx cap sync ios." >&2
+  exit 1
+fi
 
 # CocoaPods. EVERY pod in this Podfile is a local :path pod into
 # node_modules - nothing is resolved from the CocoaPods CDN. The only CDN
@@ -65,15 +102,4 @@ cd ios/App
 retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
-# Vite inlines VITE_* from the environment at `npm run build` above.
-# eGeez ships PAID UPFRONT (v1.3.0+): in-app purchases are dormant unless the
-# workflow sets VITE_STORE_IAP=true. A RevenueCat key on its own is ignored.
-# The RevenueCat plugin is NOT bundled any more (its pod does not compile on
-# Xcode 26/27 with Capacitor 7), so an IAP-enabled archive would show buy
-# buttons that can only fail. Refuse to build one.
-if [ -n "$VITE_STORE_IAP" ]; then
-  echo "ci_post_clone: ERROR VITE_STORE_IAP is set but no RevenueCat plugin is bundled; unset it in the Xcode Cloud workflow (see src/platform/iap.js)" >&2
-  exit 1
-else
-  echo "ci_post_clone: paid-upfront build (no in-app purchases, fully unlocked)"
-fi
+echo "ci_post_clone: paid-upfront build; the only in-app purchases are kids-profile slots (profile_slot_2..6)"

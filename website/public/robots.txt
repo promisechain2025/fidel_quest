@@ -1,8 +1,6 @@
 User-agent: *
 Allow: /
-# Per-buyer, per-account and utility routes - no search value, and
-# /pricing/success is keyed on a Stripe session id.
-Disallow: /pricing/success
+# Per-account and utility routes - no search value.
 Disallow: /verify
 Disallow: /progress
 Disallow: /teach

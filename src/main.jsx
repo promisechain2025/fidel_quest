@@ -40,8 +40,8 @@ lockDocumentTranslate()
 applyUrlUnlock()
 // Re-activate the chosen Family Voice (if any) so Anbessa keeps that voice.
 initVoice()
-// Native store builds: sync an already-owned Family Pack (reinstall case).
-// Dormant no-op on web or until the RevenueCat keys are configured.
+// Native store builds: sync purchased kids-profile slots (reinstall / other
+// device / Ask to Buy approved later) and honour refunds. No-op on the web.
 import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Native: silently back the household's progress up to the OS-backed
 // Documents folder, at most once a day. Web keeps manual export.

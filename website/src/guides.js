@@ -71,7 +71,7 @@ export const GUIDES = [
         h: 'Where this app fits',
         p: [
           'eGeez is built around exactly this shape: one path with a single next step, ten minutes a day, every letter voiced so the child never waits for an adult to sound it out, and a daily warm-up that reviews whatever is fading rather than whatever comes next. A grown-ups corner tells you in plain English what was learned and what needs another look.',
-          'It works offline, takes no account, and the first two letter families are free forever - enough to see whether the routine sticks in your house before deciding anything.',
+          'It works offline, takes no account, and is a single one-time purchase in the App Store or Google Play - with every path and Bible book included, no ads and no subscriptions.',
         ],
       },
     ],

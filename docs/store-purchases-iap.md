@@ -1,157 +1,113 @@
-# Store purchases (in-app) — owner setup runbook
+# Store purchases (in-app): owner setup runbook (1.3.1+)
 
-> **1.3.0+: NOT IN USE. eGeez ships PAID UPFRONT at $12.99.** Set the price
-> in App Store Connect / Play Console (Pricing and Availability) - the app's
-> own price is **$12.99, not Free**. Do **not** set `VITE_STORE_IAP`; without
-> it RevenueCat keys are ignored and every build is fully unlocked (no trial,
-> no daily window, no Buy/Restore). Everything below documents the dormant
-> free-download + in-app-purchase flow, kept for a possible v2.
->
-> **The RevenueCat Capacitor plugin was removed from the app** (its iOS pod
-> no longer compiles on Xcode 26/27; the fix, purchases-ios 5.78.0+, needs
-> `@revenuecat/purchases-capacitor` 12+, which needs Capacitor 8). Reviving
-> this flow means: upgrade to Capacitor 8, reinstall the plugin, `npx cap sync`,
-> and restore the plugin loader in `src/platform/iap.js`. Xcode Cloud's
-> `ci_post_clone.sh` now refuses to archive with `VITE_STORE_IAP` set.
+eGeez is **paid upfront**: $12.99 at download on the App Store and Google
+Play. That price includes every learning path, every Bible book and **one**
+kid profile. The **only** in-app purchases are extra kids profiles, one per
+child, bought in order, up to 6 children:
 
-The app code is DONE and dormant. Store builds show the native purchase
-sheet as soon as the platform's RevenueCat key is set at build time.
-Until then a native build deliberately stays FREE: `iapAvailable()` is
-false, so `licenseState()` returns `licensed`, no trial runs, no ask
-appears, and only the redeem-code field is offered. The web keeps its
-payment-link + EGZ-code flow either way. This document is the one-time
-setup on your side. Budget ~1-2 hours, mostly console clicking.
-
-**TWO products, not one.** Since 1.2 the app itself is sold in-app (free
-download -> 3-day trial -> buy once), so `full_app` is the one that
-actually gates the app. `family_pack` is the optional add-on.
-
-| What | Product id (both stores) | Type | Price | Entitlement |
+| Child | Product ID (identical on both stores) | Type | Price (USD tier) | Reference / display name |
 | --- | --- | --- | --- | --- |
-| The app itself | `full_app` | Non-consumable / managed | $12.99 | `full_app` |
-| Family Pack add-on | `family_pack` | Non-consumable / managed | $4.99 | `family_pack` |
+| 1st | (included in the $12.99 app) | - | - | - |
+| 2nd | `profile_slot_2` | Non-consumable / one-time product | **$4.99** | Kid profile 2 |
+| 3rd | `profile_slot_3` | Non-consumable / one-time product | **$2.49** | Kid profile 3 |
+| 4th | `profile_slot_4` | Non-consumable / one-time product | **$2.49** | Kid profile 4 |
+| 5th | `profile_slot_5` | Non-consumable / one-time product | **$2.49** | Kid profile 5 |
+| 6th | `profile_slot_6` | Non-consumable / one-time product | **$2.49** | Kid profile 6 |
 
-- Env vars at build time: `VITE_REVENUECAT_APPLE_KEY`, `VITE_REVENUECAT_GOOGLE_KEY`
-- The app never hardcodes a store price - each button shows the store's
-  own localized price string.
-- The app picks a package out of the current offering by matching the
-  product identifier against `/family/i`: anything containing "family" is
-  the add-on, anything else is the app. So do NOT put the word "family"
-  in the `full_app` product id.
+- The app only ever offers the **next** slot (`buyNextProfileSlot()` in
+  `src/platform/iap.js` takes no argument), so slots are always bought in
+  order; a slot only counts once every slot before it is owned.
+- `family_pack` (the 1.2 "unlock 6 kids" product) is **recognised but never
+  sold**: a family whose store account owns it gets all 6 profiles on Restore
+  / launch sync. Leave it **Removed from sale** in App Store Connect and
+  **Inactive** in Play Console (deleting it would break restore for those
+  families on Play, and App Store product ids can never be reused anyway).
+  1.2 FAM-code / web unlocks already on a device (`fq.familypack.v1`) also
+  keep all 6.
+- `full_app` stays retired. Xcode Cloud's `ci_post_clone.sh` fails the build
+  if `full_app` appears in the bundle or `profile_slot_` is missing.
+- The prices in the app UI come from the store (localized); the website
+  (`website/src/config.js`: `APP_PRICE`, `SECOND_PROFILE_PRICE`,
+  `EXTRA_PROFILE_PRICE`) must match the US tiers above.
 
-## 1. App Store Connect (Apple)
+Plugin: `@capgo/native-purchases` 7.19.x (Capacitor 7 line). StoreKit 2 on
+iOS, Play Billing on Android, **no RevenueCat, no server, no API keys**.
+Native config already in the repo: `com.android.vending.BILLING` in
+`AndroidManifest.xml`, `CapgoNativePurchases` in `ios/App/Podfile`,
+`capgo-native-purchases` in the Android Gradle settings.
 
-1. Make sure your Paid Applications agreement, banking, and tax forms are
-   active (Agreements, Tax, and Banking) - IAP cannot be tested without it.
-2. The app's own price must be **Free** (Pricing and Availability). The
-   download is free; the app is sold by `full_app` inside it.
-3. My Apps -> eGeez -> Monetization -> In-App Purchases -> `+`, TWICE:
+## 1. App Store Connect
 
-   **a. The app itself**
-   - Type: **Non-Consumable**
-   - Reference name: `eGeez full app`
-   - Product ID: `full_app`
-   - Price: $12.99 tier
-   - Localization (English): Display name `Unlock eGeez`, description
-     `Unlock every letter, game and story. One payment, forever.`
-
-   **b. The add-on** (optional; skip if you are not selling it yet)
-   - Type: **Non-Consumable**
-   - Reference name: `Family Pack`
-   - Product ID: `family_pack`
-   - Price: $4.99 tier
-   - Localization (English): Display name `Family Pack`, description
-     `Profiles for every child in the family on this device.`
-
-   Each needs a **review screenshot** (a shot of the sheet that sells it:
-   the after-trial dialog for `full_app`, the Grown-Ups Children card for
-   `family_pack`). Submit the IAPs **together with the app version** -
-   a first IAP submitted on its own is rejected.
-4. Xcode: open the App target -> Signing & Capabilities -> `+ Capability`
-   -> **In-App Purchase**. NOT YET DONE in this repo - the project has no
-   entitlements file, so this is a required step before the first paid
-   build. Commit the resulting `App.entitlements` + project change.
-5. Create a **Sandbox tester** (Users and Access -> Sandbox) for testing.
-6. Metadata (Apple 2.3.2): state in the description that the app needs a
-   one-time purchase after the free trial. The "What's New" line covers
-   this too.
+1. Agreements, Tax, and Banking: the **Paid Apps** agreement must be active.
+2. My Apps -> eGeez -> Monetization -> In-App Purchases -> **+** five times,
+   type **Non-Consumable**:
+   - Reference name `Kid profile 2`, Product ID `profile_slot_2`, price
+     **$4.99**. Localization (English): display name `2nd kid profile`,
+     description `Add a second child with their own path, stars and rewards.`
+   - `profile_slot_3`..`profile_slot_6`, price **$2.49** each, display names
+     `3rd kid profile` .. `6th kid profile`, description `Add one more child
+     with their own path, stars and rewards.`
+   - Each needs a **review screenshot** (use
+     `/workspace/egeez-shots/family-pack/` `grownups-restore` / the
+     unlock screen) and review notes: "Grown-Ups (parental gate: hold the
+     button, answer the sum) -> Children -> Unlock profile N. Restore
+     purchases is next to it."
+   - Availability: all territories where the app is sold.
+3. Old products: `family_pack` -> **Remove from Sale** (keep it; owners
+   restore through it). `full_app` -> Remove from Sale if it still exists.
+4. App version **1.3.1 (8)** -> "In-App Purchases and Subscriptions"
+   section -> **add all five `profile_slot_*` products** to this
+   submission. First-time IAPs are only reviewed together with an app
+   version; submitting them alone is rejected.
+5. App Privacy: unchanged (Data Not Collected). Purchases are handled by
+   Apple.
+6. Kids Category: purchases are behind the parental gate (Guideline 1.3);
+   say so in the review notes.
+7. Sandbox test: Users and Access -> Sandbox -> add a tester. On a device
+   build: Grown-Ups -> Children -> Unlock profile 2 ($4.99) -> buy -> add a
+   child -> Unlock profile 3 ($2.49). Delete + reinstall -> Restore
+   purchases -> "Kids profiles unlocked: 3 of 6".
 
 ## 2. Google Play Console
 
-1. Monetization setup must be complete (payments profile).
-2. eGeez -> Monetize -> Products -> In-app products -> Create.
-   - `full_app` - `Unlock eGeez`, $12.99
-   - `family_pack` - `Family Pack`, $4.99
-   Auto-converts per country; round if you like. **Activate** both.
-3. IAP testing on Android requires the build to be on a testing track
-   (your closed track works) and the tester's Gmail added under
-   Play Console -> Settings -> License testing.
+1. Payments profile linked (it already is for the paid app).
+2. eGeez -> Monetize with Play -> Products -> **One-time products** ->
+   Create five products, each with one purchase option (Buy, not
+   rentable), **Active**:
+   - `profile_slot_2` - `2nd kid profile` - $4.99
+   - `profile_slot_3` .. `profile_slot_6` - `3rd kid profile` .. `6th kid
+     profile` - $2.49 each
+   Use "Set prices" -> convert from USD for other countries.
+3. Old product `family_pack`: set **Inactive** (do not delete). `full_app`:
+   Inactive if present.
+4. Upload **1.3.1 (versionCode 8)** to internal testing first; one-time
+   products can only be bought from a build installed through Play.
+   Settings -> License testing -> add tester accounts.
+5. Families policy: the purchase is behind the parental gate; Play Billing
+   is the only payment method. Data safety form: unchanged ("purchase
+   history" is handled by Google Play, not collected by the app).
 
-## 3. RevenueCat (free at your scale)
+## 3. Test checklist (both stores)
 
-1. Create an account at app.revenuecat.com -> New project `eGeez`.
-2. Add two apps to the project:
-   - Apple App Store app: bundle id `net.promisechain.fidelquest`.
-     Upload the App Store Connect **In-App Purchase key** (App Store
-     Connect -> Users and Access -> Integrations -> In-App Purchase) as
-     instructed on the RevenueCat screen.
-   - Google Play app: package `net.promisechain.fidelquest`. Follow their
-     wizard to create/upload a Play service-account JSON with the two
-     read permissions it lists.
-3. Product catalog -> Products: add `full_app` AND `family_pack` for
-   BOTH stores.
-4. Entitlements: create `full_app` and `family_pack` and attach the
-   matching products to each. (The app checks these exact ids -
-   `FULL_APP_ENTITLEMENT` / `FAMILY_PACK_ENTITLEMENT` in
-   `src/platform/iap.js`.)
-5. Offerings: the default (current) offering with **two packages**, one
-   per product, for each store. The app selects between them by product
-   id, so both must live in the SAME current offering - a product that is
-   not in it cannot be bought.
-6. Copy the two public SDK keys (Project settings -> API keys):
-   `appl_...` and `goog_...`.
-
-## 4. Build with the keys
-
-The keys are PUBLIC SDK keys (safe to embed). Set them wherever the web
-bundle for native builds is produced:
-
-- Local Mac builds: create `.env.local` in the repo root:
-  ```
-  VITE_REVENUECAT_APPLE_KEY=appl_xxxxxxxx
-  VITE_REVENUECAT_GOOGLE_KEY=goog_xxxxxxxx
-  ```
-  then `npm run build && npx cap sync` as usual.
-- Xcode Cloud: add both as custom environment variables on the workflow
-  (they flow into `npm run build` via the post-clone script).
-
-No key = the exact behavior you have today (redeem-code only). Wrong key
-= buttons show "store did not respond"; nothing breaks.
-
-## 5. Test before rollout
-
-- iOS, the app purchase: run from Xcode on a device signed into the
-  Sandbox tester. Let the 3-day trial lapse (or set the device date
-  forward, or edit `fq.license.v1.startDay` in Safari Web Inspector) so
-  the after-trial dialog appears -> pass the parental gate -> Buy the app
-  -> the Apple sheet should show $12.99 and complete. Delete + reinstall
-  -> the app unlocks itself on launch (initIap), or via Restore.
-- iOS, the add-on: Grown-Ups -> Children -> Get the Family Pack -> $4.99.
-- Android: internal/closed-track build with a license-tester account ->
-  the same two flows through the Google sheet.
-- Also verify the DAILY WINDOW still works while unpaid: the after-trial
-  dialog's "Open everything for 5 minutes" must not go through the store
-  at all.
+- Fresh install: 1 profile, "+" shows a lock. Child tapping it sees "ask a
+  grown-up" with **no price and no Buy button**.
+- "I'm a grown-up" -> hold + sum gate -> "Add child 2" -> **Unlock profile 2
+  ($4.99)** -> store sheet -> success goes straight to the new-player form.
+- With 2 children: the next offer is **Unlock profile 3 ($2.49)**.
+- Grown-Ups -> Children shows the same offer when locked, and "Kids profiles
+  unlocked: N of 6" + **Restore purchases** otherwise.
+- Reinstall / second device on the same store account: Restore purchases
+  brings every slot back; on Android the launch sync also does it silently.
+- Ask to Buy (iOS Family Sharing) / slow Play payment: "Waiting for a
+  grown-up to approve"; the slot unlocks when approved (listener / next
+  launch).
+- Refund a slot in sandbox: on the next launch the limit drops; children
+  already created are never deleted, only adding is blocked.
+- A tester account that owns the old `family_pack`: Restore -> all 6.
 
 ## Notes
 
-- Refunds: handled by the stores; RevenueCat revokes the entitlement,
-  but the app only re-checks on launch/restore - acceptable at this
-  price, and the honest-app posture assumes good faith anyway.
-- Never pay twice: a store purchase and a website EGZ code both set the
-  same `supported` flag, so a family that bought on the web redeems the
-  code in the store build instead of paying again.
-- The web flow and FAM redeem codes stay live regardless; they carry no
-  store commission and serve community grants.
-- Small Business Program (Apple) / 15% service fee tier (Google): enroll
-  in both so the cut is 15%, not 30%.
+- Small Business Program (Apple) / 15% service-fee tier (Google): enroll
+  in both so the store cut is 15%, not 30%.
+- Nothing is sold on the website or by the API (no Stripe, no codes). The
+  `/pricing` page only explains the prices and links to the stores.

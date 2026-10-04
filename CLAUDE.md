@@ -207,15 +207,25 @@ user-visible claim on the site must be checkable against app code:
 - **Features that are pack-conditional must say so.** Stories are
   Amharic-only (`platform/stories.js`, every entry `pack: 'am'`), and the
   Tigrinya journey has no STORY nodes at all.
-- **Prices and trial terms live in the app** (`platform/license.js`
-  `APP_PRICE` / `TRIAL_DAYS` / `DAILY_PASS_MINUTES`,
-  `platform/familyPack.js`). The site, the JSON-LD and `api/routes/pay.js`
-  must agree with them, and JSON-LD `availability` must follow the same
-  signal as the buy button - never advertise a live price on a page that
-  cannot take money.
-- **Never advertise a purchase path that does not exist yet.** Store
-  buying needs a RevenueCat key (`platform/storeEnv.js`); without one the
-  native build is deliberately free and silent.
+- **eGeez is PAID UPFRONT** (1.3.1+): a one-time $12.99 set in App Store
+  Connect / Play Console unlocks every path and Bible book
+  (`platform/license.js` `fullAccess()` is always true) with **1 kid
+  profile**. The ONLY in-app purchases are extra kids profiles
+  (`platform/profileSlots.js`): non-consumables bought in order,
+  `profile_slot_2` $4.99, `profile_slot_3`..`profile_slot_6` $2.49 each, max
+  6; 1.2 `family_pack` owners keep all 6. No trial, no daily pass, no unlock
+  code, no subscription, no web checkout; learning content is never gated.
+  The site's prices live in `website/src/config.js` (`APP_PRICE`,
+  `SECOND_PROFILE_PRICE`, `EXTRA_PROFILE_PRICE`) and must match the stores;
+  `src/platform/paidUpfront.test.js` guards the app, the site and the
+  native config.
+- **Purchases only behind the parental gate, only through the store.**
+  `platform/iap.js` (`@capgo/native-purchases`, StoreKit 2 / Play Billing)
+  can only sell the next `profile_slot_N`; `components/ProfileSlotOffer.jsx`
+  is the only buy UI, always with Restore purchases, and is only rendered
+  behind the gate. `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud
+  if `VITE_STORE_IAP` / `VITE_MONETIZE` is set, if `full_app` is in the
+  bundle or if `profile_slot_` is missing. Keep both.
 - **No invented proof.** No user counts, awards, testimonials or test
   totals unless they are real and sourced.
 - **A promise on a sales page must match the Terms page**, and no
@@ -274,7 +284,7 @@ user-visible claim on the site must be checkable against app code:
 - Anything an anonymous caller supplies is allow-listed before it reaches
   an email subject, a query, or the store.
 - Fail fast at boot on config that would silently corrupt production
-  (`JWT_SECRET`, `SITE_URL` when Stripe is live). Do not gate those checks
+  (e.g. `JWT_SECRET`). Do not gate those checks
   on `NODE_ENV` - hosts often leave it unset.
 - Client-caused body errors are 4xx, not 500.
 - Destructive scripts refuse to run without an explicit confirm env var.

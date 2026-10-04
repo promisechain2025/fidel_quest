@@ -7,11 +7,9 @@ import authRoutes from './routes/auth.js'
 import formRoutes from './routes/forms.js'
 import childrenRoutes from './routes/children.js'
 import introRoutes from './routes/intros.js'
-import payRoutes, { webhookHandler, setStripeClient } from './routes/pay.js'
 import { store } from './store.js'
 
-export function createApp({ stripeClient } = {}) {
-  if (stripeClient) setStripeClient(stripeClient)
+export function createApp() {
   const app = express()
   // Only when the deploy really sits behind a proxy - see config.trustProxy.
   if (config.trustProxy) {
@@ -33,16 +31,12 @@ export function createApp({ stripeClient } = {}) {
   })
   app.use(helmet())
   app.use(cors({ origin: config.corsOrigin.includes('*') ? true : config.corsOrigin }))
-  // Stripe webhook MUST see the raw body for signature verification, so it
-  // mounts BEFORE express.json and never moves into the /api router below.
-  app.post('/api/pay/webhook', ...webhookHandler())
   app.use(express.json({ limit: '32kb' }))
 
   app.get('/healthz', (_req, res) => res.json({ ok: true, backend: store.backend }))
   app.use('/api/auth', authRoutes)
   app.use('/api', childrenRoutes)
   app.use('/api', introRoutes)
-  app.use('/api', payRoutes)
   app.use('/api', formRoutes)
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }))

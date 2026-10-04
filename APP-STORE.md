@@ -10,21 +10,25 @@ accounts). This guide is the end-to-end runbook.
 
 ## Before you submit — quick checklist
 
-- [ ] **Monetization — ship it PAID (v1 decision).** Leave **`VITE_MONETIZE`
-      unset** (the default) and **set a price** on the app in App Store Connect /
-      Play Console. That's the whole thing: the store takes payment at download
-      and the installed app then unlocks fully — there is **no in-app trial, no
-      "Not now" bypass, and no purchase/IAP UI** anywhere, so "Data Not
-      Collected" stays true and the kids-category rules are trivially met.
-      *(The 3-day-trial-then-buy flow is kept dormant behind `VITE_MONETIZE`
-      for a future v2 — see §7 — so nothing needs removing now.)*
+- [ ] **Pricing — PAID UPFRONT, $12.99 + per-child profile slots (1.3.1+).**
+      Set the app's price to **$12.99** in App Store Connect (Pricing and
+      Availability) and Play Console (Monetize > App pricing). That buys every
+      path and Bible book and **1 kid profile**; there is no trial, no unlock
+      code and no subscription. The **only** in-app purchases are extra kids
+      profiles, non-consumable, bought in order behind the parental gate:
+      `profile_slot_2` **$4.99**, `profile_slot_3`..`profile_slot_6` **$2.49**
+      each (up to 6 children). Create all five products in both consoles and
+      **attach them to the 1.3.1 submission**; keep the 1.2 `family_pack`
+      removed from sale / inactive (its owners restore all 6). Full steps:
+      `docs/store-purchases-iap.md`. Leave `VITE_STORE_IAP`, `VITE_MONETIZE`
+      and any RevenueCat key **unset** (Xcode Cloud's `ci_post_clone.sh`
+      fails the build if either `VITE_*` flag is set, if `full_app` is in the
+      bundle, or if `profile_slot_` is missing).
 - [ ] Build the store release with **no optional server env vars** set
       (`VITE_ANALYTICS_URL`, `VITE_SOCIAL_URL`, `VITE_SHOP_URL`) so the app
       provably collects nothing — see §5.
-- [ ] Once the App Store listing exists, set **`VITE_APPLE_APP_ID`** (the
-      numeric id from App Store Connect) at build time so the in-app
-      **"Send this app as a gift"** button links to your store page — see §7b.
-      Without it the gift guide still shows but the button stays disabled.
+- [ ] Keep **`VITE_APPLE_APP_ID`** (the numeric id from App Store Connect,
+      committed in `.env`) set so iOS share cards link to the store page.
 - [ ] Set **`VITE_APP_URL`** (the canonical landing you want shares to point
       at — the web app URL or a store smart link). Every share (Anbessa card,
       name card, voice postcard) appends this link so recipients can find the
@@ -84,7 +88,7 @@ with no network after install.
 
 `android/` and `ios/` are generated and committed, with app icons, splash
 screens and the adaptive-icon background already baked in (from
-`resources/`), and versions set to 1.0.0 / versionCode 1. On your Mac:
+`resources/`), and versions currently set to 1.3.1 / build 8 on both platforms. On your Mac:
 
 ```bash
 npm install
@@ -146,10 +150,13 @@ You have two store options:
   only leaves the device inside a file the user explicitly shares.
 
 ### App name / version
-- **iOS**: Xcode → target **App** → General → Display Name, Version (e.g.
-  `1.0.0`), Build (`1`). Signing → your Team.
+- **iOS**: `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in
+  `ios/App/App.xcodeproj/project.pbxproj` (Xcode → target **App** → General →
+  Version / Build). 1.3.1 ships as Version `1.3.1`, Build `8`. Signing → your Team.
 - **Android**: `android/app/build.gradle` → `versionCode` (integer, bump every
-  upload) and `versionName` ("1.0.0").
+  upload) and `versionName`. 1.3.1 ships as `versionCode 8`, `versionName "1.3.1"`.
+- Keep `package.json` `version` in step; `src/platform/paidUpfront.test.js`
+  fails if the three disagree.
 
 ---
 
@@ -215,8 +222,9 @@ kids/families programs — plan for it.
 **Apple — Kids Category:**
 - Choose the **Kids** category + age band (e.g. 5 and under / 6–8).
 - Kids apps **may not** send personal data, show third-party ads, or link out
-  of the app without a **parental gate**. eGeez's "For grown-ups" hold-
-  and-answer gate qualifies; keep external links (shop) behind it or unset.
+  of the app without a **parental gate**. eGeez's "For grown-ups" gate (hold
+  2 s, then answer a random sum / times-table question on a keypad)
+  qualifies; keep external links (shop) behind it or unset.
 - **App Privacy** ("nutrition label"): declare **Data Not Collected** for the
   §5 build.
 
@@ -224,31 +232,15 @@ kids/families programs — plan for it.
 
 ## 7b. Gifting & recommending the app
 
-There is an in-app **"Send this app as a gift"** entry (Backpack → **Gift**,
-shown only on Apple devices). It doesn't take payment itself — it walks a
-grown-up through Apple's own **Gift App** flow and opens the App Store page.
+The app itself has **no gift entry** (removed in 1.3.0); its only purchases
+are extra kids profiles, behind the parental gate (1.3.1). Families
+can still use the stores' own features outside the app:
 
-**Apple — the built-in Gift App flow (works once the app is paid):**
-- On the app's App Store page, the parent taps the share **(...)** button →
-  **Gift App**, pays, and sends it by email. The recipient **redeems it once**
-  and the gift code is then spent — exactly "send it, download once, expires".
-- Only works for **paid** apps, gifter/recipient in the **same country**, and
-  you can gift the **app** but not in-app purchases/subscriptions.
-- To make the in-app **Open App Store** button live, set the App Store numeric
-  id at build time once the listing exists:
-  ```bash
-  VITE_APPLE_APP_ID=1234567890 npm run build && npx cap sync
-  ```
-  Until it's set, the gift guide still shows but the button is disabled
-  ("Available once eGeez is on the App Store") — no dead link.
-
-**Google Play — no per-app gifting.** Play has no equivalent button, so the
-Gift entry is hidden on Android. The two options there are Play **gift-card
-balance** (indirect) or developer **promo codes** (Play Console → *Promotions*;
-single-use codes you generate, up to 500/app/quarter, redeemed once then spent).
-
-**Recommending (free, either store):** anyone can share the App Store / Play
-listing link — no gifting mechanics needed.
+- **Apple — Gift App:** on the App Store page, the share **(...)** button →
+  **Gift App**. Works for paid apps, gifter and recipient in the same country.
+- **Google Play:** no per-app gifting; Play **gift-card balance** or developer
+  **promo codes** (Play Console → *Promotions*) are the options.
+- **Recommending:** anyone can share the App Store / Play listing link.
 
 > A custom "paid link" outside the stores that unlocks the native download
 > yourself is **not** allowed — app payment must flow through Apple/Google.

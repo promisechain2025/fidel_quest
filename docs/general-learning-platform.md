@@ -103,9 +103,9 @@ Guardrails (unchanged platform contract):
 ## Brand and packaging
 
 - The name stays eGeez; the promise widens from "learn the fidel" to "learn".
-- Pricing: the app-unlock model already generalizes - math ships inside the
-  paid app (no per-subject paywall for core tracks) or as an add-on pack in
-  the same "never pay twice" EGZ/FAM code system, TBD per track.
+- Pricing: eGeez is paid upfront (1.3.0+), so new core tracks ship inside
+  the paid app with no per-subject paywall. The only in-app purchases are
+  extra kids profiles (1.3.1+).
 - SEO/positioning shifts from "Amharic alphabet" keywords toward
   "Ethiopian/Eritrean kids learning" while keeping the strong fidel landing
   pages as the top funnel.

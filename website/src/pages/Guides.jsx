@@ -4,7 +4,6 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Section, Card, CtaButton, Reveal } from '../components.jsx'
 import { GUIDES, guideBySlug } from '../guides.js'
-import { APP_URL } from '../config.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
 
@@ -96,10 +95,10 @@ export default function Guide() {
           <div className="mt-12 rounded-2xl p-6 text-center" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
             <p className="font-black">{t('gdCtaT', 'Want the ten minutes handled for you?')}</p>
             <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('gdCtaB', 'eGeez walks a child through the whole fidel one step at a time, voiced, offline, with the first two letter families free forever.')}
+              {t('gdCtaB', 'eGeez walks a child through the whole fidel one step at a time, voiced and offline - a one-time $12.99 on the App Store and Google Play, every path and Bible book included.')}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
-              <CtaButton href={APP_URL} tone="green">{t('gdCtaA', 'Start the free try-out')}</CtaButton>
+              <CtaButton to="/pricing" tone="green">{t('gdCtaA', 'Get eGeez')}</CtaButton>
               <CtaButton to="/guides" tone="ghost">{t('gdCtaC', 'More guides')}</CtaButton>
             </div>
           </div>

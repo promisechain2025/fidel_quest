@@ -146,8 +146,7 @@ The API is a Node server, so it does not belong in S3. Either:
 - add it as a second CloudFront origin under `/api/*` with caching disabled,
   which keeps everything same-origin and removes CORS entirely.
 
-Either way the API needs `SITE_URL=https://easygeez.com` (emailed links and
-Stripe redirects), `JWT_SECRET`, and `TRUST_PROXY` set to match whatever sits
+Either way the API needs `SITE_URL=https://easygeez.com` (emailed links), `JWT_SECRET`, and `TRUST_PROXY` set to match whatever sits
 in front of it - the rate limiter is only meaningful when `req.ip` is real.
 
 ## 9. After the first deploy, check these five

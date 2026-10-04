@@ -13,7 +13,7 @@ export default function Terms() {
     <div className="mx-auto max-w-2xl px-5 pb-16 pt-12 sm:px-6">
       <Seo title="Terms of Service - eGeez" description="The terms for using the eGeez app, website, and teacher board." path="/terms" />
       <h1 className="display-2">Terms of Service</h1>
-      <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>Last updated: July 2026</p>
+      <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>Last updated: October 2026</p>
 
       <P>
         These terms govern your use of the eGeez app, website, and teacher
@@ -69,14 +69,17 @@ export default function Terms() {
         or suspend accounts that break these rules.
       </P>
 
-      <H2>Purchases and codes</H2>
+      <H2>Purchases</H2>
       <P>
-        The app is a one-time purchase; optional packs are additional. You should
-        never pay twice for the same thing across our website and app - a purchase
-        unlocks your access by code across your devices. Purchases made through
-        the Apple App Store or Google Play are also governed by that store's terms
-        and refund policy. For purchases made on this website, refunds are handled
-        as follows: a full refund on request within 14 days of purchase; contact us for help.
+        The eGeez app is a one-time, paid-upfront purchase made through the Apple
+        App Store or Google Play. The price includes every learning path and Bible
+        book and one kid profile. The only in-app purchases are optional extra kids
+        profiles (one-time, one per additional child, up to six), also sold only
+        through the App Store or Google Play and restorable with Restore purchases.
+        There are no subscriptions, unlock codes, or purchases on this website. All
+        purchases are governed by the store's terms, and refunds are requested
+        through the store under its refund policy. If something is not working,
+        contact us and we will help.
       </P>
 
       <H2>Introductions and off-platform arrangements</H2>

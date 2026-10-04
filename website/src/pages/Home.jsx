@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
 import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
 import AppGallery from '../components/AppGallery.jsx'
-import { APP_URL } from '../config.js'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
@@ -40,7 +39,7 @@ function NameWidget() {
       </p>
       {ok && (
         <div className="mt-4">
-          <CtaButton href={APP_URL} tone="green">{t('nwCta', 'Let them write it for real')}</CtaButton>
+          <CtaButton to="/pricing" tone="green">{t('nwCta', 'Let them write it for real')}</CtaButton>
         </div>
       )}
     </Card>
@@ -66,10 +65,10 @@ export default function Home() {
               {t('heroLede', 'eGeez is a learning home for every family that wants its children to read Amharic or Tigrinya - wherever in the world they live: a joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling. The first step toward learning every subject, together.')}
             </p>
             <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center md:justify-start">
-              <CtaButton href={APP_URL} tone="green">{t('heroCta', 'Start the free try-out')}</CtaButton>
+              <CtaButton to="/pricing" tone="green">{t('heroCta', 'Get eGeez - $12.99')}</CtaButton>
               <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
             </div>
-            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote', 'Works offline. No account needed. Free to download, free for 3 days, then $12.99 once. Ages 3-9.')}</p>
+            <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote2', '$12.99 once on the App Store and Google Play, with every path and 1 kid profile. No ads, no subscriptions. Works offline. Ages 3-9.')}</p>
           </Reveal>
         </div>
         <Reveal delay={0.15} className="relative mx-auto w-full max-w-[290px] md:max-w-[320px]">
@@ -108,7 +107,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
-                {t('amBlurb', 'A complete journey: all 231 letters, first words, read-along stories, tracing, chants, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. Try free, own it for $12.99.')}
+                {t('amBlurb', 'A complete journey: all 231 letters, first words, read-along stories, tracing, chants, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. One-time $12.99, everything included.')}
               </p>
               <div className="mt-5"><CtaButton to="/amharic" tone="gold">{t('amCta', 'See the Amharic journey')}</CtaButton></div>
             </Card>
@@ -196,8 +195,9 @@ export default function Home() {
 
       {/* The objections that actually stop a parent. Every answer here is
           checkable against the app: the pace numbers come from the plan
-          settings (1/2/4 letter families a week), the free-forever content
-          from journey.js, the daily window from license.js. */}
+          settings (1/2/4 letter families a week), the price from
+          the store listings (paid upfront; extra kids profiles are the only
+          in-app purchases). */}
       <Section eyebrow={t('faqE', 'Before you start')} title={t('faqT', 'The questions parents actually ask')} center mark="ጥ">
         <div className="mx-auto grid max-w-3xl gap-4">
           {[
@@ -205,12 +205,12 @@ export default function Home() {
              t('hqA1', 'Yes - that is who it is built for. All 231 letters are real recordings, and any word can be tapped to hear it, so the app does the teaching out loud and your child never needs you to sound anything out. The grown-ups corner then tells you in plain English what was learned, what is fading, and what to do next. Plenty of parents pick up the letters alongside their child.')],
             [t('hqQ2', 'How long does it take to learn all of it?'),
              t('hqA2', 'You choose the pace in the app: one letter family a week is a gentle school year, two a week gets through all 33 Amharic families in about four months, and four a week in about two. Ten minutes a day is the whole ask - the daily warm-up reviews exactly what is starting to fade, so nothing needs cramming.')],
-            [t('hqQ3', 'What happens when the 3 free days are over?'),
-             t('hqA3', 'The first two letter families and the first arcade game stay free forever, and one tap opens the entire app for 5 more free minutes every single day - no payment, no account, for as long as you like. The buy prompt appears at most once a day, behind a grown-up gate, and always has a "Not now". A child is never stopped in the middle of a lesson.')],
+            [t('hqQ3', 'What does it cost?'),
+             t('hqA3b', 'eGeez is a one-time $12.99 purchase on the App Store and Google Play: every learning path, the Bible books and 1 kid profile. If more children share the device, a grown-up can add a 2nd child for $4.99 and each child after for $2.49, up to 6 - one-time in-app purchases behind a parental gate. There are no ads and no subscriptions, and nothing inside the app ever asks your child to buy anything.')],
             [t('hqQ4', 'Does my child need to speak Amharic or Tigrinya already?'),
              t('hqA4', 'No. It starts at the sound of a single letter and builds up - first letters, then first words with pictures, then short stories read along with the voice. Children who speak only English at home start at exactly the same place as children who hear Amharic every day.')],
             [t('hqQ5', 'Is it safe to hand my child the phone with this open?'),
-             t('hqA5', 'There are no ads, no chat, and no account to create. Nothing about your child leaves the device - progress lives in the phone itself. Everything that leaves the app or costs money (buying, sharing, settings) sits behind a hold-and-answer gate a young child cannot pass. And it works fully offline, so it is the same app on a plane as it is at home.')],
+             t('hqA5', 'There are no ads, no chat, and no account to create. Nothing about your child leaves the device - progress lives in the phone itself. Everything that leaves the app (sharing, links, settings) sits behind a hold-and-answer gate a young child cannot pass. And it works fully offline, so it is the same app on a plane as it is at home.')],
           ].map(([q, a], i) => (
             <Reveal key={i} delay={i * 0.05}>
               <Card>

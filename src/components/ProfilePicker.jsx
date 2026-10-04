@@ -6,15 +6,17 @@
              tapping another child switches (platform/profiles.js parks the
              current child and reloads); "+" adds a child (up to MAX_PROFILES)
      add     name + avatar (+ optional age / grade); the new child starts fresh
-     locked  a 2nd+ child needs the Family Pack: a kid-safe "ask a grown-up"
-             screen (no price, no Buy button), then the parental gate, then
-             the grown-up-facing FamilyPackOffer (Buy / Restore purchases)
+     locked  each child after the first needs a profile slot purchase: a
+             kid-safe "ask a grown-up" screen (no price, no Buy button), then
+             the parental gate, then the grown-up-facing ProfileSlotOffer
+             (buy the next slot / Restore purchases)
      gate    the shared ParentalGate (hold two seconds, then answer a sum on the keypad)
      manage  edit or delete any child - only reachable through the gate
      confirm "Delete <name>?" with Keep as the big default
-   The first child is included; adding a 2nd-6th child needs the Family Pack
-   (platform/familyPack.js) and the purchase sits behind the parental gate.
-   Once the pack is owned, adding is not gated (it never touches another
+   The first child is included; each further child (2nd-6th) is a one-time
+   in-app purchase bought in order (platform/profileSlots.js) and the
+   purchase sits behind the parental gate. With a free slot, adding is not
+   gated (it never touches another
    child's progress, and the cap is six); editing and deleting always are. Everything stays on this device:
    no account, no network, nothing collected.
    ========================================================================== */
@@ -23,14 +25,14 @@ import { ArrowLeft, Check, Lock, Pencil, Plus, Star, Trash2, X } from 'lucide-re
 import ProfileAvatar from './ProfileAvatar'
 import { avatarName } from './avatarNames'
 import ParentalGate from './ParentalGate'
-import FamilyPackOffer from './FamilyPackOffer'
+import ProfileSlotOffer from './ProfileSlotOffer'
 import { t } from '../platform/i18n'
 import { getActivePackId } from '../platform/ethiopic'
 import {
   loadProfiles, switchProfile, addProfile, updateProfile, deleteProfile, profileLabel, profileStats,
   markWhoPicked, nextFreeAvatar, AVATARS, AGES, GRADES, MAX_PROFILES, MAX_NAME,
 } from '../platform/profiles'
-import { needsFamilyPack } from '../platform/familyPack'
+import { needsSlot } from '../platform/profileSlots'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -43,7 +45,7 @@ const GEEZ = {
   name: { ti: 'ስም', am: 'ስም' },
   age: { ti: 'ዕድመ', am: 'ዕድሜ' },
   grade: { ti: 'ክፍሊ', am: 'ክፍል' },
-  pack: { ti: 'ናይ ስድራ ጥቕሊ', am: 'የቤተሰብ ጥቅል' },
+  slot: { ti: 'ተወሳኺ ተጻዋታይ', am: 'ተጨማሪ ተጫዋች' },
   ask: { ti: 'ንዓቢ ሰብ ሕተት', am: 'ትልቅ ሰው ጠይቅ' },
 }
 function Geez({ k, className = '' }) {
@@ -211,7 +213,7 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
     if (!el.contains(document.activeElement) || view.name !== 'confirm') el.focus({ preventScroll: true })
   }, [view.name])
   const full = reg.list.length >= MAX_PROFILES
-  const locked = !full && needsFamilyPack(reg.list.length)
+  const locked = !full && needsSlot(reg.list.length)
 
   const pick = (p) => {
     markWhoPicked()
@@ -224,11 +226,11 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
   if (view.name === 'locked') {
     body = (
       <div className="flex flex-col items-center gap-3 text-center" data-testid="pack-locked">
-        <div className="self-stretch"><TopBar title={t('kpPackTitle', 'More players')} geez="pack" onBack={() => setView({ name: 'pick' })} /></div>
+        <div className="self-stretch"><TopBar title={t('kpPackTitle', 'More players')} geez="slot" onBack={() => setView({ name: 'pick' })} /></div>
         <span className="mt-4 flex h-28 w-28 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '3px solid var(--line)' }}>
           <Lock className="h-12 w-12" style={{ color: 'var(--accent-deep)' }} aria-hidden="true" />
         </span>
-        <p className="max-w-xs text-lg font-black">{t('kpPackBody', 'A new player needs the Family Pack. Ask a grown-up to help.')}</p>
+        <p className="max-w-xs text-lg font-black">{t('kpSlotBody', 'A new player needs a grown-up to unlock a new profile. Ask a grown-up to help.')}</p>
         <Geez k="ask" className="text-base" />
         <button type="button" onClick={() => setView({ name: 'packGate' })} className={`chunk mt-2 min-h-[60px] w-full max-w-xs rounded-2xl px-4 text-xl font-black text-white ${FOCUS}`} style={chunk('var(--sky)', 'var(--sky-deep)')}>
           {t('kpPackAsk', "I'm a grown-up")}
@@ -242,15 +244,15 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
     body = (
       <>
         <TopBar title={t('kpGrownups', 'Grown-ups')} onBack={() => setView({ name: 'locked' })} />
-        <ParentalGate intro={t('kpPackGateIntro', 'Grown-ups only: the Family Pack is a purchase. Hold the button, then answer the question.')} onOpen={() => setView({ name: 'pack' })} />
+        <ParentalGate intro={t('kpSlotGateIntro', 'Grown-ups only: a new profile is a purchase. Hold the button, then answer the question.')} onOpen={() => setView({ name: 'pack' })} />
       </>
     )
   } else if (view.name === 'pack') {
     body = (
       <>
-        <TopBar title={t('fpTitle', 'Family Pack')} onBack={() => setView({ name: 'pick' })} />
+        <TopBar title={t('kpSlotShopTitle', 'New profile')} onBack={() => setView({ name: 'pick' })} />
         <div className="mt-4">
-          <FamilyPackOffer onUnlocked={() => { refresh(); setView({ name: 'add' }) }} />
+          <ProfileSlotOffer onUnlocked={() => { refresh(); setView({ name: 'add' }) }} />
         </div>
       </>
     )
@@ -397,7 +399,7 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
             <button
               type="button"
               onClick={() => setView({ name: locked ? 'locked' : 'add' })}
-              aria-label={locked ? t('kpAddChildLocked', 'Add a child (needs the Family Pack)') : undefined}
+              aria-label={locked ? t('kpAddChildLocked', 'Add a child (needs a grown-up to unlock)') : undefined}
               className={`chunk flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-3xl border-[3px] border-dashed p-3 ${FOCUS}`}
               style={{ background: 'transparent', borderColor: 'var(--line)', outlineColor: 'var(--sky)' }}
             >

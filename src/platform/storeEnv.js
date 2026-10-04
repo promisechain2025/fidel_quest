@@ -1,28 +1,27 @@
-/* Store-billing environment - split out of iap.js so license.js can ask
-   "can the native store sell right now?" without importing the purchase
-   module (iap.js imports license.js for markSupported; this file keeps the
-   graph acyclic). */
-import { isNativePlatform, isApplePlatform } from './native'
+/* Store-billing environment: "can this build talk to the App Store / Google
+   Play right now?" Split out of iap.js so screens can ask without loading
+   the purchase module.
 
-export function revenueCatKey() {
-  const key = isApplePlatform() ? import.meta.env?.VITE_REVENUECAT_APPLE_KEY : import.meta.env?.VITE_REVENUECAT_GOOGLE_KEY
-  return typeof key === 'string' && key.trim() ? key.trim() : ''
+   1.3.1+: eGeez is paid upfront ($12.99, set in App Store Connect / Play
+   Console) and sells only kids-profile slots in-app (profile_slot_2..6,
+   platform/profileSlots.js). Store billing is on in every native build that bundles the
+   @capgo/native-purchases plugin (StoreKit 2 on iOS, Play Billing on
+   Android, no third-party server). There is no env switch and no
+   RevenueCat key any more; web / PWA builds never have store billing. */
+import { Capacitor } from '@capacitor/core'
+import { isNativePlatform } from './native'
+
+export const STORE_PLUGIN = 'NativePurchases'
+
+export function storePluginAvailable() {
+  try {
+    return Capacitor?.isPluginAvailable?.(STORE_PLUGIN) === true
+  } catch {
+    return false
+  }
 }
 
-/** PAID UPFRONT (v1.3.0+): eGeez is sold as a paid download ($12.99 set in
-    App Store Connect / Play Console). The store takes payment at install, so
-    every build is fully unlocked: no trial, no paywall, no Buy/Restore UI.
-    The RevenueCat in-app purchase path (iap.js) stays in the code but is
-    DORMANT - a RevenueCat key alone (e.g. still set in an Xcode Cloud
-    workflow) no longer turns it on. Only an explicit VITE_STORE_IAP=true
-    revives it, for a possible future free-with-IAP model. */
-export function storeIapEnabled() {
-  return /^(1|true|yes|on)$/i.test(String(import.meta.env?.VITE_STORE_IAP ?? ''))
-}
-
-/** True when this build can run real store purchases: the dormant IAP path
-    was explicitly re-enabled AND the app is native with that platform's key.
-    False in every default build (paid-upfront model). */
+/** True when this build can run a real store purchase / restore. */
 export function iapAvailable() {
-  return storeIapEnabled() && isNativePlatform() && !!revenueCatKey()
+  return isNativePlatform() && storePluginAvailable()
 }

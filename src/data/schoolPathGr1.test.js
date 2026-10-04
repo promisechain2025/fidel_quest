@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { TI_PACK } from '../packs/ti'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
-import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds, isNodeFree } from '../journey'
+import { NodeKind, JOURNEY, buildJourney, learnedFamilyIds } from '../journey'
 import { learnInitial } from '../LearnLetters'
 import { buildQuestionQueue } from '../FidelQuestApp'
 import rawPath from './schoolPathGr1.json'
@@ -51,8 +51,7 @@ describe('school path coverage', () => {
     expect(new Set(cov.listed)).toEqual(new Set(tiPackFamilyIds()))
   })
 
-  it('keeps the free taste on ha and le, which are unit 1', () => {
-    expect([...FREE_FAMILIES]).toEqual(['ha', 'le'])
+  it('unit 1 is ha and le', () => {
     expect(SCHOOL_PATH_UNITS[0].familyIds).toEqual(['ha', 'le'])
   })
 })
@@ -218,10 +217,7 @@ describe('word build and find-the-fidel on the spine', () => {
     }
   })
 
-  it('keeps unit 1 drills in the free taste and leaves the Amharic spine alone', () => {
-    expect(isNodeFree(ti.find((n) => n.id === 'blend:u01'))).toBe(true)
-    expect(isNodeFree(ti.find((n) => n.id === 'find:u01'))).toBe(true)
-    expect(isNodeFree(ti.find((n) => n.id === 'blend:u02'))).toBe(false)
+  it('leaves the Amharic spine alone', () => {
     const am = buildJourney('am')
     expect(am.some((n) => n.kind === NodeKind.BLEND || n.kind === NodeKind.FIND)).toBe(false)
     expect(ti.some((n) => n.kind === 'echo')).toBe(false)

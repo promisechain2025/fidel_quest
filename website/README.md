@@ -38,18 +38,20 @@ src/
 Light + dark themes follow the visitor's system preference; the header toggle
 persists a choice in `egz.site.theme` (set before paint in `index.html`).
 
-## Payments (/pricing)
+## Pricing (/pricing)
 
-`/pricing` sells two one-time products via Stripe Checkout on the hub API
-(`../api` - see its README for `STRIPE_*` env): the app itself ($12.99,
-delivered as an EGZ code redeemable on every platform - never pay twice) and
-the Family Pack add-on ($4.99, FAM code). Buy button ->
-`POST /api/pay/checkout {product}` -> Stripe hosted page -> `/pricing/success`
-polls `GET /api/pay/order/:sessionId` and shows the code with product-specific
-redeem steps. With no `VITE_API_URL` or while the API has no Stripe keys, the
-page shows a coming-soon state. Point the app's `VITE_BUY_URL` and
-`VITE_FAMILY_PACK_URL` at this page when it goes live. Legacy `/family-pack`
-URLs alias to `/pricing`.
+eGeez is PAID UPFRONT: a one-time $12.99 in the App Store and Google Play,
+with every path, the Bible books and 1 kid profile, no ads and no
+subscriptions. The only in-app purchases are extra kids profiles, one per
+child, bought in order up to 6: $4.99 for a 2nd child, $2.49 for each child
+after (`SECOND_PROFILE_PRICE` / `EXTRA_PROFILE_PRICE`). `/pricing` only
+explains that and links to the two store listings (`APP_STORE_URL` /
+`PLAY_STORE_URL` in `src/config.js`, overridable with `VITE_APP_STORE_URL` /
+`VITE_PLAY_STORE_URL`). The site sells nothing itself: there is no web
+checkout and no unlock code; 1.2 Family Pack owners keep all 6 profiles in
+the app. Legacy `/pricing/success`,
+`/family-pack` and `/family-pack/success` URLs redirect to `/pricing`.
+Keep `APP_PRICE` in `src/config.js` in step with the store price.
 
 ## Progress review (/progress + /family)
 

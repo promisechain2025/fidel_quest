@@ -3,7 +3,6 @@ import { progressChanged, subscribeProgress, progressVersion } from './childMode
 import { saveJourney, loadJourney } from '../journey'
 import { recordAnswer } from './telemetry'
 import { markHuntDone } from './hunt'
-import { markSupported } from './license'
 import { wipeProgress } from './progress'
 
 describe('childModel (reactive invalidation)', () => {
@@ -32,7 +31,6 @@ describe('childModel (reactive invalidation)', () => {
     bumped(() => saveJourney(loadJourney()))
     bumped(() => recordAnswer('ha-1', 'ha-1', 'test'))
     bumped(() => markHuntDone('2026-07-10'))
-    bumped(() => markSupported('test'))
     bumped(() => wipeProgress())
     off()
   })
