@@ -1,5 +1,31 @@
 apply plugin: 'com.android.application'
 
+/* Release signing (Play upload key). Never committed: the keystore and its
+   passwords come from the environment, either
+     EGEEZ_KEYSTORE_PROPERTIES=/path/to/keystore.properties
+       (storeFile, storePassword, keyAlias, keyPassword)
+   or the four variables
+     EGEEZ_KEYSTORE_FILE, EGEEZ_KEYSTORE_PASSWORD, EGEEZ_KEY_ALIAS,
+     EGEEZ_KEY_PASSWORD (EGEEZ_KEY_PASSWORD defaults to the store password).
+   When none is set (CI, debug builds, contributors) nothing changes and a
+   release build is simply unsigned. See APP-STORE.md "Android signing". */
+def egeezSigning = [:]
+def egeezPropsPath = System.getenv('EGEEZ_KEYSTORE_PROPERTIES')
+if (egeezPropsPath && file(egeezPropsPath).exists()) {
+    def p = new Properties()
+    file(egeezPropsPath).withInputStream { p.load(it) }
+    egeezSigning = [storeFile: p.getProperty('storeFile'), storePassword: p.getProperty('storePassword'),
+                    keyAlias: p.getProperty('keyAlias'), keyPassword: p.getProperty('keyPassword') ?: p.getProperty('storePassword')]
+} else if (System.getenv('EGEEZ_KEYSTORE_FILE')) {
+    egeezSigning = [storeFile: System.getenv('EGEEZ_KEYSTORE_FILE'), storePassword: System.getenv('EGEEZ_KEYSTORE_PASSWORD'),
+                    keyAlias: System.getenv('EGEEZ_KEY_ALIAS') ?: 'upload',
+                    keyPassword: System.getenv('EGEEZ_KEY_PASSWORD') ?: System.getenv('EGEEZ_KEYSTORE_PASSWORD')]
+}
+def egeezCanSign = egeezSigning.storeFile && file(egeezSigning.storeFile).exists() && egeezSigning.storePassword && egeezSigning.keyAlias
+if (egeezSigning && !egeezCanSign) {
+    logger.warn('eGeez release signing: keystore settings incomplete or keystore file missing; the release build will be unsigned.')
+}
+
 android {
     namespace "net.promisechain.fidelquest"
     compileSdk rootProject.ext.compileSdkVersion
@@ -16,8 +42,21 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (egeezCanSign) {
+            release {
+                storeFile file(egeezSigning.storeFile)
+                storePassword egeezSigning.storePassword
+                keyAlias egeezSigning.keyAlias
+                keyPassword egeezSigning.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
+            if (egeezCanSign) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

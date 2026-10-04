@@ -184,8 +184,22 @@ npx cap open android          # opens Android Studio
 ```
 1. Run on a device/emulator to smoke-test.
 2. **Build → Generate Signed App Bundle / APK → Android App Bundle (.aab)**.
-3. Create an **upload keystore** the first time and **back it up safely** —
-   losing it means you can't update the app. (Enroll in Play App Signing.)
+3. **Android signing** (Play App Signing is on; Google holds the app signing
+   key, we hold only the **upload key**). The upload key was reset in
+   October 2026 (the old one was lost): alias `upload`, RSA 2048, valid to
+   2056, certificate SHA-256
+   `7F:83:6B:D6:42:76:FF:4F:05:9F:A9:08:1C:36:EF:92:91:D8:2B:41:19:25:91:DF:3C:DA:F8:C6:07:7A:EB:74`.
+   The keystore and its `keystore.properties` are backed up privately in the
+   owner's Google Drive folder "eGeez Android upload key (KEEP SAFE)";
+   never commit them (`*.jks`, `*.keystore`, `keystore.properties` are
+   gitignored). `android/app/build.gradle` signs `release` only when the
+   environment provides the key, otherwise the release build is unsigned:
+   ```bash
+   export EGEEZ_KEYSTORE_PROPERTIES=/path/to/keystore.properties
+   # or: EGEEZ_KEYSTORE_FILE, EGEEZ_KEYSTORE_PASSWORD, EGEEZ_KEY_ALIAS(=upload), EGEEZ_KEY_PASSWORD
+   npm run build && npx cap sync android && (cd android && ./gradlew bundleRelease)
+   # -> android/app/build/outputs/bundle/release/app-release.aab
+   ```
 4. In **Play Console**: create the app → **Internal testing** → upload the
    `.aab` → add testers → verify on real devices → promote to Production.
 
