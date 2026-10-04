@@ -82,10 +82,13 @@ PRIVACY FIRST
 eGeez is a fully offline children's education app. No account or
 login exists. Notes for review:
 
-1. PARENTAL GATE: adult areas (Parents dashboard, purchases links,
-   sharing) sit behind a gate: press and HOLD the button for 2 seconds,
-   then tap the digits matching the written number word (e.g.
-   "thirty-five" -> 35).
+1. PARENTAL GATE: adult areas (Grown-Ups / Parents dashboard, the
+   extra-profile purchase, sharing, outside links) sit behind a gate:
+   press and HOLD the "Hold me" button for 2 seconds, then answer the
+   arithmetic question shown (a times-table product such as "7 × 6" or a
+   two-digit sum such as "27 + 38") on the keypad and tap OK. The
+   question is random every time; two wrong answers lock the gate for
+   30 seconds (doubling on each further lock, max 5 minutes).
 2. The Backpack (bag icon, top right) contains all secondary modes.
    Teacher mode is designed for classroom use via shared links; it
    needs no server or account.

@@ -7,7 +7,8 @@
    pure selectors over the answer ledger (src/platform/telemetry.js).
 
    The gate is two non-reading-child steps: hold a button for two seconds,
-   then match a written number word to its digits.
+   then answer a random arithmetic question (e.g. 7 × 6, 27 + 38) on a
+   keypad (components/ParentalGate.jsx, platform/gateCore.js).
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from 'react'

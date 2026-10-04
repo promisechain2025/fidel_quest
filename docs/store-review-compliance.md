@@ -62,7 +62,7 @@ metadata / build-flags / console forms.**
 
 | # | Requirement | eGeez status |
 | --- | --- | --- |
-| **1.3** Kids Category | No links out, purchase opportunities, or distractions to kids **unless behind a parental gate**. | 🟢 There are no purchase opportunities in the app at all (paid upfront). Grown-Ups, settings and every outside link sit behind the parental gate. |
+| **1.3** Kids Category | No links out, purchase opportunities, or distractions to kids **unless behind a parental gate**. | 🟢 The only purchase opportunity (extra kids profiles) is shown only after the parental gate (hold 2s + random arithmetic answer); the child-facing screen shows no price or Buy button. Grown-Ups, settings and every outside link sit behind the same gate. |
 | **2.1(a)** Completeness | Final build, no placeholder, tested on device. | 🟢 Real build. Scrub any placeholder listing text. |
 | **2.1(b)** IAP works for reviewer | IAPs must be visible + functional in review. | 🟠 Create `profile_slot_2`..`profile_slot_6` (non-consumable) and **attach them to the 1.3.1 submission**; review notes say where they are (Grown-Ups -> Children -> Unlock profile 2). Gate-passing steps are in Review Notes (`store-listing.md`). |
 | **2.3.1** No hidden/dormant/undocumented features | Everything must be documented + reachable. | 🟠 Several env-gated integrations (analytics, social, shop, error-report) ship **inert** with env unset — fine, but keep them unset (§ build flags). The dormant `iap.js` guard has no UI and no plugin; keep `VITE_STORE_IAP` unset. |
@@ -149,8 +149,8 @@ until you do.
 - [ ] Host the **privacy policy** (template in `APP-STORE.md §8`); set
       **`VITE_PRIVACY_URL`** so the in-app link points at it, and paste the URL
       into both stores.
-- [ ] **Review Notes**: how to pass the parental gate (hold 2s, tap the spoken
-      number), that the app is paid upfront and the only in-app purchases are extra kids
+- [ ] **Review Notes**: how to pass the parental gate (hold "Hold me" 2s, then
+      answer the random sum / times-table question on the keypad and tap OK), that the app is paid upfront and the only in-app purchases are extra kids
       profiles (Grown-Ups -> Children -> Unlock profile 2, behind the gate, Restore purchases next to it), and that dormant server
       features are disabled in this build. (Draft in `docs/store-listing.md`.)
 - [ ] Content rating (IARC) + age bands answered honestly on both stores.
