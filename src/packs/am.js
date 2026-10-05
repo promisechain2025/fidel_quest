@@ -5,6 +5,8 @@
    Shape contract: see validatePack in src/platform/ethiopic.js.
    ========================================================================== */
 
+import { FIDEL_AUDIO_BASE, FIDEL_MANIFEST_URL } from '../platform/publicUrl'
+
 export const AM_PACK = Object.freeze({
   id: 'am',
   label: 'Amharic',
@@ -59,8 +61,8 @@ export const AM_PACK = Object.freeze({
     fe: {"name":"Fe","consonant":"f","word":{"geez":"ፈረስ","latin":"feres","meaning":"horse","picture":"🐎"},"words":[{"geez":"ፈረስ","latin":"feres","meaning":"horse","picture":"🐎"},{"geez":"ፊደል","latin":"fidel","meaning":"alphabet","picture":"🔤"},{"geez":"ፍየል","latin":"fiyel","meaning":"goat","picture":"🐐"},{"geez":"ፎቶ","latin":"foto","meaning":"photo","picture":"📷"}]},
     pe: {"name":"Pe","consonant":"p","word":{"geez":"ፓፓያ","latin":"papaya","meaning":"papaya","picture":"🥭"},"words":[{"geez":"ፓፓያ","latin":"papaya","meaning":"papaya","picture":"🥭"},{"geez":"ፖሊስ","latin":"polis","meaning":"police","picture":"👮"},{"geez":"ፓስታ","latin":"pasta","meaning":"pasta","picture":"🍝","noAudio":true}]},
   },
-  audioBase: '/audio/fidel/',
-  manifestUrl: '/audio/fidel/manifest.json',
+  audioBase: FIDEL_AUDIO_BASE,
+  manifestUrl: FIDEL_MANIFEST_URL,
   // Amharic voices the 1st (ge'ez) order of the gutturals ha/hha/kha/a/ae like
   // the 4th order (the "-a" vowel): ሀ is said "ha" (like ሃ), አ is said "a".
   // Tigrinya keeps the plain 1st order, so its pack has no such remap.

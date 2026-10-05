@@ -48,8 +48,19 @@ IMMUTABLE='public, max-age=31536000, immutable'
 NOCACHE='no-cache, no-store, must-revalidate'
 
 echo "==> Uploading the website to s3://$EGEEZ_BUCKET/"
+# --delete removes bucket keys that are not in website/dist. Exclude:
+#   app/*    the PWA, including its canonical voice and paintings
+#            (app/audio, app/art). The web build requests these.
+#   audio/*  art/*
+#            temporary root copies. Clients built before the BASE_URL
+#            fix still request /audio and /art. The marketing site does
+#            not ship these files, so without the exclude a website
+#            deploy deletes the only copy those clients can play.
+# Canonical location after the fix is under app/. A duplicate at the
+# bucket root is not required for new builds.
 aws s3 sync website/dist "s3://$EGEEZ_BUCKET/" \
-  --delete --exclude 'app/*' \
+  --delete \
+  --exclude 'app/*' --exclude 'audio/*' --exclude 'art/*' \
   --exclude '*.html' --exclude 'sitemap.xml' --exclude 'robots.txt' \
   --cache-control "$IMMUTABLE"
 aws s3 sync website/dist "s3://$EGEEZ_BUCKET/" \

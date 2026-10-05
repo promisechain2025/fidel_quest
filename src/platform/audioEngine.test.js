@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { resolveSource, effectiveKey, AudioEngine } from './audioEngine'
+import { FIDEL_MANIFEST_URL } from './publicUrl'
 
 const state = (over = {}) => ({
   memory: null,
@@ -130,6 +131,7 @@ describe('AudioEngine', () => {
     await engine.ensureManifest()
     await engine.ensureManifest()
     expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).toHaveBeenCalledWith(FIDEL_MANIFEST_URL)
     expect(engine.manifest).toBeNull()
     expect(engine.resolve('letters/ha-1').type).toBe('file')
   })
