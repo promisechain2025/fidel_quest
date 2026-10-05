@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Sparkles, Users, BookOpen, Radio, PenLine } from 'lucide-react'
+import { Sparkles, Users, BookOpen, Smartphone, PenLine } from 'lucide-react'
 import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
 import AppGallery from '../components/AppGallery.jsx'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
+import { APP_URL } from '../config.js'
 
 const HERO_TILES = ['ሀ', 'ለ', 'መ', 'ሠ', 'ረ', 'ሰ', 'በ', 'ተ']
 
@@ -49,7 +50,7 @@ function NameWidget() {
 export default function Home() {
   return (
     <>
-      <Seo title="eGeez - Learn Amharic and Tigrinya, guided from anywhere" description="A joyful app that teaches kids the fidel, tools for remote teachers, and homeschool guidance for families around the world." path="/" />
+      <Seo title="eGeez - the fidel app for families" description="A joyful app that teaches children the fidel: all 231 letters, offline, with no ads and no child data. One-time $12.99." path="/" />
       {/* hero: message left, the real app right */}
       <div className="mx-auto grid max-w-5xl items-center gap-10 px-5 pb-6 pt-10 sm:px-6 md:grid-cols-[1.15fr_0.85fr] md:pt-16 lg:gap-14">
         <div className="text-center md:text-left">
@@ -62,11 +63,11 @@ export default function Home() {
               <span style={{ color: 'var(--accent-text)' }}>{t('heroTitle2', 'Learned at home.')}</span>
             </h1>
             <p className="lede mx-auto mt-5 max-w-xl md:mx-0" style={{ color: 'var(--muted)' }}>
-              {t('heroLede', 'eGeez is a learning home for every family that wants its children to read Amharic or Tigrinya - wherever in the world they live: a joyful app that teaches kids the fidel, tools for remote teachers, and guidance for homeschooling. The first step toward learning every subject, together.')}
+              {t('heroLede', 'eGeez is the app that teaches children the fidel: all 231 letters, first words, stories, and games. One-time $12.99 on the App Store and Google Play, with a short free try of the same journey on this website.')}
             </p>
             <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center md:justify-start">
-              <CtaButton to="/pricing" tone="green">{t('heroCta', 'Get eGeez - $12.99')}</CtaButton>
-              <CtaButton to="/teachers" tone="ghost">{t('heroCtaTeach', 'Teach with us')}</CtaButton>
+              <CtaButton to="/pricing" tone="green">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton>
+              <CtaButton href={APP_URL} tone="ghost">{t('openApp', 'Open the app')}</CtaButton>
             </div>
             <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote2', '$12.99 once on the App Store and Google Play, with every path and 1 kid profile. No ads, no subscriptions. Works offline. Ages 3-9.')}</p>
           </Reveal>
@@ -109,7 +110,7 @@ export default function Home() {
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
                 {t('amBlurb', 'A complete journey: all 231 letters, first words, read-along stories, tracing, chants, arcade games, and a daily practice loop - taught by Anbessa the lion cub and friends. One-time $12.99, everything included.')}
               </p>
-              <div className="mt-5"><CtaButton to="/amharic" tone="gold">{t('amCta', 'See the Amharic journey')}</CtaButton></div>
+              <div className="mt-5"><CtaButton to="/pricing" tone="gold">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton></div>
             </Card>
           </Reveal>
           <Reveal delay={0.08}>
@@ -124,7 +125,7 @@ export default function Home() {
               <p className="mt-3 leading-relaxed" style={{ color: 'var(--muted)' }}>
                 {t('tiBlurb', 'Tigrinya is written in the Ge’ez script - the letter foundations are ready for kids today. The full Tigrinya course (names, words, stories, audio) is in the works.')}
               </p>
-              <div className="mt-5"><CtaButton to="/tigrinya" tone="gold">{t('tiCta', 'Tigrinya plans + waitlist')}</CtaButton></div>
+              <div className="mt-5"><CtaButton to="/pricing" tone="gold">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton></div>
             </Card>
           </Reveal>
         </div>
@@ -136,7 +137,7 @@ export default function Home() {
           {[
             [Sparkles, t('how1t', 'Kids play the journey'), t('how1b', 'One winding path of lessons, games, and stories. Ten joyful minutes a day; streaks, rewards, and a lion cub who cheers them on.')],
             [Users, t('how2t', 'Grown-ups see progress'), t('how2b', 'A grown-ups corner shows what was learned, what needs review, and a ready-made plan for the week - no teaching degree required.')],
-            [Radio, t('how3t', 'Teachers guide from anywhere'), t('how3b', 'Remote teachers send class links, assignments, and live class games; the app returns receipts of what each child mastered.')],
+            [Smartphone, t('phoneT', 'Buy it once, on a phone'), t('phoneB', 'One-time $12.99 on the App Store or Google Play. It works offline, with no ads, and the same journey has a short free try on this website.')],
           ].map(([Icon, title, body], i) => (
             <Reveal key={i} delay={i * 0.07}>
               <Card className="h-full">
@@ -149,28 +150,11 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* bigger picture */}
-      <Section eyebrow={t('visionEyebrow', 'Where this is going')} title={t('visionTitle', 'From one alphabet to a whole homeschool')} center mark="ትም">
-        <p className="lede mx-auto max-w-2xl text-center" style={{ color: 'var(--muted)' }}>
-          {t('visionBody', 'Language is the door. Behind it we are building a facilitator for online learning: more subjects, vetted remote teachers, structured terms, and resources that let any family run a real school week from their living room - wherever in the world they live.')}
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm font-bold" style={{ color: 'var(--muted)' }}>
-          {[t('vis1', 'Languages - now'), t('vis2', 'Teacher-guided classes - rolling out'), t('vis3', 'More subjects - next')].map((s, i) => (
-            <span key={i} className="rounded-full px-4 py-1.5" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>{s}</span>
-          ))}
-        </div>
-        <div className="mt-8 text-center">
-          <CtaButton to="/about" tone="ghost">{t('visionCta', 'Read the full vision')}</CtaButton>
-        </div>
-      </Section>
-
-      {/* Three real screens between the vision block and the trust band -
-          the page went from a wall of prose straight into a wall of stats.
-          The full six-screen arc lives on /amharic. */}
+      {/* Real screens between the how-it-works cards and the trust band. */}
       <Section mark="ዐ" eyebrow={t('seeE', 'A look inside')} title={t('seeT', 'This is what your child sees')} center>
         <AppGallery pack="am" keys={['learn', 'trace', 'words']} className="mx-auto max-w-2xl" />
         <div className="mt-8 text-center">
-          <CtaButton to="/amharic" tone="ghost">{t('seeCta', 'See a whole week of it')}</CtaButton>
+          <CtaButton to="/pricing" tone="ghost">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton>
         </div>
       </Section>
 
@@ -228,11 +212,14 @@ export default function Home() {
           <Card wash className="relative overflow-hidden text-center">
             <Picture src="/art/kokeb.png" loading="lazy" decoding="async" width={90} height={90} alt="" aria-hidden="true" className="absolute -right-4 -top-4 w-16 opacity-90 md:w-20" />
             <BookOpen className="mx-auto h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-            <h2 className="display-2 mt-3">{t('teachBandT', 'Do you teach Amharic or Tigrinya?')}</h2>
+            <h2 className="display-2 mt-3">{t('readyT', 'The whole journey is in the app')}</h2>
             <p className="lede mx-auto mt-2 max-w-xl" style={{ color: 'var(--muted)' }}>
-              {t('teachBandB', 'Classroom tools are already live: class invite links, assignments with receipts, a term planner, a TV display mode, and group games like Class Bingo. Bring your students - or find new ones through us.')}
+              {t('readyB', 'One-time $12.99 on the App Store or Google Play. It works offline, with no ads. Try it free on the web, then keep it on the phone.')}
             </p>
-            <div className="mt-6"><CtaButton to="/teachers" tone="green">{t('teachBandCta', 'Apply to teach')}</CtaButton></div>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <CtaButton to="/pricing" tone="green">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton>
+              <CtaButton href={APP_URL} tone="ghost">{t('openApp', 'Open the app')}</CtaButton>
+            </div>
           </Card>
         </Reveal>
       </div>

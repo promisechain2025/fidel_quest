@@ -15,44 +15,18 @@
    fails the build outside that band rather than shipping a bad snippet.
    ========================================================================== */
 
-import { GUIDES } from './guides.js'
-
 export const SITE = 'https://easygeez.com'
 
 /** Routes that get a prerendered HTML file. `noindex` pages are skipped by
     crawlers but still benefit from a correct title in the browser tab. */
 export const ROUTE_META = Object.freeze({
   '/': {
-    title: 'eGeez - Learn Amharic and Tigrinya, guided from anywhere',
-    description: 'A joyful app that teaches children the fidel - all 231 letters, offline, with no ads and no child data. Plus teachers who guide from anywhere.',
-  },
-  '/amharic': {
-    title: 'The Amharic journey - eGeez',
-    description: 'All 231 fidel taught through play: words, stories, tracing, games, and a daily practice loop. One-time $12.99: every path and Bible book included.',
-  },
-  '/tigrinya': {
-    title: 'Tigrinya - eGeez',
-    description: 'Tigrinya letters, words and voices for Eritrean families, built with Eritrean educators. Join the waitlist and help decide what comes first.',
-  },
-  '/alphabet': {
-    title: 'The Fidel alphabet chart - all 231 letters - eGeez',
-    description: 'The full interactive Amharic fidel chart: 33 consonant families in 7 vowel orders, searchable and printable for the wall or the fridge.',
-  },
-  '/teachers': {
-    title: 'For teachers - eGeez',
-    description: 'Teach Amharic or Tigrinya from anywhere: class links, homework assignments with receipts, a term planner, and a TV classroom display.',
-  },
-  '/homeschool': {
-    title: 'Homeschooling with eGeez',
-    description: 'A week-by-week homeschool plan for the fidel: what to do together, what the child does alone, and how to tell that it is working.',
+    title: 'eGeez - the fidel app for families',
+    description: 'A joyful app that teaches children the fidel: all 231 letters, offline, with no ads and no child data. One-time $12.99.',
   },
   '/pricing': {
     title: 'Pricing - eGeez',
     description: 'One-time $12.99 with 1 kid profile. More children: $4.99 for a 2nd child, $2.49 for each child after, up to 6. No ads, no subscriptions.',
-  },
-  '/about': {
-    title: 'About eGeez',
-    description: 'Why we built a fidel app for diaspora families, who Anbessa and Kokeb are, and what we will never do with your child data.',
   },
   '/privacy': {
     title: 'Privacy - eGeez',
@@ -62,13 +36,6 @@ export const ROUTE_META = Object.freeze({
     title: 'Terms of Service - eGeez',
     description: 'The terms for using the eGeez app, website and teacher tools, including store purchases, refunds and the teacher directory.',
   },
-  '/guides': {
-    title: 'Guides for parents - eGeez',
-    description: 'Practical guides for teaching a child the Amharic fidel at home: where to start, how the Ge\u2019ez script works, and what helps in the diaspora.',
-  },
-  // Each guide's head comes from the guide itself, so the page and the
-  // prerendered tags can never disagree.
-  ...Object.fromEntries(GUIDES.map((g) => [`/guides/${g.slug}`, { title: g.metaTitle, description: g.metaDescription }])),
 })
 
 /** Absolute canonical for a route path. */

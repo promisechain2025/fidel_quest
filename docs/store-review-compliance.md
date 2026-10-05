@@ -35,7 +35,9 @@ metadata / build-flags / console forms.**
 
 > **1.3.1 model (October 2026): PAID UPFRONT $12.99 + per-child profile
 > slots.** The store takes payment at download; every learning path and Bible
-> book is open (`platform/license.js` `fullAccess()` is always true) with
+> book is open on the **native** app (`platform/license.js` `fullAccess()` is
+> true whenever `isNativePlatform()` is true, including a bundle built with
+> `VITE_BASE=/app/`) with
 > **one** kid profile. The **only** in-app purchases are extra kids profiles:
 > non-consumables bought in order, `profile_slot_2` $4.99 and
 > `profile_slot_3`..`profile_slot_6` $2.49 each (max 6), via StoreKit 2 /
@@ -44,8 +46,18 @@ metadata / build-flags / console forms.**
 > parental gate (Grown-Ups, or the picker after "I'm a grown-up" + gate); a
 > child sees "ask a grown-up" with no price. **Restore purchases** sits next
 > to Buy and stays in Grown-Ups. 1.2 `family_pack` owners restore all 6.
-> No trial, no daily window, no unlock code, no subscription, no gift / web
-> checkout. Android declares `com.android.vending.BILLING`.
+> No trial on the native app, no daily window, no subscription, no gift / web
+> checkout, and no code that unlocks native content. The website at
+> easygeez.com/app (a separate `VITE_BASE=/app/` build, not the store binary's
+> behavior) is free for 3 sessions and then asks a grown-up to buy the phone
+> app. Grown-Ups on the **paid** app shows that browser's unlock code behind
+> the parental gate; typing it on the website unlocks that browser only.
+> The native app may ask for a review through StoreKit / Play In-App Review
+> (`@capacitor-community/in-app-review`) after a few finished lessons, when
+> the unlock code is opened, or from a Rate button in Grown-Ups. The system
+> card is optional; the app asks at most once a session, once every 120 days,
+> and 3 times ever. It does not open a store URL from the native app.
+> Android declares `com.android.vending.BILLING`.
 > `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud if `VITE_STORE_IAP`
 > / `VITE_MONETIZE` is set, if `full_app` is in the bundle, or if
 > `profile_slot_` is missing. Purchases are handled by Apple / Google, so
@@ -69,8 +81,8 @@ metadata / build-flags / console forms.**
 | **2.3.2** Disclose IAP in metadata | Description/screenshots must indicate paid items. | 🟢 The listing says "includes 1 kid profile; extra kids profiles are in-app purchases ($4.99 for a 2nd child, $2.49 each after, up to 6)" and the stores show the IAP list. |
 | **2.3.6** Honest age rating | Answer age questions truthfully. | 🟢 Education, age band 6–8 (also 5&under). Answer IARC honestly (no violence/ads/data). |
 | **2.3.8** Metadata 4+ | Icons/screenshots 4+. | 🟢 Anbessa art is 4+. |
-| **3.1.1** In-App Purchase | Unlocking features must use **IAP**, not license keys or external purchase. | 🟢 Extra kids profiles are sold only through StoreKit / Play Billing; no codes, no web checkout, no external link. Restore purchases provided (3.1.1 non-consumables). |
-| **3.1.1** Free-trial rule | A non-subscription trial should be a Price-Tier-0 **"XX-day Trial"** non-consumable, with the duration + what's lost + downstream cost disclosed up front. | ⚪ **N/A** - no trial (removed in 1.3.0). |
+| **3.1.1** In-App Purchase | Unlocking features must use **IAP**, not license keys or external purchase. | 🟢 Native content is paid at download. Extra kids profiles are sold only through StoreKit / Play Billing. The Grown-Ups code unlocks the **website** only (not the phone app), sits behind the parental gate, and does not link out. No web checkout. Restore purchases provided for profile slots. |
+| **3.1.1** Free-trial rule | A non-subscription trial should be a Price-Tier-0 **"XX-day Trial"** non-consumable, with the duration + what's lost + downstream cost disclosed up front. | ⚪ **N/A on the store app** - no native trial. The 3-session tryout is the website at easygeez.com/app, not the binary under review. |
 | **4.1(a,b,c)** Copycats | Original ideas, no impersonation, no others' brands. | 🟢 Original characters (Anbessa/Kokeb/Jibby), original name, all art drawn in code. |
 | **4.2** Minimum functionality | More than a repackaged website. | 🟢 Rich offline game (games, tracing, TTS-optional audio, dashboards) — clearly app-like. |
 | **4.3(a,b)** Spam | Single, distinct app. | 🟢 One app, one bundle id. |

@@ -77,8 +77,16 @@ free account, child profiles, saved snapshots with an over-time chart.
 
 ## Deploy
 
-Any static host. For SPA routing, add a history fallback (all paths ->
-`index.html`) — on Netlify: `/* /index.html 200` in `_redirects`.
+Any static host. For SPA routing, add a history fallback (unknown paths ->
+`index.html`). On Netlify that rule is the last line of `public/_redirects`.
+
+Pages that are not the app are closed until they are ready. `src/siteAccess.js`
+lists them; each one 302s to `/` from `public/_redirects` and from
+`scripts/cloudfront-rewrite.js`, and the SPA does the same with `<Navigate>`.
+Still public: `/` (app landing), `/pricing`, `/privacy`, `/terms`, `/progress`
+(shared progress cards), and `/app` (the PWA, built separately). Do not add a
+closed path back to `routeMeta.js` or the sitemap until it should be public
+again — prerender would publish the HTML.
 
 ## Build output
 

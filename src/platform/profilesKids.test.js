@@ -189,7 +189,9 @@ describe('"who is playing?" on launch', () => {
 const DEVICE_KEYS = new Set([
   'fq.profiles.v1', 'fq.profile.', 'fq.pack', 'fq.lang', 'fq-theme', 'fq.theme.v1', 'fq-update-toast',
   'fq.sound.v1', 'fq2.sound', 'fq3.sound', 'fidel-quest-sound', 'fq.voice', 'fq.voice.active',
-  'fq.license.v1', 'fq.familypack.v1', 'fq.profileslots.v1', 'fq.gate.v1', 'fq.perf.v1', 'fq.quality', 'fq.install.v1',
+  'fq.license.v1', 'fq.webtrial.v1', 'fq.webtrial.counted', 'fq.webtrial.paywallShown',
+  'fq.review.v1', 'fq.review.session',
+  'fq.familypack.v1', 'fq.profileslots.v1', 'fq.gate.v1', 'fq.perf.v1', 'fq.quality', 'fq.install.v1',
   'fq.reminder.v1', 'fq.uid.v1', 'fq.crashlog.v1', 'fq.community.v1', 'fq.social.v1', 'fq.class.v1',
   'fq.teacher.v1', 'fq.backup.day', 'fq.postcard.micOk', 'fq.whoPicked',
 ])

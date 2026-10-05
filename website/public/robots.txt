@@ -1,7 +1,18 @@
 User-agent: *
 Allow: /
-# Per-account and utility routes - no search value.
-Disallow: /verify
-Disallow: /progress
+# Closed until those products are ready. CloudFront and the SPA also
+# redirect them home; this asks crawlers not to keep asking.
+Disallow: /amharic
+Disallow: /tigrinya
+Disallow: /teachers
+Disallow: /homeschool
+Disallow: /alphabet
+Disallow: /about
+Disallow: /guides
+Disallow: /family
 Disallow: /teach
+Disallow: /verify
+Disallow: /family-pack
+# Shared progress cards are for the person who received the link.
+Disallow: /progress
 Sitemap: https://easygeez.com/sitemap.xml

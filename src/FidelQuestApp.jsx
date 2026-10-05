@@ -105,6 +105,9 @@ import { setCommunityCode } from './platform/community'
 import { appShareUrl } from './components/ShareCard'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform } from './platform/native'
+import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
+import { maybeRequestReview } from './platform/reviewPrompt'
+import WebTrialPaywall from './components/WebTrialPaywall'
 import Dropdown from './components/Dropdown'
 
 // Wrap React.lazy so a TRANSIENT chunk-fetch failure (a blip on a flaky
@@ -1005,6 +1008,35 @@ function useEscapeKey(onClose) {
   }, [onClose])
 }
 
+/* Deep links and QA previews. Pulled out so the website trial can refuse
+   a lesson/game/story before the first paint. */
+function initialScreens() {
+  try {
+    // QA preview (same convention as ?unlock): ?wordmoment=le opens the
+    // "New words!" flow with the words that family unlocks. Local, dev.
+    const wm = new URLSearchParams(window.location.search).get('wordmoment')
+    if (wm) {
+      const stage = FIDEL_FAMILIES.findIndex((f) => f.id === wm)
+      const before = FIDEL_FAMILIES.slice(0, stage).map((f) => f.id)
+      const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
+      if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
+    }
+    // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
+    // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
+    const bingoCode = new URLSearchParams(window.location.search).get('bingo')
+    if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
+    const ch = readChallengeFromHash(window.location.hash)
+    if (ch) return [{ name: 'challenge', challenge: ch }]
+    // Classroom deep links (platform/classroom.js): a class invite, a
+    // teacher's assignment, or a returning result receipt.
+    const cr = readClassroomFromHash(window.location.hash)
+    if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
+    if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
+    if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
+  } catch { /* non-browser */ }
+  return [{ name: 'home' }]
+}
+
 export default function FidelQuestApp() {
   // A "challenge a friend" link (#challenge=...) opens straight into the
   // seeded rematch. See utils/challenge.js + docs/social-play.md.
@@ -1012,32 +1044,27 @@ export default function FidelQuestApp() {
   // (not always Home). setScreen pushes a new page; going to a page you're
   // already on replaces it (so Replay/Retry don't pile up duplicates). goBack
   // pops one page; goHome resets to the path.
+  // The website trial counts this visit once, before any screen is chosen.
   const [stack, setStack] = useState(() => {
-    try {
-      // QA preview (same convention as ?unlock): ?wordmoment=le opens the
-      // "New words!" flow with the words that family unlocks. Local, dev.
-      const wm = new URLSearchParams(window.location.search).get('wordmoment')
-      if (wm) {
-        const stage = FIDEL_FAMILIES.findIndex((f) => f.id === wm)
-        const before = FIDEL_FAMILIES.slice(0, stage).map((f) => f.id)
-        const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
-        if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
-      }
-      // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
-      // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
-      const bingoCode = new URLSearchParams(window.location.search).get('bingo')
-      if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
-      const ch = readChallengeFromHash(window.location.hash)
-      if (ch) return [{ name: 'challenge', challenge: ch }]
-      // Classroom deep links (platform/classroom.js): a class invite, a
-      // teacher's assignment, or a returning result receipt.
-      const cr = readClassroomFromHash(window.location.hash)
-      if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
-      if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
-      if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
-    } catch { /* non-browser */ }
-    return [{ name: 'home' }]
+    noteWebSession()
+    const next = initialScreens()
+    const top = next[next.length - 1]
+    if (screenBlockedByTrial(top?.name)) return [{ name: 'home' }]
+    return next
   })
+  // Auto-open once per limited browser session. The flag is written in an
+  // effect so React StrictMode's double initializer still agrees.
+  const [paywallOpen, setPaywallOpen] = useState(() => {
+    if (!isWebTrialLimited()) return false
+    try {
+      if (sessionStorage.getItem('fq.webtrial.paywallShown') === '1') return false
+    } catch { /* show it */ }
+    return true
+  })
+  const [trialRev, setTrialRev] = useState(0)
+  // trialRev is a bump: redeeming a code writes localStorage, and reading it
+  // here is what makes the home banner leave after an unlock.
+  const trialLimited = isWebTrialLimited() || trialRev < 0
   const screen = stack[stack.length - 1]
   // "Who is playing?": greets a shared device (2+ children) once per app
   // session when the app opens on the path - never over a deep link. Also
@@ -1049,11 +1076,17 @@ export default function FidelQuestApp() {
   // the callback (the handlers close the Backpack, so its own state has already
   // been scheduled false by the time setScreen runs - the ref still reads true).
   const backpackOpenRef = useRef(false)
-  const setScreen = useCallback((next) => setStack((s) => {
-    const tagged = backpackOpenRef.current && !next.fromBackpack ? { ...next, fromBackpack: true } : next
-    const top = s[s.length - 1]
-    return top && top.name === tagged.name ? [...s.slice(0, -1), tagged] : [...s, tagged]
-  }), [])
+  const setScreen = useCallback((next) => {
+    if (next && screenBlockedByTrial(next.name)) {
+      setPaywallOpen(true)
+      return
+    }
+    setStack((s) => {
+      const tagged = backpackOpenRef.current && !next.fromBackpack ? { ...next, fromBackpack: true } : next
+      const top = s[s.length - 1]
+      return top && top.name === tagged.name ? [...s.slice(0, -1), tagged] : [...s, tagged]
+    })
+  }, [])
   const reopenBackpackIf = (s) => { if (s.length && s[s.length - 1].fromBackpack) setBackpackOpen(true) }
   const goBack = useCallback(() => setStack((s) => { if (s.length <= 1) return s; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
@@ -1084,10 +1117,18 @@ export default function FidelQuestApp() {
         const hash = window.location.hash
         if (!/(challenge|class|assign|receipt)=/.test(hash)) return
         const ch = readChallengeFromHash(hash)
-        if (ch) setStack([{ name: 'challenge', challenge: ch }])
+        if (ch) {
+          if (screenBlockedByTrial('challenge')) setPaywallOpen(true)
+          else setStack([{ name: 'challenge', challenge: ch }])
+        }
         const cr = readClassroomFromHash(hash)
         if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
-        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'assign') {
+          storePendingAssignment(cr.data)
+          armAssignmentReminder(cr.data)
+          if (screenBlockedByTrial('assignment')) setPaywallOpen(true)
+          else setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }])
+        }
         if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       } catch { /* malformed link */ }
@@ -1095,6 +1136,11 @@ export default function FidelQuestApp() {
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+  useEffect(() => {
+    if (!paywallOpen) return undefined
+    try { sessionStorage.setItem('fq.webtrial.paywallShown', '1') } catch { /* ignore */ }
+    return undefined
+  }, [paywallOpen])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
   const journeyRef = useRef(journey)
@@ -1248,6 +1294,9 @@ export default function FidelQuestApp() {
     } else if (party?.reward) {
       setJustEarned(party.reward)
     }
+    // A finished node is a happy moment. The native app may ask for a store
+    // review; the website trial ignores this.
+    if ((stars ?? 0) > 0) maybeRequestReview('complete')
     goBack()
   }, [goBack])
 
@@ -1379,6 +1428,8 @@ export default function FidelQuestApp() {
                 onAssignment={(a) => setScreen({ name: 'assignment', assignment: a })}
                 ethioDate={ethioToday}
                 holiday={holiday}
+                trialLimited={trialLimited}
+                onTrial={() => setPaywallOpen(true)}
               />
             </Screen>
           )}
@@ -1429,6 +1480,7 @@ export default function FidelQuestApp() {
                 onPlacement={startPlacement}
                 soundOn={soundOn}
                 onToggleSound={toggleSound}
+                onTrialChange={() => setTrialRev((n) => n + 1)}
               />
             </Screen>
           )}
@@ -1891,6 +1943,12 @@ export default function FidelQuestApp() {
       </div>
       {/* Outside the inert app shell, so it is the only live surface. */}
       {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
+      {paywallOpen && (
+        <WebTrialPaywall
+          onClose={() => setPaywallOpen(false)}
+          onUnlocked={() => setTrialRev((n) => n + 1)}
+        />
+      )}
     </MotionConfig>
   )
 }
@@ -2348,7 +2406,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2477,6 +2535,17 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
           </button>
         </div>
       </header>
+
+      {trialLimited && onTrial && (
+        <button
+          type="button"
+          onClick={onTrial}
+          className={`mx-auto mt-2 w-full max-w-md rounded-2xl px-4 py-3 text-left text-sm font-black md:max-w-2xl ${FOCUS}`}
+          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 3px 0 var(--accent-deep)', outlineColor: 'var(--sky)' }}
+        >
+          {t('wtBanner', 'Ask a grown-up to keep playing')}
+        </button>
+      )}
 
       <AnimatePresence>
         {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
