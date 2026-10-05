@@ -10,6 +10,7 @@
    ========================================================================== */
 
 import raw from './schoolPathGr1Stories.json'
+import { publicUrl } from '../platform/publicUrl'
 import { SCHOOL_PATH_UNITS } from './schoolPathGr1'
 
 const KID = { k: 'person', skin: '#c98a5a', hair: '#241812', cloth: '#3f8f7a', blush: true, hairStyle: 'short' }
@@ -19,7 +20,7 @@ const GRANDMA = { k: 'person', robe: true, head: 'scarf', headColor: '#6d84c9', 
 /* Picture-book panels. scene.src is the Meet-style painting. The stamp
    scene stays as the fallback if that file does not load. */
 function painted(id, n, scene) {
-  return { ...scene, src: `/art/stories/${id}-${n}.webp` }
+  return { ...scene, src: publicUrl(`/art/stories/${id}-${n}.webp`) }
 }
 
 const ART = {

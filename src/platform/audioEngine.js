@@ -8,9 +8,9 @@
      2. FilePack     static mp3s under `audioBase` (deployed app / PWA)
      3. SynthChime   deterministic two-note Web Audio tone (always works)
 
-   Manifest-driven, not 404-driven: when public/audio/fidel/manifest.json is
-   reachable, keys it does not cover skip straight to the chime — no network
-   probing. Keys that fail anyway (decode error, offline miss) are memoized
+   Manifest-driven, not 404-driven: when the fidel manifest is reachable
+   (public/audio/fidel/manifest.json, prefixed with the Vite base), keys it
+   does not cover skip straight to the chime — no network probing. Keys that fail anyway (decode error, offline miss) are memoized
    in `missing` so they never retry. Playback decodes into cached
    AudioBuffers played through gain nodes, which is what enables cross-fades
    and precise timing; environments without AudioContext degrade to
@@ -20,6 +20,8 @@
    is unit-testable without audio hardware. The machines never call this
    directly — only the shell effects do, so game determinism is untouched.
    ========================================================================== */
+
+import { FIDEL_AUDIO_BASE, FIDEL_MANIFEST_URL } from './publicUrl'
 
 /**
  * Redirect a logical key to the pack's physical clip. Two independent kinds of
@@ -84,8 +86,8 @@ const FADE_IN_S = 0.015
 
 export class AudioEngine {
   constructor({
-    audioBase = '/audio/fidel/',
-    manifestUrl = '/audio/fidel/manifest.json',
+    audioBase = FIDEL_AUDIO_BASE,
+    manifestUrl = FIDEL_MANIFEST_URL,
     override = null,
     getMemory = () => (typeof window !== 'undefined' ? window.FIDEL_AUDIO : null),
     fetchImpl = (...a) => fetch(...a),

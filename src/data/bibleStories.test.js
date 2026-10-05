@@ -5,9 +5,16 @@ import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { STORIES, storyLibrary, storyMissingFamilies, storyShelves, storyUnlocked, storyWords } from '../platform/stories'
 import { SCHOOL_PATH_STORIES } from './schoolPathGr1Stories'
+import { publicUrl } from '../platform/publicUrl'
 import { BIBLE_SHELF, BIBLE_STORIES, bibleStoryTimeEntries } from './bibleStories'
 
 const BGS = new Set(['day', 'field', 'night', 'indoor', 'kitchen', 'stable', 'sea', 'garden', 'den'])
+
+/** The painting URL follows the Vite base; the file on disk stays under public/. */
+function expectPublicArt(actual, rootPath) {
+  expect(actual).toBe(publicUrl(rootPath))
+  expect(existsSync(resolve('public', rootPath.replace(/^\//, '')))).toBe(true)
+}
 
 function familiesOfGeez(geez) {
   const ids = []
@@ -96,14 +103,11 @@ describe('bible stories shelf', () => {
     expect(storyUnlocked(entry, [])).toBe(true)
     expect(storyMissingFamilies(entry, [])).toEqual([])
     expect(entry.pages).toHaveLength(8)
-    expect(entry.cover).toBe('/art/stories/bible-creation-cover.webp')
-    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    expectPublicArt(entry.cover, '/art/stories/bible-creation-cover.webp')
     entry.pages.forEach((page, i) => {
-      const src = `/art/stories/bible-creation-${i + 1}.webp`
-      expect(page.scene.src).toBe(src)
+      expectPublicArt(page.scene.src, `/art/stories/bible-creation-${i + 1}.webp`)
       expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
       expect(BGS.has(page.scene.bg)).toBe(true)
-      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
     })
     const ti = storyLibrary([], undefined, 'ti')
     const shelves = storyShelves(ti)
@@ -201,14 +205,11 @@ describe('noah bible book', () => {
     expect(storyMissingFamilies(entry, []).length).toBeGreaterThan(0)
     expect(storyMissingFamilies(entry, chapter1)).toEqual([])
     expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
-    expect(entry.cover).toBe('/art/stories/bible-noah-cover.webp')
-    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    expectPublicArt(entry.cover, '/art/stories/bible-noah-cover.webp')
     entry.pages.forEach((page, i) => {
-      const src = `/art/stories/bible-noah-${i + 1}.webp`
-      expect(page.scene.src).toBe(src)
+      expectPublicArt(page.scene.src, `/art/stories/bible-noah-${i + 1}.webp`)
       expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
       expect(BGS.has(page.scene.bg)).toBe(true)
-      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
     })
     const amNoah = STORIES.find((s) => s.id === 'noah')
     expect(amNoah.title.g).toBe('የኖኅ መርከብ')
@@ -305,14 +306,11 @@ describe('moses bible book', () => {
     expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
     expect(bibleStoryTimeEntries()[1].band).toBe(1)
     expect(storyUnlocked(bibleStoryTimeEntries()[1], chapter1)).toBe(true)
-    expect(entry.cover).toBe('/art/stories/bible-moses-cover.webp')
-    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    expectPublicArt(entry.cover, '/art/stories/bible-moses-cover.webp')
     entry.pages.forEach((page, i) => {
-      const src = `/art/stories/bible-moses-${i + 1}.webp`
-      expect(page.scene.src).toBe(src)
+      expectPublicArt(page.scene.src, `/art/stories/bible-moses-${i + 1}.webp`)
       expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
       expect(BGS.has(page.scene.bg)).toBe(true)
-      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
     })
     const amMoses = STORIES.find((s) => s.id === 'baby-moses')
     expect(amMoses.title.g).toBe('ሕፃኑ ሙሴ')
@@ -417,14 +415,11 @@ describe('jonah bible book', () => {
     expect(bibleStoryTimeEntries()[1].band).toBe(1)
     expect(bibleStoryTimeEntries()[2].band).toBe(2)
     expect(storyUnlocked(bibleStoryTimeEntries()[2], chapter2)).toBe(true)
-    expect(entry.cover).toBe('/art/stories/bible-jonah-cover.webp')
-    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    expectPublicArt(entry.cover, '/art/stories/bible-jonah-cover.webp')
     entry.pages.forEach((page, i) => {
-      const src = `/art/stories/bible-jonah-${i + 1}.webp`
-      expect(page.scene.src).toBe(src)
+      expectPublicArt(page.scene.src, `/art/stories/bible-jonah-${i + 1}.webp`)
       expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
       expect(BGS.has(page.scene.bg)).toBe(true)
-      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
     })
     const amJonah = STORIES.find((s) => s.id === 'jonah')
     expect(amJonah.title.g).toBe('ዮናስና ዓሣ')

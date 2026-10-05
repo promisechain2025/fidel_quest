@@ -150,6 +150,29 @@ It builds both, uploads with the right cache headers (fingerprinted assets
 immutable for a year; HTML, `sw.js` and the manifest never cached), and
 invalidates the distribution.
 
+## 7b. Voice and pictures
+
+Letter voice and the paintings live in the PWA's `public/audio` and
+`public/art`. `scripts/deploy-aws.sh` uploads that build to `s3://…/app/`,
+so the canonical URLs are:
+
+```
+https://easygeez.com/app/audio/fidel/letters/ha-1.mp3
+https://easygeez.com/app/audio/fidel/manifest.json
+https://easygeez.com/app/art/meet/ha.webp
+```
+
+The app joins those paths onto Vite's base (`src/platform/publicUrl.js`).
+A web build (`VITE_BASE=/app/`) requests `/app/audio/...` and `/app/art/...`.
+Capacitor and local `vite` keep base `/` and request `/audio/...` and
+`/art/...`. A new web build does not need a second copy at the bucket root.
+
+The website upload syncs `website/dist` to the bucket root with `--delete`.
+That sync excludes `app/*`, `audio/*`, and `art/*`. `app/*` is the PWA.
+`audio/*` and `art/*` are the root copies that older web builds still
+request; the marketing site does not contain them, so an unexcluded
+`--delete` removes the only voice those builds can play.
+
 ## 8. The API
 
 The API is a Node server, so it does not belong in S3. Either:
@@ -222,6 +245,13 @@ who reads the app bundle; it is the bridge for a family who already paid.
    `curl -sI https://easygeez.com/app/` stays **200** (the PWA is not closed).
 5. `curl -s https://easygeez.com/sitemap.xml` lists only `/`, `/pricing`,
    `/privacy`, and `/terms`.
+6. Voice and paintings answer from the PWA prefix:
+   `curl -sI https://easygeez.com/app/audio/fidel/letters/ha-1.mp3` -> **200**
+   `audio/mpeg`,
+   `curl -sI https://easygeez.com/app/audio/fidel/manifest.json` -> **200**,
+   `curl -sI https://easygeez.com/app/art/meet/ha.webp` -> **200**.
+   A tap on ሀ in the app should request the `/app/audio/...` URL, not
+   `/audio/...`.
 
 ## Rollback
 

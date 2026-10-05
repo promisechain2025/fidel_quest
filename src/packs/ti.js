@@ -23,6 +23,8 @@
    appear in Build rounds but are never voiced.
    ========================================================================== */
 
+import { FIDEL_AUDIO_BASE, FIDEL_MANIFEST_URL } from '../platform/publicUrl'
+
 export const TI_PACK = Object.freeze({
   id: 'ti',
   label: 'Tigrinya',
@@ -129,7 +131,7 @@ export const TI_PACK = Object.freeze({
   // Tigrinya keeps distinct. Those distinct clips live under letters/ti/;
   // audioOverride redirects just those family ids there (see effectiveKey in
   // audioEngine). Sharing the base means no clip is duplicated on disk.
-  audioBase: '/audio/fidel/',
-  manifestUrl: '/audio/fidel/manifest.json',
+  audioBase: FIDEL_AUDIO_BASE,
+  manifestUrl: FIDEL_MANIFEST_URL,
   audioOverride: { sub: 'ti/', ids: ['hha', 'kha', 'khe', 'ae', 'qhe'] },
 })
