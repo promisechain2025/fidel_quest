@@ -47,6 +47,7 @@ import { dueList } from './platform/roundProgress'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
+import { GrownUpWebTrialCard } from './components/WebTrialPaywall'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -527,7 +528,7 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
@@ -637,6 +638,8 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
+
+          <GrownUpWebTrialCard onUnlocked={onTrialChange} />
 
           <ProfilesCard />
 

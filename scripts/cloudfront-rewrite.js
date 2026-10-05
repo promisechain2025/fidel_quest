@@ -21,9 +21,35 @@
    Deploy: create a CloudFront Function named `egeez-rewrite`, paste this,
    publish, and associate it with the default behaviour on viewer request.
    ========================================================================== */
+/* Pages that are not the app, its price, or the store legal pages.
+   Keep this list identical to website/src/siteAccess.js CLOSED_PREFIXES.
+   A request for one of them goes home (302) instead of serving the old HTML. */
+var CLOSED = [
+  '/amharic', '/tigrinya', '/teachers', '/homeschool', '/alphabet',
+  '/about', '/guides', '/family', '/teach', '/verify', '/family-pack',
+]
+
+function isClosed(uri) {
+  var path = uri.split('?')[0]
+  if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1)
+  for (var i = 0; i < CLOSED.length; i++) {
+    var p = CLOSED[i]
+    if (path === p || path.indexOf(p + '/') === 0) return true
+  }
+  return false
+}
+
 function handler(event) {
   var request = event.request
   var uri = request.uri
+
+  if (isClosed(uri)) {
+    return {
+      statusCode: 302,
+      statusDescription: 'Found',
+      headers: { location: { value: '/' } },
+    }
+  }
 
   // Already a file (has a dot in the last segment) - leave it alone.
   var last = uri.substring(uri.lastIndexOf('/') + 1)

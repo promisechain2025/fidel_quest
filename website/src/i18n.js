@@ -25,7 +25,6 @@ const AM = {
   heroCta: 'በነጻ ጀምር',
   heroCtaTeach: 'አብረውን ያስተምሩ',
   // shared
-  footerLine: 'ለቤተሰብ የተሰራ፣ በመምህራን የሚመራ - ለፊደል በፍቅር።',
   fEmail: 'ኢሜይል',
   fSending: 'በመላክ ላይ…',
   nwTitle: 'የልጅዎን ስም በፊደል ይመልከቱ',

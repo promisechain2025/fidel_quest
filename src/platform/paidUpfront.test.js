@@ -1,7 +1,9 @@
 /* eGeez 1.3.1 business model, guarded end to end:
-     - PAID UPFRONT: $12.99 at download on the App Store and Google Play;
-       every path, Bible book and game is open - no trial, no unlock codes,
-       no subscriptions, no ads, no web checkout, no gift tile.
+     - PAID UPFRONT on the stores: $12.99 at download on the App Store and
+       Google Play; every path, Bible book and game is open. No trial on
+       the native app, no subscriptions, no ads, no web checkout, no gift
+       tile. The website at /app has its own 3-session trial (webTrial.js);
+       that trial cannot turn a native build into a free one.
      - The only in-app purchases are extra kids profiles: the app includes
        1 kid profile; each further child is a non-consumable bought in order
        (profile_slot_2 $4.99, profile_slot_3..6 $2.49 each), up to 6. Old
@@ -44,6 +46,18 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     })
   }
 
+  it('a native build stays fully open even on the /app base after a spent website trial', async () => {
+    mockNative = true
+    localStorage.setItem('fq.webtrial.v1', JSON.stringify({ sessions: 9 }))
+    vi.resetModules()
+    const trial = await import('./webTrial')
+    expect(trial.hasFullAccess({ base: '/app/' })).toBe(true)
+    expect(trial.isWebTrialLimited({ base: '/app/' })).toBe(false)
+    expect(trial.screenBlockedByTrial('stories', { base: '/app/' })).toBe(false)
+    const lic = await import('./license')
+    expect(lic.fullAccess()).toBe(true)
+  })
+
   it('the store can sell only profile_slot_2..6 (never full_app, never family_pack again)', async () => {
     vi.resetModules()
     const iap = await import('./iap')
@@ -65,22 +79,37 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     expect(read('src/platform/profileSlots.js')).toMatch(/SLOT_PRICE_FALLBACK = Object\.freeze\(\{ 2: '\$4\.99', 3: '\$2\.49', 4: '\$2\.49', 5: '\$2\.49', 6: '\$2\.49' \}\)/)
   })
 
-  it('no trial / code / gift / buy-the-app copy is left in the app; the profile offer is', () => {
-    const banned = [/Buy the app/i, /free try-?out/i, /unlock code/i, /FAM code/i, /\bEGZ\b/, /Ask family to gift/i, /Not buying\?/i, /Everything open - /, /I already paid/i, /Redeem/]
+  it('no buy-the-app IAP, gift, or stripe copy is left in the app; the profile offer is', () => {
+    const banned = [/Buy the app/i, /free try-?out/i, /FAM code/i, /Ask family to gift/i, /Not buying\?/i, /Everything open - /, /I already paid/i, /\bstripe\b/i, /full_app|buyFullApp|FULL_APP/]
     const hits = []
     for (const f of appSource()) {
       const s = stripComments(fs.readFileSync(f, 'utf8'))
       for (const re of banned) if (re.test(s)) hits.push(`${path.relative(ROOT, f)}: ${re}`)
     }
     expect(hits).toEqual([])
+    const codeAllowed = new Set([
+      'src/platform/appCodes.js',
+      'src/platform/webTrial.js',
+      'src/components/WebTrialPaywall.jsx',
+    ])
+    const codeHits = []
+    for (const f of appSource()) {
+      const rel = path.relative(ROOT, f)
+      if (codeAllowed.has(rel)) continue
+      const s = stripComments(fs.readFileSync(f, 'utf8'))
+      if (/unlock code|\bEGZ\b|redeemUnlockCode|deviceUnlockCode/.test(s)) codeHits.push(rel)
+    }
+    expect(codeHits).toEqual([])
     const offer = read('src/components/ProfileSlotOffer.jsx')
     expect(offer).toMatch(/'Restore purchases'/)
     expect(offer).toMatch(/Unlock profile \{n\}/)
     expect(fs.existsSync(path.join(ROOT, 'src/components/FamilyPackOffer.jsx'))).toBe(false)
     expect(read('src/main.jsx')).toMatch(/platform\/iap'\)\.then\(\(m\) => m\.initIap\(\)\)/)
-    for (const gone of ['src/platform/appCodes.js', 'src/components/SupportAsk.jsx', 'src/components/GiftModal.jsx', 'scripts/gen-family-codes.mjs', 'scripts/gen-app-codes.mjs']) {
+    for (const gone of ['src/components/SupportAsk.jsx', 'src/components/GiftModal.jsx', 'scripts/gen-family-codes.mjs']) {
       expect(fs.existsSync(path.join(ROOT, gone)), gone).toBe(false)
     }
+    expect(fs.existsSync(path.join(ROOT, 'src/platform/appCodes.js'))).toBe(true)
+    expect(fs.existsSync(path.join(ROOT, 'scripts/gen-app-codes.mjs'))).toBe(true)
     // Store-only: no code redemption or web link left anywhere.
     const fp = appSource().map((f) => stripComments(fs.readFileSync(f, 'utf8'))).join('\n')
     for (const gone of ['redeemFamilyCode', 'isValidFamilyCode', 'mintFamilyCode', 'familyPackUrl', 'VITE_FAMILY_PACK']) expect(fp, gone).not.toContain(gone)

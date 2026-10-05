@@ -56,6 +56,19 @@ directory index, so a CloudFront Function does it.
 2. Paste `scripts/cloudfront-rewrite.js`.
 3. Publish.
 
+**Republish whenever that file changes.** The live function is a copy you
+paste in the console; a site deploy does not update it. Until the new copy
+is published, closed pages still serve their old HTML.
+
+The function sends these paths **302** to `/` (the app landing): `/amharic`,
+`/tigrinya`, `/teachers`, `/homeschool`, `/alphabet`, `/about`, `/guides`,
+`/family`, `/teach`, `/verify`, `/family-pack`, including subpaths. Still
+public: `/`, `/pricing`, `/privacy`, `/terms`, `/progress` (a progress card
+shared from the app), and `/app` (the PWA, a different build). The same list
+is `CLOSED_PREFIXES` in `website/src/siteAccess.js`, `website/public/_redirects`,
+and `robots.txt`. The next `deploy-aws.sh` also drops the old prerendered
+HTML for those paths (`aws s3 sync --delete`).
+
 ## 4. The distribution
 
 - **Origin**: the S3 bucket, with **Origin Access Control** (create one; then
@@ -149,6 +162,54 @@ The API is a Node server, so it does not belong in S3. Either:
 Either way the API needs `SITE_URL=https://easygeez.com` (emailed links), `JWT_SECRET`, and `TRUST_PROXY` set to match whatever sits
 in front of it - the rate limiter is only meaningful when `req.ip` is real.
 
+## 8b. The /app trial
+
+The PWA built by this script (`VITE_BASE=/app/`) is free for **3 browser
+sessions**, then a parental-gated paywall. Session 1 is the first open.
+Refreshing the same tab does not count again; a new tab or a cold start of
+the installed PWA does. Home, Grown-Ups, and the unlock field stay reachable.
+Lessons, games, and stories do not start until a grown-up buys the phone app
+($12.99, one time, App Store or Google Play) or enters the unlock code from
+that app.
+
+Native store builds are not built with `VITE_BASE=/app/` (Capacitor uses
+`/`). `isNativePlatform()` also forces full access, so a store build stays
+the paid app even if that variable is set by mistake. The unlock code does
+not open anything inside the phone app. It only unlocks the website on the
+browser where it is entered.
+
+Try it locally:
+
+```bash
+VITE_BASE=/app/ npm run dev
+```
+
+Four separate tabs (or clearing `sessionStorage` and reloading) reach the
+paywall. To jump straight there, in the console:
+
+```js
+localStorage.setItem('fq.webtrial.v1', JSON.stringify({ sessions: 4 }))
+sessionStorage.clear()
+location.reload()
+```
+
+Clear `fq.webtrial.v1` to start over. An unlock is the `unlocked: true` flag
+in that same key. Resetting a child's progress does not clear it.
+
+**Codes.** In the paid app, Grown-Ups (after the hold-and-answer gate) shows
+one stable code for that install. The same code entered on the website
+unlocks that browser forever. To mint extra support codes (a lost phone, a
+courtesy unlock) from this repo:
+
+```bash
+node scripts/gen-app-codes.mjs 5
+node scripts/gen-app-codes.mjs --install <install-id>
+```
+
+Checking is an offline checksum in `src/platform/appCodes.js`. There is no
+server and no Stripe on this path. A code is not a secret against someone
+who reads the app bundle; it is the bridge for a family who already paid.
+
 ## 9. After the first deploy, check these five
 
 1. `curl -sI https://easygeez.com/pricing` -> **200**, and
@@ -157,11 +218,10 @@ in front of it - the rate limiter is only meaningful when `req.ip` is real.
 2. `curl -sI https://easygeez.com/definitely-not-real` -> **404**.
 3. `https://easygeez.com/app/` loads the PWA, and installing it opens at
    `/app`, not the marketing site.
-4. Submit the Tigrinya waitlist form: it should say "You are on the list",
-   not "Your email app should have opened" - the latter means `VITE_API_URL`
-   was missing at build time.
-5. `curl -s https://easygeez.com/sitemap.xml | head` -> the `easygeez.com`
-   URLs, and Search Console accepts it.
+4. `curl -sI https://easygeez.com/teachers` -> **302** with `location: /`.
+   `curl -sI https://easygeez.com/app/` stays **200** (the PWA is not closed).
+5. `curl -s https://easygeez.com/sitemap.xml` lists only `/`, `/pricing`,
+   `/privacy`, and `/terms`.
 
 ## Rollback
 

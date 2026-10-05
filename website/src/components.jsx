@@ -142,28 +142,15 @@ export function Field({ label, children }) {
 export const inputCls = 'w-full rounded-xl px-4 py-3 text-[16px]'
 export const inputStyle = { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }
 
-/* HEADER nav: only the destinations a visitor is actually choosing between.
-   Nine links plus a theme toggle and a CTA overflowed into a second row at
-   every desktop width from 1024 to 1440 - "For teachers" wrapped, which is
-   what pushed the bar to 89px tall. The logo is Home, and Family/About live
-   in the footer, so nothing here costs a destination. */
+/* Only the store price in the bar. The logo is Home. Other product pages
+   redirect home (see siteAccess.js). */
 const NAV = [
-  ['/amharic', 'Amharic'],
-  ['/tigrinya', 'Tigrinya'],
-  ['/alphabet', 'Alphabet'],
-  ['/teachers', 'Teachers'],
-  ['/homeschool', 'Homeschool'],
-  ['/guides', 'Guides'],
   ['/pricing', 'Pricing'],
 ]
 
-/* The full map, for the footer and the mobile sheet - both have the room,
-   so trimming the header never makes a page unreachable. */
 const ALL_NAV = [
   ['/', 'Home'],
-  ...NAV,
-  ['/family', 'Family'],
-  ['/about', 'About'],
+  ['/pricing', 'Pricing'],
 ]
 
 function useTheme() {
@@ -324,51 +311,6 @@ export function Header() {
   )
 }
 
-function NewsletterRow() {
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState('')
-  const [mailto, setMailto] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const submit = async (e) => {
-    e.preventDefault()
-    setBusy(true)
-    try {
-      setError('')
-      const { submitForm } = await import('./api.js')
-      const r = await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
-      setMailto(!!r?.mailto)
-      setDone(true)
-    } catch (e) {
-      // Silently swallowing this told the visitor they had signed up when
-      // nothing had been recorded.
-      setError(e.message || 'Could not sign you up. Please try again.')
-    } finally { setBusy(false) }
-  }
-  if (done) {
-    return (
-      <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>
-        {mailto
-          ? t('nlMailto', 'Your email app should have opened - send that message and you are in.')
-          : t('nlThanks', 'You are in - we write rarely and only when it matters.')}
-      </p>
-    )
-  }
-  return (
-    <form onSubmit={submit} className="flex w-full max-w-sm flex-wrap items-stretch gap-2">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-        placeholder={t('nlPlaceholder', 'Email for launch news')} aria-label={t('nlLabel', 'Email for launch news')}
-        className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[16px]"
-        style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
-      <button type="submit" disabled={busy} className="chunk px-4 text-sm"
-        style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)', minHeight: 44 }}>
-        {busy ? '…' : t('nlJoin', 'Join')}
-      </button>
-      {error && <p role="alert" className="w-full text-xs font-bold" style={{ color: 'var(--danger)' }}>{error}</p>}
-    </form>
-  )
-}
-
 export function Footer() {
   return (
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
@@ -380,14 +322,12 @@ export function Footer() {
               <BrandMark size={26} /> eGeez
             </div>
             <p className="mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('footerLine', 'A learning home for Amharic and Tigrinya - built for families, guided by teachers, made with love for the fidel.')}
+              {t('footerLine', 'The fidel app for families. One-time purchase on the App Store and Google Play. Works offline.')}
             </p>
-            <div className="mt-4"><NewsletterRow /></div>
           </div>
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
           {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
-          <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
           <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
         </nav>
