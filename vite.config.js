@@ -121,8 +121,8 @@ export default defineConfig({
       manifest: {
         name: 'eGeez: Easy Geez',
         short_name: 'eGeez',
-        description: 'An Amharic alphabet (Fidel) learning game for kids.',
-        lang: 'am',
+        description: 'A Ge\'ez fidel learning game for kids - Tigrinya and Amharic.',
+        lang: 'en',
         // Anchored to BASE so an install from easygeez.com/app opens at /app
         // instead of the marketing site, and the service worker's scope
         // matches what it is allowed to control.

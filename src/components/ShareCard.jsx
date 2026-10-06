@@ -4,6 +4,7 @@
    PNG download. No backend, no accounts, no data leaves the device unless the
    parent chooses to share the image. */
 import { drawAnbessa, drawWearables, FIDEL_FAMILIES } from '../FidelQuestApp'
+import { shareAlphabetLines } from '../platform/ethiopic'
 import { track } from '../platform/analytics'
 import { isNativePlatform, isApplePlatform } from '../platform/native'
 import { appStoreUrl } from '../platform/gift'
@@ -115,7 +116,7 @@ export function drawShareCard(g, S, { forms = 0, worn = [], headline = '' } = {}
   // Footer tagline.
   g.fillStyle = '#7c3d00'
   g.font = `700 ${S * 0.032}px system-ui, sans-serif`
-  g.fillText('Learn the Amharic alphabet - free & offline', S / 2, S * 0.965)
+  g.fillText(shareAlphabetLines().footer, S / 2, S * 0.965)
 }
 
 /** Draw the "my name in Fidel" card at side S: the child's name rendered big in
@@ -263,7 +264,7 @@ export async function shareAnbessa({ forms = 0, worn = [], headline = '' } = {})
   drawShareCard(g, S, { forms, worn, headline })
   return shareFiles({
     files: [{ blob: await toBlob(canvas), name: 'fidel-quest.png', type: 'image/png' }],
-    text: "I'm learning the Amharic alphabet with Anbessa the lion cub!",
+    text: shareAlphabetLines().share,
     url: appShareUrl(),
   })
 }
@@ -364,9 +365,7 @@ export async function shareName({ name = '', latin = '', worn = [] } = {}) {
   drawNameCard(g, S, { name, latin, worn })
   return shareFiles({
     files: [{ blob: await toBlob(canvas), name: 'fidel-name.png', type: 'image/png' }],
-    text: latin
-      ? `${latin} - written in the Amharic alphabet with eGeez!`
-      : 'My name in the Amharic alphabet, written with eGeez!',
+    text: latin ? shareAlphabetLines().nameWithLatin(latin) : shareAlphabetLines().nameBare,
     url: appShareUrl(),
   })
 }

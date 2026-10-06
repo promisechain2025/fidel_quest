@@ -120,7 +120,8 @@ export default function VoicePostcard({ worn = [], soundOn = true, onBack }) {
 
   const send = async () => {
     setPhase('sending')
-    const r = RECIPIENT_STRINGS[getActivePackId()] || RECIPIENT_STRINGS.am
+    const packId = getActivePackId()
+    const r = RECIPIENT_STRINGS[packId] || RECIPIENT_STRINGS.ti
     // Sign with the child's nickname when set, then add the app link with an
     // invite so Gashe / Ayay can pass eGeez on to others.
     const url = appShareUrl()
