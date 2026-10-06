@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { audio, afterVoice, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
-import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice } from './platform/ethiopic'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice, confirmActivePack, languageChoicePending } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
@@ -1096,6 +1096,11 @@ export default function FidelQuestApp() {
   const goBackOrHome = useCallback(() => setStack((s) => { if (s.length <= 1) return [{ name: 'home' }]; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   useEffect(() => {
     try {
+      // Seal a choice the family already made (stored pack, legacy fq.lang,
+      // School Path progress, or a locale that already decided). Leave the
+      // soft default unwritten while the first-launch sheet is about to ask,
+      // so dismissing that sheet is what records it.
+      if (!languageChoicePending()) confirmActivePack()
       lockDocumentTranslate(getLang())
       // Strip deep-link tokens from the address bar once we've captured them,
       // so a refresh or a shared-back link starts from a clean URL. An opened
@@ -2809,6 +2814,14 @@ function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 
    chip grid (9 languages = four rows) crowded the game tiles out of view on
    a small phone. The lists open UPWARD - the picker sits at the sheet's
    bottom edge. */
+/** WebView can drop the last localStorage write if the page reloads in the
+    same turn. A short delay lets the pack/lang write land first. */
+function reloadForLanguage() {
+  setTimeout(() => {
+    try { window.location.reload() } catch { /* non-browser */ }
+  }, 50)
+}
+
 function LanguagePicker() {
   const pack = getActivePackId()
   const ui = getLang()
@@ -2821,10 +2834,15 @@ function LanguagePicker() {
         <Dropdown
           up
           geez
+          commitSame
           label={t('langLearn', 'Learning')}
           value={pack}
           options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
-          onChange={(id) => { setActivePack(id); window.location.reload() }}
+          onChange={(id) => {
+            const changed = id !== pack
+            setActivePack(id)
+            if (changed) reloadForLanguage()
+          }}
         />
       </div>
       <div className="min-w-0">
@@ -2833,10 +2851,15 @@ function LanguagePicker() {
         </span>
         <Dropdown
           up
+          commitSame
           label={t('langText', 'App text')}
           value={ui}
           options={LANG_META.map((o) => [o.id, o.label])}
-          onChange={(id) => { setLang(id); window.location.reload() }}
+          onChange={(id) => {
+            const changed = id !== ui
+            setLang(id)
+            if (changed) reloadForLanguage()
+          }}
         />
       </div>
     </div>
@@ -2888,9 +2911,13 @@ function StreakSheet({ streak, onClose }) {
    child LEARNS (Amharic/Tigrinya letters + voice) and what the app SPEAKS
    without hunting through utilities. Both axes reload on change by design. */
 export function LanguageSheet({ onClose }) {
-  useEscapeKey(onClose)
+  const close = () => {
+    confirmActivePack()
+    onClose?.()
+  }
+  useEscapeKey(close)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -2908,7 +2935,7 @@ export function LanguageSheet({ onClose }) {
             <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
             {t('langTitle', 'Language')}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={close} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>

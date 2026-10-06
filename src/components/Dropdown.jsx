@@ -14,7 +14,7 @@ import { ChevronDown, Check } from 'lucide-react'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
-export default function Dropdown({ value, options, onChange, label, geez = false, up = false, className = '' }) {
+export default function Dropdown({ value, options, onChange, label, geez = false, up = false, className = '', commitSame = false }) {
   const [open, setOpen] = useState(false)
   const [hi, setHi] = useState(-1)
   const rootRef = useRef(null)
@@ -29,7 +29,9 @@ export default function Dropdown({ value, options, onChange, label, geez = false
 
   const pick = (id) => {
     setOpen(false)
-    if (id !== value) onChange(id)
+    // Language pickers pass commitSame so tapping the already-highlighted
+    // language still records it. Other dropdowns keep the no-op.
+    if (commitSame || id !== value) onChange(id)
   }
   const onKey = (e) => {
     if (e.key === 'Escape') { setOpen(false); return }

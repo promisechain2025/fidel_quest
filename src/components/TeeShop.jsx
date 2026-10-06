@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Lock, Download, ShoppingBag, X, Check } from 'lucide-react'
-import { TEE_DESIGNS, teeUnlocked, unlockedTees, nextTeeAt, markTeesSeen, teeName } from '../tees'
+import { TEE_DESIGNS, teeUnlocked, unlockedTees, nextTeeAt, markTeesSeen, teeName, teeGezzName } from '../tees'
 import { wornLayers } from '../journey'
 import { t, getLang } from '../platform/i18n'
+import { getActivePackId } from '../platform/ethiopic'
 import { track } from '../platform/analytics'
 import { drawTee, saveTee, orderTee, shopConfigured } from './TeeCard'
 
@@ -34,6 +35,7 @@ function TeeCanvas({ design, forms, worn, size = 150, dim = false }) {
    design; parents can save it or order a real one. Opt-in and offline-safe. */
 export default function TeeShop({ stats, collection, onBack }) {
   const lang = getLang()
+  const packId = getActivePackId()
   const forms = stats.forms
   const families = stats.families
   const worn = wornLayers(collection)
@@ -120,7 +122,7 @@ export default function TeeShop({ stats, collection, onBack }) {
           <motion.div className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPreview(null)}>
             <motion.div role="dialog" aria-modal="true" aria-label={teeName(preview, lang)} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {preview.am}</span>}</h2>
+                <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {teeGezzName(preview, packId)}</span>}</h2>
                 <button type="button" onClick={() => setPreview(null)} aria-label="Close" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
                   <X className="h-6 w-6" />
                 </button>

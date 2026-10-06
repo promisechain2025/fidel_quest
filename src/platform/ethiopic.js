@@ -19,9 +19,12 @@ import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { AM_PACK } from '../packs/am'
 import { TI_PACK } from '../packs/ti'
 import { audio } from './audioEngine'
+import { hasOnboarded } from './tutorial'
 
 export const PACKS = Object.freeze({ am: AM_PACK, ti: TI_PACK })
 const PACK_KEY = 'fq.pack'
+const LANG_KEY = 'fq.lang'
+const JOURNEY_KEY = 'fq.journey.v1'
 
 /** The pack named by the device language list, or null when the device is
     in neither Amharic nor Tigrinya (e.g. an en-US diaspora parent). */
@@ -40,34 +43,107 @@ export function localePack() {
 
 /**
  * First-visit default: Tigrinya, unless the device language is explicitly
- * Amharic (owner decision). A soft default only - never persisted here, so an
- * explicit choice (setActivePack) always wins and a locale change can still be
- * reflected. Home also offers the language sheet once on first launch when the
- * locale did not decide (needsLanguageChoice).
+ * Amharic (owner decision). A soft default only - this function never writes
+ * storage. An explicit choice (setActivePack) and a sealed choice
+ * (confirmActivePack) always win over a later locale change.
  */
 export function detectPreferredPack() {
   return localePack() || 'ti'
 }
 
-/** True on a first launch where nobody has chosen a pack and the device
-    language did not pick one - the moment to show the language sheet. */
-export function needsLanguageChoice() {
+function readJourneyDoneKeys() {
   try {
-    if (PACKS[localStorage.getItem(PACK_KEY)]) return false
+    const raw = localStorage.getItem(JOURNEY_KEY)
+    if (!raw) return []
+    const done = JSON.parse(raw)?.done
+    if (!done || typeof done !== 'object' || Array.isArray(done)) return []
+    return Object.keys(done)
   } catch {
-    return false
+    return []
   }
-  return localePack() === null
 }
 
-export function getActivePackId() {
+/** School Path node ids exist only on the Tigrinya spine. Classic Amharic
+    quizzes are numeric (`quiz:1`), so they must not count. */
+function journeySuggestsTigrinya(keys = readJourneyDoneKeys()) {
+  return keys.some((k) => k.startsWith('blend:') || k.startsWith('find:') || k.startsWith('quiz:u'))
+}
+
+/** Before Amharic/Tigrinya were learn-packs only, the app stored that choice
+    in fq.lang. getLang() ignores those ids now; the learn pack still honors them. */
+function legacyLearnPack() {
+  try {
+    const l = localStorage.getItem(LANG_KEY)
+    if (l === 'am' || l === 'ti') return l
+  } catch {
+    /* no storage */
+  }
+  return null
+}
+
+/** A choice the family already made: the pack key, a legacy app-text id, or
+    School Path progress. Null when the only signal is the soft locale default. */
+export function savedPackChoice() {
   try {
     const id = localStorage.getItem(PACK_KEY)
     if (PACKS[id]) return id
   } catch {
-    return detectPreferredPack()
+    return null
   }
-  return detectPreferredPack()
+  const legacy = legacyLearnPack()
+  if (legacy) return legacy
+  if (journeySuggestsTigrinya()) return 'ti'
+  return null
+}
+
+/** True on a first launch where nobody has chosen a pack and the device
+    language did not pick one - the moment to show the language sheet. */
+export function needsLanguageChoice() {
+  if (savedPackChoice()) return false
+  return localePack() === null
+}
+
+/** True while the first-launch sheet is still the thing that should record
+    the soft default. Sealing earlier would hide that sheet. */
+export function languageChoicePending() {
+  if (!needsLanguageChoice()) return false
+  if (hasOnboarded('langpick')) return false
+  if (readJourneyDoneKeys().length > 0) return false
+  return true
+}
+
+export function getActivePackId() {
+  return savedPackChoice() || detectPreferredPack()
+}
+
+/** Write the resolved pack so a later locale list cannot replace it.
+    Does not reload; callers that change the pack still reload to rebuild
+    the module-level family tables. */
+export function confirmActivePack(id = getActivePackId()) {
+  if (!PACKS[id]) return false
+  try {
+    localStorage.setItem(PACK_KEY, id)
+  } catch {
+    /* session-only */
+  }
+  return true
+}
+
+/** English name of the alphabet being learned (share cards, captions). */
+export function alphabetLabel(packId = getActivePackId()) {
+  return PACKS[packId]?.label || 'Tigrinya'
+}
+
+/** Share-sheet and card lines. The learning pack names the alphabet;
+    a Tigrinya session must not say Amharic. */
+export function shareAlphabetLines(packId = getActivePackId()) {
+  const label = alphabetLabel(packId)
+  return {
+    footer: `Learn the ${label} alphabet - free & offline`,
+    share: `I'm learning the ${label} alphabet with Anbessa the lion cub!`,
+    nameWithLatin: (latin) => `${latin} - written in the ${label} alphabet with eGeez!`,
+    nameBare: `My name in the ${label} alphabet, written with eGeez!`,
+  }
 }
 
 /** Persist the pack choice and retarget audio; callers reload to apply. */
