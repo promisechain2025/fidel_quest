@@ -26,6 +26,7 @@ import { b64urlEncode, b64urlDecode, sanitizeName } from '../utils/challenge'
 import { dayStamp } from './streak'
 import { FIDEL_FAMILIES } from './ethiopic'
 import { buildReviewQueue, addDays } from './coach'
+import { linkBase } from '../utils/linkBase'
 
 const CLASS_KEY = 'fq.class.v1'
 const ASSIGN_KEY = 'fq.assign.v1'
@@ -37,15 +38,10 @@ export const MAX_ENROLLED = 60
 
 const FAMILY_IDS = new Set(FIDEL_FAMILIES.map((f) => f.id))
 
-/** Same origin normalization as challengeUrl. */
+/** The app's own URL (origin + path, e.g. https://easygeez.com/app). Keeping
+    the path is the whole point: an origin-only link opens the marketing site. */
 function rootOf(origin) {
-  let root = String(origin || '')
-  try {
-    root = new URL(origin).origin
-  } catch {
-    root = root.replace(/[#?].*$/, '').replace(/\/+$/, '')
-  }
-  return root
+  return linkBase(origin)
 }
 
 /** Class codes are short human tokens: letters/digits, 4..12 chars. */

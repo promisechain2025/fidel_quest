@@ -304,9 +304,20 @@ describe('hash reader + urls', () => {
     expect(readClassroomFromHash('')).toBeNull()
   })
   it('builds urls off a clean origin', () => {
-    expect(classUrl(INVITE, 'https://fidelquest.app/some/path')).toMatch(/^https:\/\/fidelquest\.app\/#class=/)
+    expect(classUrl(INVITE, 'https://fidelquest.app')).toMatch(/^https:\/\/fidelquest\.app\/#class=/)
     expect(assignmentUrl(ASSIGN, 'https://fidelquest.app')).toMatch(/#assign=/)
     expect(receiptUrl(RECEIPT, 'https://fidelquest.app')).toMatch(/#receipt=/)
     expect(assignmentUrl({ ...ASSIGN, familyIds: [] }, 'https://x.y')).toBeNull()
+  })
+  it('keeps the app path, so links open the PWA and not the marketing site', () => {
+    // The live PWA is https://easygeez.com/app/ - the root is the website.
+    for (const app of ['https://easygeez.com/app', 'https://easygeez.com/app/', 'https://easygeez.com/app/index.html', 'https://easygeez.com/app/?x=1#old']) {
+      expect(classUrl(INVITE, app)).toMatch(/^https:\/\/easygeez\.com\/app\/#class=/)
+      expect(assignmentUrl(ASSIGN, app)).toMatch(/^https:\/\/easygeez\.com\/app\/#assign=/)
+      expect(receiptUrl(RECEIPT, app)).toMatch(/^https:\/\/easygeez\.com\/app\/#receipt=/)
+    }
+    // ...and the link round-trips back through the hash reader.
+    const url = assignmentUrl(ASSIGN, 'https://easygeez.com/app')
+    expect(readClassroomFromHash(url.slice(url.indexOf('#'))).data.code).toBe(ASSIGN.code)
   })
 })

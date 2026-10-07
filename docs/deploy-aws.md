@@ -253,6 +253,14 @@ who reads the app bundle; it is the bridge for a family who already paid.
    A tap on ሀ in the app should request the `/app/audio/...` URL, not
    `/audio/...`.
 
+7. App links open the PWA. A class invite, homework, result or challenge
+   link made in the app reads `https://easygeez.com/app/#class=…`
+   (`#assign=`, `#receipt=`, `#challenge=`). Phone builds use the same
+   public URL (`src/platform/appLink.js`). Older links at the site root,
+   `https://easygeez.com/#assign=…`, are forwarded to `/app/` with the same
+   hash by the first script in `website/index.html` - the hash never
+   reaches CloudFront, so this cannot be a rewrite rule.
+
 ## Rollback
 
 S3 versioning is the cheapest safety net:
