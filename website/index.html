@@ -2,6 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script id="app-hash-forward">
+      // App links (class invite, homework, result, challenge) belong to the
+      // PWA at /app/. Links shared before that fix point at the site root
+      // (https://easygeez.com/#assign=...). The hash never reaches the
+      // server, so forward it here, before the marketing site renders.
+      (function (l) {
+        if (/^\/app(\/|$)/.test(l.pathname)) return
+        if (/^#(class|assign|receipt|challenge)=/.test(l.hash)) l.replace('/app/' + l.hash)
+      })(location)
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>eGeez - the fidel app for families</title>
     <meta name="description" content="A joyful app that teaches children the fidel: all 231 letters, offline, with no ads and no child data. One-time $12.99." />

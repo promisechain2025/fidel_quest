@@ -32,7 +32,7 @@ import { sanitizeName } from '../utils/challenge'
 import { addDays } from '../platform/coach'
 import { dayStamp } from '../platform/streak'
 import { formatDual } from '../platform/ethioCalendar'
-import { appShareUrl } from './ShareCard'
+import { appLinkUrl } from '../platform/appLink'
 import { isNativePlatform } from '../platform/native'
 import { track } from '../platform/analytics'
 import ParentalGate from './ParentalGate'
@@ -254,7 +254,7 @@ function TermPlanCard({ code, teacher, onTv, onChanged }) {
       track('teacher_assignment')
       refresh()
     }
-    shareUrl(assignmentUrl(a, appShareUrl()), t('asShareText', 'eGeez homework from your teacher:'))
+    shareUrl(assignmentUrl(a, appLinkUrl()), t('asShareText', 'eGeez homework from your teacher:'))
   }
 
   if (!plan) {
@@ -370,7 +370,7 @@ function AssignmentBuilder({ code, teacher, onSaved }) {
   }
   const make = () => {
     const a = { code, teacher, familyIds: picked, count, due, seed: newSeed(), orders: allOrders ? [1, 2, 3, 4, 5, 6, 7] : [1], week: null, createdDay: dayStamp() }
-    const url = assignmentUrl(a, appShareUrl())
+    const url = assignmentUrl(a, appLinkUrl())
     if (url) {
       saveAssignment(a)
       setMade({ url })
@@ -456,7 +456,7 @@ function SentAssignments({ code }) {
                 <span className="geez ml-2 text-base">{a.familyIds.map(glyphOf).join(' ')}</span>
                 <span className="mono ml-2 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>{a.count}q · {t('tmDueShort', 'due {date}', { date: ethioDay(a.due) })}</span>
               </p>
-              <ShareLinkButton small tone="sky" url={assignmentUrl(a, appShareUrl())} text={t('asShareText', 'eGeez homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
+              <ShareLinkButton small tone="sky" url={assignmentUrl(a, appLinkUrl())} text={t('asShareText', 'eGeez homework from your teacher:')} label={t('tmShareAgain', 'Share link again')} />
             </div>
             <div className="mt-2"><TurnIns code={code} seed={a.seed} /></div>
           </div>
@@ -609,7 +609,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   // the UI keeps it simple and shows the first.
   const code = codes[0] || null
   const cls = code ? teacherState.classes[code] : null
-  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher }, appShareUrl()) : null), [code, cls?.teacher])
+  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher }, appLinkUrl()) : null), [code, cls?.teacher])
 
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">

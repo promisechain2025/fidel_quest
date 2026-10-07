@@ -9,6 +9,7 @@
 
    A link is untrusted input — anyone can hand-craft one — so decodeChallenge
    validates and clamps every field and returns null on anything malformed. */
+import { linkBase } from './linkBase'
 
 const V = 1
 const MAX_NAME = 16
@@ -76,15 +77,10 @@ export function decodeChallenge(token) {
   }
 }
 
-/** Build a shareable challenge URL from a payload + an origin (or full href). */
+/** Build a shareable challenge URL from a payload + the app URL (or full
+    href). The app path is kept (https://easygeez.com/app/#challenge=…). */
 export function challengeUrl(payload, origin) {
-  let root = String(origin || '')
-  try {
-    root = new URL(origin).origin
-  } catch {
-    root = root.replace(/[#?].*$/, '').replace(/\/+$/, '')
-  }
-  return `${root}/#challenge=${encodeChallenge(payload)}`
+  return `${linkBase(origin)}/#challenge=${encodeChallenge(payload)}`
 }
 
 /** Pull a challenge out of a location.hash (or full URL), or null. */

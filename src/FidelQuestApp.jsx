@@ -102,7 +102,7 @@ function armAssignmentReminder(assignment) {
 }
 import { packHasStories } from './platform/stories'
 import { setCommunityCode } from './platform/community'
-import { appShareUrl } from './components/ShareCard'
+import { appLinkUrl } from './platform/appLink'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform } from './platform/native'
 import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
@@ -1861,7 +1861,7 @@ export default function FidelQuestApp() {
                   families={screen.families || null}
                   joinUrl={(() => {
                     const codes = Object.keys(loadTeacher().classes)
-                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appShareUrl()) : null
+                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appLinkUrl()) : null
                   })()}
                 />
               </Suspense>
@@ -3858,7 +3858,7 @@ function ChallengeShareButton({ payload, label }) {
     const by = loadFromStorage('fq.nickname', '')
     // Native shells have a capacitor://localhost origin - a shared link
     // built from it is unopenable. Always share the public app URL.
-    const url = challengeUrl({ ...payload, by }, appShareUrl() || window.location.origin)
+    const url = challengeUrl({ ...payload, by }, appLinkUrl())
     const text = `${t('challengeShareText', 'Beat my eGeez score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {
@@ -4329,7 +4329,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
         assignmentSeed: assignment.seed,
         missed: [...new Set(missed.map((k) => String(k).replace(/-\d+$/, '')))],
       },
-      appShareUrl(),
+      appLinkUrl(),
     )
     if (!url) return
     const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
