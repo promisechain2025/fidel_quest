@@ -9,6 +9,13 @@
 # One-time infrastructure setup is in docs/deploy-aws.md. This script only
 # uploads and invalidates, so it is safe to run repeatedly.
 #
+# WARNING: this is the FULL website + app deploy and it runs
+# `aws s3 sync ... --delete` against the BUCKET ROOT. Anything at the root
+# that is not in website/dist and not excluded below (_tools/, about/, ...)
+# is deleted. For app-only releases use the GitHub Actions workflow
+# .github/workflows/deploy-app.yml or the app-only steps in docs/deploy.md,
+# which never use --delete and never write outside app/.
+#
 # Required env:
 #   EGEEZ_BUCKET        S3 bucket name (e.g. easygeez-com)
 #   EGEEZ_DISTRIBUTION  CloudFront distribution id (e.g. E1234ABCD5678)

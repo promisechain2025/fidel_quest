@@ -1,0 +1,117 @@
+# STAGED COPY. GitHub refused to let the bot token create files in
+# .github/workflows/ (missing "workflow" scope). Move this file to
+# .github/workflows/deploy-app.yml to enable it (see docs/deploy.md).
+name: Deploy app (easygeez.com/app)
+
+# Manual only. Run it from the Actions tab ("Run workflow") or:
+#   gh workflow run deploy-app.yml --ref main
+# It uploads the PWA to s3://easygeez-com/app/ and NOTHING else.
+# No --delete, never the bucket root (protects _tools/, about/, the website).
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and show what would upload, but do not write to S3'
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write   # OIDC token for AWS
+  contents: read
+
+concurrency:
+  group: deploy-app
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: easygeez-com
+  PREFIX: app/
+  DISTRIBUTION: E1SP7A6AIN6IQF
+
+jobs:
+  deploy:
+    name: Build and upload /app
+    runs-on: ubuntu-latest
+    # The IAM role only trusts this repo's "production" environment.
+    environment: production
+    steps:
+      - name: Only deploy from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "Refusing to deploy ${GITHUB_REF}; run this workflow on main."
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Unit tests
+        run: npx vitest run
+
+      - name: Build PWA for /app/
+        run: VITE_BASE=/app/ npm run build
+
+      - name: Sanity check the build
+        run: |
+          test -f dist/index.html
+          test -f dist/sw.js
+          test -f dist/manifest.webmanifest
+          grep -q '/app/' dist/index.html || { echo "dist/index.html does not reference /app/ - wrong VITE_BASE?"; exit 1; }
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEPLOY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: egeez-app-deploy-${{ github.run_id }}
+
+      - name: Upload to s3://easygeez-com/app/ (no --delete)
+        env:
+          DRY: ${{ inputs.dry_run && '--dryrun' || '' }}
+        run: |
+          set -euo pipefail
+          B="s3://${BUCKET}/${PREFIX}"
+          case "$B" in s3://${BUCKET}/app/) ;; *) echo "Target must be s3://${BUCKET}/app/"; exit 1;; esac
+          IMM='public, max-age=31536000, immutable'
+          NOC='no-cache, no-store, must-revalidate'
+          # Fingerprinted bundles: cache forever.
+          aws s3 sync dist/assets "${B}assets/" $DRY --cache-control "$IMM"
+          # Audio keeps stable names, so it may change in place: short cache.
+          if [ -d dist/audio ]; then
+            aws s3 sync dist/audio "${B}audio/" $DRY --cache-control 'public, max-age=3600, must-revalidate'
+          fi
+          # Everything else except the entry points.
+          aws s3 sync dist "$B" $DRY --exclude 'assets/*' --exclude 'audio/*' \
+            --exclude '*.html' --exclude 'sw.js' --exclude 'manifest.webmanifest' \
+            --cache-control "$IMM"
+          # Entry points last, never cached, so clients only see the new
+          # build once all its files are already uploaded.
+          aws s3 cp dist/sw.js "${B}sw.js" $DRY \
+            --content-type 'application/javascript; charset=utf-8' --cache-control "$NOC"
+          aws s3 cp dist/manifest.webmanifest "${B}manifest.webmanifest" $DRY \
+            --content-type 'application/manifest+json' --cache-control "$NOC"
+          aws s3 sync dist "$B" $DRY --exclude '*' --include '*.html' \
+            --content-type 'text/html; charset=utf-8' --cache-control "$NOC"
+
+      - name: Invalidate CloudFront
+        if: ${{ !inputs.dry_run }}
+        run: |
+          ID=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" \
+            --paths '/*' --query 'Invalidation.Id' --output text)
+          echo "Invalidation $ID"
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION" --id "$ID"
+
+      - name: Smoke test
+        if: ${{ !inputs.dry_run }}
+        run: |
+          curl -fsS -o /dev/null -w '%{http_code} /app/\n' https://easygeez.com/app/
+          JS=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
+          curl -fsS https://easygeez.com/app/ | grep -q "$JS" \
+            && echo "Live /app/ serves this build ($JS)" \
+            || { echo "Live /app/ does not reference $JS yet"; exit 1; }

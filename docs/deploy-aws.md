@@ -1,5 +1,8 @@
 # Deploying easygeez.com on AWS
 
+> App-only releases: use the GitHub Actions workflow or the app-only steps in
+> [deploy.md](deploy.md). They never use `--delete` and never write outside `app/`.
+
 One S3 bucket, one CloudFront distribution, one certificate.
 
 ```
