@@ -8,13 +8,18 @@
    through the letter audio - the mp3-optional contract holds. Page turns
    are user actions (cut the voice, act); "Read to me" chains word audio
    through afterVoice so it always plays out.
+
+   Bible stories (isBibleStory) are the exception: the child reads them
+   alone. No page narration, no tap hint, no Read-to-me button, and the
+   words are plain text (no word or letter audio). Other stories keep the
+   reading help above.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
 import { audio, afterVoice, playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
-import { storyLibrary, storyShelves, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { isBibleStory, storyLibrary, storyShelves, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
 import { BIBLE_SHELF } from '../data/bibleStories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
@@ -120,10 +125,13 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   }
 
   const page = story?.pages[pageIdx]
+  // Bible text is read by the child alone - nothing in the reader speaks it.
+  const selfRead = isBibleStory(story)
   const words = useMemo(() => (page ? storyWords(page.g) : []), [page])
   const showGloss = getLang() === 'en' // English meaning captions only for an English UI
 
   const tapWord = (w, i) => {
+    if (selfRead) return
     stopSpeech()
     setSpokenWord(i)
     // Reading telemetry: a tapped word is a help request - the one signal
@@ -181,13 +189,14 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     }
   }
   const readToMe = () => {
+    if (selfRead) return
     playNarration().then((played) => { if (!played) readWordsAloud() })
   }
 
   // Auto-read each page: play the recorded narration when there is one; on the
   // first page with no recording yet, fall back to the spoken tap-hint.
   useEffect(() => {
-    if (!story || finished || quiz) return
+    if (!story || finished || quiz || selfRead) return
     let alive = true
     playNarration(pageIdx).then((played) => {
       if (alive && !played && pageIdx === 0) sayPrompt('tapWords', soundOn)
@@ -345,7 +354,16 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                 </div>
               )}
               <div className="flex flex-wrap items-center justify-center gap-2 px-1">
-                {words.map((w, i) => (
+                {words.map((w, i) => (selfRead ? (
+                  <span
+                    key={`${pageIdx}-${i}`}
+                    data-story-word=""
+                    className="geez rounded-2xl border-2 px-3 py-2 text-4xl font-black"
+                    style={{ background: 'var(--paper)', borderColor: 'var(--line)', boxShadow: '0 3px 0 var(--line)' }}
+                  >
+                    {w}
+                  </span>
+                ) : (
                   <button
                     key={`${pageIdx}-${i}`}
                     type="button"
@@ -360,7 +378,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                   >
                     {w}
                   </button>
-                ))}
+                )))}
                 <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>{pageStop(page.g)}</span>
               </div>
               {showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>}
@@ -369,9 +387,9 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
         </main>
 
         <div className="flex items-center gap-3">
-          <button type="button" onClick={readToMe} aria-label={t('storyReadToMe', 'Read to me')} className={`chunk flex h-14 w-14 items-center justify-center rounded-2xl text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px' }}>
+          {!selfRead && <button type="button" onClick={readToMe} aria-label={t('storyReadToMe', 'Read to me')} className={`chunk flex h-14 w-14 items-center justify-center rounded-2xl text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px' }}>
             <Volume2 className="h-6 w-6" />
-          </button>
+          </button>}
           <button type="button" onClick={nextPage} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {pageIdx + 1 < story.pages.length ? t('storyNext', 'Next page') : t('storyFinish', 'The end!')}
             <ChevronRight className="h-5 w-5" />
