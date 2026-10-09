@@ -10,7 +10,8 @@
    Why banded, not strict per-letter decodable: Ge'ez gates one family at a
    time, so "only letters already learned" boxes the earliest stories into
    near-nonsense (halo, ho-ho-ho, mulu-mulu-mulu). A STORY is narration the
-   child reads WITH help (Read-to-me voices every word), not a cold decoding
+   child reads WITH help (Read-to-me voices every word; Bible stories are the
+   exception and are read by the child alone, see isBibleStory), not a cold decoding
    drill - so we trade strict decodability for real, correct Amharic that
    still arrives in a sensible order. Vocabulary stays simple and concrete;
    the band, not the exact spelling, sets when a story appears.
@@ -123,6 +124,14 @@ export function storyShelves(library) {
   return shelves
 }
 
+/** Bible text is for the child to read alone: no narration, no Read-to-me,
+    no word or letter audio on tap. Tigrinya Bible entries carry
+    shelf 'bible'; the Amharic starter library is biblical too (kind 'bible').
+    Story Path / School Path stories are not Bible and keep their reading help. */
+export function isBibleStory(story) {
+  return !!story && (story.shelf === 'bible' || story.kind === 'bible')
+}
+
 /* ── word audio lookup ────────────────────────────────────────────────── */
 
 let WORD_AUDIO = null
@@ -166,7 +175,9 @@ export function markStoryRead(id) {
 /* ── the starter library: gentle Bible stories (Amharic) ──────────────── */
 /* Page shape: g (Ge'ez), lt (latin), en (meaning), pic (emoji fallback),
    scene ({ bg, items }) rendered by StoryScene as a picture-book panel.
-   band (1-4) gates a story to a chapter. Short, kind, easy to understand. */
+   band (1-4) gates a story to a chapter. Short, kind, easy to understand.
+   Every entry here is a Bible story, tagged kind: 'bible' below so the
+   reader leaves it for the child to read alone (see isBibleStory). */
 
 /* People presets for scenes (skin / hair / cloth, plus robe/veil/beard...). */
 const GIRL = { k: 'person', skin: '#c98a5a', hair: '#241812', cloth: '#d9642e', blush: true }
@@ -347,4 +358,4 @@ export const STORIES = [
     ],
     q: { en: 'Who welcomed the children?', a: [{ pic: '❤️', ok: true }, { pic: '🦁', ok: false }, { pic: '🌧️', ok: false }] },
   },
-]
+].map((s) => ({ kind: 'bible', ...s }))
