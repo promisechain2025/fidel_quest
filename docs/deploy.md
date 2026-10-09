@@ -9,26 +9,23 @@ Neither touches the bucket root.
 | Where it runs | GitHub, `.github/workflows/deploy-app.yml` | Your laptop |
 | Credentials | OIDC -> IAM role `github-actions-egeez-deploy` (no stored keys) | Your own AWS CLI profile |
 | Can write | `easygeez-com/app/*` only | Whatever your profile allows |
-| Trigger | Actions tab -> *Deploy app* -> *Run workflow* on `main`, or `gh workflow run deploy-app.yml --ref main` | `bash` the steps below |
+| Trigger | Automatic on push/merge to `main` (app paths), or Actions tab -> *Run workflow* / `gh workflow run deploy-app.yml --ref main` | `bash` the steps below |
 
 ## 1. GitHub Actions deploy
 
-1. Merge to `main`.
-2. Actions -> **Deploy app (easygeez.com/app)** -> **Run workflow** (branch `main`).
+1. Merge to `main`. If the merge touches `src/`, `public/`, `index.html`,
+   `vite.config.*`, `vitest.config.*`, `package*.json` or the workflow itself,
+   the deploy starts automatically and is always a real deploy.
+2. To deploy by hand (or for docs-only merges): Actions -> **Deploy app
+   (easygeez.com/app)** -> **Run workflow** (branch `main`).
    Tick **dry_run** to build and print what would upload without writing.
 3. The job runs the unit tests, builds with `VITE_BASE=/app/`, syncs `dist/`
    to `s3://easygeez-com/app/` **without `--delete`**, invalidates `/*`,
    waits for the invalidation and checks the live `/app/` serves the new bundle.
 
-It is manual (`workflow_dispatch`) on purpose: merging does not ship.
+Merging to `main` ships. Failing unit tests stop the deploy before anything is uploaded.
 
 ### What it needs (one time)
-
-- **Workflow file**: the workflow is staged at `infra/github/deploy-app.yml`
-  because the bot's GitHub token has no `workflow` scope and cannot create
-  files under `.github/workflows/`. Move it once:
-  `git mv infra/github/deploy-app.yml .github/workflows/deploy-app.yml`
-  (or GitHub web: Add file -> `.github/workflows/deploy-app.yml`, paste it).
 
 - **AWS**: OIDC provider `token.actions.githubusercontent.com` and role
   `arn:aws:iam::326055865221:role/github-actions-egeez-deploy`.

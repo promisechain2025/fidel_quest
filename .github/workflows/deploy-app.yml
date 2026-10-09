@@ -1,13 +1,23 @@
-# STAGED COPY. GitHub refused to let the bot token create files in
-# .github/workflows/ (missing "workflow" scope). Move this file to
-# .github/workflows/deploy-app.yml to enable it (see docs/deploy.md).
 name: Deploy app (easygeez.com/app)
 
-# Manual only. Run it from the Actions tab ("Run workflow") or:
-#   gh workflow run deploy-app.yml --ref main
+# Runs automatically on every push/merge to main that touches the app, and
+# manually from the Actions tab ("Run workflow") or:
+#   gh workflow run deploy-app.yml --ref main [-f dry_run=true]
+# Push to main is always a REAL deploy; dry_run only applies to manual runs.
 # It uploads the PWA to s3://easygeez-com/app/ and NOTHING else.
 # No --delete, never the bucket root (protects _tools/, about/, the website).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy-app.yml'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -24,6 +34,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # Push to main is always a real deploy; manual runs honor the dry_run box.
+  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
   AWS_REGION: us-east-1
   BUCKET: easygeez-com
   PREFIX: app/
@@ -73,7 +85,7 @@ jobs:
 
       - name: Upload to s3://easygeez-com/app/ (no --delete)
         env:
-          DRY: ${{ inputs.dry_run && '--dryrun' || '' }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dryrun' || '' }}
         run: |
           set -euo pipefail
           B="s3://${BUCKET}/${PREFIX}"
@@ -100,7 +112,7 @@ jobs:
             --content-type 'text/html; charset=utf-8' --cache-control "$NOC"
 
       - name: Invalidate CloudFront
-        if: ${{ !inputs.dry_run }}
+        if: ${{ env.DRY_RUN != 'true' }}
         run: |
           ID=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" \
             --paths '/*' --query 'Invalidation.Id' --output text)
@@ -108,7 +120,7 @@ jobs:
           aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION" --id "$ID"
 
       - name: Smoke test
-        if: ${{ !inputs.dry_run }}
+        if: ${{ env.DRY_RUN != 'true' }}
         run: |
           curl -fsS -o /dev/null -w '%{http_code} /app/\n' https://easygeez.com/app/
           JS=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
