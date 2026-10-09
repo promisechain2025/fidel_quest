@@ -24,6 +24,12 @@ It is manual (`workflow_dispatch`) on purpose: merging does not ship.
 
 ### What it needs (one time)
 
+- **Workflow file**: the workflow is staged at `infra/github/deploy-app.yml`
+  because the bot's GitHub token has no `workflow` scope and cannot create
+  files under `.github/workflows/`. Move it once:
+  `git mv infra/github/deploy-app.yml .github/workflows/deploy-app.yml`
+  (or GitHub web: Add file -> `.github/workflows/deploy-app.yml`, paste it).
+
 - **AWS**: OIDC provider `token.actions.githubusercontent.com` and role
   `arn:aws:iam::326055865221:role/github-actions-egeez-deploy`.
   Run `infra/aws/setup-github-oidc.sh` once as an IAM admin (AWS CloudShell works).

@@ -1,3 +1,6 @@
+# STAGED COPY. GitHub refused to let the bot token create files in
+# .github/workflows/ (missing "workflow" scope). Move this file to
+# .github/workflows/deploy-app.yml to enable it (see docs/deploy.md).
 name: Deploy app (easygeez.com/app)
 
 # Manual only. Run it from the Actions tab ("Run workflow") or:
