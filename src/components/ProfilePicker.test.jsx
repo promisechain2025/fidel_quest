@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
+import { wordsToNumber } from '../platform/numberWords'
 import ProfilePicker from './ProfilePicker'
 import { loadProfiles, addProfile, activeProfile, profileCount } from '../platform/profiles'
 
@@ -17,8 +18,7 @@ function twoKids() {
 const passGate = () => {
   fireEvent.pointerDown(screen.getByText('Hold me'))
   act(() => { vi.advanceTimersByTime(2100) })
-  const m = /What is (\d+) ([×+]) (\d+)\?/.exec(screen.getByText(/What is/).textContent)
-  const ans = m[2] === '×' ? Number(m[1]) * Number(m[3]) : Number(m[1]) + Number(m[3])
+  const ans = wordsToNumber(screen.getByTestId('gate-words').textContent)
   for (const d of String(ans)) fireEvent.click(screen.getByRole('button', { name: d }))
   fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 }

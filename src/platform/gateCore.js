@@ -2,38 +2,68 @@
    PARENTAL GATE CORE — challenge generation + wrong-answer lockout. Pure apart
    from the tiny persisted lock record, so it is unit-testable.
    ----------------------------------------------------------------------------
-   Apple 1.3 (Kids) wants gates a child cannot pass by chance or memory. The
-   old gate rotated three fixed "tap the number" puzzles with 1-in-3 odds and
-   unlimited retries. Now:
-     - a fresh random arithmetic question every time (two-digit sums with a
-       carry, or a times-table product), answered on a keypad - a guess has
-       about a 1-in-100 chance, not 1-in-3;
+   Apple 1.3 / 5.1.4 (Kids) want gates a young child cannot pass by chance or
+   memory. Parents found the old arithmetic step (7 × 6, 27 + 38) hard, so the
+   gate is now "hold the button, then type the number shown in words":
+     - a fresh random number from 11 to 99 is shown ONLY spelled out - by
+       default in the learn language the family chose (Tigrinya ኣርብዓን
+       ሸውዓተን, Amharic አርባ ሰባት), switchable to English or the app-text
+       language ("forty-seven", "siebenundvierzig"); the digits never
+       appear on screen. Reading a written-out two-digit number and turning it
+       into digits is adult / older-reader knowledge that pre-readers in the
+       Kids age bands do not have, and the number changes every time so it
+       cannot be memorised;
+     - it is answered on a keypad, so a random guess has a 1-in-89 chance
+       (11..99), not 1-in-3 like the old "tap the number" puzzles;
+     - "Different number" swaps the number without counting as a miss (it
+       gives a guesser nothing);
      - after MAX_MISSES wrong answers the gate locks for a cooldown that
        doubles on each lock (30s, 60s, 120s ... capped at 5 min), persisted so
-       closing and reopening the gate does not reset it.
+       closing and reopening the gate does not reset it. Three blind guesses
+       pass about 3.4% of the time, then the waits grow.
    ========================================================================== */
+import { numberWords, NUMBER_WORD_LANGS } from './numberWords'
+
 const KEY = 'fq.gate.v1'
-export const MAX_MISSES = 2
+export const MAX_MISSES = 3
 export const BASE_LOCK_MS = 30_000
 export const MAX_LOCK_MS = 5 * 60_000
+export const MIN_NUMBER = 11
+export const MAX_NUMBER = 99
 
 const randInt = (rand, lo, hi) => lo + Math.floor(rand() * (hi - lo + 1))
 
-/** A random question: { text: '7 × 6', answer: 42 } or { text: '27 + 38', answer: 65 }. */
-export function makeChallenge(rand = Math.random) {
-  if (rand() < 0.5) {
-    const a = randInt(rand, 3, 9)
-    const b = randInt(rand, 4, 9)
-    return { text: `${a} × ${b}`, answer: a * b }
-  }
-  // two-digit addition that always carries (ones digits sum to >= 10)
-  const a1 = randInt(rand, 1, 4)
-  const b1 = randInt(rand, 1, 4)
-  const a0 = randInt(rand, 2, 9)
-  const b0 = randInt(rand, Math.max(1, 10 - a0), 9)
-  const a = a1 * 10 + a0
-  const b = b1 * 10 + b0
-  return { text: `${a} + ${b}`, answer: a + b }
+/** A random challenge: { text: 'forty-seven', answer: 47 }. `avoid` keeps a
+    "Different number" from landing on the same number again. */
+export function makeChallenge(lang = 'en', rand = Math.random, avoid) {
+  let n = randInt(rand, MIN_NUMBER, MAX_NUMBER)
+  if (n === avoid) n = n === MAX_NUMBER ? MIN_NUMBER : n + 1
+  return { text: numberWords(n, lang), answer: n }
+}
+
+const WORDS_KEY = 'fq.gate.words'
+const WORD_LABELS = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English', de: 'Deutsch', it: 'Italiano', sv: 'Svenska', nl: 'Nederlands', no: 'Norsk', fr: 'Français' }
+
+/** Which languages the number can be shown in, default first: the learn
+    pack's language when it is Amharic or Tigrinya, then English, then the
+    app-text language if different. [{ id, label }] */
+export function wordLangOptions(packId, uiLang = 'en') {
+  const ids = []
+  if (packId === 'am' || packId === 'ti') ids.push(packId)
+  if (uiLang !== 'en' && NUMBER_WORD_LANGS.includes(uiLang) && !ids.length) ids.push(uiLang)
+  ids.push('en')
+  if (uiLang !== 'en' && NUMBER_WORD_LANGS.includes(uiLang) && !ids.includes(uiLang)) ids.push(uiLang)
+  return ids.map((id) => ({ id, label: WORD_LABELS[id] || id }))
+}
+
+/** The saved words language if it is still offered, else the default. */
+export function pickWordLang(options) {
+  let saved = null
+  try { saved = localStorage.getItem(WORDS_KEY) } catch { /* none */ }
+  return options.some((o) => o.id === saved) ? saved : options[0].id
+}
+export function saveWordLang(id) {
+  try { localStorage.setItem(WORDS_KEY, id) } catch { /* session only */ }
 }
 
 function load() {

@@ -84,11 +84,14 @@ login exists. Notes for review:
 
 1. PARENTAL GATE: adult areas (Grown-Ups / Parents dashboard, the
    extra-profile purchase, sharing, outside links) sit behind a gate:
-   press and HOLD the "Hold me" button for 2 seconds, then answer the
-   arithmetic question shown (a times-table product such as "7 × 6" or a
-   two-digit sum such as "27 + 38") on the keypad and tap OK. The
-   question is random every time; two wrong answers lock the gate for
-   30 seconds (doubling on each further lock, max 5 minutes).
+   press and HOLD the "Hold me" button for 2 seconds, then type the
+   number shown in words (a random number from 11 to 99 spelled out,
+   such as "forty-seven" -> type 4, 7) on the keypad and tap OK. The
+   number is random every time and its digits are never shown;
+   "Different number" picks a new one. The words appear in the
+   alphabet the child is learning (Tigrinya or Amharic) by default -
+   tap "English" under them to see the number in English words. Three wrong answers lock the
+   gate for 30 seconds (doubling on each further lock, max 5 minutes).
 2. The Backpack (bag icon, top right) contains all secondary modes.
    Teacher mode is designed for classroom use via shared links; it
    needs no server or account.
