@@ -131,7 +131,8 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
 
   it('Android and iOS ship the same version: 1.3.1 (8)', () => {
     const gradle = read('android/app/build.gradle')
-    expect(gradle).toMatch(/versionCode 8\b/)
+    // Local default is 8; CI overrides it per upload with -PegeezVersionCode.
+    expect(gradle).toMatch(/versionCode\(\(project\.findProperty\('egeezVersionCode'\) \?: '8'\) as Integer\)/)
     expect(gradle).toMatch(/versionName "1\.3\.1"/)
     const pbx = read('ios/App/App.xcodeproj/project.pbxproj')
     expect([...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['1.3.1', '1.3.1'])

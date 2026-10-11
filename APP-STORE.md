@@ -202,6 +202,8 @@ npx cap open android          # opens Android Studio
    ```
 4. In **Play Console**: create the app → **Internal testing** → upload the
    `.aab` → add testers → verify on real devices → promote to Production.
+   Pushes to `main` now do the build + internal upload automatically
+   (`.github/workflows/android-play.yml`, setup in `docs/deploy-android.md`).
 
 ### iOS (App Store)
 ```bash

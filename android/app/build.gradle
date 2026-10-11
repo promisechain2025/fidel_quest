@@ -33,7 +33,9 @@ android {
         applicationId "net.promisechain.fidelquest"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
+        // CI (.github/workflows/android-play.yml) passes -PegeezVersionCode=<n>
+        // so every Play upload gets a new, higher code; local builds keep 8.
+        versionCode((project.findProperty('egeezVersionCode') ?: '8') as Integer)
         versionName "1.3.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
