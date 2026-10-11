@@ -33,7 +33,8 @@ import { LanguageSheet } from './FidelQuestApp'
 import { getTheme, toggleTheme } from './platform/theme'
 import { PACKS, getActivePackId } from './platform/ethiopic'
 import { isNativePlatform } from './platform/native'
-import { reminderOn, setReminder } from './platform/notify'
+import { reminderOn, setReminder, getReminderTime, setReminderTime, formatReminderTime, timeInputValue } from './platform/notify'
+import { reminderTexts } from './platform/firstRun'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadStoriesRead } from './platform/stories'
@@ -103,33 +104,59 @@ function NicknameField() {
   )
 }
 
-/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden). */
+/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden).
+    Shows the reminder time; changing it re-arms the notification. */
 function ReminderCard() {
   const [on, setOn] = useState(reminderOn())
+  const [time, setTime] = useState(getReminderTime)
   const [busy, setBusy] = useState(false)
   if (!isNativePlatform()) return null
   const toggle = async () => {
     setBusy(true)
-    const next = await setReminder(!on, {
-      title: t('remindTitle', 'Anbessa misses you!'),
-      body: t('remindBody', 'Come learn a letter today.'),
-      hour: 17,
-    })
+    const next = await setReminder(!on, reminderTexts())
     setOn(next)
+    setTime(getReminderTime())
     setBusy(false)
   }
+  const changeTime = async (value) => {
+    const m = /^(\d{2}):(\d{2})$/.exec(value || '')
+    if (!m) return
+    const hour = Number(m[1])
+    const minute = Number(m[2])
+    if (!setReminderTime(hour, minute)) return
+    setTime({ hour, minute })
+    if (on) {
+      setBusy(true)
+      setOn(await setReminder(true, reminderTexts()))
+      setBusy(false)
+    }
+  }
+  const at = formatReminderTime(time, getLang())
   return (
-    <section className="flex items-center justify-between gap-3 rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-      <div className="flex items-center gap-3">
-        <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-        <div>
-          <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
-          <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+          <div>
+            <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDescAt', 'A gentle nudge every day at {time}.', { time: at })}</p>
+          </div>
         </div>
+        <button type="button" role="switch" aria-checked={on} aria-label={t('remindTitleLabel', 'Daily reminder')} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+          <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+        </button>
       </div>
-      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
-        <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
-      </button>
+      <label className="mt-3 flex items-center justify-between gap-3 text-sm font-bold">
+        <span>{t('remindTimeLabel', 'Reminder time')}</span>
+        <input
+          type="time"
+          value={timeInputValue(time)}
+          disabled={busy}
+          onChange={(e) => changeTime(e.target.value)}
+          className={`rounded-xl border-2 px-3 py-2 font-black ${FOCUS}`}
+          style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        />
+      </label>
     </section>
   )
 }

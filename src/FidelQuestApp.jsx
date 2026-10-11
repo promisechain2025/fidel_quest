@@ -106,7 +106,9 @@ import { appLinkUrl } from './platform/appLink'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform } from './platform/native'
 import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
-import { maybeRequestReview } from './platform/reviewPrompt'
+import { maybeRequestReview, noteCompletion } from './platform/reviewPrompt'
+import { planSetup, parkSetup, finishSetup, reminderTexts } from './platform/firstRun'
+import { reminderOn, setReminder, setReminderTime, getReminderTime, formatReminderTime, REMINDER_PRESETS } from './platform/notify'
 import WebTrialPaywall from './components/WebTrialPaywall'
 import Dropdown from './components/Dropdown'
 
@@ -168,6 +170,7 @@ import {
   ClipboardCheck,
   Users,
   Globe,
+  Bell,
   ArrowDown,
   Send,
   Sun,
@@ -997,6 +1000,15 @@ export const isLevelUnlocked = (progress, index) =>
 
 export const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
+/* Store-review asks happen BETWEEN activities: a short beat after the child
+   is back on the path, so the system card never covers a game or the
+   transition. All caps live in platform/reviewPrompt. */
+const REVIEW_ASK_DELAY_MS = 900
+export const WORDS_REVIEW_ACCURACY = 80
+function askReviewSoon(reason) {
+  setTimeout(() => { maybeRequestReview(reason) }, REVIEW_ASK_DELAY_MS)
+}
+
 /** Close a modal on the Escape key (a parent's quick out; also assistive tech). */
 function useEscapeKey(onClose) {
   useEffect(() => {
@@ -1229,6 +1241,8 @@ export default function FidelQuestApp() {
   }, [])
 
   const finishLevel = useCallback((levelId, result) => {
+    // A Lesson Level replay passed with 2+ stars is a happy moment too.
+    if (result && result.passed !== false && (result.stars ?? 0) >= 2) askReviewSoon('complete')
     if (result) {
       setProgress((p) => {
         const next = mergeResult(p, levelId, result)
@@ -1243,6 +1257,13 @@ export default function FidelQuestApp() {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'lesson', levelId })
   }, [setScreen])
+
+  // First Words / Twin Drill: a round finished with 80%+ first-try accuracy
+  // (Continue only - not Replay, the child is still playing) may ask.
+  const finishWords = useCallback((r) => {
+    if ((r?.accuracy ?? 0) >= WORDS_REVIEW_ACCURACY) askReviewSoon('words')
+    goBack()
+  }, [goBack])
 
   const startWords = useCallback(() => {
     setRunSeed((Date.now() % 1000000) | 1)
@@ -1300,8 +1321,13 @@ export default function FidelQuestApp() {
       setJustEarned(party.reward)
     }
     // A finished node is a happy moment. The native app may ask for a store
-    // review; the website trial ignores this.
-    if ((stars ?? 0) > 0) maybeRequestReview('complete')
+    // review once the child is back on the path; the website trial ignores
+    // this. A finished CHAPTER waits: its party is on screen now, so the ask
+    // comes when that party is closed (never over it).
+    if ((stars ?? 0) > 0) {
+      if (party?.chapter) noteCompletion()
+      else askReviewSoon('complete')
+    }
     goBack()
   }, [goBack])
 
@@ -1435,6 +1461,8 @@ export default function FidelQuestApp() {
                 holiday={holiday}
                 trialLimited={trialLimited}
                 onTrial={() => setPaywallOpen(true)}
+                soundOn={soundOn}
+                onToggleSound={toggleSound}
               />
             </Screen>
           )}
@@ -1588,7 +1616,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'words' && (
             <Screen key={`words-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={goBack} onReplay={startWords} />
+              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={finishWords} onReplay={startWords} />
             </Screen>
           )}
           {screen.name === 'stories' && (
@@ -1604,7 +1632,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
+              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={finishWords} onReplay={startTwins} />
             </Screen>
           )}
           {screen.name === 'ladder' && (
@@ -1886,7 +1914,7 @@ export default function FidelQuestApp() {
               rewardName={celebration.rewardName}
               worn={wornLayers(journey.collection)}
               forms={progressStats(journey).forms}
-              onClose={() => setCelebration(null)}
+              onClose={() => { setCelebration(null); askReviewSoon('chapter') }}
               onPostcard={() => { setCelebration(null); setScreen({ name: 'postcard' }) }}
             />
           )}
@@ -2411,7 +2439,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null }) {
+function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null, soundOn = true, onToggleSound = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2422,10 +2450,28 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
     markOnboarded('placeoffer')
     setPlaceOfferOpen(false)
   }
-  // First launch on a device that is neither Amharic nor Tigrinya: the app
-  // starts in Tigrinya (the default), and offers the language sheet once so an
-  // Amharic family can switch before the child starts. Dismissing keeps it.
-  const [langOpen, setLangOpen] = useState(() => doneCount === 0 && !hasOnboarded('langpick') && needsLanguageChoice())
+  // First-launch setup (platform/firstRun): the language step (only on a
+  // device that is neither Amharic nor Tigrinya - the app starts in Tigrinya,
+  // the default, so an Amharic family can switch before the child starts),
+  // then the daily reminder (native app) and sound. Shown once and skippable;
+  // an install that already chose a language just sees the reminder step.
+  const [setup] = useState(() => planSetup({
+    native: isNativePlatform(),
+    fresh: doneCount === 0,
+    langNeeded: doneCount === 0 && !hasOnboarded('langpick') && needsLanguageChoice(),
+    reminderAlreadyOn: reminderOn(),
+  }))
+  const [setupOpen, setSetupOpen] = useState(setup.steps.length > 0)
+  const sealLanguage = () => {
+    confirmActivePack()
+    markOnboarded('langpick')
+  }
+  const closeSetup = () => {
+    finishSetup()
+    setSetupOpen(false)
+  }
+  // The header pill reopens the plain language sheet any time.
+  const [langOpen, setLangOpen] = useState(false)
   const closeLang = () => {
     markOnboarded('langpick')
     setLangOpen(false)
@@ -2553,6 +2599,18 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
       )}
 
       <AnimatePresence>
+        {setupOpen && (
+          <FirstRunSetup
+            key="first-run-setup"
+            steps={setup.steps}
+            before={setup.before}
+            soundOn={soundOn}
+            onToggleSound={onToggleSound}
+            onLeaveLang={sealLanguage}
+            onLangPicked={(remaining, before) => { markOnboarded('langpick'); parkSetup(remaining, before) }}
+            onDone={closeSetup}
+          />
+        )}
         {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
       </AnimatePresence>
@@ -2822,7 +2880,7 @@ function reloadForLanguage() {
   }, 50)
 }
 
-function LanguagePicker() {
+function LanguagePicker({ onPick = null }) {
   const pack = getActivePackId()
   const ui = getLang()
   return (
@@ -2841,7 +2899,7 @@ function LanguagePicker() {
           onChange={(id) => {
             const changed = id !== pack
             setActivePack(id)
-            if (changed) reloadForLanguage()
+            if (changed) { onPick?.(); reloadForLanguage() }
           }}
         />
       </div>
@@ -2858,7 +2916,7 @@ function LanguagePicker() {
           onChange={(id) => {
             const changed = id !== ui
             setLang(id)
-            if (changed) reloadForLanguage()
+            if (changed) { onPick?.(); reloadForLanguage() }
           }}
         />
       </div>
@@ -2901,6 +2959,170 @@ function StreakSheet({ streak, onClose }) {
         <button type="button" onClick={onClose} className={`chunk mt-5 w-full rounded-2xl px-6 py-3 font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }}>
           {t('keepGoing', 'Keep going!')}
         </button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* First-launch setup: the language sheet grown into a short, friendly flow
+   (platform/firstRun decides which steps). Big kid-app buttons, a step
+   counter, "Skip" always visible. Every choice stays changeable in Grown-ups.
+   The reminder step asks the OS for notification permission only when the
+   grown-up taps "Yes" - in context, never on its own. */
+export function FirstRunSetup({ steps, before = 0, soundOn = true, onToggleSound = null, onLeaveLang = null, onLangPicked = null, onDone }) {
+  const [i, setI] = useState(0)
+  const [time, setTime] = useState(() => getReminderTime())
+  const [busy, setBusy] = useState(false)
+  const [denied, setDenied] = useState(false)
+  const step = steps[i]
+  const total = before + steps.length
+  const last = i + 1 >= steps.length
+  const leaving = () => { if (step === 'lang') onLeaveLang?.() }
+  const next = () => {
+    leaving()
+    if (last) onDone?.()
+    else { setDenied(false); setI(i + 1) }
+  }
+  const skipAll = useCallback(() => { leaving(); onDone?.() }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEscapeKey(skipAll)
+  const remindYes = async () => {
+    setBusy(true)
+    setReminderTime(time.hour, time.minute)
+    const armed = await setReminder(true, reminderTexts())
+    setBusy(false)
+    if (armed) next()
+    else setDenied(true)
+  }
+  const lang = getLang()
+  const primary = { background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }
+  const nextLabel = last ? t('setupDone', "Let's go!") : t('setupNext', 'Next')
+  if (!step) return null
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('setupTitle', "Let's get ready!")}
+        data-setup-step={step}
+        className="w-full max-w-sm rounded-3xl p-5 text-center"
+        style={{ background: 'var(--paper)' }}
+        initial={{ scale: 0.9, y: 14 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="mono text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+            {total > 1 ? t('setupStep', 'Step {n} of {total}', { n: before + i + 1, total }) : t('setupTitle', "Let's get ready!")}
+          </span>
+          <button type="button" onClick={skipAll} className={`min-h-11 rounded-xl px-3 text-sm font-black ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            {t('setupSkip', 'Skip')}
+          </button>
+        </div>
+        {total > 1 && (
+          <div className="mt-1 flex justify-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: total }, (_, k) => (
+              <span key={k} className="h-2 rounded-full transition-all" style={{ width: k === before + i ? 22 : 8, background: k <= before + i ? 'var(--go)' : 'var(--line)' }} />
+            ))}
+          </div>
+        )}
+        <div className="mt-2 flex justify-center"><Hero size={88} pose={step === 'sound' ? 'cheer' : 'stand'} /></div>
+
+        {step === 'lang' && (
+          <>
+            <h2 className="mt-1 flex items-center justify-center gap-2 text-2xl font-black">
+              <Globe className="h-6 w-6" style={{ color: 'var(--sky)' }} aria-hidden="true" />
+              {t('langTitle', 'Language')}
+            </h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('langSheetBody', 'Choose the alphabet to learn and the language of the app text.')}
+            </p>
+            <div className="text-left"><LanguagePicker onPick={() => onLangPicked?.(steps.slice(i + 1), before + i + 1)} /></div>
+            <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+              {nextLabel}
+            </button>
+          </>
+        )}
+
+        {step === 'reminder' && (
+          <>
+            <h2 className="mt-1 text-2xl font-black leading-tight">
+              {t('setupRemindTitle', 'Remind us to practise every day?')}
+            </h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('setupRemindBody', 'Anbessa sends one friendly nudge a day. You can change it any time in Grown-ups.')}
+            </p>
+            {denied ? (
+              <>
+                <p role="status" className="mt-4 rounded-2xl border-2 px-4 py-3 text-sm font-bold" style={{ borderColor: 'var(--line)', background: 'var(--card)' }}>
+                  {t('setupRemindDenied', 'Notifications are off for eGeez. You can allow them later in your phone settings, then turn the reminder on in Grown-ups.')}
+                </p>
+                <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+                  {nextLabel}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>{t('setupRemindTime', 'What time?')}</p>
+                <div role="radiogroup" aria-label={t('setupRemindTime', 'What time?')} className="mt-2 grid grid-cols-3 gap-2">
+                  {REMINDER_PRESETS.map((p) => {
+                    const on = p.hour === time.hour && p.minute === time.minute
+                    return (
+                      <button
+                        key={`${p.hour}:${p.minute}`}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setTime({ hour: p.hour, minute: p.minute })}
+                        className={`min-h-14 rounded-2xl border-2 px-2 py-3 text-base font-black ${FOCUS}`}
+                        style={{ borderColor: on ? 'var(--go)' : 'var(--line)', background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--sky)' }}
+                      >
+                        {formatReminderTime(p, lang)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button type="button" disabled={busy} onClick={remindYes} className={`chunk mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={{ ...primary, opacity: busy ? 0.7 : 1 }}>
+                  <Bell className="h-5 w-5" aria-hidden="true" />
+                  {t('setupRemindYes', 'Yes, remind us')}
+                </button>
+                <button type="button" disabled={busy} onClick={next} className={`mt-2 min-h-12 w-full rounded-2xl px-6 py-3 text-base font-black ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  {t('dismiss', 'Not now')}
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {step === 'sound' && (
+          <>
+            <h2 className="mt-1 text-2xl font-black">{t('setupSoundTitle', 'Sounds and voices')}</h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('setupSoundBody', 'Anbessa says every letter out loud. Keep sound on for the best learning.')}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {[[true, Volume2, t('setupSoundOn', 'Sound on')], [false, VolumeX, t('setupSoundOff', 'Sound off')]].map(([val, Icon, label]) => {
+                const on = soundOn === val
+                return (
+                  <button
+                    key={String(val)}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => { if (!on) onToggleSound?.() }}
+                    className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-base font-black ${FOCUS}`}
+                    style={{ borderColor: on ? 'var(--go)' : 'var(--line)', background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--sky)' }}
+                  >
+                    <Icon className="h-8 w-8" aria-hidden="true" />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+              {nextLabel}
+            </button>
+          </>
+        )}
       </motion.div>
     </motion.div>
   )
@@ -4930,7 +5152,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
         accuracy={selectAccuracy(ctx)}
         stars={null}
         bestStreak={ctx.bestStreak}
-        onContinue={() => onFinish()}
+        onContinue={() => onFinish({ accuracy: selectAccuracy(ctx) })}
         onReplay={() => {
           onFinish()
           onReplay()

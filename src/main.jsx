@@ -9,6 +9,7 @@ import { applyUrlUnlock } from './utils/devUnlock'
 import { initVoice } from './platform/voicePack'
 import { warmAudioCache } from './platform/audioEngine'
 import { initReminder } from './platform/notify'
+import { reminderTexts } from './platform/firstRun'
 import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
 
@@ -47,7 +48,7 @@ import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Documents folder, at most once a day. Web keeps manual export.
 import('./platform/backup').then((m) => m.autoBackup()).catch(() => {})
 // Re-arm the daily reminder if a grown-up opted in (native only).
-initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
+initReminder(reminderTexts())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
