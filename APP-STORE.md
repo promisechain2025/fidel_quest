@@ -237,7 +237,8 @@ kids/families programs — plan for it.
 - Choose the **Kids** category + age band (e.g. 5 and under / 6–8).
 - Kids apps **may not** send personal data, show third-party ads, or link out
   of the app without a **parental gate**. eGeez's "For grown-ups" gate (hold
-  2 s, then answer a random sum / times-table question on a keypad)
+  the button 2 s, then type the number shown in words, e.g. "forty-seven",
+  on a keypad)
   qualifies; keep external links (shop) behind it or unset.
 - **App Privacy** ("nutrition label"): declare **Data Not Collected** for the
   §5 build.
