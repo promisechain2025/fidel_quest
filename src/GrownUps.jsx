@@ -7,7 +7,7 @@
    pure selectors over the answer ledger (src/platform/telemetry.js).
 
    The gate is two non-reading-child steps: hold a button for two seconds,
-   then answer a random arithmetic question (e.g. 7 × 6, 27 + 38) on a
+   then type a random number shown only in words (e.g. "forty-seven") on a
    keypad (components/ParentalGate.jsx, platform/gateCore.js).
    ========================================================================== */
 

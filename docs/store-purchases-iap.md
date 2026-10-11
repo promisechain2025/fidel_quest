@@ -50,7 +50,7 @@ Native config already in the repo: `com.android.vending.BILLING` in
    - Each needs a **review screenshot** (use
      `/workspace/egeez-shots/family-pack/` `grownups-restore` / the
      unlock screen) and review notes: "Grown-Ups (parental gate: hold the
-     button, answer the sum) -> Children -> Unlock profile N. Restore
+     button, then type the number shown in words) -> Children -> Unlock profile N. Restore
      purchases is next to it."
    - Availability: all territories where the app is sold.
 3. Old products: `family_pack` -> **Remove from Sale** (keep it; owners

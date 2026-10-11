@@ -1,12 +1,18 @@
-/* A "are you a grown-up?" gate: hold a button for two seconds, then answer a
-   random arithmetic question on a keypad (e.g. 7 × 6, 27 + 38). Two wrong
-   answers lock the gate for a cooldown that doubles each time (see
-   platform/gateCore.js). Shared by Grown-ups, Teacher, Family Voice, Voice
-   Postcard, Support and every share sheet. */
+/* A "are you a grown-up?" gate: hold a button for two seconds, then type a
+   random number from 11 to 99 that is shown ONLY in words (e.g. ኣርብዓን ሸውዓተን
+   / አርባ ሰባት / "forty-seven" -> 47) on a keypad. The words default to the
+   learn language (Tigrinya or Amharic) and a small toggle switches them to
+   English or the app-text language (remembered; not a miss). "Different
+   number" swaps the number without counting as a miss; three wrong answers lock the gate for a
+   cooldown that doubles each time (see platform/gateCore.js). Shared by
+   Grown-ups, Teacher, Family Voice, Voice Postcard, Support and every share
+   sheet. */
 import { useEffect, useRef, useState } from 'react'
 import { Delete } from 'lucide-react'
-import { t } from '../platform/i18n'
-import { makeChallenge, lockRemaining, recordMiss, recordPass } from '../platform/gateCore'
+import { t, getLang } from '../platform/i18n'
+import { getActivePackId } from '../platform/ethiopic'
+import { ETHIOPIC_WORD_LANGS, numberWords } from '../platform/numberWords'
+import { makeChallenge, lockRemaining, recordMiss, recordPass, wordLangOptions, pickWordLang, saveWordLang } from '../platform/gateCore'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok']
@@ -15,7 +21,17 @@ export default function ParentalGate({ onOpen, intro }) {
   const [held, setHeld] = useState(false)
   const [progress, setProgress] = useState(0)
   const timer = useRef(null)
-  const [challenge, setChallenge] = useState(() => makeChallenge())
+  const [options] = useState(() => wordLangOptions(getActivePackId(), getLang()))
+  const [lang, setLang] = useState(() => pickWordLang(options))
+  const [challenge, setChallenge] = useState(() => makeChallenge(lang))
+  // Same number, other language; remembered for next time, never a miss.
+  const switchLang = (id) => {
+    if (id === lang) return
+    setLang(id)
+    saveWordLang(id)
+    setChallenge((c) => ({ text: numberWords(c.answer, id), answer: c.answer }))
+  }
+  const ethiopic = ETHIOPIC_WORD_LANGS.includes(lang)
   const [entry, setEntry] = useState('')
   const [missed, setMissed] = useState(false)
   const [lockMs, setLockMs] = useState(() => lockRemaining())
@@ -40,14 +56,20 @@ export default function ParentalGate({ onOpen, intro }) {
     }
     const locked = recordMiss()
     setEntry('')
-    setChallenge(makeChallenge())
+    setChallenge((c) => makeChallenge(lang, Math.random, c.answer))
     setMissed(true)
     if (locked) setLockMs(locked)
   }
   const press = (k) => {
     if (k === 'del') setEntry((e) => e.slice(0, -1))
     else if (k === 'ok') submit()
-    else setEntry((e) => (e.length >= 3 ? e : e + k))
+    else setEntry((e) => (e.length >= 2 ? e : e + k))
+  }
+  // A new number on request; not a miss (it tells a guesser nothing).
+  const another = () => {
+    setEntry('')
+    setMissed(false)
+    setChallenge((c) => makeChallenge(lang, Math.random, c.answer))
   }
 
   const startHold = () => {
@@ -85,32 +107,69 @@ export default function ParentalGate({ onOpen, intro }) {
             onPointerDown={startHold}
             onPointerUp={cancelHold}
             onPointerLeave={cancelHold}
+            onPointerCancel={cancelHold}
+            onContextMenu={(e) => e.preventDefault()}
             onKeyDown={(e) => {
               if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) startHold()
             }}
             onKeyUp={(e) => {
               if (e.key === 'Enter' || e.key === ' ') cancelHold()
             }}
-            className={`relative h-28 w-28 rounded-full font-extrabold text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', outlineColor: 'var(--accent)' }}
+            className={`relative h-40 w-40 select-none rounded-full text-xl font-extrabold text-white ${FOCUS}`}
+            style={{ background: 'var(--sky)', outlineColor: 'var(--accent)', touchAction: 'none', WebkitTouchCallout: 'none', boxShadow: '0 6px 0 rgba(0,0,0,0.18)' }}
           >
+            {/* fill rises from the bottom while held */}
+            <span aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-full">
+              <span className="absolute inset-x-0 bottom-0" style={{ height: `${progress * 100}%`, background: 'rgba(255,255,255,0.25)' }} />
+            </span>
             <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden="true">
-              <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="6" />
-              <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" strokeWidth="6" strokeDasharray={`${progress * 289} 289`} />
+              <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="7" />
+              <circle cx="50" cy="50" r="46" fill="none" stroke="#fff" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${progress * 289} 289`} />
             </svg>
-            {t('gpHold', 'Hold me')}
+            <span className="relative">{t('gpHold', 'Hold me')}</span>
           </button>
-          <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {t('gpHoldHint', 'Press and hold for two seconds')}
+          <p className="text-base font-bold" aria-live="polite" style={{ color: progress > 0 ? 'var(--ink)' : 'var(--muted)' }}>
+            {progress > 0 ? t('gpHoldKeep', 'Keep holding…') : t('gpHoldHint', 'Press and hold for two seconds')}
           </p>
         </>
       ) : (
         <>
-          <p className="text-lg font-extrabold" aria-live="polite">
-            {t('gateQuestion', 'What is {q}?', { q: challenge.text })}
+          <p className="text-base font-bold" style={{ color: 'var(--muted)' }}>
+            {t('gateTypeNumber', 'Type this number:')}
           </p>
+          <p
+            lang={lang}
+            className={`-mt-2 flex min-h-[4.75rem] w-full max-w-[22rem] items-center justify-center rounded-2xl border-2 px-5 py-3 font-black ${ethiopic ? 'geez text-4xl leading-snug' : 'text-3xl leading-tight'}`}
+            style={{ background: 'var(--paper)', borderColor: 'var(--line)', overflowWrap: 'break-word', textWrap: 'balance' }}
+            aria-live="polite"
+            data-testid="gate-words"
+          >
+            {challenge.text}
+          </p>
+          {options.length > 1 && (
+            <div role="group" aria-label={t('gateWordsLang', 'Number words language')} className="-mt-2 flex flex-wrap justify-center gap-1.5">
+              {options.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  lang={o.id}
+                  aria-pressed={o.id === lang}
+                  onClick={() => switchLang(o.id)}
+                  className={`rounded-full border-2 px-3 py-1 text-sm font-bold ${ETHIOPIC_WORD_LANGS.includes(o.id) ? 'geez' : ''} ${FOCUS}`}
+                  style={{
+                    background: o.id === lang ? 'var(--sky)' : 'transparent',
+                    color: o.id === lang ? '#fff' : 'var(--muted)',
+                    borderColor: o.id === lang ? 'var(--sky)' : 'var(--line)',
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
           {missed && (
-            <p className="-mt-3 text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
+            <p role="alert" className="-mt-2 text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
               {t('gateMissed', 'Not quite - here is a new one.')}
             </p>
           )}
@@ -132,6 +191,14 @@ export default function ParentalGate({ onOpen, intro }) {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={another}
+            className={`rounded-full px-4 py-2 text-sm font-bold underline underline-offset-4 ${FOCUS}`}
+            style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}
+          >
+            {t('gateNewNumber', 'Different number')}
+          </button>
         </>
       )}
     </div>

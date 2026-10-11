@@ -244,7 +244,7 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
     body = (
       <>
         <TopBar title={t('kpGrownups', 'Grown-ups')} onBack={() => setView({ name: 'locked' })} />
-        <ParentalGate intro={t('kpSlotGateIntro', 'Grown-ups only: a new profile is a purchase. Hold the button, then answer the question.')} onOpen={() => setView({ name: 'pack' })} />
+        <ParentalGate intro={t('kpSlotGateIntro', 'Grown-ups only: a new profile is a purchase. Hold the button, then type the number shown in words.')} onOpen={() => setView({ name: 'pack' })} />
       </>
     )
   } else if (view.name === 'pack') {
@@ -275,7 +275,7 @@ export default function ProfilePicker({ onClose, reload = () => window.location.
     body = (
       <>
         <TopBar title={t('kpGrownups', 'Grown-ups')} onBack={() => setView({ name: 'pick' })} />
-        <ParentalGate intro={t('kpGateIntro', 'Grown-ups only: change or delete a child. Hold the button, then answer the question.')} onOpen={() => setView({ name: 'manage' })} />
+        <ParentalGate intro={t('kpGateIntro', 'Grown-ups only: change or delete a child. Hold the button, then type the number shown in words.')} onOpen={() => setView({ name: 'manage' })} />
       </>
     )
   } else if (view.name === 'manage') {
