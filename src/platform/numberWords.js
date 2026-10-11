@@ -102,8 +102,13 @@ export function numberWords(n, lang = 'en') {
   return join(Math.floor(n / 10), n % 10, tb.tens, tb.ones, tb.glue)
 }
 
-/** The inverse, for tests and tools: the number a word string spells, or null. */
-export function wordsToNumber(words, lang = 'en') {
-  for (let n = 10; n <= 99; n++) if (numberWords(n, lang) === words) return n
+/** Languages written in Ethiopic script (shown in the Ge'ez font). */
+export const ETHIOPIC_WORD_LANGS = ['am', 'ti']
+
+/** The inverse, for tests and tools: the number a word string spells (in
+    `lang`, or in any table when omitted), or null. */
+export function wordsToNumber(words, lang) {
+  for (const l of lang ? [lang] : NUMBER_WORD_LANGS)
+    for (let n = 10; n <= 99; n++) if (numberWords(n, l) === words) return n
   return null
 }

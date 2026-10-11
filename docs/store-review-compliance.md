@@ -162,7 +162,7 @@ until you do.
       **`VITE_PRIVACY_URL`** so the in-app link points at it, and paste the URL
       into both stores.
 - [ ] **Review Notes**: how to pass the parental gate (hold "Hold me" 2s, then
-      type the number shown in words, e.g. "forty-seven" -> 47, on the keypad and tap OK), that the app is paid upfront and the only in-app purchases are extra kids
+      type the number shown in words, e.g. "forty-seven" -> 47, on the keypad and tap OK; the words default to Tigrinya/Amharic - tap "English" under them for English words), that the app is paid upfront and the only in-app purchases are extra kids
       profiles (Grown-Ups -> Children -> Unlock profile 2, behind the gate, Restore purchases next to it), and that dormant server
       features are disabled in this build. (Draft in `docs/store-listing.md`.)
 - [ ] Content rating (IARC) + age bands answered honestly on both stores.

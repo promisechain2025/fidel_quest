@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import ParentalGate from './ParentalGate'
 import { BASE_LOCK_MS } from '../platform/gateCore'
-import { wordsToNumber } from '../platform/numberWords'
+import { wordsToNumber, numberWords } from '../platform/numberWords'
 
 const holdOpen = () => {
   fireEvent.pointerDown(screen.getByText('Hold me'))
@@ -10,14 +10,17 @@ const holdOpen = () => {
 }
 const words = () => screen.getByTestId('gate-words').textContent
 // Read the spelled-out number back to digits, the way a grown-up would.
-const shown = () => wordsToNumber(words(), 'en')
+const shown = () => wordsToNumber(words())
 const wrong = () => (shown() === 99 ? 11 : shown() + 1)
 const type = (n) => {
   for (const d of String(n)) fireEvent.click(screen.getByRole('button', { name: d }))
   fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 }
 
-beforeEach(() => { vi.useFakeTimers(); localStorage.removeItem('fq.gate.v1') })
+beforeEach(() => {
+  vi.useFakeTimers()
+  for (const k of ['fq.gate.v1', 'fq.gate.words', 'fq.pack', 'fq.lang']) localStorage.removeItem(k)
+})
 afterEach(() => vi.useRealTimers())
 
 describe('ParentalGate', () => {
@@ -77,5 +80,47 @@ describe('ParentalGate', () => {
     act(() => { vi.advanceTimersByTime(BASE_LOCK_MS + 600) })
     expect(screen.getByText('Hold me')).toBeTruthy()
     expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('shows the words in the learn language by default (Tigrinya pack)', () => {
+    localStorage.setItem('fq.pack', 'ti')
+    render(<ParentalGate onOpen={vi.fn()} />)
+    holdOpen()
+    expect(words()).toBe(numberWords(shown(), 'ti'))
+    expect(words()).toMatch(/[\u1200-\u137F]/)
+    expect(screen.getByRole('button', { name: 'ትግርኛ' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('shows Amharic words for the Amharic pack', () => {
+    localStorage.setItem('fq.pack', 'am')
+    render(<ParentalGate onOpen={vi.fn()} />)
+    holdOpen()
+    expect(words()).toBe(numberWords(shown(), 'am'))
+    expect(screen.getByRole('button', { name: 'አማርኛ' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'ትግርኛ' })).toBeNull()
+  })
+
+  it('the language toggle keeps the number, is not a miss, and is remembered', () => {
+    localStorage.setItem('fq.pack', 'ti')
+    const onOpen = vi.fn()
+    const { unmount } = render(<ParentalGate onOpen={onOpen} />)
+    holdOpen()
+    const n = shown()
+    for (let i = 0; i < 5; i++) {
+      fireEvent.click(screen.getByRole('button', { name: 'English' }))
+      expect(words()).toBe(numberWords(n, 'en'))
+      fireEvent.click(screen.getByRole('button', { name: 'ትግርኛ' }))
+      expect(words()).toBe(numberWords(n, 'ti'))
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+    expect(screen.queryByText(/Not quite/)).toBeNull()
+    expect(JSON.parse(localStorage.getItem('fq.gate.v1') || '{}').misses || 0).toBe(0)
+    unmount()
+    render(<ParentalGate onOpen={onOpen} />)
+    holdOpen()
+    expect(words()).toBe(numberWords(shown(), 'en')) // English remembered
+    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe('true')
+    type(shown())
+    expect(onOpen).toHaveBeenCalledTimes(1)
   })
 })

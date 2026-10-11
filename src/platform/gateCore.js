@@ -5,8 +5,10 @@
    Apple 1.3 / 5.1.4 (Kids) want gates a young child cannot pass by chance or
    memory. Parents found the old arithmetic step (7 × 6, 27 + 38) hard, so the
    gate is now "hold the button, then type the number shown in words":
-     - a fresh random number from 11 to 99 is shown ONLY spelled out in the
-       app-text language ("forty-seven", "siebenundvierzig"); the digits never
+     - a fresh random number from 11 to 99 is shown ONLY spelled out - by
+       default in the learn language the family chose (Tigrinya ኣርብዓን
+       ሸውዓተን, Amharic አርባ ሰባት), switchable to English or the app-text
+       language ("forty-seven", "siebenundvierzig"); the digits never
        appear on screen. Reading a written-out two-digit number and turning it
        into digits is adult / older-reader knowledge that pre-readers in the
        Kids age bands do not have, and the number changes every time so it
@@ -20,7 +22,7 @@
        closing and reopening the gate does not reset it. Three blind guesses
        pass about 3.4% of the time, then the waits grow.
    ========================================================================== */
-import { numberWords } from './numberWords'
+import { numberWords, NUMBER_WORD_LANGS } from './numberWords'
 
 const KEY = 'fq.gate.v1'
 export const MAX_MISSES = 3
@@ -37,6 +39,31 @@ export function makeChallenge(lang = 'en', rand = Math.random, avoid) {
   let n = randInt(rand, MIN_NUMBER, MAX_NUMBER)
   if (n === avoid) n = n === MAX_NUMBER ? MIN_NUMBER : n + 1
   return { text: numberWords(n, lang), answer: n }
+}
+
+const WORDS_KEY = 'fq.gate.words'
+const WORD_LABELS = { am: 'አማርኛ', ti: 'ትግርኛ', en: 'English', de: 'Deutsch', it: 'Italiano', sv: 'Svenska', nl: 'Nederlands', no: 'Norsk', fr: 'Français' }
+
+/** Which languages the number can be shown in, default first: the learn
+    pack's language when it is Amharic or Tigrinya, then English, then the
+    app-text language if different. [{ id, label }] */
+export function wordLangOptions(packId, uiLang = 'en') {
+  const ids = []
+  if (packId === 'am' || packId === 'ti') ids.push(packId)
+  if (uiLang !== 'en' && NUMBER_WORD_LANGS.includes(uiLang) && !ids.length) ids.push(uiLang)
+  ids.push('en')
+  if (uiLang !== 'en' && NUMBER_WORD_LANGS.includes(uiLang) && !ids.includes(uiLang)) ids.push(uiLang)
+  return ids.map((id) => ({ id, label: WORD_LABELS[id] || id }))
+}
+
+/** The saved words language if it is still offered, else the default. */
+export function pickWordLang(options) {
+  let saved = null
+  try { saved = localStorage.getItem(WORDS_KEY) } catch { /* none */ }
+  return options.some((o) => o.id === saved) ? saved : options[0].id
+}
+export function saveWordLang(id) {
+  try { localStorage.setItem(WORDS_KEY, id) } catch { /* session only */ }
 }
 
 function load() {

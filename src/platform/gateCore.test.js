@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { makeChallenge, recordMiss, recordPass, lockRemaining, MAX_MISSES, BASE_LOCK_MS, MAX_LOCK_MS, MIN_NUMBER, MAX_NUMBER } from './gateCore'
+import { wordLangOptions, pickWordLang, saveWordLang, makeChallenge, recordMiss, recordPass, lockRemaining, MAX_MISSES, BASE_LOCK_MS, MAX_LOCK_MS, MIN_NUMBER, MAX_NUMBER } from './gateCore'
 import { numberWords, NUMBER_WORD_LANGS } from './numberWords'
 import { LANG_IDS } from './langpacks'
 
 const seq = (vals) => { let i = 0; return () => vals[i++ % vals.length] }
 
-beforeEach(() => localStorage.removeItem('fq.gate.v1'))
+beforeEach(() => { localStorage.removeItem('fq.gate.v1'); localStorage.removeItem('fq.gate.words') })
 
 describe('parental gate challenges', () => {
   it('are a random 11..99 number shown only in words', () => {
@@ -103,5 +103,26 @@ describe('wrong-answer lockout', () => {
     recordMiss(0)
     recordPass()
     expect(recordMiss(0)).toBe(0)
+  })
+})
+
+describe('number words language', () => {
+  const ids = (o) => o.map((x) => x.id)
+  it('defaults to the learn language, then English, then the UI language', () => {
+    expect(ids(wordLangOptions('ti', 'en'))).toEqual(['ti', 'en'])
+    expect(ids(wordLangOptions('am', 'de'))).toEqual(['am', 'en', 'de'])
+    expect(wordLangOptions('ti', 'en')[0].label).toBe('ትግርኛ')
+    expect(wordLangOptions('am', 'en')[0].label).toBe('አማርኛ')
+  })
+  it('falls back to the UI language when the learn pack is not Amharic/Tigrinya', () => {
+    expect(ids(wordLangOptions('om', 'fr'))).toEqual(['fr', 'en'])
+    expect(ids(wordLangOptions(undefined, 'en'))).toEqual(['en'])
+  })
+  it('remembers a choice that is still offered', () => {
+    const opts = wordLangOptions('ti', 'de')
+    expect(pickWordLang(opts)).toBe('ti')
+    saveWordLang('de')
+    expect(pickWordLang(opts)).toBe('de')
+    expect(pickWordLang(wordLangOptions('am', 'en'))).toBe('am') // 'de' no longer offered
   })
 })

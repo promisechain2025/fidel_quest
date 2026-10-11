@@ -1,14 +1,18 @@
 /* A "are you a grown-up?" gate: hold a button for two seconds, then type a
-   random number from 11 to 99 that is shown ONLY in words in the app-text
-   language (e.g. "forty-seven" -> 47) on a keypad. "Different number" swaps
-   it without counting as a miss; three wrong answers lock the gate for a
+   random number from 11 to 99 that is shown ONLY in words (e.g. ኣርብዓን ሸውዓተን
+   / አርባ ሰባት / "forty-seven" -> 47) on a keypad. The words default to the
+   learn language (Tigrinya or Amharic) and a small toggle switches them to
+   English or the app-text language (remembered; not a miss). "Different
+   number" swaps the number without counting as a miss; three wrong answers lock the gate for a
    cooldown that doubles each time (see platform/gateCore.js). Shared by
    Grown-ups, Teacher, Family Voice, Voice Postcard, Support and every share
    sheet. */
 import { useEffect, useRef, useState } from 'react'
 import { Delete } from 'lucide-react'
 import { t, getLang } from '../platform/i18n'
-import { makeChallenge, lockRemaining, recordMiss, recordPass } from '../platform/gateCore'
+import { getActivePackId } from '../platform/ethiopic'
+import { ETHIOPIC_WORD_LANGS, numberWords } from '../platform/numberWords'
+import { makeChallenge, lockRemaining, recordMiss, recordPass, wordLangOptions, pickWordLang, saveWordLang } from '../platform/gateCore'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok']
@@ -17,8 +21,17 @@ export default function ParentalGate({ onOpen, intro }) {
   const [held, setHeld] = useState(false)
   const [progress, setProgress] = useState(0)
   const timer = useRef(null)
-  const [lang] = useState(getLang)
+  const [options] = useState(() => wordLangOptions(getActivePackId(), getLang()))
+  const [lang, setLang] = useState(() => pickWordLang(options))
   const [challenge, setChallenge] = useState(() => makeChallenge(lang))
+  // Same number, other language; remembered for next time, never a miss.
+  const switchLang = (id) => {
+    if (id === lang) return
+    setLang(id)
+    saveWordLang(id)
+    setChallenge((c) => ({ text: numberWords(c.answer, id), answer: c.answer }))
+  }
+  const ethiopic = ETHIOPIC_WORD_LANGS.includes(lang)
   const [entry, setEntry] = useState('')
   const [missed, setMissed] = useState(false)
   const [lockMs, setLockMs] = useState(() => lockRemaining())
@@ -125,13 +138,36 @@ export default function ParentalGate({ onOpen, intro }) {
             {t('gateTypeNumber', 'Type this number:')}
           </p>
           <p
-            className="-mt-2 max-w-xs rounded-2xl border-2 px-5 py-3 text-3xl font-black leading-tight"
-            style={{ background: 'var(--paper)', borderColor: 'var(--line)', overflowWrap: 'anywhere' }}
+            lang={lang}
+            className={`-mt-2 flex min-h-[4.75rem] w-full max-w-[22rem] items-center justify-center rounded-2xl border-2 px-5 py-3 font-black ${ethiopic ? 'geez text-4xl leading-snug' : 'text-3xl leading-tight'}`}
+            style={{ background: 'var(--paper)', borderColor: 'var(--line)', overflowWrap: 'break-word', textWrap: 'balance' }}
             aria-live="polite"
             data-testid="gate-words"
           >
             {challenge.text}
           </p>
+          {options.length > 1 && (
+            <div role="group" aria-label={t('gateWordsLang', 'Number words language')} className="-mt-2 flex flex-wrap justify-center gap-1.5">
+              {options.map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  lang={o.id}
+                  aria-pressed={o.id === lang}
+                  onClick={() => switchLang(o.id)}
+                  className={`rounded-full border-2 px-3 py-1 text-sm font-bold ${ETHIOPIC_WORD_LANGS.includes(o.id) ? 'geez' : ''} ${FOCUS}`}
+                  style={{
+                    background: o.id === lang ? 'var(--sky)' : 'transparent',
+                    color: o.id === lang ? '#fff' : 'var(--muted)',
+                    borderColor: o.id === lang ? 'var(--sky)' : 'var(--line)',
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
           {missed && (
             <p role="alert" className="-mt-2 text-sm font-bold" style={{ color: 'var(--bad-ink)' }}>
               {t('gateMissed', 'Not quite - here is a new one.')}

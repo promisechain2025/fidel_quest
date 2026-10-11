@@ -88,7 +88,9 @@ login exists. Notes for review:
    number shown in words (a random number from 11 to 99 spelled out,
    such as "forty-seven" -> type 4, 7) on the keypad and tap OK. The
    number is random every time and its digits are never shown;
-   "Different number" picks a new one. Three wrong answers lock the
+   "Different number" picks a new one. The words appear in the
+   alphabet the child is learning (Tigrinya or Amharic) by default -
+   tap "English" under them to see the number in English words. Three wrong answers lock the
    gate for 30 seconds (doubling on each further lock, max 5 minutes).
 2. The Backpack (bag icon, top right) contains all secondary modes.
    Teacher mode is designed for classroom use via shared links; it
