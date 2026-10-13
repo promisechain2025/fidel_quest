@@ -37,9 +37,9 @@ describe('bible stories shelf', () => {
   ].join('\n')
 
   it('is the Creation book, separate from Story Path and from Amharic', () => {
-    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah'])
-    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
-    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
+    expect(BIBLE_STORIES.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah', 'bible-david'])
+    expect(SCHOOL_PATH_STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah' || s.id === 'bible-david')).toBe(false)
+    expect(STORIES.some((s) => s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah' || s.id === 'bible-david')).toBe(false)
     expect(STORIES.find((s) => s.id === 'creation').pack).toBe('am')
     expect(STORIES.find((s) => s.id === 'noah').pack).toBe('am')
     expect(entry.shelf).toBe('bible')
@@ -109,14 +109,15 @@ describe('bible stories shelf', () => {
     const shelves = storyShelves(ti)
     expect(shelves.map((s) => s.id)).toEqual(['path', 'bible'])
     expect(shelves[0].stories.every((s) => s.schoolPath && s.shelf !== 'bible')).toBe(true)
-    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah'])
+    expect(shelves[1].stories.map((s) => s.id)).toEqual(['bible-creation', 'bible-noah', 'bible-moses', 'bible-jonah', 'bible-david'])
     expect(shelves[1].stories[0].unlocked).toBe(true)
     expect(shelves[1].stories[1].unlocked).toBe(false)
     expect(shelves[1].stories[2].unlocked).toBe(false)
     expect(shelves[1].stories[3].unlocked).toBe(false)
+    expect(shelves[1].stories[4].unlocked).toBe(false)
     const am = storyLibrary([], undefined, 'am')
     expect(storyShelves(am).map((s) => s.id)).toEqual(['library'])
-    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah')).toBe(false)
+    expect(am.some((s) => s.shelf === 'bible' || s.id === 'bible-creation' || s.id === 'bible-noah' || s.id === 'bible-moses' || s.id === 'bible-jonah' || s.id === 'bible-david')).toBe(false)
     expect(am.length).toBe(STORIES.length)
   })
 })
@@ -437,6 +438,128 @@ describe('jonah bible book', () => {
       'ትልቅ ዓሣ ዋጠው።',
       'ዮናስ ጸለየ።',
       'ዓሣው መልሶ አወጣው።',
+    ])
+  })
+})
+
+describe('david bible book', () => {
+  const book = BIBLE_STORIES[4]
+  const entry = bibleStoryTimeEntries()[4]
+  const chapter1 = FIDEL_FAMILIES.slice(0, 8).map((f) => f.id)
+  const chapter2 = FIDEL_FAMILIES.slice(0, 16).map((f) => f.id)
+  const chapter3 = FIDEL_FAMILIES.slice(0, 24).map((f) => f.id)
+  const beforeLast = FIDEL_FAMILIES.slice(0, -1).map((f) => f.id)
+  const all = FIDEL_FAMILIES.map((f) => f.id)
+  const blob = [book.titleTi, book.refrain.geez, book.question.geez, ...book.pages.map((p) => p.geez)].join('\n')
+
+  it('paraphrases 1 Samuel 17 as one connected story', () => {
+    expect(book.id).toBe('bible-david')
+    expect(book.titleTi).toBe('ዳዊትን ጐልያድን')
+    expect(book.titleEn).toBe('David and Goliath')
+    expect(book.free).toBe(false)
+    expect(book.band).toBe(4)
+    expect(book.refrain.geez).toBe('ንእሽተይ እግዚኣብሄር ምስ እመነ ይብርትዕ።')
+    expect(book.refrain.meaningEn).toBe('A little one is brave when he trusts God.')
+    expect(book.pages.map((p) => p.geez)).toEqual([
+      'ዳዊት ንእሽተይ ጓሳ ነበረ። ንኣባጊዕ ኣቦኡ የዕቅብ ነበረ።',
+      'ኣንበሳ ወይ ድቢ ምስ መጸ፡ ዳዊት ንኣባጊዕ የድሕን ነበረ።',
+      'ኣቦኡ ንዳዊት መግቢ ሒዙ ናብ ኣሕዋቱ ኣብ ሰራዊት ሰደዶ።',
+      'ኣብኡ ዓቢይ ጐልያድ ካብ ፍልስጥኤማውያን ንእስራኤል ጸውዐ።',
+      'እቶም ሰራዊት እስራኤል ነቲ ጐልያድ ርእዮም ፈርሑ።',
+      'ዳዊት ግና ንሳኦል እግዚኣብሄር ክሕግዘኒ እዩ በሎ።',
+      'ንጉስ ሳኦል ክዳኑ ኸደኖ። እቲ ክዳን ግና ዓቢይ ነበረ።',
+      'ዳዊት ግና ወንጭፉን ሓሙሽተ ልሙፃት ኣእማንን ካብ ሩባ ወሰደ።',
+      'ዳዊት ብወንጭፉ ናብ ጐልያድ ቀረበ። ኣይፈርሐን።',
+      'ዳዊት ሓንቲ እምኒ ወንጨፈ። ጐልያድ ኣብ ምድሪ ወደቐ።',
+      'ሰብ እስራኤል ሓጎሱ። ዳዊት ብእግዚኣብሄር ሰዓረ።',
+      'ንእሽተይ ዳዊት እግዚኣብሄር ምስ እመነ ብርቱዕ ኮነ።',
+    ])
+    expect(book.pages.map((p) => p.meaningEn)).toEqual([
+      'David was a young shepherd. He watched his father\'s sheep.',
+      'When a lion or a bear came, David would save the sheep.',
+      'His father sent David, carrying food, to his brothers in the army.',
+      'There, big Goliath from the Philistines shouted at Israel.',
+      'The soldiers of Israel saw Goliath and were afraid.',
+      'But David told Saul, "God will help me."',
+      'King Saul put his armor on him. But the armor was too big.',
+      'But David took his sling and five smooth stones from the stream.',
+      'David came up to Goliath with his sling. He was not afraid.',
+      'David slung one stone. Goliath fell to the ground.',
+      'The people of Israel rejoiced. David won with God\'s help.',
+      'When little David trusted God, he became brave.',
+    ])
+    expect(blob.includes('አ')).toBe(false)
+    expect(blob.includes('ሔ')).toBe(false)
+    expect(blob.includes('እግዚኣብሄር')).toBe(true)
+    expect(blob.includes('ዳዊት')).toBe(true)
+    expect(blob.includes('ጐልያድ')).toBe(true)
+    expect(blob.includes('ጎልያድ')).toBe(false)
+    expect(blob.includes('ሳኦል')).toBe(true)
+    expect(blob.includes('ፍልስጥኤማውያን')).toBe(true)
+    expect(blob.includes('እስራኤል')).toBe(true)
+    expect(blob.includes('ወንጭፉ')).toBe(true)
+    expect(blob.includes('ሓሙሽተ ልሙፃት ኣእማን')).toBe(true)
+    expect(blob.includes('ሓንቲ እምኒ')).toBe(true)
+    expect(blob.includes('ወደቐ')).toBe(true)
+    expect(blob.includes('ድቢ')).toBe(true)
+    expect(blob.includes('ዓቢይ ጐልያድ') || blob.includes('ዓቢይ')).toBe(true)
+    expect(book.pages[3].geez.includes('ዓቢይ')).toBe(true)
+    expect(book.pages[3].geez.includes('ዓባይ')).toBe(false)
+    expect(book.pages[6].geez.includes('ዓቢይ')).toBe(true)
+    expect(book.pages[11].geez.includes('ይብርትዕ')).toBe(false)
+    expect(book.pages.length).toBe(12)
+    for (const page of book.pages) {
+      expect(storyWords(page.geez).length, page.geez).toBeGreaterThan(0)
+      expect(storyWords(page.geez).length, page.geez).toBeLessThanOrEqual(16)
+      expect(page.latin && page.meaningEn && page.pictureHint).toBeTruthy()
+      expect(page.familyIds).toEqual(familiesOfGeez(page.geez))
+    }
+    expect(book.question.geez).toBe('ዳዊት እንታይ ተጠቐመ?')
+    expect(book.question.meaningEn).toBe('What did David use?')
+    expect(book.question.answers.filter((a) => a.ok)).toHaveLength(1)
+    expect(book.question.answers.find((a) => a.ok).pic).toBe('🪨')
+    expect(book.question.answers.map((a) => a.alt)).toEqual(['a sling and a stone', 'a sword', 'a spear'])
+    expect(book.question.answers).toHaveLength(3)
+  })
+
+  it('sits behind the band-4 progress gate and leaves Jonah and Amharic David as they are', () => {
+    expect(entry.free).toBe(false)
+    expect(entry.shelf).toBe('bible')
+    expect(entry.pack).toBe('ti')
+    expect(entry.band).toBe(4)
+    expect(entry.schoolPath).toBeUndefined()
+    expect(storyUnlocked(entry, [])).toBe(false)
+    expect(storyUnlocked(entry, chapter1)).toBe(false)
+    expect(storyUnlocked(entry, chapter2)).toBe(false)
+    expect(storyUnlocked(entry, chapter3)).toBe(false)
+    expect(storyUnlocked(entry, beforeLast)).toBe(false)
+    expect(storyUnlocked(entry, all)).toBe(true)
+    expect(storyMissingFamilies(entry, chapter3).length).toBeGreaterThan(0)
+    expect(storyMissingFamilies(entry, all)).toEqual([])
+    expect(storyUnlocked(bibleStoryTimeEntries()[0], [])).toBe(true)
+    expect(bibleStoryTimeEntries()[1].band).toBe(1)
+    expect(bibleStoryTimeEntries()[2].band).toBe(2)
+    expect(bibleStoryTimeEntries()[3].band).toBe(3)
+    expect(storyUnlocked(bibleStoryTimeEntries()[3], chapter3)).toBe(true)
+    expect(entry.cover).toBe('/art/stories/bible-david-cover.webp')
+    expect(existsSync(resolve('public', entry.cover.slice(1)))).toBe(true)
+    entry.pages.forEach((page, i) => {
+      const src = `/art/stories/bible-david-${i + 1}.webp`
+      expect(page.scene.src).toBe(src)
+      expect(page.g && page.lt && page.en && page.pic).toBeTruthy()
+      expect(BGS.has(page.scene.bg)).toBe(true)
+      expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+    })
+    const amDavid = STORIES.find((s) => s.id === 'david')
+    expect(amDavid.title.g).toBe('ዳዊትና ጎልያድ')
+    expect(amDavid.band).toBe(4)
+    expect(amDavid.pack).toBe('am')
+    expect(storyUnlocked(amDavid, [])).toBe(false)
+    expect(amDavid.pages.map((p) => p.g)).toEqual([
+      'ዳዊት ትንሽ ልጅ ነበር።',
+      'ጎልያድ ትልቅ ወታደር ነበር።',
+      'ዳዊት እግዚአብሔርን ታመነ።',
+      'ዳዊት ድል ነሳ።',
     ])
   })
 })
