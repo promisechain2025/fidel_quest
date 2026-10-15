@@ -23,6 +23,7 @@ retaining their copyright/license notices (npm keeps these in `node_modules`).
 
 - **Nunito** (variable) — SIL Open Font License 1.1
 - **Noto Sans Ethiopic** — SIL Open Font License 1.1
+- **Noto Serif Ethiopic** (Bold, Ethiopic subset, prayer book) — SIL Open Font License 1.1
 
 The SIL OFL permits bundling and commercial use of the fonts within a product;
 the fonts themselves may not be sold on their own and any modified font must not
