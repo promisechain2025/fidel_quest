@@ -10,7 +10,8 @@
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Eye, EyeOff, Pause, Play } from 'lucide-react'
-import BOOK from '../data/tselotMarks.json'
+import TSELOT from '../data/tselotMarks.json'
+import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -18,7 +19,8 @@ import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 const SIZES = [0.86, 1, 1.16, 1.32]
 const SIZE_KEY = 'fq.prayer.size'
 
-const UNITS = BOOK.units
+const BOOKS = [TSELOT, WUDASE_MON]
+const BOOK_KEY = 'fq.prayer.book'
 const SPEEDS = [0.8, 1, 1.2]
 const TURN_MS = 650
 
@@ -74,7 +76,7 @@ function Unit({ u, idx, mode, glow, onTap }) {
   )
 }
 
-function PageFace({ units, pageNo, markMode, glowFor, onTap }) {
+function PageFace({ UNITS, units, pageNo, markMode, glowFor, onTap }) {
   return (
     <div className="pb-face">
       <div className="pb-text geez-book">
@@ -88,7 +90,19 @@ function PageFace({ units, pageNo, markMode, glowFor, onTap }) {
   )
 }
 
+/* ---- shelf: which reading is open (remembered per device) -------------- */
 export default function PrayerBook({ onBack, pack }) {
+  const [id, setId] = useState(() => {
+    try { const v = localStorage.getItem(BOOK_KEY); return BOOKS.some((b) => b.id === v) ? v : BOOKS[0].id } catch { return BOOKS[0].id }
+  })
+  useEffect(() => { try { localStorage.setItem(BOOK_KEY, id) } catch { /* ignore */ } }, [id])
+  const book = BOOKS.find((b) => b.id === id) || BOOKS[0]
+  return <BookView key={book.id} book={book} onBack={onBack} pack={pack} onPick={setId} />
+}
+
+function BookView({ book: BOOK, onBack, pack, onPick }) {
+  const UNITS = BOOK.units
+  const [shelf, setShelf] = useState(false)
   const NAMES = markNames(pack || getActivePackId())
   // Pages are cut from REAL layout: every unit is laid out once in a hidden
   // page of the same size, we read which line each lands on, and fill each
@@ -143,8 +157,8 @@ export default function PrayerBook({ onBack, pack }) {
     }
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [size])
-  const resume = useMemo(() => loadResume(BOOK.id), [])
+  }, [size, UNITS])
+  const resume = useMemo(() => loadResume(BOOK.id), [BOOK.id])
   const [page, setPage] = useState(() => (resume && resume.unit >= 0 ? pageOfUnit(paginate(UNITS, 70), resume.unit) : Math.max(0, resume?.page || 0)))
   const pageSafe = Math.min(page, pages.length - 1)
   // Keep the resume word on screen when the budget changes after measuring.
@@ -181,7 +195,7 @@ export default function PrayerBook({ onBack, pack }) {
   pageRef.current = pageSafe
 
   useEffect(() => { shownFirst.current = pages[pageSafe][0] }, [pages, pageSafe])
-  useEffect(() => { saveResume(BOOK.id, { page: pageSafe, unit: cur >= 0 ? cur : pages[pageSafe][0] }) }, [pageSafe, cur, pages])
+  useEffect(() => { saveResume(BOOK.id, { page: pageSafe, unit: cur >= 0 ? cur : pages[pageSafe][0] }) }, [BOOK.id, pageSafe, cur, pages])
 
   /* ---- audio ------------------------------------------------------------ */
   const stopAudio = useCallback(() => {
@@ -257,7 +271,7 @@ export default function PrayerBook({ onBack, pack }) {
       raf.current = requestAnimationFrame(tick)
     }
     el.play().then(() => { raf.current = requestAnimationFrame(tick) }).catch(() => { setPlaying(false); playingRef.current = false })
-  }, [pages, speed, autoTurn])
+  }, [UNITS, pages, speed, autoTurn])
 
   const togglePlay = () => {
     if (playingRef.current) { playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); return }
@@ -321,7 +335,7 @@ export default function PrayerBook({ onBack, pack }) {
     return 'hidden'
   }
   const glowFor = (i) => (playing && i === cur ? glow : -1)
-  const face = (p) => <PageFace units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} />
+  const face = (p) => <PageFace UNITS={UNITS} units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} />
 
   // Layers: base (what will be revealed) under the flap (the turning page).
   const baseP = turn ? (turn.dir === 1 ? turn.to : turn.from) : pageSafe
@@ -338,7 +352,14 @@ export default function PrayerBook({ onBack, pack }) {
     <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': SIZES[size] }}>
       <header className="pb-top">
         <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
-        <div className="pb-title geez-book">{BOOK.title}</div>
+        <button type="button" className="pb-title geez-book" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker">{BOOK.title}</button>
+        {shelf && (
+          <div className="pb-shelf geez-book" role="menu">
+            {BOOKS.map((b) => (
+              <button key={b.id} type="button" role="menuitem" className={`pb-shelf-item${b.id === BOOK.id ? ' pb-on' : ''}`} data-testid={`book-${b.id}`} onClick={() => { setShelf(false); if (b.id !== BOOK.id) onPick(b.id) }}>{b.title}</button>
+            ))}
+          </div>
+        )}
         <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => { setShowAll((s) => !s); setLegendOpen(true) }} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
           {showAll ? <Eye size={30} /> : <EyeOff size={30} />}
         </button>

@@ -5,6 +5,18 @@ import PrayerBook from './PrayerBook'
 beforeEach(() => localStorage.clear())
 
 describe('PrayerBook', () => {
+  it('shelf switches to ውዳሴ ማርያም ዘሰኑይ and remembers it', () => {
+    const { container, unmount } = render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('book-picker'))
+    fireEvent.click(screen.getByTestId('book-wudase-monday'))
+    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰኑይ')
+    expect(container.querySelectorAll('.pb-base .pb-mark').length).toBe(0)
+    expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-monday')
+    unmount()
+    render(<PrayerBook onBack={() => {}} />)
+    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰኑይ')
+  })
+
   it('opens on clean text: no marks until asked', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.textContent).toContain('አአትብ')

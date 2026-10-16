@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import BOOK from '../data/tselotMarks.json'
+import MON from '../data/wudaseMondayMarks.json'
 import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
@@ -56,6 +57,28 @@ describe('owner rules', () => {
   it('legend names follow the learn language', () => {
     expect(markNames('am')).toMatchObject({ tenesh: 'ተነሽ', tetay: 'ተጣይ', seyaf: 'ሰያፍ', wedaqi: 'ወዳቂ' })
     expect(markNames('ti')).toMatchObject({ tenesh: 'ተለዓሊ', tetay: 'ተዋሓጢ', seyaf: 'ሰያፍ', wedaqi: 'ወዳቂ', tie: 'ተናባቢ', tebqo: 'ጠብቆ' })
+  })
+})
+
+describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
+  it('every unit has a mark on a real letter, a clip on disk, and the ሰያፍ⇔ሳድስ rule holds', () => {
+    const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
+    expect(MON.units.length).toBe(228)
+    for (const [i, u] of MON.units.entries()) {
+      expect(MARK_TYPES).toContain(u.m)
+      const last = [...u.w[u.w.length - 1]]
+      expect(u.li).toBeLessThan(last.length)
+      if (u.m === 'seyaf' || u.m === 'tenesh') expect(u.m).toBe(sadis(last[last.length - 1]) ? 'seyaf' : 'tenesh')
+      expect(u.a).toBe(`reader/wudase-mon/${String(i).padStart(3, '0')}.mp3`)
+      expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
+    }
+  })
+  it('one paragraph per stanza, opener red; Yosief spellings in', () => {
+    const paras = MON.units.filter((u) => u.s)
+    expect(paras.length).toBe(10)
+    for (const u of paras) expect(u.h).toContain(0)
+    expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'የሕየው'], m: 'seyaf' })
+    expect(MON.units.flatMap((u) => u.w)).not.toContain('ሕያዉ')
   })
 })
 
