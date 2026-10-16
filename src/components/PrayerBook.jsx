@@ -16,7 +16,9 @@ import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume
 import { getActivePackId } from '../platform/ethiopic'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 
-const SIZES = [0.86, 1, 1.16, 1.32]
+const SIZES = [0.82, 0.9, 1, 1.16, 1.32]
+// Default is fitted: step down until the longest paragraph fits one page (readable floor 0.82).
+const FIT_STEPS = [1, 0.94, 0.88, 0.82]
 const SIZE_KEY = 'fq.prayer.size'
 
 const BOOKS = [TSELOT, WUDASE_MON]
@@ -60,7 +62,7 @@ function Unit({ u, idx, mode, glow, onTap }) {
                 <span key={li} className={`pb-l${st}`}>
                   {ch}
                   {show && wi === last && li === u.li && (
-                    <span className="pb-mark" style={{ color: tone }}><MarkShape type={u.m} size={mode === 'current' ? 26 : 20} /></span>
+                    <span className="pb-mark" style={{ color: tone }}><MarkShape type={u.m} size={20} /></span>
                   )}
                 </span>
               )
@@ -109,9 +111,11 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   // page with as many whole lines as fit. Marks are absolutely positioned,
   // so marks on/off never changes the cut.
   const [size, setSize] = useState(() => {
-    try { const r = localStorage.getItem(SIZE_KEY); const v = r === null ? 1 : Number(r); return SIZES[v] ? v : 1 } catch { return 1 }
+    try { const r = localStorage.getItem(SIZE_KEY); const v = r === null ? null : Number(r); return SIZES[v] ? v : null } catch { return null }
   })
-  useEffect(() => { try { localStorage.setItem(SIZE_KEY, String(size)) } catch { /* ignore */ } }, [size])
+  useEffect(() => { try { if (size === null) localStorage.removeItem(SIZE_KEY); else localStorage.setItem(SIZE_KEY, String(size)) } catch { /* ignore */ } }, [size])
+  const [fit, setFit] = useState(FIT_STEPS[0])
+  const scale = size === null ? fit : SIZES[size]
   const stageRef = useRef(null)
   const measRef = useRef(null)
   const [pages, setPages] = useState(() => paginate(UNITS, 70))
@@ -133,6 +137,18 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         else L.units.push(i)
       }
       if (lines.length < 2) return // no real layout (tests): keep the fallback
+      if (size === null) {
+        // Auto-fit: if a paragraph is taller than a page, try the next smaller step.
+        let worst = 0
+        for (let a = 0; a < lines.length; a++) {
+          if (!lines[a].para && a > 0) continue
+          let b = a
+          while (b + 1 < lines.length && !lines[b + 1].para) b++
+          worst = Math.max(worst, lines[b].top + lh - lines[a].top)
+        }
+        const nxt = FIT_STEPS[FIT_STEPS.indexOf(fit) + 1]
+        if (worst > box + 0.5 && nxt) { setFit(nxt); return }
+      }
       const out = []
       let k = 0
       while (k < lines.length) {
@@ -157,7 +173,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     }
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [size, UNITS])
+  }, [size, fit, UNITS])
   const resume = useMemo(() => loadResume(BOOK.id), [BOOK.id])
   const [page, setPage] = useState(() => (resume && resume.unit >= 0 ? pageOfUnit(paginate(UNITS, 70), resume.unit) : Math.max(0, resume?.page || 0)))
   const pageSafe = Math.min(page, pages.length - 1)
@@ -345,11 +361,14 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   // Keep the word being read (or the page's first word) on screen across a re-cut.
   const resize = (d) => {
     anchor.current = playingRef.current && curRef.current >= 0 ? curRef.current : pages[pageSafe][0]
-    setSize((v) => Math.max(0, Math.min(SIZES.length - 1, v + d)))
+    setSize(() => {
+      const k = d > 0 ? SIZES.findIndex((z) => z > scale + 1e-6) : SIZES.findLastIndex((z) => z < scale - 1e-6)
+      return k >= 0 ? k : SIZES.indexOf(scale) >= 0 ? SIZES.indexOf(scale) : null
+    })
   }
 
   return (
-    <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': SIZES[size] }}>
+    <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
         <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
         <button type="button" className="pb-title geez-book" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker">{BOOK.title}</button>
@@ -404,8 +423,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
           {playing ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" />}
         </button>
         <div className="pb-size">
-          <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={size === 0} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
-          <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={size === SIZES.length - 1} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
+          <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={scale <= SIZES[0] + 1e-6} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
+          <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={scale >= SIZES[SIZES.length - 1] - 1e-6} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
         </div>
       </footer>
     </div>
