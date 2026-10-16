@@ -328,3 +328,4 @@ input, textarea, [contenteditable='true'] {
   .pb-title { font-size: 16px; padding: 6px 2px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .pb-title::after { margin-left: 4px; border-width: 5px; }
 }
+.pb-play-slot { width: 84px; height: 84px; }

@@ -68,6 +68,23 @@ describe('PrayerBook', () => {
     expect(localStorage.getItem('fq.prayer.marks')).toBe('0')
   })
 
+  it('a day without a recording shows no play or speed controls, and marks stay hidden', () => {
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('book-picker'))
+    for (const d of ['wednesday', 'thursday', 'friday', 'saturday', 'sunday']) expect(screen.getByTestId(`book-wudase-${d}`)).toBeTruthy()
+    fireEvent.click(screen.getByTestId('book-wudase-sunday'))
+    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘእሁድ')
+    expect(screen.queryByTestId('play')).toBeNull()
+    expect(screen.queryByTestId('speed')).toBeNull()
+    expect(screen.getByTestId('no-voice')).toBeTruthy()
+    expect(container.querySelectorAll('.pb-base .pb-mark').length).toBe(0)
+    expect(/[A-Za-z]/.test(container.textContent)).toBe(false)
+    fireEvent.click(screen.getByTestId('book-picker'))
+    fireEvent.click(screen.getByTestId('book-wudase-tuesday'))
+    expect(screen.getByTestId('play')).toBeTruthy()
+    expect(screen.getByTestId('speed')).toBeTruthy()
+  })
+
   it('opens on clean text: no marks until asked', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.textContent).toContain('አአትብ')

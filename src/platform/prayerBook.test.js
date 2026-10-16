@@ -3,6 +3,11 @@ import { describe, it, expect } from 'vitest'
 import BOOK from '../data/tselotMarks.json'
 import MON from '../data/wudaseMondayMarks.json'
 import TUE from '../data/wudaseTuesdayMarks.json'
+import WED from '../data/wudaseWednesdayMarks.json'
+import THU from '../data/wudaseThursdayMarks.json'
+import FRI from '../data/wudaseFridayMarks.json'
+import SAT from '../data/wudaseSaturdayMarks.json'
+import SUN from '../data/wudaseSundayMarks.json'
 import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
@@ -98,6 +103,32 @@ describe('ውዳሴ ማርያም ዘሰሉስ data', () => {
   })
   it('ሙሴ stays ወዳቂ pending review', () => {
     expect(TUE.units[71]).toMatchObject({ w: ['ሙሴ'], m: 'wedaqi' })
+  })
+})
+
+describe('ውዳሴ ማርያም ረቡዕ–እሁድ (text-only until recorded)', () => {
+  const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
+  const DAYS = [[WED, 'wudase-wednesday', 425], [THU, 'wudase-thursday', 474], [FRI, 'wudase-friday', 319], [SAT, 'wudase-saturday', 250], [SUN, 'wudase-sunday', 279]]
+  it.each(DAYS)('%#: marks valid, ሰያፍ⇔ሳድስ, Ge\u2019ez only, paragraphs open red, no clips yet', (B, id, n) => {
+    expect(B.id).toBe(id)
+    expect(B.units.length).toBe(n)
+    expect(B.title.startsWith('ውዳሴ ማርያም ዘ')).toBe(true)
+    for (const u of B.units) {
+      expect(MARK_TYPES).toContain(u.m)
+      for (const w of u.w) expect(/^[\u1200-\u137F]+$/.test(w)).toBe(true)
+      const last = [...u.w[u.w.length - 1]]
+      expect(u.li).toBeLessThan(last.length)
+      if (u.m === 'seyaf' || u.m === 'tenesh') expect(u.m).toBe(sadis(last[last.length - 1]) ? 'seyaf' : 'tenesh')
+      if (u.s) expect(u.h).toContain(0)
+      expect(u.a).toBeUndefined()
+    }
+    expect(B.units.filter((u) => u.s).length).toBeGreaterThan(5)
+  })
+  it('Thursday spelling: ወመጠው ወከዓው; Tuesday reads ተሰዓተ (no numeral guide left)', () => {
+    const thu = THU.units.flatMap((u) => u.w)
+    expect(thu).toContain('ወመጠው'); expect(thu).toContain('ወከዓው'); expect(thu).not.toContain('ወመጠዉ')
+    expect(TUE.units[268]).toMatchObject({ w: ['ተሰዓተ'], a: 'reader/wudase-tue/268.mp3' })
+    for (const u of TUE.units) for (const w of u.w) expect(/^[\u1200-\u137F]+$/.test(w)).toBe(true)
   })
 })
 

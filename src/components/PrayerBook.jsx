@@ -13,6 +13,11 @@ import { ArrowLeft, Eye, EyeOff, Pause, Play, Rabbit, Turtle } from 'lucide-reac
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
+import WUDASE_WED from '../data/wudaseWednesdayMarks.json'
+import WUDASE_THU from '../data/wudaseThursdayMarks.json'
+import WUDASE_FRI from '../data/wudaseFridayMarks.json'
+import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
+import WUDASE_SUN from '../data/wudaseSundayMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -22,7 +27,7 @@ const SIZES = [0.82, 0.9, 1, 1.16, 1.32]
 const FIT_STEPS = [1, 0.94, 0.88, 0.82]
 const SIZE_KEY = 'fq.prayer.size'
 
-const BOOKS = [TSELOT, WUDASE_MON, WUDASE_TUE]
+const BOOKS = [TSELOT, WUDASE_MON, WUDASE_TUE, WUDASE_WED, WUDASE_THU, WUDASE_FRI, WUDASE_SAT, WUDASE_SUN]
 const BOOK_KEY = 'fq.prayer.book'
 // Playback speed (pitch preserved). 0.5 is for practice; never faster than 1.25.
 export const SPEEDS = [0.5, 0.75, 1, 1.25]
@@ -368,6 +373,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   // Layers: base (what will be revealed) under the flap (the turning page).
   const baseP = turn ? (turn.dir === 1 ? turn.to : turn.from) : pageSafe
   const flapP = turn ? (turn.dir === 1 ? turn.from : turn.to) : null
+  // Books without a recording yet: no play or speed controls at all (layout slots kept).
+  const voiced = useMemo(() => UNITS.some((u) => u.a), [UNITS])
   const hasRec = pages[pageSafe].some((i) => UNITS[i].a) || nextRecorded(UNITS, pages[pageSafe][pages[pageSafe].length - 1]) >= 0
 
   // Keep the word being read (or the page's first word) on screen across a re-cut.
@@ -435,14 +442,17 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
       </div>
 
       <footer className="pb-bottom">
-        <div className="pb-speed" role="group" aria-label="ፍጥነት" data-testid="speed" data-rate={SPEEDS[speed]}>
+        {voiced ? (<div className="pb-speed" role="group" aria-label="ፍጥነት" data-testid="speed" data-rate={SPEEDS[speed]}>
           <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.max(0, v - 1))} disabled={speed === 0} aria-label="ቀስ" data-testid="speed-down"><Turtle size={22} /></button>
           <span className="pb-spd-dots" aria-hidden="true">{SPEEDS.map((r, k) => <span key={k} className={`${k === speed ? 'on' : ''}${r === 1 ? ' one' : ''}`} />)}</span>
           <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.min(SPEEDS.length - 1, v + 1))} disabled={speed === SPEEDS.length - 1} aria-label="ፍጠን" data-testid="speed-up"><Rabbit size={22} /></button>
         </div>
+        ) : <span className="pb-speed" aria-hidden="true" />}
+        {voiced ? (
         <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
           {playing ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" />}
         </button>
+        ) : <span className="pb-play-slot" aria-hidden="true" data-testid="no-voice" />}
         <div className="pb-size">
           <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={scale <= SIZES[0] + 1e-6} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
           <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={scale >= SIZES[SIZES.length - 1] - 1e-6} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
