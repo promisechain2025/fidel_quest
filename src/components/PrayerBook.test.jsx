@@ -18,7 +18,7 @@ describe('PrayerBook', () => {
     expect(container.querySelectorAll('.pb-base .pb-mark').length).toBe(units.length)
     expect(screen.getByTestId('legend').textContent).toContain('ተነሽ')
     // አአትብ: ሰያፍ above ት (letter index 2)
-    const first = container.querySelector('[data-unit="0"]')
+    const first = container.querySelector('.pb-base [data-unit="0"]')
     const marked = first.querySelector('.pb-mark').parentElement
     expect(marked.textContent.charAt(0)).toBe('ት')
     expect(first.querySelector('[data-mark="seyaf"]')).toBeTruthy()
@@ -33,13 +33,13 @@ describe('PrayerBook', () => {
 
   it('shows the page number in Ge\u2019ez numerals and no Latin in the chrome', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
-    expect(container.querySelector('.pb-folio').textContent).toBe('፩')
+    expect(container.querySelector('.pb-base .pb-folio').textContent).toBe('፩')
     expect(/[A-Za-z]/.test(container.textContent)).toBe(false)
   })
 
   it('resumes on the saved page', () => {
     localStorage.setItem('fq.prayer.v1', JSON.stringify({ 'tselot-zezewetir': { page: 2, unit: -1 } }))
     const { container } = render(<PrayerBook onBack={() => {}} />)
-    expect(container.querySelector('.pb-folio').textContent).toBe('፫')
+    expect(container.querySelector('.pb-base .pb-folio').textContent).toBe('፫')
   })
 })
