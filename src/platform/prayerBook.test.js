@@ -124,9 +124,10 @@ describe('ውዳሴ ማርያም ረቡዕ–እሁድ (text-only until recorded
     }
     expect(B.units.filter((u) => u.s).length).toBeGreaterThan(5)
   })
-  it('Thursday spelling: ወመጠው ወከዓው; Tuesday reads ተሰዓተ (no numeral guide left)', () => {
+  it('ወመጠዉ ወከዓዉ keep ዉ (Yosief) in every day; Tuesday reads ተሰዓተ (no numeral guide left)', () => {
     const thu = THU.units.flatMap((u) => u.w)
-    expect(thu).toContain('ወመጠው'); expect(thu).toContain('ወከዓው'); expect(thu).not.toContain('ወመጠዉ')
+    expect(thu).toContain('ወመጠዉ'); expect(thu).toContain('ወከዓዉ')
+    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) { const all = B.units.flatMap((u) => u.w); expect(all).not.toContain('ወመጠው'); expect(all).not.toContain('ወከዓው') }
     expect(TUE.units[268]).toMatchObject({ w: ['ተሰዓተ'], a: 'reader/wudase-tue/268.mp3' })
     for (const u of TUE.units) for (const w of u.w) expect(/^[\u1200-\u137F]+$/.test(w)).toBe(true)
   })
