@@ -41,7 +41,7 @@ function Unit({ u, idx, mode, glow, onTap }) {
   let flat = 0
   const last = u.w.length - 1
   return (
-    <span className={`pb-unit${u.t ? ' pb-titleu' : ''}${mode === 'current' ? ' pb-current' : ''}${u.a ? '' : ' pb-norec'}`} data-unit={idx} onClick={() => onTap(idx)}>
+    <span className={`pb-unit${mode === 'current' ? ' pb-current' : ''}${u.a ? '' : ' pb-norec'}`} data-unit={idx} onClick={() => onTap(idx)}>
       {u.w.map((w, wi) => {
         const holy = u.h && u.h.includes(wi)
         const letters = [...w]
