@@ -74,7 +74,7 @@ export default defineConfig({
         // bloat the up-front install on the slow devices this app targets.
         // The runtime CacheFirst rule below still caches them after first play,
         // and offline reading degrades to word-by-word audio.
-        globIgnores: ['**/audio/fidel/stories/**'],
+        globIgnores: ['**/audio/fidel/stories/**', '**/audio/fidel/reader/**'],
         // The generated SW registers an SPA navigation fallback (every
         // navigation resolves to index.html). The /review page is a SEPARATE
         // static document, not part of the SPA, so it must be exempt — without
@@ -99,6 +99,16 @@ export default defineConfig({
             options: {
               cacheName: 'meet-heroes-v1',
               expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 60 },
+            },
+          },
+          {
+            // Prayer-book word clips: their own bucket so ~300 passage clips
+            // never evict the core letter voice from fidel-audio.
+            urlPattern: /\/audio\/fidel\/reader\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'reader-audio-v1',
+              expiration: { maxEntries: 600, maxAgeSeconds: 60 * 60 * 24 * 90 },
             },
           },
           {

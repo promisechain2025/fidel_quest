@@ -143,6 +143,7 @@ const TvClass = lazyRetry(() => import('./components/TvClass'))
 // The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
 // most sessions never open it, so keep it out of the boot chunk like the rest.
 const StoryTime = lazyRetry(() => import('./components/StoryTime'))
+const PrayerBook = lazyRetry(() => import('./components/PrayerBook'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
@@ -1630,6 +1631,13 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
+          {screen.name === 'prayer' && (
+            <Screen key="prayer">
+              <Suspense fallback={null}>
+                <PrayerBook onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
               <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={finishWords} onReplay={startTwins} />
@@ -1940,6 +1948,7 @@ export default function FidelQuestApp() {
               onCloset={openCloset}
               onWords={() => { setBackpackOpen(false); startWords() }}
               onStories={() => { setBackpackOpen(false); startStories() }}
+              onPrayer={() => { setBackpackOpen(false); setScreen({ name: 'prayer' }) }}
               onTwins={() => { setBackpackOpen(false); startTwins() }}
               onLadder={() => { setBackpackOpen(false); setScreen({ name: 'ladder' }) }}
               onEcho={() => { setBackpackOpen(false); setScreen({ name: 'echo' }) }}
@@ -3170,7 +3179,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -3235,6 +3244,8 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
             {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
             {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
+            {/* Prayer book (ጸሎት ዘዘወትር): Ge'ez for every pack, never gated. */}
+            {onPrayer && <BackpackTile icon={<BookOpen size={24} />} tone="var(--accent, #d9731c)" title="ጸሎት" onClick={onPrayer} />}
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {
