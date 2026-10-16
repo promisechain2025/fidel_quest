@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import BOOK from '../data/tselotMarks.json'
 import MON from '../data/wudaseMondayMarks.json'
+import TUE from '../data/wudaseTuesdayMarks.json'
 import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
@@ -79,6 +80,24 @@ describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
     for (const u of paras) expect(u.h).toContain(0)
     expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'የሕየው'], m: 'seyaf' })
     expect(MON.units.flatMap((u) => u.w)).not.toContain('ሕያዉ')
+  })
+})
+
+describe('ውዳሴ ማርያም ዘሰሉስ data', () => {
+  it('every unit has a mark on a real letter, a clip on disk, and the ሰያፍ⇔ሳድስ rule holds', () => {
+    const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
+    expect(TUE.units.length).toBe(402)
+    for (const [i, u] of TUE.units.entries()) {
+      expect(MARK_TYPES).toContain(u.m)
+      const last = [...u.w[u.w.length - 1]]
+      expect(u.li).toBeLessThan(last.length)
+      if (u.m === 'seyaf' || u.m === 'tenesh') expect(u.m).toBe(sadis(last[last.length - 1]) ? 'seyaf' : 'tenesh')
+      expect(u.a).toBe(`reader/wudase-tue/${String(i).padStart(3, '0')}.mp3`)
+      expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
+    }
+  })
+  it('ሙሴ stays ወዳቂ pending review', () => {
+    expect(TUE.units[71]).toMatchObject({ w: ['ሙሴ'], m: 'wedaqi' })
   })
 })
 

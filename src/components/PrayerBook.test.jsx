@@ -17,6 +17,14 @@ describe('PrayerBook', () => {
     expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰኑይ')
   })
 
+  it('shelf offers ውዳሴ ማርያም ዘሰሉስ as the third book', () => {
+    render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('book-picker'))
+    fireEvent.click(screen.getByTestId('book-wudase-tuesday'))
+    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰሉስ')
+    expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
+  })
+
   it('opens on clean text: no marks until asked', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.textContent).toContain('አአትብ')

@@ -12,6 +12,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { ArrowLeft, Eye, EyeOff, Pause, Play } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
+import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -21,7 +22,7 @@ const SIZES = [0.82, 0.9, 1, 1.16, 1.32]
 const FIT_STEPS = [1, 0.94, 0.88, 0.82]
 const SIZE_KEY = 'fq.prayer.size'
 
-const BOOKS = [TSELOT, WUDASE_MON]
+const BOOKS = [TSELOT, WUDASE_MON, WUDASE_TUE]
 const BOOK_KEY = 'fq.prayer.book'
 const SPEEDS = [0.8, 1, 1.2]
 const TURN_MS = 650
