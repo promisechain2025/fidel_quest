@@ -45,6 +45,29 @@ describe('PrayerBook', () => {
     expect(screen.getByTestId('speed').textContent).not.toMatch(/[A-Za-z]/)
   })
 
+  it('marks hidden by default; eye choice remembered; legend opens by button and closes on tap', () => {
+    const { container, unmount } = render(<PrayerBook onBack={() => {}} />)
+    expect(container.querySelectorAll('.pb-base .pb-mark').length).toBe(0)
+    expect(screen.queryByTestId('legend-toggle')).toBeNull()
+    fireEvent.click(screen.getByTestId('marks-toggle'))
+    expect(screen.queryByTestId('legend')).toBeNull()
+    expect(localStorage.getItem('fq.prayer.marks')).toBe('1')
+    fireEvent.click(screen.getByTestId('legend-toggle'))
+    const lg = screen.getByTestId('legend')
+    expect(lg.closest('.pb-stage')).toBeNull()
+    expect(/[A-Za-z]/.test(lg.textContent)).toBe(false)
+    fireEvent.click(lg)
+    expect(screen.queryByTestId('legend')).toBeNull()
+    unmount()
+    const r2 = render(<PrayerBook onBack={() => {}} />)
+    expect(r2.container.querySelectorAll('.pb-base .pb-mark').length).toBeGreaterThan(0)
+    expect(screen.queryByTestId('legend')).toBeNull()
+    fireEvent.click(screen.getByTestId('legend-toggle'))
+    fireEvent.click(screen.getByTestId('marks-toggle'))
+    expect(screen.queryByTestId('legend')).toBeNull()
+    expect(localStorage.getItem('fq.prayer.marks')).toBe('0')
+  })
+
   it('opens on clean text: no marks until asked', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.textContent).toContain('አአትብ')
@@ -55,6 +78,7 @@ describe('PrayerBook', () => {
     localStorage.setItem('fq.pack', 'ti')
     render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('marks-toggle'))
+    fireEvent.click(screen.getByTestId('legend-toggle'))
     const t = screen.getByTestId('legend').textContent
     expect(t).toContain('ተለዓሊ')
     expect(t).toContain('ተዋሓጢ')
@@ -66,6 +90,7 @@ describe('PrayerBook', () => {
     localStorage.setItem('fq.pack', 'am')
     render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('marks-toggle'))
+    fireEvent.click(screen.getByTestId('legend-toggle'))
     const t = screen.getByTestId('legend').textContent
     expect(t).toContain('ተነሽ')
     expect(t).toContain('ተጣይ')
@@ -77,6 +102,7 @@ describe('PrayerBook', () => {
     fireEvent.click(screen.getByTestId('marks-toggle'))
     const units = container.querySelectorAll('.pb-base [data-unit]')
     expect(container.querySelectorAll('.pb-base .pb-mark').length).toBe(units.length)
+    fireEvent.click(screen.getByTestId('legend-toggle'))
     expect(screen.getByTestId('legend').textContent).toContain('ተነሽ')
     // አአትብ: ሰያፍ above ት (letter index 2)
     const first = container.querySelector('.pb-base [data-unit="0"]')

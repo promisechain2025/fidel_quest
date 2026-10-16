@@ -66,6 +66,7 @@ export const SWAP_KEYS = Object.freeze([
   'fq.nickname', // raw string - the child's name
   'fq.scope.v1', // raw string - learned-only vs all-letters choice
   'fq.runnerSpeed', // raw string - the child's chosen runner speed
+  'fq.prayer.marks', // raw '1'/'0' - the child's show-reading-marks choice
   'fq.prayer.speed', // raw string - the child's prayer-reading audio speed step
 ])
 

@@ -28,6 +28,7 @@ const BOOK_KEY = 'fq.prayer.book'
 export const SPEEDS = [0.5, 0.75, 1, 1.25]
 const SPEED_DEFAULT = 2
 const SPEED_KEY = 'fq.prayer.speed'
+const MARKS_KEY = 'fq.prayer.marks'
 function applyRate(el, rate) {
   if (!el) return
   el.preservesPitch = true; el.mozPreservesPitch = true; el.webkitPreservesPitch = true
@@ -193,13 +194,12 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     const a = anchor.current !== null ? anchor.current : shownFirst.current
     if (a !== null) setPage(pageOfUnit(pages, a))
   }, [pages])
-  const [showAll, setShowAll] = useState(false)
+  // Marks are hidden by default (kids outgrow them); the eye choice is remembered per child.
+  const [showAll, setShowAll] = useState(() => { try { return localStorage.getItem(MARKS_KEY) === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem(MARKS_KEY, showAll ? '1' : '0') } catch { /* ignore */ } }, [showAll])
+  // Legend is a sheet opened by its own button; it sits in the layout (never over the text) and closes on tap.
   const [legendOpen, setLegendOpen] = useState(false)
-  useEffect(() => {
-    if (!showAll || !legendOpen) return
-    const t = setTimeout(() => setLegendOpen(false), 3500)
-    return () => clearTimeout(t)
-  }, [showAll, legendOpen])
+  useEffect(() => { if (!showAll) setLegendOpen(false) }, [showAll])
   const [playing, setPlaying] = useState(false)
   const [cur, setCur] = useState(resume?.unit ?? -1)
   const [glow, setGlow] = useState(-1)
@@ -391,13 +391,20 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
             ))}
           </div>
         )}
-        <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => { setShowAll((s) => !s); setLegendOpen(true) }} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
+        <div className="pb-top-right">
+        {showAll && (
+          <button type="button" className={`pb-icon pb-legend-btn${legendOpen ? ' pb-on' : ''}`} onClick={() => setLegendOpen((v) => !v)} aria-label="የምልክቶች መፍቻ" aria-expanded={legendOpen} data-testid="legend-toggle">
+            <MarkShape type="tenesh" size={26} />
+          </button>
+        )}
+        <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => setShowAll((s) => !s)} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
           {showAll ? <Eye size={30} /> : <EyeOff size={30} />}
         </button>
+        </div>
       </header>
 
       {showAll && legendOpen && (
-        <div className="pb-legend geez-book" data-testid="legend" onClick={() => setLegendOpen(false)}>
+        <div className="pb-legend geez-book" role="button" tabIndex={0} aria-label="ዝጋ" data-testid="legend" onClick={() => setLegendOpen(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setLegendOpen(false) }}>
           {['tenesh', 'seyaf', 'tetay', 'wedaqi', 'tie', 'tebqo'].map((k) => (
             <span key={k} className="pb-chip"><MarkShape type={k} size={k === 'tie' ? 26 : 20} />{NAMES[k]}</span>
           ))}
