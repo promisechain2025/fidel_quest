@@ -9,7 +9,7 @@
    reduced motion it becomes a plain slide. No words in the chrome: icons only.
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Eye, EyeOff, Pause, Play } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Pause, Play, Rabbit, Turtle } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -24,7 +24,15 @@ const SIZE_KEY = 'fq.prayer.size'
 
 const BOOKS = [TSELOT, WUDASE_MON, WUDASE_TUE]
 const BOOK_KEY = 'fq.prayer.book'
-const SPEEDS = [0.8, 1, 1.2]
+// Playback speed (pitch preserved). 0.5 is for practice; never faster than 1.25.
+export const SPEEDS = [0.5, 0.75, 1, 1.25]
+const SPEED_DEFAULT = 2
+const SPEED_KEY = 'fq.prayer.speed'
+function applyRate(el, rate) {
+  if (!el) return
+  el.preservesPitch = true; el.mozPreservesPitch = true; el.webkitPreservesPitch = true
+  try { el.playbackRate = rate } catch { /* ignore */ }
+}
 const TURN_MS = 650
 
 /* ---- mark shapes (viewBox 0 0 24 16; drawn in currentColor) ------------- */
@@ -195,7 +203,10 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   const [playing, setPlaying] = useState(false)
   const [cur, setCur] = useState(resume?.unit ?? -1)
   const [glow, setGlow] = useState(-1)
-  const [speed, setSpeed] = useState(0)
+  const [speed, setSpeed] = useState(() => {
+    try { const r = localStorage.getItem(SPEED_KEY); const v = r === null ? SPEED_DEFAULT : Number(r); return SPEEDS[v] ? v : SPEED_DEFAULT } catch { return SPEED_DEFAULT }
+  })
+  useEffect(() => { try { localStorage.setItem(SPEED_KEY, String(speed)) } catch { /* ignore */ } applyRate(audio.current, SPEEDS[speed]) }, [speed])
   const [turn, setTurn] = useState(null) // { dir: 1|-1, from, to }
   const reduced = useMemo(() => typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches, [])
 
@@ -281,7 +292,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     if (!audio.current) audio.current = new Audio()
     const el = audio.current
     el.src = FIDEL_AUDIO_BASE + u.a
-    el.playbackRate = SPEEDS[speed]
+    applyRate(el, SPEEDS[speed])
     el.onended = () => { cancelAnimationFrame(raf.current); if (playingRef.current) playUnit(nextRecorded(UNITS, i)) }
     const tick = () => {
       if (el.duration > 0) setGlow(glowLetter(u, el.currentTime / el.duration))
@@ -417,9 +428,11 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
       </div>
 
       <footer className="pb-bottom">
-        <button type="button" className="pb-speed" onClick={() => setSpeed((s) => (s + 1) % SPEEDS.length)} aria-label="ፍጥነት" data-speed={speed}>
-          {SPEEDS.map((_, k) => <span key={k} className={k <= speed ? 'on' : ''} />)}
-        </button>
+        <div className="pb-speed" role="group" aria-label="ፍጥነት" data-testid="speed" data-rate={SPEEDS[speed]}>
+          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.max(0, v - 1))} disabled={speed === 0} aria-label="ቀስ" data-testid="speed-down"><Turtle size={22} /></button>
+          <span className="pb-spd-dots" aria-hidden="true">{SPEEDS.map((r, k) => <span key={k} className={`${k === speed ? 'on' : ''}${r === 1 ? ' one' : ''}`} />)}</span>
+          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.min(SPEEDS.length - 1, v + 1))} disabled={speed === SPEEDS.length - 1} aria-label="ፍጠን" data-testid="speed-up"><Rabbit size={22} /></button>
+        </div>
         <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
           {playing ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" />}
         </button>

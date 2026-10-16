@@ -25,6 +25,26 @@ describe('PrayerBook', () => {
     expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
   })
 
+  it('speed: tortoise/hare steps 0.5–1.25, default 1, remembered', () => {
+    const { unmount } = render(<PrayerBook onBack={() => {}} />)
+    const g = () => screen.getByTestId('speed').dataset.rate
+    expect(g()).toBe('1')
+    fireEvent.click(screen.getByTestId('speed-up'))
+    expect(g()).toBe('1.25')
+    expect(screen.getByTestId('speed-up').disabled).toBe(true)
+    fireEvent.click(screen.getByTestId('speed-up'))
+    expect(g()).toBe('1.25')
+    for (let k = 0; k < 5; k++) fireEvent.click(screen.getByTestId('speed-down'))
+    expect(g()).toBe('0.5')
+    expect(screen.getByTestId('speed-down').disabled).toBe(true)
+    fireEvent.click(screen.getByTestId('speed-up'))
+    expect(localStorage.getItem('fq.prayer.speed')).toBe('1')
+    unmount()
+    render(<PrayerBook onBack={() => {}} />)
+    expect(g()).toBe('0.75')
+    expect(screen.getByTestId('speed').textContent).not.toMatch(/[A-Za-z]/)
+  })
+
   it('opens on clean text: no marks until asked', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.textContent).toContain('አአትብ')
