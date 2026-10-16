@@ -84,22 +84,36 @@ function PageFace({ units, pageNo, markMode, glowFor, onTap }) {
 }
 
 export default function PrayerBook({ onBack }) {
-  // Pages are cut to fit THIS screen: a letter budget from the measured page
-  // size and the font size, so text never runs off the paper.
+  // Pages are cut from REAL layout: every unit is laid out once in a hidden
+  // page of the same size, we read which line each lands on, and fill each
+  // page with as many whole lines as fit. Marks are absolutely positioned,
+  // so marks on/off never changes the cut.
   const stageRef = useRef(null)
-  const [budget, setBudget] = useState(70)
+  const measRef = useRef(null)
+  const [pages, setPages] = useState(() => paginate(UNITS, 70))
   useLayoutEffect(() => {
-    const el = stageRef.current
+    const el = measRef.current
     if (!el || typeof window === 'undefined') return
     const measure = () => {
-      const r = el.getBoundingClientRect()
-      if (!r.width || !r.height) return
-      const font = Math.max(26, Math.min(36, window.innerWidth * 0.074))
-      const lines = Math.max(3, Math.floor((r.height - 12 - 48 - 30) / (font * 2.7)))
-      const perLine = Math.max(6, Math.floor((r.width - 28 - 60) / (font * 0.78)))
-      setBudget(Math.max(24, Math.floor(lines * perLine * 0.92)))
+      const box = el.clientHeight
+      const kids = el.children
+      if (!box || kids.length !== UNITS.length) return
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || 0
+      if (!lh) return
+      const per = Math.max(2, Math.floor((box + 0.5) / lh))
+      const out = []
+      let line = -1, lastTop = null
+      for (let i = 0; i < kids.length; i++) {
+        const t = kids[i].offsetTop
+        if (lastTop === null || t > lastTop + lh / 2) { line++; lastTop = t }
+        const pg = Math.floor(line / per)
+        ;(out[pg] = out[pg] || []).push(i)
+      }
+      if (line < 1) return // no real layout (tests): keep the fallback
+      setPages(out.filter(Boolean))
     }
     measure()
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure)
     if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(measure)
       ro.observe(el)
@@ -108,7 +122,6 @@ export default function PrayerBook({ onBack }) {
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [])
-  const pages = useMemo(() => paginate(UNITS, budget), [budget])
   const resume = useMemo(() => loadResume(BOOK.id), [])
   const [page, setPage] = useState(() => (resume && resume.unit >= 0 ? pageOfUnit(paginate(UNITS, 70), resume.unit) : Math.max(0, resume?.page || 0)))
   const pageSafe = Math.min(page, pages.length - 1)
@@ -120,6 +133,12 @@ export default function PrayerBook({ onBack }) {
     if (a !== null) setPage(pageOfUnit(pages, a))
   }, [pages])
   const [showAll, setShowAll] = useState(false)
+  const [legendOpen, setLegendOpen] = useState(false)
+  useEffect(() => {
+    if (!showAll || !legendOpen) return
+    const t = setTimeout(() => setLegendOpen(false), 3500)
+    return () => clearTimeout(t)
+  }, [showAll, legendOpen])
   const [playing, setPlaying] = useState(false)
   const [cur, setCur] = useState(resume?.unit ?? -1)
   const [glow, setGlow] = useState(-1)
@@ -292,13 +311,13 @@ export default function PrayerBook({ onBack }) {
       <header className="pb-top">
         <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
         <div className="pb-title geez-book">{BOOK.title}</div>
-        <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => setShowAll((s) => !s)} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
+        <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => { setShowAll((s) => !s); setLegendOpen(true) }} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
           {showAll ? <Eye size={30} /> : <EyeOff size={30} />}
         </button>
       </header>
 
-      {showAll && (
-        <div className="pb-legend geez-book" data-testid="legend">
+      {showAll && legendOpen && (
+        <div className="pb-legend geez-book" data-testid="legend" onClick={() => setLegendOpen(false)}>
           {['tenesh', 'seyaf', 'tetay', 'wedaqi', 'tie', 'tebqo'].map((k) => (
             <span key={k} className="pb-chip"><MarkShape type={k} size={k === 'tie' ? 26 : 20} />{MARK_NAMES[k]}</span>
           ))}
@@ -307,6 +326,14 @@ export default function PrayerBook({ onBack }) {
 
       <div ref={stageRef} className="pb-stage" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="pb-book">
+          <div className="pb-page pb-measure" aria-hidden="true">
+            <div className="pb-face">
+              <div ref={measRef} className="pb-text geez-book">
+                {UNITS.map((u, i) => <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />)}
+              </div>
+              <div className="pb-folio">፩</div>
+            </div>
+          </div>
           <div className="pb-page pb-base">{face(baseP)}<div ref={shade} className="pb-shade" /></div>
           {flapP !== null && (
             <div ref={flap} className={`pb-page pb-flap${reduced ? ' pb-slide' : ''}`}>

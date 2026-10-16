@@ -255,7 +255,9 @@ input, textarea, [contenteditable='true'] {
 .pb-title { color: var(--pb-holy); font-size: 22px; }
 .pb-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; color: var(--pb-ink); background: transparent; }
 .pb-icon.pb-on { background: #fff6e4; color: var(--pb-saffron); box-shadow: 0 2px 0 var(--pb-paper-edge); }
-.pb-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 0 10px 6px; font-size: 14px; }
+.pb-legend { position: fixed; left: 12px; right: 12px; bottom: calc(110px + env(safe-area-inset-bottom)); z-index: 20; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 10px; font-size: 14px; background: rgba(233, 215, 176, .96); border-radius: 18px; box-shadow: 0 8px 22px rgba(90, 60, 20, .3); animation: pb-mark-in .2s ease-out; }
+.pb-measure { visibility: hidden; pointer-events: none; z-index: -1; }
+.pb-measure .pb-text { overflow: hidden; }
 .pb-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: var(--pb-paper); border: 1.5px solid var(--pb-paper-edge); }
 .pb-stage { flex: 1; position: relative; overflow: hidden; padding: 4px 14px 8px; touch-action: none; }
 .pb-book { position: relative; height: 100%; perspective: 1300px; }
@@ -269,10 +271,10 @@ input, textarea, [contenteditable='true'] {
 .pb-front { background: var(--pb-paper); box-shadow: inset 10px 0 18px -10px rgba(120, 80, 30, .35); overflow: hidden; }
 .pb-sheen { position: absolute; inset: 0; pointer-events: none; opacity: .25; background: linear-gradient(90deg, rgba(120, 80, 30, .28), rgba(255, 250, 235, 0) 35%, rgba(255, 252, 240, .35) 78%, rgba(110, 70, 25, .3)); }
 .pb-back { transform: rotateY(180deg); background: linear-gradient(90deg, #efe2c6, #f8eedb 40%, #e8d6b2); box-shadow: inset -12px 0 22px -12px rgba(90, 60, 20, .4); }
-.pb-face { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 30px 26px 18px 34px; }
-.pb-text { flex: 1; font-size: clamp(26px, 7.4vw, 36px); line-height: 2.7; word-spacing: .18em; }
+.pb-face { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 22px 20px 12px 28px; }
+.pb-text { flex: 1; font-size: clamp(20px, 5.7vw, 30px); line-height: 2.15; word-spacing: .06em; min-height: 0; }
 .pb-folio { text-align: center; color: #9b8462; font-size: 18px; }
-.pb-unit { position: relative; display: inline-block; margin-right: .42em; white-space: nowrap; }
+.pb-unit { position: relative; display: inline-block; margin-right: .28em; white-space: nowrap; }
 .pb-word { white-space: nowrap; }
 .pb-holy { color: var(--pb-holy); }
 .pb-l { position: relative; transition: color .12s linear; }
@@ -280,10 +282,10 @@ input, textarea, [contenteditable='true'] {
 .pb-l.pb-glow { color: var(--pb-saffron); text-shadow: 0 0 .35em rgba(247, 196, 110, .9); }
 .pb-holy .pb-l.pb-read { color: var(--pb-holy); }
 .pb-current { background: radial-gradient(ellipse at 50% 60%, rgba(255, 228, 175, .85), rgba(255, 228, 175, 0) 70%); border-radius: 12px; }
-.pb-mark { position: absolute; left: 50%; top: -.5em; transform: translateX(-50%); line-height: 0; pointer-events: none; }
+.pb-mark { position: absolute; left: 50%; top: .12em; transform: translate(-50%, -100%); line-height: 0; pointer-events: none; }
 .pb-current .pb-mark { animation: pb-mark-in .25s ease-out; }
-@keyframes pb-mark-in { from { opacity: 0; transform: translate(-50%, 4px) scale(.7); } to { opacity: 1; transform: translateX(-50%); } }
-.pb-tie { position: absolute; left: 6%; right: 6%; bottom: -.12em; line-height: 0; pointer-events: none; }
+@keyframes pb-mark-in { from { opacity: 0; transform: translate(-50%, -80%) scale(.7); } to { opacity: 1; transform: translate(-50%, -100%); } }
+.pb-tie { position: absolute; left: 6%; right: 6%; bottom: .08em; line-height: 0; pointer-events: none; }
 .pb-tie svg { display: block; width: 100% !important; height: .42em; }
 .pb-bottom { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 8px 22px max(14px, env(safe-area-inset-bottom)); }
 .pb-play { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; color: #fffaf0; background: var(--pb-saffron); box-shadow: 0 5px 0 #a8550f; }
