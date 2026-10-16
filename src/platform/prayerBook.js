@@ -14,6 +14,12 @@ export const MARK_TYPES = Object.freeze(['tenesh', 'seyaf', 'tetay', 'wedaqi'])
 export const MARK_NAMES = Object.freeze({
   tenesh: 'ተነሽ', seyaf: 'ሰያፍ', tetay: 'ተጣይ', wedaqi: 'ወዳቂ', tie: 'ተናባቢ', tebqo: 'ጠብቆ',
 })
+/** Tigrinya names given by the owner; the rest stay as in Amharic. */
+export const MARK_NAMES_TI = Object.freeze({ ...MARK_NAMES, tenesh: 'ተለዓሊ', tetay: 'ተዋሓጢ' })
+/** Legend names for the selected learn language ('am' | 'ti'). */
+export function markNames(pack) {
+  return pack === 'ti' ? MARK_NAMES_TI : MARK_NAMES
+}
 
 /** Letters (grapheme = one Ethiopic codepoint here) in a unit, all words. */
 export function unitLetterCount(u) {

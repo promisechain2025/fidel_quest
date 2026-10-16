@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import BOOK from '../data/tselotMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
+import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
 describe('prayer book data', () => {
@@ -40,6 +40,22 @@ describe('prayer book data', () => {
   })
   it('clip paths stay under reader/', () => {
     for (const u of BOOK.units) if (u.a) expect(u.a).toMatch(/^reader\/tselot\/\d{3}\.mp3$/)
+  })
+})
+
+describe('owner rules', () => {
+  const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
+  it('ሰያፍ exactly when the last letter of the last word is ሳድስ (else ተነሽ)', () => {
+    for (const u of BOOK.units) {
+      if (u.m !== 'seyaf' && u.m !== 'tenesh') continue
+      const last = [...u.w[u.w.length - 1]].pop()
+      expect([u.w.join('‿'), u.m]).toEqual([u.w.join('‿'), sadis(last) ? 'seyaf' : 'tenesh'])
+    }
+    expect(BOOK.units[88]).toMatchObject({ w: ['አበሳነ'], m: 'tenesh' })
+  })
+  it('legend names follow the learn language', () => {
+    expect(markNames('am')).toMatchObject({ tenesh: 'ተነሽ', tetay: 'ተጣይ', seyaf: 'ሰያፍ', wedaqi: 'ወዳቂ' })
+    expect(markNames('ti')).toMatchObject({ tenesh: 'ተለዓሊ', tetay: 'ተዋሓጢ', seyaf: 'ሰያፍ', wedaqi: 'ወዳቂ', tie: 'ተናባቢ', tebqo: 'ጠብቆ' })
   })
 })
 

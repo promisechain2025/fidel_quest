@@ -11,7 +11,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Eye, EyeOff, Pause, Play } from 'lucide-react'
 import BOOK from '../data/tselotMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, MARK_NAMES } from '../platform/prayerBook'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
+import { getActivePackId } from '../platform/ethiopic'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 
 const SIZES = [0.86, 1, 1.16, 1.32]
@@ -87,7 +88,8 @@ function PageFace({ units, pageNo, markMode, glowFor, onTap }) {
   )
 }
 
-export default function PrayerBook({ onBack }) {
+export default function PrayerBook({ onBack, pack }) {
+  const NAMES = markNames(pack || getActivePackId())
   // Pages are cut from REAL layout: every unit is laid out once in a hidden
   // page of the same size, we read which line each lands on, and fill each
   // page with as many whole lines as fit. Marks are absolutely positioned,
@@ -345,7 +347,7 @@ export default function PrayerBook({ onBack }) {
       {showAll && legendOpen && (
         <div className="pb-legend geez-book" data-testid="legend" onClick={() => setLegendOpen(false)}>
           {['tenesh', 'seyaf', 'tetay', 'wedaqi', 'tie', 'tebqo'].map((k) => (
-            <span key={k} className="pb-chip"><MarkShape type={k} size={k === 'tie' ? 26 : 20} />{MARK_NAMES[k]}</span>
+            <span key={k} className="pb-chip"><MarkShape type={k} size={k === 'tie' ? 26 : 20} />{NAMES[k]}</span>
           ))}
         </div>
       )}

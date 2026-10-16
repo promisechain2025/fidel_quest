@@ -11,7 +11,28 @@ describe('PrayerBook', () => {
     expect(container.querySelectorAll('.pb-mark').length).toBe(0)
   })
 
+  it('legend uses Tigrinya names when the learn pack is ትግርኛ', () => {
+    localStorage.setItem('fq.pack', 'ti')
+    render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('marks-toggle'))
+    const t = screen.getByTestId('legend').textContent
+    expect(t).toContain('ተለዓሊ')
+    expect(t).toContain('ተዋሓጢ')
+    expect(t).not.toContain('ተነሽ')
+    expect(t).toContain('ሰያፍ')
+  })
+
+  it('legend uses Amharic names when the learn pack is አማርኛ', () => {
+    localStorage.setItem('fq.pack', 'am')
+    render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('marks-toggle'))
+    const t = screen.getByTestId('legend').textContent
+    expect(t).toContain('ተነሽ')
+    expect(t).toContain('ተጣይ')
+  })
+
   it('the eye toggle shows every mark on the page, with the legend', () => {
+    localStorage.setItem('fq.pack', 'am')
     const { container } = render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('marks-toggle'))
     const units = container.querySelectorAll('.pb-base [data-unit]')
