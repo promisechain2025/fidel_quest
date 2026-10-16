@@ -14,6 +14,9 @@ import BOOK from '../data/tselotMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, MARK_NAMES } from '../platform/prayerBook'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 
+const SIZES = [0.86, 1, 1.16, 1.32]
+const SIZE_KEY = 'fq.prayer.size'
+
 const UNITS = BOOK.units
 const SPEEDS = [0.8, 1, 1.2]
 const TURN_MS = 650
@@ -89,6 +92,10 @@ export default function PrayerBook({ onBack }) {
   // page of the same size, we read which line each lands on, and fill each
   // page with as many whole lines as fit. Marks are absolutely positioned,
   // so marks on/off never changes the cut.
+  const [size, setSize] = useState(() => {
+    try { const r = localStorage.getItem(SIZE_KEY); const v = r === null ? 1 : Number(r); return SIZES[v] ? v : 1 } catch { return 1 }
+  })
+  useEffect(() => { try { localStorage.setItem(SIZE_KEY, String(size)) } catch { /* ignore */ } }, [size])
   const stageRef = useRef(null)
   const measRef = useRef(null)
   const [pages, setPages] = useState(() => paginate(UNITS, 70))
@@ -134,7 +141,7 @@ export default function PrayerBook({ onBack }) {
     }
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
-  }, [])
+  }, [size])
   const resume = useMemo(() => loadResume(BOOK.id), [])
   const [page, setPage] = useState(() => (resume && resume.unit >= 0 ? pageOfUnit(paginate(UNITS, 70), resume.unit) : Math.max(0, resume?.page || 0)))
   const pageSafe = Math.min(page, pages.length - 1)
@@ -319,8 +326,14 @@ export default function PrayerBook({ onBack }) {
   const flapP = turn ? (turn.dir === 1 ? turn.from : turn.to) : null
   const hasRec = pages[pageSafe].some((i) => UNITS[i].a) || nextRecorded(UNITS, pages[pageSafe][pages[pageSafe].length - 1]) >= 0
 
+  // Keep the word being read (or the page's first word) on screen across a re-cut.
+  const resize = (d) => {
+    anchor.current = playingRef.current && curRef.current >= 0 ? curRef.current : pages[pageSafe][0]
+    setSize((v) => Math.max(0, Math.min(SIZES.length - 1, v + d)))
+  }
+
   return (
-    <div className="pb-root" data-testid="prayer-book">
+    <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': SIZES[size] }}>
       <header className="pb-top">
         <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
         <div className="pb-title geez-book">{BOOK.title}</div>
@@ -367,7 +380,10 @@ export default function PrayerBook({ onBack }) {
         <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
           {playing ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" />}
         </button>
-        <span />
+        <div className="pb-size">
+          <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={size === 0} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
+          <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={size === SIZES.length - 1} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
+        </div>
       </footer>
     </div>
   )
