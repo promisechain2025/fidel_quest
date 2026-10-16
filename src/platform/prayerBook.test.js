@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { describe, it, expect } from 'vitest'
 import BOOK from '../data/tselotMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
@@ -17,6 +18,25 @@ describe('prayer book data', () => {
     expect(/[A-Za-z]/.test(text)).toBe(false)
     const cov = passageCoverage(text)
     expect(cov.unknown).toEqual([])
+  })
+  it('every unit, incl. 321-471, has a word clip that exists on disk', () => {
+    for (const [i, u] of BOOK.units.entries()) {
+      expect(u.a).toBe(`reader/tselot/${String(i).padStart(3, '0')}.mp3`)
+      expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
+    }
+  })
+  it('carries the owner review: #200 ብእሴ ወዳቂ, ወነበረ / በየማነ‿አቡሁ split', () => {
+    expect(BOOK.units[200]).toMatchObject({ w: ['ብእሴ'], m: 'wedaqi' })
+    expect(BOOK.units[218].w).toEqual(['ወነበረ'])
+    expect(BOOK.units[219].w).toEqual(['በየማነ', 'አቡሁ'])
+  })
+  it('red only for the holy names and each paragraph opener', () => {
+    const STEMS = ['እግዚአብሔር', 'ሥላሴ', 'ስላሴ', 'ኢየሱስ', 'ክርስቶስ', 'ማርያም']
+    for (const u of BOOK.units) {
+      for (const k of u.h || []) expect(STEMS.some((t) => u.w[k].includes(t)) || (u.s && k === 0)).toBe(true)
+      if (u.s) expect(u.h).toContain(0)
+    }
+    expect(BOOK.units.filter((u) => u.s).length).toBe(13)
   })
   it('clip paths stay under reader/', () => {
     for (const u of BOOK.units) if (u.a) expect(u.a).toMatch(/^reader\/tselot\/\d{3}\.mp3$/)
