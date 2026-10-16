@@ -41,7 +41,7 @@ function Unit({ u, idx, mode, glow, onTap }) {
   let flat = 0
   const last = u.w.length - 1
   return (
-    <span className={`pb-unit${mode === 'current' ? ' pb-current' : ''}${u.a ? '' : ' pb-norec'}`} data-unit={idx} onClick={() => onTap(idx)}>
+    <span className={`pb-unit${u.t ? ' pb-titleu' : ''}${mode === 'current' ? ' pb-current' : ''}${u.a ? '' : ' pb-norec'}`} data-unit={idx} onClick={() => onTap(idx)}>
       {u.w.map((w, wi) => {
         const holy = u.h && u.h.includes(wi)
         const letters = [...w]
@@ -74,9 +74,10 @@ function PageFace({ units, pageNo, markMode, glowFor, onTap }) {
   return (
     <div className="pb-face">
       <div className="pb-text geez-book">
-        {units.map((i) => (
-          <Unit key={i} u={UNITS[i]} idx={i} mode={markMode(i)} glow={glowFor(i)} onTap={onTap} />
-        ))}
+        {units.map((i, k) => [
+          UNITS[i].s && k > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
+          <Unit key={i} u={UNITS[i]} idx={i} mode={markMode(i)} glow={glowFor(i)} onTap={onTap} />,
+        ])}
       </div>
       <div className="pb-folio">{geezNumeral(pageNo)}</div>
     </div>
@@ -96,21 +97,33 @@ export default function PrayerBook({ onBack }) {
     if (!el || typeof window === 'undefined') return
     const measure = () => {
       const box = el.clientHeight
-      const kids = el.children
+      const kids = el.querySelectorAll('[data-unit]')
       if (!box || kids.length !== UNITS.length) return
       const lh = parseFloat(getComputedStyle(el).lineHeight) || 0
       if (!lh) return
-      const per = Math.max(2, Math.floor((box + 0.5) / lh))
-      const out = []
-      let line = -1, lastTop = null
+      // Group units into visual lines (pixel tops include paragraph gaps).
+      const lines = []
       for (let i = 0; i < kids.length; i++) {
         const t = kids[i].offsetTop
-        if (lastTop === null || t > lastTop + lh / 2) { line++; lastTop = t }
-        const pg = Math.floor(line / per)
-        ;(out[pg] = out[pg] || []).push(i)
+        const L = lines[lines.length - 1]
+        if (!L || t > L.top + lh / 2) lines.push({ top: t, units: [i], para: !!UNITS[i].s })
+        else L.units.push(i)
       }
-      if (line < 1) return // no real layout (tests): keep the fallback
-      setPages(out.filter(Boolean))
+      if (lines.length < 2) return // no real layout (tests): keep the fallback
+      const out = []
+      let k = 0
+      while (k < lines.length) {
+        const top = lines[k].top
+        let e = k
+        while (e + 1 < lines.length && lines[e + 1].top + lh - top <= box + 0.5) e++
+        // No lone first line of a paragraph at the page bottom.
+        if (e > k && e + 1 < lines.length && lines[e].para && !lines[e + 1].para) e--
+        const pg = []
+        for (let q = k; q <= e; q++) pg.push(...lines[q].units)
+        out.push(pg)
+        k = e + 1
+      }
+      setPages(out)
     }
     measure()
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure)
@@ -329,7 +342,10 @@ export default function PrayerBook({ onBack }) {
           <div className="pb-page pb-measure" aria-hidden="true">
             <div className="pb-face">
               <div ref={measRef} className="pb-text geez-book">
-                {UNITS.map((u, i) => <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />)}
+                {UNITS.map((u, i) => [
+                  u.s && i > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
+                  <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />,
+                ])}
               </div>
               <div className="pb-folio">፩</div>
             </div>

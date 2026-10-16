@@ -294,3 +294,5 @@ input, textarea, [contenteditable='true'] {
 .pb-speed span { width: 13px; height: 13px; border-radius: 50%; background: var(--pb-faint); }
 .pb-speed span.on { background: var(--pb-saffron); }
 @media (prefers-reduced-motion: reduce) { .pb-l, .pb-current .pb-mark { transition: none; animation: none; } }
+.pb-para { display: block; height: .7em; }
+.pb-titleu { color: var(--pb-holy); font-size: .82em; }
