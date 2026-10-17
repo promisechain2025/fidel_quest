@@ -68,6 +68,7 @@ export const SWAP_KEYS = Object.freeze([
   'fq.runnerSpeed', // raw string - the child's chosen runner speed
   'fq.prayer.marks', // raw '1'/'0' - the child's show-reading-marks choice
   'fq.prayer.speed', // raw string - the child's prayer-reading audio speed step
+  'fq.classSync.v1', // this child's class-view join (code, name, sync token, queue) - not in backups
 ])
 
 function readJson(key, fallback) {

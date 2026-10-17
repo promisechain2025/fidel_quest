@@ -41,8 +41,9 @@ import {
   loadTeacher, createClass, removeClass, addReceipt, rosterByStudent,
   saveAssignment, assignmentsFor, submissionStats, classTroubleLetters,
   termWeeks, saveTermPlan, currentWeekIndex, weekDue,
-  enrollStudent, unenrollStudent, removeStudent,
+  enrollStudent, unenrollStudent, removeStudent, setClassGoal,
 } from '../platform/classroom'
+import ClassPracticeCard, { GoalPicker } from './ClassPractice'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const glyphOf = (id) => Array.from(FIDEL_FAMILIES.find((f) => f.id === id)?.chars || '')[0] || ''
@@ -68,7 +69,7 @@ export function QrPanel({ url, size = 200, light = '#ffffff', dark = '#1a1a1a' }
 }
 
 /** Share a URL: OS sheet where available, clipboard fallback. */
-async function shareUrl(url, text, onCopied) {
+export async function shareUrl(url, text, onCopied) {
   const body = text ? `${text} ${url}` : url
   if (isNativePlatform()) {
     try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text: body, url }) } catch { /* dismissed */ }
@@ -609,7 +610,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   // the UI keeps it simple and shows the first.
   const code = codes[0] || null
   const cls = code ? teacherState.classes[code] : null
-  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher }, appLinkUrl()) : null), [code, cls?.teacher])
+  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher, goalMin: cls.goalMin }, appLinkUrl()) : null), [code, cls?.teacher, cls?.goalMin])
 
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">
@@ -648,6 +649,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
           <>
             <HowItWorksCard />
             <CreateClassCard onCreated={refresh} />
+            <ClassPracticeCard />
           </>
         ) : (
           <>
@@ -660,6 +662,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
               <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
                 {t('tmInviteHint', 'A student opens this link (or scans the code) once - their app joins your class. Works over WhatsApp.')}
               </p>
+              <GoalPicker value={cls.goalMin || null} onChange={(g) => { setClassGoal(code, g); refresh() }} />
               <div className="mt-3 flex flex-col items-center gap-3">
                 {inviteUrl && <QrPanel url={inviteUrl} size={180} />}
                 {inviteUrl && <ShareLinkButton url={inviteUrl} text={t('jcShareText', 'Join my eGeez class:')} label={t('tmShareInvite', 'Share invite link')} tone="sky" />}
@@ -684,6 +687,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
             </SectionCard>
 
             <HowItWorksCard defaultOpen={false} />
+            <ClassPracticeCard teacherName={cls.teacher} />
 
             <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
               {!confirmRemove ? (

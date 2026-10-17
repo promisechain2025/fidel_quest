@@ -555,7 +555,7 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport }) {
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
@@ -619,6 +619,19 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             ))}
           </div>
+
+          {/* Verified practice time (platform/practice.js) + teacher share. */}
+          {onPracticeReport && (
+            <button type="button" onClick={onPracticeReport} data-testid="open-practice-report"
+              className={`chunk flex items-center justify-between gap-3 rounded-3xl border-2 p-4 text-left ${FOCUS}`}
+              style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              <span>
+                <span className="block text-sm font-black">{t('prTitle', 'Practice report')}</span>
+                <span className="block text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpPracticeHint', 'Active minutes per day, 7-day chart, send to the teacher')}</span>
+              </span>
+              <Flame className="h-6 w-6 shrink-0" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />
+            </button>
+          )}
 
           {/* Settings: theme + language, deliberately behind the gate. */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>

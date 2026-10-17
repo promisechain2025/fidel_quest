@@ -84,6 +84,11 @@ import { Runner2D } from './components/ArcadeFallback'
 import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
+import { installPracticeTracker, notePractice } from './platform/practiceTracker'
+import { setPracticeGoal } from './platform/practice'
+import { joinClassSync, flushSync } from './platform/practiceSync'
+import { readReportFromHash } from './platform/practiceReport'
+import PracticeRing from './components/PracticeRing'
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignments, markAssignmentDone, pendingAssignmentKey, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
 import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
 
@@ -134,6 +139,8 @@ const FidelMaster = lazyRetry(() => import('./components/FidelMaster'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
 // encoder, so they stay out of the child-facing home chunk too.
 const TeacherMode = lazyRetry(() => import('./components/TeacherMode'))
+const PracticeReport = lazyRetry(() => import('./components/PracticeReport'))
+const PracticeReportViewer = lazyRetry(() => import('./components/ClassPractice').then((m) => ({ default: m.ReportViewer })))
 // The 3D arcade games carry the whole three.js / R3F stack, so they load
 // only when a capable device actually enters an arcade node; degraded
 // devices route to the 2D fallbacks and never fetch these chunks.
@@ -1042,6 +1049,8 @@ function initialScreens() {
     if (ch) return [{ name: 'challenge', challenge: ch }]
     // Classroom deep links (platform/classroom.js): a class invite, a
     // teacher's assignment, or a returning result receipt.
+    const rep = readReportFromHash(window.location.hash)
+    if (rep) return [{ name: 'practiceview', token: rep }]
     const cr = readClassroomFromHash(window.location.hash)
     if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
     if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
@@ -1118,7 +1127,7 @@ export default function FidelQuestApp() {
       // Strip deep-link tokens from the address bar once we've captured them,
       // so a refresh or a shared-back link starts from a clean URL. An opened
       // assignment also becomes the pending one (surfaces in Today's plan).
-      if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
+      if (/(challenge|class|assign|receipt|report)=/.test(window.location.hash)) {
         const cr = readClassroomFromHash(window.location.hash)
         if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data) }
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -1127,13 +1136,16 @@ export default function FidelQuestApp() {
       /* non-browser */
     }
     track('app_open')
+    installPracticeTracker()
     // A resident PWA can receive a tapped link as a hash change on the LIVE
     // instance (no reload). Route it exactly like a boot-time deep link, then
     // strip the token.
     const onHash = () => {
       try {
         const hash = window.location.hash
-        if (!/(challenge|class|assign|receipt)=/.test(hash)) return
+        if (!/(challenge|class|assign|receipt|report)=/.test(hash)) return
+        const rep = readReportFromHash(hash)
+        if (rep) setStack([{ name: 'practiceview', token: rep }])
         const ch = readChallengeFromHash(hash)
         if (ch) {
           if (screenBlockedByTrial('challenge')) setPaywallOpen(true)
@@ -1311,6 +1323,7 @@ export default function FidelQuestApp() {
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
     track('lesson_complete')
+    notePractice(NODE_BY_ID.get(nodeId)?.kind === NodeKind.ARCADE ? 'game' : 'lesson')
     // Replaying a done node must not re-run the chapter party or re-announce
     // a reward the child already owns - only newly earned things celebrate.
     const party = nodeDoneCelebration(j, next, nodeId)
@@ -1476,7 +1489,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
                 onTreasure={() => { goBack(); openGift() }}
-                onDone={() => { markHuntDone(); track('hunt_complete') }}
+                onDone={() => { markHuntDone(); track('hunt_complete'); notePractice('game') }}
                 onBack={goBack}
               />
             </Screen>
@@ -1515,7 +1528,22 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 onToggleSound={toggleSound}
                 onTrialChange={() => setTrialRev((n) => n + 1)}
+                onPracticeReport={() => setScreen({ name: 'practicelog' })}
               />
+            </Screen>
+          )}
+          {screen.name === 'practicelog' && (
+            <Screen key="practicelog">
+              <Suspense fallback={null}>
+                <PracticeReport onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'practiceview' && (
+            <Screen key="practiceview">
+              <Suspense fallback={null}>
+                <PracticeReportViewer token={screen.token} onBack={() => setStack([{ name: 'home' }])} />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'familyvoice' && (
@@ -2822,6 +2850,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
+              <PracticeRing size={38} />
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
                 <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                   <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}
@@ -4434,6 +4463,14 @@ function JoinClassIntro({ invite, onHome }) {
   const join = () => {
     joinClass(invite)
     setCommunityCode(invite.code)
+    // Teacher's daily practice goal rides in the link; a class-view link (sync)
+    // also joins this child's profile to the live class with their nickname.
+    if (invite.goalMin) setPracticeGoal(invite.goalMin)
+    if (invite.sync) {
+      let nick = ''
+      try { nick = (localStorage.getItem('fq.nickname') || '').trim() } catch { /* ignore */ }
+      if (nick) joinClassSync(invite.code, nick).then((r) => { if (r.ok) flushSync() })
+    }
     track('class_join')
     setJoined(true)
   }
@@ -4566,7 +4603,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     )
     if (!url) return
     const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
-    track('assignment_receipt')
+    track('assignment_receipt'); notePractice('lesson')
     if (isNativePlatform()) {
       try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
