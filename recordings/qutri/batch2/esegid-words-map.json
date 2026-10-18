@@ -1,0 +1,1049 @@
+{
+ "source": "batch2/rec6.m4a",
+ "slug": "esegid",
+ "title": "እሰግድ ለአብ",
+ "textSource": "daily.pdf p3 #2 (pdf repeats 'አሐዱ ሠለስቱ ወእንዘ ሠለስቱ' at a line break; standard text used)",
+ "text": "እሰግድ ለአብ ወወልድ ወመንፈስ ቅዱስ አሐተ ስግደተ። እንዘ አሐዱ ሠለስቱ ወእንዘ ሠለስቱ አሐዱ እንዘ ይሤለሱ በአካላት ወይትዋሐዱ በመለኮት። እሰግድ ለእግዝእትነ ማርያም ድንግል ወላዲተ አምላክ። እሰግድ ለመስቀለ እግዚእነ ኢየሱስ ክርስቶስ ዘተቀደሰ በደሙ ክቡር። መስቀል ኃይልነ መስቀል ጽንዕነ መስቀል ቤዛነ መስቀል መድኃኒተ ነፍስነ። አይሁድ ክሕዱ ንሕነሰ አመነ ወእለ አመነ በኃይለ መስቀሉ ድኅነ።",
+ "words": [
+  "እሰግድ",
+  "ለአብ",
+  "ወወልድ",
+  "ወመንፈስ",
+  "ቅዱስ",
+  "አሐተ",
+  "ስግደተ",
+  "እንዘ",
+  "አሐዱ",
+  "ሠለስቱ",
+  "ወእንዘ",
+  "ሠለስቱ",
+  "አሐዱ",
+  "እንዘ",
+  "ይሤለሱ",
+  "በአካላት",
+  "ወይትዋሐዱ",
+  "በመለኮት",
+  "እሰግድ",
+  "ለእግዝእትነ",
+  "ማርያም",
+  "ድንግል",
+  "ወላዲተ",
+  "አምላክ",
+  "እሰግድ",
+  "ለመስቀለ",
+  "እግዚእነ",
+  "ኢየሱስ",
+  "ክርስቶስ",
+  "ዘተቀደሰ",
+  "በደሙ",
+  "ክቡር",
+  "መስቀል",
+  "ኃይልነ",
+  "መስቀል",
+  "ጽንዕነ",
+  "መስቀል",
+  "ቤዛነ",
+  "መስቀል",
+  "መድኃኒተ",
+  "ነፍስነ",
+  "አይሁድ",
+  "ክሕዱ",
+  "ንሕነሰ",
+  "አመነ",
+  "ወእለ",
+  "አመነ",
+  "በኃይለ",
+  "መስቀሉ",
+  "ድኅነ"
+ ],
+ "spokenTitleWords": 0,
+ "sentenceEnds": [
+  6,
+  17,
+  23,
+  31,
+  40,
+  49
+ ],
+ "mode": "word-by-word (units may join 2-3 words)",
+ "method": "energy silence split + faster-whisper medium per-unit transliteration (Arabic script) + DP alignment on consonant skeleton and duration",
+ "skipped": [],
+ "droppedSegments": [],
+ "joinedUnits": [
+  "ወመንፈስ ቅዱስ",
+  "እንዘ አሐዱ",
+  "ወእንዘ ሠለስቱ",
+  "እንዘ ይሤለሱ",
+  "ወላዲተ አምላክ",
+  "ለመስቀለ እግዚእነ",
+  "መድኃኒተ ነፍስነ",
+  "ወእለ አመነ",
+  "በኃይለ መስቀሉ"
+ ],
+ "units": [
+  {
+   "i": 0,
+   "text": "እሰግድ",
+   "words": [
+    "እሰግድ"
+   ],
+   "wordIndices": [
+    0
+   ],
+   "joined": false,
+   "start": 1.47,
+   "end": 3.37,
+   "clipStart": 1.39,
+   "clipEnd": 3.49,
+   "file": "esegid-words/000.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    0
+   ],
+   "stt": "س applauds || ساااااااااااااا書",
+   "sttMatch": 0.4,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 1,
+   "text": "ለአብ",
+   "words": [
+    "ለአብ"
+   ],
+   "wordIndices": [
+    1
+   ],
+   "joined": false,
+   "start": 3.67,
+   "end": 5.26,
+   "clipStart": 3.59,
+   "clipEnd": 5.38,
+   "file": "esegid-words/001.mp3",
+   "gainDb": -2.3,
+   "silenceSegments": [
+    1
+   ],
+   "stt": "لا || لعاااااااااو",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 2,
+   "text": "ወወልድ",
+   "words": [
+    "ወወልድ"
+   ],
+   "wordIndices": [
+    2
+   ],
+   "joined": false,
+   "start": 6.05,
+   "end": 7.66,
+   "clipStart": 5.97,
+   "clipEnd": 7.78,
+   "file": "esegid-words/002.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    2
+   ],
+   "stt": "ووووو.. || الاوالد",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 3,
+   "text": "ወመንፈስ ቅዱስ",
+   "words": [
+    "ወመንፈስ",
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    3,
+    4
+   ],
+   "joined": true,
+   "start": 8.3,
+   "end": 10.7,
+   "clipStart": 8.22,
+   "clipEnd": 10.82,
+   "file": "esegid-words/003.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    3
+   ],
+   "stt": "ومن فسك الدووس || ومن فسك الدوس",
+   "sttMatch": 0.88,
+   "confidence": "stt"
+  },
+  {
+   "i": 4,
+   "text": "አሐተ",
+   "words": [
+    "አሐተ"
+   ],
+   "wordIndices": [
+    5
+   ],
+   "joined": false,
+   "start": 11.34,
+   "end": 13.18,
+   "clipStart": 11.26,
+   "clipEnd": 13.3,
+   "file": "esegid-words/004.mp3",
+   "gainDb": -2.2,
+   "silenceSegments": [
+    4
+   ],
+   "stt": "أحتى || أحت",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 5,
+   "text": "ስግደተ",
+   "words": [
+    "ስግደተ"
+   ],
+   "wordIndices": [
+    6
+   ],
+   "joined": false,
+   "start": 13.7,
+   "end": 15.7,
+   "clipStart": 13.62,
+   "clipEnd": 15.82,
+   "file": "esegid-words/005.mp3",
+   "gainDb": -0.7,
+   "silenceSegments": [
+    5
+   ],
+   "stt": "سقداتا || سقدات",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 6,
+   "text": "እንዘ አሐዱ",
+   "words": [
+    "እንዘ",
+    "አሐዱ"
+   ],
+   "wordIndices": [
+    7,
+    8
+   ],
+   "joined": true,
+   "start": 17.2,
+   "end": 19.32,
+   "clipStart": 17.12,
+   "clipEnd": 19.44,
+   "file": "esegid-words/006.mp3",
+   "gainDb": -1.3,
+   "silenceSegments": [
+    6
+   ],
+   "stt": "انذا أهدو || انذا أهدو",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 7,
+   "text": "ሠለስቱ",
+   "words": [
+    "ሠለስቱ"
+   ],
+   "wordIndices": [
+    9
+   ],
+   "joined": false,
+   "start": 19.83,
+   "end": 21.65,
+   "clipStart": 19.75,
+   "clipEnd": 21.77,
+   "file": "esegid-words/007.mp3",
+   "gainDb": -0.1,
+   "silenceSegments": [
+    7
+   ],
+   "stt": "سلستون || سلسطون",
+   "sttMatch": 0.8,
+   "confidence": "stt"
+  },
+  {
+   "i": 8,
+   "text": "ወእንዘ ሠለስቱ",
+   "words": [
+    "ወእንዘ",
+    "ሠለስቱ"
+   ],
+   "wordIndices": [
+    10,
+    11
+   ],
+   "joined": true,
+   "start": 22.27,
+   "end": 24.56,
+   "clipStart": 22.19,
+   "clipEnd": 24.68,
+   "file": "esegid-words/008.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    8
+   ],
+   "stt": "وأنزفووووو || وانذا سلسطون",
+   "sttMatch": 0.86,
+   "confidence": "stt",
+   "note": "joined ወእንዘ ሠለስቱ inferred from duration + STT 'wa-inza salastun'"
+  },
+  {
+   "i": 9,
+   "text": "አሐዱ",
+   "words": [
+    "አሐዱ"
+   ],
+   "wordIndices": [
+    12
+   ],
+   "joined": false,
+   "start": 25.09,
+   "end": 26.87,
+   "clipStart": 25.01,
+   "clipEnd": 26.99,
+   "file": "esegid-words/009.mp3",
+   "gainDb": -2.2,
+   "silenceSegments": [
+    9
+   ],
+   "stt": "أحاكي",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 10,
+   "text": "እንዘ ይሤለሱ",
+   "words": [
+    "እንዘ",
+    "ይሤለሱ"
+   ],
+   "wordIndices": [
+    13,
+    14
+   ],
+   "joined": true,
+   "start": 27.58,
+   "end": 29.95,
+   "clipStart": 27.5,
+   "clipEnd": 30.07,
+   "file": "esegid-words/010.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    10
+   ],
+   "stt": "أهدو رسيلاسو",
+   "sttMatch": 0.5,
+   "confidence": "stt",
+   "note": "STT hears 'ahdu rasilasu' here; text has እንዘ ይሤለሱ. Order of እንዘ/አሐዱ around this spot is uncertain"
+  },
+  {
+   "i": 11,
+   "text": "በአካላት",
+   "words": [
+    "በአካላት"
+   ],
+   "wordIndices": [
+    15
+   ],
+   "joined": false,
+   "start": 30.55,
+   "end": 32.35,
+   "clipStart": 30.47,
+   "clipEnd": 32.47,
+   "file": "esegid-words/011.mp3",
+   "gainDb": -2.5,
+   "silenceSegments": [
+    11
+   ],
+   "stt": "ب || بأكلات",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 12,
+   "text": "ወይትዋሐዱ",
+   "words": [
+    "ወይትዋሐዱ"
+   ],
+   "wordIndices": [
+    16
+   ],
+   "joined": false,
+   "start": 33.04,
+   "end": 35.22,
+   "clipStart": 32.96,
+   "clipEnd": 35.34,
+   "file": "esegid-words/012.mp3",
+   "gainDb": -2.5,
+   "silenceSegments": [
+    12
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 13,
+   "text": "በመለኮት",
+   "words": [
+    "በመለኮት"
+   ],
+   "wordIndices": [
+    17
+   ],
+   "joined": false,
+   "start": 35.81,
+   "end": 37.75,
+   "clipStart": 35.73,
+   "clipEnd": 37.87,
+   "file": "esegid-words/013.mp3",
+   "gainDb": 0.2,
+   "silenceSegments": [
+    13
+   ],
+   "stt": "بملكات || وَإِتْوَحَادُ بَمَلَقُوَاتِ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 14,
+   "text": "እሰግድ",
+   "words": [
+    "እሰግድ"
+   ],
+   "wordIndices": [
+    18
+   ],
+   "joined": false,
+   "start": 38.69,
+   "end": 40.46,
+   "clipStart": 38.61,
+   "clipEnd": 40.58,
+   "file": "esegid-words/014.mp3",
+   "gainDb": -0.5,
+   "silenceSegments": [
+    14
+   ],
+   "stt": "أسه phải || أَسَقِّدْ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 15,
+   "text": "ለእግዝእትነ",
+   "words": [
+    "ለእግዝእትነ"
+   ],
+   "wordIndices": [
+    19
+   ],
+   "joined": false,
+   "start": 41.02,
+   "end": 43.39,
+   "clipStart": 40.94,
+   "clipEnd": 43.51,
+   "file": "esegid-words/015.mp3",
+   "gainDb": 1.5,
+   "silenceSegments": [
+    15
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 16,
+   "text": "ማርያም",
+   "words": [
+    "ማርያም"
+   ],
+   "wordIndices": [
+    20
+   ],
+   "joined": false,
+   "start": 44.17,
+   "end": 46.1,
+   "clipStart": 44.09,
+   "clipEnd": 46.22,
+   "file": "esegid-words/016.mp3",
+   "gainDb": -1.2,
+   "silenceSegments": [
+    16
+   ],
+   "stt": "ماريا || لقذئتنا مريم",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 17,
+   "text": "ድንግል",
+   "words": [
+    "ድንግል"
+   ],
+   "wordIndices": [
+    21
+   ],
+   "joined": false,
+   "start": 46.65,
+   "end": 48.37,
+   "clipStart": 46.57,
+   "clipEnd": 48.49,
+   "file": "esegid-words/017.mp3",
+   "gainDb": 0.5,
+   "silenceSegments": [
+    17
+   ],
+   "stt": "دنجد || دنجل",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 18,
+   "text": "ወላዲተ አምላክ",
+   "words": [
+    "ወላዲተ",
+    "አምላክ"
+   ],
+   "wordIndices": [
+    22,
+    23
+   ],
+   "joined": true,
+   "start": 48.97,
+   "end": 51.17,
+   "clipStart": 48.89,
+   "clipEnd": 51.29,
+   "file": "esegid-words/018.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    18
+   ],
+   "stt": "ولا لتعمل || وَلَا لِي تَأَمْلَاكُ",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 19,
+   "text": "እሰግድ",
+   "words": [
+    "እሰግድ"
+   ],
+   "wordIndices": [
+    24
+   ],
+   "joined": false,
+   "start": 51.85,
+   "end": 53.58,
+   "clipStart": 51.77,
+   "clipEnd": 53.7,
+   "file": "esegid-words/019.mp3",
+   "gainDb": -0.8,
+   "silenceSegments": [
+    19
+   ],
+   "stt": "ساااااااا قد || إِسَاكِدْ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 20,
+   "text": "ለመስቀለ እግዚእነ",
+   "words": [
+    "ለመስቀለ",
+    "እግዚእነ"
+   ],
+   "wordIndices": [
+    25,
+    26
+   ],
+   "joined": true,
+   "start": 54.24,
+   "end": 56.94,
+   "clipStart": 54.16,
+   "clipEnd": 57.06,
+   "file": "esegid-words/020.mp3",
+   "gainDb": 1.2,
+   "silenceSegments": [
+    20
+   ],
+   "stt": "لماسك الاغزينة || لَمَسْكَلَ إِقْزِيناً",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 21,
+   "text": "ኢየሱስ",
+   "words": [
+    "ኢየሱስ"
+   ],
+   "wordIndices": [
+    27
+   ],
+   "joined": false,
+   "start": 57.51,
+   "end": 59.33,
+   "clipStart": 57.43,
+   "clipEnd": 59.45,
+   "file": "esegid-words/021.mp3",
+   "gainDb": 1.0,
+   "silenceSegments": [
+    21
+   ],
+   "stt": "!</DER]..ispering || يسوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 22,
+   "text": "ክርስቶስ",
+   "words": [
+    "ክርስቶስ"
+   ],
+   "wordIndices": [
+    28
+   ],
+   "joined": false,
+   "start": 59.92,
+   "end": 61.68,
+   "clipStart": 59.84,
+   "clipEnd": 61.8,
+   "file": "esegid-words/022.mp3",
+   "gainDb": 1.4,
+   "silenceSegments": [
+    22
+   ],
+   "stt": "كرستووووو...​ || كريستوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 23,
+   "text": "ዘተቀደሰ",
+   "words": [
+    "ዘተቀደሰ"
+   ],
+   "wordIndices": [
+    29
+   ],
+   "joined": false,
+   "start": 62.27,
+   "end": 64.92,
+   "clipStart": 62.19,
+   "clipEnd": 65.04,
+   "file": "esegid-words/023.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    23
+   ],
+   "stt": "!!)�� JONれた...</ sẽ JON || ذاتك أداسا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 24,
+   "text": "በደሙ",
+   "words": [
+    "በደሙ"
+   ],
+   "wordIndices": [
+    30
+   ],
+   "joined": false,
+   "start": 65.49,
+   "end": 67.34,
+   "clipStart": 65.41,
+   "clipEnd": 67.46,
+   "file": "esegid-words/024.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    24
+   ],
+   "stt": "بدم",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 25,
+   "text": "ክቡር",
+   "words": [
+    "ክቡር"
+   ],
+   "wordIndices": [
+    31
+   ],
+   "joined": false,
+   "start": 68.41,
+   "end": 69.9,
+   "clipStart": 68.33,
+   "clipEnd": 70.02,
+   "file": "esegid-words/025.mp3",
+   "gainDb": -2.7,
+   "silenceSegments": [
+    25
+   ],
+   "stt": "? được, kg được đã rồi, như gì ஒLAUGHS || كبور",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 26,
+   "text": "መስቀል",
+   "words": [
+    "መስቀል"
+   ],
+   "wordIndices": [
+    32
+   ],
+   "joined": false,
+   "start": 70.69,
+   "end": 72.36,
+   "clipStart": 70.61,
+   "clipEnd": 72.48,
+   "file": "esegid-words/026.mp3",
+   "gainDb": -0.5,
+   "silenceSegments": [
+    26
+   ],
+   "stt": "nữa kilosれたУ WILLIAM những הר MARISHA sv WILLIAMーい ở applauding!!),</ || مسكال",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 27,
+   "text": "ኃይልነ",
+   "words": [
+    "ኃይልነ"
+   ],
+   "wordIndices": [
+    33
+   ],
+   "joined": false,
+   "start": 73.08,
+   "end": 75.19,
+   "clipStart": 73.0,
+   "clipEnd": 75.31,
+   "file": "esegid-words/027.mp3",
+   "gainDb": 0.2,
+   "silenceSegments": [
+    27
+   ],
+   "stt": "!</ làm chúng thì theЗ 않은 applaudsЯ எ MICHAEL thấy từ thấyต nữaЯ component",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 28,
+   "text": "መስቀል",
+   "words": [
+    "መስቀል"
+   ],
+   "wordIndices": [
+    34
+   ],
+   "joined": false,
+   "start": 75.71,
+   "end": 77.59,
+   "clipStart": 75.63,
+   "clipEnd": 77.71,
+   "file": "esegid-words/028.mp3",
+   "gainDb": -0.4,
+   "silenceSegments": [
+    28
+   ],
+   "stt": "اتركي الاشتراك اللي يشترك اتركي الاشتراك اتركي الاشتراك",
+   "sttMatch": 0.1,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 29,
+   "text": "ጽንዕነ",
+   "words": [
+    "ጽንዕነ"
+   ],
+   "wordIndices": [
+    35
+   ],
+   "joined": false,
+   "start": 78.16,
+   "end": 80.34,
+   "clipStart": 78.08,
+   "clipEnd": 80.46,
+   "file": "esegid-words/029.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    29
+   ],
+   "stt": "WILLIAM the đâu gì pm thì về உLAUGHS về~\" lại rồi rồi��을 để sẽ lại,!!) kilograms kilometres JON...​].. đến JAMES kilograms kilos kilometres]..!!) vậy kilometresispering thếりました a],,...</ that,​LAUGHING đó kilograms!!\"まり đó��ん PLAYING này எ cái gì,</ mình applauds.CHUCKЯ��이��이 applauds],,A đây. ấy tablespoons || موسيقى",
+   "sttMatch": 0.0,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 30,
+   "text": "መስቀል",
+   "words": [
+    "መስቀል"
+   ],
+   "wordIndices": [
+    36
+   ],
+   "joined": false,
+   "start": 80.85,
+   "end": 82.8,
+   "clipStart": 80.77,
+   "clipEnd": 82.92,
+   "file": "esegid-words/030.mp3",
+   "gainDb": 0.2,
+   "silenceSegments": [
+    30
+   ],
+   "stt": "اوووو || ماسكاد || ماسكال",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 31,
+   "text": "ቤዛነ",
+   "words": [
+    "ቤዛነ"
+   ],
+   "wordIndices": [
+    37
+   ],
+   "joined": false,
+   "start": 83.32,
+   "end": 85.43,
+   "clipStart": 83.24,
+   "clipEnd": 85.55,
+   "file": "esegid-words/031.mp3",
+   "gainDb": -0.7,
+   "silenceSegments": [
+    31
+   ],
+   "stt": "بيزان || بيزانا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 32,
+   "text": "መስቀል",
+   "words": [
+    "መስቀል"
+   ],
+   "wordIndices": [
+    38
+   ],
+   "joined": false,
+   "start": 86.03,
+   "end": 87.9,
+   "clipStart": 85.95,
+   "clipEnd": 88.02,
+   "file": "esegid-words/032.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    32
+   ],
+   "stt": "ما س vậy || ماسكال",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 33,
+   "text": "መድኃኒተ ነፍስነ",
+   "words": [
+    "መድኃኒተ",
+    "ነፍስነ"
+   ],
+   "wordIndices": [
+    39,
+    40
+   ],
+   "joined": true,
+   "start": 88.45,
+   "end": 91.12,
+   "clipStart": 88.37,
+   "clipEnd": 91.24,
+   "file": "esegid-words/033.mp3",
+   "gainDb": 1.8,
+   "silenceSegments": [
+    33
+   ],
+   "stt": "مَدْحَانِيثَ نَفْسِنا || مَدْحَنِي تَنَفْسِنَا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 34,
+   "text": "አይሁድ",
+   "words": [
+    "አይሁድ"
+   ],
+   "wordIndices": [
+    41
+   ],
+   "joined": false,
+   "start": 91.69,
+   "end": 93.57,
+   "clipStart": 91.61,
+   "clipEnd": 93.69,
+   "file": "esegid-words/034.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    34
+   ],
+   "stt": "أهوووووو || آيْهُوَدْ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 35,
+   "text": "ክሕዱ",
+   "words": [
+    "ክሕዱ"
+   ],
+   "wordIndices": [
+    42
+   ],
+   "joined": false,
+   "start": 94.18,
+   "end": 95.91,
+   "clipStart": 94.1,
+   "clipEnd": 96.03,
+   "file": "esegid-words/035.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    35
+   ],
+   "stt": "كهدو || كَهِدُهُ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 36,
+   "text": "ንሕነሰ",
+   "words": [
+    "ንሕነሰ"
+   ],
+   "wordIndices": [
+    43
+   ],
+   "joined": false,
+   "start": 96.56,
+   "end": 98.68,
+   "clipStart": 96.48,
+   "clipEnd": 98.8,
+   "file": "esegid-words/036.mp3",
+   "gainDb": -0.4,
+   "silenceSegments": [
+    36
+   ],
+   "stt": "نح",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 37,
+   "text": "አመነ",
+   "words": [
+    "አመነ"
+   ],
+   "wordIndices": [
+    44
+   ],
+   "joined": false,
+   "start": 99.31,
+   "end": 101.35,
+   "clipStart": 99.23,
+   "clipEnd": 101.47,
+   "file": "esegid-words/037.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    37
+   ],
+   "stt": "أمانّة || نهنسا عمانا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 38,
+   "text": "ወእለ አመነ",
+   "words": [
+    "ወእለ",
+    "አመነ"
+   ],
+   "wordIndices": [
+    45,
+    46
+   ],
+   "joined": true,
+   "start": 101.99,
+   "end": 104.53,
+   "clipStart": 101.91,
+   "clipEnd": 104.65,
+   "file": "esegid-words/038.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    38
+   ],
+   "stt": "وإلا عمان || وإلا عمانا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 39,
+   "text": "በኃይለ መስቀሉ",
+   "words": [
+    "በኃይለ",
+    "መስቀሉ"
+   ],
+   "wordIndices": [
+    47,
+    48
+   ],
+   "joined": true,
+   "start": 105.08,
+   "end": 107.93,
+   "clipStart": 105.0,
+   "clipEnd": 108.05,
+   "file": "esegid-words/039.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    39
+   ],
+   "stt": "بحيلة مسكالو || بحيلة مسكلة",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 40,
+   "text": "ድኅነ",
+   "words": [
+    "ድኅነ"
+   ],
+   "wordIndices": [
+    49
+   ],
+   "joined": false,
+   "start": 108.57,
+   "end": 110.64,
+   "clipStart": 108.49,
+   "clipEnd": 110.76,
+   "file": "esegid-words/040.mp3",
+   "gainDb": -1.1,
+   "silenceSegments": [
+    40
+   ],
+   "stt": "دهونا || دهنة",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  }
+ ],
+ "notes": "daily.pdf repeats 'አሐዱ ሠለስቱ ወእንዘ ሠለስቱ' at a line break; he reads the standard text once (unit count fits only that). He says the opening phrase once, not three times (ሠለስ ጊዜያተ በል)."
+}

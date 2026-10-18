@@ -173,6 +173,10 @@ import {
   ChevronLeft,
   Sparkles,
   LockOpen,
+  GraduationCap,
+  CheckCircle2,
+  Smile,
+  Home as HomeIcon,
   Play,
   Pause,
   BookOpen,
@@ -4461,7 +4465,16 @@ function ChallengeMissing({ onHome }) {
 
 /** A #class= invite: joining is a local fact on this device — it stores the
    class + credits the teacher's community code. Nothing is sent anywhere. */
+/* Screen-reader words for the join screen, in the learn language. */
+const JC_WORDS = {
+  am: { join: 'ክፍሉን ተቀላቀል', notNow: 'አሁን አይደለም', joined: 'ተቀላቅለሃል', unlocked: 'ተከፍቷል', home: 'ወደ ቤት' },
+  ti: { join: 'ክፍሊ ተጸንበር', notNow: 'ሕጂ ኣይኮነን', joined: 'ተጸንቢርካ', unlocked: 'ተኸፊቱ', home: 'ናብ ገዛ' },
+}
+const jcLang = () => (getActivePackId() === 'am' ? 'am' : 'ti')
+
 function JoinClassIntro({ invite, onHome }) {
+  let kidName = ''
+  try { kidName = (localStorage.getItem('fq.nickname') || '').trim() } catch { /* ignore */ }
   const [joined, setJoined] = useState(false)
   const [unlocked, setUnlocked] = useState(false)
   useEscapeKey(onHome)
@@ -4486,22 +4499,29 @@ function JoinClassIntro({ invite, onHome }) {
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
+      {/* No English on this kid screen (Yosief): names, icons and the class
+         code only; aria labels follow the learn language (Amharic/Tigrinya). */}
       {joined ? (
         <>
-          <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
-            {t('jcJoined', "You're in {who}'s class!", { who: invite.teacher })}
-          </h1>
+          <div className="mt-4 flex items-center gap-3" data-testid="jc-joined">
+            <span className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xl font-black" style={{ background: 'var(--card)', color: 'var(--ink)' }}>
+              <GraduationCap className="h-6 w-6" style={{ color: 'var(--accent)' }} aria-hidden="true" />{invite.teacher}
+            </span>
+            <CheckCircle2 className="h-9 w-9" style={{ color: 'var(--go)' }} aria-label={JC_WORDS[jcLang()].joined} />
+            {kidName && (
+              <span className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xl font-black" style={{ background: 'var(--card)', color: 'var(--ink)' }}>
+                <Smile className="h-6 w-6" style={{ color: 'var(--go)' }} aria-hidden="true" />{kidName}
+              </span>
+            )}
+          </div>
           {unlocked && (
-            <div data-testid="class-unlocked" aria-label="ተከፍቷል" className="mt-3 flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
+            <div data-testid="class-unlocked" aria-label={JC_WORDS[jcLang()].unlocked} className="mt-3 flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
               <LockOpen className="h-6 w-6" aria-hidden="true" /><Sparkles className="h-5 w-5" aria-hidden="true" />
             </div>
           )}
-          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('jcJoinedBody', 'Assignments from your teacher will show up in your daily plan.')}
-          </p>
           <div className="mt-8 w-full max-w-sm">
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
-              {t('goHome', 'Home')}
+            <Chunky tone="go" className="flex w-full items-center justify-center py-4" onClick={onHome} aria-label={JC_WORDS[jcLang()].home} data-testid="jc-home">
+              <HomeIcon className="h-7 w-7" aria-hidden="true" />
             </Chunky>
           </div>
         </>
@@ -4510,18 +4530,15 @@ function JoinClassIntro({ invite, onHome }) {
           <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
             {invite.code}
           </p>
-          <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
-            {t('jcTitle', 'Join {who}’s class?', { who: invite.teacher })}
-          </h1>
-          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('jcBody', 'Your app remembers the class on this device only. Nothing about you is sent anywhere.')}
-          </p>
-          <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={join}>
-              {t('jcJoin', 'Join class')}
+          <div className="mt-2 flex items-center gap-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+            <GraduationCap className="h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />{invite.teacher}
+          </div>
+          <div className="mt-8 flex w-full max-w-sm gap-3">
+            <Chunky tone="card" className="flex flex-1 items-center justify-center py-4" onClick={onHome} aria-label={JC_WORDS[jcLang()].notNow} data-testid="jc-dismiss">
+              <X className="h-7 w-7" aria-hidden="true" />
             </Chunky>
-            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
-              {t('dismiss', 'Not now')}
+            <Chunky tone="go" className="flex flex-[2] items-center justify-center gap-2 py-4" onClick={join} aria-label={JC_WORDS[jcLang()].join} data-testid="jc-join">
+              <Users className="h-7 w-7" aria-hidden="true" /><Check className="h-7 w-7" aria-hidden="true" />
             </Chunky>
           </div>
         </>
