@@ -163,32 +163,67 @@ describe('storage', () => {
   it('state starts empty', () => { expect(emptyState().days).toEqual({}) })
 })
 
-describe('prayer pages (memorizing: no interaction needed)', () => {
+describe('prayer pages in practice mode (memorizing: no interaction needed)', () => {
   const M = 60 * S
   it('counts while a prayer page is open and visible, as prayer and total', () => {
-    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 5 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 5 * M }])
     expect(row(st).activeMs).toBe(5 * M)
     expect(prayerMinutes(row(st))).toBe(5)
   })
   it('pauses after the 10-minute safety cap with no page turn, tap or audio', () => {
-    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 60 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 60 * M }])
     expect(row(st).prayerMs).toBe(PRAYER_CAP_MS)
   })
   it('page turns and taps renew the cap', () => {
-    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerPage', t: T0 + 8 * M }, { type: 'tap', t: T0 + 16 * M, x: 1, y: 1 }, { type: 'tick', t: T0 + 60 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'prayerPage', t: T0 + 8 * M }, { type: 'tap', t: T0 + 16 * M, x: 1, y: 1 }, { type: 'tick', t: T0 + 60 * M }])
     expect(row(st).prayerMs).toBe(26 * M)
   })
   it('a playing recording counts past the cap until it stops', () => {
-    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'tick', t: T0 + 25 * M }, { type: 'prayerAudio', t: T0 + 25 * M, playing: false }, { type: 'tick', t: T0 + 60 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'tick', t: T0 + 25 * M }, { type: 'prayerAudio', t: T0 + 25 * M, playing: false }, { type: 'tick', t: T0 + 60 * M }])
     expect(row(st).prayerMs).toBe(35 * M)
   })
   it('stops when hidden / backgrounded / locked, even with audio playing', () => {
-    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'hidden', t: T0 + 2 * M }, { type: 'tick', t: T0 + 30 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'hidden', t: T0 + 2 * M }, { type: 'tick', t: T0 + 30 * M }])
     expect(row(st).activeMs).toBe(2 * M)
   })
   it('stops when the page closes; normal play is not prayer and is not double counted', () => {
-    const st = fold([{ type: 'tap', t: T0, x: 0, y: 0 }, { type: 'prayerOpen', t: T0 + 10 * S }, { type: 'prayerClose', t: T0 + 2 * M }, { type: 'tick', t: T0 + 20 * M }])
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'tap', t: T0, x: 0, y: 0 }, { type: 'prayerOpen', t: T0 + 10 * S }, { type: 'prayerClose', t: T0 + 2 * M }, { type: 'tick', t: T0 + 20 * M }])
     expect(row(st).activeMs).toBe(2 * M)
     expect(row(st).prayerMs).toBe(2 * M - 10 * S)
+  })
+})
+
+describe('practice mode gate + replays', () => {
+  const M = 60 * S
+  it('casual prayer reading outside practice mode earns no tracked time', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true, key: 0 }, { type: 'tick', t: T0 + 20 * M }])
+    expect(row(st).activeMs).toBe(0)
+    expect(row(st).prayerMs).toBe(0)
+  })
+  it('ending practice mode stops prayer time', () => {
+    const st = fold([{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }, { type: 'practiceEnd', t: T0 + 3 * M }, { type: 'tick', t: T0 + 20 * M }])
+    expect(row(st).prayerMs).toBe(3 * M)
+  })
+  it('replays after the 3rd of the same prayer earn nothing and get flagged at the 6th', () => {
+    const ev = [{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }]
+    let t = T0
+    for (let k = 0; k < 8; k++) { // each replay: tap play, 1 min of audio, stop
+      ev.push({ type: 'tap', t, x: 10, y: 10 }, { type: 'prayerAudio', t, playing: true, key: 71 })
+      t += M
+      ev.push({ type: 'prayerAudio', t, playing: false, key: 71 })
+      t += 5 * S
+    }
+    ev.push({ type: 'tick', t: t + 30 * M })
+    const st = fold(ev)
+    // 3 counted plays (+ gaps) then only the 30 s tap windows of later taps
+    expect(row(st).prayerMs).toBeLessThan(4 * M)
+    expect(row(st).flags.audioLoop).toBe(1)
+  })
+  it('a page turn resets the replay budget', () => {
+    const ev = [{ type: 'practiceStart', t: T0 }, { type: 'prayerOpen', t: T0 }]
+    let t = T0
+    for (let k = 0; k < 5; k++) { ev.push({ type: 'prayerAudio', t, playing: true, key: 0 }, { type: 'prayerAudio', t: t + M, playing: false, key: 0 }); t += M }
+    ev.push({ type: 'prayerPage', t }, { type: 'prayerAudio', t, playing: true, key: 0 }, { type: 'tick', t: t + 2 * M })
+    expect(fold(ev).days[DAY].prayerMs).toBeGreaterThanOrEqual(5 * M)
   })
 })

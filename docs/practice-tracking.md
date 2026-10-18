@@ -25,33 +25,61 @@ fully unit-tested (`practice.test.js`).
   (lesson).
 * **Streak.** The number of consecutive days with at least one active minute.
 
-### 1b. Prayer pages (memorizing, so no interaction is needed)
+### 1b. Prayer pages: only in PRACTICE MODE (Yosief, Oct 2026)
 
-Kids memorize prayers by reading along and listening, so prayer time follows
-its own rule (Yosief, Oct 2026):
+Kids memorize prayers by reading along and listening, so prayer pages have their
+own rules. **They apply only inside practice mode**, which is a homework or
+practice session. Casually opening the prayer book earns **no tracked time**
+(normal tap time still follows section 1, like anywhere in the app).
 
-* Time counts as **active** while a prayer page is open and visible, or while a
-  prayer recording is playing. No tap is needed.
-* It stops at once when the app is backgrounded, the tab is hidden or the
-  screen is locked, even if audio is still playing.
-* **Safety cap:** `PRAYER_CAP_MS` (10 minutes). If nothing happens for 10
-  minutes (no page turn, tap, or recording starting or stopping), the clock
-  pauses, so a phone left open on a prayer page does not log an hour. While a
-  recording plays, the cap does not apply; it restarts when the recording
-  ends. Coming back to the page after a hide restarts the cap.
-* Prayer time is stored as `prayerMs` and is **included in** `activeMs` (the
-  total). Overlap with normal tap time is never counted twice.
-* The parent report shows "incl. N min on prayer pages" and a book-icon column.
-  The teacher dashboard has a book-icon column with weekly and daily prayer
-  minutes. Sync and signed reports carry `prayerMin`, and older links decode
-  it as 0.
-* **Hooks:** the prayer feature (PR #57, not on main yet) is wired with
-  `prayerTracking` from `platform/practiceTracker.js`:
-  ```js
-  useEffect(() => { prayerTracking.open(); return () => prayerTracking.close() }, [])
-  // on every page turn:            prayerTracking.page()
-  // recording play / pause / ended: prayerTracking.audio(true | false)
-  ```
+**Inside practice mode:**
+* Time counts while a prayer page is open and visible, or a prayer recording is
+  playing, with no tap needed.
+* It stops when the app is backgrounded, the tab is hidden, the screen is
+  locked, the page closes, or practice mode ends.
+* **10-minute safety cap** (`PRAYER_CAP_MS`): with no page turn, tap, or
+  recording starting or stopping, the clock pauses. While a counted recording
+  plays, the cap doesn't apply.
+* **One prayer per play:** the recording plays only the current prayer (ጸሎት),
+  meaning the units from one `s: 1` section start up to the next, and then it
+  **stops**. There is no auto-advance, no continuous playback and no loop.
+  Playing it again takes a tap.
+* **Replay limit:** plays of the same prayer after the 3rd (`LOOP_FREE`) earn
+  nothing. The tap that starts one gets only the normal 30-second window. A page
+  turn or a different prayer resets the count. The 6th play (`LOOP_RUN`) raises
+  one `audioLoop` flag.
+* Prayer minutes are stored as `prayerMs`, are included in the total, and are
+  shown separately in the parent report (book icon), the teacher dashboard
+  (book icon), the sync and signed reports.
+
+**Contract: `src/platform/prayerPractice.js`**
+* The file is byte-identical on PR #57 and PR #58 and has no imports. It sends
+  `window` CustomEvent `fq:practice`, and `practiceTracker` listens.
+* With PR #57 alone, nobody listens and the calls do nothing.
+
+| Call | Meaning |
+|---|---|
+| `startPractice(source)` / `endPractice()` | Practice session on or off. Source is `'button'`, `'class'`, `'assignment'` or `'goal'` |
+| `isPracticeMode()`, `subscribePracticeMode(fn)` | Read and observe the mode |
+| `prayerOpen()` / `prayerClose()` | The prayer page mounts or unmounts |
+| `prayerPage()` | A page turn |
+| `prayerAudio(playing, prayerKey)` | A recording starts or stops. `prayerKey` is the index of the prayer's first unit, so replays of the same prayer are recognized |
+| `playCurrentPrayerOnly(units, i)` | The next recorded unit inside the same prayer, or `-1` (stop) |
+
+**Wiring in PR #57 (`PrayerBook.jsx`), pushed on `feat/prayer-reading-marks`:**
+* A practice-mode icon button in the header (a target icon, aria-label
+  ልምምድ, no English). It is highlighted, with a pulsing dot, while on. Leaving
+  the book ends practice mode.
+* `prayerOpen()` on mount and `prayerClose()` on unmount, `prayerPage()` on
+  every page change.
+* `prayerAudio(true, key)` when a unit starts playing, `prayerAudio(false)` on
+  pause, stop or the end of the prayer.
+* In practice mode, `onended` advances with `playCurrentPrayerOnly`
+  (stopping at the prayer's end) instead of `nextRecorded`. Outside practice
+  mode, playback is unchanged.
+* Homework entry: an assignment or class screen can call
+  `startPractice('assignment' | 'class')` before opening the book. The book
+  shows the same indicator.
 
 ### 1c. Kid study timer
 

@@ -16,6 +16,7 @@ import { step, emptyRuntime, loadPractice, savePractice } from './practice'
 import { queueDaySync, installPracticeSync } from './practiceSync'
 import { setAnswerHook } from './telemetry'
 import { setListenHook } from './audioEngine'
+import { PRACTICE_EVENT, isPracticeMode, prayerOpen, prayerPage, prayerAudio, prayerClose } from './prayerPractice'
 
 let state = null
 let installed = false
@@ -53,15 +54,18 @@ export function notePractice(type, extra = {}) {
   } catch { /* never break play */ }
 }
 
-/** Prayer-page hooks (docs/practice-tracking.md section 1b). The prayer book
-    calls open() on mount, page() on every page turn, audio(true|false) when
-    a recording starts/stops/ends, close() on unmount. */
-export const prayerTracking = Object.freeze({
-  open: () => notePractice('prayerOpen'),
-  page: () => notePractice('prayerPage'),
-  audio: (playing) => notePractice('prayerAudio', { playing: !!playing }),
-  close: () => notePractice('prayerClose'),
-})
+/** Prayer/practice-mode contract lives in prayerPractice.js (shared with the
+    prayer book, PR #57). Re-exported here for app code. */
+export { startPractice, endPractice, isPracticeMode, playCurrentPrayerOnly } from './prayerPractice'
+export const prayerTracking = Object.freeze({ open: prayerOpen, page: prayerPage, audio: prayerAudio, close: prayerClose })
+
+const PRAYER_TYPES = new Set(['practiceStart', 'practiceEnd', 'prayerOpen', 'prayerPage', 'prayerClose', 'prayerAudio'])
+/** Bus listener: prayer-book events -> tracker events. Exported for tests. */
+export function onPracticeBus(e) {
+  const d = e?.detail
+  if (!d || !PRAYER_TYPES.has(d.type)) return
+  notePractice(d.type, d.type === 'prayerAudio' ? { playing: !!d.playing, key: d.key ?? null } : {})
+}
 
 /** Current in-memory days (fresher than storage). */
 export function currentPracticeDays() {
@@ -86,6 +90,8 @@ export function installPracticeTracker(doc = typeof document !== 'undefined' ? d
   setAnswerHook((correct) => notePractice('answer', { correct }))
   setListenHook(() => notePractice('listen'))
   installPracticeSync(win)
+  win.addEventListener(PRACTICE_EVENT, onPracticeBus)
+  if (isPracticeMode()) notePractice('practiceStart')
   if (doc.visibilityState === 'hidden') notePractice('hidden')
   doc.addEventListener('pointerdown', (e) => notePractice('tap', { x: e.clientX, y: e.clientY }), { capture: true, passive: true })
   doc.addEventListener('keydown', () => notePractice('tap', { x: -1, y: -1 }), { capture: true, passive: true })

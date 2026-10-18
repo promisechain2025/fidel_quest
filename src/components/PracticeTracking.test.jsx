@@ -3,7 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import PracticeRing from './PracticeRing'
 import StudyTimer, { TIMER_KEY } from './StudyTimer'
 import { fireEvent } from '@testing-library/react'
-import { prayerTracking } from '../platform/practiceTracker'
+import { prayerTracking, onPracticeBus, startPractice, endPractice } from '../platform/practiceTracker'
+import { PRACTICE_EVENT } from '../platform/prayerPractice'
 import PracticeReport from './PracticeReport'
 import ClassPracticeCard, { ReportViewer, dashboardRows } from './ClassPractice'
 import { savePractice, emptyDay } from '../platform/practice'
@@ -52,9 +53,13 @@ describe('kid study timer', () => {
 describe('tracker runtime', () => {
   it('prayer hooks credit prayer time', () => {
     const t0 = Date.now()
+    window.addEventListener(PRACTICE_EVENT, onPracticeBus)
+    startPractice('button')
     prayerTracking.open()
     notePractice('tick', { t: t0 + 120000 })
     prayerTracking.close()
+    endPractice()
+    window.removeEventListener(PRACTICE_EVENT, onPracticeBus)
     expect(currentPracticeDays()[dayStamp(new Date(t0))].prayerMs).toBeGreaterThanOrEqual(119000)
   })
   it('taps and answers become active time in memory', () => {

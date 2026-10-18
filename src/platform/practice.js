@@ -52,7 +52,7 @@ export const emptyDay = (day) => ({
 /** Runtime (never persisted): what the next event needs to know. */
 export const emptyRuntime = () => ({
   visible: true, windowEnd: -Infinity, accountedAt: null, lastInteractionAt: null,
-  prayerOpen: false, prayerAudio: false, prayerLast: null,
+  practice: false, prayerOpen: false, prayerAudio: false, prayerLast: null, prayerKey: null, prayerPlays: 0, prayerLoopFlagged: false,
   taps: [], answers: [], listensSinceInput: 0, rapidFlagged: false, randomFlagged: false, loopFlagged: false,
 })
 
@@ -69,10 +69,13 @@ function dayRow(days, t) {
 /** Where the prayer window ends: open-ended while a recording plays,
     otherwise PRAYER_CAP_MS after the last prayer activity. */
 export function prayerEnd(rt) {
+  if (!rt.practice) return -Infinity // prayer rules apply only in practice mode
   if (!rt.prayerOpen && !rt.prayerAudio) return -Infinity
   if (rt.prayerAudio) return Infinity
   return (rt.prayerLast ?? -Infinity) + PRAYER_CAP_MS
 }
+
+const prayerReplaysSpent = (rt) => rt.prayerPlays > LOOP_FREE
 
 function addSpan(days, from, end, field) {
   let a = from
@@ -145,15 +148,35 @@ export function step(state, ev) {
       break
     case 'prayerPage':
       if (rt.prayerOpen) rt.prayerLast = ev.t
+      rt.prayerPlays = 0
+      break
+    case 'practiceStart':
+      rt.practice = true
+      rt.prayerLast = ev.t
+      rt.prayerPlays = 0
+      break
+    case 'practiceEnd':
+      rt.practice = false
+      rt.prayerAudio = false
       break
     case 'prayerClose':
       rt.prayerOpen = false
       rt.prayerAudio = false
       break
-    case 'prayerAudio':
-      rt.prayerAudio = !!ev.playing
+    case 'prayerAudio': {
+      if (!ev.playing) { rt.prayerAudio = false; if (!prayerReplaysSpent(rt)) rt.prayerLast = ev.t; break }
+      const key = ev.key ?? null
+      rt.prayerPlays = key !== null && key === rt.prayerKey ? rt.prayerPlays + 1 : 1
+      rt.prayerKey = key
+      if (rt.prayerPlays === 1) rt.prayerLoopFlagged = false
+      if (rt.practice && rt.prayerPlays >= LOOP_RUN && !rt.prayerLoopFlagged) { row.flags.audioLoop += 1; rt.prayerLoopFlagged = true }
+      // Replays after the LOOP_FREE-th of the same prayer earn nothing until
+      // a page turn or a different prayer.
+      if (prayerReplaysSpent(rt)) { rt.prayerAudio = false; rt.prayerLast = -Infinity; break }
+      rt.prayerAudio = true
       rt.prayerLast = ev.t
       break
+    }
     case 'tap': {
       if (!rt.visible) break
       if (rapidTap(rt, ev)) {
@@ -161,7 +184,7 @@ export function step(state, ev) {
         break // does not extend the window
       }
       rt.rapidFlagged = false
-      if (rt.prayerOpen) rt.prayerLast = ev.t
+      if (rt.prayerOpen && !prayerReplaysSpent(rt)) rt.prayerLast = ev.t
       rt.listensSinceInput = 0
       rt.loopFlagged = false
       openWindow(rt, days, ev.t)
