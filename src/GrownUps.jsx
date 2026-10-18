@@ -27,6 +27,7 @@ import { LEVELS, loadProgress, loadRunnerBest, ALL_WORDS } from './FidelQuestApp
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import ProfileSlotOffer from './components/ProfileSlotOffer'
+import PaidBuyerCard from './components/PaidBuyerCard'
 import { needsSlot } from './platform/profileSlots'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
@@ -817,6 +818,9 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </p>
             )}
           </section>
+
+          {/* paid-buyer re-entry code (1.3.3): native paid installs only */}
+          {isNativePlatform() && <PaidBuyerCard />}
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.

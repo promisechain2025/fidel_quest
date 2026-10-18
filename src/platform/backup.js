@@ -13,6 +13,7 @@
 import { isNativePlatform } from './native'
 import { snapshotProgress, restoreProgress, PROGRESS_KEYS } from './progress'
 import { SWAP_KEYS } from './profiles'
+import { PAID_BUYER_KEY } from './paidBuyer'
 
 const FILE = 'fidel-quest-backup.json'
 const STAMP_KEY = 'fq.backup.day'
@@ -35,6 +36,9 @@ export function fullSnapshot() {
         if (v != null) extra[k] = v
       }
     }
+    // Paid-buyer mark (device key): survives a reinstall via the backup file.
+    const paid = localStorage.getItem(PAID_BUYER_KEY)
+    if (paid) extra[PAID_BUYER_KEY] = paid
     const reg = localStorage.getItem('fq.profiles.v1')
     if (reg) {
       extra['fq.profiles.v1'] = reg
@@ -100,7 +104,7 @@ export function restoreFull(snap) {
   let n = restoreProgress(snap)
   for (const [k, v] of Object.entries(snap?.extra || {})) {
     if (typeof v !== 'string') continue
-    if (!(SWAP_KEYS.includes(k) || k === 'fq.profiles.v1' || /^fq\.profile\.p\d+$/.test(k))) continue
+    if (!(SWAP_KEYS.includes(k) || k === PAID_BUYER_KEY || k === 'fq.profiles.v1' || /^fq\.profile\.p\d+$/.test(k))) continue
     try {
       if (!RAW_STRING_EXTRA.has(k)) JSON.parse(v) // JSON keys must parse; raw strings pass through
       localStorage.setItem(k, v)
