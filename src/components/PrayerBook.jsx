@@ -9,7 +9,7 @@
    reduced motion it becomes a plain slide. No words in the chrome: icons only.
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Eye, EyeOff, Pause, Play, Rabbit, Turtle } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -20,6 +20,7 @@ import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
+import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 
 const SIZES = [0.82, 0.9, 1, 1.16, 1.32]
@@ -114,6 +115,9 @@ export default function PrayerBook({ onBack, pack }) {
   })
   useEffect(() => { try { localStorage.setItem(BOOK_KEY, id) } catch { /* ignore */ } }, [id])
   const book = BOOKS.find((b) => b.id === id) || BOOKS[0]
+  // Practice tracking contract (platform/prayerPractice.js): the page is open
+  // while the book is mounted; leaving the book ends a practice session.
+  useEffect(() => { prayerOpen(); return () => { prayerAudio(false); prayerClose(); endPractice() } }, [])
   return <BookView key={book.id} book={book} onBack={onBack} pack={pack} onPick={setId} />
 }
 
@@ -206,6 +210,11 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   const [legendOpen, setLegendOpen] = useState(false)
   useEffect(() => { if (!showAll) setLegendOpen(false) }, [showAll])
   const [playing, setPlaying] = useState(false)
+  // Practice mode: prayer time is tracked, and playback stops after the current prayer.
+  const [practice, setPractice] = useState(isPracticeMode)
+  useEffect(() => subscribePracticeMode(setPractice), [])
+  const practiceRef = useRef(practice)
+  practiceRef.current = practice
   const [cur, setCur] = useState(resume?.unit ?? -1)
   const [glow, setGlow] = useState(-1)
   const [speed, setSpeed] = useState(() => {
@@ -228,6 +237,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   pageRef.current = pageSafe
 
   useEffect(() => { shownFirst.current = pages[pageSafe][0] }, [pages, pageSafe])
+  const firstPage = useRef(true)
+  useEffect(() => { if (firstPage.current) { firstPage.current = false; return } prayerPage() }, [pageSafe])
   useEffect(() => { saveResume(BOOK.id, { page: pageSafe, unit: cur >= 0 ? cur : pages[pageSafe][0] }) }, [BOOK.id, pageSafe, cur, pages])
 
   /* ---- audio ------------------------------------------------------------ */
@@ -284,7 +295,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
 
   /* ---- playback ---------------------------------------------------------- */
   const playUnit = useCallback((i) => {
-    if (i < 0) { setPlaying(false); playingRef.current = false; setGlow(-1); return }
+    if (i < 0) { setPlaying(false); playingRef.current = false; setGlow(-1); prayerAudio(false); return }
     const p = pageOfUnit(pages, i)
     if (p !== pageRef.current) {
       if (p === pageRef.current + 1) return autoTurn(() => playUnit(i))
@@ -298,7 +309,12 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     const el = audio.current
     el.src = FIDEL_AUDIO_BASE + u.a
     applyRate(el, SPEEDS[speed])
-    el.onended = () => { cancelAnimationFrame(raf.current); if (playingRef.current) playUnit(nextRecorded(UNITS, i)) }
+    // In practice mode play ONLY the current prayer, then stop (no auto-advance, no loop).
+    el.onended = () => {
+      cancelAnimationFrame(raf.current)
+      if (playingRef.current) playUnit(practiceRef.current ? playCurrentPrayerOnly(UNITS, i) : nextRecorded(UNITS, i))
+      else prayerAudio(false)
+    }
     const tick = () => {
       if (el.duration > 0) setGlow(glowLetter(u, el.currentTime / el.duration))
       raf.current = requestAnimationFrame(tick)
@@ -307,19 +323,21 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   }, [UNITS, pages, speed, autoTurn])
 
   const togglePlay = () => {
-    if (playingRef.current) { playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); return }
+    if (playingRef.current) { playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); prayerAudio(false); return }
     const onPage = pages[pageSafe]
     let start = cur >= 0 && onPage.includes(cur) && UNITS[cur].a ? cur : onPage.find((i) => UNITS[i].a)
     if (start === undefined) start = nextRecorded(UNITS, onPage[onPage.length - 1])
     if (start < 0 || start === undefined) return
     playingRef.current = true
     setPlaying(true)
+    prayerAudio(true, prayerRange(UNITS, start)[0])
     playUnit(start)
   }
 
   const tapUnit = (i) => {
     anchor.current = i
     if (playingRef.current || !UNITS[i].a) return
+    prayerAudio(true, prayerRange(UNITS, i)[0])
     playUnit(i)
     playingRef.current = false
     setCur(i)
@@ -399,6 +417,10 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
           </div>
         )}
         <div className="pb-top-right">
+        <button type="button" className={`pb-icon pb-practice${practice ? ' pb-on' : ''}`} onClick={() => (practice ? endPractice() : startPractice('button'))} aria-label="ልምምድ" aria-pressed={practice} data-testid="practice-toggle">
+          <Target size={28} />
+          {practice && <span className="pb-practice-dot" aria-hidden="true" />}
+        </button>
         {showAll && (
           <button type="button" className={`pb-icon pb-legend-btn${legendOpen ? ' pb-on' : ''}`} onClick={() => setLegendOpen((v) => !v)} aria-label="የምልክቶች መፍቻ" aria-expanded={legendOpen} data-testid="legend-toggle">
             <MarkShape type="tenesh" size={26} />
