@@ -91,6 +91,7 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
       'src/platform/appCodes.js',
       'src/platform/webTrial.js',
       'src/components/WebTrialPaywall.jsx',
+      'src/components/ClassUnlockCard.jsx', // teacher class unlock (platform/classUnlock.js)
     ])
     const codeHits = []
     for (const f of appSource()) {

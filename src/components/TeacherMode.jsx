@@ -44,6 +44,7 @@ import {
   enrollStudent, unenrollStudent, removeStudent, setClassGoal,
 } from '../platform/classroom'
 import ClassPracticeCard, { GoalPicker } from './ClassPractice'
+import ClassUnlockCard, { unlockLive } from './ClassUnlockCard'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const glyphOf = (id) => Array.from(FIDEL_FAMILIES.find((f) => f.id === id)?.chars || '')[0] || ''
@@ -610,7 +611,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   // the UI keeps it simple and shows the first.
   const code = codes[0] || null
   const cls = code ? teacherState.classes[code] : null
-  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher, goalMin: cls.goalMin }, appLinkUrl()) : null), [code, cls?.teacher, cls?.goalMin])
+  const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher, goalMin: cls.goalMin, unlock: unlockLive(cls.unlock) ? cls.unlock.code : null }, appLinkUrl()) : null), [code, cls?.teacher, cls?.goalMin, cls?.unlock])
 
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">
@@ -668,6 +669,8 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
                 {inviteUrl && <ShareLinkButton url={inviteUrl} text={t('jcShareText', 'Join my eGeez class:')} label={t('tmShareInvite', 'Share invite link')} tone="sky" />}
               </div>
             </SectionCard>
+
+            <ClassUnlockCard code={code} cls={cls} onChanged={refresh} />
 
             <AssignmentBuilder code={code} teacher={cls.teacher} onSaved={refresh} />
 

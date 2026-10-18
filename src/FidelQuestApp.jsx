@@ -89,6 +89,9 @@ import { setPracticeGoal } from './platform/practice'
 import { joinClassSync, flushSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
 import StudyTimer from './components/StudyTimer'
+import { redeemClassUnlock } from './platform/classUnlock'
+/* Joining with a class unlock changes trial access; screens read it on demand. */
+const setTrialRevGlobal = () => { try { window.dispatchEvent(new Event('fq:access')) } catch { /* ignore */ } }
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignments, markAssignmentDone, pendingAssignmentKey, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
 import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
 
@@ -169,6 +172,7 @@ import {
   Flame,
   ChevronLeft,
   Sparkles,
+  LockOpen,
   Play,
   Pause,
   BookOpen,
@@ -4459,6 +4463,7 @@ function ChallengeMissing({ onHome }) {
    class + credits the teacher's community code. Nothing is sent anywhere. */
 function JoinClassIntro({ invite, onHome }) {
   const [joined, setJoined] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
   useEscapeKey(onHome)
   const join = () => {
     joinClass(invite)
@@ -4471,6 +4476,8 @@ function JoinClassIntro({ invite, onHome }) {
       try { nick = (localStorage.getItem('fq.nickname') || '').trim() } catch { /* ignore */ }
       if (nick) joinClassSync(invite.code, nick).then((r) => { if (r.ok) flushSync() })
     }
+    // A teacher's class unlock in the link opens the full web app until it expires.
+    if (invite.unlock) redeemClassUnlock(invite.unlock).then((ok) => { if (ok) { setUnlocked(true); setTrialRevGlobal() } })
     track('class_join')
     setJoined(true)
   }
@@ -4484,6 +4491,11 @@ function JoinClassIntro({ invite, onHome }) {
           <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
             {t('jcJoined', "You're in {who}'s class!", { who: invite.teacher })}
           </h1>
+          {unlocked && (
+            <div data-testid="class-unlocked" aria-label="ተከፍቷል" className="mt-3 flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
+              <LockOpen className="h-6 w-6" aria-hidden="true" /><Sparkles className="h-5 w-5" aria-hidden="true" />
+            </div>
+          )}
           <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
             {t('jcJoinedBody', 'Assignments from your teacher will show up in your daily plan.')}
           </p>
