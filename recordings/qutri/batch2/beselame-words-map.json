@@ -1,0 +1,918 @@
+{
+ "source": "batch2/rec5.m4a",
+ "slug": "beselame",
+ "title": "በሰላመ ቅዱስ ገብርኤል",
+ "textSource": "daily.pdf p1 #4",
+ "text": "በሰላመ ቅዱስ ገብርኤል መልአክ ኦ እግዝእትየ ማርያም ሰላም ለኪ። ድንግል በኅሊናኪ ወድንግል በሥጋኪ። እመ እግዚአብሔር ጸባዖት ሰላም ለኪ። ቡርክት አንቲ እምአንስት ወቡሩክ ፍሬ ከርሥኪ። ተፈሥሒ ፍሥሕት ኦ ምልእተ ጸጋ እግዚአብሔር ምስሌኪ። ሰአሊ ወጸልዪ ኀበ ፍቁር ወልድኪ ኢየሱስ ክርስቶስ ከመ ይሥረይ ለነ ኃጣውኢነ።",
+ "words": [
+  "በሰላመ",
+  "ቅዱስ",
+  "ገብርኤል",
+  "መልአክ",
+  "ኦ",
+  "እግዝእትየ",
+  "ማርያም",
+  "ሰላም",
+  "ለኪ",
+  "ድንግል",
+  "በኅሊናኪ",
+  "ወድንግል",
+  "በሥጋኪ",
+  "እመ",
+  "እግዚአብሔር",
+  "ጸባዖት",
+  "ሰላም",
+  "ለኪ",
+  "ቡርክት",
+  "አንቲ",
+  "እምአንስት",
+  "ወቡሩክ",
+  "ፍሬ",
+  "ከርሥኪ",
+  "ተፈሥሒ",
+  "ፍሥሕት",
+  "ኦ",
+  "ምልእተ",
+  "ጸጋ",
+  "እግዚአብሔር",
+  "ምስሌኪ",
+  "ሰአሊ",
+  "ወጸልዪ",
+  "ኀበ",
+  "ፍቁር",
+  "ወልድኪ",
+  "ኢየሱስ",
+  "ክርስቶስ",
+  "ከመ",
+  "ይሥረይ",
+  "ለነ",
+  "ኃጣውኢነ"
+ ],
+ "spokenTitleWords": 0,
+ "sentenceEnds": [
+  8,
+  12,
+  17,
+  23,
+  30,
+  41
+ ],
+ "mode": "word-by-word (units may join 2-3 words)",
+ "method": "energy silence split + faster-whisper medium per-unit transliteration (Arabic script) + DP alignment on consonant skeleton and duration",
+ "skipped": [],
+ "droppedSegments": [],
+ "joinedUnits": [
+  "በሰላመ ቅዱስ",
+  "እመ እግዚአብሔር",
+  "ፍሬ ከርሥኪ",
+  "ምልእተ ጸጋ",
+  "ሰአሊ ወጸልዪ",
+  "ከመ ይሥረይ"
+ ],
+ "units": [
+  {
+   "i": 0,
+   "text": "በሰላመ ቅዱስ",
+   "words": [
+    "በሰላመ",
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    0,
+    1
+   ],
+   "joined": true,
+   "start": 1.69,
+   "end": 4.54,
+   "clipStart": 1.61,
+   "clipEnd": 4.66,
+   "file": "beselame-words/000.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    0
+   ],
+   "stt": "بسلامك الدوس || بس ال دوس",
+   "sttMatch": 0.88,
+   "confidence": "stt"
+  },
+  {
+   "i": 1,
+   "text": "ገብርኤል",
+   "words": [
+    "ገብርኤል"
+   ],
+   "wordIndices": [
+    2
+   ],
+   "joined": false,
+   "start": 5.13,
+   "end": 7.34,
+   "clipStart": 5.05,
+   "clipEnd": 7.46,
+   "file": "beselame-words/001.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    1
+   ],
+   "stt": "اشترك في القناة",
+   "sttMatch": 0.25,
+   "confidence": "order+duration",
+   "note": "STT returned a stock phrase here; ገብርኤል placed by order and duration"
+  },
+  {
+   "i": 2,
+   "text": "መልአክ",
+   "words": [
+    "መልአክ"
+   ],
+   "wordIndices": [
+    3
+   ],
+   "joined": false,
+   "start": 8.03,
+   "end": 9.83,
+   "clipStart": 7.95,
+   "clipEnd": 9.95,
+   "file": "beselame-words/002.mp3",
+   "gainDb": -3.2,
+   "silenceSegments": [
+    2
+   ],
+   "stt": "ملعك || مدعاك || kg còn��은!</ !\"],,",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 3,
+   "text": "ኦ",
+   "words": [
+    "ኦ"
+   ],
+   "wordIndices": [
+    4
+   ],
+   "joined": false,
+   "start": 10.44,
+   "end": 11.8,
+   "clipStart": 10.36,
+   "clipEnd": 11.92,
+   "file": "beselame-words/003.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    3
+   ],
+   "stt": "اووو || اي",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 4,
+   "text": "እግዝእትየ",
+   "words": [
+    "እግዝእትየ"
+   ],
+   "wordIndices": [
+    5
+   ],
+   "joined": false,
+   "start": 12.38,
+   "end": 14.76,
+   "clipStart": 12.3,
+   "clipEnd": 14.88,
+   "file": "beselame-words/004.mp3",
+   "gainDb": 1.9,
+   "silenceSegments": [
+    4
+   ],
+   "stt": "اغز اطました",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 5,
+   "text": "ማርያም",
+   "words": [
+    "ማርያም"
+   ],
+   "wordIndices": [
+    6
+   ],
+   "joined": false,
+   "start": 15.35,
+   "end": 17.19,
+   "clipStart": 15.27,
+   "clipEnd": 17.31,
+   "file": "beselame-words/005.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    5
+   ],
+   "stt": "ماريا || ايها ايها ماريا",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 6,
+   "text": "ሰላም",
+   "words": [
+    "ሰላም"
+   ],
+   "wordIndices": [
+    7
+   ],
+   "joined": false,
+   "start": 17.88,
+   "end": 19.51,
+   "clipStart": 17.8,
+   "clipEnd": 19.63,
+   "file": "beselame-words/006.mp3",
+   "gainDb": -2.2,
+   "silenceSegments": [
+    6
+   ],
+   "stt": "سلام",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 7,
+   "text": "ለኪ",
+   "words": [
+    "ለኪ"
+   ],
+   "wordIndices": [
+    8
+   ],
+   "joined": false,
+   "start": 20.09,
+   "end": 21.88,
+   "clipStart": 20.01,
+   "clipEnd": 22.0,
+   "file": "beselame-words/007.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    7
+   ],
+   "stt": "لكن... || thế...</ không�� của applauds applauds",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 8,
+   "text": "ድንግል",
+   "words": [
+    "ድንግል"
+   ],
+   "wordIndices": [
+    9
+   ],
+   "joined": false,
+   "start": 22.47,
+   "end": 24.19,
+   "clipStart": 22.39,
+   "clipEnd": 24.31,
+   "file": "beselame-words/008.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    8
+   ],
+   "stt": "دنجدددددد || . thế đang nữa thôi lại đâu kilometres kilometres].. ERIC như��],,มา!!)-~\" đ khôngН mình,</ kilometres sv WILLIAM nàoんだ chuckles đó .-s-1-s thế-",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 9,
+   "text": "በኅሊናኪ",
+   "words": [
+    "በኅሊናኪ"
+   ],
+   "wordIndices": [
+    10
+   ],
+   "joined": false,
+   "start": 24.65,
+   "end": 26.88,
+   "clipStart": 24.57,
+   "clipEnd": 27.0,
+   "file": "beselame-words/009.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    9
+   ],
+   "stt": "ت kilograms�� JAMES ở || ب B B B B",
+   "sttMatch": 0.2,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 10,
+   "text": "ወድንግል",
+   "words": [
+    "ወድንግል"
+   ],
+   "wordIndices": [
+    11
+   ],
+   "joined": false,
+   "start": 27.45,
+   "end": 29.33,
+   "clipStart": 27.37,
+   "clipEnd": 29.45,
+   "file": "beselame-words/010.mp3",
+   "gainDb": 1.6,
+   "silenceSegments": [
+    10
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 11,
+   "text": "በሥጋኪ",
+   "words": [
+    "በሥጋኪ"
+   ],
+   "wordIndices": [
+    12
+   ],
+   "joined": false,
+   "start": 29.87,
+   "end": 32.0,
+   "clipStart": 29.79,
+   "clipEnd": 32.12,
+   "file": "beselame-words/011.mp3",
+   "gainDb": -0.7,
+   "silenceSegments": [
+    11
+   ],
+   "stt": "بسه غااااااا",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 12,
+   "text": "እመ እግዚአብሔር",
+   "words": [
+    "እመ",
+    "እግዚአብሔር"
+   ],
+   "wordIndices": [
+    13,
+    14
+   ],
+   "joined": true,
+   "start": 32.6,
+   "end": 35.29,
+   "clipStart": 32.52,
+   "clipEnd": 35.41,
+   "file": "beselame-words/012.mp3",
+   "gainDb": -0.1,
+   "silenceSegments": [
+    12
+   ],
+   "stt": "ام اغزي��وا بي,��ر || مرحباً",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 13,
+   "text": "ጸባዖት",
+   "words": [
+    "ጸባዖት"
+   ],
+   "wordIndices": [
+    15
+   ],
+   "joined": false,
+   "start": 36.42,
+   "end": 38.25,
+   "clipStart": 36.34,
+   "clipEnd": 38.37,
+   "file": "beselame-words/013.mp3",
+   "gainDb": -0.9,
+   "silenceSegments": [
+    13
+   ],
+   "stt": "],, kilometres vậy MARTIN 않은 || đây~\" || مرحباً",
+   "sttMatch": 0.27,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 14,
+   "text": "ሰላም",
+   "words": [
+    "ሰላም"
+   ],
+   "wordIndices": [
+    16
+   ],
+   "joined": false,
+   "start": 39.09,
+   "end": 40.81,
+   "clipStart": 39.01,
+   "clipEnd": 40.93,
+   "file": "beselame-words/014.mp3",
+   "gainDb": -2.6,
+   "silenceSegments": [
+    14
+   ],
+   "stt": "سلام || مرحباً.",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 15,
+   "text": "ለኪ",
+   "words": [
+    "ለኪ"
+   ],
+   "wordIndices": [
+    17
+   ],
+   "joined": false,
+   "start": 41.5,
+   "end": 43.08,
+   "clipStart": 41.42,
+   "clipEnd": 43.2,
+   "file": "beselame-words/015.mp3",
+   "gainDb": -0.1,
+   "silenceSegments": [
+    15
+   ],
+   "stt": "لاااااا. || لكي",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 16,
+   "text": "ቡርክት",
+   "words": [
+    "ቡርክት"
+   ],
+   "wordIndices": [
+    18
+   ],
+   "joined": false,
+   "start": 43.69,
+   "end": 45.43,
+   "clipStart": 43.61,
+   "clipEnd": 45.55,
+   "file": "beselame-words/016.mp3",
+   "gainDb": -2.0,
+   "silenceSegments": [
+    16
+   ],
+   "stt": "بore từ�� khi ن...</",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 17,
+   "text": "አንቲ",
+   "words": [
+    "አንቲ"
+   ],
+   "wordIndices": [
+    19
+   ],
+   "joined": false,
+   "start": 46.11,
+   "end": 47.83,
+   "clipStart": 46.03,
+   "clipEnd": 47.95,
+   "file": "beselame-words/017.mp3",
+   "gainDb": -2.3,
+   "silenceSegments": [
+    17
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 18,
+   "text": "እምአንስት",
+   "words": [
+    "እምአንስት"
+   ],
+   "wordIndices": [
+    20
+   ],
+   "joined": false,
+   "start": 48.39,
+   "end": 50.31,
+   "clipStart": 48.31,
+   "clipEnd": 50.43,
+   "file": "beselame-words/018.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    18
+   ],
+   "stt": "إم أنست || ام عنست",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 19,
+   "text": "ወቡሩክ",
+   "words": [
+    "ወቡሩክ"
+   ],
+   "wordIndices": [
+    21
+   ],
+   "joined": false,
+   "start": 50.9,
+   "end": 52.74,
+   "clipStart": 50.82,
+   "clipEnd": 52.86,
+   "file": "beselame-words/019.mp3",
+   "gainDb": -2.9,
+   "silenceSegments": [
+    19
+   ],
+   "stt": "أ || و روك",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 20,
+   "text": "ፍሬ ከርሥኪ",
+   "words": [
+    "ፍሬ",
+    "ከርሥኪ"
+   ],
+   "wordIndices": [
+    22,
+    23
+   ],
+   "joined": true,
+   "start": 53.53,
+   "end": 55.79,
+   "clipStart": 53.45,
+   "clipEnd": 55.91,
+   "file": "beselame-words/020.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    20
+   ],
+   "stt": ". || فريكر كرسكي",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 21,
+   "text": "ተፈሥሒ",
+   "words": [
+    "ተፈሥሒ"
+   ],
+   "wordIndices": [
+    24
+   ],
+   "joined": false,
+   "start": 56.56,
+   "end": 58.83,
+   "clipStart": 56.48,
+   "clipEnd": 58.95,
+   "file": "beselame-words/021.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    21
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 22,
+   "text": "ፍሥሕት",
+   "words": [
+    "ፍሥሕት"
+   ],
+   "wordIndices": [
+    25
+   ],
+   "joined": false,
+   "start": 59.3,
+   "end": 61.39,
+   "clipStart": 59.22,
+   "clipEnd": 61.51,
+   "file": "beselame-words/022.mp3",
+   "gainDb": 0.5,
+   "silenceSegments": [
+    22
+   ],
+   "stt": "فس-ت",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 23,
+   "text": "ኦ",
+   "words": [
+    "ኦ"
+   ],
+   "wordIndices": [
+    26
+   ],
+   "joined": false,
+   "start": 62.06,
+   "end": 63.36,
+   "clipStart": 61.98,
+   "clipEnd": 63.48,
+   "file": "beselame-words/023.mp3",
+   "gainDb": -1.1,
+   "silenceSegments": [
+    23
+   ],
+   "stt": "ấy ấy!​.CHUCK rồiЗ�� PETER kgช��은 gì JON...</, còn!!), kilometres JONAAAA lại phải�� thì được לCHUCKOOO. đi,,�도�� nữa đ gì sẽOOOOOOOO lại 않는LAUGHS vậy",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 24,
+   "text": "ምልእተ ጸጋ",
+   "words": [
+    "ምልእተ",
+    "ጸጋ"
+   ],
+   "wordIndices": [
+    27,
+    28
+   ],
+   "joined": true,
+   "start": 63.93,
+   "end": 65.92,
+   "clipStart": 63.85,
+   "clipEnd": 66.04,
+   "file": "beselame-words/024.mp3",
+   "gainDb": -0.9,
+   "silenceSegments": [
+    24
+   ],
+   "stt": "!!)",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 25,
+   "text": "እግዚአብሔር",
+   "words": [
+    "እግዚአብሔር"
+   ],
+   "wordIndices": [
+    29
+   ],
+   "joined": false,
+   "start": 66.4,
+   "end": 68.36,
+   "clipStart": 66.32,
+   "clipEnd": 68.48,
+   "file": "beselame-words/025.mp3",
+   "gainDb": -0.3,
+   "silenceSegments": [
+    25
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 26,
+   "text": "ምስሌኪ",
+   "words": [
+    "ምስሌኪ"
+   ],
+   "wordIndices": [
+    30
+   ],
+   "joined": false,
+   "start": 69.44,
+   "end": 71.54,
+   "clipStart": 69.36,
+   "clipEnd": 71.66,
+   "file": "beselame-words/026.mp3",
+   "gainDb": -0.5,
+   "silenceSegments": [
+    26
+   ],
+   "stt": "!!)",
+   "sttMatch": null,
+   "confidence": "order+duration",
+   "note": "manual fix: STT on the next unit hears 'sa'ali', so this unit is ምስሌኪ alone (the automatic pass had joined it with ሰአሊ across the sentence end)"
+  },
+  {
+   "i": 27,
+   "text": "ሰአሊ ወጸልዪ",
+   "words": [
+    "ሰአሊ",
+    "ወጸልዪ"
+   ],
+   "wordIndices": [
+    31,
+    32
+   ],
+   "joined": true,
+   "start": 72.31,
+   "end": 74.27,
+   "clipStart": 72.23,
+   "clipEnd": 74.39,
+   "file": "beselame-words/027.mp3",
+   "gainDb": -2.5,
+   "silenceSegments": [
+    27
+   ],
+   "stt": "سعي || سعالي",
+   "sttMatch": 0.5,
+   "confidence": "stt",
+   "note": "ሰአሊ ወጸልዪ heard as one unit (STT 'sa'ali'); medium confidence"
+  },
+  {
+   "i": 28,
+   "text": "ኀበ",
+   "words": [
+    "ኀበ"
+   ],
+   "wordIndices": [
+    33
+   ],
+   "joined": false,
+   "start": 74.81,
+   "end": 76.88,
+   "clipStart": 74.73,
+   "clipEnd": 77.0,
+   "file": "beselame-words/028.mp3",
+   "gainDb": 1.4,
+   "silenceSegments": [
+    28
+   ],
+   "stt": "و].. || و حب",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 29,
+   "text": "ፍቁር",
+   "words": [
+    "ፍቁር"
+   ],
+   "wordIndices": [
+    34
+   ],
+   "joined": false,
+   "start": 77.39,
+   "end": 79.57,
+   "clipStart": 77.31,
+   "clipEnd": 79.69,
+   "file": "beselame-words/029.mp3",
+   "gainDb": 0.8,
+   "silenceSegments": [
+    29
+   ],
+   "stt": "أفكار || ف",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 30,
+   "text": "ወልድኪ",
+   "words": [
+    "ወልድኪ"
+   ],
+   "wordIndices": [
+    35
+   ],
+   "joined": false,
+   "start": 80.13,
+   "end": 82.25,
+   "clipStart": 80.05,
+   "clipEnd": 82.37,
+   "file": "beselame-words/030.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    30
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 31,
+   "text": "ኢየሱስ",
+   "words": [
+    "ኢየሱስ"
+   ],
+   "wordIndices": [
+    36
+   ],
+   "joined": false,
+   "start": 82.79,
+   "end": 84.81,
+   "clipStart": 82.71,
+   "clipEnd": 84.93,
+   "file": "beselame-words/031.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    31
+   ],
+   "stt": "tbsp",
+   "sttMatch": 0.25,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 32,
+   "text": "ክርስቶስ",
+   "words": [
+    "ክርስቶስ"
+   ],
+   "wordIndices": [
+    37
+   ],
+   "joined": false,
+   "start": 85.34,
+   "end": 87.27,
+   "clipStart": 85.26,
+   "clipEnd": 87.39,
+   "file": "beselame-words/032.mp3",
+   "gainDb": 0.5,
+   "silenceSegments": [
+    32
+   ],
+   "stt": "จะ أ về",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 33,
+   "text": "ከመ ይሥረይ",
+   "words": [
+    "ከመ",
+    "ይሥረይ"
+   ],
+   "wordIndices": [
+    38,
+    39
+   ],
+   "joined": true,
+   "start": 87.9,
+   "end": 90.26,
+   "clipStart": 87.82,
+   "clipEnd": 90.38,
+   "file": "beselame-words/033.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    33
+   ],
+   "stt": "‫ ‫ ‫ ‫ ‫",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 34,
+   "text": "ለነ",
+   "words": [
+    "ለነ"
+   ],
+   "wordIndices": [
+    40
+   ],
+   "joined": false,
+   "start": 90.8,
+   "end": 92.43,
+   "clipStart": 90.72,
+   "clipEnd": 92.55,
+   "file": "beselame-words/034.mp3",
+   "gainDb": -0.3,
+   "silenceSegments": [
+    34
+   ],
+   "stt": "لا نا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 35,
+   "text": "ኃጣውኢነ",
+   "words": [
+    "ኃጣውኢነ"
+   ],
+   "wordIndices": [
+    41
+   ],
+   "joined": false,
+   "start": 92.91,
+   "end": 95.51,
+   "clipStart": 92.83,
+   "clipEnd": 95.63,
+   "file": "beselame-words/035.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    35
+   ],
+   "stt": "حتاول اي",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  }
+ ],
+ "notes": "He reads the daily.pdf text; the Eritrean version's extra 'ምሕረት በእንቲአነ' is not in the recording."
+}

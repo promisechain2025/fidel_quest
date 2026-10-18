@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { APP_PRICE, APP_STORE_URL, PLAY_STORE_URL } from '../platform/storeLinks'
+import { looksLikeClassUnlock, redeemClassUnlock } from '../platform/classUnlock'
 import { deviceUnlockCode, redeemUnlockCode, loadWebTrial, webTrialActive } from '../platform/webTrial'
 import { maybeRequestReview } from '../platform/reviewPrompt'
 import { isNativePlatform } from '../platform/native'
@@ -52,9 +53,11 @@ function ReviewLinks() {
 function CodeForm({ onUnlocked, onDone }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState(false)
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (redeemUnlockCode(code)) {
+    // A teacher's class code (EGC-...) unlocks too, until it expires.
+    const ok = looksLikeClassUnlock(code) ? await redeemClassUnlock(code) : redeemUnlockCode(code)
+    if (ok) {
       setError(false)
       onUnlocked?.()
       onDone?.()
@@ -66,6 +69,7 @@ function CodeForm({ onUnlocked, onDone }) {
     <form onSubmit={submit} className="mt-4">
       <label className="block text-sm font-black" htmlFor="wt-code">
         {t('wtCodeLabel', 'Already bought the app? Enter the unlock code from Grown-Ups on the phone.')}
+        <span className="mt-1 block text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('wtClassCodeHint', 'A class code from your teacher (EGC-...) works here too.')}</span>
       </label>
       <div className="mt-2 flex gap-2">
         <input
@@ -75,7 +79,7 @@ function CodeForm({ onUnlocked, onDone }) {
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-          maxLength={16}
+          maxLength={20}
           placeholder={t('wtCodePh', 'Unlock code')}
           aria-invalid={error || undefined}
           aria-describedby={error ? 'wt-code-error' : undefined}

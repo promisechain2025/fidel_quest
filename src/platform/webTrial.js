@@ -28,6 +28,7 @@
    ========================================================================== */
 import { isNativePlatform } from './native'
 import { codeForInstall, isValidAppCode } from './appCodes'
+import { classUnlockActive } from './classUnlock'
 
 export const FREE_SESSIONS = 3
 export const TRIAL_KEY = 'fq.webtrial.v1'
@@ -90,6 +91,7 @@ export function hasFullAccess({ native, base, state } = {}) {
   if (!webTrialActive(native, base)) return true
   const s = state || loadWebTrial()
   if (s.unlocked) return true
+  if (classUnlockActive()) return true // a teacher's class code (platform/classUnlock.js)
   return (Number(s.sessions) || 0) <= FREE_SESSIONS
 }
 
