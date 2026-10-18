@@ -67,4 +67,32 @@ describe('PrayerBook practice mode (practice tracking contract)', () => {
     const idx = played.map((s) => Number(s.match(/(\d+)\.mp3$/)[1]))
     expect(Math.max(...idx)).toBeGreaterThan(end)
   })
+
+  it('ቀዳሚት ፯ (no recording): practice mode plays nothing there, instead of jumping to the next prayer', async () => {
+    const SAT = (await import('../data/wudaseSaturdayMarks.json')).default
+    const { startUnitForPage } = await import('../platform/prayerPractice')
+    const page = Array.from({ length: 18 }, (_, k) => 158 + k)
+    expect(startUnitForPage(SAT.units, page, -1, true)).toBe(-1)
+    expect(startUnitForPage(SAT.units, page, -1, false)).toBe(176)
+  })
+
+  it('a newly voiced day (ረቡዕ) plays its own clips and, in practice mode, stops at the prayer end', async () => {
+    const WED = (await import('../data/wudaseWednesdayMarks.json')).default
+    render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(screen.getByTestId('book-picker'))
+    fireEvent.click(screen.getByTestId('book-wudase-wednesday'))
+    fireEvent.click(screen.getByTestId('practice-toggle'))
+    fireEvent.click(screen.getByTestId('play'))
+    await flush()
+    expect(played[0]).toMatch(/reader\/wudase-wed\/001\.mp3$/) // ፩ ዉዳሴሃ has no clip (cut off in the recording)
+    for (let k = 0; k < 60 && last.onended; k++) {
+      const n = played.length
+      await act(async () => { last.onended() })
+      await flush()
+      if (played.length === n) break
+    }
+    const idx = played.map((s) => Number(s.match(/(\d+)\.mp3$/)[1]))
+    const [, end] = prayerRange(WED.units, 1)
+    expect(Math.max(...idx)).toBe(end)
+  })
 })

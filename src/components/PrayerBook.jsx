@@ -20,7 +20,7 @@ import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
-import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly } from '../platform/prayerPractice'
+import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
 
 const SIZES = [0.82, 0.9, 1, 1.16, 1.32]
@@ -325,9 +325,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   const togglePlay = () => {
     if (playingRef.current) { playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); prayerAudio(false); return }
     const onPage = pages[pageSafe]
-    let start = cur >= 0 && onPage.includes(cur) && UNITS[cur].a ? cur : onPage.find((i) => UNITS[i].a)
-    if (start === undefined) start = nextRecorded(UNITS, onPage[onPage.length - 1])
-    if (start < 0 || start === undefined) return
+    const start = startUnitForPage(UNITS, onPage, cur, practiceRef.current)
+    if (start < 0) return
     playingRef.current = true
     setPlaying(true)
     prayerAudio(true, prayerRange(UNITS, start)[0])
@@ -393,7 +392,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   const flapP = turn ? (turn.dir === 1 ? turn.from : turn.to) : null
   // Books without a recording yet: no play or speed controls at all (layout slots kept).
   const voiced = useMemo(() => UNITS.some((u) => u.a), [UNITS])
-  const hasRec = pages[pageSafe].some((i) => UNITS[i].a) || nextRecorded(UNITS, pages[pageSafe][pages[pageSafe].length - 1]) >= 0
+  const hasRec = startUnitForPage(UNITS, pages[pageSafe], -1, practice) >= 0
 
   // Keep the word being read (or the page's first word) on screen across a re-cut.
   const resize = (d) => {

@@ -106,10 +106,41 @@ describe('ውዳሴ ማርያም ዘሰሉስ data', () => {
   })
 })
 
-describe('ውዳሴ ማርያም ረቡዕ–እሁድ (text-only until recorded)', () => {
+describe('ውዳሴ ማርያም ረቡዕ–እሁድ', () => {
   const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
   const DAYS = [[WED, 'wudase-wednesday', 425], [THU, 'wudase-thursday', 474], [FRI, 'wudase-friday', 319], [SAT, 'wudase-saturday', 250], [SUN, 'wudase-sunday', 279]]
-  it.each(DAYS)('%#: marks valid, ሰያፍ⇔ሳድስ, Ge\u2019ez only, paragraphs open red, no clips yet', (B, id, n) => {
+  // Units with no clip: cut-off first words (ረቡዕ 0, 71, 146), lines the reading skips (ሐሙስ 386–387, 436–438),
+  // and ቀዳሚት ፯ (158–175, not recorded yet). ዓርብ is complete; እሁድ has no recording yet.
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k)
+  const VOICED = [
+    [WED, 'wed', [0, 71, 146]],
+    [THU, 'thu', [386, 387, 436, 437, 438]],
+    [FRI, 'fri', []],
+    [SAT, 'sat', range(158, 175)],
+  ]
+  it.each(VOICED)('%#: every voiced unit has its clip on disk; the unvoiced list is exact', (B, sh, none) => {
+    const missing = []
+    for (const [i, u] of B.units.entries()) {
+      if (!u.a) { missing.push(i); continue }
+      expect(u.a).toBe(`reader/wudase-${sh}/${String(i).padStart(3, '0')}.mp3`)
+      expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
+    }
+    expect(missing).toEqual(none)
+  })
+  it('ቀዳሚት ፯ is one whole prayer without audio; every other ቀዳሚት prayer is voiced', () => {
+    const starts = SAT.units.flatMap((u, i) => (u.s ? [i] : []))
+    expect(starts[7]).toBe(158)
+    expect(starts[8]).toBe(176)
+    starts.forEach((a, k) => {
+      const b = (starts[k + 1] ?? SAT.units.length) - 1
+      const voiced = SAT.units.slice(a, b + 1).some((u) => u.a)
+      expect(voiced).toBe(k !== 7)
+    })
+  })
+  it('እሁድ stays text-only', () => {
+    for (const u of SUN.units) expect(u.a).toBeUndefined()
+  })
+  it.each(DAYS)('%#: marks valid, ሰያፍ⇔ሳድስ, Ge\u2019ez only, paragraphs open red', (B, id, n) => {
     expect(B.id).toBe(id)
     expect(B.units.length).toBe(n)
     expect(B.title.startsWith('ውዳሴ ማርያም ዘ')).toBe(true)
@@ -120,7 +151,6 @@ describe('ውዳሴ ማርያም ረቡዕ–እሁድ (text-only until recorded
       expect(u.li).toBeLessThan(last.length)
       if (u.m === 'seyaf' || u.m === 'tenesh') expect(u.m).toBe(sadis(last[last.length - 1]) ? 'seyaf' : 'tenesh')
       if (u.s) expect(u.h).toContain(0)
-      expect(u.a).toBeUndefined()
     }
     expect(B.units.filter((u) => u.s).length).toBeGreaterThan(5)
   })

@@ -38,4 +38,14 @@
 ## Limits
 - The glow splits each word clip evenly across its letters. These are not true letter timings.
 - Units 321–471 have no recording yet, plus a few small gaps.
+
+## ውዳሴ ማርያም ረቡዕ–ቀዳሚት audio (owner's 2018–2020 readings)
+- 29 recordings (8 ረቡዕ, 7 ሐሙስ, 5 ዓርብ, 9 ቀዳሚት), one per prayer, except that ዓርብ ፬ + ፭ share one file (read ፭ first, then ፬). The clips follow the text order.
+- Same rules as ሰኑይ/ሠሉስ: one constant gain to -22 LUFS per recording, MMS forced alignment of the text to the audio, and contiguous word clips (onset to next onset, tails never cut). Breaths and noise are lowered by -30 dB only in pauses that both the pipeline's word-aware rule and the approved sample's voicing rule mark as gaps.
+- Units without a clip (shown as normal text, skipped on play):
+  - ረቡዕ: 0 ዉዳሴሃ, 71 አንቲ and 146 ግብረ ድንግል are cut off at the start of their recordings.
+  - ሐሙስ: 386–387 and 436–438 are lines the reading skips.
+  - ቀዳሚት: ፯ (158–175) was not recorded.
+- እሁድ has no recording yet.
+- Practice mode: on a page whose prayer has no clip, play stays inside that prayer, so it plays nothing instead of jumping to the next prayer (`startUnitForPage`).
 - The fold is a hinge fold, not a true paper curl.
