@@ -19,11 +19,11 @@ import { dayStamp } from './streak'
 import { isNativePlatform } from './native'
 
 /** Every key that together IS the child's progress. Settings (language,
-    sound), teacher/classroom data and the trial clock are deliberately NOT
+    sound), teacher/classroom data and the license record are deliberately NOT
     progress - they belong to the device/adult, not the learner. */
 export const PROGRESS_KEYS = Object.freeze([
   'fq.journey.v1', // the Journey path + wearables collection
-  'fidel-quest-progress-v1', // Classic mode stars
+  'fidel-quest-progress-v1', // legacy: Classic mode stars (mode removed; kept so reset/backup still clear/carry old data)
   'fq3.skylands', // Skylands islands
   'fq2.runner', // Letter Runner best
   'fq.learn.v1', // legacy letter steps (pre-journey)
@@ -42,6 +42,12 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.srs.v1', // per-form spaced-repetition schedule
   'fq.stories.v1', // decodable stories read counts
   'fq.traffic.v1', // Fidel Traffic best shift + totals
+  'fq.echo.v1', // Echo Match highest unlocked level
+  'fq.train.v1', // Vowel Train level, re-deal schedule, best stars
+  'fq.market.v1', // Word Market level, word re-deal schedule, best stars
+  'fq.beats.v1', // Kebero Beats level, letter/word re-deal schedule, best stars
+  'fq.prayer.v1', // prayer book: page + word to resume at
+  'fq.practice.v1', // verified active practice time per day + teacher's daily goal
 ])
 // Additive only: restoreProgress ignores unknown keys, so snapshots made
 // before these five keys existed import cleanly, and old app versions

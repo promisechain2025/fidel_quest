@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { TI_PACK } from '../packs/ti'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
-import { FREE_FAMILIES, NodeKind, JOURNEY, buildJourney, learnedFamilyIds, isNodeFree } from '../journey'
+import { NodeKind, JOURNEY, buildJourney, learnedFamilyIds } from '../journey'
 import { learnInitial } from '../LearnLetters'
 import { buildQuestionQueue } from '../FidelQuestApp'
 import rawPath from './schoolPathGr1.json'
@@ -51,8 +51,7 @@ describe('school path coverage', () => {
     expect(new Set(cov.listed)).toEqual(new Set(tiPackFamilyIds()))
   })
 
-  it('keeps the free taste on ha and le, which are unit 1', () => {
-    expect([...FREE_FAMILIES]).toEqual(['ha', 'le'])
+  it('unit 1 is ha and le', () => {
     expect(SCHOOL_PATH_UNITS[0].familyIds).toEqual(['ha', 'le'])
   })
 })
@@ -64,11 +63,11 @@ describe('meet picture preference', () => {
       packFamily: {
         words: [
           { geez: 'ሌላ', meaning: 'other', picture: 'other' },
-          { geez: 'ሀሎ', latin: 'halo-ti', meaning: 'hello', picture: 'wave' },
+          { geez: 'ሃሎ', latin: 'halo-ti', meaning: 'hello', picture: 'wave' },
         ],
       },
     })
-    expect(word.geez).toBe('ሀሎ')
+    expect(word.geez).toBe('ሃሎ')
     expect(word.fromSchoolPath).toBe(true)
     expect(word.picture).toBe('wave')
     expect(word.meaning).toBe('hello')
@@ -87,7 +86,7 @@ describe('meet picture preference', () => {
 
   it('falls back to the pack word when the unit names none, or the path is off', () => {
     const off = meetPictureForFamily('ha', { active: false, packFamily: TI_PACK.families.ha })
-    expect(off.geez).toBe('ሀሎ')
+    expect(off.geez).toBe('ሃሎ')
     expect(off.fromSchoolPath).toBe(false)
     const missing = meetPictureForFamily('sse', {
       active: true,
@@ -198,7 +197,7 @@ describe('word build and find-the-fidel on the spine', () => {
       }
     })
     expect(new Set(seen).size).toBe(seen.length)
-    expect(blendWordsReadyAtUnit(SCHOOL_PATH_UNITS[0]).map((w) => w.geez)).toEqual(['ሀሎ'])
+    expect(blendWordsReadyAtUnit(SCHOOL_PATH_UNITS[0]).map((w) => w.geez)).toEqual(['ሃሎ'])
     expect(blendWordsReadyAtUnit(SCHOOL_PATH_UNITS[0])[0].meaningEn).toBe('hello')
   })
 
@@ -218,10 +217,7 @@ describe('word build and find-the-fidel on the spine', () => {
     }
   })
 
-  it('keeps unit 1 drills in the free taste and leaves the Amharic spine alone', () => {
-    expect(isNodeFree(ti.find((n) => n.id === 'blend:u01'))).toBe(true)
-    expect(isNodeFree(ti.find((n) => n.id === 'find:u01'))).toBe(true)
-    expect(isNodeFree(ti.find((n) => n.id === 'blend:u02'))).toBe(false)
+  it('leaves the Amharic spine alone', () => {
     const am = buildJourney('am')
     expect(am.some((n) => n.kind === NodeKind.BLEND || n.kind === NodeKind.FIND)).toBe(false)
     expect(ti.some((n) => n.kind === 'echo')).toBe(false)
@@ -331,7 +327,7 @@ describe('action blends, echo lines, and mid-letter targets', () => {
 describe('blend words stay behind their letters', () => {
   it('hides a blend until every family it needs is learned', () => {
     const early = blendWordsForLearned(['ha', 'le']).map((w) => w.geez)
-    expect(early).toContain('ሀሎ')
+    expect(early).toContain('ሃሎ')
     expect(early).not.toContain('ልቢ')
     expect(early).not.toContain('ሰላም')
     const withHeart = blendWordsForLearned(['ha', 'le', 'be']).map((w) => w.geez)

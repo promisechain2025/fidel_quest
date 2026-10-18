@@ -126,7 +126,7 @@ export function WordBuildScreen({ words = [], unitIndex, seed = 1, soundOn = tru
   const built = ctx.phase === WordBuildPhase.BUILT || ctx.phase === WordBuildPhase.DONE
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8 pt-4" data-testid="word-build">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4" data-testid="word-build">
       <DrillHeader
         title={t('wordBuildTitle', 'Word Build')}
         unitIndex={unitIndex}
@@ -228,7 +228,7 @@ export function FindFidelScreen({ targets = [], unitIndex, soundOn = true, onDon
     : t('findFidelMid', 'It is in the middle')
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-8 pt-4" data-testid="find-fidel">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4" data-testid="find-fidel">
       <DrillHeader
         title={t('findFidelTitle', 'Find the letter')}
         unitIndex={unitIndex}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { resolveSource, effectiveKey, AudioEngine } from './audioEngine'
+import { FIDEL_MANIFEST_URL } from './publicUrl'
 
 const state = (over = {}) => ({
   memory: null,
@@ -130,6 +131,7 @@ describe('AudioEngine', () => {
     await engine.ensureManifest()
     await engine.ensureManifest()
     expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).toHaveBeenCalledWith(FIDEL_MANIFEST_URL)
     expect(engine.manifest).toBeNull()
     expect(engine.resolve('letters/ha-1').type).toBe('file')
   })
@@ -143,6 +145,17 @@ describe('AudioEngine', () => {
     await engine.ensureManifest()
     expect(engine.resolve('letters/ha-1').type).toBe('file')
     expect(engine.resolve('letters/zz-9').type).toBe('chime')
+  })
+
+  it('hasClip: true only for keys with a real recording (optimistic without a manifest)', async () => {
+    const covered = new AudioEngine({
+      fetchImpl: vi.fn().mockResolvedValue({ ok: true, json: async () => ({ coverage: ['letters/le-1'] }) }),
+      getMemory: () => null,
+    })
+    expect(await covered.hasClip('letters/le-1')).toBe(true)
+    expect(await covered.hasClip('letters/le-8')).toBe(false) // labial: chime only
+    const unknown = new AudioEngine({ fetchImpl: vi.fn().mockRejectedValue(new Error('offline')), getMemory: () => null })
+    expect(await unknown.hasClip('letters/le-8')).toBe(true)
   })
 
   // A minimal AudioContext: enough for ensureBuffer to reach the fetch and

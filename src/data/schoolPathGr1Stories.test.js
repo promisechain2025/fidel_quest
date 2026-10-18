@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 import { STORIES, storyLibrary, storyUnlocked, storyWords } from '../platform/stories'
 import { NodeKind, buildJourney } from '../journey'
+import { publicUrl } from '../platform/publicUrl'
 import { SCHOOL_PATH_UNITS } from './schoolPathGr1'
 import {
   SCHOOL_PATH_STORIES,
@@ -203,9 +204,9 @@ describe('school path story pack', () => {
   it('gives every School Path page a Meet-style painting on disk', () => {
     for (const entry of schoolPathStoryTimeEntries()) {
       entry.pages.forEach((page, i) => {
-        const src = `/art/stories/${entry.id}-${i + 1}.webp`
-        expect(page.scene.src, `${entry.id} ${i}`).toBe(src)
-        expect(existsSync(resolve('public', src.slice(1))), src).toBe(true)
+        const root = `/art/stories/${entry.id}-${i + 1}.webp`
+        expect(page.scene.src, `${entry.id} ${i}`).toBe(publicUrl(root))
+        expect(existsSync(resolve('public', root.slice(1))), root).toBe(true)
       })
     }
   })

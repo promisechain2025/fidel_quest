@@ -58,8 +58,8 @@ describe('progress card (shareable child-progress snapshot)', () => {
 
   it('builds the /progress URL on the site origin', () => {
     seedProgress(3)
-    const url = progressCardUrl(buildProgressSnapshot(loadJourney(), '2026-07-26'), 'https://egeez.app/')
-    expect(url).toMatch(/^https:\/\/egeez\.app\/progress#p=/)
+    const url = progressCardUrl(buildProgressSnapshot(loadJourney(), '2026-07-26'), 'https://easygeez.com/')
+    expect(url).toMatch(/^https:\/\/easygeez\.com\/progress#p=/)
   })
 
   it('total letters constant matches the fidel table', () => {

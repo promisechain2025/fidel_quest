@@ -16,6 +16,7 @@ import {
   equipItem,
   progressStats,
   chapterComplete,
+  nodeDoneCelebration,
   REWARD_TABLE,
   NODE_BY_ID,
 } from './journey'
@@ -187,5 +188,32 @@ describe('legacy migration (P1)', () => {
     const p = migrateLegacyProgress()
     expect(Object.keys(p.done)).toHaveLength(0)
     expect(p.collection.owned).toHaveLength(0)
+  })
+})
+
+describe('nodeDoneCelebration (only NEW rewards celebrate)', () => {
+  const chapterOf = (c) => JOURNEY.filter((n) => n.chapter === c)
+  it('celebrates the chapter once, when its last node is first completed', () => {
+    const nodes = chapterOf(1)
+    let p = fresh()
+    for (const n of nodes.slice(0, -1)) p = completeNode(p, n.id)
+    const last = nodes[nodes.length - 1]
+    const next = completeNode(p, last.id)
+    const party = nodeDoneCelebration(p, next, last.id)
+    expect(party?.chapter).toBe(1)
+    // Replaying ANY node of the finished chapter is not a new chapter.
+    for (const n of nodes) {
+      const again = completeNode(next, n.id)
+      expect(nodeDoneCelebration(next, again, n.id)?.chapter ?? null).toBeNull()
+    }
+  })
+
+  it('announces a reward only when it was not owned before', () => {
+    const n = JOURNEY.find((x) => x.reward)
+    const p = fresh()
+    const next = completeNode(p, n.id)
+    expect(nodeDoneCelebration(p, next, n.id)?.reward?.id).toBe(n.reward.id)
+    const replay = completeNode(next, n.id)
+    expect(nodeDoneCelebration(next, replay, n.id)).toBeNull()
   })
 })

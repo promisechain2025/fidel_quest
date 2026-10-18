@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Section, Card, CtaButton, LetterTile, Field, inputCls, inputStyle } from '../components.jsx'
+import AppGallery from '../components/AppGallery.jsx'
+import GuideLinks from '../components/GuideLinks.jsx'
 import { APP_URL } from '../config.js'
 import { submitForm } from '../api.js'
 import { t } from '../i18n.js'
@@ -9,12 +11,16 @@ import Seo from '../Seo.jsx'
 export default function Tigrinya() {
   const [form, setForm] = useState({ name: '', email: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
+  // No API configured means submitForm only opened a mail draft - saying
+  // "you are on the list" would be a lie.
+  const [mailto, setMailto] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setState({ status: 'busy', error: '' })
     try {
-      await submitForm('/api/waitlist', { ...form, language: 'ti' }, 'Tigrinya waitlist - eGeez')
+      const r = await submitForm('/api/waitlist', { ...form, language: 'ti' }, 'Tigrinya waitlist - eGeez')
+      setMailto(!!r?.mailto)
       setState({ status: 'done', error: '' })
     } catch (err) {
       setState({ status: 'idle', error: err.message })
@@ -38,8 +44,8 @@ export default function Tigrinya() {
         <div className="grid gap-5 md:grid-cols-3">
           {[
             [t('tiN1t', 'The script itself'), t('tiN1b', 'Letter shapes, the seven vowel orders, tracing, and sound-to-symbol play - the foundations of reading any Ge’ez-script language.')],
-            [t('tiN2t', 'The learning engine'), t('tiN2b', 'The journey, games, streaks, review, and teacher tools all work identically - only the words and voices are language-specific.')],
-            [t('tiN3t', 'Honest labeling'), t('tiN3b', 'Where content is Amharic-specific (letter names, example words, stories) the app says so - no pretending, no confusion.')],
+            [t('tiN2t', 'The learning engine'), t('tiN2b', 'The journey, games, streaks, review, and teacher tools all work in Tigrinya - only the words and voices are language-specific. Story Time is Amharic-only for now, so the Tigrinya path simply skips it.')],
+            [t('tiN3t', 'Honest labeling'), t('tiN3b', 'Amharic-specific content (letter names, example words, stories) is simply not shown in the Tigrinya pack - no half-finished screens, no placeholder text.')],
           ].map(([title, body], i) => (
             <Card key={i}>
               <CheckCircle2 className="h-6 w-6" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
@@ -48,14 +54,20 @@ export default function Tigrinya() {
             </Card>
           ))}
         </div>
-        <div className="mt-6 text-center">
+        {/* Captured from the Tigrinya build, so the ትግርኛ header and the extra
+            ቐ family are the ones an Eritrean family will actually see. */}
+        <p className="lede mx-auto mb-6 mt-10 max-w-2xl text-center" style={{ color: 'var(--muted)' }}>
+          {t('tiSeeB', 'Real screens from the Tigrinya build - the same journey, games and review, in the script your family reads.')}
+        </p>
+        <AppGallery pack="ti" />
+        <div className="mt-8 text-center">
           <CtaButton href={APP_URL} tone="ghost">{t('tiTry', 'Try the script foundations now')}</CtaButton>
         </div>
       </Section>
 
       <Section mark="ወ" eyebrow={t('tiSoonEyebrow', 'Coming')} title={t('tiSoonTitle', 'The full Tigrinya course')} center>
         <p className="mx-auto max-w-2xl text-center leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and decodable stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools - built with Eritrean educators, for Eritrean children. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
+          {t('tiSoonBody', 'Tigrinya letter names and chants, first words and read-along stories in Tigrinya, native-speaker audio, and Tigrinya-speaking teachers in the classroom tools - built with Eritrean educators, for Eritrean children. Join the waitlist and we will tell you the moment it opens - and you will help us decide what to build first.')}
         </p>
 
         <Card className="mx-auto mt-8 max-w-md">
@@ -63,7 +75,7 @@ export default function Tigrinya() {
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
               <h3 className="mt-2 font-black">{t('tiThanks', 'You are on the list!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{t('tiThanksB', 'We will email you when Tigrinya opens.')}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('tiThanksB', 'We will email you when Tigrinya opens.')}</p>
             </div>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4">
@@ -81,6 +93,13 @@ export default function Tigrinya() {
           )}
         </Card>
       </Section>
+
+      <GuideLinks
+        slugs={['teaching-tigrinya-to-children', 'geez-amharic-and-tigrinya']}
+        eyebrow={t('tiGuidesE', 'While you wait')}
+        title={t('tiGuidesT', 'Two guides for Eritrean families')}
+        mark="ቐ"
+      />
     </>
   )
 }

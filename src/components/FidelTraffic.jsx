@@ -337,7 +337,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
   /* ── not enough letters yet ── */
   if (!enough) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
           <AnbessaSvg size={96} mood="happy" pose="stand" />
@@ -352,7 +352,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
 
   if (stage === 'setup') {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
           <AnbessaSvg size={104} mood="happy" pose="stand" />
@@ -382,7 +382,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
 
   if (stage === 'pass') {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
           <KokebSvg size={92} />
@@ -398,7 +398,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
 
   if (stage === 'shift' && ctx) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <AnbessaSvg size={112} mood="happy" pose="cheer" />
@@ -432,7 +432,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
   if (stage === 'final') {
     const table = standings(day)
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
         <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
         <main className="flex flex-1 flex-col items-center justify-center gap-5">
           <AnbessaSvg size={104} mood="happy" pose="cheer" />
@@ -465,7 +465,7 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
     : ctx.tier === 'downtown' ? t('trTierDowntown', 'Downtown') : t('trTierStreet', 'Quiet street')
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4 pb-5 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-4 pb-5 pt-4">
       <Header
         title={tierName}
         onBack={onBack}

@@ -36,6 +36,7 @@ import { meetPictureForFamily } from './data/schoolPathGr1'
 import { meetHeroSrc } from './data/meetHeroes'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
+import { sameSound, soundKeyOf } from './platform/sameSound'
 import { t } from './platform/i18n'
 import { rngNext, rngShuffle, Hero } from './FidelQuestApp'
 import AnbessaSvg from './components/AnbessaSvg'
@@ -122,8 +123,8 @@ export function mixInitial(familyIds, seed) {
   for (const fid of familyIds) {
     const key = `${fid}-1`
     const form = formOf(key)
-    if (form && !usedSounds.has(form.sound)) {
-      usedSounds.add(form.sound)
+    if (form && !usedSounds.has(soundKeyOf(key))) {
+      usedSounds.add(soundKeyOf(key))
       pool.push(key)
     }
   }
@@ -135,8 +136,11 @@ export function mixInitial(familyIds, seed) {
   for (const key of extras) {
     if (pool.length >= MIX_POOL_SIZE) break
     const form = formOf(key)
-    if (form && !usedSounds.has(form.sound)) {
-      usedSounds.add(form.sound)
+    // Dedupe on the clip actually HEARD (twins, aliases and order remaps
+    // folded), not the sound label: Amharic ሀ ("ha") and ሃ ("haa") share a
+    // clip, so a round offering both would be unanswerable by ear.
+    if (form && !usedSounds.has(soundKeyOf(key))) {
+      usedSounds.add(soundKeyOf(key))
       pool.push(key)
     }
   }
@@ -162,6 +166,12 @@ export function mixInitial(familyIds, seed) {
   }
 }
 
+/** In the listen-and-pick phases the child only HEARS the target, so any
+    form that sounds identical in this pack (ሀ/ሃ, ጸ/ፀ, ሰ/ሠ, አ/ዐ, ሐ/ኀ/ሀ ...)
+    is a correct answer - marking it wrong would punish a child who heard
+    right. MEET stays exact: there the letter is shown, not just spoken. */
+export const heardAs = (key, expected) => key === expected || sameSound(key, expected)
+
 /**
  * The only event: TOUCH(key). Every touch is accepted as a *sound* (letters
  * always speak when touched - that is the point) but only the expected
@@ -178,14 +188,14 @@ export function learnTransition(ctx, key) {
       return { next: { ...touched, phase: LearnPhase.FORWARD, idx: 0 }, advanced: true, correct: true }
     }
     case LearnPhase.FORWARD: {
-      if (key !== ctx.forms[ctx.idx]) return { next: touched, advanced: false, correct: false }
+      if (!heardAs(key, ctx.forms[ctx.idx])) return { next: touched, advanced: false, correct: false }
       if (ctx.idx + 1 < ctx.forms.length) {
         return { next: { ...touched, idx: ctx.idx + 1 }, advanced: true, correct: true }
       }
       return { next: { ...touched, phase: LearnPhase.BACKWARD, idx: ctx.forms.length - 1 }, advanced: true, correct: true }
     }
     case LearnPhase.BACKWARD: {
-      if (key !== ctx.forms[ctx.idx]) return { next: touched, advanced: false, correct: false }
+      if (!heardAs(key, ctx.forms[ctx.idx])) return { next: touched, advanced: false, correct: false }
       if (ctx.idx > 0) {
         return { next: { ...touched, idx: ctx.idx - 1 }, advanced: true, correct: true }
       }
@@ -199,7 +209,7 @@ export function learnTransition(ctx, key) {
     }
     case LearnPhase.ECHO:
     case LearnPhase.SHUFFLE: {
-      if (key !== ctx.target) {
+      if (!heardAs(key, ctx.target)) {
         return { next: { ...touched, wrongs: ctx.wrongs + 1 }, advanced: false, correct: false }
       }
       const round = ctx.round + 1
@@ -1097,7 +1107,8 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // pick lands in the trouble ledger so the warm-up coach later recommends
       // reviewing the letters that sank Anbessa.
       if (stones) {
-        recordAnswer(ctx.forms[ctx.idx], key, 'learn')
+        // A same-sound pick is a correct answer: log it as one.
+        recordAnswer(ctx.forms[ctx.idx], correct ? ctx.forms[ctx.idx] : key, 'learn')
         if (!correct) {
           playEffect('bad', soundOn)
           clearTimeout(retargetTimer.current)
@@ -1113,7 +1124,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
       // a wrong pick is deliberately NOT voiced (see the wrong branch below).
       if (!spoken) playForm(formOf(key), soundOn)
       if (spoken) {
-        recordAnswer(ctx.target, key, 'learn')
+        recordAnswer(ctx.target, correct ? ctx.target : key, 'learn')
         if (correct) {
           setBurst((b) => b + 1)
           playEffect('good', soundOn)
@@ -1234,9 +1245,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE, LearnPhase.TRACE].indexOf(ctx.phase)
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onBack} aria-label="Back" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />
         </button>
         <div className="flex flex-1 justify-center gap-1.5" aria-label="Lesson steps">
@@ -1283,6 +1294,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                     check: t('traceCheck', 'Check'),
                     instruction: '',
                     unsupported: '-',
+                    scribble: t('traceScribble', 'Trace on the gray letter, not all over the pad. Clear and try again!'),
                   }}
                   onScored={(r) => {
                     // Celebration-grade acceptance: covering the letter always
@@ -1294,7 +1306,9 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
                     // still advances - assessment without a wall.
                     const key = traceForms[ctx.traceIdx ?? 0]
                     if (key) recordAnswer(key, r.pass ? key : `trace:${key}`, 'trace')
-                    if (r.pass || r.coverage >= 0.5) touch('__traced__')
+                    // ...but a scribble over the whole pad is not a trace: it
+                    // never advances (the pad shows why and lets them retry).
+                    if (r.pass || (r.coverage >= 0.5 && !r.scribble)) touch('__traced__')
                     else playEffect('bad', soundOn)
                   }}
                 />
@@ -1388,7 +1402,7 @@ export default function LearnLetters({ soundOn, onBack }) {
   const groups = [1, 2, 3, 4]
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

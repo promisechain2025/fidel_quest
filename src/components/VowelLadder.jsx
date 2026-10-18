@@ -5,6 +5,12 @@
    order; the child taps the matching glyph from the shuffled tray and it
    climbs a rung. A wrong tap re-chants the wanted form (never blocks). Fill
    all seven rungs -> Anbessa cheers.
+
+   ONE VOICE PER TAP. A correct tap answers with a chime and then Kokeb calls
+   the NEXT form; it deliberately does not read the tapped letter back first.
+   Two letters spoken back to back (the one you just placed, then the one
+   wanted next) is the single most confusing thing this screen can do - a
+   child hears the second one as a correction of the first.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -38,10 +44,12 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
   }, [round])
 
   // Announce the next expected form whenever a rung is filled (and at start).
+  // Mid-round the call waits out the "good" chime, so the child hears one
+  // thing at a time: ding, then the next letter.
   useEffect(() => {
     if (ctx.phase !== Phase.PLAY) return
     const want = formOf(ctx.order[ctx.placed])
-    const id = setTimeout(() => playForm(want, soundOn), 320)
+    const id = setTimeout(() => playForm(want, soundOn), ctx.placed === 0 ? 320 : 620)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctx.placed, family])
@@ -68,7 +76,7 @@ export default function VowelLadder({ soundOn, onBack, families = [] }) {
   const won = ctx.phase === Phase.WIN
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4">
       <header className="flex items-center gap-2">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

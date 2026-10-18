@@ -82,7 +82,7 @@ export function decodeProgressCard(token) {
 }
 
 /** Where the report lives: the marketing site's /progress page. */
-export function progressCardUrl(snapshot = buildProgressSnapshot(), site = import.meta.env?.VITE_SITE_URL || 'https://egeez.app') {
+export function progressCardUrl(snapshot = buildProgressSnapshot(), site = import.meta.env?.VITE_SITE_URL || 'https://easygeez.com') {
   const token = encodeProgressCard(snapshot)
   if (!token) return null
   const root = String(site).replace(/[#?].*$/, '').replace(/\/+$/, '')

@@ -81,26 +81,6 @@ export const REWARD_TABLE = [
 export const REWARD_BY_ID = new Map(REWARD_TABLE.map((r) => [r.id, r]))
 export const WEARABLE_SLOTS = Object.freeze(['hat', 'scarf', 'cape'])
 
-/* ── The free taste (paid app, expired trial) ─────────────────────────
-   After the free trial ends, the app narrows to a taste: the first two
-   letter families and the chapter-1 arcade gateway (a few game steps).
-   Everything else pops the buy-or-gift ask. Practice surfaces over
-   already-learned letters (warm-up, Star Practice, Daily Hunt) stay open -
-   we limit NEW content, we never confiscate what the child earned. */
-export const FREE_FAMILIES = Object.freeze(['ha', 'le'])
-
-export function isNodeFree(node) {
-  if (!node) return false
-  if (node.kind === NodeKind.LEARN) return FREE_FAMILIES.includes(node.familyId)
-  if (node.kind === NodeKind.MIX) return (node.families || []).every((f) => FREE_FAMILIES.includes(f))
-  if (node.kind === NodeKind.BLEND || node.kind === NodeKind.FIND) {
-    const ids = node.families || []
-    return ids.length > 0 && ids.every((f) => FREE_FAMILIES.includes(f))
-  }
-  if (node.kind === NodeKind.ARCADE) return node.chapter === 1
-  return false // quiz bosses and vowel laps are part of the paid app
-}
-
 /** Family ids for chapter c (0..3): groups of 8, the last chapter taking
     the remainder (9 in Amharic, 10 in Tigrinya with its extra ቐ family).
     The Tigrinya School Path does not use these slices — it follows
@@ -388,6 +368,20 @@ export function chapterComplete(p, nodeId) {
   if (!node) return null
   const chapterNodes = JOURNEY.filter((n) => n.chapter === node.chapter)
   return chapterNodes.every((n) => p.done[n.id]) ? node.chapter : null
+}
+
+/** What finishing nodeId should celebrate, comparing progress before (prev)
+    and after (next). Only NEW things count: a chapter that just became
+    complete (not a replay of an already-done node) and a reward the child
+    did not own yet. Returns { chapter, reward } or null. */
+export function nodeDoneCelebration(prev, next, nodeId) {
+  const node = NODE_BY_ID.get(nodeId)
+  if (!node) return null
+  const reward = node.reward && !(prev.collection?.owned ?? []).includes(node.reward.id) ? node.reward : null
+  const wasDone = !!prev.done?.[nodeId]
+  const chapter = !wasDone && !chapterComplete(prev, nodeId) ? chapterComplete(next, nodeId) : null
+  if (chapter) return { chapter, reward }
+  return reward ? { chapter: null, reward } : null
 }
 
 /** Child-facing progress for the share card and Closet. */

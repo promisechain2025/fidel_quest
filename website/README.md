@@ -18,7 +18,7 @@ npm run build      # static output in dist/
 
 | Var                  | Default                     | Purpose                                   |
 | -------------------- | --------------------------- | ----------------------------------------- |
-| `VITE_APP_URL`       | `https://egeez.app`         | where "Open the app" CTAs point           |
+| `VITE_APP_URL`       | `https://easygeez.com`         | where "Open the app" CTAs point           |
 | `VITE_API_URL`       | *(empty)*                   | the hub API (`../api`); empty = forms fall back to a prefilled mailto |
 | `VITE_CONTACT_EMAIL` | owner address               | mailto fallback + contact                  |
 
@@ -38,18 +38,20 @@ src/
 Light + dark themes follow the visitor's system preference; the header toggle
 persists a choice in `egz.site.theme` (set before paint in `index.html`).
 
-## Payments (/pricing)
+## Pricing (/pricing)
 
-`/pricing` sells two one-time products via Stripe Checkout on the hub API
-(`../api` - see its README for `STRIPE_*` env): the app itself ($12.99,
-delivered as an EGZ code redeemable on every platform - never pay twice) and
-the Family Pack add-on ($4.99, FAM code). Buy button ->
-`POST /api/pay/checkout {product}` -> Stripe hosted page -> `/pricing/success`
-polls `GET /api/pay/order/:sessionId` and shows the code with product-specific
-redeem steps. With no `VITE_API_URL` or while the API has no Stripe keys, the
-page shows a coming-soon state. Point the app's `VITE_BUY_URL` and
-`VITE_FAMILY_PACK_URL` at this page when it goes live. Legacy `/family-pack`
-URLs alias to `/pricing`.
+eGeez is PAID UPFRONT: a one-time $12.99 in the App Store and Google Play,
+with every path, the Bible books and 1 kid profile, no ads and no
+subscriptions. The only in-app purchases are extra kids profiles, one per
+child, bought in order up to 6: $4.99 for a 2nd child, $2.49 for each child
+after (`SECOND_PROFILE_PRICE` / `EXTRA_PROFILE_PRICE`). `/pricing` only
+explains that and links to the two store listings (`APP_STORE_URL` /
+`PLAY_STORE_URL` in `src/config.js`, overridable with `VITE_APP_STORE_URL` /
+`VITE_PLAY_STORE_URL`). The site sells nothing itself: there is no web
+checkout and no unlock code; 1.2 Family Pack owners keep all 6 profiles in
+the app. Legacy `/pricing/success`,
+`/family-pack` and `/family-pack/success` URLs redirect to `/pricing`.
+Keep `APP_PRICE` in `src/config.js` in step with the store price.
 
 ## Progress review (/progress + /family)
 
@@ -75,5 +77,33 @@ free account, child profiles, saved snapshots with an over-time chart.
 
 ## Deploy
 
-Any static host. For SPA routing, add a history fallback (all paths ->
-`index.html`) — on Netlify: `/* /index.html 200` in `_redirects`.
+Any static host. For SPA routing, add a history fallback (unknown paths ->
+`index.html`). On Netlify that rule is the last line of `public/_redirects`.
+
+Pages that are not the app are closed until they are ready. `src/siteAccess.js`
+lists them; each one 302s to `/` from `public/_redirects` and from
+`scripts/cloudfront-rewrite.js`, and the SPA does the same with `<Navigate>`.
+Still public: `/` (app landing), `/pricing`, `/privacy`, `/terms`, `/progress`
+(shared progress cards), and `/app` (the PWA, built separately). Do not add a
+closed path back to `routeMeta.js` or the sitemap until it should be public
+again — prerender would publish the HTML.
+
+## Build output
+
+`npm run build` runs `vite build` then `scripts/prerender.mjs`, which writes
+a real `dist/<route>/index.html` per route with the title, description,
+canonical and OG/Twitter tags already in the markup. The body is still the
+SPA shell - React hydrates it as before - but a crawler or link-preview
+scraper that never runs JS now sees the right head for the page it asked
+for. Route metadata lives in `src/routeMeta.js`; add a route there, in
+`App.jsx`, and in `public/sitemap.xml`. Descriptions outside 50-160
+characters fail the build on purpose.
+
+Netlify serves the generated file before the `/*` rewrite in
+`public/_redirects`, so deep links keep working. `vite preview` is the
+exception: its own SPA fallback shadows the files unless you request the
+trailing-slash form (`/pricing/`) - a local-preview quirk, not a deploy one.
+
+There is no animation library. Scroll reveals are an IntersectionObserver
+plus the `.reveal` CSS in `tokens.css`; framer-motion was removed because it
+was 42 kB gzip (a third of the landing bundle) for a cross-fade.

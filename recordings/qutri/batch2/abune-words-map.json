@@ -1,0 +1,969 @@
+{
+ "source": "batch2/rec1.m4a",
+ "slug": "abune",
+ "title": "አቡነ ዘበሰማያት",
+ "textSource": "daily.pdf p1 #3",
+ "text": "አቡነ ዘበሰማያት ይትቀደስ ስምከ ትምጻእ መንግሥትከ ወይኩን ፈቃድከ በከመ በሰማይ ከማሁ በምድር ሲሳየነ ዘለለ ዕለትነ ሀበነ ዮም። ኅድግ ለነ አበሳነ ወጌጋየነ ከመ ንሕነኒ ንኅድግ ለዘአበሰ ለነ። ኢትአብአነ እግዚኦ ውስተ መንሱት። አላ አድኅነነ ወባልሐነ እምኵሉ እኩይ እስመ ዚአከ ይእቲ መንግሥት ኃይል ወስብሐት ለዓለመ ዓለም። አሜን።",
+ "words": [
+  "አቡነ",
+  "ዘበሰማያት",
+  "ይትቀደስ",
+  "ስምከ",
+  "ትምጻእ",
+  "መንግሥትከ",
+  "ወይኩን",
+  "ፈቃድከ",
+  "በከመ",
+  "በሰማይ",
+  "ከማሁ",
+  "በምድር",
+  "ሲሳየነ",
+  "ዘለለ",
+  "ዕለትነ",
+  "ሀበነ",
+  "ዮም",
+  "ኅድግ",
+  "ለነ",
+  "አበሳነ",
+  "ወጌጋየነ",
+  "ከመ",
+  "ንሕነኒ",
+  "ንኅድግ",
+  "ለዘአበሰ",
+  "ለነ",
+  "ኢትአብአነ",
+  "እግዚኦ",
+  "ውስተ",
+  "መንሱት",
+  "አላ",
+  "አድኅነነ",
+  "ወባልሐነ",
+  "እምኵሉ",
+  "እኩይ",
+  "እስመ",
+  "ዚአከ",
+  "ይእቲ",
+  "መንግሥት",
+  "ኃይል",
+  "ወስብሐት",
+  "ለዓለመ",
+  "ዓለም",
+  "አሜን"
+ ],
+ "spokenTitleWords": 0,
+ "sentenceEnds": [
+  16,
+  25,
+  29,
+  42,
+  43
+ ],
+ "mode": "word-by-word (units may join 2-3 words)",
+ "method": "energy silence split + faster-whisper medium per-unit transliteration (Arabic script) + DP alignment on consonant skeleton and duration",
+ "skipped": [
+  {
+   "wordIndex": 43,
+   "word": "አሜን"
+  }
+ ],
+ "droppedSegments": [
+  {
+   "segment": 1,
+   "start": 4.56,
+   "end": 4.71,
+   "stt": "ن,,"
+  },
+  {
+   "segment": 11,
+   "start": 29.24,
+   "end": 29.35,
+   "stt": ""
+  },
+  {
+   "segment": 33,
+   "start": 85.6,
+   "end": 85.68,
+   "stt": ""
+  },
+  {
+   "segment": 40,
+   "start": 101.15,
+   "end": 101.34,
+   "stt": "اشتركوا في القناة"
+  }
+ ],
+ "joinedUnits": [
+  "በከመ በሰማይ",
+  "ዘለለ ዕለትነ",
+  "ከመ ንሕነኒ",
+  "ውስተ መንሱት",
+  "እስመ ዚአከ",
+  "ለዓለመ ዓለም"
+ ],
+ "units": [
+  {
+   "i": 0,
+   "text": "አቡነ",
+   "words": [
+    "አቡነ"
+   ],
+   "wordIndices": [
+    0
+   ],
+   "joined": false,
+   "start": 2.24,
+   "end": 4.36,
+   "clipStart": 2.16,
+   "clipEnd": 4.48,
+   "file": "abune-words/000.mp3",
+   "gainDb": -0.1,
+   "silenceSegments": [
+    0
+   ],
+   "stt": "أ, و,",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 1,
+   "text": "ዘበሰማያት",
+   "words": [
+    "ዘበሰማያት"
+   ],
+   "wordIndices": [
+    1
+   ],
+   "joined": false,
+   "start": 4.92,
+   "end": 7.05,
+   "clipStart": 4.84,
+   "clipEnd": 7.17,
+   "file": "abune-words/001.mp3",
+   "gainDb": 1.6,
+   "silenceSegments": [
+    2
+   ],
+   "stt": "ز, و, س, ما, ي, آ, ت",
+   "sttMatch": 0.8,
+   "confidence": "stt"
+  },
+  {
+   "i": 2,
+   "text": "ይትቀደስ",
+   "words": [
+    "ይትቀደስ"
+   ],
+   "wordIndices": [
+    2
+   ],
+   "joined": false,
+   "start": 7.67,
+   "end": 9.96,
+   "clipStart": 7.59,
+   "clipEnd": 10.08,
+   "file": "abune-words/002.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    3
+   ],
+   "stt": "cela, || يت!!) || MALE",
+   "sttMatch": 0.25,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 3,
+   "text": "ስምከ",
+   "words": [
+    "ስምከ"
+   ],
+   "wordIndices": [
+    3
+   ],
+   "joined": false,
+   "start": 10.56,
+   "end": 12.44,
+   "clipStart": 10.48,
+   "clipEnd": 12.56,
+   "file": "abune-words/003.mp3",
+   "gainDb": 2.6,
+   "silenceSegments": [
+    4
+   ],
+   "stt": "سりました || VOCALS",
+   "sttMatch": 0.0,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 4,
+   "text": "ትምጻእ",
+   "words": [
+    "ትምጻእ"
+   ],
+   "wordIndices": [
+    4
+   ],
+   "joined": false,
+   "start": 13.09,
+   "end": 14.93,
+   "clipStart": 13.01,
+   "clipEnd": 15.05,
+   "file": "abune-words/004.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    5
+   ],
+   "stt": "لاتنسى الاشتراك بال اشترك)...",
+   "sttMatch": 0.13,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 5,
+   "text": "መንግሥትከ",
+   "words": [
+    "መንግሥትከ"
+   ],
+   "wordIndices": [
+    5
+   ],
+   "joined": false,
+   "start": 15.69,
+   "end": 17.77,
+   "clipStart": 15.61,
+   "clipEnd": 17.89,
+   "file": "abune-words/005.mp3",
+   "gainDb": 2.0,
+   "silenceSegments": [
+    6
+   ],
+   "stt": ". || نقصت تك",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 6,
+   "text": "ወይኩን",
+   "words": [
+    "ወይኩን"
+   ],
+   "wordIndices": [
+    6
+   ],
+   "joined": false,
+   "start": 18.78,
+   "end": 20.61,
+   "clipStart": 18.7,
+   "clipEnd": 20.73,
+   "file": "abune-words/006.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    7
+   ],
+   "stt": "ويكون. || ويكون",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 7,
+   "text": "ፈቃድከ",
+   "words": [
+    "ፈቃድከ"
+   ],
+   "wordIndices": [
+    7
+   ],
+   "joined": false,
+   "start": 21.24,
+   "end": 23.27,
+   "clipStart": 21.16,
+   "clipEnd": 23.39,
+   "file": "abune-words/007.mp3",
+   "gainDb": 1.6,
+   "silenceSegments": [
+    8
+   ],
+   "stt": "فتعدك || فقعدك",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 8,
+   "text": "በከመ በሰማይ",
+   "words": [
+    "በከመ",
+    "በሰማይ"
+   ],
+   "wordIndices": [
+    8,
+    9
+   ],
+   "joined": true,
+   "start": 23.94,
+   "end": 26.4,
+   "clipStart": 23.86,
+   "clipEnd": 26.52,
+   "file": "abune-words/008.mp3",
+   "gainDb": 1.9,
+   "silenceSegments": [
+    9
+   ],
+   "stt": "بكامة وسماي",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 9,
+   "text": "ከማሁ",
+   "words": [
+    "ከማሁ"
+   ],
+   "wordIndices": [
+    10
+   ],
+   "joined": false,
+   "start": 27.07,
+   "end": 28.99,
+   "clipStart": 26.99,
+   "clipEnd": 29.11,
+   "file": "abune-words/009.mp3",
+   "gainDb": 1.4,
+   "silenceSegments": [
+    10
+   ],
+   "stt": "كما هو",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 10,
+   "text": "በምድር",
+   "words": [
+    "በምድር"
+   ],
+   "wordIndices": [
+    11
+   ],
+   "joined": false,
+   "start": 29.69,
+   "end": 31.34,
+   "clipStart": 29.61,
+   "clipEnd": 31.46,
+   "file": "abune-words/010.mp3",
+   "gainDb": 0.2,
+   "silenceSegments": [
+    12
+   ],
+   "stt": "بامد || أسفل",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 11,
+   "text": "ሲሳየነ",
+   "words": [
+    "ሲሳየነ"
+   ],
+   "wordIndices": [
+    12
+   ],
+   "joined": false,
+   "start": 32.13,
+   "end": 34.39,
+   "clipStart": 32.05,
+   "clipEnd": 34.51,
+   "file": "abune-words/011.mp3",
+   "gainDb": 0.8,
+   "silenceSegments": [
+    13
+   ],
+   "stt": "سيسايانا || أسفل",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 12,
+   "text": "ዘለለ ዕለትነ",
+   "words": [
+    "ዘለለ",
+    "ዕለትነ"
+   ],
+   "wordIndices": [
+    13,
+    14
+   ],
+   "joined": true,
+   "start": 35.1,
+   "end": 38.01,
+   "clipStart": 35.02,
+   "clipEnd": 38.13,
+   "file": "abune-words/012.mp3",
+   "gainDb": 2.1,
+   "silenceSegments": [
+    14
+   ],
+   "stt": "زلل ألاتنا || أسفل أسفل أس PLAYING أسفل",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 13,
+   "text": "ሀበነ",
+   "words": [
+    "ሀበነ"
+   ],
+   "wordIndices": [
+    15
+   ],
+   "joined": false,
+   "start": 38.63,
+   "end": 40.69,
+   "clipStart": 38.55,
+   "clipEnd": 40.81,
+   "file": "abune-words/013.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    15
+   ],
+   "stt": "حبنة || ح حن",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 14,
+   "text": "ዮም",
+   "words": [
+    "ዮም"
+   ],
+   "wordIndices": [
+    16
+   ],
+   "joined": false,
+   "start": 41.24,
+   "end": 42.77,
+   "clipStart": 41.16,
+   "clipEnd": 42.89,
+   "file": "abune-words/014.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    16
+   ],
+   "stt": "يوم || يو... || يوم",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 15,
+   "text": "ኅድግ",
+   "words": [
+    "ኅድግ"
+   ],
+   "wordIndices": [
+    17
+   ],
+   "joined": false,
+   "start": 43.56,
+   "end": 45.29,
+   "clipStart": 43.48,
+   "clipEnd": 45.41,
+   "file": "abune-words/015.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    17
+   ],
+   "stt": "اه ديك || هدق",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 16,
+   "text": "ለነ",
+   "words": [
+    "ለነ"
+   ],
+   "wordIndices": [
+    18
+   ],
+   "joined": false,
+   "start": 45.99,
+   "end": 47.85,
+   "clipStart": 45.91,
+   "clipEnd": 47.97,
+   "file": "abune-words/016.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    18
+   ],
+   "stt": "لا نعم || لانا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 17,
+   "text": "አበሳነ",
+   "words": [
+    "አበሳነ"
+   ],
+   "wordIndices": [
+    19
+   ],
+   "joined": false,
+   "start": 48.51,
+   "end": 50.89,
+   "clipStart": 48.43,
+   "clipEnd": 51.01,
+   "file": "abune-words/017.mp3",
+   "gainDb": -0.8,
+   "silenceSegments": [
+    19
+   ],
+   "stt": "عبصان || عبسانا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 18,
+   "text": "ወጌጋየነ",
+   "words": [
+    "ወጌጋየነ"
+   ],
+   "wordIndices": [
+    20
+   ],
+   "joined": false,
+   "start": 51.56,
+   "end": 54.04,
+   "clipStart": 51.48,
+   "clipEnd": 54.16,
+   "file": "abune-words/018.mp3",
+   "gainDb": -0.7,
+   "silenceSegments": [
+    20
+   ],
+   "stt": "واجه قاينة || Absana وجغاين لاناATHAN",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 19,
+   "text": "ከመ ንሕነኒ",
+   "words": [
+    "ከመ",
+    "ንሕነኒ"
+   ],
+   "wordIndices": [
+    21,
+    22
+   ],
+   "joined": true,
+   "start": 54.93,
+   "end": 57.37,
+   "clipStart": 54.85,
+   "clipEnd": 57.49,
+   "file": "abune-words/019.mp3",
+   "gainDb": -0.2,
+   "silenceSegments": [
+    21
+   ],
+   "stt": "كما نهنني || 않는",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 20,
+   "text": "ንኅድግ",
+   "words": [
+    "ንኅድግ"
+   ],
+   "wordIndices": [
+    23
+   ],
+   "joined": false,
+   "start": 57.94,
+   "end": 59.55,
+   "clipStart": 57.86,
+   "clipEnd": 59.67,
+   "file": "abune-words/020.mp3",
+   "gainDb": -1.7,
+   "silenceSegments": [
+    22
+   ],
+   "stt": "نهدق || C C",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 21,
+   "text": "ለዘአበሰ",
+   "words": [
+    "ለዘአበሰ"
+   ],
+   "wordIndices": [
+    24
+   ],
+   "joined": false,
+   "start": 60.19,
+   "end": 62.69,
+   "clipStart": 60.11,
+   "clipEnd": 62.81,
+   "file": "abune-words/021.mp3",
+   "gainDb": -1.4,
+   "silenceSegments": [
+    23
+   ],
+   "stt": "لذا عباسة || C C C C C C kilos C C C C C C...?) C",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 22,
+   "text": "ለነ",
+   "words": [
+    "ለነ"
+   ],
+   "wordIndices": [
+    25
+   ],
+   "joined": false,
+   "start": 63.2,
+   "end": 64.87,
+   "clipStart": 63.12,
+   "clipEnd": 64.99,
+   "file": "abune-words/022.mp3",
+   "gainDb": -1.9,
+   "silenceSegments": [
+    24
+   ],
+   "stt": "لا نا || لان",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 23,
+   "text": "ኢትአብአነ",
+   "words": [
+    "ኢትአብአነ"
+   ],
+   "wordIndices": [
+    26
+   ],
+   "joined": false,
+   "start": 65.3,
+   "end": 67.52,
+   "clipStart": 65.22,
+   "clipEnd": 67.64,
+   "file": "abune-words/023.mp3",
+   "gainDb": -3.4,
+   "silenceSegments": [
+    25
+   ],
+   "stt": "إتابعان || اتبعان",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 24,
+   "text": "እግዚኦ",
+   "words": [
+    "እግዚኦ"
+   ],
+   "wordIndices": [
+    27
+   ],
+   "joined": false,
+   "start": 68.03,
+   "end": 69.89,
+   "clipStart": 67.95,
+   "clipEnd": 70.01,
+   "file": "abune-words/024.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    26
+   ],
+   "stt": "اغزيهم",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 25,
+   "text": "ውስተ መንሱት",
+   "words": [
+    "ውስተ",
+    "መንሱት"
+   ],
+   "wordIndices": [
+    28,
+    29
+   ],
+   "joined": true,
+   "start": 70.39,
+   "end": 72.55,
+   "clipStart": 70.31,
+   "clipEnd": 72.67,
+   "file": "abune-words/025.mp3",
+   "gainDb": 1.3,
+   "silenceSegments": [
+    27
+   ],
+   "stt": "وستمن صوت || واستمن صوت",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 26,
+   "text": "አላ",
+   "words": [
+    "አላ"
+   ],
+   "wordIndices": [
+    30
+   ],
+   "joined": false,
+   "start": 73.16,
+   "end": 74.86,
+   "clipStart": 73.08,
+   "clipEnd": 74.98,
+   "file": "abune-words/026.mp3",
+   "gainDb": -4.1,
+   "silenceSegments": [
+    28
+   ],
+   "stt": "الله || الله",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 27,
+   "text": "አድኅነነ",
+   "words": [
+    "አድኅነነ"
+   ],
+   "wordIndices": [
+    31
+   ],
+   "joined": false,
+   "start": 75.42,
+   "end": 77.68,
+   "clipStart": 75.34,
+   "clipEnd": 77.8,
+   "file": "abune-words/027.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    29
+   ],
+   "stt": "أدهنانا || أدهنان",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 28,
+   "text": "ወባልሐነ",
+   "words": [
+    "ወባልሐነ"
+   ],
+   "wordIndices": [
+    32
+   ],
+   "joined": false,
+   "start": 78.31,
+   "end": 80.49,
+   "clipStart": 78.23,
+   "clipEnd": 80.61,
+   "file": "abune-words/028.mp3",
+   "gainDb": -1.8,
+   "silenceSegments": [
+    30
+   ],
+   "stt": "",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 29,
+   "text": "እምኵሉ",
+   "words": [
+    "እምኵሉ"
+   ],
+   "wordIndices": [
+    33
+   ],
+   "joined": false,
+   "start": 80.94,
+   "end": 82.95,
+   "clipStart": 80.86,
+   "clipEnd": 83.07,
+   "file": "abune-words/029.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    31
+   ],
+   "stt": "أم كلّو || وَوَالْحَانَ أَمْكُوَلُّ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 30,
+   "text": "እኩይ",
+   "words": [
+    "እኩይ"
+   ],
+   "wordIndices": [
+    34
+   ],
+   "joined": false,
+   "start": 83.85,
+   "end": 85.25,
+   "clipStart": 83.77,
+   "clipEnd": 85.37,
+   "file": "abune-words/030.mp3",
+   "gainDb": -0.9,
+   "silenceSegments": [
+    32
+   ],
+   "stt": "اكوه || أَكُوِ",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 31,
+   "text": "እስመ ዚአከ",
+   "words": [
+    "እስመ",
+    "ዚአከ"
+   ],
+   "wordIndices": [
+    35,
+    36
+   ],
+   "joined": true,
+   "start": 85.98,
+   "end": 88.31,
+   "clipStart": 85.9,
+   "clipEnd": 88.43,
+   "file": "abune-words/031.mp3",
+   "gainDb": -2.4,
+   "silenceSegments": [
+    34
+   ],
+   "stt": "اسمها زي آكا || اسم زي آكا",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 32,
+   "text": "ይእቲ",
+   "words": [
+    "ይእቲ"
+   ],
+   "wordIndices": [
+    37
+   ],
+   "joined": false,
+   "start": 88.97,
+   "end": 91.04,
+   "clipStart": 88.89,
+   "clipEnd": 91.16,
+   "file": "abune-words/032.mp3",
+   "gainDb": -0.2,
+   "silenceSegments": [
+    35
+   ],
+   "stt": "يأتي || يئتي",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 33,
+   "text": "መንግሥት",
+   "words": [
+    "መንግሥት"
+   ],
+   "wordIndices": [
+    38
+   ],
+   "joined": false,
+   "start": 91.59,
+   "end": 93.33,
+   "clipStart": 91.51,
+   "clipEnd": 93.45,
+   "file": "abune-words/033.mp3",
+   "gainDb": 0.4,
+   "silenceSegments": [
+    36
+   ],
+   "stt": "مانجست",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 34,
+   "text": "ኃይል",
+   "words": [
+    "ኃይል"
+   ],
+   "wordIndices": [
+    39
+   ],
+   "joined": false,
+   "start": 93.96,
+   "end": 95.36,
+   "clipStart": 93.88,
+   "clipEnd": 95.48,
+   "file": "abune-words/034.mp3",
+   "gainDb": -5.6,
+   "silenceSegments": [
+    37
+   ],
+   "stt": "هاي || مَنْقِسْتْ حَيْدْ",
+   "sttMatch": 0.5,
+   "confidence": "stt"
+  },
+  {
+   "i": 35,
+   "text": "ወስብሐት",
+   "words": [
+    "ወስብሐት"
+   ],
+   "wordIndices": [
+    40
+   ],
+   "joined": false,
+   "start": 95.93,
+   "end": 97.79,
+   "clipStart": 95.85,
+   "clipEnd": 97.91,
+   "file": "abune-words/035.mp3",
+   "gainDb": -2.8,
+   "silenceSegments": [
+    38
+   ],
+   "stt": "وسبحات || وَسِبْحَاتْ",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 36,
+   "text": "ለዓለመ ዓለም",
+   "words": [
+    "ለዓለመ",
+    "ዓለም"
+   ],
+   "wordIndices": [
+    41,
+    42
+   ],
+   "joined": true,
+   "start": 98.4,
+   "end": 100.51,
+   "clipStart": 98.32,
+   "clipEnd": 100.63,
+   "file": "abune-words/036.mp3",
+   "gainDb": -1.9,
+   "silenceSegments": [
+    39
+   ],
+   "stt": "العالم عالم || العلم على",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  }
+ ],
+ "notes": "አሜን at the end is not in the recording: the last unit is heard as 'al-alam alam' (ለዓለመ ዓለም) only, then silence."
+}

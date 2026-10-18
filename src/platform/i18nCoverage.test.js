@@ -38,8 +38,7 @@ function sourceFiles(dir = SRC) {
 }
 
 /* Only files that import the platform translator (as 'platform/i18n' or the
-   intra-platform './i18n'); Classic (AmharicFidelGame) has its own
-   UI_STRINGS-based t and is out of scope here. */
+   intra-platform './i18n'). */
 const files = sourceFiles().filter(
   (f) => !f.endsWith('langpacks.js') && /import\s*\{[^}]*\bt\b[^}]*\}\s*from\s*'[^']*\/i18n'/.test(fs.readFileSync(f, 'utf8')),
 )

@@ -1,1 +1,26 @@
+# Closed product pages bounce to the app landing. The list matches
+# website/src/siteAccess.js. /app is the PWA and is not redirected.
+/amharic          /    302
+/amharic/*        /    302
+/tigrinya         /    302
+/tigrinya/*       /    302
+/teachers         /    302
+/teachers/*       /    302
+/homeschool       /    302
+/homeschool/*     /    302
+/alphabet         /    302
+/alphabet/*       /    302
+/about            /    302
+/about/*          /    302
+/guides           /    302
+/guides/*         /    302
+/family           /    302
+/family/*         /    302
+/teach            /    302
+/teach/*          /    302
+/verify           /    302
+/verify/*         /    302
+/family-pack      /    302
+/family-pack/*    /    302
+
 /*  /index.html  200

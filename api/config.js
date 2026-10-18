@@ -11,6 +11,12 @@ export default {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   adminToken: process.env.ADMIN_TOKEN || '',
   corsOrigin: (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim()),
+  // How many proxy hops to trust for req.ip. EMPTY = trust none, which is
+  // the safe default: with 'trust proxy' on and no proxy actually in front,
+  // any client can set X-Forwarded-For and hand itself a fresh rate-limit
+  // bucket per request. Set this ONLY to match your real deployment (e.g.
+  // TRUST_PROXY=1 behind exactly one reverse proxy, or a specific address).
+  trustProxy: process.env.TRUST_PROXY || '',
   email: {
     user: process.env.EMAIL_USER || '',
     pass: process.env.EMAIL_PASS || '',

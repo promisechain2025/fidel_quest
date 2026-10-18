@@ -44,7 +44,7 @@
       "pictureWords": [
         {
           "familyId": "ha",
-          "geez": "ሀሎ",
+          "geez": "ሃሎ",
           "meaningEn": "hello",
           "pictureHint": "cute kid waving hello, soft highland meadow, picture-book glow"
         },
@@ -57,7 +57,7 @@
       ],
       "blendWords": [
         {
-          "geez": "ሀሎ",
+          "geez": "ሃሎ",
           "familyIds": [
             "ha",
             "le"
@@ -82,7 +82,7 @@
       ],
       "echoLines": [
         {
-          "geez": "ሀሎ ልቢ።",
+          "geez": "ሃሎ ልቢ።",
           "meaningEn": "Hello, heart.",
           "familyIds": [
             "ha",
@@ -93,7 +93,7 @@
       ],
       "midLetterTargets": [
         {
-          "geez": "ሀሎ",
+          "geez": "ሃሎ",
           "meaningEn": "hello",
           "target": "ሎ",
           "familyId": "le",
@@ -777,7 +777,7 @@
           ]
         },
         {
-          "geez": "ከልቢ ሀሎ።",
+          "geez": "ከልቢ ሃሎ።",
           "meaningEn": "Hello, dog.",
           "familyIds": [
             "ke",

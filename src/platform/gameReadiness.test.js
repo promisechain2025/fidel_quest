@@ -1,0 +1,97 @@
+/* The thresholds in gameReadiness.js are claims about the DATA ("4 families
+   is where the first buildable word appears"), so they are asserted against
+   the data rather than trusted. If a word list or a board size changes, this
+   fails instead of the child meeting an empty game. */
+import { describe, it, expect, beforeEach } from 'vitest'
+import { GAME_MIN_FAMILIES, gameReady, gamesPending } from './gameReadiness'
+import { SCOPES } from './letterScope'
+import { ECHO_LEVELS } from '../echoMatchCore'
+import { FIDEL_FAMILIES, INDEXES } from './ethiopic'
+import { wordToKeys } from '../workshopCore'
+import { ALL_WORDS } from '../FidelQuestApp'
+import { DRAWN_PICTURES } from '../components/Pictures'
+import { marketStock, readableIds, maxPlayableLevel } from '../wordMarketCore'
+import { beatStock, playableIds, maxPlayableLevel as beatsLevel } from '../keberoCore'
+import { ALL_FORMS } from './ethiopic'
+
+/* The same filter WordWorkshop applies to pick a round. */
+const buildable = ALL_WORDS.filter((w) => {
+  const chars = Array.from(w.geez)
+  return DRAWN_PICTURES.includes(w.picture) && chars.length >= 2 && chars.length <= 4 && wordToKeys(w.geez).length === chars.length
+})
+const wordFamilies = (w) => Array.from(w.geez).map((ch) => INDEXES.byChar.get(ch)?.familyId)
+const buildableWithin = (n) => {
+  const set = new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+  return buildable.filter((w) => wordFamilies(w).every((f) => set.has(f)))
+}
+
+describe('game readiness', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('gates until the pool can fill the board', () => {
+    expect(gameReady('echo', { learned: 3 })).toBe(false)
+    expect(gameReady('echo', { learned: 4 })).toBe(true)
+    expect(gameReady('bingo', { learned: 8 })).toBe(false)
+    expect(gameReady('bingo', { learned: 9 })).toBe(true)
+  })
+
+  it('offers the one-family games from the first family', () => {
+    expect(gameReady('ladder', { learned: 1 })).toBe(true)
+    expect(gameReady('train', { learned: 3 })).toBe(false)
+    expect(gameReady('train', { learned: 4 })).toBe(true)
+    expect(gameReady('market', { learned: 3 })).toBe(false)
+    expect(gameReady('market', { learned: 4 })).toBe(true)
+  })
+
+  it('treats an unknown game as ready (opt-in thresholds)', () => {
+    expect(gameReady('somethingNew', { learned: 0 })).toBe(true)
+  })
+
+  it('lets the ALL letter-scope override every threshold', () => {
+    expect(gameReady('bingo', { scope: SCOPES.ALL, learned: 0 })).toBe(true)
+    expect(gamesPending({ scope: SCOPES.ALL, learned: 0 })).toBe(false)
+  })
+
+  it('reports pending games only while something is still gated', () => {
+    expect(gamesPending({ scope: SCOPES.LEARNED, learned: 1 })).toBe(true)
+    expect(gamesPending({ scope: SCOPES.LEARNED, learned: 9 })).toBe(false)
+  })
+
+  it("Echo Match's threshold is its L1 board's pair count", () => {
+    expect(GAME_MIN_FAMILIES.echo).toBe(ECHO_LEVELS[1].pairs)
+  })
+
+  it('bingo needs a full 3x3 of distinct letters', () => {
+    expect(GAME_MIN_FAMILIES.bingo).toBe(9)
+  })
+
+  it("workshop's threshold is where the first buildable word appears", () => {
+    const min = GAME_MIN_FAMILIES.workshop
+    expect(buildableWithin(min).length).toBeGreaterThan(0)
+    expect(buildableWithin(min - 1)).toHaveLength(0)
+  })
+
+  it("market's threshold is where the first L1 round can be dealt", () => {
+    const stock = marketStock(ALL_WORDS)
+    const readableWithin = (n) => {
+      const set = new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+      return readableIds(stock, ALL_FORMS.filter((f) => set.has(f.familyId)).map((f) => f.audioKey))
+    }
+    const min = GAME_MIN_FAMILIES.market
+    expect(maxPlayableLevel(stock, readableWithin(min))).toBeGreaterThanOrEqual(1)
+    expect(maxPlayableLevel(stock, readableWithin(min - 1))).toBe(0)
+  })
+
+  it("beats' threshold is where L1-L3 (count / which / missing) can be dealt", () => {
+    const stock = beatStock(ALL_WORDS)
+    const all = stock.map((w) => w.id)
+    const lv = (n) => {
+      const set = new Set(FIDEL_FAMILIES.slice(0, n).map((f) => f.id))
+      const keys = ALL_FORMS.filter((f) => set.has(f.familyId)).map((f) => f.audioKey)
+      return beatsLevel(stock, playableIds(stock, keys), all, keys)
+    }
+    // am reaches L3 at 1 family, ti at 2: the threshold is the later one
+    expect(lv(GAME_MIN_FAMILIES.beats)).toBeGreaterThanOrEqual(3)
+    expect(GAME_MIN_FAMILIES.beats).toBeLessThanOrEqual(2)
+  })
+})

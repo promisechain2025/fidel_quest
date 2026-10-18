@@ -53,7 +53,7 @@ export default class ErrorBoundary extends Component {
     return (
       <div
         role="alert"
-        className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-6 text-center"
+        className="mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-6 text-center"
         style={{ background: 'var(--paper)', color: 'var(--ink)' }}
       >
         {/* A simple friendly face drawn inline - no dependency on app art. */}

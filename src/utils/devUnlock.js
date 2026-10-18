@@ -16,7 +16,6 @@ import { progressChanged } from '../platform/childModel'
 import { JOURNEY, saveJourney, grantReward } from '../journey'
 import { wipeProgress } from '../platform/progress'
 import { persistSkySave } from '../platform/skylandsSave'
-import { saveClassicProgress } from '../platform/classicSave'
 
 export function unlockEverything() {
   // Journey: every node done + every wearable owned and equipped.
@@ -24,15 +23,11 @@ export function unlockEverything() {
   JOURNEY.forEach((n) => { p.done[n.id] = { stars: 3 } })
   JOURNEY.forEach((n) => grantReward(p, n.id))
   saveJourney(p)
-  // Classic: three stars on every level unlocks all seven.
-  saveClassicProgress({ stars: { 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3 }, bestScore: 0, missCounts: {} })
   // Skylands: every island learned and REACHABLE (sessionsCompleted 3 opens
   // island 4) without pretending they were beaten - no 4/4 on start.
   persistSkySave({ sessionsCompleted: 3, learnedSessions: 4 })
   // Don't nag with the first-run onboarding once everything is open.
   try { localStorage.setItem('fq.onboarded.v1', JSON.stringify({ lesson: true, runner: true, skylands: true })) } catch { /* ignore */ }
-  // QA convenience: the Family Pack (per-child profiles) opens too.
-  try { localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'dev' })) } catch { /* ignore */ }
   progressChanged()
 }
 

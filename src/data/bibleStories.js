@@ -47,6 +47,7 @@
    ========================================================================== */
 
 import raw from './bibleStories.json'
+import { publicUrl } from '../platform/publicUrl'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
 
 const MAN = { k: 'person', skin: '#6b3a22', hair: '#1a100c', cloth: '#efe4cf', hairStyle: 'short' }
@@ -84,7 +85,7 @@ function familiesOfGeez(geez) {
 /* Stamp scenes are the fallback if a painting file does not load.
    scene.src is the Meet-style painting. */
 function painted(id, n, scene) {
-  return { ...scene, src: `/art/stories/${id}-${n}.webp` }
+  return { ...scene, src: publicUrl(`/art/stories/${id}-${n}.webp`) }
 }
 
 const ART = {
@@ -217,7 +218,7 @@ export function bibleStoryTimeEntries() {
       band: story.band || 1,
       title: { g: story.titleTi, lt: story.latinTitle, en: story.titleEn },
       refrain: story.refrain,
-      cover: `/art/stories/${story.id}-cover.webp`,
+      cover: publicUrl(`/art/stories/${story.id}-cover.webp`),
       pages: story.pages.map((page, i) => ({
         g: page.geez,
         lt: page.latin,

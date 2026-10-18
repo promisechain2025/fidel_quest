@@ -23,7 +23,7 @@
 import { lazy, Suspense, useReducer, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { audio, afterVoice, playForm, playEffect, preloadForms, effectiveKey } from './platform/audioEngine'
 import { rngNext, rngShuffle } from './platform/rng'
-import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack } from './platform/ethiopic'
+import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice, confirmActivePack, languageChoicePending } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
@@ -48,13 +48,14 @@ import { Harag, JewelRim } from './components/Manuscript'
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, chapterComplete, grantWearable, learnedFamilyIds, isNodeFree } from './journey'
+import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds } from './journey'
 import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
 import FamilyFriends from './components/FamilyFriends'
 import { isSocialEnabled } from './platform/social'
-import { getScope, setScope, scopedBaseForms, SCOPES } from './platform/letterScope'
+import { getScope, setScope, scopedBaseForms, scopedForms, SCOPES } from './platform/letterScope'
+import { gameReady, gamesPending } from './platform/gameReadiness'
 import { bumpStreak, dayStamp, loadStreak } from './platform/streak'
 import { newlyDecodable, isDecodable, pickUnlockWords } from './platform/words'
 import { wordStepsInitial, markWordsPracticed, loadWordsPracticed } from './platform/wordSteps'
@@ -68,8 +69,9 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { shareAnbessa } from './components/ShareCard'
 import { installState, promptInstall, dismissInstall, onInstallChange } from './platform/install'
 import { todayKey, loadGift, saveGift, giftAvailable, pickGift } from './dailyGift'
-import { licenseState, markAsked, MONETIZE } from './platform/license'
-import { loadProfiles, switchProfile, profileLabel } from './platform/profiles'
+import { activeProfile, profileLabel, shouldAskWhoOnLaunch } from './platform/profiles'
+import ProfilePicker from './components/ProfilePicker'
+import ProfileAvatar from './components/ProfileAvatar'
 import { useChildModel, useAppDay } from './platform/childModel'
 import { progressChanged } from './platform/childModel'
 import { track } from './platform/analytics'
@@ -82,6 +84,14 @@ import { Runner2D } from './components/ArcadeFallback'
 import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
+import { installPracticeTracker, notePractice } from './platform/practiceTracker'
+import { setPracticeGoal } from './platform/practice'
+import { joinClassSync, flushSync } from './platform/practiceSync'
+import { readReportFromHash } from './platform/practiceReport'
+import StudyTimer from './components/StudyTimer'
+import { redeemClassUnlock } from './platform/classUnlock'
+/* Joining with a class unlock changes trial access; screens read it on demand. */
+const setTrialRevGlobal = () => { try { window.dispatchEvent(new Event('fq:access')) } catch { /* ignore */ } }
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignments, markAssignmentDone, pendingAssignmentKey, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
 import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
 
@@ -98,11 +108,16 @@ function armAssignmentReminder(assignment) {
     })
   }
 }
+import { packHasStories } from './platform/stories'
 import { setCommunityCode } from './platform/community'
-import { appShareUrl } from './components/ShareCard'
+import { appLinkUrl } from './platform/appLink'
 import { loadFromStorage } from './utils/loadFromStorage'
-import { isNativePlatform, isApplePlatform } from './platform/native'
-import GiftAppModal from './components/GiftModal'
+import { isNativePlatform } from './platform/native'
+import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
+import { maybeRequestReview, noteCompletion } from './platform/reviewPrompt'
+import { planSetup, parkSetup, finishSetup, reminderTexts } from './platform/firstRun'
+import { reminderOn, setReminder, setReminderTime, getReminderTime, formatReminderTime, REMINDER_PRESETS } from './platform/notify'
+import WebTrialPaywall from './components/WebTrialPaywall'
 import Dropdown from './components/Dropdown'
 
 // Wrap React.lazy so a TRANSIENT chunk-fetch failure (a blip on a flaky
@@ -120,12 +135,15 @@ function lazyRetry(factory, tries = 3) {
   })
 }
 
-// The original eGeez game (chant mode, tracing pad, first words) lives
-// on as the Classic mode; lazy so the heavy page stays out of the home chunk.
-const AmharicFidelGame = lazyRetry(() => import('./pages/AmharicFidelGame'))
+// Classic mode's two unique tools - trace any family, and Fidel Master's
+// chart/chant - now live in Letter Explorer, lazy so Explorer stays light.
+const ExplorerTrace = lazyRetry(() => import('./components/ExplorerTrace'))
+const FidelMaster = lazyRetry(() => import('./components/FidelMaster'))
 // Teacher tools + the TV chant board are adult-facing and pull in the QR
 // encoder, so they stay out of the child-facing home chunk too.
 const TeacherMode = lazyRetry(() => import('./components/TeacherMode'))
+const PracticeReport = lazyRetry(() => import('./components/PracticeReport'))
+const PracticeReportViewer = lazyRetry(() => import('./components/ClassPractice').then((m) => ({ default: m.ReportViewer })))
 // The 3D arcade games carry the whole three.js / R3F stack, so they load
 // only when a capable device actually enters an arcade node; degraded
 // devices route to the 2D fallbacks and never fetch these chunks.
@@ -135,13 +153,14 @@ const TvClass = lazyRetry(() => import('./components/TvClass'))
 // The story reader pulls in the 38KB StoryScene picture-book canvas renderer;
 // most sessions never open it, so keep it out of the boot chunk like the rest.
 const StoryTime = lazyRetry(() => import('./components/StoryTime'))
-const SupportAsk = lazyRetry(() => import('./components/SupportAsk'))
+const PrayerBook = lazyRetry(() => import('./components/PrayerBook'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
-const FidelMatch = lazyRetry(() => import('./components/FidelMatch'))
+const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
-const FidelLineup = lazyRetry(() => import('./components/FidelLineup'))
+const VowelTrain = lazyRetry(() => import('./components/VowelTrain'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
-const MerkatoMarket = lazyRetry(() => import('./components/MerkatoMarket'))
+const WordMarket = lazyRetry(() => import('./components/WordMarket'))
+const KeberoBeats = lazyRetry(() => import('./components/KeberoBeats'))
 const BingoCard = lazyRetry(() => import('./components/BingoCard'))
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import {
@@ -153,6 +172,11 @@ import {
   Flame,
   ChevronLeft,
   Sparkles,
+  LockOpen,
+  GraduationCap,
+  CheckCircle2,
+  Smile,
+  Home as HomeIcon,
   Play,
   Pause,
   BookOpen,
@@ -162,10 +186,13 @@ import {
   ClipboardCheck,
   Users,
   Globe,
+  Bell,
   ArrowDown,
   Send,
   Sun,
   Moon,
+  Pencil,
+  Music,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -648,6 +675,7 @@ export const RunnerState = Object.freeze({
   FEEDING: 'FEEDING',
   BOSS: 'BOSS',
   DESTROYED: 'DESTROYED',
+  FINISHED: 'FINISHED', // survived the last level of a fixed-length run
 })
 
 export const RunnerEvent = Object.freeze({
@@ -657,6 +685,9 @@ export const RunnerEvent = Object.freeze({
 })
 
 export const RUNNER_QPL = 5 // questions ("meals") per level
+// A run is a fixed number of levels, then it ends with a summary - it used to
+// keep levelling up until the child lost or quit, so it never ended on a win.
+export const RUNNER_LEVELS = 3
 
 // Runner pace. Signs spawn at SIGN_SPAWN_Z and glide in at RUNNER_BASE_SPEED *
 // scale. Slower base + a closer spawn than before, so the letters are readable
@@ -712,6 +743,7 @@ export function runnerInitial(seed = 1, pool = RUNNER_DEFAULT_POOL) {
     correct: 0, // power this level
     wrong: 0, // Muncher strength this level
     fed: 0, // total correct feeds this run (the score)
+    missed: 0, // total wrong feeds this run (for the end summary)
     survivedBoss: false,
     lastFeed: null, // { audioKey, good }
   }
@@ -729,6 +761,7 @@ const RUNNER_TRANSITIONS = {
         correct: ctx.correct + (good ? 1 : 0),
         wrong: ctx.wrong + (good ? 0 : 1),
         fed: ctx.fed + (good ? 1 : 0),
+        missed: (ctx.missed ?? 0) + (good ? 0 : 1),
         lastFeed: { audioKey, good },
       }
     },
@@ -742,6 +775,7 @@ const RUNNER_TRANSITIONS = {
   [RunnerState.BOSS]: {
     [RunnerEvent.BOSS_DONE]: (ctx) => {
       if (!ctx.survivedBoss) return { ...ctx, status: RunnerState.DESTROYED }
+      if (ctx.level >= RUNNER_LEVELS) return { ...ctx, status: RunnerState.FINISHED }
       const [queue, rngState] = buildQuestionQueue(runnerLevelSpec(ctx.pool), ctx.rngState)
       return {
         ...ctx,
@@ -758,6 +792,13 @@ const RUNNER_TRANSITIONS = {
     },
   },
   [RunnerState.DESTROYED]: {},
+  [RunnerState.FINISHED]: {},
+}
+
+/** Run accuracy for the end summary: correct feeds over all feeds, 0-100. */
+export function runnerAccuracy(ctx) {
+  const total = (ctx.fed ?? 0) + (ctx.missed ?? 0)
+  return total ? Math.round(((ctx.fed ?? 0) / total) * 100) : 0
 }
 
 export function runnerTransition(ctx, event) {
@@ -975,6 +1016,15 @@ export const isLevelUnlocked = (progress, index) =>
 
 export const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
+/* Store-review asks happen BETWEEN activities: a short beat after the child
+   is back on the path, so the system card never covers a game or the
+   transition. All caps live in platform/reviewPrompt. */
+const REVIEW_ASK_DELAY_MS = 900
+export const WORDS_REVIEW_ACCURACY = 80
+function askReviewSoon(reason) {
+  setTimeout(() => { maybeRequestReview(reason) }, REVIEW_ASK_DELAY_MS)
+}
+
 /** Close a modal on the Escape key (a parent's quick out; also assistive tech). */
 function useEscapeKey(onClose) {
   useEffect(() => {
@@ -986,6 +1036,37 @@ function useEscapeKey(onClose) {
   }, [onClose])
 }
 
+/* Deep links and QA previews. Pulled out so the website trial can refuse
+   a lesson/game/story before the first paint. */
+function initialScreens() {
+  try {
+    // QA preview (same convention as ?unlock): ?wordmoment=le opens the
+    // "New words!" flow with the words that family unlocks. Local, dev.
+    const wm = new URLSearchParams(window.location.search).get('wordmoment')
+    if (wm) {
+      const stage = FIDEL_FAMILIES.findIndex((f) => f.id === wm)
+      const before = FIDEL_FAMILIES.slice(0, stage).map((f) => f.id)
+      const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
+      if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
+    }
+    // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
+    // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
+    const bingoCode = new URLSearchParams(window.location.search).get('bingo')
+    if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
+    const ch = readChallengeFromHash(window.location.hash)
+    if (ch) return [{ name: 'challenge', challenge: ch }]
+    // Classroom deep links (platform/classroom.js): a class invite, a
+    // teacher's assignment, or a returning result receipt.
+    const rep = readReportFromHash(window.location.hash)
+    if (rep) return [{ name: 'practiceview', token: rep }]
+    const cr = readClassroomFromHash(window.location.hash)
+    if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
+    if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
+    if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
+  } catch { /* non-browser */ }
+  return [{ name: 'home' }]
+}
+
 export default function FidelQuestApp() {
   // A "challenge a friend" link (#challenge=...) opens straight into the
   // seeded rematch. See utils/challenge.js + docs/social-play.md.
@@ -993,44 +1074,49 @@ export default function FidelQuestApp() {
   // (not always Home). setScreen pushes a new page; going to a page you're
   // already on replaces it (so Replay/Retry don't pile up duplicates). goBack
   // pops one page; goHome resets to the path.
+  // The website trial counts this visit once, before any screen is chosen.
   const [stack, setStack] = useState(() => {
-    try {
-      // QA preview (same convention as ?unlock): ?wordmoment=le opens the
-      // "New words!" flow with the words that family unlocks. Local, dev.
-      const wm = new URLSearchParams(window.location.search).get('wordmoment')
-      if (wm) {
-        const stage = FIDEL_FAMILIES.findIndex((f) => f.id === wm)
-        const before = FIDEL_FAMILIES.slice(0, stage).map((f) => f.id)
-        const words = pickUnlockWords(newlyDecodable(ALL_WORDS, before, wm), wm)
-        if (words.length) return [{ name: 'home' }, { name: 'wordsteps', words }]
-      }
-      // Class Bingo join link: ?bingo=<config> opens the kid's unique card.
-      // The code is a URL-safe encoded config (letters + pattern) - keep it raw.
-      const bingoCode = new URLSearchParams(window.location.search).get('bingo')
-      if (bingoCode) return [{ name: 'home' }, { name: 'bingo', code: bingoCode.slice(0, 512) }]
-      const ch = readChallengeFromHash(window.location.hash)
-      if (ch) return [{ name: 'challenge', challenge: ch }]
-      // Classroom deep links (platform/classroom.js): a class invite, a
-      // teacher's assignment, or a returning result receipt.
-      const cr = readClassroomFromHash(window.location.hash)
-      if (cr?.kind === 'class') return [{ name: 'joinclass', invite: cr.data }]
-      if (cr?.kind === 'assign') return [{ name: 'assignment', assignment: cr.data, fromLink: true }]
-      if (cr?.kind === 'receipt') return [{ name: 'teacher', receipt: cr.data }]
-    } catch { /* non-browser */ }
-    return [{ name: 'home' }]
+    noteWebSession()
+    const next = initialScreens()
+    const top = next[next.length - 1]
+    if (screenBlockedByTrial(top?.name)) return [{ name: 'home' }]
+    return next
   })
+  // Auto-open once per limited browser session. The flag is written in an
+  // effect so React StrictMode's double initializer still agrees.
+  const [paywallOpen, setPaywallOpen] = useState(() => {
+    if (!isWebTrialLimited()) return false
+    try {
+      if (sessionStorage.getItem('fq.webtrial.paywallShown') === '1') return false
+    } catch { /* show it */ }
+    return true
+  })
+  const [trialRev, setTrialRev] = useState(0)
+  // trialRev is a bump: redeeming a code writes localStorage, and reading it
+  // here is what makes the home banner leave after an unlock.
+  const trialLimited = isWebTrialLimited() || trialRev < 0
   const screen = stack[stack.length - 1]
+  // "Who is playing?": greets a shared device (2+ children) once per app
+  // session when the app opens on the path - never over a deep link. Also
+  // opened from the home kid chip and the Backpack.
+  const [whoOpen, setWhoOpen] = useState(() => stack.length === 1 && stack[0].name === 'home' && shouldAskWhoOnLaunch())
   // A screen opened from the Backpack remembers that origin (fromBackpack), so
   // Back returns to the Backpack instead of straight home. The ref lets
   // setScreen see the Backpack's open state at push time without re-creating
   // the callback (the handlers close the Backpack, so its own state has already
   // been scheduled false by the time setScreen runs - the ref still reads true).
   const backpackOpenRef = useRef(false)
-  const setScreen = useCallback((next) => setStack((s) => {
-    const tagged = backpackOpenRef.current && !next.fromBackpack ? { ...next, fromBackpack: true } : next
-    const top = s[s.length - 1]
-    return top && top.name === tagged.name ? [...s.slice(0, -1), tagged] : [...s, tagged]
-  }), [])
+  const setScreen = useCallback((next) => {
+    if (next && screenBlockedByTrial(next.name)) {
+      setPaywallOpen(true)
+      return
+    }
+    setStack((s) => {
+      const tagged = backpackOpenRef.current && !next.fromBackpack ? { ...next, fromBackpack: true } : next
+      const top = s[s.length - 1]
+      return top && top.name === tagged.name ? [...s.slice(0, -1), tagged] : [...s, tagged]
+    })
+  }, [])
   const reopenBackpackIf = (s) => { if (s.length && s[s.length - 1].fromBackpack) setBackpackOpen(true) }
   const goBack = useCallback(() => setStack((s) => { if (s.length <= 1) return s; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   const goHome = useCallback(() => setStack([{ name: 'home' }]), [])
@@ -1040,11 +1126,16 @@ export default function FidelQuestApp() {
   const goBackOrHome = useCallback(() => setStack((s) => { if (s.length <= 1) return [{ name: 'home' }]; reopenBackpackIf(s); return s.slice(0, -1) }), [])
   useEffect(() => {
     try {
+      // Seal a choice the family already made (stored pack, legacy fq.lang,
+      // School Path progress, or a locale that already decided). Leave the
+      // soft default unwritten while the first-launch sheet is about to ask,
+      // so dismissing that sheet is what records it.
+      if (!languageChoicePending()) confirmActivePack()
       lockDocumentTranslate(getLang())
       // Strip deep-link tokens from the address bar once we've captured them,
       // so a refresh or a shared-back link starts from a clean URL. An opened
       // assignment also becomes the pending one (surfaces in Today's plan).
-      if (/(challenge|class|assign|receipt)=/.test(window.location.hash)) {
+      if (/(challenge|class|assign|receipt|report)=/.test(window.location.hash)) {
         const cr = readClassroomFromHash(window.location.hash)
         if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data) }
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
@@ -1053,18 +1144,29 @@ export default function FidelQuestApp() {
       /* non-browser */
     }
     track('app_open')
+    installPracticeTracker()
     // A resident PWA can receive a tapped link as a hash change on the LIVE
     // instance (no reload). Route it exactly like a boot-time deep link, then
     // strip the token.
     const onHash = () => {
       try {
         const hash = window.location.hash
-        if (!/(challenge|class|assign|receipt)=/.test(hash)) return
+        if (!/(challenge|class|assign|receipt|report)=/.test(hash)) return
+        const rep = readReportFromHash(hash)
+        if (rep) setStack([{ name: 'practiceview', token: rep }])
         const ch = readChallengeFromHash(hash)
-        if (ch) setStack([{ name: 'challenge', challenge: ch }])
+        if (ch) {
+          if (screenBlockedByTrial('challenge')) setPaywallOpen(true)
+          else setStack([{ name: 'challenge', challenge: ch }])
+        }
         const cr = readClassroomFromHash(hash)
         if (cr?.kind === 'class') setStack([{ name: 'joinclass', invite: cr.data }])
-        if (cr?.kind === 'assign') { storePendingAssignment(cr.data); armAssignmentReminder(cr.data); setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }]) }
+        if (cr?.kind === 'assign') {
+          storePendingAssignment(cr.data)
+          armAssignmentReminder(cr.data)
+          if (screenBlockedByTrial('assignment')) setPaywallOpen(true)
+          else setStack([{ name: 'assignment', assignment: cr.data, fromLink: true }])
+        }
         if (cr?.kind === 'receipt') setStack([{ name: 'teacher', receipt: cr.data }])
         window.history.replaceState(null, '', window.location.pathname + window.location.search)
       } catch { /* malformed link */ }
@@ -1072,6 +1174,11 @@ export default function FidelQuestApp() {
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+  useEffect(() => {
+    if (!paywallOpen) return undefined
+    try { sessionStorage.setItem('fq.webtrial.paywallShown', '1') } catch { /* ignore */ }
+    return undefined
+  }, [paywallOpen])
   const [progress, setProgress] = useState(loadProgress)
   const [journey, setJourney] = useState(loadJourney)
   const journeyRef = useRef(journey)
@@ -1093,7 +1200,6 @@ export default function FidelQuestApp() {
   useEffect(() => { audio.stopVoice() }, [screen])
   const [backpackOpen, setBackpackOpen] = useState(false)
   useEffect(() => { backpackOpenRef.current = backpackOpen }, [backpackOpen])
-  const [giftOpen, setGiftOpen] = useState(false)
   // Daily streak: count each day's visit (re-bumps if the day rolls over).
   const [streak, setStreak] = useState(0)
   useEffect(() => { setStreak(bumpStreak().count) }, [dayKey])
@@ -1102,17 +1208,13 @@ export default function FidelQuestApp() {
   // state is written (platform/childModel.js). Everything below derives
   // fresh from the pure selectors instead of holding copies.
   const childVer = useChildModel()
+  // The child playing now (name + avatar for the home chip). Re-read when
+  // a grown-up edits the card - updateProfile announces through the model.
+  const kid = useMemo(() => activeProfile(), [childVer, whoOpen]) // eslint-disable-line react-hooks/exhaustive-deps
   const huntDone = useMemo(() => huntDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
   // Session coach: the daily warm-up review + the registered learning plan.
   const [plan, setPlan] = useState(loadPlan)
   const warmupDone = useMemo(() => warmupDoneToday(), [childVer, dayKey]) // eslint-disable-line react-hooks/exhaustive-deps
-  // The honest free-trial ask: at most once per calendar day, after the
-  // trial ends (platform/license.js). Never blocks - always dismissible.
-  const [askSupport, setAskSupport] = useState(false)
-  useEffect(() => {
-    const lic = licenseState(dayKey)
-    if (lic.shouldAsk) { setAskSupport(true); markAsked(dayKey) }
-  }, [dayKey, childVer])
   const [warmupNudge, setWarmupNudge] = useState(null) // { node, enforced } | null
   // Teacher assignments opened from links wait in fq.assign.v1 until done -
   // several can be pending at once (two teachers, or a make-up plus this week).
@@ -1134,7 +1236,7 @@ export default function FidelQuestApp() {
   // preventDefault, so the native layer exits the app.
   useEffect(() => {
     const onBack = (e) => {
-      if (giftOpen) { setGiftOpen(false); e.preventDefault(); return }
+      if (whoOpen) { setWhoOpen(false); e.preventDefault(); return }
       if (giftOpened) { setGiftOpened(null); e.preventDefault(); return }
       if (celebration) { setCelebration(null); e.preventDefault(); return }
       if (backpackOpen) { setBackpackOpen(false); e.preventDefault(); return }
@@ -1142,7 +1244,7 @@ export default function FidelQuestApp() {
     }
     window.addEventListener('fq:back', onBack)
     return () => window.removeEventListener('fq:back', onBack)
-  }, [screen.name, backpackOpen, celebration, giftOpened, giftOpen, goBackOrHome])
+  }, [screen.name, backpackOpen, celebration, giftOpened, whoOpen, goBackOrHome])
   // Recompute the Backpack's Star Practice badge whenever progress advances
   // (the answer ledger it reads grows as the child plays).
   const troubleCount = useMemo(
@@ -1160,6 +1262,8 @@ export default function FidelQuestApp() {
   }, [])
 
   const finishLevel = useCallback((levelId, result) => {
+    // A Lesson Level replay passed with 2+ stars is a happy moment too.
+    if (result && result.passed !== false && (result.stars ?? 0) >= 2) askReviewSoon('complete')
     if (result) {
       setProgress((p) => {
         const next = mergeResult(p, levelId, result)
@@ -1174,6 +1278,13 @@ export default function FidelQuestApp() {
     setRunSeed((Date.now() % 1000000) | 1)
     setScreen({ name: 'lesson', levelId })
   }, [setScreen])
+
+  // First Words / Twin Drill: a round finished with 80%+ first-try accuracy
+  // (Continue only - not Replay, the child is still playing) may ask.
+  const finishWords = useCallback((r) => {
+    if ((r?.accuracy ?? 0) >= WORDS_REVIEW_ACCURACY) askReviewSoon('words')
+    goBack()
+  }, [goBack])
 
   const startWords = useCallback(() => {
     setRunSeed((Date.now() % 1000000) | 1)
@@ -1194,6 +1305,16 @@ export default function FidelQuestApp() {
     setScreen({ name: 'placement', window: 0, placed: [] })
   }, [setScreen])
 
+  // applyPlacement writes the credited nodes to storage; the home map renders
+  // the in-memory journey, so pull it back in now - otherwise "Placed! 33
+  // families credited" lands on a home that still shows 0 and every node
+  // locked until the app is restarted.
+  const finishPlacement = useCallback((placed) => {
+    const credited = applyPlacement(placed)
+    if (credited > 0) setJourney(loadJourney())
+    setScreen({ name: 'placement-done', credited, families: placed.length })
+  }, [setScreen])
+
   const startPractice = useCallback(() => {
     const seed = (Date.now() % 1000000) | 1
     const queue = buildPracticeQueue(loadLedger(), seed)
@@ -1207,18 +1328,27 @@ export default function FidelQuestApp() {
   // Surface a newly-earned wearable as a celebratory chip on the path.
   const markNodeDone = useCallback((nodeId, stars = 3) => {
     const j = journeyRef.current
-    const node = NODE_BY_ID.get(nodeId)
-    const isNew = node?.reward && !(j.collection?.owned ?? []).includes(node.reward.id)
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
     track('lesson_complete')
-    const chapter = chapterComplete(next, nodeId)
-    if (chapter) {
+    notePractice(NODE_BY_ID.get(nodeId)?.kind === NodeKind.ARCADE ? 'game' : 'lesson')
+    // Replaying a done node must not re-run the chapter party or re-announce
+    // a reward the child already owns - only newly earned things celebrate.
+    const party = nodeDoneCelebration(j, next, nodeId)
+    if (party?.chapter) {
       // Peak pride: a full celebration that also asks for a share.
       track('chapter_complete')
-      setCelebration({ chapter, rewardName: node?.reward?.name || null })
-    } else if (isNew) {
-      setJustEarned(node.reward)
+      setCelebration({ chapter: party.chapter, rewardName: party.reward?.name || null })
+    } else if (party?.reward) {
+      setJustEarned(party.reward)
+    }
+    // A finished node is a happy moment. The native app may ask for a store
+    // review once the child is back on the path; the website trial ignores
+    // this. A finished CHAPTER waits: its party is on screen now, so the ask
+    // comes when that party is closed (never over it).
+    if ((stars ?? 0) > 0) {
+      if (party?.chapter) noteCompletion()
+      else askReviewSoon('complete')
     }
     goBack()
   }, [goBack])
@@ -1263,12 +1393,6 @@ export default function FidelQuestApp() {
   }, [setScreen])
 
   const openNode = useCallback((node, opts = {}) => {
-    // Paid app: after the trial ends, only the free taste opens (first two
-    // families + the chapter-1 gateway). Anything else asks to buy or gift.
-    if (licenseState().phase === 'ended' && !isNodeFree(node)) {
-      setAskSupport(true)
-      return
-    }
     // Games come AFTER the day's warm-up: kids rush to the arcade, so the
     // gateway nudges (or, if the plan enforces it, requires) a quick review
     // of yesterday's letters first. Reads storage fresh - the plan may have
@@ -1279,8 +1403,9 @@ export default function FidelQuestApp() {
       node.kind === NodeKind.ARCADE && !opts.skipWarmup && !warmupDoneToday() &&
       learnedFamilyIds(journeyRef.current).length > 0
     ) {
-      const enforced = !!loadPlan()?.requireWarmup || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
-      setWarmupNudge({ node, enforced })
+      const parentRule = !!loadPlan()?.requireWarmup
+      const enforced = parentRule || troubleLetters(loadLedger()).some((t) => INDEXES.byAudioKey.has(t.key))
+      setWarmupNudge({ node, enforced, parentRule })
       return
     }
     // NEW letters also wait when the ledger holds unresolved trouble letters:
@@ -1315,6 +1440,10 @@ export default function FidelQuestApp() {
     }
     return setScreen({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
+  // Lets the gate above retry itself once the daily window opens, without
+  // openNode having to depend on (and re-create) itself.
+  const openNodeRef = useRef(null)
+  useEffect(() => { openNodeRef.current = openNode }, [openNode])
 
   return (
     <MotionConfig reducedMotion="user">
@@ -1322,7 +1451,7 @@ export default function FidelQuestApp() {
           the manuscript ground gradient, glow, lattice and watermark live on
           that canvas, and body already paints var(--paper) behind it as the
           fallback. An opaque background here would occlude the whole ground. */}
-      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }}>
+      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
         <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
@@ -1332,6 +1461,8 @@ export default function FidelQuestApp() {
                 onOpen={openNode}
                 onPlacement={startPlacement}
                 onBackpack={() => setBackpackOpen(true)}
+                kid={kid}
+                onWho={() => setWhoOpen(true)}
                 onCloset={openCloset}
                 giftReady={giftAvailable(gift, today)}
                 onGift={openGift}
@@ -1350,6 +1481,10 @@ export default function FidelQuestApp() {
                 onAssignment={(a) => setScreen({ name: 'assignment', assignment: a })}
                 ethioDate={ethioToday}
                 holiday={holiday}
+                trialLimited={trialLimited}
+                onTrial={() => setPaywallOpen(true)}
+                soundOn={soundOn}
+                onToggleSound={toggleSound}
               />
             </Screen>
           )}
@@ -1362,7 +1497,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
                 onTreasure={() => { goBack(); openGift() }}
-                onDone={() => { markHuntDone(); track('hunt_complete') }}
+                onDone={() => { markHuntDone(); track('hunt_complete'); notePractice('game') }}
                 onBack={goBack}
               />
             </Screen>
@@ -1400,7 +1535,23 @@ export default function FidelQuestApp() {
                 onPlacement={startPlacement}
                 soundOn={soundOn}
                 onToggleSound={toggleSound}
+                onTrialChange={() => setTrialRev((n) => n + 1)}
+                onPracticeReport={() => setScreen({ name: 'practicelog' })}
               />
+            </Screen>
+          )}
+          {screen.name === 'practicelog' && (
+            <Screen key="practicelog">
+              <Suspense fallback={null}>
+                <PracticeReport onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'practiceview' && (
+            <Screen key="practiceview">
+              <Suspense fallback={null}>
+                <PracticeReportViewer token={screen.token} onBack={() => setStack([{ name: 'home' }])} />
+              </Suspense>
             </Screen>
           )}
           {screen.name === 'familyvoice' && (
@@ -1416,23 +1567,6 @@ export default function FidelQuestApp() {
           {screen.name === 'postcard' && (
             <Screen key="postcard">
               <VoicePostcard onBack={goBack} soundOn={soundOn} worn={wornLayers(journey.collection)} />
-            </Screen>
-          )}
-          {screen.name === 'classic' && (
-            <Screen key="classic">
-              <div className="relative">
-                <Suspense fallback={null}>
-                  <AmharicFidelGame />
-                </Suspense>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="chunk fixed bottom-4 left-4 z-50 rounded-2xl px-4 py-2 font-extrabold text-white"
-                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}
-                >
-                  Home
-                </button>
-              </div>
             </Screen>
           )}
           {screen.name === 'stone' && (
@@ -1519,7 +1653,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'words' && (
             <Screen key={`words-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={goBack} onReplay={startWords} />
+              <WordMatch seed={runSeed} soundOn={soundOn} onFinish={finishWords} onReplay={startWords} />
             </Screen>
           )}
           {screen.name === 'stories' && (
@@ -1533,9 +1667,16 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
+          {screen.name === 'prayer' && (
+            <Screen key="prayer">
+              <Suspense fallback={null}>
+                <PrayerBook onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={goBack} onReplay={startTwins} />
+              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={finishWords} onReplay={startTwins} />
             </Screen>
           )}
           {screen.name === 'ladder' && (
@@ -1549,10 +1690,10 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
-          {screen.name === 'match' && (
-            <Screen key="match">
+          {screen.name === 'echo' && (
+            <Screen key="echo">
               <Suspense fallback={null}>
-                <FidelMatch soundOn={soundOn} onBack={goBack} pool={scopedBaseForms(getScope(), journey)} />
+                <EchoMatch soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
               </Suspense>
             </Screen>
           )}
@@ -1567,13 +1708,14 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
-          {screen.name === 'lineup' && (
-            <Screen key="lineup">
+          {screen.name === 'train' && (
+            <Screen key="train">
               <Suspense fallback={null}>
-                <FidelLineup
+                <VowelTrain
                   soundOn={soundOn}
                   onBack={goBack}
-                  families={getScope() === SCOPES.ALL ? FIDEL_FAMILIES.map((f) => f.id) : learnedFamilyIds(journey)}
+                  pool={scopedForms(getScope(), journey).map((f) => f.audioKey)}
+                  extra={(() => { const inScope = new Set(scopedForms(getScope(), journey).map((f) => f.audioKey)); return ALL_FORMS.filter((f) => !inScope.has(f.audioKey)).map((f) => f.audioKey) })()}
                 />
               </Suspense>
             </Screen>
@@ -1592,7 +1734,14 @@ export default function FidelQuestApp() {
           {screen.name === 'market' && (
             <Screen key="market">
               <Suspense fallback={null}>
-                <MerkatoMarket soundOn={soundOn} onBack={goBack} />
+                <WordMarket soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'beats' && (
+            <Screen key="beats">
+              <Suspense fallback={null}>
+                <KeberoBeats soundOn={soundOn} onBack={goBack} pool={scopedForms(getScope(), journey).map((f) => f.audioKey)} />
               </Suspense>
             </Screen>
           )}
@@ -1642,17 +1791,17 @@ export default function FidelQuestApp() {
                   if (passed && screen.window + 1 < windows.length) {
                     setScreen({ name: 'placement', window: screen.window + 1, placed })
                   } else {
-                    setScreen({ name: 'placement-done', credited: applyPlacement(placed), families: placed.length })
+                    finishPlacement(placed)
                   }
                 }}
-                onQuit={() => setScreen({ name: 'placement-done', credited: applyPlacement(screen.placed), families: screen.placed.length })}
+                onQuit={() => finishPlacement(screen.placed)}
                 onReplay={startPlacement}
               />
             </Screen>
           )}
           {screen.name === 'placement-done' && (
             <Screen key="placement-done">
-              <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+              <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
                 <AnbessaSvg size={110} mood="happy" />
                 <h1 className="text-2xl font-black">
                   {screen.families > 0 ? t('placeDoneTitle', 'Placed!') : t('placeFreshTitle', 'Starting fresh!')}
@@ -1784,7 +1933,7 @@ export default function FidelQuestApp() {
                   families={screen.families || null}
                   joinUrl={(() => {
                     const codes = Object.keys(loadTeacher().classes)
-                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appShareUrl()) : null
+                    return codes.length ? classUrl({ code: codes[0], teacher: loadTeacher().classes[codes[0]].teacher }, appLinkUrl()) : null
                   })()}
                 />
               </Suspense>
@@ -1809,7 +1958,7 @@ export default function FidelQuestApp() {
               rewardName={celebration.rewardName}
               worn={wornLayers(journey.collection)}
               forms={progressStats(journey).forms}
-              onClose={() => setCelebration(null)}
+              onClose={() => { setCelebration(null); askReviewSoon('chapter') }}
               onPostcard={() => { setCelebration(null); setScreen({ name: 'postcard' }) }}
             />
           )}
@@ -1828,41 +1977,32 @@ export default function FidelQuestApp() {
             <Backpack
               key="backpack"
               onClose={() => setBackpackOpen(false)}
+              onWho={() => { setBackpackOpen(false); setWhoOpen(true) }}
               troubleCount={troubleCount}
               teeBadge={newTeeCount(progressStats(journey).families)}
               onTees={openTeeShop}
               onCloset={openCloset}
-              onWords={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startWords() }}
-              onStories={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startStories() }}
-              onTwins={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } startTwins() }}
-              onLadder={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'ladder' }) }}
-              onMatch={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'match' }) }}
-              onTraffic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'traffic' }) }}
-              onLineup={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'lineup' }) }}
-              onWorkshop={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'workshop' }) }}
-              onMarket={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'market' }) }}
-              onBingo={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'bingo' }) }}
+              onWords={() => { setBackpackOpen(false); startWords() }}
+              onStories={() => { setBackpackOpen(false); startStories() }}
+              onPrayer={() => { setBackpackOpen(false); setScreen({ name: 'prayer' }) }}
+              onTwins={() => { setBackpackOpen(false); startTwins() }}
+              onLadder={() => { setBackpackOpen(false); setScreen({ name: 'ladder' }) }}
+              onEcho={() => { setBackpackOpen(false); setScreen({ name: 'echo' }) }}
+              onTraffic={() => { setBackpackOpen(false); setScreen({ name: 'traffic' }) }}
+              onTrain={() => { setBackpackOpen(false); setScreen({ name: 'train' }) }}
+              onWorkshop={() => { setBackpackOpen(false); setScreen({ name: 'workshop' }) }}
+              onMarket={() => { setBackpackOpen(false); setScreen({ name: 'market' }) }}
+              onBingo={() => { setBackpackOpen(false); setScreen({ name: 'bingo' }) }}
               onPractice={startPractice}
-              onExplore={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'explore' }) }}
-              onClassic={() => { setBackpackOpen(false); if (licenseState().phase === 'ended') { setAskSupport(true); return } setScreen({ name: 'classic' }) }}
+              onExplore={() => { setBackpackOpen(false); setScreen({ name: 'explore' }) }}
+              onBeats={() => { setBackpackOpen(false); setScreen({ name: 'beats' }) }}
               onGrownUps={() => { setBackpackOpen(false); setScreen({ name: 'grownups' }) }}
               onFamily={() => { setBackpackOpen(false); setScreen({ name: 'family' }) }}
               onFamilyVoice={() => { setBackpackOpen(false); setScreen({ name: 'familyvoice' }) }}
               onName={() => { setBackpackOpen(false); setScreen({ name: 'name' }) }}
               onPostcard={() => { setBackpackOpen(false); setScreen({ name: 'postcard' }) }}
-              onGift={() => { setBackpackOpen(false); setGiftOpen(true) }}
               onTeacher={() => { setBackpackOpen(false); setScreen({ name: 'teacher', gate: true }) }}
             />
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {giftOpen && <GiftAppModal key="gift" onClose={() => setGiftOpen(false)} />}
-        </AnimatePresence>
-        <AnimatePresence>
-          {askSupport && (
-            <Suspense fallback={null}>
-              <SupportAsk key="support" onClose={() => setAskSupport(false)} />
-            </Suspense>
           )}
         </AnimatePresence>
         <AnimatePresence>
@@ -1872,11 +2012,21 @@ export default function FidelQuestApp() {
               enforced={warmupNudge.enforced}
               onStart={() => { setWarmupNudge(null); startWarmup() }}
               onSkip={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
+              parentRule={!!warmupNudge.parentRule}
               onClose={() => setWarmupNudge(null)}
+              onNotNow={() => { const n = warmupNudge.node; setWarmupNudge(null); openNode(n, { skipWarmup: true }) }}
             />
           )}
         </AnimatePresence>
       </div>
+      {/* Outside the inert app shell, so it is the only live surface. */}
+      {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
+      {paywallOpen && (
+        <WebTrialPaywall
+          onClose={() => setPaywallOpen(false)}
+          onUnlocked={() => setTrialRev((n) => n + 1)}
+        />
+      )}
     </MotionConfig>
   )
 }
@@ -2118,12 +2268,14 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
           onClick={onClick}
           whileTap={unlocked ? { scale: 0.92 } : {}}
           animate={highlight ? { scale: [1, 1.08, 1], transition: { duration: 1.3, repeat: Infinity } } : { scale: 1 }}
-          className={`geez relative flex items-center justify-center border-2 font-black ${FOCUS}`}
+          className={`geez relative flex items-center justify-center border-2 font-black md:[--node-scale:1.3] ${FOCUS}`}
           style={{
-            width: size,
-            height: size,
+            // Tablets scale the tiles up (--node-scale, set at md) so the
+            // wider path is not a row of phone-sized tiles.
+            width: `calc(${size}px * var(--node-scale, 1))`,
+            height: `calc(${size}px * var(--node-scale, 1))`,
             borderRadius: radius,
-            fontSize: big ? 22 : node.kind === NodeKind.MIX ? 17 : 26,
+            fontSize: `calc(${big ? 22 : node.kind === NodeKind.MIX ? 17 : 26}px * var(--node-scale, 1))`,
             background: bg,
             color: fg,
             borderColor: goldTile ? 'var(--tile-deep)' : unlocked ? (big ? 'transparent' : 'var(--accent)') : 'var(--line)',
@@ -2222,7 +2374,7 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
       aria-current={active ? 'step' : undefined}
       animate={active ? { scale: [1, 1.04, 1] } : {}}
       transition={{ duration: 1.6, repeat: Infinity }}
-      className={`chunk flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
+      className={`chunk flex min-h-[44px] items-center gap-1.5 rounded-full px-3 py-2 text-xs font-black ${FOCUS}`}
       style={done
         ? { background: 'var(--go-soft)', color: 'var(--go-ink)', boxShadow: '0 2px 0 rgba(0,0,0,0.05)', '--chunk-depth': '2px', outlineColor: 'var(--sky)' }
         : active
@@ -2238,7 +2390,12 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
 /* The arcade gateway's gentle gate: warm up before the game. When the plan
    enforces it there is no "Play anyway" - but that is a Grown-ups choice;
    the default is a nudge, matching the app's never-block philosophy. */
-function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
+/* "Not now" opens the node the child tapped (the warm-up is offered again
+   next time) - it used to just close the dialog, so the tap did nothing.
+   Under a Grown-ups "require warm-up" rule, and in the optional nudge (where
+   "Play anyway" already opens the node), the quiet button is "Back to the
+   path", which closes. */
+function WarmupNudge({ enforced, parentRule = false, onStart, onSkip, onClose, onNotNow = onClose }) {
   useEscapeKey(onClose)
   return (
     <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -2259,9 +2416,15 @@ function WarmupNudge({ enforced, onStart, onSkip, onClose }) {
               {t('warmSkip', 'Play anyway')}
             </button>
           )}
-          <button type="button" onClick={onClose} className={`text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-            {t('dismiss', 'Not now')}
-          </button>
+          {enforced && !parentRule ? (
+            <button type="button" onClick={onNotNow} className={`min-h-[44px] rounded-xl px-4 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+              {t('dismiss', 'Not now')}
+            </button>
+          ) : (
+            <button type="button" onClick={onClose} className={`min-h-[44px] rounded-xl px-4 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+              {t('warmBackToPath', 'Back to the path')}
+            </button>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -2281,7 +2444,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
   const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
   const eta = formatDual(etaStamp(today, learned, per), getLang())
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-6">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -2321,7 +2484,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null }) {
+function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null, soundOn = true, onToggleSound = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2332,7 +2495,32 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
     markOnboarded('placeoffer')
     setPlaceOfferOpen(false)
   }
+  // First-launch setup (platform/firstRun): the language step (only on a
+  // device that is neither Amharic nor Tigrinya - the app starts in Tigrinya,
+  // the default, so an Amharic family can switch before the child starts),
+  // then the daily reminder (native app) and sound. Shown once and skippable;
+  // an install that already chose a language just sees the reminder step.
+  const [setup] = useState(() => planSetup({
+    native: isNativePlatform(),
+    fresh: doneCount === 0,
+    langNeeded: doneCount === 0 && !hasOnboarded('langpick') && needsLanguageChoice(),
+    reminderAlreadyOn: reminderOn(),
+  }))
+  const [setupOpen, setSetupOpen] = useState(setup.steps.length > 0)
+  const sealLanguage = () => {
+    confirmActivePack()
+    markOnboarded('langpick')
+  }
+  const closeSetup = () => {
+    finishSetup()
+    setSetupOpen(false)
+  }
+  // The header pill reopens the plain language sheet any time.
   const [langOpen, setLangOpen] = useState(false)
+  const closeLang = () => {
+    markOnboarded('langpick')
+    setLangOpen(false)
+  }
   const [streakOpen, setStreakOpen] = useState(false)
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
@@ -2359,7 +2547,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-28 pt-3">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-0 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
@@ -2378,7 +2566,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
                 type="button"
                 onClick={() => setLangOpen(true)}
                 aria-label={t('langTitle', 'Language')}
-                className={`flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black ${FOCUS}`}
+                className={`relative flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black before:absolute before:-inset-x-1 before:-inset-y-[11px] before:content-[''] ${FOCUS}`}
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -2395,6 +2583,20 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         {/* Header stays minimal: the streak lives in the bottom power bar and
             sound is a device-level control, so neither clutters the header. */}
         <div className="flex items-center gap-2">
+          {/* Who is playing: the active child's friend + name. Tapping it
+              opens the picker (switch, add, or - behind the gate - edit). */}
+          {kid && onWho && (
+            <button
+              type="button"
+              onClick={onWho}
+              aria-label={t('kpWhoChip', 'Playing: {name}. Change player', { name: profileLabel(kid, t('gpChild', 'Child')) })}
+              className={`chunk flex h-11 min-w-11 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-0.5 ${kid.name ? 'min-[400px]:pr-2.5' : ''} ${FOCUS}`}
+              style={{ background: 'var(--card)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go-deep)', outlineColor: 'var(--sky)', '--chunk-depth': '3px' }}
+            >
+              <ProfileAvatar avatar={kid.avatar} size={36} />
+              {kid.name && <span className="hidden max-w-[4.5rem] truncate text-sm font-black min-[400px]:inline">{kid.name}</span>}
+            </button>
+          )}
           {giftReady && (
             <motion.button
               type="button"
@@ -2430,8 +2632,31 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         </div>
       </header>
 
+      {trialLimited && onTrial && (
+        <button
+          type="button"
+          onClick={onTrial}
+          className={`mx-auto mt-2 w-full max-w-md rounded-2xl px-4 py-3 text-left text-sm font-black md:max-w-2xl ${FOCUS}`}
+          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 3px 0 var(--accent-deep)', outlineColor: 'var(--sky)' }}
+        >
+          {t('wtBanner', 'Ask a grown-up to keep playing')}
+        </button>
+      )}
+
       <AnimatePresence>
-        {langOpen && <LanguageSheet key="lang-sheet" onClose={() => setLangOpen(false)} />}
+        {setupOpen && (
+          <FirstRunSetup
+            key="first-run-setup"
+            steps={setup.steps}
+            before={setup.before}
+            soundOn={soundOn}
+            onToggleSound={onToggleSound}
+            onLeaveLang={sealLanguage}
+            onLangPicked={(remaining, before) => { markOnboarded('langpick'); parkSetup(remaining, before) }}
+            onDone={closeSetup}
+          />
+        )}
+        {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
       </AnimatePresence>
 
@@ -2458,7 +2683,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto mt-3 w-full max-w-md rounded-3xl px-4 py-3 text-center text-white"
+          className="mx-auto mt-3 w-full max-w-md md:max-w-2xl rounded-3xl px-4 py-3 text-center text-white"
           style={{ background: 'var(--accent)', boxShadow: '0 4px 0 var(--accent-deep)' }}
           role="status"
         >
@@ -2476,15 +2701,15 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
          pace's finish date (or the make-a-plan invite) as a small tail
          line. Deliberately compact: the Journey path is the hero and must
          stay above the fold even on a small phone. */}
-      <div className="mx-auto mt-3 w-full max-w-md">
-        <div className="flex items-baseline justify-between gap-2 px-1">
+      <div className="mx-auto mt-3 w-full max-w-md md:max-w-2xl">
+        <div className="-mb-2 flex items-center justify-between gap-2 px-1">
           <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('planTitle', "Today's plan")}</p>
           {coach?.hasPlan && coach?.eta ? (
-            <button type="button" onClick={onPlanSetup} className={`truncate text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
+            <button type="button" onClick={onPlanSetup} className={`min-h-[44px] truncate px-1 text-[11px] font-bold underline decoration-dotted ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--sky)' }}>
               {t('planEta', 'Whole Fidel by {date}', { date: coach.eta })}
             </button>
           ) : (
-            <button type="button" onClick={onPlanSetup} className={`text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
+            <button type="button" onClick={onPlanSetup} className={`min-h-[44px] px-1 text-[11px] font-black underline ${FOCUS}`} style={{ color: 'var(--sky)', outlineColor: 'var(--accent)' }}>
               {t('planMake', 'Make my learning plan')}
             </button>
           )}
@@ -2535,21 +2760,21 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
       </div>
 
       {placeOfferOpen && onPlacement && (
-        <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
+        <div className="mx-auto mt-3 flex w-full max-w-md md:max-w-2xl items-center gap-3 rounded-2xl border-2 px-4 py-3" style={{ background: 'var(--card)', borderColor: 'var(--sky)' }}>
           <KokebSvg size={36} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black">{t('placeOfferTitle', 'Already knows some letters?')}</p>
             <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('placeOfferBody', 'A quick listening check skips what you already know.')}</p>
           </div>
-          <button type="button" onClick={() => { dismissPlaceOffer(); onPlacement() }} className={`chunk shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+          <button type="button" onClick={() => { dismissPlaceOffer(); onPlacement() }} className={`chunk min-h-[44px] shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
             {t('placeOfferCta', 'Skip ahead')}
           </button>
-          <button type="button" onClick={dismissPlaceOffer} aria-label={t('placeOfferSkip', 'Not now')} className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)' }}>
+          <button type="button" onClick={dismissPlaceOffer} aria-label={t('placeOfferSkip', 'Not now')} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)' }}>
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
-      <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-3 px-2">
+      <div className="mx-auto mt-4 flex w-full max-w-md md:max-w-2xl flex-col gap-3 px-2">
         {PATH_ROWS.map((row, r) => {
           const chapter = row[0]?.chapter ?? 1
           const prevChapter = r > 0 ? PATH_ROWS[r - 1][0]?.chapter : null
@@ -2627,12 +2852,13 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
             className="fixed inset-x-0 bottom-0 z-30"
             style={{ background: 'var(--paper)', borderTop: '2px solid var(--accent)', boxShadow: '0 -6px 20px var(--overlay)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
-            <div className="mx-auto flex w-full max-w-md items-center gap-2 px-7 py-2.5">
+            <div className="mx-auto flex w-full max-w-md md:max-w-2xl items-center gap-2 px-7 py-2.5">
               {/* Kokeb power = the streak; tap it for the streak detail. */}
-              <button type="button" onClick={() => setStreakOpen(true)} className={`flex shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
+              <button type="button" onClick={() => setStreakOpen(true)} className={`flex min-h-[44px] shrink-0 items-center gap-1 rounded-2xl px-2 py-1.5 ${FOCUS}`} style={{ background: 'var(--paper-2)', outlineColor: 'var(--sky)' }} aria-label={t('streakDays', `${streak}-day streak`, { n: streak })}>
                 <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
+              <StudyTimer />
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
                 <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                   <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}
@@ -2658,7 +2884,7 @@ function JourneyPath({ journey, onOpen, onBackpack, onCloset, giftReady, onGift,
 }
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
-// whole toolkit on one screen so nothing (Classic, Review...) gets buried.
+// whole toolkit on one screen so nothing (Explorer, Review...) gets buried.
 function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
   return (
     <button
@@ -2692,7 +2918,15 @@ function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 
    chip grid (9 languages = four rows) crowded the game tiles out of view on
    a small phone. The lists open UPWARD - the picker sits at the sheet's
    bottom edge. */
-function LanguagePicker() {
+/** WebView can drop the last localStorage write if the page reloads in the
+    same turn. A short delay lets the pack/lang write land first. */
+function reloadForLanguage() {
+  setTimeout(() => {
+    try { window.location.reload() } catch { /* non-browser */ }
+  }, 50)
+}
+
+function LanguagePicker({ onPick = null }) {
   const pack = getActivePackId()
   const ui = getLang()
   return (
@@ -2704,10 +2938,15 @@ function LanguagePicker() {
         <Dropdown
           up
           geez
+          commitSame
           label={t('langLearn', 'Learning')}
           value={pack}
           options={[['am', PACKS.am.nativeName || 'አማርኛ'], ['ti', PACKS.ti.nativeName || 'ትግርኛ']]}
-          onChange={(id) => { setActivePack(id); window.location.reload() }}
+          onChange={(id) => {
+            const changed = id !== pack
+            setActivePack(id)
+            if (changed) { onPick?.(); reloadForLanguage() }
+          }}
         />
       </div>
       <div className="min-w-0">
@@ -2716,10 +2955,15 @@ function LanguagePicker() {
         </span>
         <Dropdown
           up
+          commitSame
           label={t('langText', 'App text')}
           value={ui}
           options={LANG_META.map((o) => [o.id, o.label])}
-          onChange={(id) => { setLang(id); window.location.reload() }}
+          onChange={(id) => {
+            const changed = id !== ui
+            setLang(id)
+            if (changed) { onPick?.(); reloadForLanguage() }
+          }}
         />
       </div>
     </div>
@@ -2766,14 +3010,182 @@ function StreakSheet({ streak, onClose }) {
   )
 }
 
+/* First-launch setup: the language sheet grown into a short, friendly flow
+   (platform/firstRun decides which steps). Big kid-app buttons, a step
+   counter, "Skip" always visible. Every choice stays changeable in Grown-ups.
+   The reminder step asks the OS for notification permission only when the
+   grown-up taps "Yes" - in context, never on its own. */
+export function FirstRunSetup({ steps, before = 0, soundOn = true, onToggleSound = null, onLeaveLang = null, onLangPicked = null, onDone }) {
+  const [i, setI] = useState(0)
+  const [time, setTime] = useState(() => getReminderTime())
+  const [busy, setBusy] = useState(false)
+  const [denied, setDenied] = useState(false)
+  const step = steps[i]
+  const total = before + steps.length
+  const last = i + 1 >= steps.length
+  const leaving = () => { if (step === 'lang') onLeaveLang?.() }
+  const next = () => {
+    leaving()
+    if (last) onDone?.()
+    else { setDenied(false); setI(i + 1) }
+  }
+  const skipAll = useCallback(() => { leaving(); onDone?.() }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEscapeKey(skipAll)
+  const remindYes = async () => {
+    setBusy(true)
+    setReminderTime(time.hour, time.minute)
+    const armed = await setReminder(true, reminderTexts())
+    setBusy(false)
+    if (armed) next()
+    else setDenied(true)
+  }
+  const lang = getLang()
+  const primary = { background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px', outlineColor: 'var(--sky)' }
+  const nextLabel = last ? t('setupDone', "Let's go!") : t('setupNext', 'Next')
+  if (!step) return null
+  return (
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('setupTitle', "Let's get ready!")}
+        data-setup-step={step}
+        className="w-full max-w-sm rounded-3xl p-5 text-center"
+        style={{ background: 'var(--paper)' }}
+        initial={{ scale: 0.9, y: 14 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 18 }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className="mono text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+            {total > 1 ? t('setupStep', 'Step {n} of {total}', { n: before + i + 1, total }) : t('setupTitle', "Let's get ready!")}
+          </span>
+          <button type="button" onClick={skipAll} className={`min-h-11 rounded-xl px-3 text-sm font-black ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+            {t('setupSkip', 'Skip')}
+          </button>
+        </div>
+        {total > 1 && (
+          <div className="mt-1 flex justify-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: total }, (_, k) => (
+              <span key={k} className="h-2 rounded-full transition-all" style={{ width: k === before + i ? 22 : 8, background: k <= before + i ? 'var(--go)' : 'var(--line)' }} />
+            ))}
+          </div>
+        )}
+        <div className="mt-2 flex justify-center"><Hero size={88} pose={step === 'sound' ? 'cheer' : 'stand'} /></div>
+
+        {step === 'lang' && (
+          <>
+            <h2 className="mt-1 flex items-center justify-center gap-2 text-2xl font-black">
+              <Globe className="h-6 w-6" style={{ color: 'var(--sky)' }} aria-hidden="true" />
+              {t('langTitle', 'Language')}
+            </h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('langSheetBody', 'Choose the alphabet to learn and the language of the app text.')}
+            </p>
+            <div className="text-left"><LanguagePicker onPick={() => onLangPicked?.(steps.slice(i + 1), before + i + 1)} /></div>
+            <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+              {nextLabel}
+            </button>
+          </>
+        )}
+
+        {step === 'reminder' && (
+          <>
+            <h2 className="mt-1 text-2xl font-black leading-tight">
+              {t('setupRemindTitle', 'Remind us to practise every day?')}
+            </h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('setupRemindBody', 'Anbessa sends one friendly nudge a day. You can change it any time in Grown-ups.')}
+            </p>
+            {denied ? (
+              <>
+                <p role="status" className="mt-4 rounded-2xl border-2 px-4 py-3 text-sm font-bold" style={{ borderColor: 'var(--line)', background: 'var(--card)' }}>
+                  {t('setupRemindDenied', 'Notifications are off for eGeez. You can allow them later in your phone settings, then turn the reminder on in Grown-ups.')}
+                </p>
+                <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+                  {nextLabel}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 text-xs font-black uppercase tracking-wide" style={{ color: 'var(--muted)' }}>{t('setupRemindTime', 'What time?')}</p>
+                <div role="radiogroup" aria-label={t('setupRemindTime', 'What time?')} className="mt-2 grid grid-cols-3 gap-2">
+                  {REMINDER_PRESETS.map((p) => {
+                    const on = p.hour === time.hour && p.minute === time.minute
+                    return (
+                      <button
+                        key={`${p.hour}:${p.minute}`}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setTime({ hour: p.hour, minute: p.minute })}
+                        className={`min-h-14 rounded-2xl border-2 px-2 py-3 text-base font-black ${FOCUS}`}
+                        style={{ borderColor: on ? 'var(--go)' : 'var(--line)', background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--sky)' }}
+                      >
+                        {formatReminderTime(p, lang)}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button type="button" disabled={busy} onClick={remindYes} className={`chunk mt-5 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={{ ...primary, opacity: busy ? 0.7 : 1 }}>
+                  <Bell className="h-5 w-5" aria-hidden="true" />
+                  {t('setupRemindYes', 'Yes, remind us')}
+                </button>
+                <button type="button" disabled={busy} onClick={next} className={`mt-2 min-h-12 w-full rounded-2xl px-6 py-3 text-base font-black ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+                  {t('dismiss', 'Not now')}
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {step === 'sound' && (
+          <>
+            <h2 className="mt-1 text-2xl font-black">{t('setupSoundTitle', 'Sounds and voices')}</h2>
+            <p className="mt-1 text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('setupSoundBody', 'Anbessa says every letter out loud. Keep sound on for the best learning.')}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {[[true, Volume2, t('setupSoundOn', 'Sound on')], [false, VolumeX, t('setupSoundOff', 'Sound off')]].map(([val, Icon, label]) => {
+                const on = soundOn === val
+                return (
+                  <button
+                    key={String(val)}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => { if (!on) onToggleSound?.() }}
+                    className={`flex min-h-24 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-3 text-base font-black ${FOCUS}`}
+                    style={{ borderColor: on ? 'var(--go)' : 'var(--line)', background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', outlineColor: 'var(--sky)' }}
+                  >
+                    <Icon className="h-8 w-8" aria-hidden="true" />
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+            <button type="button" onClick={next} className={`chunk mt-5 w-full rounded-2xl px-6 py-4 text-lg font-black text-white ${FOCUS}`} style={primary}>
+              {nextLabel}
+            </button>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /* The home-screen language sheet: the same two-axis picker the Backpack
    carries, reachable from the header pill so a family can switch what the
    child LEARNS (Amharic/Tigrinya letters + voice) and what the app SPEAKS
    without hunting through utilities. Both axes reload on change by design. */
 export function LanguageSheet({ onClose }) {
-  useEscapeKey(onClose)
+  const close = () => {
+    confirmActivePack()
+    onClose?.()
+  }
+  useEscapeKey(close)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -2791,7 +3203,7 @@ export function LanguageSheet({ onClose }) {
             <Globe className="h-5 w-5" style={{ color: 'var(--sky)' }} aria-hidden="true" />
             {t('langTitle', 'Language')}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t('dismiss', 'Not now')} className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={close} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -2804,17 +3216,20 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onTwins, onLadder, onMatch, onTraffic, onLineup, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onGift, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
   const [scope, setScopeState] = useState(getScope)
   const changeScope = (s) => { setScopeState(s); setScope(s) }
-  // Sibling switcher: only exists once a grown-up has added a second child
-  // (Family Pack). Switching is safe (all progress is parked, nothing is
-  // lost), so the child-facing surface needs no parental gate.
-  const [profileReg] = useState(loadProfiles)
-  const [whoOpen, setWhoOpen] = useState(false)
+  // "Who plays?" opens the app-level profile picker (switch / add; edit and
+  // delete sit behind the parental gate inside it).
+  // A game whose board cannot be filled from what the child knows is hidden
+  // rather than dealt half-empty (platform/gameReadiness.js). `scope` is
+  // state, so flipping the letter-scope toggle brings the tiles straight
+  // back without closing the Backpack.
+  const [learnedFamilies] = useState(() => learnedFamilyIds(loadJourney()).length)
+  const ready = (game) => gameReady(game, { scope, learned: learnedFamilies })
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-end justify-center p-4"
@@ -2840,7 +3255,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <span className="block text-lg font-black">{APP_NAME}</span>
             <span className="text-xs font-extrabold" style={{ color: 'var(--muted)' }}>{t('backpack', 'Backpack')}</span>
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-9 w-9 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+          <button type="button" onClick={onClose} aria-label="Close backpack" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -2848,8 +3263,8 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
            panel can still scroll on a very short device as a safety net. */}
         <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 pb-1">
           <div className="grid grid-cols-3 gap-2.5">
-            {profileReg.list.length > 1 && (
-              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={() => setWhoOpen(true)} />
+            {onWho && (
+              <BackpackTile icon={<Users className="h-6 w-6" />} tone="var(--accent)" title={t('whoShort', 'Who plays?')} onClick={onWho} />
             )}
             <BackpackTile art="closet" title={t('closetShort', 'Closet')} onClick={onCloset} />
             {/* Tee Shop tile HIDDEN until the merch pipeline is ready to
@@ -2857,14 +3272,17 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             <BackpackTile art="words" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />
-            <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />
-            <BackpackTile art="lineup" title={t('lineupShort', 'Line Up')} onClick={onLineup} />
-            <BackpackTile art="match" title={t('matchShort', 'Match')} onClick={onMatch} />
-            <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />
-            <BackpackTile art="market" title={t('marketShort', 'Market')} onClick={onMarket} />
-            <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />
-            <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />
+            {ready('workshop') && <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
+            {ready('ladder') && <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />}
+            {ready('train') && <BackpackTile art="train" title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
+            {ready('echo') && <BackpackTile art="match" title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
+            {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
+            {ready('market') && <BackpackTile art="market" title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
+            {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
+            {/* Stories only exist for packs that ship them - no empty room. */}
+            {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
+            {/* Prayer book (ጸሎት ዘዘወትር): Ge'ez for every pack, never gated. */}
+            {onPrayer && <BackpackTile icon={<BookOpen size={24} />} tone="var(--accent, #d9731c)" title="ጸሎት" onClick={onPrayer} />}
             {/* Twin Drill appears once a same-sound pair is learned - the
                spelling choice (ሰላም takes ሰ, not ሠ) only exists then. */}
             {(() => {
@@ -2876,7 +3294,7 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
               return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
             <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            <BackpackTile art="classic" title={t('classicShort', 'Classic')} onClick={onClassic} />
+            {ready('beats') && <BackpackTile art="kebero" title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
             {troubleCount > 0 && (
               <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
@@ -2887,6 +3305,13 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
             <BackpackTile art="name" title={t('nameShort', 'My Name')} onClick={onName} />
             <BackpackTile art="postcard" title={t('pcShort', 'Postcard')} onClick={onPostcard} />
           </div>
+          {/* Say WHY the grid is short, so a hidden game reads as "not yet"
+             rather than "missing". */}
+          {gamesPending({ scope, learned: learnedFamilies }) && (
+            <p className="mt-2.5 px-1 text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+              {t('gamesLocked', 'More games appear as more letters are learned.')}
+            </p>
+          )}
           {/* Adult utilities live in their own visually quieter row so a
              child's play grid is not interleaved with settings doors. */}
           <p className="mt-3 px-1 text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
@@ -2895,12 +3320,6 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
           <div className="mt-1.5 grid grid-cols-3 gap-2.5 opacity-90">
             <BackpackTile icon={<Sparkles className="h-6 w-6" />} tone="var(--muted)" title={t('parentsShort', 'Parents')} onClick={onGrownUps} />
             <BackpackTile icon={<ClipboardCheck className="h-6 w-6" />} tone="var(--muted)" title={t('tmShort', 'Teacher')} onClick={onTeacher} />
-            {/* Gift entry: Apple only, since App Store "Gift App" is the one
-               store path for gifting a paid app. Hidden on Android/Play, and
-               while monetization is off (the app is free - nothing to gift). */}
-            {MONETIZE && isApplePlatform() && (
-              <BackpackTile icon={<Gift className="h-6 w-6" />} tone="var(--muted)" title={t('giftShort', 'Gift')} onClick={onGift} />
-            )}
             {/* Reviewer entry: web-only. Hidden in the packaged app so a kids-
                category store build has no un-gated external link. */}
             {!isNativePlatform() && (
@@ -2916,59 +3335,6 @@ function Backpack({ onClose, onExplore, onClassic, onGrownUps, onFamily, onFamil
         </div>
         {/* Language moved to the home-screen pill (header) - one home for
             the choice instead of two competing ones. */}
-        <AnimatePresence>
-          {whoOpen && (
-            <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-6"
-              style={{ background: 'rgba(0,0,0,0.45)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setWhoOpen(false)}
-            >
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                aria-label={t('whoTitle', 'Who is playing?')}
-                className="w-full max-w-sm rounded-3xl p-5"
-                style={{ background: 'var(--paper)' }}
-                initial={{ scale: 0.92 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.92 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h2 className="text-center text-xl font-black">{t('whoTitle', 'Who is playing?')}</h2>
-                <div className="mt-4 space-y-2.5">
-                  {profileReg.list.map((p) => {
-                    const active = p.id === profileReg.active
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        disabled={active}
-                        onClick={() => {
-                          if (switchProfile(p.id)) window.location.reload()
-                        }}
-                        className={`chunk flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-lg font-black ${FOCUS}`}
-                        style={
-                          active
-                            ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
-                            : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', '--chunk-depth': '4px' }
-                        }
-                      >
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full text-base" style={{ background: active ? 'rgba(255,255,255,0.25)' : 'var(--accent)', color: '#fff' }}>
-                          {(profileLabel(p, t('gpChild', 'Child'))[0] || '?').toUpperCase()}
-                        </span>
-                        <span className="flex-1 truncate text-left">{profileLabel(p, t('gpChild', 'Child'))}</span>
-                        {active && <span className="text-xs font-black uppercase">{t('whoNow', 'Now')}</span>}
-                      </button>
-                    )
-                  })}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     </motion.div>
   )
@@ -3002,7 +3368,7 @@ function InstallBanner() {
         >
           {state === 'prompt' ? t('installCta', 'Add') : t('installHow', 'How?')}
         </button>
-        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`shrink-0 rounded-lg p-1 ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={dismissInstall} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-5 w-5" />
         </button>
       </motion.div>
@@ -3141,6 +3507,9 @@ const EXPLORE_PACE = { slow: 2300, normal: 1700, fast: 850 }
 
 function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
+  // Rehomed from Classic: trace any family, and Fidel Master's chart/chant.
+  const [tracing, setTracing] = useState(false)
+  const [master, setMaster] = useState(false)
   const [order, setOrder] = useState(1) // which vowel order the grid shows
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
@@ -3174,10 +3543,18 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
     return cancel
   }, [playing, playIdx, order, pace, family, soundOn])
 
+  if (master) {
+    return (
+      <Suspense fallback={null}>
+        <FidelMaster onBack={() => setMaster(false)} soundOn={soundOn} />
+      </Suspense>
+    )
+  }
+
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); family ? setOpenFamily(null) : onBack() }} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
@@ -3218,6 +3595,10 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
           </Chunky>
+          <Chunky tone="card" className="ml-auto flex min-h-[44px] items-center gap-2 px-3 py-2 text-sm" onClick={() => { stopPlay(); setMaster(true) }} depth={3} aria-label={t('masterOpen', 'Fidel Master: chart and chant')} data-testid="explore-master">
+            <Music className="h-5 w-5" aria-hidden="true" />
+            {t('masterShort', 'Chant')}
+          </Chunky>
           <div className="flex gap-1">
             {['slow', 'normal', 'fast'].map((p) => (
               <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
@@ -3245,7 +3626,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
                   onClick={() => {
                     stopPlay()
                     playForm(cell, soundOn)
-                    setOpenFamily(f.id)
+                    setOpenFamily(f.id); setTracing(false)
                   }}
                   animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
                   transition={{ duration: 0.4 }}
@@ -3269,7 +3650,19 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
           </motion.div>
         ) : (
           <motion.div key={family.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }} className="mt-6">
-            <FamilyDetail family={family} soundOn={soundOn} />
+            <div className="mb-4 flex justify-center">
+              <Chunky tone={tracing ? 'sky' : 'card'} className="flex min-h-[44px] items-center gap-2 px-4 py-2 text-sm" onClick={() => setTracing((v) => !v)} depth={3} aria-pressed={tracing} data-testid="explore-trace">
+                {tracing ? <Volume2 className="h-5 w-5" aria-hidden="true" /> : <Pencil className="h-5 w-5" aria-hidden="true" />}
+                {tracing ? t('traceListen', 'Listen') : t('traceShort', 'Trace')}
+              </Chunky>
+            </div>
+            {tracing ? (
+              <Suspense fallback={null}>
+                <ExplorerTrace family={family} soundOn={soundOn} />
+              </Suspense>
+            ) : (
+              <FamilyDetail family={family} soundOn={soundOn} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -3277,9 +3670,21 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   )
 }
 
-function FamilyDetail({ family, soundOn }) {
+export function FamilyDetail({ family, soundOn }) {
   const forms = useMemo(() => ALL_FORMS.filter((f) => f.familyId === family.id), [family.id])
   const [active, setActive] = useState(null)
+  // The bonus labialized form (e.g. ሏ "lwa") plays its own recording when one
+  // exists; with none (today: no -8 clips are recorded) the tile is hidden
+  // rather than answering a tap with a generic "good" sound effect.
+  const labialKey = family.labial ? `letters/${family.id}-8` : null
+  const [labialVoiced, setLabialVoiced] = useState(false)
+  useEffect(() => {
+    if (!labialKey) return undefined
+    let live = true
+    setLabialVoiced(false)
+    audio.hasClip(labialKey).then((ok) => { if (live) setLabialVoiced(ok) })
+    return () => { live = false }
+  }, [labialKey])
 
   return (
     <div className="flex flex-col gap-4">
@@ -3306,15 +3711,19 @@ function FamilyDetail({ family, soundOn }) {
             </span>
           </motion.button>
         ))}
-        {family.labial && (
+        {family.labial && labialVoiced && (
           <button
             type="button"
-            onClick={() => playEffect('good', soundOn)}
+            onClick={() => audio.play(labialKey, { enabled: soundOn })}
+            aria-label={`Bonus form ${family.labial}, sounds like ${family.consonant}wa`}
             className={`chunk flex flex-col items-center gap-1 rounded-2xl border-2 border-dashed py-4 ${FOCUS}`}
             style={{ background: 'var(--card)', borderColor: 'var(--accent)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
           >
             <span className="geez text-5xl font-black" style={{ color: 'var(--accent)' }}>
               {family.labial}
+            </span>
+            <span className="mono text-sm font-bold" style={{ color: 'var(--sky)' }}>
+              {family.consonant}wa
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
               Bonus form
@@ -3541,7 +3950,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
   const presenting = ctx.status === GameState.PRESENTATION
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col overflow-hidden px-7 pb-32 pt-5">
+    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col overflow-hidden px-7 pb-32 pt-5">
       {/* Scene framing: a soft ground swell with Anbessa watching from the
          corner, so the quiz floats in a place instead of empty paper. Purely
          decorative - zero pointer events, behind everything. */}
@@ -3554,7 +3963,7 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
         </div>
       </div>
       <header className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
-        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">
@@ -3719,7 +4128,7 @@ function ChallengeShareButton({ payload, label }) {
     const by = loadFromStorage('fq.nickname', '')
     // Native shells have a capacitor://localhost origin - a shared link
     // built from it is unopenable. Always share the public app URL.
-    const url = challengeUrl({ ...payload, by }, appShareUrl() || window.location.origin)
+    const url = challengeUrl({ ...payload, by }, appLinkUrl())
     const text = `${t('challengeShareText', 'Beat my eGeez score! Can you?')} ${url}`
     // Native shell: use the OS share sheet via Capacitor.
     if (isNativePlatform()) {
@@ -3762,7 +4171,7 @@ function ChallengeShareButton({ payload, label }) {
 
 function FixItGate({ missedCount, onPractice, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixTitle', 'Almost!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3771,7 +4180,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
       <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onPractice}>
         {t('fixCta', 'Practice the tricky ones')}
       </Chunky>
-      <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+      <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
         {t('home', 'Home')}
       </button>
     </div>
@@ -3780,7 +4189,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
 
 function FixItReady({ onRetry, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixReady', 'Nice practice!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3792,7 +4201,7 @@ function FixItReady({ onRetry, onHome }) {
       {/* Always leave a way back to the path - a tired child must not be forced
          into another full quiz to escape (same exit the fix-it gate/cap give). */}
       {onHome && (
-        <button type="button" onClick={onHome} className={`font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           {t('backToPath', 'Back to the path')}
         </button>
       )}
@@ -3802,7 +4211,7 @@ function FixItReady({ onRetry, onHome }) {
 
 function FixItCap({ onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-5 px-7 text-center">
+    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
       <Hero size={110} />
       <h2 className="text-3xl font-black">{t('fixCapTitle', 'Great practice today!')}</h2>
       <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
@@ -3877,7 +4286,7 @@ function NextUpTeaser({ levelId }) {
 function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
   const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center overflow-hidden px-7 py-10 text-center">
+    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center overflow-hidden px-7 py-10 text-center">
       <Confetti />
       <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <motion.span
@@ -4011,7 +4420,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
   const who = challenge.by || t('aFriend', 'A friend')
   const levelTitle = t(`${level.id}.title`, level.title)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4038,7 +4447,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
 
 function ChallengeMissing({ onHome }) {
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <Hero size={112} mood="worried" />
       <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
         {t('challengeGone', 'This challenge is not available.')}
@@ -4056,31 +4465,63 @@ function ChallengeMissing({ onHome }) {
 
 /** A #class= invite: joining is a local fact on this device — it stores the
    class + credits the teacher's community code. Nothing is sent anywhere. */
+/* Screen-reader words for the join screen, in the learn language. */
+const JC_WORDS = {
+  am: { join: 'ክፍሉን ተቀላቀል', notNow: 'አሁን አይደለም', joined: 'ተቀላቅለሃል', unlocked: 'ተከፍቷል', home: 'ወደ ቤት' },
+  ti: { join: 'ክፍሊ ተጸንበር', notNow: 'ሕጂ ኣይኮነን', joined: 'ተጸንቢርካ', unlocked: 'ተኸፊቱ', home: 'ናብ ገዛ' },
+}
+const jcLang = () => (getActivePackId() === 'am' ? 'am' : 'ti')
+
 function JoinClassIntro({ invite, onHome }) {
+  let kidName = ''
+  try { kidName = (localStorage.getItem('fq.nickname') || '').trim() } catch { /* ignore */ }
   const [joined, setJoined] = useState(false)
+  const [unlocked, setUnlocked] = useState(false)
   useEscapeKey(onHome)
   const join = () => {
     joinClass(invite)
     setCommunityCode(invite.code)
+    // Teacher's daily practice goal rides in the link; a class-view link (sync)
+    // also joins this child's profile to the live class with their nickname.
+    if (invite.goalMin) setPracticeGoal(invite.goalMin)
+    if (invite.sync) {
+      let nick = ''
+      try { nick = (localStorage.getItem('fq.nickname') || '').trim() } catch { /* ignore */ }
+      if (nick) joinClassSync(invite.code, nick).then((r) => { if (r.ok) flushSync() })
+    }
+    // A teacher's class unlock in the link opens the full web app until it expires.
+    if (invite.unlock) redeemClassUnlock(invite.unlock).then((ok) => { if (ok) { setUnlocked(true); setTrialRevGlobal() } })
     track('class_join')
     setJoined(true)
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
+      {/* No English on this kid screen (Yosief): names, icons and the class
+         code only; aria labels follow the learn language (Amharic/Tigrinya). */}
       {joined ? (
         <>
-          <h1 className="mt-4 text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
-            {t('jcJoined', "You're in {who}'s class!", { who: invite.teacher })}
-          </h1>
-          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('jcJoinedBody', 'Assignments from your teacher will show up in your daily plan.')}
-          </p>
+          <div className="mt-4 flex items-center gap-3" data-testid="jc-joined">
+            <span className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xl font-black" style={{ background: 'var(--card)', color: 'var(--ink)' }}>
+              <GraduationCap className="h-6 w-6" style={{ color: 'var(--accent)' }} aria-hidden="true" />{invite.teacher}
+            </span>
+            <CheckCircle2 className="h-9 w-9" style={{ color: 'var(--go)' }} aria-label={JC_WORDS[jcLang()].joined} />
+            {kidName && (
+              <span className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xl font-black" style={{ background: 'var(--card)', color: 'var(--ink)' }}>
+                <Smile className="h-6 w-6" style={{ color: 'var(--go)' }} aria-hidden="true" />{kidName}
+              </span>
+            )}
+          </div>
+          {unlocked && (
+            <div data-testid="class-unlocked" aria-label={JC_WORDS[jcLang()].unlocked} className="mt-3 flex items-center gap-2 rounded-full px-4 py-2" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
+              <LockOpen className="h-6 w-6" aria-hidden="true" /><Sparkles className="h-5 w-5" aria-hidden="true" />
+            </div>
+          )}
           <div className="mt-8 w-full max-w-sm">
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
-              {t('goHome', 'Home')}
+            <Chunky tone="go" className="flex w-full items-center justify-center py-4" onClick={onHome} aria-label={JC_WORDS[jcLang()].home} data-testid="jc-home">
+              <HomeIcon className="h-7 w-7" aria-hidden="true" />
             </Chunky>
           </div>
         </>
@@ -4089,18 +4530,15 @@ function JoinClassIntro({ invite, onHome }) {
           <p className="mono mt-4 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
             {invite.code}
           </p>
-          <h1 className="mt-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
-            {t('jcTitle', 'Join {who}’s class?', { who: invite.teacher })}
-          </h1>
-          <p className="mt-3 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('jcBody', 'Your app remembers the class on this device only. Nothing about you is sent anywhere.')}
-          </p>
-          <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={join}>
-              {t('jcJoin', 'Join class')}
+          <div className="mt-2 flex items-center gap-2 text-3xl font-black" style={{ color: 'var(--ink)' }}>
+            <GraduationCap className="h-8 w-8" style={{ color: 'var(--accent)' }} aria-hidden="true" />{invite.teacher}
+          </div>
+          <div className="mt-8 flex w-full max-w-sm gap-3">
+            <Chunky tone="card" className="flex flex-1 items-center justify-center py-4" onClick={onHome} aria-label={JC_WORDS[jcLang()].notNow} data-testid="jc-dismiss">
+              <X className="h-7 w-7" aria-hidden="true" />
             </Chunky>
-            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onHome}>
-              {t('dismiss', 'Not now')}
+            <Chunky tone="go" className="flex flex-[2] items-center justify-center gap-2 py-4" onClick={join} aria-label={JC_WORDS[jcLang()].join} data-testid="jc-join">
+              <Users className="h-7 w-7" aria-hidden="true" /><Check className="h-7 w-7" aria-hidden="true" />
             </Chunky>
           </div>
         </>
@@ -4144,7 +4582,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
 function AssignmentIntro({ assignment, count, onStart, onHome }) {
   useEscapeKey(onHome)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4190,11 +4628,11 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
         assignmentSeed: assignment.seed,
         missed: [...new Set(missed.map((k) => String(k).replace(/-\d+$/, '')))],
       },
-      appShareUrl(),
+      appLinkUrl(),
     )
     if (!url) return
     const text = `${t('asShareBack', 'eGeez result for {who}:', { who: assignment.teacher })} ${url}`
-    track('assignment_receipt')
+    track('assignment_receipt'); notePractice('lesson')
     if (isNativePlatform()) {
       try { const { Share } = await import('@capacitor/share'); await Share.share({ title: 'eGeez', text, url }) } catch { /* dismissed */ }
       return
@@ -4209,7 +4647,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     } catch { /* clipboard blocked */ }
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4791,7 +5229,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
         accuracy={selectAccuracy(ctx)}
         stars={null}
         bestStreak={ctx.bestStreak}
-        onContinue={() => onFinish()}
+        onContinue={() => onFinish({ accuracy: selectAccuracy(ctx) })}
         onReplay={() => {
           onFinish()
           onReplay()
@@ -4803,9 +5241,9 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
   const busy = ctx.status !== GameState.AWAITING_INPUT
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
       <header className="flex items-center gap-3">
-        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-10 w-10 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
+        <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
         </button>
         <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Words progress">

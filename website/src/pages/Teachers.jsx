@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users, School, Search } from 'lucide-react'
-import { Section, Card, CtaButton, Field, inputCls, inputStyle, Reveal } from '../components.jsx'
+import { Card, CtaButton, Field, Picture, Reveal, Section, inputCls, inputStyle } from '../components.jsx'
 import { submitForm } from '../api.js'
 import { API_URL, APP_URL } from '../config.js'
 import { SUBJECTS, SUBJECT_LABEL } from '../subjects.js'
@@ -273,6 +273,7 @@ function TwoWays() {
 export default function Teachers() {
   const [form, setForm] = useState({ name: '', email: '', languages: [], subjectTags: [], subjects: '', location: '', experience: '', message: '' })
   const [state, setState] = useState({ status: 'idle', error: '' })
+  const [mailto, setMailto] = useState(false)
 
   const toggleLang = (id) => setForm((f) => ({
     ...f, languages: f.languages.includes(id) ? f.languages.filter((l) => l !== id) : [...f.languages, id],
@@ -283,9 +284,17 @@ export default function Teachers() {
 
   const submit = async (e) => {
     e.preventDefault()
+    // The toggles are aria-pressed buttons, so HTML validation cannot see
+    // them - an application with neither language nor subject used to be
+    // accepted and was useless to match on.
+    if (!form.languages?.length) {
+      setState({ status: 'idle', error: t('teNeedLang', 'Please choose at least one language you can teach.') })
+      return
+    }
     setState({ status: 'busy', error: '' })
     try {
-      await submitForm('/api/teachers/apply', form, 'Teacher application - eGeez')
+      const r = await submitForm('/api/teachers/apply', form, 'Teacher application - eGeez')
+      setMailto(!!r?.mailto)
       setState({ status: 'done', error: '' })
     } catch (err) {
       setState({ status: 'idle', error: err.message })
@@ -308,7 +317,7 @@ export default function Teachers() {
       <Section mark="መ" eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
         <div className="mb-8 grid items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
           <div className="phone mx-auto w-full max-w-[260px]">
-            <img src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
+            <Picture src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
               alt={t('teShotAlt', 'Kokeb’s Bingo in the app: play solo, host for a class, or join a game')} />
           </div>
           <p className="lede text-center md:text-left" style={{ color: 'var(--muted)' }}>
@@ -319,7 +328,7 @@ export default function Teachers() {
           {[
             [Link2, t('teT1t', 'Class links'), t('teT1b', 'Invite a whole class with one link or QR - no student accounts, no passwords, works on any phone.')],
             [ClipboardList, t('teT2t', 'Assignments + receipts'), t('teT2b', 'Send a letter-range assignment; each child’s app returns a receipt of what they mastered. You see progress without collecting data.')],
-            [CalendarRange, t('teT3t', 'Term Plan'), t('teT3b', 'A syllabus organizer that lays your term out week by week over the journey - review packs included.')],
+            [CalendarRange, t('teT3t', 'Term Plan'), t('teT3b', 'A syllabus organizer that lays your term out week by week over the journey.')],
             [MonitorPlay, t('teT4t', 'TV classroom display'), t('teT4b', 'Project a big, chant-along display for in-person or video classes.')],
             [Grid3x3, t('teT5t', 'Class Bingo + group games'), t('teT5b', 'Host live listening games: you pick the letters and the winning shape, kids scan a QR for unique cards, and you call the letters - show or voice-only.')],
           ].map(([Icon, title, body], i) => (
@@ -347,7 +356,7 @@ export default function Teachers() {
             <div className="text-center">
               <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
               <h3 className="mt-2 font-black">{t('teThanks', 'Application received!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{t('teThanksB', 'We read every application and will reply by email.')}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('teThanksB', 'We read every application and will reply by email.')}</p>
             </div>
           ) : (
             <form onSubmit={submit} className="flex flex-col gap-4 text-left">

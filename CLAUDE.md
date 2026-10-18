@@ -107,6 +107,12 @@ src/
   Runner3D.jsx                 # the WebGL Letter Runner scene (three.js);
                                # lazy-loaded with FidelSkylands so the 3D
                                # stack stays off the home path
+  components/ProfilePicker.jsx # "Who is playing?": kid profiles - pick/switch,
+                               # add (name + avatar + optional age/grade), and
+                               # edit/delete behind the ParentalGate. Mechanics
+                               # (swap slots, migration, 6-child cap) live in
+                               # platform/profiles.js; every child-progress key
+                               # must be in SWAP_KEYS or profilesKids.test.js fails
   journey.js                   # unified Journey model: nodes, fq.journey.v1
                                # progress, rewards, legacy migration (pure)
   journey.test.js
@@ -154,6 +160,9 @@ npm run lint
 - **Audio is optional by contract.** Every sound call tries the real mp3
   first and falls back to Web Audio tones. Never make a feature hard-depend
   on an mp3 existing. No network calls anywhere — the PWA works offline.
+  One opt-in exception: the teacher class view (docs/practice-tracking.md)
+  talks to `api/` only when the build sets `VITE_API_URL` AND a grown-up
+  joins a class or a teacher signs in; everything else stays local.
 - **Character art is drawn in code** (canvas draw-functions shared between
   DOM sprites and WebGL textures). No image assets.
 - **ESLint:** `react/no-unknown-property` and `only-export-components` are
@@ -184,6 +193,120 @@ npm run lint
 
 See `docs/architecture-review.md` for the full must-do list and the
 current scorecard.
+
+## Standing rules these repos are reviewed against
+
+These came out of the review rounds; a change that breaks one is a
+regression even if nothing fails. Check them before saying a task is done.
+
+### The website may never out-claim the app
+
+`website/` imports nothing from `src/`, so it drifts silently. Every
+user-visible claim on the site must be checkable against app code:
+
+- **Numbers are per-pack.** Amharic is 33 families / 231 forms; Tigrinya is
+  34 / 238 (the extra ቐ). Never print one as "all letters" without saying
+  which language.
+- **Features that are pack-conditional must say so.** Stories are
+  Amharic-only (`platform/stories.js`, every entry `pack: 'am'`), and the
+  Tigrinya journey has no STORY nodes at all.
+- **eGeez is PAID UPFRONT** (1.3.1+): a one-time $12.99 set in App Store
+  Connect / Play Console unlocks every path and Bible book
+  (`platform/license.js` `fullAccess()` is always true) with **1 kid
+  profile**. The ONLY in-app purchases are extra kids profiles
+  (`platform/profileSlots.js`): non-consumables bought in order,
+  `profile_slot_2` $4.99, `profile_slot_3`..`profile_slot_6` $2.49 each, max
+  6; 1.2 `family_pack` owners keep all 6. No trial, no daily pass, no unlock
+  code, no subscription, no web checkout; learning content is never gated.
+  The site's prices live in `website/src/config.js` (`APP_PRICE`,
+  `SECOND_PROFILE_PRICE`, `EXTRA_PROFILE_PRICE`) and must match the stores;
+  `src/platform/paidUpfront.test.js` guards the app, the site and the
+  native config.
+- **Purchases only behind the parental gate, only through the store.**
+  `platform/iap.js` (`@capgo/native-purchases`, StoreKit 2 / Play Billing)
+  can only sell the next `profile_slot_N`; `components/ProfileSlotOffer.jsx`
+  is the only buy UI, always with Restore purchases, and is only rendered
+  behind the gate. `ios/App/ci_scripts/ci_post_clone.sh` fails Xcode Cloud
+  if `VITE_STORE_IAP` / `VITE_MONETIZE` is set, if `full_app` is in the
+  bundle or if `profile_slot_` is missing. Keep both.
+- **No invented proof.** No user counts, awards, testimonials or test
+  totals unless they are real and sourced.
+- **A promise on a sales page must match the Terms page**, and no
+  `[bracketed placeholder]` ships next to a live checkout.
+
+### A game must be playable before it is offered
+
+- **No game is shown before its board can be filled.** Every side game
+  declares its minimum in `platform/gameReadiness.js` and the Backpack hides
+  the tile until then; the thresholds are asserted against the real data
+  (board sizes, word lists) in `gameReadiness.test.js`, never guessed. With
+  one family learned, Match used to deal a "pair" of the same letter twice
+  and Bingo repeated it across nine cells - a game that cannot be played is
+  worse than a game that is not there yet. The ALL letter-scope stays the
+  deliberate override.
+- **One voice per interaction.** A tap may speak the letter, or chime and
+  let the next call speak - never both. Two letters spoken back to back
+  (what you placed, then what is wanted next) reads to a child as a
+  correction even when they were right.
+- **Never require precision a four-year-old does not have.** A drag target
+  gets slack around it and, wherever the choice can be expressed in taps,
+  a tap path exists alongside the drag (`FidelLineup`: pick the letter, then
+  tap its place). Auto-placing on the tap is not the fix when the placement
+  IS the question being asked.
+
+### Accessibility is measured, not eyeballed
+
+- Text contrast >= 4.5:1 (>= 3:1 at 18.66px bold / 24px), and focus
+  indicators >= 3:1 against what they sit on - **in both colour schemes**.
+  Sample the rendered pixels; do not trust the palette.
+- Colour tokens split by ROLE: `--accent` is a fill, `--accent-text` is
+  readable text, `--focus` is the ring. A fill colour is not a text colour.
+- `aria-modal` obliges a real focus trap plus an inert background.
+- One `<h1>` per page, no skipped heading levels, every control labelled,
+  every image `alt` (or `alt="" aria-hidden`), a skip link to `#main`.
+
+### A form must never lie about what happened
+
+- Success UI only after the server actually accepted it. `submitForm`
+  returns `{ mailto: true }` when `VITE_API_URL` is unset - that is a mail
+  draft, not a signup, and must read differently.
+- Every failure path renders a `role="alert"`; no `catch {}` that swallows.
+- Transport failures get human copy (`UNREACHABLE`), never the browser's
+  raw "Failed to fetch".
+- A definitive 4xx is terminal - do not retry it behind a spinner.
+
+### API defaults must fail safe
+
+- **Never trust a header for identity.** Rate limiting keys on `req.ip`,
+  which only means anything when `trust proxy` matches the real deploy
+  (`TRUST_PROXY`, empty by default).
+- Auth paths cost the same whether or not the account exists - no timing
+  oracle - and password hashing runs OFF the event loop (`api/password.js`
+  uses `crypto.scrypt`; a pure-JS hash blocks the single thread and makes
+  login an unauthenticated CPU amplifier).
+- Anything an anonymous caller supplies is allow-listed before it reaches
+  an email subject, a query, or the store.
+- Fail fast at boot on config that would silently corrupt production
+  (e.g. `JWT_SECRET`). Do not gate those checks
+  on `NODE_ENV` - hosts often leave it unset.
+- Client-caused body errors are 4xx, not 500.
+- Destructive scripts refuse to run without an explicit confirm env var.
+
+### SEO on a client-rendered SPA
+
+- Every indexable route needs baked head tags. `src/routeMeta.js` is the
+  source of truth and `scripts/prerender.mjs` writes them at build time;
+  add a route to both, plus `public/sitemap.xml`.
+- Descriptions 50-160 chars (the prerender script fails the build
+  otherwise). Unknown URLs, per-buyer and account pages are `noindex`.
+
+### Weight on the landing path
+
+- No animation library on the critical path. Scroll reveals are
+  IntersectionObserver + CSS (`.reveal`), and every motion class is a
+  no-op under `prefers-reduced-motion`.
+- Content is never hidden by a mechanism that JS failure leaves closed -
+  `.reveal` has a `<noscript>` and a no-IntersectionObserver fallback.
 
 ## Branching
 
