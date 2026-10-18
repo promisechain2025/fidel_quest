@@ -5,7 +5,8 @@
      #report=<payload>.<sig>
    payload = b64url JSON {v:1, n: name, c: classCode|'', g: goalMin|0,
              at: day made, d: [[day, min, sessions, items, answered, correct,
-             lessons, games, flags], ...]}
+             lessons, games, flags, prayerMin], ...]} (prayerMin optional:
+             older links decode it as 0)
    sig     = HMAC-SHA256(REPORT_KEY, payload), first 12 bytes, b64url.
    The teacher's device recomputes the HMAC: any edit to a number, name or
    day breaks it and the viewer says so. The human check code (first 8 sig
@@ -19,7 +20,7 @@
    ========================================================================== */
 import { b64urlEncode, b64urlDecode, sanitizeName } from '../utils/challenge'
 import { sanitizeClassCode } from './classroom'
-import { lastDays, activeMinutes, flagCount, clampGoal } from './practice'
+import { lastDays, activeMinutes, prayerMinutes, flagCount, clampGoal } from './practice'
 import { linkBase } from '../utils/linkBase'
 
 const REPORT_KEY = 'egeez-practice-report-v1:7f3a9c1e5b2d'
@@ -44,7 +45,7 @@ const validDay = (d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)
 export function reportPayload({ name, code = '', goal = null, days, today }) {
   return {
     v: 1, n: sanitizeName(name) || '?', c: sanitizeClassCode(code), g: clampGoal(goal) || 0, at: today,
-    d: lastDays(days, today, 7).map((r) => [r.day, activeMinutes(r), r.sessions, r.items, r.answered, r.correct, r.lessons, r.games, flagCount(r)]),
+    d: lastDays(days, today, 7).map((r) => [r.day, activeMinutes(r), r.sessions, r.items, r.answered, r.correct, r.lessons, r.games, flagCount(r), prayerMinutes(r)]),
   }
 }
 
@@ -73,7 +74,7 @@ export async function verifyReport(token) {
     const report = {
       name: sanitizeName(p.n) || '?', code: sanitizeClassCode(p.c), goal: clampGoal(p.g), at: validDay(p.at) ? p.at : '',
       days: p.d.filter((r) => Array.isArray(r) && validDay(r[0])).slice(0, 7).map((r) => ({
-        day: r[0], minutes: n0(r[1]), sessions: n0(r[2]), items: n0(r[3]), answered: n0(r[4]), correct: n0(r[5]), lessons: n0(r[6]), games: n0(r[7]), flags: n0(r[8]),
+        day: r[0], minutes: n0(r[1]), sessions: n0(r[2]), items: n0(r[3]), answered: n0(r[4]), correct: n0(r[5]), lessons: n0(r[6]), games: n0(r[7]), flags: n0(r[8]), prayer: n0(r[9]),
       })),
     }
     const verified = (await hmac(body)) === sig

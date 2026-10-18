@@ -34,7 +34,7 @@ function models() {
     studentId: { type: String, required: true },
     classCode: { type: String, required: true, index: true },
     day: { type: String, required: true },
-    activeMin: Number, sessions: Number, items: Number, answered: Number, correct: Number,
+    activeMin: Number, prayerMin: Number, sessions: Number, items: Number, answered: Number, correct: Number,
     lessons: Number, games: Number,
     flags: { rapidTap: Number, randomTap: Number, audioLoop: Number },
   }, { timestamps: true })
@@ -52,9 +52,10 @@ const mem = { classes: [], students: [], days: [], seq: 0 }
 const id = () => String(++mem.seq)
 const pickClass = (c) => ({ code: c.code, name: c.name || '', goalMin: c.goalMin, teacherId: c.teacherId })
 const pickStudent = (s) => ({ id: String(s._id), name: s.name, classCode: s.classCode })
-const DAY_FIELDS = ['day', 'activeMin', 'sessions', 'items', 'answered', 'correct', 'lessons', 'games', 'flags']
+const DAY_FIELDS = ['day', 'activeMin', 'prayerMin', 'sessions', 'items', 'answered', 'correct', 'lessons', 'games', 'flags']
 const pickDay = (d) => Object.fromEntries(DAY_FIELDS.map((k) => [k, k === 'flags' ? { rapidTap: d.flags?.rapidTap || 0, randomTap: d.flags?.randomTap || 0, audioLoop: d.flags?.audioLoop || 0 } : d[k]]))
 
+const withDefaults = (d) => ({ ...d, prayerMin: d.prayerMin || 0 })
 export const practiceStore = {
   async createClass(teacherId, { name, goalMin }) {
     for (let i = 0; i < 8; i++) {
@@ -131,7 +132,7 @@ export const practiceStore = {
     const rows = useMongo
       ? await models().PDay.find({ classCode: code, day: { $gte: from, $lte: to } }).lean()
       : mem.days.filter((d) => d.classCode === code && d.day >= from && d.day <= to)
-    return rows.map((d) => ({ studentId: d.studentId, ...pickDay(d) }))
+    return rows.map((d) => withDefaults({ studentId: d.studentId, ...pickDay(d) }))
   },
   _reset() { mem.classes = []; mem.students = []; mem.days = []; mem.seq = 0 },
 }

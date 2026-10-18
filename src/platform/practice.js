@@ -38,15 +38,21 @@ export const LOOP_FREE = 3
 export const KEEP_DAYS = 90
 export const GOAL_MIN = 5
 export const GOAL_MAX = 180
+/* Prayer pages: kids memorize by reading/listening, so time counts with no
+   interaction while a prayer page is open+visible or a recording plays.
+   Safety cap: after PRAYER_CAP_MS with no page change, tap or audio event
+   the clock pauses (a phone left open on a prayer page). */
+export const PRAYER_CAP_MS = 10 * 60000
 
 export const emptyDay = (day) => ({
-  day, activeMs: 0, sessions: 0, items: 0, answered: 0, correct: 0,
+  day, activeMs: 0, prayerMs: 0, sessions: 0, items: 0, answered: 0, correct: 0,
   lessons: 0, games: 0, flags: { rapidTap: 0, randomTap: 0, audioLoop: 0 },
 })
 
 /** Runtime (never persisted): what the next event needs to know. */
 export const emptyRuntime = () => ({
   visible: true, windowEnd: -Infinity, accountedAt: null, lastInteractionAt: null,
+  prayerOpen: false, prayerAudio: false, prayerLast: null,
   taps: [], answers: [], listensSinceInput: 0, rapidFlagged: false, randomFlagged: false, loopFlagged: false,
 })
 
@@ -60,21 +66,36 @@ function dayRow(days, t) {
   return days[d]
 }
 
-/** Credit visible time inside the open window up to t, splitting at
-    midnight so each day gets its own share. */
-function credit(rt, days, t) {
-  const from = rt.accountedAt
-  rt.accountedAt = t
-  if (from == null || !rt.visible) return
-  const end = Math.min(t, rt.windowEnd)
+/** Where the prayer window ends: open-ended while a recording plays,
+    otherwise PRAYER_CAP_MS after the last prayer activity. */
+export function prayerEnd(rt) {
+  if (!rt.prayerOpen && !rt.prayerAudio) return -Infinity
+  if (rt.prayerAudio) return Infinity
+  return (rt.prayerLast ?? -Infinity) + PRAYER_CAP_MS
+}
+
+function addSpan(days, from, end, field) {
   let a = from
   while (a < end) {
     const d = new Date(a)
     const midnight = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime()
     const b = Math.min(end, midnight)
-    dayRow(days, a).activeMs += b - a
+    dayRow(days, a)[field] += b - a
     a = b
   }
+}
+
+/** Credit visible time up to t: the interaction window and the prayer window
+    both start at `from`, so total = the longer one, prayer = its own span.
+    Split at midnight so each day gets its own share. */
+function credit(rt, days, t) {
+  const from = rt.accountedAt
+  rt.accountedAt = t
+  if (from == null || !rt.visible) return
+  const pEnd = Math.min(t, prayerEnd(rt))
+  const end = Math.max(Math.min(t, rt.windowEnd), pEnd)
+  addSpan(days, from, end, 'activeMs')
+  addSpan(days, from, pEnd, 'prayerMs')
 }
 
 /** Is this tap part of a rapid same-spot run? Mutates rt.taps. */
@@ -115,6 +136,23 @@ export function step(state, ev) {
       break
     case 'visible':
       rt.visible = true
+      if (rt.prayerOpen) rt.prayerLast = ev.t // the page is on screen again
+      break
+    // prayer hooks (PrayerBook): open/close the page, turn a page, audio state
+    case 'prayerOpen':
+      rt.prayerOpen = true
+      rt.prayerLast = ev.t
+      break
+    case 'prayerPage':
+      if (rt.prayerOpen) rt.prayerLast = ev.t
+      break
+    case 'prayerClose':
+      rt.prayerOpen = false
+      rt.prayerAudio = false
+      break
+    case 'prayerAudio':
+      rt.prayerAudio = !!ev.playing
+      rt.prayerLast = ev.t
       break
     case 'tap': {
       if (!rt.visible) break
@@ -123,6 +161,7 @@ export function step(state, ev) {
         break // does not extend the window
       }
       rt.rapidFlagged = false
+      if (rt.prayerOpen) rt.prayerLast = ev.t
       rt.listensSinceInput = 0
       rt.loopFlagged = false
       openWindow(rt, days, ev.t)
@@ -170,6 +209,7 @@ export const fold = (events, state = emptyState()) => events.reduce(step, state)
 /* ── derived numbers ── */
 
 export const activeMinutes = (row) => Math.floor((row?.activeMs || 0) / 60000)
+export const prayerMinutes = (row) => Math.floor((row?.prayerMs || 0) / 60000)
 export const accuracyPct = (row) => (row?.answered ? Math.round((100 * row.correct) / row.answered) : null)
 export const flagCount = (row) => (row ? row.flags.rapidTap + row.flags.randomTap + row.flags.audioLoop : 0)
 

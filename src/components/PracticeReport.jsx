@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronLeft, Share2, Users, Flame } from 'lucide-react'
 import { t } from '../platform/i18n'
-import { lastDays, activeMinutes, practiceStreak, loadPractice, setPracticeGoal, flagCount } from '../platform/practice'
+import { lastDays, activeMinutes, prayerMinutes, practiceStreak, loadPractice, setPracticeGoal, flagCount } from '../platform/practice'
 import { currentPracticeDays, subscribePractice } from '../platform/practiceTracker'
 import { reportPayload, reportUrl, checkCode } from '../platform/practiceReport'
 import { loadSync, joinClassSync, leaveSync, flushSync, apiBase } from '../platform/practiceSync'
@@ -96,7 +96,7 @@ export default function PracticeReport({ onBack, today: todayProp }) {
     const url = await reportUrl(reportPayload({ name: nickname() || sync?.name || '?', code: sync?.code || '', goal, days, today }), appLinkUrl())
     setShare({ url, check: checkCode(url.split('#report=')[1]) })
   }
-  const tableDays = rows.map((r) => ({ day: r.day, minutes: activeMinutes(r), sessions: r.sessions, items: r.items, answered: r.answered, correct: r.correct, lessons: r.lessons, games: r.games, flags: flagCount(r) }))
+  const tableDays = rows.map((r) => ({ day: r.day, minutes: activeMinutes(r), prayer: prayerMinutes(r), sessions: r.sessions, items: r.items, answered: r.answered, correct: r.correct, lessons: r.lessons, games: r.games, flags: flagCount(r) }))
   return (
     <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6" data-testid="practice-report">
       <header className="flex items-center gap-3">
@@ -116,6 +116,7 @@ export default function PracticeReport({ onBack, today: todayProp }) {
           </div>
           <div className="text-sm font-bold">
             <p className="text-lg font-black">{goal ? t('prToday', 'Today: {m} of {g} min', { m: activeMinutes(todayRow), g: goal }) : t('prTodayNoGoal', 'Today: {m} min', { m: activeMinutes(todayRow) })}</p>
+            <p style={{ color: 'var(--sky)' }} data-testid="prayer-today">{t('prPrayerToday', 'incl. {p} min on prayer pages', { p: prayerMinutes(todayRow) })}</p>
             <p style={{ color: 'var(--muted)' }}>{t('prTodayDetail', '{s} sessions · {i} practiced', { s: todayRow.sessions, i: todayRow.items })}</p>
             <p className="mt-1 flex items-center gap-1" style={{ color: 'var(--accent)' }}><Flame className="h-4 w-4" fill="currentColor" />{t('prStreak', '{n}-day practice streak', { n: practiceStreak(days, today) })}</p>
           </div>

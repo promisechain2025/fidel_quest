@@ -53,6 +53,16 @@ export function notePractice(type, extra = {}) {
   } catch { /* never break play */ }
 }
 
+/** Prayer-page hooks (docs/practice-tracking.md section 1b). The prayer book
+    calls open() on mount, page() on every page turn, audio(true|false) when
+    a recording starts/stops/ends, close() on unmount. */
+export const prayerTracking = Object.freeze({
+  open: () => notePractice('prayerOpen'),
+  page: () => notePractice('prayerPage'),
+  audio: (playing) => notePractice('prayerAudio', { playing: !!playing }),
+  close: () => notePractice('prayerClose'),
+})
+
 /** Current in-memory days (fresher than storage). */
 export function currentPracticeDays() {
   return ensure().days

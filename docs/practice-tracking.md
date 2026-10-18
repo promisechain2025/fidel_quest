@@ -25,6 +25,42 @@ fully unit-tested (`practice.test.js`).
   (lesson).
 * **Streak.** The number of consecutive days with at least one active minute.
 
+### 1b. Prayer pages (memorizing, so no interaction is needed)
+
+Kids memorize prayers by reading along and listening, so prayer time follows
+its own rule (Yosief, Oct 2026):
+
+* Time counts as **active** while a prayer page is open and visible, or while a
+  prayer recording is playing. No tap is needed.
+* It stops at once when the app is backgrounded, the tab is hidden or the
+  screen is locked, even if audio is still playing.
+* **Safety cap:** `PRAYER_CAP_MS` (10 minutes). If nothing happens for 10
+  minutes (no page turn, tap, or recording starting or stopping), the clock
+  pauses, so a phone left open on a prayer page does not log an hour. While a
+  recording plays, the cap does not apply; it restarts when the recording
+  ends. Coming back to the page after a hide restarts the cap.
+* Prayer time is stored as `prayerMs` and is **included in** `activeMs` (the
+  total). Overlap with normal tap time is never counted twice.
+* The parent report shows "incl. N min on prayer pages" and a book-icon column.
+  The teacher dashboard has a book-icon column with weekly and daily prayer
+  minutes. Sync and signed reports carry `prayerMin`, and older links decode
+  it as 0.
+* **Hooks:** the prayer feature (PR #57, not on main yet) is wired with
+  `prayerTracking` from `platform/practiceTracker.js`:
+  ```js
+  useEffect(() => { prayerTracking.open(); return () => prayerTracking.close() }, [])
+  // on every page turn:            prayerTracking.page()
+  // recording play / pause / ended: prayerTracking.audio(true | false)
+  ```
+
+### 1c. Kid study timer
+
+There's a small clock button in the home HUD (`StudyTimer.jsx`). It is
+**hidden by default**: one tap shows today's study time as h:mm, with the goal
+ring when a goal is set and a star when the goal is met. Another tap hides it.
+The choice is remembered per child in `fq.studyTimer.v1` (in `SWAP_KEYS`). It
+uses only icons and digits, with no words.
+
 ### Anti-cheat flags (they inform the teacher and never block the child)
 
 | Flag | Rule | Effect on minutes |
@@ -54,10 +90,8 @@ exported constants.
   same as before.
 * A class-view link also carries `y:1`. Opening it joins the class **and**
   turns on sync with the child's nickname.
-* The child sees `PracticeRing` in the bottom HUD next to the Kokeb streak: a
-  ring, the minute count, and a star when the goal is met. There is **no text**
-  (the aria-label is Amharic), so the kid UI has no English. The ring is
-  hidden until a goal exists.
+* The child sees the goal ring inside the study timer (section 1c) once they
+  tap to show it.
 
 ## 4. Parent report and tamper-evident share
 

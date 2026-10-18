@@ -88,7 +88,7 @@ import { installPracticeTracker, notePractice } from './platform/practiceTracker
 import { setPracticeGoal } from './platform/practice'
 import { joinClassSync, flushSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
-import PracticeRing from './components/PracticeRing'
+import StudyTimer from './components/StudyTimer'
 import { readClassroomFromHash, joinClass, buildAssignmentQueue, storePendingAssignment, loadPendingAssignments, markAssignmentDone, pendingAssignmentKey, receiptUrl, loadTeacher, classUrl } from './platform/classroom'
 import { scheduleAssignmentDue, cancelAssignmentDue } from './platform/notify'
 
@@ -2850,7 +2850,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 <KokebSvg size={30} />
                 <span className="text-sm font-black tabular-nums" style={{ color: 'var(--accent)' }}>{streak}</span>
               </button>
-              <PracticeRing size={38} />
+              <StudyTimer />
               {coach?.warmupState && coach.warmupState !== 'none' && coach.warmupState !== 'done' && (
                 <button type="button" onClick={onWarmup} className={`chunk flex shrink-0 items-center gap-1 rounded-2xl px-3 py-2.5 text-sm font-black ${FOCUS}`} style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '2px solid var(--go)', boxShadow: '0 3px 0 var(--go)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                   <Sparkles className="h-4 w-4" aria-hidden="true" />{t('warmTitle', 'Warm-up')}

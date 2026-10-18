@@ -105,7 +105,7 @@ router.get('/classes/:code/report', ...teacher, async (req, res, next) => {
         return {
           id: s.id, name: s.name, days,
           total: {
-            activeMin: sum('activeMin'), sessions: sum('sessions'), items: sum('items'),
+            activeMin: sum('activeMin'), prayerMin: sum('prayerMin'), sessions: sum('sessions'), items: sum('items'),
             accuracy: answered ? Math.round((100 * sum('correct')) / answered) : null,
             daysMetGoal: days.filter((d) => d.activeMin >= c.goalMin).length,
             flags: days.reduce((n, d) => n + d.flags.rapidTap + d.flags.randomTap + d.flags.audioLoop, 0),
@@ -133,8 +133,9 @@ router.post('/join', joinLimit, async (req, res, next) => {
 export function cleanRow(r) {
   if (!r || !DAY_RE.test(r.day)) return null
   const answered = int(r.answered, 0, 20000)
+  const activeMin = int(r.activeMin, 0, 1440)
   return {
-    day: r.day,
+    day: r.day, prayerMin: int(r.prayerMin, 0, activeMin),
     activeMin: int(r.activeMin, 0, 1440), sessions: int(r.sessions, 0, 500), items: int(r.items, 0, 20000),
     answered, correct: int(r.correct, 0, answered), lessons: int(r.lessons, 0, 500), games: int(r.games, 0, 500),
     flags: { rapidTap: int(r.flags?.rapidTap, 0, 500), randomTap: int(r.flags?.randomTap, 0, 500), audioLoop: int(r.flags?.audioLoop, 0, 500) },

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   fold, emptyState, activeMinutes, accuracyPct, practiceStreak, lastDays, clampGoal, goalProgress,
-  loadPractice, savePractice, setPracticeGoal, IDLE_MS, RAPID_RUN, LOOP_RUN, RANDOM_WINDOW, PRACTICE_KEY,
+  loadPractice, savePractice, prayerMinutes, PRAYER_CAP_MS, setPracticeGoal, IDLE_MS, RAPID_RUN, LOOP_RUN, RANDOM_WINDOW, PRACTICE_KEY,
 } from './practice'
 import { PROGRESS_KEYS } from './progress'
 import { SWAP_KEYS } from './profiles'
@@ -161,4 +161,34 @@ describe('storage', () => {
     expect(SWAP_KEYS).toContain('fq.classSync.v1')
   })
   it('state starts empty', () => { expect(emptyState().days).toEqual({}) })
+})
+
+describe('prayer pages (memorizing: no interaction needed)', () => {
+  const M = 60 * S
+  it('counts while a prayer page is open and visible, as prayer and total', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 5 * M }])
+    expect(row(st).activeMs).toBe(5 * M)
+    expect(prayerMinutes(row(st))).toBe(5)
+  })
+  it('pauses after the 10-minute safety cap with no page turn, tap or audio', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'tick', t: T0 + 60 * M }])
+    expect(row(st).prayerMs).toBe(PRAYER_CAP_MS)
+  })
+  it('page turns and taps renew the cap', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerPage', t: T0 + 8 * M }, { type: 'tap', t: T0 + 16 * M, x: 1, y: 1 }, { type: 'tick', t: T0 + 60 * M }])
+    expect(row(st).prayerMs).toBe(26 * M)
+  })
+  it('a playing recording counts past the cap until it stops', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'tick', t: T0 + 25 * M }, { type: 'prayerAudio', t: T0 + 25 * M, playing: false }, { type: 'tick', t: T0 + 60 * M }])
+    expect(row(st).prayerMs).toBe(35 * M)
+  })
+  it('stops when hidden / backgrounded / locked, even with audio playing', () => {
+    const st = fold([{ type: 'prayerOpen', t: T0 }, { type: 'prayerAudio', t: T0, playing: true }, { type: 'hidden', t: T0 + 2 * M }, { type: 'tick', t: T0 + 30 * M }])
+    expect(row(st).activeMs).toBe(2 * M)
+  })
+  it('stops when the page closes; normal play is not prayer and is not double counted', () => {
+    const st = fold([{ type: 'tap', t: T0, x: 0, y: 0 }, { type: 'prayerOpen', t: T0 + 10 * S }, { type: 'prayerClose', t: T0 + 2 * M }, { type: 'tick', t: T0 + 20 * M }])
+    expect(row(st).activeMs).toBe(2 * M)
+    expect(row(st).prayerMs).toBe(2 * M - 10 * S)
+  })
 })

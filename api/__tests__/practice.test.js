@@ -21,7 +21,7 @@ async function account(email, role = 'teacher', verify = true) {
   if (verify) await request(app).post('/api/auth/verify').send({ token: store._peekVerifyToken(email) })
   return res.body.token
 }
-const row = (day, activeMin, extra = {}) => ({ day, activeMin, sessions: 2, items: 40, answered: 30, correct: 24, lessons: 1, games: 1, flags: { rapidTap: 0, randomTap: 0, audioLoop: 0 }, ...extra })
+const row = (day, activeMin, extra = {}) => ({ day, activeMin, prayerMin: 20, sessions: 2, items: 40, answered: 30, correct: 24, lessons: 1, games: 1, flags: { rapidTap: 0, randomTap: 0, audioLoop: 0 }, ...extra })
 
 test('only verified teachers can create classes', async () => {
   assert.equal((await request(app).post('/api/practice/classes').send({})).status, 401)
@@ -63,6 +63,7 @@ test('teacher creates a class, child joins with the code and syncs; dashboard sh
   assert.equal(s.name, 'Selam')
   assert.equal(s.days.length, 2)
   assert.equal(s.total.activeMin, 95)
+  assert.equal(s.total.prayerMin, 40)
   assert.equal(s.total.daysMetGoal, 1)
   assert.equal(s.total.flags, 3)
   assert.equal(s.total.accuracy, 80)
@@ -95,5 +96,6 @@ test('rows are clamped to possible values', () => {
   assert.equal(r.activeMin, 1440)
   assert.equal(r.correct, 10)
   assert.equal(r.flags.rapidTap, 0)
+  assert.equal(cleanRow({ day: '2026-10-18', activeMin: 10, prayerMin: 50 }).prayerMin, 10)
   assert.equal(cleanRow({ day: 'nope' }), null)
 })

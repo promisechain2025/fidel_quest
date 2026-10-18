@@ -11,7 +11,7 @@
    Grown-up area: follows Teacher Mode conventions (t() with fallbacks).
    ========================================================================== */
 import { useCallback, useEffect, useState } from 'react'
-import { BarChart3, ShieldCheck, ShieldAlert, Flag, LogOut, Plus, RefreshCw } from 'lucide-react'
+import { BookOpen, BarChart3, ShieldCheck, ShieldAlert, Flag, LogOut, Plus, RefreshCw } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { apiBase } from '../platform/practiceSync'
 import { classUrl } from '../platform/classroom'
@@ -106,9 +106,9 @@ export function dashboardRows(report, view, day) {
       const by = Object.fromEntries(s.days.map((r) => [r.day, r]))
       if (view === 'day') {
         const r = by[day]
-        return { id: s.id, name: s.name, minutes: r?.activeMin || 0, sessions: r?.sessions || 0, items: r?.items || 0, accuracy: r?.answered ? Math.round((100 * r.correct) / r.answered) : null, flags: flagsOf(r) }
+        return { id: s.id, name: s.name, minutes: r?.activeMin || 0, prayer: r?.prayerMin || 0, sessions: r?.sessions || 0, items: r?.items || 0, accuracy: r?.answered ? Math.round((100 * r.correct) / r.answered) : null, flags: flagsOf(r) }
       }
-      return { id: s.id, name: s.name, cells: days.map((x) => by[x]?.activeMin || 0), minutes: s.total.activeMin, items: s.total.items, accuracy: s.total.accuracy, flags: s.total.flags, met: s.total.daysMetGoal }
+      return { id: s.id, name: s.name, cells: days.map((x) => by[x]?.activeMin || 0), minutes: s.total.activeMin, prayer: s.total.prayerMin || 0, items: s.total.items, accuracy: s.total.accuracy, flags: s.total.flags, met: s.total.daysMetGoal }
     }),
   }
 }
@@ -164,6 +164,7 @@ function Dashboard({ cls, auth, onGoal, preset = null }) {
                 {view === 'week'
                   ? table.days.map((d) => <th key={d} className="px-1 text-center tabular-nums">{d.slice(8)}</th>)
                   : <><th className="text-center">{t('ptMinutes', 'Minutes')}</th><th className="text-center">{t('ptSessions', 'Sessions')}</th></>}
+                <th className="px-1 text-center"><BookOpen className="mx-auto h-3.5 w-3.5" aria-label={t('ptPrayer', 'Prayer minutes')} /></th>
                 <th className="px-1 text-center">{view === 'week' ? t('ptTotal', 'Total') : t('ptPractice', 'Practice')}</th>
                 <th className="px-1 text-center">{t('ptAccuracy', 'Accuracy')}</th>
                 <th className="px-1 text-center"><Flag className="mx-auto h-3.5 w-3.5" aria-label={t('ptFlags', 'Flags')} /></th>
@@ -176,6 +177,7 @@ function Dashboard({ cls, auth, onGoal, preset = null }) {
                   {view === 'week'
                     ? r.cells.map((m, i) => <td key={i} className="rounded-lg px-1 py-1 text-center font-black tabular-nums" style={cellTone(m, goal)}>{m || '·'}</td>)
                     : <><td className="rounded-lg px-1 py-1 text-center font-black tabular-nums" style={cellTone(r.minutes, goal)}>{r.minutes}/{goal}</td><td className="text-center tabular-nums">{r.sessions}</td></>}
+                  <td className="px-1 text-center font-bold tabular-nums" data-testid="prayer-cell" style={{ color: 'var(--sky)' }}>{r.prayer ? `${r.prayer}′` : '·'}</td>
                   <td className="whitespace-nowrap px-1 text-center font-bold tabular-nums">{view === 'week' ? `${r.minutes}′ · ${r.met}/7` : r.items}</td>
                   <td className="px-1 text-center tabular-nums">{r.accuracy == null ? '–' : `${r.accuracy}%`}</td>
                   <td className="px-1 text-center font-black tabular-nums" style={{ color: r.flags ? 'var(--bad-ink)' : 'var(--muted)' }}>{r.flags || ''}</td>
@@ -184,7 +186,7 @@ function Dashboard({ cls, auth, onGoal, preset = null }) {
             </tbody>
           </table>
           <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
-            {t('ptLegend', 'Minutes are active time only: the clock stops after 30 seconds without a tap or answer, and when the app is hidden or the screen is locked. Green = goal met. Flags mark rapid same-spot tapping, random fast guessing, or audio looping with no input - worth a gentle check, never a punishment.')}
+            {t('ptLegend', 'Minutes are active time only: the clock stops after 30 seconds without a tap or answer, and when the app is hidden or the screen is locked. Prayer-page time (book icon) counts without taps while the page is open or a recording plays, pausing after 10 minutes with no page turn, tap or audio; it is included in the total. Green = goal met. Flags mark rapid same-spot tapping, random fast guessing, or audio looping with no input - worth a gentle check, never a punishment.')}
           </p>
         </div>
       )}
@@ -293,7 +295,7 @@ export function ReportTable({ days, goal }) {
     <table className="w-full border-separate text-sm" style={{ borderSpacing: '0 4px' }} data-testid="report-table">
       <thead>
         <tr className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
-          <th className="text-left">{t('ptDate', 'Date')}</th><th>{t('ptMinutes', 'Minutes')}</th><th>{t('ptSessions', 'Sessions')}</th>
+          <th className="text-left">{t('ptDate', 'Date')}</th><th>{t('ptMinutes', 'Minutes')}</th><th><BookOpen className="mx-auto h-3.5 w-3.5" aria-label={t('ptPrayer', 'Prayer minutes')} /></th><th>{t('ptSessions', 'Sessions')}</th>
           <th>{t('ptPractice', 'Practice')}</th><th>{t('ptAccuracy', 'Accuracy')}</th><th>{t('ptDone', 'Finished')}</th><th><Flag className="mx-auto h-3.5 w-3.5" aria-label={t('ptFlags', 'Flags')} /></th>
         </tr>
       </thead>
@@ -302,6 +304,7 @@ export function ReportTable({ days, goal }) {
           <tr key={d.day} className="text-center tabular-nums">
             <td className="text-left font-bold">{d.day.slice(5)}</td>
             <td className="rounded-lg py-1 font-black" style={goal ? cellTone(d.minutes, goal) : {}}>{d.minutes}{goal ? `/${goal}` : ''}</td>
+            <td className="font-bold" style={{ color: 'var(--sky)' }}>{d.prayer ? `${d.prayer}′` : '·'}</td>
             <td>{d.sessions}</td><td>{d.items}</td>
             <td>{d.answered ? `${Math.round((100 * d.correct) / d.answered)}%` : '–'}</td>
             <td>{d.lessons + d.games}</td>

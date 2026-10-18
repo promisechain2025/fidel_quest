@@ -59,6 +59,7 @@ export function wireRow(r) {
   return {
     day: r.day,
     activeMin: Math.floor((r.activeMs || 0) / 60000),
+    prayerMin: Math.floor((r.prayerMs || 0) / 60000),
     sessions: r.sessions | 0, items: r.items | 0, answered: r.answered | 0, correct: r.correct | 0,
     lessons: r.lessons | 0, games: r.games | 0,
     flags: { rapidTap: r.flags?.rapidTap | 0, randomTap: r.flags?.randomTap | 0, audioLoop: r.flags?.audioLoop | 0 },

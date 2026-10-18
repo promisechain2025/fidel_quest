@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import PracticeRing from './PracticeRing'
+import StudyTimer, { TIMER_KEY } from './StudyTimer'
+import { fireEvent } from '@testing-library/react'
+import { prayerTracking } from '../platform/practiceTracker'
 import PracticeReport from './PracticeReport'
 import ClassPracticeCard, { ReportViewer, dashboardRows } from './ClassPractice'
 import { savePractice, emptyDay } from '../platform/practice'
@@ -27,7 +30,33 @@ describe('child ring', () => {
   })
 })
 
+describe('kid study timer', () => {
+  it('hidden by default, tap shows time + ring, tap hides; remembered; no Latin', () => {
+    savePractice({ days: { [TODAY]: row(TODAY, 75) }, goal: 60 })
+    const { unmount } = render(<StudyTimer today={TODAY} />)
+    const btn = screen.getByTestId('study-timer')
+    expect(screen.queryByTestId('study-timer-time')).toBe(null)
+    fireEvent.click(btn)
+    expect(screen.getByTestId('study-timer-time').textContent).toBe('1:15')
+    expect(localStorage.getItem(TIMER_KEY)).toBe('shown')
+    expect(LATIN.test(btn.textContent + btn.getAttribute('aria-label'))).toBe(false)
+    unmount()
+    render(<StudyTimer today={TODAY} />)
+    expect(screen.getByTestId('study-timer-time')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('study-timer'))
+    expect(screen.queryByTestId('study-timer-time')).toBe(null)
+    expect(localStorage.getItem(TIMER_KEY)).toBe('hidden')
+  })
+})
+
 describe('tracker runtime', () => {
+  it('prayer hooks credit prayer time', () => {
+    const t0 = Date.now()
+    prayerTracking.open()
+    notePractice('tick', { t: t0 + 120000 })
+    prayerTracking.close()
+    expect(currentPracticeDays()[dayStamp(new Date(t0))].prayerMs).toBeGreaterThanOrEqual(119000)
+  })
   it('taps and answers become active time in memory', () => {
     const t0 = Date.now()
     notePractice('tap', { t: t0, x: 1, y: 1 })

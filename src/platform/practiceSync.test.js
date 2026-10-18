@@ -49,7 +49,7 @@ describe('class sync (child side)', () => {
     expect((await flushSync({ fetchImpl: srv.fetchImpl, base: BASE })).sent).toBe(1)
     const last = srv.calls[srv.calls.length - 1]
     expect(last.opts.headers.authorization).toBe('Student stok_abc')
-    expect(last.body.days[0]).toEqual({ day: '2026-10-18', activeMin: 61, sessions: 2, items: 30, answered: 20, correct: 15, lessons: 0, games: 0, flags: { rapidTap: 0, randomTap: 0, audioLoop: 0 } })
+    expect(last.body.days[0]).toEqual({ day: '2026-10-18', activeMin: 61, prayerMin: 0, sessions: 2, items: 30, answered: 20, correct: 15, lessons: 0, games: 0, flags: { rapidTap: 0, randomTap: 0, audioLoop: 0 } })
     expect(loadSync().pending).toEqual([])
     expect(loadPractice().goal).toBe(45) // goal changed on the server
   })
