@@ -193,7 +193,7 @@ const DEVICE_KEYS = new Set([
   'fq.review.v1', 'fq.review.session',
   'fq.familypack.v1', 'fq.profileslots.v1', 'fq.gate.v1', 'fq.gate.words', 'fq.perf.v1', 'fq.quality', 'fq.install.v1',
   'fq.reminder.v1', 'fq.reminder.time.v1', 'fq.setup.v1', 'fq.uid.v1', 'fq.crashlog.v1', 'fq.community.v1', 'fq.social.v1', 'fq.class.v1',
-  'fq.teacher.v1', 'fq.teacherAuth.v1', 'fq.classUnlock.v1', 'fq.backup.day', 'fq.postcard.micOk', 'fq.whoPicked', 'fq.prayer.size', 'fq.prayer.book',
+  'fq.teacher.v1', 'fq.teacherAuth.v1', 'fq.classUnlock.v1', 'fq.paidBuyer.v1', 'fq.backup.day', 'fq.postcard.micOk', 'fq.whoPicked', 'fq.prayer.size', 'fq.prayer.book',
 ])
 describe('storage-key registry guard', () => {
   it('no child-progress key escapes profile swapping', () => {

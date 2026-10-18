@@ -46,7 +46,13 @@ initVoice()
 import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Native: silently back the household's progress up to the OS-backed
 // Documents folder, at most once a day. Web keeps manual export.
-import('./platform/backup').then((m) => m.autoBackup()).catch(() => {})
+// Paid-buyer mark first (1.3.3), so the daily backup that follows carries it.
+import('./platform/paidBuyer')
+  .then((m) => m.ensurePaidBuyerMark())
+  .catch(() => {})
+  .then(() => import('./platform/backup'))
+  .then((m) => m.autoBackup())
+  .catch(() => {})
 // Re-arm the daily reminder if a grown-up opted in (native only).
 initReminder(reminderTexts())
 
