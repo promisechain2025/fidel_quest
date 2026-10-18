@@ -160,6 +160,9 @@ npm run lint
 - **Audio is optional by contract.** Every sound call tries the real mp3
   first and falls back to Web Audio tones. Never make a feature hard-depend
   on an mp3 existing. No network calls anywhere — the PWA works offline.
+  One opt-in exception: the teacher class view (docs/practice-tracking.md)
+  talks to `api/` only when the build sets `VITE_API_URL` AND a grown-up
+  joins a class or a teacher signs in; everything else stays local.
 - **Character art is drawn in code** (canvas draw-functions shared between
   DOM sprites and WebGL textures). No image assets.
 - **ESLint:** `react/no-unknown-property` and `only-export-components` are

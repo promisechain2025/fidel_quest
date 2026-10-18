@@ -47,6 +47,7 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.market.v1', // Word Market level, word re-deal schedule, best stars
   'fq.beats.v1', // Kebero Beats level, letter/word re-deal schedule, best stars
   'fq.prayer.v1', // prayer book: page + word to resume at
+  'fq.practice.v1', // verified active practice time per day + teacher's daily goal
 ])
 // Additive only: restoreProgress ignores unknown keys, so snapshots made
 // before these five keys existed import cleanly, and old app versions

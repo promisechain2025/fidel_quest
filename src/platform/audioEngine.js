@@ -84,6 +84,10 @@ export function resolveSource(key, state) {
 
 const FADE_IN_S = 0.015
 
+let listenHook = null
+/** practiceTracker registers here: called when a voice clip finishes. */
+export function setListenHook(fn) { listenHook = typeof fn === 'function' ? fn : null }
+
 export class AudioEngine {
   constructor({
     audioBase = FIDEL_AUDIO_BASE,
@@ -429,6 +433,9 @@ export class AudioEngine {
       this.current = { source: node, gain }
       this._voiceUntil = Date.now() + buffer.duration * 1000 + 800
       node.onended = () => {
+        // a clip that played to its end (not one cut off by the next) counts
+        // as a completed listen for practice tracking
+        if (this.current?.source === node) { try { listenHook?.(key) } catch { /* ignore */ } }
         if (this.current?.source === node) this.current = null
         // The clip audibly finished, so it was never lost to the autoplay
         // policy - the unlock kick must not replay it.
