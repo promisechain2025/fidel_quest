@@ -72,6 +72,7 @@ describe('PrayerBook', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('book-picker'))
     for (const d of ['wednesday', 'thursday', 'friday', 'saturday', 'sunday']) expect(screen.getByTestId(`book-wudase-${d}`)).toBeTruthy()
+    // ረቡዕ–ቀዳሚት are voiced now; እሁድ is the one day still without a recording
     fireEvent.click(screen.getByTestId('book-wudase-sunday'))
     expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘእሁድ')
     expect(screen.queryByTestId('play')).toBeNull()

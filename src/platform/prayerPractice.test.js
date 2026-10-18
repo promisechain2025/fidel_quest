@@ -49,3 +49,19 @@ describe('play only the current prayer', () => {
     expect(playCurrentPrayerOnly(U, 9)).toBe(-1) // no loop back to the start
   })
 })
+
+describe('startUnitForPage (where play starts)', () => {
+  // prayer A = 0..3 (2,3 recorded), prayer B = 4..6 (none), prayer C = 7..8 (recorded)
+  const U = [{ s: 1 }, {}, { a: 'x' }, { a: 'x' }, { s: 1 }, {}, {}, { s: 1, a: 'x' }, { a: 'x' }]
+  it('prefers the current unit, then the first recorded unit on the page', async () => {
+    const { startUnitForPage } = await import('./prayerPractice')
+    expect(startUnitForPage(U, [0, 1, 2, 3], 3, false)).toBe(3)
+    expect(startUnitForPage(U, [0, 1, 2, 3], -1, true)).toBe(2)
+  })
+  it('a page whose prayer has no recording plays nothing in practice mode, and skips ahead outside it', async () => {
+    const { startUnitForPage } = await import('./prayerPractice')
+    expect(startUnitForPage(U, [4, 5, 6], -1, true)).toBe(-1)
+    expect(startUnitForPage(U, [4, 5, 6], -1, false)).toBe(7)
+    expect(startUnitForPage(U, [0, 1], -1, true)).toBe(2) // same prayer, later page
+  })
+})

@@ -82,5 +82,23 @@ export function playCurrentPrayerOnly(units, i) {
   return -1
 }
 
+/**
+ * Where play starts on a page. Outside practice mode: the current unit, else the
+ * page's first recorded unit, else the next recorded unit after the page.
+ * In practice mode the "after the page" fallback stays inside the prayer of the
+ * page's last unit, so a page whose prayer has no recording (e.g. ቀዳሚት ፯) plays
+ * nothing instead of jumping into the next prayer. Returns -1 when nothing plays.
+ */
+export function startUnitForPage(units, onPage, cur, practice) {
+  if (!units?.length || !onPage?.length) return -1
+  if (cur >= 0 && onPage.includes(cur) && units[cur]?.a) return cur
+  const first = onPage.find((i) => units[i]?.a)
+  if (first !== undefined) return first
+  const lastOnPage = onPage[onPage.length - 1]
+  if (practice) return playCurrentPrayerOnly(units, lastOnPage)
+  for (let j = lastOnPage + 1; j < units.length; j++) if (units[j]?.a) return j
+  return -1
+}
+
 /** Test hook. */
 export function _resetPracticeMode() { mode = null; subs.clear() }
