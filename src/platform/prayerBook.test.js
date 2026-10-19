@@ -32,6 +32,18 @@ describe('prayer book data', () => {
       expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
     }
   })
+  it('carries the owner review of 19 Oct: ትንሣኤ/ሰማያዊ ወዳቂ, ወላዲተ‿ኣምላክ joined ተጣይ, ለመንፈስ‿ቅዱስ ተጣይ', () => {
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[274]).toMatchObject({ w: ['ሰማያዊ'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[326]).toMatchObject({ w: ['ለመንፈስ', 'ቅዱስ'], m: 'tetay' })
+    expect(BOOK.units[419]).toMatchObject({ w: ['ወላዲተ', 'ኣምላክ'], m: 'tetay', li: 2, p: '።' })
+    expect(BOOK.units.some((u) => u.w.length === 1 && u.w[0] === 'ወላዲተ')).toBe(false)
+    expect(BOOK.units[47]).toMatchObject({ w: ['ይትቀነይ'], m: 'seyaf' })
+    expect(BOOK.units[79]).toMatchObject({ w: ['በከመ', 'በሰማይ'], m: 'tetay' })
+    expect(BOOK.units[80]).toMatchObject({ w: ['ከማሁ'], m: 'wedaqi' })
+    expect(BOOK.units[84]).toMatchObject({ w: ['ሃበነ'], m: 'tenesh' })
+    expect(BOOK.units[449]).toMatchObject({ w: ['ሕሊና', 'ልቦሙ'], m: 'tenesh' })
+  })
   it('carries the owner review: #200 ብእሴ ወዳቂ, ወነበረ / በየማነ‿አቡሁ split', () => {
     expect(BOOK.units[200]).toMatchObject({ w: ['ብእሴ'], m: 'wedaqi' })
     expect(BOOK.units[218].w).toEqual(['ወነበረ'])
