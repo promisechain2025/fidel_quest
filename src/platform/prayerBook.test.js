@@ -44,6 +44,28 @@ describe('prayer book data', () => {
     expect(BOOK.units[84]).toMatchObject({ w: ['ሃበነ'], m: 'tenesh' })
     expect(BOOK.units[449]).toMatchObject({ w: ['ሕሊና', 'ልቦሙ'], m: 'tenesh' })
   })
+  it('carries the owner review of 19 Oct (2nd round): ኦ always ወዳቂ, ድንግል always ተጣይ, እሁድ/ረቡዕ/ሠሉስ/ቀዳሚት answers', async () => {
+    const files = ['tselot', 'wudaseMonday', 'wudaseTuesday', 'wudaseWednesday', 'wudaseThursday', 'wudaseFriday', 'wudaseSaturday', 'wudaseSunday']
+    let dingil = 0
+    for (const f of files) {
+      const B = (await import(`../data/${f === 'tselot' ? 'tselotMarks' : f + 'Marks'}.json`)).default
+      for (const u of B.units) {
+        if (u.w.length === 1 && u.w[0] === 'ኦ') expect([f, u.m, u.li]).toEqual([f, 'wedaqi', 0])
+        if (u.w.length === 1 && u.w[0] === 'ድንግል') { dingil++; expect([f, u.m]).toEqual([f, 'tetay']) }
+      }
+    }
+    expect(dingil).toBeGreaterThanOrEqual(17)
+    const SUN = (await import('../data/wudaseSundayMarks.json')).default.units
+    for (const i of [74, 187, 207]) expect(SUN[i]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'tetay', li: 6 })
+    expect(SUN[80]).toMatchObject({ w: ['መለኮት'], m: 'tetay', li: 2 })
+    expect((await import('../data/wudaseWednesdayMarks.json')).default.units[392]).toMatchObject({ w: ['ምሕረተ'], m: 'tenesh' })
+    const TUE = (await import('../data/wudaseTuesdayMarks.json')).default.units
+    expect(TUE[16]).toMatchObject({ w: ['ቃለ'], m: 'tenesh' })
+    expect(TUE[31]).toMatchObject({ w: ['ኃይለ', 'ወሊዶታ'], m: 'wedaqi' })
+    expect(TUE[60]).toMatchObject({ m: 'tetay' }); expect(TUE[72]).toMatchObject({ m: 'tetay' })
+    for (const i of [45, 96, 153, 293]) expect(BOOK.units[i].m).toBe('tetay')
+    expect(BOOK.units[293]).toMatchObject({ w: ['በመለኮት'], p: '።' })
+  })
   it('carries the owner review: #200 ብእሴ ወዳቂ, ወነበረ / በየማነ‿አቡሁ split', () => {
     expect(BOOK.units[200]).toMatchObject({ w: ['ብእሴ'], m: 'wedaqi' })
     expect(BOOK.units[218].w).toEqual(['ወነበረ'])
