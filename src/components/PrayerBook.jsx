@@ -9,7 +9,7 @@
    reduced motion it becomes a plain slide. No words in the chrome: icons only.
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
+import { ChevronLeft, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -18,7 +18,7 @@ import WUDASE_THU from '../data/wudaseThursdayMarks.json'
 import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -54,6 +54,21 @@ export function MarkShape({ type, size = 22, style }) {
       {type === 'tebqo' && (<><circle cx="8" cy="8" r="2.4" fill="currentColor" /><circle cx="16" cy="8" r="2.4" fill="currentColor" /></>)}
       {type === 'tie' && <path d="M2 4 C 7 13, 17 13, 22 4" {...p} strokeWidth={2.4} />}
     </svg>
+  )
+}
+
+/* ---- compact title: "ውዳሴ ማርያም ዘሰኑይ" -> small book line over the day,
+   so the header stays one icon-row tall instead of wrapping at 22px --- */
+function TitleLabel({ title }) {
+  // One centered line like every other screen's header (GameHeader: 18px, 900).
+  // The book name ("ውዳሴ ማርያም") stays in the text for screen readers and the
+  // shelf; the visible line is the day, or the whole two-word title.
+  const [over, main] = splitTitle(title)
+  return (
+    <>
+      {over && <span className="pb-sr">{over} </span>}
+      <span className="pb-title-main">{main}</span>
+    </>
   )
 }
 
@@ -406,8 +421,15 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   return (
     <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
-        <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
-        <button type="button" className="pb-title geez-book" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker">{BOOK.title}</button>
+        <div className="pb-top-side">
+          <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ChevronLeft size={24} /></button>
+          {showAll && (
+            <button type="button" className={`pb-icon pb-legend-btn${legendOpen ? ' pb-on' : ''}`} onClick={() => setLegendOpen((v) => !v)} aria-label="የምልክቶች መፍቻ" aria-expanded={legendOpen} data-testid="legend-toggle">
+              <MarkShape type="tenesh" size={22} />
+            </button>
+          )}
+        </div>
+        <button type="button" className="pb-title" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker" aria-label={BOOK.title}><TitleLabel title={BOOK.title} /></button>
         {shelf && (
           <div className="pb-shelf geez-book" role="menu">
             {BOOKS.map((b) => (
@@ -415,19 +437,14 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
             ))}
           </div>
         )}
-        <div className="pb-top-right">
-        <button type="button" className={`pb-icon pb-practice${practice ? ' pb-on' : ''}`} onClick={() => (practice ? endPractice() : startPractice('button'))} aria-label="ልምምድ" aria-pressed={practice} data-testid="practice-toggle">
-          <Target size={28} />
-          {practice && <span className="pb-practice-dot" aria-hidden="true" />}
-        </button>
-        {showAll && (
-          <button type="button" className={`pb-icon pb-legend-btn${legendOpen ? ' pb-on' : ''}`} onClick={() => setLegendOpen((v) => !v)} aria-label="የምልክቶች መፍቻ" aria-expanded={legendOpen} data-testid="legend-toggle">
-            <MarkShape type="tenesh" size={26} />
+        <div className="pb-top-side pb-top-end">
+          <button type="button" className={`pb-icon pb-practice${practice ? ' pb-on' : ''}`} onClick={() => (practice ? endPractice() : startPractice('button'))} aria-label="ልምምድ" aria-pressed={practice} data-testid="practice-toggle">
+            <Target size={24} />
+            {practice && <span className="pb-practice-dot" aria-hidden="true" />}
           </button>
-        )}
-        <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => setShowAll((s) => !s)} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
-          {showAll ? <Eye size={30} /> : <EyeOff size={30} />}
-        </button>
+          <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => setShowAll((x) => !x)} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
+            {showAll ? <Eye size={24} /> : <EyeOff size={24} />}
+          </button>
         </div>
       </header>
 

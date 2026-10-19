@@ -21,6 +21,12 @@ export function markNames(pack) {
   return pack === 'ti' ? MARK_NAMES_TI : MARK_NAMES
 }
 
+/** Header title split: "ውዳሴ ማርያም ዘሰኑይ" -> ["ውዳሴ ማርያም", "ዘሰኑይ"] (book small above the day); two-word titles stay one line. */
+export function splitTitle(title) {
+  const w = String(title || '').trim().split(/\s+/)
+  return w.length > 2 ? [w.slice(0, -1).join(' '), w[w.length - 1]] : [null, w.join(' ')]
+}
+
 /** Letters (grapheme = one Ethiopic codepoint here) in a unit, all words. */
 export function unitLetterCount(u) {
   return u.w.reduce((n, w) => n + [...w].length, 0)

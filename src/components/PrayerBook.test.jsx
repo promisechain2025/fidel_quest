@@ -1,10 +1,24 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import PrayerBook from './PrayerBook'
+import { splitTitle } from '../platform/prayerBook'
 
 beforeEach(() => localStorage.clear())
 
 describe('PrayerBook', () => {
+  it('header title: one centered line, the day for ውዳሴ, the whole title for ጸሎት ዘዘወትር', () => {
+    expect(splitTitle('ውዳሴ ማርያም ዘሰኑይ')).toEqual(['ውዳሴ ማርያም', 'ዘሰኑይ'])
+    expect(splitTitle('ጸሎት ዘዘወትር')).toEqual([null, 'ጸሎት ዘዘወትር'])
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    expect(container.querySelector('.pb-sr')).toBeNull()
+    expect(container.querySelector('.pb-title-main').textContent).toBe('ጸሎት ዘዘወትር')
+    fireEvent.click(screen.getByTestId('book-picker'))
+    fireEvent.click(screen.getByTestId('book-wudase-friday'))
+    expect(container.querySelector('.pb-sr').textContent.trim()).toBe('ውዳሴ ማርያም')
+    expect(container.querySelector('.pb-title-main').textContent).toBe('ዘዓርብ')
+    expect(screen.getByTestId('book-picker').getAttribute('aria-label')).toBe('ውዳሴ ማርያም ዘዓርብ')
+  })
+
   it('shelf switches to ውዳሴ ማርያም ዘሰኑይ and remembers it', () => {
     const { container, unmount } = render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('book-picker'))
