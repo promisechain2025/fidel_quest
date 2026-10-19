@@ -4,7 +4,7 @@
 - One warm-paper page (#fbf3e2) on a desk tone (#e9d7b0). Margins are about 44px on the sides and 40px at the top.
 - Kids' type: Noto Serif Ethiopic Bold at clamp(26px, 7.4vw, 36px), line-height 2.7. The tall line gap leaves room for marks above and ties below.
 - Pagination is measured. A ResizeObserver reads the page box and computes lines × letters per line, which gives a letter budget. Pages are cut on whole words and prefer to end at a ። once the page is 70% full. This usually gives 5–7 lines.
-- Header: back arrow on the left, the title in red in the middle, and the eye toggle on the right.
+- Header: one compact 44px icon row (back arrow left; practice, legend and eye icons right). The title in red sits in the middle on one row and never wraps: a book with a day shows the book name small (13px) above the day (clamp 15–18px), e.g. ውዳሴ ማርያም over ዘሰኑይ; ጸሎት ዘዘወትር is a single line. At 390px wide the header is 52px tall (was 94px when the 22px title wrapped), so the page gets about 42px more for the prayer text.
 - Footer: speed dots on the left (0.8 / 1 / 1.2) and a large saffron play/pause button in the middle.
 - The page number is a Ge'ez numeral (፩ ፪ …), centered at the bottom of the page.
 - No English anywhere. Icons only, with Amharic aria-labels.

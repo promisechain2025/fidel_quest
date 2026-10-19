@@ -18,7 +18,7 @@ import WUDASE_THU from '../data/wudaseThursdayMarks.json'
 import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames } from '../platform/prayerBook'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -54,6 +54,18 @@ export function MarkShape({ type, size = 22, style }) {
       {type === 'tebqo' && (<><circle cx="8" cy="8" r="2.4" fill="currentColor" /><circle cx="16" cy="8" r="2.4" fill="currentColor" /></>)}
       {type === 'tie' && <path d="M2 4 C 7 13, 17 13, 22 4" {...p} strokeWidth={2.4} />}
     </svg>
+  )
+}
+
+/* ---- compact title: "ውዳሴ ማርያም ዘሰኑይ" -> small book line over the day,
+   so the header stays one icon-row tall instead of wrapping at 22px --- */
+function TitleLabel({ title }) {
+  const [over, main] = splitTitle(title)
+  return (
+    <span className="pb-title-txt" aria-hidden="true">
+      {over && <span className="pb-title-over">{over}</span>}{over && ' '}
+      <span className="pb-title-main">{main}</span>
+    </span>
   )
 }
 
@@ -407,7 +419,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
         <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ArrowLeft size={30} /></button>
-        <button type="button" className="pb-title geez-book" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker">{BOOK.title}</button>
+        <button type="button" className="pb-title geez-book" onClick={() => setShelf((v) => !v)} aria-expanded={shelf} data-testid="book-picker" aria-label={BOOK.title}><TitleLabel title={BOOK.title} /></button>
         {shelf && (
           <div className="pb-shelf geez-book" role="menu">
             {BOOKS.map((b) => (
