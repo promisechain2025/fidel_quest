@@ -86,7 +86,7 @@ import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } fr
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { installPracticeTracker, notePractice } from './platform/practiceTracker'
 import { setPracticeGoal } from './platform/practice'
-import { joinClassSync, flushSync } from './platform/practiceSync'
+import { joinClassSync, flushSync, queueHomeworkSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
 import StudyTimer from './components/StudyTimer'
 import { redeemClassUnlock } from './platform/classUnlock'
@@ -4567,6 +4567,12 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
         onFinish={(levelId, res) => {
           if (!res) { onHome(); return }
           markAssignmentDone(assignment.code, assignment.seed)
+          {
+            // Web teacher dashboard: send the result with the next class sync.
+            const total = queue.length
+            const score = Math.max(0, Math.min(total, Math.round(((res.accuracy ?? 0) * total) / 100)))
+            if (queueHomeworkSync({ code: assignment.code, seed: assignment.seed, score, total, missed: res.missed || [] })) flushSync().catch(() => {})
+          }
           cancelAssignmentDue(pendingAssignmentKey(assignment))
           onDone?.()
           setResult(res)

@@ -8,10 +8,19 @@
      DELETE /api/practice/classes/:code           (deletes students + rows)
      GET    /api/practice/classes/:code/report?from=YYYY-MM-DD&to=YYYY-MM-DD
      DELETE /api/practice/classes/:code/students/:id
+     POST   /api/practice/classes/:code/homework  {title, familyIds, count, due, orders?} -> {homework}
+     GET    /api/practice/classes/:code/homework  -> {homework}
+     DELETE /api/practice/classes/:code/homework/:seed
+     GET    /api/practice/classes/:code/roster    -> live roster: per student last
+            active day, week minutes, accuracy, homework turned in / missing,
+            and per-student + class trouble letters (family ids)
    Child side (no account; the class join code is the invitation):
      POST   /api/practice/join   {code, name}  -> {token, className, goalMin}
-     POST   /api/practice/sync   Authorization: Student <token>  {days:[row]}
+     POST   /api/practice/sync   Authorization: Student <token>
+            {days:[row], homework?:[{seed, score, total, missed:[familyId]}]}
             -> {ok, goalMin}
+   Student data is a nickname (<= 16 chars) and learning counts only: no
+   email, no birthday, no free text, no audio.
    A student token is 32 random bytes, returned once and stored only as a
    SHA-256 hash; it can write only its own rows. Rows are clamped to
    physically possible values (<= 1440 active minutes a day). */
@@ -161,7 +170,111 @@ router.post('/sync', syncLimit, async (req, res, next) => {
       await practiceStore.upsertDay(student, row)
       saved += 1
     }
-    res.json({ ok: true, saved, goalMin: c.goalMin })
+    // Homework results: only for homework this class actually set.
+    let turnedIn = 0
+    const hw = Array.isArray(req.body?.homework) ? req.body.homework.slice(0, 20) : []
+    for (const raw of hw) {
+      const seed = Math.round(Number(raw?.seed))
+      const h = Number.isInteger(seed) && (await practiceStore.findHomework(c.code, seed))
+      if (!h) continue
+      const total = int(raw.total, 1, 20)
+      await practiceStore.addSubmission(student, {
+        seed, total, score: int(raw.score, 0, total), day: dayStr(new Date()),
+        missed: cleanFamilies(raw.missed).filter((f) => h.familyIds.includes(f)).slice(0, 12),
+      })
+      turnedIn += 1
+    }
+    res.json({ ok: true, saved, turnedIn, goalMin: c.goalMin })
+  } catch (err) { next(err) }
+})
+
+/* ── homework (set on the web dashboard; results arrive with /sync) ── */
+const FAMILY_RE = /^[a-z]{1,6}$/
+const cleanFamilies = (raw) => [...new Set((Array.isArray(raw) ? raw : []).map(String).filter((f) => FAMILY_RE.test(f)))].slice(0, 40)
+
+router.post('/classes/:code/homework', ...teacher, async (req, res, next) => {
+  try {
+    const c = await ownClass(req, res); if (!c) return
+    const familyIds = cleanFamilies(req.body?.familyIds)
+    const due = String(req.body?.due || '')
+    if (!familyIds.length || !DAY_RE.test(due)) return res.status(400).json({ error: 'Pick letter families and a due date' })
+    const list = await practiceStore.listHomework(c.code)
+    if (list.length >= 100) return res.status(400).json({ error: 'Homework limit reached' })
+    let seed
+    do seed = crypto.randomInt(1, 1000000); while (list.some((h) => h.seed === seed))
+    const orders = [...new Set((Array.isArray(req.body?.orders) ? req.body.orders : [1]).map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 7))].sort()
+    const hw = await practiceStore.addHomework(c.code, {
+      seed, title: cleanName(req.body?.title, 60) || 'Homework', familyIds, count: int(req.body?.count ?? 10, 3, 20), due, orders: orders.length ? orders : [1],
+    })
+    res.status(201).json({ homework: hw })
+  } catch (err) { next(err) }
+})
+
+router.get('/classes/:code/homework', ...teacher, async (req, res, next) => {
+  try {
+    const c = await ownClass(req, res); if (!c) return
+    res.json({ homework: await practiceStore.listHomework(c.code) })
+  } catch (err) { next(err) }
+})
+
+router.delete('/classes/:code/homework/:seed', ...teacher, async (req, res, next) => {
+  try {
+    const c = await ownClass(req, res); if (!c) return
+    if (!(await practiceStore.deleteHomework(c.code, Number(req.params.seed)))) return res.status(404).json({ error: 'Homework not found' })
+    res.json({ ok: true })
+  } catch (err) { next(err) }
+})
+
+/** Tally family ids into [{id, misses, students}] sorted by misses. */
+export function troubleLetters(subs, limit = 8) {
+  const m = new Map()
+  for (const s of subs) for (const f of s.missed || []) {
+    const e = m.get(f) || { id: f, misses: 0, students: new Set() }
+    e.misses += 1; e.students.add(s.studentId); m.set(f, e)
+  }
+  return [...m.values()].sort((a, b) => b.misses - a.misses || (a.id < b.id ? -1 : 1)).slice(0, limit)
+    .map((e) => ({ id: e.id, misses: e.misses, students: e.students.size }))
+}
+
+/** The live roster: everything the dashboard table needs in one call. */
+router.get('/classes/:code/roster', ...teacher, async (req, res, next) => {
+  try {
+    const c = await ownClass(req, res); if (!c) return
+    const to = dayStr(new Date())
+    const from = dayStr(new Date(Date.now() - 6 * 86400000))
+    const [students, week, all, homework, subs] = await Promise.all([
+      practiceStore.listStudents(c.code), practiceStore.listDays(c.code, from, to),
+      practiceStore.listDays(c.code, '0000-00-00', to), practiceStore.listHomework(c.code), practiceStore.listSubmissions(c.code),
+    ])
+    res.json({
+      class: publicClass(c), from, to,
+      homework: homework.map((h) => {
+        const got = subs.filter((s) => s.seed === h.seed)
+        return { ...h, turnedIn: got.length, missing: students.length - got.length, overdue: h.due < to }
+      }),
+      trouble: troubleLetters(subs),
+      students: students.map((s) => {
+        const mine = week.filter((d) => d.studentId === s.id)
+        const ever = all.filter((d) => d.studentId === s.id).map((d) => d.day).sort()
+        const sum = (k) => mine.reduce((n, d) => n + (d[k] || 0), 0)
+        const answered = sum('answered')
+        const done = subs.filter((x) => x.studentId === s.id)
+        return {
+          id: s.id, name: s.name,
+          lastActive: ever[ever.length - 1] || null,
+          week: {
+            activeMin: sum('activeMin'), prayerMin: sum('prayerMin'), sessions: sum('sessions'), lessons: sum('lessons'),
+            accuracy: answered ? Math.round((100 * sum('correct')) / answered) : null,
+            daysMetGoal: mine.filter((d) => d.activeMin >= c.goalMin).length,
+          },
+          homework: homework.map((h) => {
+            const d = done.find((x) => x.seed === h.seed)
+            return d ? { seed: h.seed, status: 'done', score: d.score, total: d.total } : { seed: h.seed, status: h.due < to ? 'missing' : 'open' }
+          }),
+          trouble: troubleLetters(done, 4).map((t) => t.id),
+        }
+      }),
+    })
   } catch (err) { next(err) }
 })
 

@@ -32,7 +32,7 @@ export function loadSync() {
   try {
     const s = JSON.parse(localStorage.getItem(SYNC_KEY))
     if (s && typeof s.token === 'string' && s.token && /^[A-Z0-9]{4,12}$/.test(s.code || '')) {
-      return { code: s.code, name: String(s.name || ''), token: s.token, pending: Array.isArray(s.pending) ? s.pending.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)) : [], lastSyncAt: s.lastSyncAt || null, className: s.className || '' }
+      return { code: s.code, name: String(s.name || ''), token: s.token, pending: Array.isArray(s.pending) ? s.pending.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)) : [], lastSyncAt: s.lastSyncAt || null, className: s.className || '', hw: Array.isArray(s.hw) ? s.hw.filter(validHw).slice(-20) : [] }
     }
   } catch { /* none */ }
   return null
@@ -45,6 +45,23 @@ function saveSync(s) {
 
 export function leaveSync() {
   try { localStorage.removeItem(SYNC_KEY) } catch { /* ignore */ }
+}
+
+const validHw = (h) => h && Number.isInteger(h.seed) && h.seed > 0 && Number.isInteger(h.total) && Number.isInteger(h.score)
+
+/** Queue a finished homework result for the web teacher dashboard. Only for
+    the class this device synced with; carries counts + family ids, no name. */
+export function queueHomeworkSync({ code, seed, score, total, missed }) {
+  const s = loadSync()
+  if (!s || s.code !== code) return false
+  const h = {
+    seed: Math.round(Number(seed)), total: Math.max(1, Math.min(20, Math.round(Number(total) || 0))),
+    score: 0, missed: [...new Set((Array.isArray(missed) ? missed : []).map((k) => String(k).replace(/-\d+$/, '')).filter((k) => /^[a-z]{1,6}$/.test(k)))].slice(0, 12),
+  }
+  h.score = Math.max(0, Math.min(h.total, Math.round(Number(score) || 0)))
+  if (!validHw(h)) return false
+  saveSync({ ...s, hw: [...s.hw.filter((x) => x.seed !== h.seed), h].slice(-20) })
+  return true
 }
 
 /** Add days to the outgoing queue (no-op when not joined). */
@@ -91,14 +108,14 @@ export function flushSync({ fetchImpl = globalThis.fetch, base = apiBase(), days
   if (flushing) return flushing
   flushing = (async () => {
     const s = loadSync()
-    if (!s || !s.pending.length || !base || !fetchImpl) return { sent: 0, kept: s?.pending.length || 0 }
+    if (!s || (!s.pending.length && !s.hw.length) || !base || !fetchImpl) return { sent: 0, kept: s?.pending.length || 0 }
     const all = days || loadPractice().days
     const rows = s.pending.map((d) => all[d]).filter(Boolean).map(wireRow)
     try {
       const res = await fetchImpl(`${base}/api/practice/sync`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Student ${s.token}` },
-        body: JSON.stringify({ days: rows }),
+        body: JSON.stringify(s.hw.length ? { days: rows, homework: s.hw } : { days: rows }),
       })
       if (res.status === 401 || res.status === 410) { leaveSync(); return { sent: 0, kept: 0, revoked: true } }
       if (!res.ok) return { sent: 0, kept: s.pending.length }
@@ -107,7 +124,8 @@ export function flushSync({ fetchImpl = globalThis.fetch, base = apiBase(), days
       const sentDays = new Set(s.pending)
       // Today keeps changing; the tracker re-queues it on its next save, so
       // the sent set can be dropped here without losing later minutes.
-      saveSync({ ...latest, pending: latest.pending.filter((d) => !sentDays.has(d)), lastSyncAt: Date.now() })
+      const sentHw = new Set(s.hw.map((h) => h.seed))
+      saveSync({ ...latest, pending: latest.pending.filter((d) => !sentDays.has(d)), hw: (latest.hw || []).filter((h) => !sentHw.has(h.seed)), lastSyncAt: Date.now() })
       if (clampGoal(body.goalMin)) setPracticeGoal(body.goalMin)
       return { sent: rows.length, kept: 0 }
     } catch {
