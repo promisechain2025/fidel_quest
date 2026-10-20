@@ -21,3 +21,9 @@ export const COMPANY_NAME = 'PromiseChain'
 
 /* Web trial on easygeez.com/app (src/platform/webTrial.js FREE_SESSIONS). */
 export const WEB_TRIAL_SESSIONS = 3
+
+/* NEW PRICING (free download + in-app purchases). OFF until the day the app
+   turns free in both stores: build with VITE_FREE_PRICING=1 to switch the
+   /pricing page to src/pages/PricingFree.jsx. Keep in step with the stores. */
+export const FREE_PRICING = import.meta.env.VITE_FREE_PRICING === '1'
+export const NEW_PRICES = Object.freeze({ core: '$12.99', prayer: '$9.99', bundle: '$19.99' })
