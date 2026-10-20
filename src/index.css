@@ -339,3 +339,29 @@ input, textarea, [contenteditable='true'] {
   .pb-title { font-size: 17px; padding: 4px; }
 }
 .pb-play-slot { width: 84px; height: 84px; }
+
+/* ---- SAMPLE: compact prayer footer variants (?pbfooter=a|b|c) ---------- */
+/* A: one slim row (~48px), same controls, small play. */
+.pb-fa { padding: 4px 14px max(4px, env(safe-area-inset-bottom)); min-height: 48px; }
+.pb-fa .pb-play { width: 44px; height: 44px; box-shadow: 0 3px 0 #a8550f; }
+.pb-fa .pb-play-slot { width: 44px; height: 44px; }
+.pb-fa .pb-spd { width: 32px; height: 32px; }
+.pb-fa .pb-sz { width: 36px; height: 36px; }
+/* B: no footer; floating play bottom-right, controls open on tap; fades while page is touched. */
+[data-footer='b'] .pb-stage { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.pb-fb { position: fixed; right: 14px; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 8px; transition: opacity .25s; }
+.pb-root[data-footer='b']:has(.pb-stage:active) .pb-fb:not(.pb-open) { opacity: .25; }
+.pb-fb .pb-play { width: 56px; height: 56px; box-shadow: 0 4px 0 #a8550f, 0 6px 14px rgba(90, 60, 20, .3); }
+.pb-fb-more { width: 44px; height: 44px; background: rgba(255, 246, 228, .92); color: #7a6347; box-shadow: 0 2px 8px rgba(90, 60, 20, .25); }
+.pb-fb-more.pb-on { color: var(--pb-saffron); }
+.pb-fb-tray { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 999px; background: rgba(233, 215, 176, .97); box-shadow: 0 6px 18px rgba(90, 60, 20, .3); }
+/* C: play + options in the header, thin page-progress line, no footer. */
+[data-footer='c'] .pb-top { position: relative; }
+[data-footer='c'] .pb-top .pb-play { width: 40px; height: 40px; flex: none; box-shadow: 0 3px 0 #a8550f; }
+[data-footer='c'] .pb-top .pb-play-slot { width: 0; height: 0; }
+[data-footer='c'] .pb-top-side { gap: 2px; }
+[data-footer='c'] .pb-top .pb-icon { width: 40px; height: 40px; }
+[data-footer='c'] .pb-stage { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.pb-progress { position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 2px; background: rgba(122, 99, 71, .18); }
+.pb-progress span { display: block; height: 100%; border-radius: inherit; background: var(--pb-saffron); }
+.pb-fc-tray { display: flex; justify-content: space-between; align-items: center; margin: 2px 14px 4px; padding: 4px 10px; border-radius: 999px; background: rgba(255, 246, 228, .7); }
