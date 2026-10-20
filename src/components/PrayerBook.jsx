@@ -495,7 +495,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       </div>
 
-      <div className="pb-fb" data-testid="controls">{speedEl}{sizeEl}{playEl(26)}</div>
+      <footer className="pb-fb" data-testid="controls">{speedEl}{playEl(26)}{sizeEl}</footer>
     </div>
   )
 }

@@ -340,13 +340,14 @@ input, textarea, [contenteditable='true'] {
 }
 .pb-play-slot { width: 84px; height: 84px; }
 
-/* Compact controls: no footer bar. One small floating row bottom-right —
-   speed, letter size, play — always visible. Page number sits bottom-left. */
-.pb-stage { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+/* Slim full-width footer like the original (speed | play centered | letter size),
+   with small buttons and letters — always visible. Page number sits bottom-left. */
 .pb-folio { text-align: left; padding-left: 4px; font-size: 13px; }
-.pb-fb { position: fixed; right: 12px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-radius: 999px; background: rgba(233, 215, 176, .95); box-shadow: 0 4px 14px rgba(90, 60, 20, .25); }
+.pb-fb { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 4px 22px max(4px, env(safe-area-inset-bottom)); }
+.pb-fb .pb-speed { justify-self: start; }
+.pb-fb .pb-size { justify-self: end; }
 .pb-fb .pb-play { width: 48px; height: 48px; box-shadow: 0 3px 0 #a8550f; }
-.pb-fb .pb-play-slot { width: 0; height: 0; }
+.pb-fb .pb-play-slot { width: 48px; height: 48px; }
 .pb-fb .pb-spd { width: 28px; height: 28px; }
 .pb-fb .pb-spd svg { width: 18px; height: 18px; }
 .pb-fb .pb-spd-dots span { width: 5px; height: 5px; }

@@ -39,12 +39,14 @@ describe('PrayerBook', () => {
     expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
   })
 
-  it('compact controls: one always-visible floating row (speed, size, play), no footer bar, no options button', () => {
+  it('compact controls: one slim always-visible footer: speed | play | size, no options button', () => {
     const { container } = render(<PrayerBook onBack={() => {}} />)
     expect(container.querySelector('.pb-bottom')).toBeNull()
     expect(screen.queryByTestId('tray-toggle')).toBeNull()
     const row = screen.getByTestId('controls')
     for (const id of ['speed', 'size-up', 'size-down', 'play']) expect(row.querySelector(`[data-testid="${id}"]`)).toBeTruthy()
+    const order = [...row.children].map((e) => e.dataset.testid || e.className)
+    expect(order).toEqual(['speed', 'play', 'pb-size'])
     fireEvent.pointerDown(container.querySelector('.pb-stage'))
     expect(row.className).toBe('pb-fb')
   })
