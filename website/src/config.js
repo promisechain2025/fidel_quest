@@ -14,3 +14,16 @@ export const SECOND_PROFILE_PRICE = '$4.99'
 export const EXTRA_PROFILE_PRICE = '$2.49'
 export const APP_STORE_URL = import.meta.env.VITE_APP_STORE_URL || 'https://apps.apple.com/app/id6789703688'
 export const PLAY_STORE_URL = import.meta.env.VITE_PLAY_STORE_URL || 'https://play.google.com/store/apps/details?id=net.promisechain.fidelquest'
+
+/* [CONFIRM] legal entity name, type and state before filings. Shown in the
+   footer and on /about. */
+export const COMPANY_NAME = 'PromiseChain'
+
+/* Web trial on easygeez.com/app (src/platform/webTrial.js FREE_SESSIONS). */
+export const WEB_TRIAL_SESSIONS = 3
+
+/* NEW PRICING (free download + in-app purchases). OFF until the day the app
+   turns free in both stores: build with VITE_FREE_PRICING=1 to switch the
+   /pricing page to src/pages/PricingFree.jsx. Keep in step with the stores. */
+export const FREE_PRICING = import.meta.env.VITE_FREE_PRICING === '1'
+export const NEW_PRICES = Object.freeze({ core: '$12.99', prayer: '$9.99', bundle: '$19.99' })

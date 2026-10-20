@@ -1,7 +1,7 @@
 /* What easygeez.com still publishes.
    The phone app is the product. The public site is the landing, the store
-   price, the legal pages a store listing needs, and the progress-card link
-   the app itself shares. Teachers, guides, the alphabet chart, homeschool,
+   price, the teachers page, About, the legal pages a store listing needs, and the progress-card link
+   the app itself shares. Guides, the alphabet chart, homeschool,
    accounts, and the language marketing pages are closed until they are ready.
    The PWA at /app is a separate build and is not a route of this site.
 
@@ -11,10 +11,8 @@
 export const CLOSED_PREFIXES = Object.freeze([
   '/amharic',
   '/tigrinya',
-  '/teachers',
   '/homeschool',
   '/alphabet',
-  '/about',
   '/guides',
   '/family',
   '/teach',

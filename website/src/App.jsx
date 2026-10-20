@@ -12,6 +12,9 @@ const Progress = lazy(() => import('./pages/Progress.jsx'))
 const Pricing = lazy(() => import('./pages/Pricing.jsx'))
 const Privacy = lazy(() => import('./pages/Privacy.jsx'))
 const Terms = lazy(() => import('./pages/Terms.jsx'))
+const Teachers = lazy(() => import('./pages/Teachers.jsx'))
+const TeacherGuide = lazy(() => import('./pages/TeacherGuide.jsx'))
+const About = lazy(() => import('./pages/About.jsx'))
 
 function NotFound() {
   const { pathname } = useLocation()
@@ -40,6 +43,9 @@ export default function App() {
       <Route path="/pricing/success" element={<Navigate to="/pricing" replace />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
+      <Route path="/teachers" element={<Teachers />} />
+      <Route path="/teachers/guide" element={<TeacherGuide />} />
+      <Route path="/about" element={<About />} />
       {CLOSED_PREFIXES.map((path) => (
         <Route key={path} path={path === '/guides' ? '/guides/*' : `${path}/*`} element={<Navigate to="/" replace />} />
       ))}
