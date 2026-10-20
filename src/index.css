@@ -340,20 +340,18 @@ input, textarea, [contenteditable='true'] {
 }
 .pb-play-slot { width: 84px; height: 84px; }
 
-/* Compact controls: no footer bar. A floating play button (bottom-right) and an
-   options button that opens a small speed / letter-size strip. The play button
-   fades while the page is touched or turned; the page number sits bottom-left. */
+/* Compact controls: no footer bar. One small floating row bottom-right —
+   speed, letter size, play — always visible. Page number sits bottom-left. */
 .pb-stage { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 .pb-folio { text-align: left; padding-left: 4px; font-size: 13px; }
-.pb-fb { position: fixed; right: 14px; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 8px; transition: opacity .25s; }
-.pb-fb.pb-busy { opacity: .15; pointer-events: none; }
-.pb-fb .pb-play { width: 56px; height: 56px; box-shadow: 0 4px 0 #a8550f, 0 6px 14px rgba(90, 60, 20, .3); }
+.pb-fb { position: fixed; right: 12px; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 20; display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-radius: 999px; background: rgba(233, 215, 176, .95); box-shadow: 0 4px 14px rgba(90, 60, 20, .25); }
+.pb-fb .pb-play { width: 48px; height: 48px; box-shadow: 0 3px 0 #a8550f; }
 .pb-fb .pb-play-slot { width: 0; height: 0; }
-.pb-fb-more { width: 44px; height: 44px; background: rgba(255, 246, 228, .92); color: #7a6347; box-shadow: 0 2px 8px rgba(90, 60, 20, .25); }
-.pb-fb-more.pb-on { color: var(--pb-saffron); }
-.pb-fb-tray { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 999px; background: rgba(233, 215, 176, .97); box-shadow: 0 6px 18px rgba(90, 60, 20, .3); }
-.pb-fb-tray .pb-spd { width: 30px; height: 30px; }
-.pb-fb-tray .pb-sz { width: 32px; height: 32px; }
-.pb-fb-tray .pb-sz:first-child span { font-size: 13px !important; }
-.pb-fb-tray .pb-sz:last-child span { font-size: 19px !important; }
-@media (prefers-reduced-motion: reduce) { .pb-fb { transition: none; } }
+.pb-fb .pb-spd { width: 28px; height: 28px; }
+.pb-fb .pb-spd svg { width: 18px; height: 18px; }
+.pb-fb .pb-spd-dots span { width: 5px; height: 5px; }
+.pb-fb .pb-spd-dots span.one { width: 7px; height: 7px; }
+.pb-fb .pb-size { gap: 4px; }
+.pb-fb .pb-sz { width: 30px; height: 30px; }
+.pb-fb .pb-sz:first-child span { font-size: 13px !important; }
+.pb-fb .pb-sz:last-child span { font-size: 19px !important; }

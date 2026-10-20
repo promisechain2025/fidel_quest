@@ -9,7 +9,7 @@
    reduced motion it becomes a plain slide. No words in the chrome: icons only.
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, Eye, EyeOff, Pause, Play, Rabbit, SlidersHorizontal, Target, Turtle } from 'lucide-react'
+import { ChevronLeft, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -225,11 +225,6 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   const [legendOpen, setLegendOpen] = useState(false)
   useEffect(() => { if (!showAll) setLegendOpen(false) }, [showAll])
   const [playing, setPlaying] = useState(false)
-  const [tray, setTray] = useState(false)
-  // Floating play fades while the reader is touching / turning the page.
-  const [busy, setBusy] = useState(false)
-  const busyT = useRef(0)
-  useEffect(() => () => clearTimeout(busyT.current), [])
   // Practice mode: prayer time is tracked, and playback stops after the current prayer.
   const [practice, setPractice] = useState(isPracticeMode)
   useEffect(() => subscribePracticeMode(setPractice), [])
@@ -477,7 +472,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       )}
 
-      <div ref={stageRef} className="pb-stage" onPointerDown={(e) => { setBusy(true); onPointerDown(e) }} onPointerMove={onPointerMove} onPointerUp={(e) => { setBusy(false); onPointerUp(e) }} onPointerCancel={(e) => { setBusy(false); onPointerUp(e) }} onWheel={() => { setBusy(true); clearTimeout(busyT.current); busyT.current = setTimeout(() => setBusy(false), 700) }}>
+      <div ref={stageRef} className="pb-stage" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
         <div className="pb-book">
           <div className="pb-page pb-measure" aria-hidden="true">
             <div className="pb-face">
@@ -500,13 +495,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       </div>
 
-      {(
-        <div className={`pb-fb${tray ? ' pb-open' : ''}${busy && !tray ? ' pb-busy' : ''}`}>
-          {tray && <div className="pb-fb-tray">{speedEl}{sizeEl}</div>}
-          <button type="button" className={`pb-icon pb-fb-more${tray ? ' pb-on' : ''}`} onClick={() => setTray((v) => !v)} aria-label="ምርጫታት" aria-expanded={tray} data-testid="tray-toggle"><SlidersHorizontal size={22} /></button>
-          {playEl(26)}
-        </div>
-      )}
+      <div className="pb-fb" data-testid="controls">{speedEl}{sizeEl}{playEl(26)}</div>
     </div>
   )
 }
