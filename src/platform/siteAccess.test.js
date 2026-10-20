@@ -36,7 +36,7 @@ describe('marketing site stays on the app', () => {
     expect(sitemap).toContain('https://easygeez.com/pricing')
     expect(sitemap).not.toContain('https://easygeez.com/progress')
 
-    for (const open of ['/', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
+    for (const open of ['/', '/classes', '/verify', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
       expect(isClosedPath(open), open).toBe(false)
     }
     expect(isClosedPath('/teachers')).toBe(true)

@@ -26,7 +26,7 @@
    A request for one of them goes home (302) instead of serving the old HTML. */
 var CLOSED = [
   '/amharic', '/tigrinya', '/teachers', '/homeschool', '/alphabet',
-  '/about', '/guides', '/family', '/teach', '/verify', '/family-pack',
+  '/about', '/guides', '/family', '/teach', '/family-pack',
 ]
 
 function isClosed(uri) {

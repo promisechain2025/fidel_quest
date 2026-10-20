@@ -40,7 +40,24 @@ function models() {
   }, { timestamps: true })
   pday.index({ studentId: 1, day: 1 }, { unique: true })
   pday.index({ classCode: 1, day: 1 })
+  // Homework set from the web dashboard, and each student's turned-in result.
+  const phw = new mongoose.Schema({
+    classCode: { type: String, required: true, index: true },
+    seed: { type: Number, required: true },
+    title: { type: String, maxlength: 60 },
+    familyIds: [String], count: Number, due: String, orders: [Number],
+  }, { timestamps: true })
+  phw.index({ classCode: 1, seed: 1 }, { unique: true })
+  const psub = new mongoose.Schema({
+    classCode: { type: String, required: true, index: true },
+    studentId: { type: String, required: true },
+    seed: { type: Number, required: true },
+    score: Number, total: Number, missed: [String], day: String,
+  }, { timestamps: true })
+  psub.index({ studentId: 1, seed: 1 }, { unique: true })
   M = {
+    PHomework: mongoose.models.PracticeHomework || mongoose.model('PracticeHomework', phw),
+    PSubmission: mongoose.models.PracticeSubmission || mongoose.model('PracticeSubmission', psub),
     PClass: mongoose.models.PracticeClass || mongoose.model('PracticeClass', pclass),
     PStudent: mongoose.models.PracticeStudent || mongoose.model('PracticeStudent', pstudent),
     PDay: mongoose.models.PracticeDay || mongoose.model('PracticeDay', pday),
@@ -48,13 +65,14 @@ function models() {
   return M
 }
 
-const mem = { classes: [], students: [], days: [], seq: 0 }
+const mem = { classes: [], students: [], days: [], homework: [], subs: [], seq: 0 }
 const id = () => String(++mem.seq)
 const pickClass = (c) => ({ code: c.code, name: c.name || '', goalMin: c.goalMin, teacherId: c.teacherId })
 const pickStudent = (s) => ({ id: String(s._id), name: s.name, classCode: s.classCode })
 const DAY_FIELDS = ['day', 'activeMin', 'prayerMin', 'sessions', 'items', 'answered', 'correct', 'lessons', 'games', 'flags']
 const pickDay = (d) => Object.fromEntries(DAY_FIELDS.map((k) => [k, k === 'flags' ? { rapidTap: d.flags?.rapidTap || 0, randomTap: d.flags?.randomTap || 0, audioLoop: d.flags?.audioLoop || 0 } : d[k]]))
 
+const pickHw = (h) => ({ seed: h.seed, title: h.title || '', familyIds: [...(h.familyIds || [])], count: h.count, due: h.due, orders: [...(h.orders || [1])] })
 const withDefaults = (d) => ({ ...d, prayerMin: d.prayerMin || 0 })
 export const practiceStore = {
   async createClass(teacherId, { name, goalMin }) {
@@ -84,10 +102,12 @@ export const practiceStore = {
   async deleteClass(code) {
     if (useMongo) {
       const m = models()
-      await Promise.all([m.PDay.deleteMany({ classCode: code }), m.PStudent.deleteMany({ classCode: code }), m.PClass.deleteOne({ code })])
+      await Promise.all([m.PHomework.deleteMany({ classCode: code }), m.PSubmission.deleteMany({ classCode: code }), m.PDay.deleteMany({ classCode: code }), m.PStudent.deleteMany({ classCode: code }), m.PClass.deleteOne({ code })])
       return
     }
     mem.days = mem.days.filter((d) => d.classCode !== code)
+    mem.homework = mem.homework.filter((h) => h.classCode !== code)
+    mem.subs = mem.subs.filter((x) => x.classCode !== code)
     mem.students = mem.students.filter((s) => s.classCode !== code)
     mem.classes = mem.classes.filter((c) => c.code !== code)
   },
@@ -113,11 +133,13 @@ export const practiceStore = {
       const m = models()
       const r = await m.PStudent.deleteOne({ _id: studentId, classCode: code }).catch(() => ({ deletedCount: 0 }))
       await m.PDay.deleteMany({ studentId: String(studentId) })
+      await m.PSubmission.deleteMany({ studentId: String(studentId) })
       return r.deletedCount > 0
     }
     const before = mem.students.length
     mem.students = mem.students.filter((s) => !(s._id === String(studentId) && s.classCode === code))
     mem.days = mem.days.filter((d) => d.studentId !== String(studentId))
+    mem.subs = mem.subs.filter((x) => x.studentId !== String(studentId))
     return mem.students.length < before
   },
   /** One row per student per day; re-syncing a day overwrites it. */
@@ -134,5 +156,44 @@ export const practiceStore = {
       : mem.days.filter((d) => d.classCode === code && d.day >= from && d.day <= to)
     return rows.map((d) => withDefaults({ studentId: d.studentId, ...pickDay(d) }))
   },
-  _reset() { mem.classes = []; mem.students = []; mem.days = []; mem.seq = 0 },
+  async addHomework(code, hw) {
+    const doc = { classCode: code, ...hw }
+    if (useMongo) { await models().PHomework.create(doc); return pickHw(doc) }
+    mem.homework.push(doc)
+    return pickHw(doc)
+  },
+  async listHomework(code) {
+    const rows = useMongo ? await models().PHomework.find({ classCode: code }).lean() : mem.homework.filter((h) => h.classCode === code)
+    return rows.map(pickHw).sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : a.seed - b.seed))
+  },
+  async findHomework(code, seed) {
+    const h = useMongo ? await models().PHomework.findOne({ classCode: code, seed }).lean() : mem.homework.find((x) => x.classCode === code && x.seed === seed)
+    return h ? pickHw(h) : null
+  },
+  async deleteHomework(code, seed) {
+    if (useMongo) {
+      const m = models()
+      const r = await m.PHomework.deleteOne({ classCode: code, seed })
+      await m.PSubmission.deleteMany({ classCode: code, seed })
+      return r.deletedCount > 0
+    }
+    const before = mem.homework.length
+    mem.homework = mem.homework.filter((h) => !(h.classCode === code && h.seed === seed))
+    mem.subs = mem.subs.filter((x) => !(x.classCode === code && x.seed === seed))
+    return mem.homework.length < before
+  },
+  /** One result per student per homework; the first turn-in wins. */
+  async addSubmission(student, sub) {
+    const doc = { classCode: student.classCode, studentId: student.id, ...sub }
+    if (useMongo) {
+      await models().PSubmission.updateOne({ studentId: student.id, seed: sub.seed }, { $setOnInsert: doc }, { upsert: true })
+      return
+    }
+    if (!mem.subs.some((x) => x.studentId === student.id && x.seed === sub.seed)) mem.subs.push(doc)
+  },
+  async listSubmissions(code) {
+    const rows = useMongo ? await models().PSubmission.find({ classCode: code }).lean() : mem.subs.filter((x) => x.classCode === code)
+    return rows.map((x) => ({ studentId: x.studentId, seed: x.seed, score: x.score, total: x.total, missed: [...(x.missed || [])], day: x.day }))
+  },
+  _reset() { mem.classes = []; mem.students = []; mem.days = []; mem.homework = []; mem.subs = []; mem.seq = 0 },
 }
