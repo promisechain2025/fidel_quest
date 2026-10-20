@@ -28,6 +28,17 @@ export const ROUTE_META = Object.freeze({
     title: 'Pricing - eGeez',
     description: 'One-time $12.99 with 1 kid profile. More children: $4.99 for a 2nd child, $2.49 for each child after, up to 6. No ads, no subscriptions.',
   },
+  // noindex: prerendered so S3 serves a real 200 page, kept out of search.
+  '/classes': {
+    title: 'Teacher dashboard - eGeez',
+    description: 'Sign in to manage your eGeez classes: class codes, invite links, homework and a live roster of student progress.',
+    noindex: true,
+  },
+  '/verify': {
+    title: 'Confirm your email - eGeez',
+    description: 'Confirm the email address for your eGeez account so you can use the teacher dashboard and other account features.',
+    noindex: true,
+  },
   '/privacy': {
     title: 'Privacy - eGeez',
     description: 'What the offline app stores on the device, what the website and accounts collect, and what never leaves your phone. No ads, no child data.',

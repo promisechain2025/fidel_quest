@@ -50,6 +50,8 @@ for (const [route, meta] of Object.entries(ROUTE_META)) {
   html = upsert(html, /<meta name="twitter:title"[^>]*>/, `<meta name="twitter:title" content="${esc(meta.title)}" />`)
   html = upsert(html, /<meta name="twitter:description"[^>]*>/, `<meta name="twitter:description" content="${esc(meta.description)}" />`)
 
+  if (meta.noindex) html = upsert(html, /<meta name="robots"[^>]*>/, '<meta name="robots" content="noindex" />')
+
   const out = route === '/' ? join(dist, 'index.html') : join(dist, route.slice(1), 'index.html')
   mkdirSync(dirname(out), { recursive: true })
   writeFileSync(out, html)

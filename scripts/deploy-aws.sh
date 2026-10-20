@@ -22,6 +22,10 @@
 # Optional:
 #   VITE_API_URL        hub API origin; WITHOUT it every form silently
 #                       degrades to a mailto draft, so the deploy refuses.
+#   ALLOW_MAILTO_ONLY=1 deploy anyway without VITE_API_URL: forms open a
+#                       mailto draft and /classes shows "coming soon".
+#   SKIP_APP=1          website only; leave s3://BUCKET/app/ untouched (the
+#                       app ships through deploy-app.yml, which never deletes).
 #
 # Usage:  EGEEZ_BUCKET=... EGEEZ_DISTRIBUTION=... VITE_API_URL=... \
 #           bash scripts/deploy-aws.sh
@@ -43,8 +47,10 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> Building the PWA for /app/"
-VITE_BASE=/app/ npm run build
+if [ "${SKIP_APP:-}" != "1" ]; then
+  echo "==> Building the PWA for /app/"
+  VITE_BASE=/app/ npm run build
+fi
 
 echo "==> Building the website"
 (cd website && npm run build)
@@ -80,6 +86,7 @@ aws s3 cp "s3://$EGEEZ_BUCKET/sitemap.xml" "s3://$EGEEZ_BUCKET/sitemap.xml" \
 aws s3 cp "s3://$EGEEZ_BUCKET/robots.txt" "s3://$EGEEZ_BUCKET/robots.txt" \
   --content-type 'text/plain; charset=utf-8' --cache-control "$NOCACHE" --metadata-directive REPLACE
 
+if [ "${SKIP_APP:-}" != "1" ]; then
 echo "==> Uploading the PWA to s3://$EGEEZ_BUCKET/app/"
 aws s3 sync dist "s3://$EGEEZ_BUCKET/app/" \
   --delete --exclude '*.html' --exclude 'sw.js' --exclude 'manifest.webmanifest' \
@@ -91,6 +98,8 @@ aws s3 cp "s3://$EGEEZ_BUCKET/app/sw.js" "s3://$EGEEZ_BUCKET/app/sw.js" \
   --content-type 'application/javascript; charset=utf-8' --cache-control "$NOCACHE" --metadata-directive REPLACE
 aws s3 cp "s3://$EGEEZ_BUCKET/app/manifest.webmanifest" "s3://$EGEEZ_BUCKET/app/manifest.webmanifest" \
   --content-type 'application/manifest+json' --cache-control "$NOCACHE" --metadata-directive REPLACE
+
+fi
 
 echo "==> Invalidating CloudFront"
 aws cloudfront create-invalidation --distribution-id "$EGEEZ_DISTRIBUTION" \
