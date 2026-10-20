@@ -418,6 +418,22 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     })
   }
 
+  const speedEl = (voiced ? (<div className="pb-speed" role="group" aria-label="ፍጥነት" data-testid="speed" data-rate={SPEEDS[speed]}>
+          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.max(0, v - 1))} disabled={speed === 0} aria-label="ቀስ" data-testid="speed-down"><Turtle size={22} /></button>
+          <span className="pb-spd-dots" aria-hidden="true">{SPEEDS.map((r, k) => <span key={k} className={`${k === speed ? 'on' : ''}${r === 1 ? ' one' : ''}`} />)}</span>
+          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.min(SPEEDS.length - 1, v + 1))} disabled={speed === SPEEDS.length - 1} aria-label="ፍጠን" data-testid="speed-up"><Rabbit size={22} /></button>
+        </div>
+        ) : <span className="pb-speed" aria-hidden="true" />)
+  const playEl = (ic) => (voiced ? (
+        <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
+          {playing ? <Pause size={ic} fill="currentColor" /> : <Play size={ic} fill="currentColor" />}
+        </button>
+        ) : <span className="pb-play-slot" aria-hidden="true" data-testid="no-voice" />)
+  const sizeEl = (<div className="pb-size">
+          <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={scale <= SIZES[0] + 1e-6} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
+          <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={scale >= SIZES[SIZES.length - 1] - 1e-6} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
+        </div>)
+
   return (
     <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
@@ -479,23 +495,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       </div>
 
-      <footer className="pb-bottom">
-        {voiced ? (<div className="pb-speed" role="group" aria-label="ፍጥነት" data-testid="speed" data-rate={SPEEDS[speed]}>
-          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.max(0, v - 1))} disabled={speed === 0} aria-label="ቀስ" data-testid="speed-down"><Turtle size={22} /></button>
-          <span className="pb-spd-dots" aria-hidden="true">{SPEEDS.map((r, k) => <span key={k} className={`${k === speed ? 'on' : ''}${r === 1 ? ' one' : ''}`} />)}</span>
-          <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.min(SPEEDS.length - 1, v + 1))} disabled={speed === SPEEDS.length - 1} aria-label="ፍጠን" data-testid="speed-up"><Rabbit size={22} /></button>
-        </div>
-        ) : <span className="pb-speed" aria-hidden="true" />}
-        {voiced ? (
-        <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
-          {playing ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" />}
-        </button>
-        ) : <span className="pb-play-slot" aria-hidden="true" data-testid="no-voice" />}
-        <div className="pb-size">
-          <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={scale <= SIZES[0] + 1e-6} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
-          <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={scale >= SIZES[SIZES.length - 1] - 1e-6} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
-        </div>
-      </footer>
+      <footer className="pb-fb" data-testid="controls">{speedEl}{playEl(26)}{sizeEl}</footer>
     </div>
   )
 }

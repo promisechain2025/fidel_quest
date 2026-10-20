@@ -39,6 +39,17 @@ describe('PrayerBook', () => {
     expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
   })
 
+  it('compact controls: one slim always-visible footer: speed | play | size, no options button', () => {
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    expect(container.querySelector('.pb-bottom')).toBeNull()
+    expect(screen.queryByTestId('tray-toggle')).toBeNull()
+    const row = screen.getByTestId('controls')
+    for (const id of ['speed', 'size-up', 'size-down', 'play']) expect(row.querySelector(`[data-testid="${id}"]`)).toBeTruthy()
+    const order = [...row.children].map((e) => e.dataset.testid || e.className)
+    expect(order).toEqual(['speed', 'play', 'pb-size'])
+    fireEvent.pointerDown(container.querySelector('.pb-stage'))
+    expect(row.className).toBe('pb-fb')
+  })
   it('speed: tortoise/hare steps 0.5–1.25, default 1, remembered', () => {
     const { unmount } = render(<PrayerBook onBack={() => {}} />)
     const g = () => screen.getByTestId('speed').dataset.rate
