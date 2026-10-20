@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
-import { APP_URL } from './config.js'
+import { APP_URL, APP_STORE_URL, PLAY_STORE_URL, CONTACT_EMAIL, COMPANY_NAME } from './config.js'
 import { t, currentLang, setLang } from './i18n.js'
 
 /* HIDDEN AT LAUNCH (owner decision): the toggle must not offer Amharic UI
@@ -109,6 +109,43 @@ export function CtaButton({ href, to, onClick, children, tone = 'gold', external
   return <button type={type || 'button'} onClick={onClick} disabled={disabled} className={cls} style={styles}>{children}</button>
 }
 
+/** Which store this visitor's phone uses: 'ios' | 'android' | null (desktop). */
+export function detectStore(ua = typeof navigator === 'undefined' ? '' : navigator.userAgent) {
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1)) return 'ios'
+  if (/Android/i.test(ua)) return 'android'
+  return null
+}
+
+/* The two store buttons. On a phone, the visitor's own store goes first and
+   gets the solid style, so one tap lands them on the right listing. */
+export function StoreButtons({ className = '', center = false }) {
+  const store = detectStore()
+  const apple = { key: 'ios', href: APP_STORE_URL, top: t('dlOn', 'Download on the'), name: 'App Store', Icon: AppleGlyph }
+  const play = { key: 'android', href: PLAY_STORE_URL, top: t('getOn', 'Get it on'), name: 'Google Play', Icon: PlayGlyph }
+  const list = store === 'android' ? [play, apple] : [apple, play]
+  return (
+    <div className={`flex flex-wrap gap-3 ${center ? 'justify-center' : 'justify-center md:justify-start'} ${className}`}>
+      {list.map(({ key, href, top, name, Icon }) => {
+        const mine = store === key
+        return (
+          <a key={key} href={href} target="_blank" rel="noreferrer" data-store={key}
+            className="chunk inline-flex items-center gap-2.5 px-4 py-2"
+            style={{ minHeight: 52, background: mine || !store ? '#000' : 'var(--card)', color: mine || !store ? '#fff' : 'var(--ink)', border: '2px solid ' + (mine || !store ? '#000' : 'var(--line)') }}>
+            <Icon />
+            <span className="text-left leading-tight"><span className="block text-[11px] font-bold opacity-80">{top}</span><span className="block text-lg font-black">{name}</span></span>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+function AppleGlyph() {
+  return <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.4-2.8-.1 0-2.6-1-2.6-3.9zM13.9 5c.7-.8 1.1-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
+}
+function PlayGlyph() {
+  return <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2.5l10.2 9.5L4 21.5c-.4-.2-.6-.6-.6-1.1V3.6c0-.5.2-.9.6-1.1z" fill="#34a853"/><path d="M17.6 8.8L14.2 12 4 2.5c.2-.1.5-.1.8.1l12.8 6.2z" fill="#4285f4"/><path d="M17.6 15.2L4.8 21.4c-.3.2-.6.2-.8.1L14.2 12l3.4 3.2z" fill="#ea4335"/><path d="M21 12c0 .5-.3 1-.8 1.3l-2.6 1.9L14.2 12l3.4-3.2 2.6 1.9c.5.3.8.8.8 1.3z" fill="#fbbc04"/></svg>
+}
+
 export function Section({ eyebrow, title, children, center = false, className = '', mark = '' }) {
   return (
     <section className={`watermark mx-auto w-full max-w-5xl px-5 py-14 sm:px-6 md:py-20 ${className}`} data-mark={mark}>
@@ -145,12 +182,16 @@ export const inputStyle = { background: 'var(--paper)', border: '2px solid var(-
 /* Only the store price in the bar. The logo is Home. Other product pages
    redirect home (see siteAccess.js). */
 const NAV = [
+  ['/teachers', 'For teachers'],
   ['/pricing', 'Pricing'],
+  ['/about', 'About'],
 ]
 
 const ALL_NAV = [
   ['/', 'Home'],
+  ['/teachers', 'For teachers'],
   ['/pricing', 'Pricing'],
+  ['/about', 'About'],
 ]
 
 function useTheme() {
@@ -330,9 +371,10 @@ export function Footer() {
           {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
           <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="col-span-2 rounded py-0.5 hover:underline">{t('navContact', 'Contact')}: {CONTACT_EMAIL}</a>
         </nav>
       </div>
-      <p className="pb-6 text-center text-xs" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
+      <p className="pb-6 text-center text-xs" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} {COMPANY_NAME} · eGeez</p>
       <Tibeb />
     </footer>
   )

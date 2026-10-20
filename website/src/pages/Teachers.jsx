@@ -1,418 +1,233 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Link2, ClipboardList, CalendarRange, MonitorPlay, Grid3x3, CheckCircle2, GraduationCap, MapPin, Star, TrendingUp, ShieldCheck, Users, School, Search } from 'lucide-react'
-import { Card, CtaButton, Field, Picture, Reveal, Section, inputCls, inputStyle } from '../components.jsx'
+/* ============================================================================
+   /teachers - everything a church-school or parish teacher needs to run an
+   online Ge'ez / Tigrinya / Amharic class with eGeez.
+   ----------------------------------------------------------------------------
+   Only REAL app features are described as available (src/components/
+   TeacherMode.jsx, TvClass.jsx, ClassUnlockCard.jsx, platform/classroom.js,
+   platform/classUnlock.js, platform/practiceReport.js). Anything not built
+   yet is under "Coming next" and labelled as a plan. Prices are [CONFIRM].
+   ========================================================================== */
+import { useState } from 'react'
+import { CheckCircle2, Church, Users, BookOpen, Home as HomeIcon, Globe, Printer } from 'lucide-react'
+import { Section, Card, CtaButton, Field, inputCls, inputStyle, LetterTile } from '../components.jsx'
 import { submitForm } from '../api.js'
-import { API_URL, APP_URL } from '../config.js'
-import { SUBJECTS, SUBJECT_LABEL } from '../subjects.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
+import { APP_URL, CONTACT_EMAIL } from '../config.js'
+import { WEEKS, LESSON_PLAN } from '../teacherCurriculum.js'
 
-const LANG_LABEL = { am: 'Amharic', ti: 'Tigrinya', other: 'Other' }
+const WHO = [
+  [Church, 'Parishes', 'One class code for the whole Sunday school, so every family starts on the same week.'],
+  [BookOpen, 'Deacon training', 'Fidel to fluent Ge’ez reading, with ጸሎት and ውዳሴ ማርያም read with the traditional marks.'],
+  [Users, 'Sunday schools', 'A ready term plan: two letter families a week, a TV lesson and one homework link per week.'],
+  [Globe, 'Online diaspora classes', 'Teach students in many cities over Zoom or Google Meet. Everything they need opens in a browser.'],
+  [HomeIcon, 'Homeschool families', 'A parent can run the same plan at the kitchen table with one or several children.'],
+]
 
-export function Stars({ avg, count }) {
-  if (!count) return <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('teNewTeacher', 'New on the board')}</span>
-  return (
-    <span className="inline-flex items-center gap-1 text-sm font-black" role="img" aria-label={`${avg} out of 5 stars from ${count} families`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className="h-4 w-4" aria-hidden="true"
-          style={{ color: 'var(--star)', fill: i <= Math.round(avg) ? 'var(--star)' : 'transparent' }} />
-      ))}
-      <span className="ml-1">{avg}</span>
-      <span className="font-bold" style={{ color: 'var(--muted)' }}>({count})</span>
-    </span>
-  )
-}
+const STEPS = [
+  ['Open Teacher Mode', 'Open easygeez.com/app (or the eGeez app) on your phone, tablet or computer. Go to Grown-ups (hold-and-answer gate) and tap Teacher.'],
+  ['Create your class', 'Type your name and a class code you choose, e.g. STMARY1. The class lives on your device - no account and no server needed.'],
+  ['Pick your pace', 'Choose letter families per week (2 matches the plan below). The term plan lays out every week with due dates.'],
+  ['Unlock the app for your class', 'In “Unlock the web app for this class”, choose 30, 90 or 180 days and make the class unlock code. It rides inside your invite link.'],
+  ['Invite students', 'Share the class link in your WhatsApp or Telegram group, or show the QR code on screen. Students tap Join and get the full web app on that browser until the code expires.'],
+  ['Teach live', 'Share your screen with the TV lesson board: Chant mode with “Say after me”, then Quiz mode where students answer by number.'],
+  ['Send homework', 'Tap “Send homework” on the week’s row. Every student gets the same questions from one link, so results are comparable.'],
+  ['See progress', 'When a student finishes, they send back a result link. Open it on your device: the roster fills in, the week shows “5 of 7 turned in”, and missed letters add up in “Class trouble letters”.'],
+]
 
-/* Ask the platform to broker an introduction. Contacts are exchanged only
-   if the teacher accepts - the form says so. */
-function IntroForm({ te, onClose }) {
-  const [childName, setChildName] = useState('')
-  const [message, setMessage] = useState('')
-  const [state, setState] = useState({ status: 'idle', error: '' })
-  const send = async (e) => {
+const FEATURES = [
+  'Class code + invite link and QR code',
+  'Class unlock code (30/90/180 days) that opens the full web app for students',
+  'Term plan with weekly due dates, at your pace',
+  'TV lesson board: chant with “Say after me” and number quiz, keyboard or remote',
+  'Weekly homework links, plus extra assignments on any letter families',
+  'Result links back to the teacher: roster, turned in / missing, class trouble letters',
+  'Parent practice reports (signed links, 7 days of minutes including prayer time)',
+  'Tigrinya and Amharic learning packs; prayer book with reading marks',
+]
+
+const COMING = [
+  'Teacher dashboard on the web with a live class roster (no result links needed)',
+  'Homework on words, reading and prayer pages - today homework covers letters',
+  'Live reading checks: a student reads a prayer line and the teacher listens and marks it',
+  'Class-wide prayer book screen in the TV board with marks',
+  'Parish license billing and bulk codes for the phone apps',
+]
+
+const FAQ = [
+  ['Do students need to buy the app?', 'For your class, no: the class unlock code opens the full web app (easygeez.com/app) on each student’s browser until it expires. Families who want it on their phone offline can get it from the App Store or Google Play.'],
+  ['Does it work for Tigrinya and Amharic?', 'Yes. Teacher Mode, the TV board, homework and the term plan run in both learning packs. The prayer book is Ge’ez; when learning in Tigrinya the marks use the Tigrinya names ተለዓሊ and ተዋሓጢ.'],
+  ['Do I need an account or a server?', 'No. Your class lives on your device and travels in links. If you change devices, keep your class code; [CONFIRM] moving a class between devices is planned.'],
+  ['What about children’s privacy?', 'The app has no ads and no chat. Results come back only as links a family chooses to send you, with the first name they typed. Nothing is uploaded unless a family shares it.'],
+  ['Can I use it on Zoom or Google Meet?', 'Yes - open the TV lesson board or the prayer book and share your screen. Students follow along and answer out loud or in chat.'],
+  ['How long does the code last?', 'Up to 180 days, then make a new one. If a code leaks, “Make a new code” replaces it in your invite link.'],
+]
+
+function RequestForm() {
+  const [form, setForm] = useState({ name: '', email: '', parish: '', city: '', language: 'Ge’ez + Tigrinya', students: '', message: '' })
+  const [state, setState] = useState('idle')
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const submit = async (e) => {
     e.preventDefault()
-    setState({ status: 'busy', error: '' })
-    try {
-      const { apiFetch } = await import('../auth.js')
-      await apiFetch(`/api/teachers/${te.id}/intros`, { method: 'POST', body: { childName, message } })
-      setState({ status: 'done', error: '' })
-    } catch (err) { setState({ status: 'idle', error: err.message }) }
+    setState('busy')
+    try { await submitForm('/api/contact', { ...form, topic: 'class code request' }, 'Class code request - eGeez teachers'); setState('done') } catch { setState('idle') }
   }
-  if (state.status === 'done') {
+  if (state === 'done') {
     return (
-      <div className="mt-3 rounded-xl p-3 text-sm font-bold" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}>
-        {t('inSent', 'Request sent! {n} will answer in their dashboard - you will get an email either way. Track it in your Family page.').replace('{n}', te.name)}
-      </div>
+      <Card className="text-center">
+        <CheckCircle2 className="mx-auto h-10 w-10" style={{ color: 'var(--go)' }} aria-hidden="true" />
+        <p className="mt-2 font-black">{t('tcSent', 'Thank you! Your email app should have opened - send that message and we will reply within a few days.')}</p>
+      </Card>
     )
   }
   return (
-    <form onSubmit={send} className="mt-3 flex flex-col gap-2">
-      <input value={childName} onChange={(e) => setChildName(e.target.value.slice(0, 40))}
-        placeholder={t('inChild', 'Child first name (optional)')} aria-label={t('inChildL', 'Child first name')}
-        className="rounded-xl px-3 py-2.5 text-[16px]" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
-      <textarea required value={message} onChange={(e) => setMessage(e.target.value.slice(0, 1000))} rows={3}
-        placeholder={t('inMsg', 'What are you looking for? Age, level, days that work…')} aria-label={t('inMsgL', 'Message to the teacher')}
-        className="rounded-xl px-3 py-2.5 text-[16px]" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
-      {state.error && <p className="text-xs font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
-      <div className="flex gap-2">
-        <CtaButton type="submit" tone="green" className="flex-1 !py-2.5 text-sm" disabled={state.status === 'busy'}>
-          {state.status === 'busy' ? t('fSending', 'Sending…') : t('inSend', 'Send request')}
-        </CtaButton>
-        <button type="button" onClick={onClose} className="px-3 text-sm font-bold" style={{ color: 'var(--muted)' }}>{t('inCancel', 'Cancel')}</button>
-      </div>
-      <p className="text-[11px]" style={{ color: 'var(--muted)' }}>
-        {t('inPrivacy', 'Your contact is shared with the teacher only if they accept.')}
-      </p>
-    </form>
-  )
-}
-
-function TeacherCard({ te }) {
-  const [reviews, setReviews] = useState(null)
-  const [asking, setAsking] = useState(false)
-  const [authed, setAuthed] = useState(false)
-  useEffect(() => { import('../auth.js').then((m) => setAuthed(m.signedIn())) }, [])
-  const loadReviews = () => {
-    if (reviews !== null) { setReviews(null); return }
-    fetch(`${API_URL}/api/teachers/${te.id}/reviews`)
-      .then((r) => (r.ok ? r.json() : { reviews: [] }))
-      .then((j) => setReviews(j.reviews || []))
-      .catch(() => setReviews([]))
-  }
-  return (
-    <Card className="h-full">
-      <div className="flex items-center gap-3">
-        <span className="lt flex-none" style={{ width: 44, height: 44, fontSize: 20, fontFamily: 'inherit' }} aria-hidden="true">
-          {te.name.trim()[0]?.toUpperCase() || '?'}
-        </span>
-        <div className="min-w-0">
-          <h3 className="font-black">{te.name}</h3>
-          <p className="text-xs font-bold" style={{ color: 'var(--accent)' }}>
-            {(te.languages || []).map((l) => LANG_LABEL[l] || l).join(' · ')}
-          </p>
-        </div>
-      </div>
-      {(te.subjectTags || []).length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {te.subjectTags.map((s) => (
-            <span key={s} className="rounded-full px-2.5 py-0.5 text-xs font-bold"
-              style={{ background: 'var(--paper)', border: '1px solid var(--line)', color: 'var(--muted)' }}>
-              {SUBJECT_LABEL[s] || s}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="mt-3"><Stars avg={te.rating?.avg} count={te.rating?.count} /></div>
-      {te.progress?.show && (
-        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black"
-          style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', border: '1px solid var(--go)' }}
-          title={t('teVerifiedTip', 'Average new letters that families recorded for their children after linking this teacher.')}>
-          <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />
-          {t('teVerified', '+{n} letters/child, reported by {k} families')
-            .replace('{n}', te.progress.avgLettersGained).replace('{k}', te.progress.verified)}
-        </p>
-      )}
-      {te.progress?.families > 0 && (
-        <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--muted)' }}>
-          <Users className="h-3.5 w-3.5" aria-hidden="true" />
-          {(te.progress.families === 1
-            ? t('teFamilies1', 'Working with {k} family')
-            : t('teFamiliesN', 'Working with {k} families')).replace('{k}', te.progress.families)}
-        </p>
-      )}
-      {te.subjects && (
-        <p className="mt-3 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-          <GraduationCap className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.subjects}
-        </p>
-      )}
-      {te.location && (
-        <p className="mt-1.5 flex items-start gap-2 text-sm" style={{ color: 'var(--muted)' }}>
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {te.location}
-        </p>
-      )}
-      {te.rating?.count > 0 && (
-        <button type="button" onClick={loadReviews} className="mt-3 text-xs font-bold underline" style={{ color: 'var(--muted)' }}>
-          {reviews === null ? t('teShowReviews', 'What families say') : t('teHideReviews', 'Hide')}
-        </button>
-      )}
-      {reviews && reviews.length > 0 && (
-        <ul className="mt-2 space-y-2">
-          {reviews.map((r, i) => (
-            <li key={i} className="rounded-xl p-2.5 text-xs leading-relaxed" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
-              <Stars avg={r.stars} count={1} /> <span style={{ color: 'var(--muted)' }}>{r.comment}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {reviews && reviews.length === 0 && (
-        <p className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>{t('teNoComments', 'No written reviews yet.')}</p>
-      )}
-      <div className="mt-4">
-        {asking ? (
-          <IntroForm te={te} onClose={() => setAsking(false)} />
-        ) : authed ? (
-          <CtaButton onClick={() => setAsking(true)} tone="gold" className="w-full !py-2.5 text-sm">
-            {t('inAsk', 'Request an introduction')}
-          </CtaButton>
-        ) : (
-          <CtaButton to="/family" tone="ghost" className="w-full !py-2.5 text-sm">
-            {t('inSignIn', 'Sign in to request an introduction')}
-          </CtaButton>
-        )}
-      </div>
+    <Card>
+      <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+        <Field label={t('tcName', 'Your name')}><input required className={inputCls} style={inputStyle} value={form.name} onChange={set('name')} /></Field>
+        <Field label={t('tcEmail', 'Email')}><input required type="email" className={inputCls} style={inputStyle} value={form.email} onChange={set('email')} /></Field>
+        <Field label={t('tcParish', 'Parish / school')}><input className={inputCls} style={inputStyle} value={form.parish} onChange={set('parish')} /></Field>
+        <Field label={t('tcCity', 'City and country')}><input className={inputCls} style={inputStyle} value={form.city} onChange={set('city')} /></Field>
+        <Field label={t('tcLang', 'Class language')}>
+          <select className={inputCls} style={inputStyle} value={form.language} onChange={set('language')}>
+            {['Ge’ez + Tigrinya', 'Ge’ez + Amharic', 'Ge’ez only (prayers)'].map((x) => <option key={x}>{x}</option>)}
+          </select>
+        </Field>
+        <Field label={t('tcStudents', 'About how many students?')}><input inputMode="numeric" className={inputCls} style={inputStyle} value={form.students} onChange={set('students')} /></Field>
+        <div className="sm:col-span-2"><Field label={t('tcMsg', 'Anything we should know?')}><textarea rows={3} className={inputCls} style={inputStyle} value={form.message} onChange={set('message')} /></Field></div>
+        <div className="sm:col-span-2"><CtaButton type="submit" tone="green" disabled={state === 'busy'}>{t('tcSubmit', 'Request help with a class code')}</CtaButton></div>
+      </form>
+      <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('tcMailNote', 'Opens your email app with the details filled in, addressed to')} {CONTACT_EMAIL}.</p>
     </Card>
   )
 }
 
-/* The trust board: owner-vetted teachers with family ratings and
-   family-reported progress (computed from linked children's own saved
-   gameplay snapshots - real usage, gated on an accepted relationship, but
-   reported by families, not independently audited). Renders once approved. */
-function Directory() {
-  const [teachers, setTeachers] = useState([])
-  const [subject, setSubject] = useState('') // '' = all subjects
-  useEffect(() => {
-    if (!API_URL) return
-    fetch(`${API_URL}/api/teachers`)
-      .then((r) => (r.ok ? r.json() : { teachers: [] }))
-      .then((j) => setTeachers(j.teachers || []))
-      .catch(() => {})
-  }, [])
-  if (teachers.length === 0) return null
-  // Only offer filters for subjects that actually appear on the board.
-  const present = SUBJECTS.filter((s) => teachers.some((te) => (te.subjectTags || []).includes(s.id)))
-  const shown = subject ? teachers.filter((te) => (te.subjectTags || []).includes(subject)) : teachers
-  return (
-    <Section mark="ት" eyebrow={t('teDirEyebrow', 'The teacher board')} title={t('teDirTitle', 'Vetted, rated, and progress-tracked')} center>
-      {present.length > 0 && (
-        <div className="mb-6 flex flex-wrap justify-center gap-2" role="group" aria-label={t('teFilterLabel', 'Filter teachers by subject')}>
-          {[['', t('teFilterAll', 'All subjects')], ...present.map((s) => [s.id, s.label])].map(([id, label]) => (
-            <button key={id || 'all'} type="button" onClick={() => setSubject(id)} aria-pressed={subject === id}
-              className="rounded-full px-4 py-1.5 text-sm font-bold"
-              style={subject === id
-                ? { background: 'var(--accent)', color: '#241a05' }
-                : { background: 'var(--card)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {shown.map((te) => <Reveal key={te.id}><TeacherCard te={te} /></Reveal>)}
-      </div>
-      {shown.length === 0 && (
-        <p className="mt-4 text-center text-sm" style={{ color: 'var(--muted)' }}>
-          {t('teNoneForSubject', 'No teachers listed for this subject yet.')}
-        </p>
-      )}
-      <Card className="mx-auto mt-8 max-w-2xl">
-        <h3 className="flex items-center gap-2 font-black">
-          <ShieldCheck className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
-          {t('teHowT', 'How this board earns your trust')}
-        </h3>
-        <ul className="mt-2 space-y-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-          <li>{t('teHow1', 'Vetted: we review every teacher’s application before they appear here. We check their stated background - we do not run formal background checks, so meet and judge for yourself before hiring.')}</li>
-          <li>{t('teHow2', 'Rated: stars come only from families who requested an introduction, had it accepted, and linked their child to the teacher - not from anonymous strangers.')}</li>
-          <li>{t('teHow3', 'Progress-tracked: the green badge shows the average new letters that linked families recorded for their own children through normal app play after starting with this teacher. It only appears once at least two families have measurable gains. It is real usage - stronger than a testimonial - but it is reported by families through the app, not independently audited.')}</li>
-        </ul>
-      </Card>
-      <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
-        {t('teDirNote2', 'Pick a teacher in your Family dashboard to link them with your child - rating unlocks after that.')}
-        {' '}<Link to="/teach" className="font-bold underline">{t('teDash', 'On the board? Open your teacher dashboard')}</Link>
-      </p>
-    </Section>
-  )
-}
-
-const LANGS = [
-  ['am', 'Amharic'],
-  ['ti', 'Tigrinya'],
-  ['other', 'Other'],
-]
-
-/* The two teacher paths, stated up front so nobody has to guess which one
-   they want - and so the "board has no responsibility" line for own-class
-   teaching is clear before anyone applies. */
-function TwoWays() {
-  return (
-    <Section mark="ሁ" eyebrow={t('teWaysEyebrow', 'Two ways to teach')} title={t('teWaysTitle', 'Bring your own class, or let families find you')} center>
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card className="flex h-full flex-col">
-          <School className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-          <h3 className="mt-3 text-lg font-black">{t('teWayOwnT', 'Run your own class')}</h3>
-          <p className="mt-2 flex-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-            {t('teWayOwnB', 'Already have students - a weekend school, a church group, your own tutoring? Use the classroom built into the app: register your students, send homework with due dates, and watch each child’s progress. It works offline, needs no accounts, and stays entirely on your device. No application, no waiting - you are in charge, and eGeez is just your tool.')}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <CtaButton href={APP_URL} tone="green" className="!py-2.5 text-sm">{t('teWayOwnCta', 'Open the app')}</CtaButton>
-            <a href="#toolkit" className="self-center text-sm font-bold underline" style={{ color: 'var(--accent)' }}>{t('teWayOwnLink', 'See the classroom tools')}</a>
-          </div>
-        </Card>
-        <Card className="flex h-full flex-col">
-          <Search className="h-7 w-7" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-          <h3 className="mt-3 text-lg font-black">{t('teWayBoardT', 'Get found by families')}</h3>
-          <p className="mt-2 flex-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-            {t('teWayBoardB', 'Want new students? Join the teacher board. Families looking for face-to-face help find you, request an introduction, and eGeez brokers the first contact. You keep your rating and your track record here as families work with you.')}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <a href="#apply" className="chunk inline-flex items-center rounded-2xl px-4 py-2.5 text-sm font-black"
-              style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)' }}>
-              {t('teWayBoardCta', 'Apply to the board')}
-            </a>
-          </div>
-        </Card>
-      </div>
-      <p className="mt-5 text-center text-sm" style={{ color: 'var(--muted)' }}>
-        {t('teWaysBoth', 'You can do both - run your own class and take new families from the board.')}
-      </p>
-    </Section>
-  )
-}
-
 export default function Teachers() {
-  const [form, setForm] = useState({ name: '', email: '', languages: [], subjectTags: [], subjects: '', location: '', experience: '', message: '' })
-  const [state, setState] = useState({ status: 'idle', error: '' })
-  const [mailto, setMailto] = useState(false)
-
-  const toggleLang = (id) => setForm((f) => ({
-    ...f, languages: f.languages.includes(id) ? f.languages.filter((l) => l !== id) : [...f.languages, id],
-  }))
-  const toggleSubject = (id) => setForm((f) => ({
-    ...f, subjectTags: f.subjectTags.includes(id) ? f.subjectTags.filter((s) => s !== id) : [...f.subjectTags, id],
-  }))
-
-  const submit = async (e) => {
-    e.preventDefault()
-    // The toggles are aria-pressed buttons, so HTML validation cannot see
-    // them - an application with neither language nor subject used to be
-    // accepted and was useless to match on.
-    if (!form.languages?.length) {
-      setState({ status: 'idle', error: t('teNeedLang', 'Please choose at least one language you can teach.') })
-      return
-    }
-    setState({ status: 'busy', error: '' })
-    try {
-      const r = await submitForm('/api/teachers/apply', form, 'Teacher application - eGeez')
-      setMailto(!!r?.mailto)
-      setState({ status: 'done', error: '' })
-    } catch (err) {
-      setState({ status: 'idle', error: err.message })
-    }
-  }
-
   return (
     <>
-      <Seo title="Teach Amharic or Tigrinya remotely - eGeez" description="Class links, assignments with receipts, a term planner, TV display, and Class Bingo - a real classroom for remote teachers. Apply now." path="/teachers" />
-      <div className="mx-auto max-w-5xl px-6 pt-14 text-center">
-        <h1 className="display-1" style={{ textWrap: 'balance' }}>{t('teTitle', 'Teach the next generation - from anywhere')}</h1>
-        <p className="lede mx-auto mt-4 max-w-2xl" style={{ color: 'var(--muted)' }}>
-          {t('teLede', 'eGeez gives remote teachers a real classroom: your students play a curriculum that runs itself, and you guide, assign, and celebrate. Diaspora families are looking for you.')}
+      <Seo title="Teach Ge’ez, Tigrinya or Amharic online - eGeez for teachers" description="Run an online fidel and prayer class for your parish or Sunday school: class codes, homework links, a weekly lesson plan and a printable guide." path="/teachers" />
+      <div className="mx-auto max-w-4xl px-6 pt-14 text-center">
+        <div className="mb-5 flex justify-center gap-2" aria-hidden="true">
+          {['መ', 'ም', 'ህ', 'ር'].map((ch) => <LetterTile key={ch} ch={ch} size={46} />)}
+        </div>
+        <p className="geez text-lg font-black" style={{ color: 'var(--accent-text)' }} lang="gez">ለመምህራን · ንመማህራን</p>
+        <h1 className="display-1 mt-2" style={{ textWrap: 'balance' }}>{t('tcTitle', 'Run your fidel and prayer class online')}</h1>
+        <p className="lede mx-auto mt-5 max-w-2xl" style={{ color: 'var(--muted)' }}>
+          {t('tcLede', 'For parish, Sunday school and deacon-training teachers. Create a class, share one link, teach live on Zoom or Meet, send weekly homework and see who is keeping up - with a ready 17-week plan for the fidel, words, reading, ጸሎት and ውዳሴ ማርያም.')}
         </p>
+        <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
+          <CtaButton href={APP_URL} tone="green">{t('tcOpen', 'Open Teacher Mode')}</CtaButton>
+          <CtaButton to="/teachers/guide" tone="ghost"><Printer className="h-4 w-4" aria-hidden="true" /> {t('tcGuide', 'Printable teacher guide')}</CtaButton>
+          <CtaButton href="#request" tone="ghost">{t('tcReq', 'Request a class code')}</CtaButton>
+        </div>
       </div>
 
-      <TwoWays />
-
-      <span id="toolkit" className="block" aria-hidden="true" />
-      <Section mark="መ" eyebrow={t('teToolsEyebrow', 'Already in the app')} title={t('teToolsTitle', 'Your classroom toolkit')}>
-        <div className="mb-8 grid items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
-          <div className="phone mx-auto w-full max-w-[260px]">
-            <Picture src="/shots/app-bingo.png" width={780} height={1688} loading="lazy"
-              alt={t('teShotAlt', 'Kokeb’s Bingo in the app: play solo, host for a class, or join a game')} />
-          </div>
-          <p className="lede text-center md:text-left" style={{ color: 'var(--muted)' }}>
-            {t('teToolsLede', 'This is not a promise of future tools - it is a screenshot. Class Bingo, invite links, assignments with receipts, the term planner, and the TV display are in the app your students already have.')}
-          </p>
-        </div>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            [Link2, t('teT1t', 'Class links'), t('teT1b', 'Invite a whole class with one link or QR - no student accounts, no passwords, works on any phone.')],
-            [ClipboardList, t('teT2t', 'Assignments + receipts'), t('teT2b', 'Send a letter-range assignment; each child’s app returns a receipt of what they mastered. You see progress without collecting data.')],
-            [CalendarRange, t('teT3t', 'Term Plan'), t('teT3b', 'A syllabus organizer that lays your term out week by week over the journey.')],
-            [MonitorPlay, t('teT4t', 'TV classroom display'), t('teT4b', 'Project a big, chant-along display for in-person or video classes.')],
-            [Grid3x3, t('teT5t', 'Class Bingo + group games'), t('teT5b', 'Host live listening games: you pick the letters and the winning shape, kids scan a QR for unique cards, and you call the letters - show or voice-only.')],
-          ].map(([Icon, title, body], i) => (
-            <Card key={i}>
-              <Icon className="h-6 w-6" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-              <h3 className="mt-3 font-black">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{body}</p>
+      <Section mark="ሰ" eyebrow={t('tcWhoE', 'Who it is for')} title={t('tcWhoT', 'Made for the Church’s teachers')}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {WHO.map(([Icon, h, b]) => (
+            <Card key={h}>
+              <Icon className="h-6 w-6" style={{ color: 'var(--accent-text)' }} aria-hidden="true" />
+              <h3 className="mt-2 text-lg font-black">{t(`tcWho_${h}`, h)}</h3>
+              <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{b}</p>
             </Card>
           ))}
+        </div>
+      </Section>
+
+      <Section mark="ተ" eyebrow={t('tcHowE', 'How it works · እንዴት')} title={t('tcHowT', 'From zero to a running class in 15 minutes')}>
+        <ol className="grid gap-3 md:grid-cols-2">
+          {STEPS.map(([h, b], i) => (
+            <li key={h}><Card className="h-full">
+              <div className="flex items-start gap-3">
+                <span className="chunk flex h-9 w-9 shrink-0 items-center justify-center text-base font-black" style={{ background: 'var(--accent)', color: '#241a05' }}>{i + 1}</span>
+                <div><h3 className="font-black">{h}</h3><p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{b}</p></div>
+              </div>
+            </Card></li>
+          ))}
+        </ol>
+      </Section>
+
+      <Section mark="ለ" eyebrow={t('tcLessonE', 'Each live lesson')} title={t('tcLessonT', 'A 60-minute Zoom or Meet lesson')}>
+        <Card>
+          <table className="w-full text-left text-sm">
+            <tbody>
+              {LESSON_PLAN.map(([time, h, b]) => (
+                <tr key={h} style={{ borderTop: '1px solid var(--line)' }}>
+                  <td className="py-3 pr-3 align-top font-black whitespace-nowrap">{time}</td>
+                  <td className="py-3"><span className="font-black">{h}.</span> <span style={{ color: 'var(--muted)' }}>{b}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      </Section>
+
+      <Section mark="ቀ" eyebrow={t('tcPlanE', 'Curriculum · ትምህርት')} title={t('tcPlanT', 'A ready 17-week plan')}>
+        <p className="mb-5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
+          {t('tcPlanB', 'Two letter families a week - set the same pace in Teacher Mode and each week gets its own TV lesson and homework link. Prayers run alongside: first by ear, then reading ውዳሴ ማርያም with the reading marks.')}
+        </p>
+        <div className="grid gap-3 md:grid-cols-2">
+          {WEEKS.map((w) => (
+            <Card key={w.week}>
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="font-black">{t('tcWeek', 'Week')} {w.week}</h3>
+                <span className="geez text-xl font-black" style={{ color: 'var(--accent-text)' }} lang="am">{w.letters}</span>
+              </div>
+              <p className="geez mt-1 text-base" lang="am">{w.rows}</p>
+              <dl className="mt-2 space-y-1 text-sm" style={{ color: 'var(--muted)' }}>
+                {w.words && <div><dt className="inline font-bold" style={{ color: 'var(--ink)' }}>Words: </dt><dd className="inline geez">{w.words}</dd></div>}
+                <div><dt className="inline font-bold" style={{ color: 'var(--ink)' }}>Reading: </dt><dd className="inline">{w.reading}</dd></div>
+                <div><dt className="inline font-bold" style={{ color: 'var(--ink)' }}>ጸሎት: </dt><dd className="inline">{w.prayer}</dd></div>
+              </dl>
+            </Card>
+          ))}
+        </div>
+        <div className="mt-6"><CtaButton to="/teachers/guide" tone="gold"><Printer className="h-4 w-4" aria-hidden="true" /> {t('tcGuide2', 'Print or save the guide as PDF')}</CtaButton></div>
+      </Section>
+
+      <Section mark="ከ" eyebrow={t('tcFeatE', 'In the app today')} title={t('tcFeatT', 'What you get now, and what is coming')}>
+        <div className="grid gap-5 md:grid-cols-2">
           <Card>
-            <h3 className="font-black" style={{ color: 'var(--accent)' }}>{t('teNextT', 'Coming for teachers')}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('teNextB', 'Public teacher profiles, family matching, and scheduling - apply now and you will be first in the directory when it opens.')}
-            </p>
+            <h3 className="font-black">{t('tcNow', 'Available now')}</h3>
+            <ul className="mt-2 space-y-2 text-sm">{FEATURES.map((f) => <li key={f} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--go)' }} aria-hidden="true" />{f}</li>)}</ul>
+          </Card>
+          <Card>
+            <h3 className="font-black">{t('tcNext', 'Coming next (planned, not yet in the app)')}</h3>
+            <ul className="mt-2 space-y-2 text-sm" style={{ color: 'var(--muted)' }}>{COMING.map((f) => <li key={f} className="flex gap-2"><span aria-hidden="true">○</span>{f}</li>)}</ul>
           </Card>
         </div>
       </Section>
 
-      <Directory />
+      <Section mark="ዋ" eyebrow={t('tcPriceE', 'Pricing')} title={t('tcPriceT', 'For teachers and parishes')}>
+        {/* [CONFIRM] all prices below with the owner before launch. */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            ['Teacher', 'Free [CONFIRM]', 'Teacher Mode, TV board, homework links, the plan and guide.'],
+            ['Class', '$[CONFIRM] per class / term', 'Class unlock code for up to [CONFIRM] students on the web app.'],
+            ['Parish license', '$[CONFIRM] / month', 'All classes in a parish, phone-app codes for families, and help setting up.'],
+          ].map(([h, p, b]) => (
+            <Card key={h}>
+              <h3 className="font-black">{h}</h3>
+              <p className="mt-1 text-xl font-black" style={{ color: 'var(--accent-text)' }}>{p}</p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{b}</p>
+            </Card>
+          ))}
+        </div>
+      </Section>
 
-      <span id="apply" className="block" aria-hidden="true" />
-      <Section mark="ም" eyebrow={t('teApplyEyebrow', 'Apply')} title={t('teApplyTitle', 'Tell us about your teaching')} center>
-        <Card className="mx-auto max-w-xl">
-          {state.status === 'done' ? (
-            <div className="text-center">
-              <CheckCircle2 className="mx-auto h-9 w-9" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
-              <h3 className="mt-2 font-black">{t('teThanks', 'Application received!')}</h3>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>{mailto ? t('mailtoSent', 'Your email app should have opened - send that message and we will have it.') : t('teThanksB', 'We read every application and will reply by email.')}</p>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="flex flex-col gap-4 text-left">
-              <Field label={t('fName2', 'Full name')}>
-                <input className={inputCls} style={inputStyle} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoComplete="name" />
-              </Field>
-              <Field label={t('fEmail', 'Email')}>
-                <input className={inputCls} style={inputStyle} type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" />
-              </Field>
-              <fieldset>
-                <legend className="mb-1.5 text-sm font-bold">{t('fLangs', 'Languages you teach')}</legend>
-                <div className="flex flex-wrap gap-2">
-                  {LANGS.map(([id, label]) => (
-                    <button key={id} type="button" onClick={() => toggleLang(id)} aria-pressed={form.languages.includes(id)}
-                      className="rounded-full px-4 py-1.5 text-sm font-bold"
-                      style={form.languages.includes(id)
-                        ? { background: 'var(--go-soft)', border: '2px solid var(--go)', color: 'var(--go-ink)' }
-                        : { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="mb-1.5 text-sm font-bold">{t('fSubjectsL', 'Subjects you teach')}</legend>
-                <div className="flex flex-wrap gap-2">
-                  {SUBJECTS.map((s) => (
-                    <button key={s.id} type="button" onClick={() => toggleSubject(s.id)} aria-pressed={form.subjectTags.includes(s.id)}
-                      className="rounded-full px-4 py-1.5 text-sm font-bold"
-                      style={form.subjectTags.includes(s.id)
-                        ? { background: 'var(--go-soft)', border: '2px solid var(--go)', color: 'var(--go-ink)' }
-                        : { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-              <Field label={t('fSubjects', 'Focus / details (e.g. conversational, grades 3-6, exam prep)')}>
-                <input className={inputCls} style={inputStyle} value={form.subjects} onChange={(e) => setForm({ ...form, subjects: e.target.value })} />
-              </Field>
-              <Field label={t('fLocation', 'Where are you based? (city, timezone)')}>
-                <input className={inputCls} style={inputStyle} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              </Field>
-              <Field label={t('fExperience', 'Your teaching experience')}>
-                <textarea className={inputCls} style={inputStyle} rows={3} value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} />
-              </Field>
-              <Field label={t('fMessage', 'Anything else? (optional)')}>
-                <textarea className={inputCls} style={inputStyle} rows={2} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
-              </Field>
-              {state.error && <p className="text-sm font-bold" role="alert" style={{ color: 'var(--danger)' }}>{state.error}</p>}
-              <CtaButton type="submit" tone="green" className="justify-center">
-                {state.status === 'busy' ? t('fSending', 'Sending…') : t('teSubmit', 'Send application')}
-              </CtaButton>
-            </form>
-          )}
-        </Card>
+      <Section mark="ጥ" eyebrow={t('tcFaqE', 'Questions · ጥያቄዎች')} title={t('tcFaqT', 'Teacher FAQ')}>
+        <div className="space-y-3">
+          {FAQ.map(([q, a]) => (
+            <details key={q} className="rounded-2xl p-4" style={{ background: 'var(--card)', border: '1px solid var(--line)' }}>
+              <summary className="cursor-pointer font-black">{q}</summary>
+              <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{a}</p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      <div id="request" />
+      <Section mark="ደ" eyebrow={t('tcReqE', 'Get started')} title={t('tcReqT', 'Request a class code or help')}>
+        <RequestForm />
       </Section>
     </>
   )

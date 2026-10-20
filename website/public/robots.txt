@@ -4,13 +4,13 @@ Allow: /
 # redirect them home; this asks crawlers not to keep asking.
 Disallow: /amharic
 Disallow: /tigrinya
-Disallow: /teachers
 Disallow: /homeschool
 Disallow: /alphabet
-Disallow: /about
 Disallow: /guides
 Disallow: /family
-Disallow: /teach
+# $ = exact match, so /teachers stays crawlable.
+Disallow: /teach$
+Disallow: /teach/
 Disallow: /verify
 Disallow: /family-pack
 # Shared progress cards are for the person who received the link.

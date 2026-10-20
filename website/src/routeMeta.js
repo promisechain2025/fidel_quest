@@ -28,6 +28,18 @@ export const ROUTE_META = Object.freeze({
     title: 'Pricing - eGeez',
     description: 'One-time $12.99 with 1 kid profile. More children: $4.99 for a 2nd child, $2.49 for each child after, up to 6. No ads, no subscriptions.',
   },
+  '/teachers': {
+    title: 'Teach Ge\u2019ez, Tigrinya or Amharic online - eGeez for teachers',
+    description: 'Run an online fidel and prayer class for your parish or Sunday school: class codes, homework links, a weekly lesson plan and a printable guide.',
+  },
+  '/teachers/guide': {
+    title: 'Printable teacher guide - eGeez',
+    description: 'A printable week-by-week guide for teaching the fidel, words, reading and ጸሎት with reading marks in live video lessons, using eGeez class tools.',
+  },
+  '/about': {
+    title: 'About eGeez - why a church teacher built it',
+    description: 'eGeez is built by a church teacher who has taught many deacons, so every child in the diaspora can read the fidel, the prayers and their language.',
+  },
   '/privacy': {
     title: 'Privacy - eGeez',
     description: 'What the offline app stores on the device, what the website and accounts collect, and what never leaves your phone. No ads, no child data.',
