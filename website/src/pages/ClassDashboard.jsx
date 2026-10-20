@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { LogOut, Plus, Copy, Check, Trash2, RefreshCw, Users, BookOpen, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { Card, CtaButton, Field, inputCls, inputStyle } from '../components.jsx'
 import { signedIn, login, register, signOut, apiFetch } from '../auth.js'
-import { API_URL, CONTACT_EMAIL } from '../config.js'
+import { API_URL, APP_URL, CONTACT_EMAIL } from '../config.js'
 import { classInviteUrl, homeworkUrl } from '../classLinks.js'
 import { FAMILY_IDS, familyChar } from '../familyIds.js'
 import Seo from '../Seo.jsx'
@@ -250,9 +250,9 @@ export default function ClassDashboard() {
   const head = <Seo title="Teacher dashboard - eGeez" description="Sign in to manage your eGeez classes: class codes, invite links, homework and a live roster of student progress." path="/classes" noindex />
   if (!API_URL) {
     return (<div className="mx-auto max-w-xl px-6 pt-16 text-center">{head}
-      <h1 className="display-2">Teacher dashboard</h1>
-      <p className="lede mt-3" style={muted}>The online class dashboard is not switched on yet. Teacher Mode in the app works today without it.</p>
-      <div className="mt-6"><CtaButton to="/teachers">See how classes work</CtaButton></div>
+      <h1 className="display-2">Teacher dashboard - coming soon</h1>
+      <p className="lede mt-3" style={muted}>We are getting the online class dashboard ready for parishes and Sunday schools. Until then, Teacher Mode in the app already lets you run a class with links: open the app, go to Grown-ups, then Teacher.</p>
+      <div className="mt-6 flex flex-wrap justify-center gap-3"><CtaButton href={APP_URL} tone="green">Open the app</CtaButton><CtaButton href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Teacher dashboard - tell me when it opens')}`} tone="ghost">Tell me when it opens</CtaButton></div>
     </div>)
   }
   return (
