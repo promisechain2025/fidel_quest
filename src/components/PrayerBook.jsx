@@ -10,9 +10,6 @@
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, Eye, EyeOff, Pause, Play, Rabbit, SlidersHorizontal, Target, Turtle } from 'lucide-react'
-
-// SAMPLE ONLY: compact-footer variants for review, picked with ?pbfooter=a|b|c (default = current footer).
-const FOOTER = (() => { try { const v = new URLSearchParams(window.location.search).get('pbfooter'); return ['a', 'b', 'c'].includes(v) ? v : '' } catch { return '' } })()
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -229,6 +226,10 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
   useEffect(() => { if (!showAll) setLegendOpen(false) }, [showAll])
   const [playing, setPlaying] = useState(false)
   const [tray, setTray] = useState(false)
+  // Floating play fades while the reader is touching / turning the page.
+  const [busy, setBusy] = useState(false)
+  const busyT = useRef(0)
+  useEffect(() => () => clearTimeout(busyT.current), [])
   // Practice mode: prayer time is tracked, and playback stops after the current prayer.
   const [practice, setPractice] = useState(isPracticeMode)
   useEffect(() => subscribePracticeMode(setPractice), [])
@@ -428,7 +429,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
           <button type="button" className="pb-spd" onClick={() => setSpeed((v) => Math.min(SPEEDS.length - 1, v + 1))} disabled={speed === SPEEDS.length - 1} aria-label="ፍጠን" data-testid="speed-up"><Rabbit size={22} /></button>
         </div>
         ) : <span className="pb-speed" aria-hidden="true" />)
-  const playEl = (ic = 40) => (voiced ? (
+  const playEl = (ic) => (voiced ? (
         <button type="button" className="pb-play" onClick={togglePlay} disabled={!hasRec} aria-label={playing ? 'አቁም' : 'አንብብ'} data-testid="play">
           {playing ? <Pause size={ic} fill="currentColor" /> : <Play size={ic} fill="currentColor" />}
         </button>
@@ -437,14 +438,12 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
           <button type="button" className="pb-sz" onClick={() => resize(-1)} disabled={scale <= SIZES[0] + 1e-6} aria-label="ፊደል አሳንስ" data-testid="size-down"><span className="geez-book" style={{ fontSize: 17 }}>አ</span></button>
           <button type="button" className="pb-sz" onClick={() => resize(1)} disabled={scale >= SIZES[SIZES.length - 1] - 1e-6} aria-label="ፊደል አተልቅ" data-testid="size-up"><span className="geez-book" style={{ fontSize: 28 }}>አ</span></button>
         </div>)
-  const progress = pages.length > 1 ? pageSafe / (pages.length - 1) : 1
 
   return (
-    <div className="pb-root" data-footer={FOOTER || undefined} data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
+    <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
         <div className="pb-top-side">
           <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ChevronLeft size={24} /></button>
-          {FOOTER === 'c' && <button type="button" className={`pb-icon${tray ? ' pb-on' : ''}`} onClick={() => setTray((v) => !v)} aria-label="ምርጫታት" aria-expanded={tray} data-testid="tray-toggle"><SlidersHorizontal size={22} /></button>}
           {showAll && (
             <button type="button" className={`pb-icon pb-legend-btn${legendOpen ? ' pb-on' : ''}`} onClick={() => setLegendOpen((v) => !v)} aria-label="የምልክቶች መፍቻ" aria-expanded={legendOpen} data-testid="legend-toggle">
               <MarkShape type="tenesh" size={22} />
@@ -467,11 +466,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
           <button type="button" className={`pb-icon${showAll ? ' pb-on' : ''}`} onClick={() => setShowAll((x) => !x)} aria-label="ምልክቶች" aria-pressed={showAll} data-testid="marks-toggle">
             {showAll ? <Eye size={24} /> : <EyeOff size={24} />}
           </button>
-          {FOOTER === 'c' && playEl(22)}
         </div>
-        {FOOTER === 'c' && <div className="pb-progress" aria-hidden="true"><span style={{ width: `${progress * 100}%` }} /></div>}
       </header>
-      {FOOTER === 'c' && tray && <div className="pb-fc-tray">{speedEl}{sizeEl}</div>}
 
       {showAll && legendOpen && (
         <div className="pb-legend geez-book" role="button" tabIndex={0} aria-label="ዝጋ" data-testid="legend" onClick={() => setLegendOpen(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setLegendOpen(false) }}>
@@ -481,7 +477,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       )}
 
-      <div ref={stageRef} className="pb-stage" onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+      <div ref={stageRef} className="pb-stage" onPointerDown={(e) => { setBusy(true); onPointerDown(e) }} onPointerMove={onPointerMove} onPointerUp={(e) => { setBusy(false); onPointerUp(e) }} onPointerCancel={(e) => { setBusy(false); onPointerUp(e) }} onWheel={() => { setBusy(true); clearTimeout(busyT.current); busyT.current = setTimeout(() => setBusy(false), 700) }}>
         <div className="pb-book">
           <div className="pb-page pb-measure" aria-hidden="true">
             <div className="pb-face">
@@ -504,10 +500,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         </div>
       </div>
 
-      {FOOTER === '' && (<footer className="pb-bottom">{speedEl}{playEl(40)}{sizeEl}</footer>)}
-      {FOOTER === 'a' && (<footer className="pb-bottom pb-fa">{speedEl}{playEl(22)}{sizeEl}</footer>)}
-      {FOOTER === 'b' && (
-        <div className={`pb-fb${tray ? ' pb-open' : ''}`}>
+      {(
+        <div className={`pb-fb${tray ? ' pb-open' : ''}${busy && !tray ? ' pb-busy' : ''}`}>
           {tray && <div className="pb-fb-tray">{speedEl}{sizeEl}</div>}
           <button type="button" className={`pb-icon pb-fb-more${tray ? ' pb-on' : ''}`} onClick={() => setTray((v) => !v)} aria-label="ምርጫታት" aria-expanded={tray} data-testid="tray-toggle"><SlidersHorizontal size={22} /></button>
           {playEl(26)}
