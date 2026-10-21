@@ -14,7 +14,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Star, Volume2, RotateCcw, Check } from 'lucide-react'
-import { Brick, Stud, shade, brickCss, studCss, WOOD, WOOD_DARK } from './blockArt'
+import { publicUrl } from '../platform/publicUrl'
+import { shade, brickCss, studCss, WOOD, WOOD_DARK } from './blockArt'
 import { afterVoice, playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { initRound, snap, target, isComplete, SAMPLE_FAMILY, ORDERS } from '../blockChurchCore'
@@ -22,122 +23,105 @@ import { initRound, snap, target, isComplete, SAMPLE_FAMILY, ORDERS } from '../b
 const PIECE_COLORS = ['#e2453c', '#f08a24', '#f2c230', '#4fb04a', '#2f86d6', '#7a4fc9', '#d94f9a']
 const formOf = (family, order) => INDEXES.byAudioKey.get(`${family}-${order}`)
 
-/* --- the church scene (layered SVG toy bricks) ------------------------ */
-const COLS = 7, BW = 27, BH = 16, WX = 100
-const ROOF = ORDERS.map((_, i) => ({ x: WX + i * BW, y: 206 }))
-const TEAL = '#25b3b0'
+/* --- the church scene: 3D background art + SVG overlay ------------------
+   The art (public/img/games/block-church-3d.webp, no text) is the church on
+   its hill. The overlay, in the image's own pixel space, adds the 7 progress
+   bricks along the roof ridge and the dome + cross above the peak. */
+const SCENE = publicUrl('/img/games/block-church-3d.webp')
+const RIDGE = ORDERS.map((_, i) => {
+  // the ridge runs left->right across the roof in a gentle 3D curve
+  const t = i / (ORDERS.length - 1)
+  return { x: 240 + t * 290, y: 350 - Math.sin(t * Math.PI) * 6 }
+})
+const BRW = 42, BRH = 26, DEP = 12
 
-function Cloud({ x, y, s = 1 }) {
-  return (
-    <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <ellipse cx="2" cy="6" rx="44" ry="12" fill="#9fc8e8" opacity=".5" />
-      <circle cx="-22" cy="0" r="14" fill="#fff" /><circle cx="0" cy="-8" r="19" fill="#fff" />
-      <circle cx="22" cy="-2" r="15" fill="#fff" /><rect x="-36" y="-2" width="72" height="12" rx="6" fill="#fff" />
-      <circle cx="-6" cy="-14" r="7" fill="#fff" opacity=".9" />
-    </g>
-  )
-}
-function Flower({ x, y, c }) {
+/** A 3D toy brick: front face, top face, right side and studs (iso-ish). */
+function Brick3D({ x, y, color, w = BRW, h = BRH, d = DEP }) {
+  const top = shade(color, 0.28), side = shade(color, -0.28), edge = shade(color, -0.45)
   return (
     <g>
-      <rect x={x - 1} y={y} width="2" height="10" fill="#2e7d32" />
-      {[0, 72, 144, 216, 288].map((d) => (
-        <circle key={d} cx={x + Math.cos((d * Math.PI) / 180) * 4} cy={y + Math.sin((d * Math.PI) / 180) * 4} r="3.2" fill={c} stroke={shade(c, -0.3)} strokeWidth=".5" />
-      ))}
-      <circle cx={x} cy={y} r="2.2" fill="#ffd54a" />
+      <ellipse cx={x + w / 2 + d / 2} cy={y + h + 3} rx={w * 0.62} ry="5" fill="#000" opacity=".22" />
+      <path d={`M${x + w} ${y} l${d} ${-d * 0.6} v${h} l${-d} ${d * 0.6}Z`} fill={side} stroke={edge} strokeWidth=".8" />
+      <path d={`M${x} ${y} l${d} ${-d * 0.6} h${w} l${-d} ${d * 0.6}Z`} fill={top} stroke={edge} strokeWidth=".8" />
+      <rect x={x} y={y} width={w} height={h} rx="2" fill={color} stroke={edge} strokeWidth=".8" />
+      <rect x={x + 2} y={y + 2} width={w - 4} height="4" rx="2" fill="#fff" opacity=".35" />
+      {[0.3, 0.75].map((f) => {
+        const cx = x + w * f + d * 0.45, cy = y - d * 0.3
+        return (
+          <g key={f}>
+            <rect x={cx - 6} y={cy - 6} width="12" height="5" fill={shade(color, -0.12)} />
+            <ellipse cx={cx} cy={cy - 1} rx="6" ry="3" fill={side} />
+            <ellipse cx={cx} cy={cy - 6} rx="6" ry="3" fill={shade(color, 0.38)} />
+            <ellipse cx={cx - 2} cy={cy - 7} rx="2.2" ry="1" fill="#fff" opacity=".7" />
+          </g>
+        )
+      })}
     </g>
   )
 }
 
+const CX = 390, DOME_Y = 342, DOME_R = 92
+
 function Church({ built, complete, reduce }) {
-  const wallRows = [0, 1, 2, 3, 4]
   return (
-    <svg viewBox="0 0 390 470" preserveAspectRatio="xMidYMax slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
+    <svg viewBox="110 40 548 640" preserveAspectRatio="xMidYMax slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
       <defs>
-        <linearGradient id="bc-sky" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#1f7fe0" /><stop offset=".6" stopColor="#5fb4f4" /><stop offset="1" stopColor="#bfe5ff" />
-        </linearGradient>
-        <linearGradient id="bc-hill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#8fd25a" /><stop offset="1" stopColor="#4fa83a" />
-        </linearGradient>
-        <radialGradient id="bc-glow"><stop offset="0" stopColor="#fff7b0" stopOpacity=".9" /><stop offset="1" stopColor="#fff7b0" stopOpacity="0" /></radialGradient>
+        <radialGradient id="bc-gold" cx=".35" cy=".3" r=".8">
+          <stop offset="0" stopColor="#fff3a8" /><stop offset=".35" stopColor="#f8cf38" /><stop offset=".8" stopColor="#d99a16" /><stop offset="1" stopColor="#a86c0c" />
+        </radialGradient>
+        <linearGradient id="bc-goldbar" x1="0" x2="1"><stop offset="0" stopColor="#ffe27a" /><stop offset=".5" stopColor="#f2b324" /><stop offset="1" stopColor="#b8780e" /></linearGradient>
+        <radialGradient id="bc-glow"><stop offset="0" stopColor="#fff7b0" stopOpacity=".95" /><stop offset="1" stopColor="#fff7b0" stopOpacity="0" /></radialGradient>
       </defs>
-      <rect width="390" height="470" fill="url(#bc-sky)" />
-      <Cloud x={70} y={120} s={1.1} /><Cloud x={320} y={95} s={1.3} /><Cloud x={300} y={250} s={0.8} /><Cloud x={60} y={240} s={0.7} />
-      {/* distant hills */}
-      <path d="M0 300 Q60 255 120 290 T240 285 T390 280 V360 H0Z" fill="#7fb0c8" opacity=".75" />
-      <path d="M0 325 Q80 285 160 318 T320 305 T390 315 V380 H0Z" fill="#5aa36a" />
-      {[20, 48, 330, 360].map((x, i) => (
-        <g key={x}><rect x={x - 2} y={318 - (i % 2) * 6} width="4" height="12" fill="#5d4030" />
-          <circle cx={x} cy={312 - (i % 2) * 6} r="10" fill="#2f8a45" /><circle cx={x - 3} cy={308 - (i % 2) * 6} r="4" fill="#4fae5e" /></g>
-      ))}
-      {/* studded hill */}
-      <path d="M-20 470 V352 Q195 318 410 352 V470Z" fill="#3d8f2e" />
-      <path d="M-20 362 Q195 326 410 362 L410 400 Q195 372 -20 400Z" fill="url(#bc-hill)" />
-      {Array.from({ length: 4 }, (_, r) => Array.from({ length: 16 }, (_, c) => {
-        const x = 12 + c * 24 + (r % 2) * 12, y = 352 + r * 11 - Math.max(0, 18 - Math.abs(x - 195) / 9)
-        return (x > 92 && x < 298 && y < 352) ? null : <Stud key={`h${r}-${c}`} cx={x} cy={y + 6} r={4.2} color="#6cc444" />
-      }))}
-      <Brick x={40} y={340} w={22} h={12} color="#9aa3ad" /><Brick x={318} y={346} w={22} h={12} color="#9aa3ad" />
-      <Brick x={70} y={372} w={22} h={12} color="#3e9e3a" /><Brick x={300} y={380} w={22} h={12} color="#3e9e3a" />
-      <Flower x={30} y={378} c="#8e4fd0" /><Flower x={88} y={360} c="#f2c230" /><Flower x={350} y={372} c="#8e4fd0" />
-      <Flower x={276} y={386} c="#f2c230" /><Flower x={150} y={392} c="#8e4fd0" /><Flower x={240} y={398} c="#f2c230" />
-      {/* church: walls */}
-      <ellipse cx="195" cy="348" rx="110" ry="9" fill="#000" opacity=".2" />
-      {wallRows.map((r) => Array.from({ length: COLS }, (_, i) => {
-        const edge = i === 0 || i === COLS - 1
-        const col = edge ? (r % 2 ? '#f08a24' : '#7a4fc9') : (r % 2 ? shade(TEAL, -0.06) : TEAL)
-        return <Brick key={`w${r}-${i}`} x={WX + i * BW} y={262 + r * BH} w={BW} h={BH} color={col} studs={0} shadow={false} />
-      }))}
-      {/* trim rows */}
-      {Array.from({ length: COLS }, (_, i) => <Brick key={`y${i}`} x={WX + i * BW} y={246} w={BW} h={BH} color="#f6c22c" studs={0} shadow={false} />)}
-      {Array.from({ length: COLS }, (_, i) => <Brick key={`p${i}`} x={WX + i * BW} y={230} w={BW} h={BH} color={i % 3 === 0 ? '#f08a24' : '#7a4fc9'} studs={2} shadow={false} />)}
-      {/* door + windows */}
-      <path d="M174 342 V300 A21 21 0 0 1 216 300 V342Z" fill="#f08a24" stroke="#b85a10" strokeWidth="1.2" />
-      <path d="M180 342 V302 A15 15 0 0 1 210 302 V342Z" fill="#8a5426" />
-      {[186, 194, 202].map((x) => <line key={x} x1={x} y1="292" x2={x} y2="342" stroke="#6a3a18" strokeWidth="1" />)}
-      <circle cx="205" cy="322" r="2.2" fill="#f6c22c" />
-      <rect x="172" y="342" width="46" height="5" rx="2" fill="#b8bec6" /><rect x="168" y="347" width="54" height="5" rx="2" fill="#9aa3ad" />
-      {[124, 242].map((x) => (
-        <g key={x}><path d={`M${x} 312 V290 A12 12 0 0 1 ${x + 24} 290 V312Z`} fill="#f6c22c" stroke="#c4922a" />
-          <path d={`M${x + 4} 310 V291 A8 8 0 0 1 ${x + 20} 291 V310Z`} fill="#5b2f9a" />
-          <line x1={x + 12} y1="283" x2={x + 12} y2="310" stroke="#f6c22c" strokeWidth="1.5" /><line x1={x + 4} y1="298" x2={x + 20} y2="298" stroke="#f6c22c" strokeWidth="1.5" /></g>
-      ))}
-      <path d="M187 268 l8 -8 l8 8 l-8 8z" fill="#f6c22c" stroke="#c4922a" />
-      {/* roof row: one glossy brick per right answer */}
-      {ROOF.map((p, i) => (i < built ? (
-        <motion.g key={`r${i}`} data-testid="church-block"
-          initial={reduce ? false : { y: 160, opacity: 0, scale: 1.4 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          style={{ transformOrigin: `${p.x + 13}px ${p.y + 10}px` }}
-          transition={{ type: 'spring', stiffness: 170, damping: 13 }}>
-          <Brick x={p.x} y={p.y} w={BW} h={22} color={PIECE_COLORS[i]} studs={2} />
-        </motion.g>
-      ) : (
-        <rect key={`g${i}`} x={p.x + 1} y={p.y + 1} width={BW - 2} height="21" rx="3" fill="rgba(255,255,255,.28)"
-          stroke="#fff" strokeWidth="1.6" strokeDasharray="3 3" />
-      )))}
-      {/* dome + cross: dotted until complete */}
+      <image href={SCENE} x="0" y="0" width="768" height="1024" />
+      {/* dome + cross: dotted until complete (drawn behind the ridge bricks) */}
       {complete ? (
         <motion.g data-testid="dome-done" initial={reduce ? false : { scale: 0.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-          style={{ transformOrigin: '195px 200px' }} transition={{ type: 'spring', stiffness: 140, damping: 11 }}>
-          <circle cx="195" cy="150" r="95" fill="url(#bc-glow)" />
-          <path d="M135 204 A60 60 0 0 1 255 204 Z" fill="#f6c22c" stroke="#c4922a" strokeWidth="2" />
-          <path d="M150 196 A46 52 0 0 1 195 150" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" opacity=".5" />
-          {[150, 172, 195, 218, 240].map((x) => <Stud key={x} cx={x} cy={200} r={4} color="#f6c22c" />)}
-          <rect x="189" y="84" width="12" height="62" rx="3" fill="#f08a24" stroke="#b85a10" />
-          <rect x="174" y="98" width="42" height="12" rx="3" fill="#f08a24" stroke="#b85a10" />
-          <rect x="191" y="86" width="3" height="58" fill="#fff" opacity=".4" />
+          style={{ transformOrigin: `${CX}px ${DOME_Y}px` }} transition={{ type: 'spring', stiffness: 140, damping: 11 }}>
+          <circle cx={CX} cy={DOME_Y - 90} r="200" fill="url(#bc-glow)" />
+          {/* drum */}
+          <path d={`M${CX - 84} ${DOME_Y + 6} Q${CX} ${DOME_Y + 30} ${CX + 84} ${DOME_Y + 6} V${DOME_Y - 14} Q${CX} ${DOME_Y + 10} ${CX - 84} ${DOME_Y - 14}Z`} fill="#e0a21c" stroke="#9a620a" strokeWidth="2" />
+          {/* dome */}
+          <path d={`M${CX - DOME_R} ${DOME_Y - 12} A${DOME_R} ${DOME_R * 1.02} 0 0 1 ${CX + DOME_R} ${DOME_Y - 12} Q${CX} ${DOME_Y + 14} ${CX - DOME_R} ${DOME_Y - 12}Z`} fill="url(#bc-gold)" stroke="#9a620a" strokeWidth="2.5" />
+          <path d={`M${CX - 66} ${DOME_Y - 34} A74 84 0 0 1 ${CX - 8} ${DOME_Y - 98}`} fill="none" stroke="#fff" strokeWidth="9" strokeLinecap="round" opacity=".45" />
+          {[-80, -40, 0, 40, 80].map((dx) => (
+            <path key={dx} d={`M${CX + dx * 1.2} ${DOME_Y - 8} Q${CX + dx * 0.6} ${DOME_Y - 90} ${CX} ${DOME_Y - DOME_R - 10}`} fill="none" stroke="#b87a10" strokeWidth="1.5" opacity=".5" />
+          ))}
+          <ellipse cx={CX} cy={DOME_Y - DOME_R - 10} rx="12" ry="6" fill="#f8cf38" stroke="#9a620a" />
+          {/* 3D cross */}
+          <g>
+            <path d={`M${CX + 10} ${DOME_Y - 205} l8 -5 v93 l-8 5Z`} fill="#b8780e" />
+            <path d={`M${CX + 42} ${DOME_Y - 178} l8 -5 v22 l-8 5Z`} fill="#b8780e" />
+            <path d={`M${CX - 10} ${DOME_Y - 205} l8 -5 h20 l-8 5Z`} fill="#ffe892" />
+            <path d={`M${CX - 42} ${DOME_Y - 178} l8 -5 h84 l-8 5Z`} fill="#ffe892" />
+            <rect x={CX - 10} y={DOME_Y - 205} width="20" height="93" rx="2" fill="url(#bc-goldbar)" stroke="#9a620a" strokeWidth="1.5" />
+            <rect x={CX - 42} y={DOME_Y - 178} width="84" height="22" rx="2" fill="url(#bc-goldbar)" stroke="#9a620a" strokeWidth="1.5" />
+          </g>
         </motion.g>
       ) : (
-        <g data-testid="dome-outline" fill="none" stroke="#fff" strokeWidth="3.2" strokeDasharray="0.1 8" strokeLinecap="round">
-          <path d="M135 204 A60 60 0 0 1 255 204" />
-          <path d="M195 144 V86 M174 104 H216 M189 86 H201 M189 144 V86 M201 144 V86" />
+        <g data-testid="dome-outline" fill="none" stroke="#fff" strokeWidth="6" strokeDasharray="0.1 15" strokeLinecap="round">
+          <path d={`M${CX - DOME_R} ${DOME_Y - 12} A${DOME_R} ${DOME_R * 1.02} 0 0 1 ${CX + DOME_R} ${DOME_Y - 12}`} />
+          <path d={`M${CX - 10} ${DOME_Y - 112} V${DOME_Y - 205} H${CX + 10} V${DOME_Y - 112} M${CX - 42} ${DOME_Y - 178} H${CX + 42} V${DOME_Y - 160} H${CX - 42}Z`} />
         </g>
       )}
-      {complete && !reduce && Array.from({ length: 14 }, (_, i) => (
-        <motion.rect key={`c${i}`} x="190" y="150" width="9" height="7" rx="1.5" fill={PIECE_COLORS[i % 7]}
-          initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ x: Math.cos(i * 0.9) * 170, y: Math.sin(i * 1.7) * 130 - 20, opacity: 0, rotate: 360 }}
+      {/* roof ridge: one 3D brick per right answer */}
+      {RIDGE.map((p, i) => (i < built ? (
+        <motion.g key={`r${i}`} data-testid="church-block"
+          initial={reduce ? false : { y: 260, opacity: 0, scale: 1.4 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          style={{ transformOrigin: `${p.x + 20}px ${p.y + 12}px` }}
+          transition={{ type: 'spring', stiffness: 170, damping: 13 }}>
+          <Brick3D x={p.x - BRW / 2} y={p.y} color={PIECE_COLORS[i]} />
+        </motion.g>
+      ) : (
+        <g key={`g${i}`} fill="rgba(255,255,255,.3)" stroke="#fff" strokeWidth="2.5" strokeDasharray="5 5" strokeLinejoin="round">
+          <path d={`M${p.x - BRW / 2} ${p.y} l${DEP} ${-DEP * 0.6} h${BRW} l${-DEP} ${DEP * 0.6}Z`} />
+          <rect x={p.x - BRW / 2} y={p.y} width={BRW} height={BRH} rx="2" />
+          <path d={`M${p.x + BRW / 2} ${p.y} l${DEP} ${-DEP * 0.6} v${BRH} l${-DEP} ${DEP * 0.6}`} />
+        </g>
+      )))}
+      {complete && !reduce && Array.from({ length: 16 }, (_, i) => (
+        <motion.rect key={`c${i}`} x={CX - 8} y={DOME_Y - 120} width="16" height="12" rx="3" fill={PIECE_COLORS[i % 7]}
+          initial={{ opacity: 1, x: 0, y: 0, rotate: 0 }} animate={{ x: Math.cos(i * 0.9) * 330, y: Math.sin(i * 1.7) * 240 - 30, opacity: 0, rotate: 360 }}
           transition={{ duration: 1.6, repeat: 2, delay: i * 0.04 }} />
       ))}
     </svg>
