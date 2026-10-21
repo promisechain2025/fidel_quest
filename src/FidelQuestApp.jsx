@@ -158,6 +158,7 @@ const StoryTime = lazyRetry(() => import('./components/StoryTime'))
 const PrayerBook = lazyRetry(() => import('./components/PrayerBook'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
+const BlockChurch = lazyRetry(() => import('./components/BlockChurch'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const VowelTrain = lazyRetry(() => import('./components/VowelTrain'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
@@ -195,6 +196,7 @@ import {
   Moon,
   Pencil,
   Music,
+  Church,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -1713,6 +1715,13 @@ export default function FidelQuestApp() {
               </Suspense>
             </Screen>
           )}
+          {screen.name === 'blocks' && (
+            <Screen key="blocks">
+              <Suspense fallback={null}>
+                <BlockChurch soundOn={soundOn} onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
           {screen.name === 'traffic' && (
             <Screen key="traffic">
               <Suspense fallback={null}>
@@ -2004,6 +2013,7 @@ export default function FidelQuestApp() {
               onTwins={() => { setBackpackOpen(false); startTwins() }}
               onLadder={() => { setBackpackOpen(false); setScreen({ name: 'ladder' }) }}
               onEcho={() => { setBackpackOpen(false); setScreen({ name: 'echo' }) }}
+              onBlocks={() => { setBackpackOpen(false); setScreen({ name: 'blocks' }) }}
               onTraffic={() => { setBackpackOpen(false); setScreen({ name: 'traffic' }) }}
               onTrain={() => { setBackpackOpen(false); setScreen({ name: 'train' }) }}
               onWorkshop={() => { setBackpackOpen(false); setScreen({ name: 'workshop' }) }}
@@ -3249,7 +3259,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onBlocks, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -3309,6 +3319,8 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
             {ready('ladder') && <BackpackTile art="ladder" locked={!coreScreenOpen({ name: 'ladder' })} title={t('ladderShort', 'Order')} onClick={onLadder} />}
             {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
             {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
+            {/* Block Church SAMPLE (ለ only). Ge'ez-only title: no English in kid UI. */}
+            {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title="ለሉሊ" onClick={onBlocks} />}
             {ready('traffic') && <BackpackTile art="traffic" locked={!coreScreenOpen({ name: 'traffic' })} title={t('trShort', 'Traffic')} onClick={onTraffic} />}
             {ready('market') && <BackpackTile art="market" locked={!coreScreenOpen({ name: 'market' })} title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
             {ready('bingo') && <BackpackTile art="bingo" locked={!coreScreenOpen({ name: 'bingo' })} title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
