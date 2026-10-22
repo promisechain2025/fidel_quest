@@ -209,6 +209,7 @@ describe('PrayerBook reading modes', () => {
     expect(screen.getByTestId('read-mode').dataset.mode).toBe('letter')
     fireEvent.click(screen.getByTestId('read-mode'))
     expect(screen.getByTestId('read-mode-menu').querySelectorAll('button')).toHaveLength(3)
+    expect([...screen.getByTestId('read-mode-menu').querySelectorAll('button')].map((b) => b.textContent.replace('ሰላም', ''))).toEqual(['ቅጽሪ', 'ወርድ', 'ንባብ'])
     fireEvent.click(screen.getByTestId('read-mode-word'))
     expect(localStorage.getItem('fq.prayer.readmode')).toBe('word')
     r.unmount()

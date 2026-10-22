@@ -36,13 +36,13 @@ const SPEED_DEFAULT = 2
 const SPEED_KEY = 'fq.prayer.speed'
 const MARKS_KEY = 'fq.prayer.marks'
 // Three ways to follow the owner's voice; the choice is remembered per device.
-//  letter: the word being read glows and its letters light up one by one (default)
-//  word:   the whole word being read glows at once (no letter run)
-//  listen: plain page, no highlight at all; the page still turns with the voice
+//  letter (ቅጽሪ): the word being read glows and its letters light up one by one (default)
+//  word (ንባብ):   the whole word being read glows at once (no letter run)
+//  listen (ወርድ): plain page, no highlight at all; the page still turns with the voice
 export const READ_MODES = [
-  { id: 'letter', label: 'ፊደል በፊደል', icon: 'ፊ' },
-  { id: 'word', label: 'ቃል በቃል', icon: 'ቃ' },
-  { id: 'listen', label: 'ስማ ብቻ', icon: '♪' },
+  { id: 'letter', label: 'ቅጽሪ', icon: 'ቅ' },
+  { id: 'listen', label: 'ወርድ', icon: 'ወ' },
+  { id: 'word', label: 'ንባብ', icon: 'ን' },
 ]
 const READ_KEY = 'fq.prayer.readmode'
 function applyRate(el, rate) {
