@@ -55,9 +55,9 @@ describe('page translate lock', () => {
     expect(document.querySelector('meta[name="google"][content="notranslate"]')).toBeTruthy()
   })
 
-  it('ignores a learn-pack language and stays on English chrome', () => {
+  it('marks the page Tigrinya when ti is the app-text language', () => {
     lockDocumentTranslate('ti')
-    expect(document.documentElement.lang).toBe('en')
+    expect(document.documentElement.lang).toBe('ti')
     expect(document.documentElement.getAttribute('translate')).toBe('no')
   })
 })

@@ -70,7 +70,7 @@ function journeySuggestsTigrinya(keys = readJourneyDoneKeys()) {
 }
 
 /** Before Amharic/Tigrinya were learn-packs only, the app stored that choice
-    in fq.lang. getLang() ignores those ids now; the learn pack still honors them. */
+    in fq.lang. getLang() now also honors them as app-text languages (Oct 2026). */
 function legacyLearnPack() {
   try {
     const l = localStorage.getItem(LANG_KEY)
