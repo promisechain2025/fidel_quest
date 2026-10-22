@@ -9,7 +9,7 @@
    reduced motion it becomes a plain slide. No words in the chrome: icons only.
    ========================================================================== */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ChevronLeft, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Pause, Play, Rabbit, Target, Turtle } from 'lucide-react'
 import TSELOT from '../data/tselotMarks.json'
 import WUDASE_MON from '../data/wudaseMondayMarks.json'
 import WUDASE_TUE from '../data/wudaseTuesdayMarks.json'
@@ -357,22 +357,61 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     setCur(i)
   }
 
-  /* ---- drag to turn ------------------------------------------------------ */
+  /* ---- turning pages: swipe, edge taps, arrows, keyboard ----------------- */
+  // A manual turn stops the reader first (turning used to be locked while playing).
+  const stopForTurn = () => {
+    if (!playingRef.current) return
+    playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); prayerAudio(false)
+  }
+  const turning = useRef(false)
+  // Animated turn for taps / arrows / keys. Forward = next page (swipe left).
+  const goTurn = useCallback((dir) => {
+    if (turning.current || drag.current) return
+    const to = pageRef.current + dir
+    if (to < 0 || to >= pages.length) return
+    stopForTurn()
+    if (!beginTurn(dir)) return
+    turning.current = true
+    requestAnimationFrame(() => {
+      const a = dir === 1 ? 0 : 180
+      setAngle(a)
+      animateTo(a, dir === 1 ? 180 : 0, () => { finishTurn(true); turning.current = false })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages.length, beginTurn, setAngle, animateTo, finishTurn])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); goTurn(1) }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goTurn(-1) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [goTurn])
+
   const onPointerDown = (e) => {
-    if (turn || playingRef.current) return
-    drag.current = { x: e.clientX, w: e.currentTarget.getBoundingClientRect().width, dir: 0, t: performance.now() }
+    if (turn || turning.current) return
+    drag.current = { x: e.clientX, y: e.clientY, w: e.currentTarget.getBoundingClientRect().width, dir: 0, lock: '', t: performance.now() }
   }
   const onPointerMove = (e) => {
     const d = drag.current
     if (!d) return
     const dx = e.clientX - d.x
-    if (!d.dir && Math.abs(dx) > 8) {
+    const dy = e.clientY - d.y
+    // Direction lock: decide once, after a small move, whether this is a page swipe.
+    if (!d.lock && Math.hypot(dx, dy) > 10) {
+      d.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y'
+      if (d.lock === 'y') { drag.current = null; return }
       d.dir = dx < 0 ? 1 : -1
+      stopForTurn()
       if (!beginTurn(d.dir)) { drag.current = null; return }
+      d.t = performance.now(); d.x0 = e.clientX
       e.currentTarget.setPointerCapture?.(e.pointerId)
     }
     if (!d.dir) return
-    const frac = Math.max(0, Math.min(1, Math.abs(dx) / d.w))
+    // Page follows the finger a little faster than 1:1 so a short swipe goes far.
+    const frac = Math.max(0, Math.min(1, (Math.abs(dx) * 1.6) / d.w))
     setAngle(d.dir === 1 ? frac * 180 : 180 - frac * 180)
   }
   const onPointerUp = (e) => {
@@ -380,13 +419,17 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
     drag.current = null
     if (!d || !d.dir) return
     const dx = e.clientX - d.x
-    const v = Math.abs(dx) / Math.max(1, performance.now() - d.t)
-    const frac = Math.min(1, Math.abs(dx) / d.w)
-    const commit = frac > 0.35 || v > 0.6
+    const moved = d.dir === 1 ? -dx : dx // distance in the turning direction
+    const v = Math.abs(e.clientX - (d.x0 ?? d.x)) / Math.max(1, performance.now() - d.t)
+    const frac = Math.max(0, Math.min(1, (Math.abs(dx) * 1.6) / d.w))
+    const commit = moved > 0 && (frac > 0.25 || v > 0.3 || Math.abs(dx) > 60)
     const now = d.dir === 1 ? frac * 180 : 180 - frac * 180
     const target = d.dir === 1 ? (commit ? 180 : 0) : (commit ? 0 : 180)
-    animateTo(now, target, () => finishTurn(commit))
+    turning.current = true
+    animateTo(now, target, () => { finishTurn(commit); turning.current = false })
   }
+  const canBack = pageSafe > 0
+  const canNext = pageSafe < pages.length - 1
 
   // Put a freshly mounted flap at its start angle before paint.
   useEffect(() => { if (turn) setAngle(turn.dir === 1 ? 0 : 180) }, [turn, setAngle])
@@ -493,6 +536,8 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
             </div>
           )}
         </div>
+        <button type="button" className="pb-edge pb-edge-l" onClick={() => goTurn(-1)} disabled={!canBack} aria-label="ወደ ኋላ" data-testid="page-back"><span className="pb-arrow"><ChevronLeft size={22} /></span></button>
+        <button type="button" className="pb-edge pb-edge-r" onClick={() => goTurn(1)} disabled={!canNext} aria-label="ቀጣይ" data-testid="page-next"><span className="pb-arrow"><ChevronRight size={22} /></span></button>
       </div>
 
       <footer className="pb-fb" data-testid="controls">{speedEl}{playEl(26)}{sizeEl}</footer>
