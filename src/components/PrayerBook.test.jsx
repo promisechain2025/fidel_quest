@@ -192,4 +192,10 @@ describe('PrayerBook', () => {
     const again = render(<PrayerBook onBack={() => {}} />)
     expect(again.container.querySelector('.pb-root').style.getPropertyValue('--pb-scale')).toBe('1.32')
   })
+  it('page turn: edge arrows present, back hidden on first page, labels are not English', () => {
+    render(<PrayerBook onBack={() => {}} />)
+    const back = screen.getByTestId('page-back'), next = screen.getByTestId('page-next')
+    expect(back.disabled).toBe(true)
+    for (const b of [back, next]) expect(b.getAttribute('aria-label')).not.toMatch(/[A-Za-z]/)
+  })
 })
