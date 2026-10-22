@@ -59,8 +59,12 @@ android {
             if (egeezCanSign) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8: shrink + obfuscate + optimize (Play "DEX code optimization").
+            // mapping.txt lands in build/outputs/mapping/release/ and is
+            // uploaded with the bundle for readable crash reports.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
