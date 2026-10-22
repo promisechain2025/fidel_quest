@@ -39,11 +39,6 @@ on:
 permissions:
   contents: read
 
-# 1.4 free-download build: per-package IAP (core_unlock, prayer_book,
-# bundle_core_prayer). Rep codes stay web-only; native ignores them.
-env:
-  VITE_PACKAGES: '1'
-
 concurrency:
   group: android-play
   cancel-in-progress: false
@@ -130,6 +125,11 @@ jobs:
         run: npx vitest run
 
       - name: Web build + cap sync android
+        # 1.4 free-download build: per-package IAP (core_unlock, prayer_book,
+        # bundle_core_prayer). Scoped to the build only - unit tests run with
+        # the flag unset. Rep codes stay web-only; native ignores them.
+        env:
+          VITE_PACKAGES: '1'
         run: |
           npm run build
           npx cap sync android
