@@ -62,6 +62,7 @@ export const REINFORCE = {
    fills every gap, so this is the frequently-seen surface, not every key. */
 export const LANGPACKS = {
   de: {
+    sectionN: 'Abschnitt {n}',
         backpack: 'Rucksack', home: 'Start', continue: 'Weiter', gotIt: 'Verstanden',
     nice: 'Toll!', amazing: 'Fantastisch! {n} in Folge!', notQuite: 'Nicht ganz!', tryAgain: '— hör zu und versuch es nochmal',
     yourTurn: 'Jetzt sagst du es!', levelUp: 'Level geschafft!', levelComplete: 'Level geschafft!', playAgain: 'Nochmal spielen', listen: 'Hör zu…',
@@ -281,6 +282,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Dieser Browser ist freigeschaltet.",
   },
   it: {
+    sectionN: 'Sezione {n}',
         backpack: 'Zaino', home: 'Home', continue: 'Continua', gotIt: 'Capito',
     nice: 'Bravo!', amazing: 'Fantastico! {n} di fila!', notQuite: 'Non proprio!', tryAgain: '— ascolta e riprova',
     yourTurn: 'Ora tocca a te!', levelUp: 'Livello completato!', levelComplete: 'Livello completato!', playAgain: 'Gioca ancora', listen: 'Ascolta…',
@@ -500,6 +502,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Questo browser è sbloccato.",
   },
   sv: {
+    sectionN: 'Avsnitt {n}',
         backpack: 'Ryggsäck', home: 'Hem', continue: 'Fortsätt', gotIt: 'Klart',
     nice: 'Bra!', amazing: 'Fantastiskt! {n} i rad!', notQuite: 'Inte riktigt!', tryAgain: '— lyssna och försök igen',
     yourTurn: 'Nu säger du det!', levelUp: 'Nivå klar!', levelComplete: 'Nivå klar!', playAgain: 'Spela igen', listen: 'Lyssna…',
@@ -719,6 +722,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Den här webbläsaren är upplåst.",
   },
   nl: {
+    sectionN: 'Sectie {n}',
         backpack: 'Rugzak', home: 'Home', continue: 'Verder', gotIt: 'Begrepen',
     nice: 'Goed zo!', amazing: 'Geweldig! {n} op een rij!', notQuite: 'Net niet!', tryAgain: '— luister en probeer opnieuw',
     yourTurn: 'Nu zeg jij het!', levelUp: 'Level voltooid!', levelComplete: 'Level voltooid!', playAgain: 'Opnieuw spelen', listen: 'Luister…',
@@ -938,6 +942,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Deze browser is ontgrendeld.",
   },
   no: {
+    sectionN: 'Del {n}',
         backpack: 'Ryggsekk', home: 'Hjem', continue: 'Fortsett', gotIt: 'Skjønner',
     nice: 'Bra!', amazing: 'Fantastisk! {n} på rad!', notQuite: 'Ikke helt!', tryAgain: '— lytt og prøv igjen',
     yourTurn: 'Nå sier du det!', levelUp: 'Nivå fullført!', levelComplete: 'Nivå fullført!', playAgain: 'Spill igjen', listen: 'Lytt…',
@@ -1157,6 +1162,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Denne nettleseren er låst opp.",
   },
   fr: {
+    sectionN: 'Section {n}',
         backpack: 'Sac à dos', home: 'Accueil', continue: 'Continuer', gotIt: 'Compris',
     nice: 'Bravo !', amazing: 'Fantastique ! {n} d’affilée !', notQuite: 'Pas tout à fait !', tryAgain: '— écoute et réessaie',
     yourTurn: "À toi de le dire !", levelUp: 'Niveau terminé !', levelComplete: 'Niveau terminé !', playAgain: 'Rejouer', listen: 'Écoute…',
