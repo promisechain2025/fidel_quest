@@ -12,6 +12,11 @@ import { initReminder } from './platform/notify'
 import { reminderTexts } from './platform/firstRun'
 import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
+import { snapshotInstall } from './platform/installSeen'
+
+// First, before anything writes storage: did this device already have
+// pre-1.4 (paid-download) household data? Grandfathers paid buyers.
+snapshotInstall()
 
 // Kick the bundled Ethiopic font loading immediately. The 3D games and the
 // share cards bake Ge'ez glyphs into canvas textures; if that happens before
