@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       # Capacitor 7 / AGP 8.7 need JDK 21.
