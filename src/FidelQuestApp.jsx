@@ -720,7 +720,7 @@ export function saveRunnerSpeed(s) {
 export const RUNNER_DEFAULT_POOL = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
 
 // The runner quizzes ONLY what the child has learned (their `pool`); the place
-// (Aksum/Gondar/Adulis) and pace still change per level, but never the scope of
+// (per-section scenery) and pace still change per level, but never the scope of
 // letters. Falls back to the whole table if the pool is too small to make a
 // 3-option question.
 function runnerLevelSpec(pool) {
@@ -2348,7 +2348,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
 const PATH_COLS = 3
 
 /* Each chapter of the path is a place on the journey - Ethiopian places for
-   the Amharic pack, Eritrea + Axum for Tigrinya (platform/places.js) - with
+   numbered sections (platform/places.js) - with
    its own gentle tint band so the home screen changes as the child climbs
    instead of being one long amber wall. Tints are translucent over
    var(--paper), so they hold in both themes. */
@@ -2811,8 +2811,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 <>
                   <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
                     <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                    {/* Place names are proper nouns from the active pack's
-                       geography - never translated. */}
+                    {/* Generic numbered sections (owner decision, Oct 2026: no city names). */}
                     <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
                       {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
                     </span>
