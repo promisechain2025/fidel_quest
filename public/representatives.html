@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ti"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eGeez — ወኪላት / ወኪሎች</title>
+<style>body{font-family:system-ui,sans-serif;max-width:40rem;margin:2rem auto;padding:0 1rem;line-height:1.5}li{border:2px solid #ddd;border-radius:1rem;padding:.6rem;margin:.5rem 0;list-style:none}ul{padding:0}.en{color:#666;font-size:.9em}</style>
+</head><body>
+<h1>ወኪላት eGeez <br><span lang="am">የeGeez ወኪሎች</span><br><span class="en" lang="en">eGeez representatives</span></h1>
+<p lang="ti">ካርድ ክፍሊት ኣብ ዘይሰርሓሉ ሃገራት፡ ካብ ወኪል ኮድ ዓዲግኩም ኣብ easygeez.com/app ክፈቱ።</p>
+<p lang="am">የካርድ ክፍያ በማይሰራባቸው አገሮች፣ ከወኪል ኮድ ገዝተው በeasygeez.com/app ይክፈቱ።</p>
+<ul id="reps"></ul>
+<p id="empty" hidden><span lang="ti">ወኪላት ኣብ ቀረባ ክዝርዘሩ እዮም።</span><br><span lang="am">ወኪሎች በቅርቡ ይዘረዘራሉ።</span><br><span class="en" lang="en">Representatives will be listed here soon.</span></p>
+<script>
+fetch('representatives.json').then(r=>r.json()).then(d=>{const l=(d&&d.representatives)||[];const u=document.getElementById('reps');
+if(!l.length){document.getElementById('empty').hidden=false;return}
+for(const r of l){const li=document.createElement('li');li.textContent=[r.name,[r.city,r.country].filter(Boolean).join(', '),r.phone,r.telegram].filter(Boolean).join(' · ');u.appendChild(li)}
+}).catch(()=>{document.getElementById('empty').hidden=false})
+</script></body></html>

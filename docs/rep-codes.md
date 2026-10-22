@@ -59,3 +59,33 @@ With the flag off (all current builds) nothing is gated and nothing new is sold.
 - `ios/App/App/Products.storekit` is a local StoreKit test config (Xcode →
   Scheme → Run → Options → StoreKit Configuration). It is NOT the store:
   the real products are created in App Store Connect (pending, owner).
+
+## Rep countries (web Grown-Ups order)
+
+`src/platform/repCountries.js` → `REP_COUNTRIES` (edit there; tests pin the owner's core list).
+In these countries the **web** Grown-Ups shows the rep code + representatives list first; elsewhere the
+store/card buy stays first. Store apps never show rep parts (Apple 3.1.1 / Play billing).
+
+Detection: IANA time zone (country-unique African zones) → else first `navigator.languages` region (e.g. `ti-ER`).
+Manual override in Grown-Ups ("How you pay"), stored as `fq.repRegion` = `auto` | `rep` | `store`.
+
+| Code | Country | Why |
+|---|---|---|
+| ET | Ethiopia | owner list; very low card ownership, telebirr/mobile money dominant; not in Apple's storefront list (verify in App Store Connect) |
+| ER | Eritrea | owner list; no App Store storefront, sanctions-era card restrictions, almost no cards |
+| UG | Uganda | owner list; storefront exists but mobile money (MTN/Airtel) dominant, few cards |
+| AO | Angola | owner list; Multicaixa is domestic-only, international card payments routinely fail |
+| SS | South Sudan | no App Store storefront, minimal banking |
+| SD | Sudan | no storefront, US sanctions history, card networks largely unavailable |
+| SO | Somalia | no storefront, mobile money (EVC/Zaad) economy |
+| CD | DR Congo | mobile money dominant, very low card penetration |
+| DJ, BI, CF, GN, TG, GQ, KM, LS | Djibouti, Burundi, CAR, Guinea, Togo, Eq. Guinea, Comoros, Lesotho | no App Store storefront (users can't buy in-app at all); several also have very low card use |
+
+Source for storefronts: appavailability.com App Store country list + Apple Community, checked 2026-10-22.
+Candidates not added (have storefronts / workable cards, revisit with data): Malawi, Madagascar, Mauritania
+(no Google Play paid apps), Chad, Niger.
+
+## Representatives list
+
+`public/representatives.json` (empty `representatives: []` — **no names until each rep agrees to be listed**),
+rendered in web Grown-Ups and on the static page `/representatives.html` (Tigrinya/Amharic first, English small).

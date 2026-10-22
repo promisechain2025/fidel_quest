@@ -30,6 +30,9 @@ import ProfileSlotOffer from './components/ProfileSlotOffer'
 import PaidBuyerCard from './components/PaidBuyerCard'
 import PackageOffer from './components/PackageOffer'
 import RepCodeCard from './components/RepCodeCard'
+import { RepRegionToggle, RepresentativesList } from './components/RepRegion'
+import { repFirst } from './platform/repCountries'
+import { repCodesAvailable } from './platform/repCodes'
 import { needsSlot } from './platform/profileSlots'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
@@ -559,6 +562,8 @@ function CommunityCard() {
 }
 
 export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport }) {
+  const repWeb = repCodesAvailable()
+  const [repLead, setRepLead] = useState(() => repFirst())
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
@@ -824,11 +829,23 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* paid-buyer re-entry code (1.3.3): native paid installs only */}
           {isNativePlatform() && <PaidBuyerCard />}
 
-          {/* content packages (free-download build, VITE_PACKAGES=1): store buy + restore */}
-          <PackageOffer />
-
-          {/* representative unlock code: easygeez.com/app only, never in the store apps */}
-          <RepCodeCard />
+          {/* Buy order. Rep countries (platform/repCountries.js, web only): the
+             representative code + rep list lead; elsewhere the store / card
+             buy leads. Store apps never render the rep parts. */}
+          {repWeb && repLead ? (
+            <>
+              <RepCodeCard />
+              <RepresentativesList />
+              <PackageOffer />
+            </>
+          ) : (
+            <>
+              <PackageOffer />
+              <RepCodeCard />
+              {repWeb && <RepresentativesList />}
+            </>
+          )}
+          {repWeb && <RepRegionToggle onChange={() => setRepLead(repFirst())} />}
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.
