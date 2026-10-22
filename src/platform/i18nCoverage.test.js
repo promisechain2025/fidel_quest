@@ -78,9 +78,7 @@ describe('language pack structure', () => {
   })
 
   it('every language pack carries the identical key set', () => {
-    // am/ti cover the kid screens only (adult screens fall back to English);
-    // uiLangGeez.test.js guards their coverage.
-    const ids = Object.keys(LANGPACKS).filter((id) => id !== 'am' && id !== 'ti')
+    const ids = Object.keys(LANGPACKS)
     const ref = Object.keys(LANGPACKS[ids[0]]).sort()
     for (const id of ids) {
       const keys = Object.keys(LANGPACKS[id]).sort()

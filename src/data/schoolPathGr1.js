@@ -12,7 +12,6 @@
    the Tigrinya pack is active, journey.js builds the spine from these units.
    Amharic keeps the chapter-of-8 path.
    ========================================================================== */
-import { t } from '../platform/i18n'
 
 import raw from './schoolPathGr1.json'
 import { ETHIOPIC_SCRIPT } from '../script/ethiopic'
@@ -270,7 +269,7 @@ export function quizSpecForFamilies(familyIds, {
     n: unitIndex,
     kind: vowel ? 'orders' : 'base',
     title,
-    blurb: schoolPathLabel(unitIndex),
+    blurb: unitIndex ? schoolPathLabel(unitIndex) : 'School Path',
     families,
     pool,
     questionCount,
@@ -281,7 +280,7 @@ export function quizSpecForFamilies(familyIds, {
   }
 }
 
-/** Path chrome; follows the app-text language (English default). */
+/** Parent-facing English chrome. Learning content stays Tigrinya; this label does not. */
 export function schoolPathLabel(unitIndex) {
-  return unitIndex ? t('schoolPathUnit', `School Path · Unit ${unitIndex}`, { n: unitIndex }) : t('schoolPath', 'School Path')
+  return unitIndex ? `School Path · Unit ${unitIndex}` : 'School Path'
 }

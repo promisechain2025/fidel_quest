@@ -54,7 +54,7 @@ describe('learning language persistence', () => {
     localStorage.removeItem('fq.pack')
     localStorage.setItem('fq.lang', 'ti')
     setLangs(['am-ET', 'en'])
-    expect(getLang()).toBe('ti')
+    expect(getLang()).toBe('en')
     expect(savedPackChoice()).toBe('ti')
     expect(getActivePackId()).toBe('ti')
     expect(needsLanguageChoice()).toBe(false)

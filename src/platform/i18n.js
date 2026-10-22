@@ -3,8 +3,10 @@
    ----------------------------------------------------------------------------
    UI strings for the child-facing core (home, lessons, feedback,
    celebrations, runner HUD). English is every key's fallback; the diaspora
-   packs live in langpacks.js. Amharic and Tigrinya are full app-text
-   languages too (owner's decision, Oct 2026): langpackAm.js / langpackTi.js. Language choice persists and applies on reload, like packs.
+   packs live in langpacks.js. Amharic and Tigrinya are learn languages
+   only, not app-text languages (owner's decision, July 2026) — a legacy
+   stored fq.lang of 'am'/'ti' falls back to English via the LANG_IDS check
+   in getLang(). Language choice persists and applies on reload, like packs.
    ========================================================================== */
 
 import { LANGPACKS, LANG_IDS, REINFORCE } from './langpacks'

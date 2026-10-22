@@ -7,20 +7,16 @@
    the high-visibility core (navigation, buttons, feedback, celebrations,
    Fidel Master, Tee Shop) plus the full REINFORCEMENT word lists; anything a
    pack omits simply shows in English. Best-effort translations, FLAGGED FOR
-   NATIVE-SPEAKER REVIEW. Amharic and Tigrinya are full app-text languages
-   (owner's decision, Oct 2026; reverses July 2026): their kid-screen text
-   lives in langpackAm.js / langpackTi.js and a test fails if any kid-screen
-   key is missing there. (Hebrew/Arabic are also big diaspora
+   NATIVE-SPEAKER REVIEW. Amharic and Tigrinya are LEARN languages only
+   (owner's decision, July 2026): the app text is for the diaspora parent
+   reading over the child's shoulder, and unreviewed Ge'ez-script UI copy
+   was removed rather than shipped. (Hebrew/Arabic are also big diaspora
    languages but are right-to-left and need layout work first — tracked for
    a later pass.)
    ========================================================================== */
-import { AM, AM_REINFORCE } from './langpackAm'
-import { TI, TI_REINFORCE } from './langpackTi'
 // Order shown in the picker. `label` is the language's own endonym.
 export const LANG_META = [
   { id: 'en', label: 'English' },
-  { id: 'am', label: 'አማርኛ' },
-  { id: 'ti', label: 'ትግርኛ' },
   { id: 'de', label: 'Deutsch' },
   { id: 'it', label: 'Italiano' },
   { id: 'sv', label: 'Svenska' },
@@ -33,8 +29,6 @@ export const LANG_IDS = LANG_META.map((l) => l.id)
    answers, per language. English lives here too so one helper serves both the
    main app and the Classic game. */
 export const REINFORCE = {
-  am: AM_REINFORCE,
-  ti: TI_REINFORCE,
   en: {
     praise: ['Great job!', 'Wonderful!', 'You are a star!', 'Brilliant!', 'Amazing!', 'Fantastic!', 'You did it!', 'Way to go!', 'Superb!', 'Awesome!'],
     encourage: ['Try again!', 'So close!', 'You can do it!', 'Almost!', 'Keep going!', 'Nearly there!', 'Give it another go!', 'Listen again!'],
@@ -67,8 +61,6 @@ export const REINFORCE = {
 /* Core UI strings per new language. English (inline fallbacks in t() calls)
    fills every gap, so this is the frequently-seen surface, not every key. */
 export const LANGPACKS = {
-  am: AM,
-  ti: TI,
   de: {
         backpack: 'Rucksack', home: 'Start', continue: 'Weiter', gotIt: 'Verstanden',
     nice: 'Toll!', amazing: 'Fantastisch! {n} in Folge!', notQuite: 'Nicht ganz!', tryAgain: '— hör zu und versuch es nochmal',

@@ -13,27 +13,6 @@
    only has to rhyme with it.
    ========================================================================== */
 import { getActivePackId } from './ethiopic'
-import { getLang } from './i18n'
-
-/* Ge'ez-script spellings of the same proper nouns, shown when the app text
-   is Amharic or Tigrinya (owner's decision, Oct 2026). */
-const GEEZ_NAMES = {
-  am: {
-    Lalibela: 'ላሊበላ', Aksum: 'አክሱም', Axum: 'አክሱም', Simien: 'ስሜን', 'Simien Mountains': 'የስሜን ተራሮች', Gondar: 'ጎንደር',
-    'Bahir Dar': 'ባሕር ዳር', 'Addis Ababa': 'አዲስ አበባ', Asmara: 'አስመራ', Keren: 'ከረን', Massawa: 'ምጽዋ',
-    'Dahlak Islands': 'የዳህላክ ደሴቶች', 'Semenawi Bahri': 'ሰሜናዊ ባሕሪ', 'Vowel Skies': 'የአናባቢ ሰማያት',
-    Ethiopia: 'ኢትዮጵያ', Eritrea: 'ኤርትራ', 'Ethiopia (Tigray)': 'ኢትዮጵያ (ትግራይ)',
-  },
-  ti: {
-    Lalibela: 'ላሊበላ', Aksum: 'ኣኽሱም', Axum: 'ኣኽሱም', Simien: 'ስሜን', 'Simien Mountains': 'ኣኽራን ስሜን', Gondar: 'ጎንደር',
-    'Bahir Dar': 'ባሕር ዳር', 'Addis Ababa': 'ኣዲስ ኣበባ', Asmara: 'ኣስመራ', Keren: 'ከረን', Massawa: 'ምጽዋዕ',
-    'Dahlak Islands': 'ደሴታት ዳህላክ', 'Semenawi Bahri': 'ሰሜናዊ ባሕሪ', 'Vowel Skies': 'ሰማያት ኣናባቢ',
-    Ethiopia: 'ኢትዮጵያ', Eritrea: 'ኤርትራ', 'Ethiopia (Tigray)': 'ኢትዮጵያ (ትግራይ)',
-  },
-}
-export const GEEZ_PLACE_NAMES = GEEZ_NAMES
-const loc = (v) => (typeof v === 'string' && GEEZ_NAMES[getLang()]?.[v]) || v
-const locRow = (r) => ({ ...r, ...(r.name && { name: loc(r.name) }), ...(r.place && { place: loc(r.place) }), ...(r.country && { country: loc(r.country) }) })
 
 /* Chapter bands on the home path: 4 letter chapters + the vowel lap. */
 const CHAPTERS = {
@@ -79,6 +58,6 @@ const SKYLANDS = {
 
 const packOr = (table) => table[getActivePackId()] || table.am
 
-export const chapterPlaces = () => packOr(CHAPTERS).map(loc)
-export const runnerPlaces = () => packOr(RUNNER).map(locRow)
-export const skylandsPlaces = () => packOr(SKYLANDS).map(locRow)
+export const chapterPlaces = () => packOr(CHAPTERS)
+export const runnerPlaces = () => packOr(RUNNER)
+export const skylandsPlaces = () => packOr(SKYLANDS)
