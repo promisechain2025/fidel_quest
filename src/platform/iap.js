@@ -41,9 +41,17 @@ import { isApplePlatform } from './native'
 import {
   SLOT_PRODUCTS, LEGACY_FAMILY_PACK_ID, nextSlot, slotProductId, setOwnedSlots, grantLegacyFamilyPack, revokeStoreLegacyPack,
 } from './profileSlots'
+import { PACKAGE_PRODUCT, PACKAGE_PRODUCTS, packagesEnabled, setStorePackages } from './packages'
 
-export { SLOT_PRODUCTS }
-/** The complete list of products this app can ever ask the store to SELL. */
+export { SLOT_PRODUCTS, PACKAGE_PRODUCTS }
+/** The complete list of products this app can ever ask the store to SELL.
+    Paid builds (today): the five slots only. The free-download build
+    (VITE_PACKAGES=1, plan 1.4) adds exactly core_unlock, prayer_book and
+    bundle_core_prayer - never full_app. Evaluated per call so the flag can
+    be tested. */
+export function sellableProducts() {
+  return packagesEnabled() ? [...SLOT_PRODUCTS, ...PACKAGE_PRODUCTS] : [...SLOT_PRODUCTS]
+}
 export const SELLABLE_PRODUCTS = SLOT_PRODUCTS
 const INAPP = 'inapp' // PURCHASE_TYPE.INAPP - one-time (non-consumable) products
 
@@ -104,7 +112,8 @@ const isAlreadyOwned = (e) => /already.?owned|already purchased|ITEM_ALREADY_OWN
     refunded, and (Android) in the PURCHASED state. */
 export function validTransaction(tx) {
   if (!tx || typeof tx.productIdentifier !== 'string') return false
-  if (!SLOT_PRODUCTS.includes(tx.productIdentifier) && tx.productIdentifier !== LEGACY_FAMILY_PACK_ID) return false
+  const known = SLOT_PRODUCTS.includes(tx.productIdentifier) || tx.productIdentifier === LEGACY_FAMILY_PACK_ID || PACKAGE_PRODUCTS.includes(tx.productIdentifier)
+  if (!known) return false
   if (tx.revocationDate) return false
   if (tx.purchaseState != null && String(tx.purchaseState) !== '1') return false
   return true
@@ -114,6 +123,7 @@ export function validTransaction(tx) {
 function grant(tx) {
   if (!validTransaction(tx)) return false
   if (tx.productIdentifier === LEGACY_FAMILY_PACK_ID) grantLegacyFamilyPack()
+  else if (PACKAGE_PRODUCTS.includes(tx.productIdentifier)) setStorePackages([tx.productIdentifier], 'add')
   else setOwnedSlots([tx.productIdentifier], 'add')
   return true
 }
@@ -129,7 +139,11 @@ async function syncFromStore(P) {
   else revokeStoreLegacyPack()
   const slots = ids.filter((id) => SLOT_PRODUCTS.includes(id))
   setOwnedSlots(slots, 'replace')
-  return { slots, legacy: ids.includes(LEGACY_FAMILY_PACK_ID) }
+  // Packages are mirrored too (refunds drop). A device that has never seen
+  // a package product just stores an empty list.
+  const packages = ids.filter((id) => PACKAGE_PRODUCTS.includes(id))
+  setStorePackages(packages, 'replace')
+  return { slots, packages, legacy: ids.includes(LEGACY_FAMILY_PACK_ID) }
 }
 
 async function listen(P) {
@@ -187,7 +201,36 @@ export async function buyNextProfileSlot() {
   const n = nextSlot()
   if (!n) return 'purchased' // all 6 already owned
   const productId = slotProductId(n)
-  if (!SELLABLE_PRODUCTS.includes(productId)) return 'error'
+  if (!sellableProducts().includes(productId)) return 'error'
+  return buyProduct(productId, (got) => got.legacy || got.slots.includes(productId))
+}
+
+/**
+ * Buy one content package: 'core' | 'prayer' | 'bundle'. Only in the
+ * free-download build (VITE_PACKAGES=1); otherwise 'unavailable'.
+ * Same result strings as buyNextProfileSlot().
+ */
+export async function buyPackage(pkg) {
+  if (!iapAvailable() || !packagesEnabled()) return 'unavailable'
+  const productId = PACKAGE_PRODUCT[pkg]
+  if (!productId || !sellableProducts().includes(productId)) return 'error'
+  return buyProduct(productId, (got) => got.packages.includes(productId))
+}
+
+/** Localized store price for a package ('core' | 'prayer' | 'bundle') or ''. */
+export async function packageStorePrice(pkg) {
+  if (!iapAvailable() || !PACKAGE_PRODUCT[pkg]) return ''
+  try {
+    const { P } = await plugin()
+    const res = await P.getProduct({ productIdentifier: PACKAGE_PRODUCT[pkg], productType: INAPP })
+    return res?.product?.priceString || ''
+  } catch (e) {
+    iapWarn('price', e)
+    return ''
+  }
+}
+
+async function buyProduct(productId, ownedAfterSync) {
   let P
   try {
     P = (await plugin()).P
@@ -195,14 +238,14 @@ export async function buyNextProfileSlot() {
     const tx = await P.purchaseProduct({ productIdentifier: productId, productType: INAPP, quantity: 1 })
     if (tx?.productIdentifier === productId && grant(tx)) return 'purchased'
     if (tx && String(tx.purchaseState) === '0') return 'pending'
-    return (await syncFromStore(P)).slots.includes(productId) ? 'purchased' : 'error'
+    return ownedAfterSync(await syncFromStore(P)) ? 'purchased' : 'error'
   } catch (e) {
     if (isPending(e)) return 'pending'
     if (isUserCancel(e)) return 'cancelled'
     if ((isAlreadyOwned(e) || isNotPurchased(e)) && P) {
       try {
         const got = await syncFromStore(P)
-        if (got.legacy || got.slots.includes(productId)) return 'purchased'
+        if (ownedAfterSync(got)) return 'purchased'
         return isNotPurchased(e) ? 'cancelled' : 'error'
       } catch (e2) {
         iapWarn('already-owned', e2)
@@ -223,10 +266,13 @@ export async function restoreProfileSlots() {
     const { P } = await plugin()
     await P.restorePurchases()
     const got = await syncFromStore(P)
-    return got.legacy || got.slots.length ? 'restored' : 'none'
+    return got.legacy || got.slots.length || got.packages.length ? 'restored' : 'none'
   } catch (e) {
     if (isUserCancel(e)) return 'cancelled'
     iapWarn('restore', e)
     return 'error'
   }
 }
+
+/** Restore everything (slots, legacy family_pack, packages). */
+export const restorePurchases = restoreProfileSlots

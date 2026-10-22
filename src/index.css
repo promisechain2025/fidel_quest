@@ -364,3 +364,7 @@ input, textarea, [contenteditable='true'] {
 .pb-fb .pb-sz { width: 30px; height: 30px; }
 .pb-fb .pb-sz:first-child span { font-size: 13px !important; }
 .pb-fb .pb-sz:last-child span { font-size: 19px !important; }
+
+/* Prayer Book shelf: a book not owned yet (free-download build only). */
+.pb-shelf-item.pb-locked { opacity: 0.55; }
+.pb-lock-ic { display: inline-block; vertical-align: -2px; margin-inline-end: 6px; }

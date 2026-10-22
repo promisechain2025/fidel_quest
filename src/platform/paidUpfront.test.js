@@ -75,7 +75,9 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     const iapSrc = stripComments(read('src/platform/iap.js'))
     // purchaseProduct is only ever called with the computed next slot id.
     expect([...iapSrc.matchAll(/purchaseProduct\(\{ productIdentifier:\s*([A-Za-z_'"]+)/g)].map((m) => m[1])).toEqual(['productId'])
-    expect(iapSrc).toMatch(/const productId = slotProductId\(n\)\n\s*if \(!SELLABLE_PRODUCTS\.includes\(productId\)\) return 'error'/)
+    expect(iapSrc).toMatch(/const productId = slotProductId\(n\)\n\s*if \(!sellableProducts\(\)\.includes\(productId\)\) return 'error'/)
+    // Packages (1.4, behind VITE_PACKAGES) go through the same allow-list.
+    expect(iapSrc).toMatch(/const productId = PACKAGE_PRODUCT\[pkg\]\n\s*if \(!productId \|\| !sellableProducts\(\)\.includes\(productId\)\) return 'error'/)
     expect(read('src/platform/profileSlots.js')).toMatch(/SLOT_PRICE_FALLBACK = Object\.freeze\(\{ 2: '\$4\.99', 3: '\$2\.49', 4: '\$2\.49', 5: '\$2\.49', 6: '\$2\.49' \}\)/)
   })
 

@@ -113,6 +113,8 @@ import { setCommunityCode } from './platform/community'
 import { appLinkUrl } from './platform/appLink'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform } from './platform/native'
+import { coreNodeOpen, coreScreenOpen } from './platform/packages'
+import CoreLockSheet from './components/CoreLockSheet'
 import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
 import { maybeRequestReview, noteCompletion } from './platform/reviewPrompt'
 import { planSetup, parkSetup, finishSetup, reminderTexts } from './platform/firstRun'
@@ -1080,6 +1082,7 @@ export default function FidelQuestApp() {
     const next = initialScreens()
     const top = next[next.length - 1]
     if (screenBlockedByTrial(top?.name)) return [{ name: 'home' }]
+    if (!coreScreenOpen(top)) return [{ name: 'home' }]
     return next
   })
   // Auto-open once per limited browser session. The flag is written in an
@@ -1092,10 +1095,14 @@ export default function FidelQuestApp() {
     return true
   })
   const [trialRev, setTrialRev] = useState(0)
+  // 1.4 packages: a Core-only screen was tapped without core_unlock.
+  const [coreLockOpen, setCoreLockOpen] = useState(false)
   // trialRev is a bump: redeeming a code writes localStorage, and reading it
   // here is what makes the home banner leave after an unlock.
   const trialLimited = isWebTrialLimited() || trialRev < 0
   const screen = stack[stack.length - 1]
+  const stackRef = useRef(stack)
+  stackRef.current = stack
   // "Who is playing?": greets a shared device (2+ children) once per app
   // session when the app opens on the path - never over a deep link. Also
   // opened from the home kid chip and the Backpack.
@@ -1109,6 +1116,11 @@ export default function FidelQuestApp() {
   const setScreen = useCallback((next) => {
     if (next && screenBlockedByTrial(next.name)) {
       setPaywallOpen(true)
+      return
+    }
+    const topNow = stackRef.current[stackRef.current.length - 1]
+    if (next && !coreScreenOpen(next) && !(topNow?.freeNode && topNow.name === next.name)) {
+      setCoreLockOpen(true)
       return
     }
     setStack((s) => {
@@ -1423,22 +1435,25 @@ export default function FidelQuestApp() {
       setWarmupNudge({ node, enforced: true })
       return
     }
+    if (!coreNodeOpen(node, JOURNEY)) { setCoreLockOpen(true); return }
+    const free = !coreScreenOpen({ name: 'lesson' }) // core locked: tag the free-unit screens
+    const go = (n) => setScreen(free ? { ...n, freeNode: true } : n)
     setRunSeed((Date.now() % 1000000) | 1)
-    if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
-    if (node.kind === NodeKind.BLEND) return setScreen({ name: 'wordbuild', node })
-    if (node.kind === NodeKind.FIND) return setScreen({ name: 'findfidel', node })
-    if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
-    if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
+    if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return go({ name: 'stone', node })
+    if (node.kind === NodeKind.BLEND) return go({ name: 'wordbuild', node })
+    if (node.kind === NodeKind.FIND) return go({ name: 'findfidel', node })
+    if (node.kind === NodeKind.QUIZ) return go({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
+    if (node.kind === NodeKind.STORY) return go({ name: 'stories', nodeId: node.id })
     if (node.kind === NodeKind.REVIEW) {
       const seed = (Date.now() % 1000000) | 1
       setRunSeed(seed)
-      return setScreen({
+      return go({
         name: 'review-node',
         nodeId: node.id,
         queue: buildWarmup(seed, learnedFamilyIds(journeyRef.current), loadLedger(), 8, dueKeys()),
       })
     }
-    return setScreen({ name: 'arcade', node }) // ARCADE gateway
+    return go({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
   // Lets the gate above retry itself once the daily window opens, without
   // openNode having to depend on (and re-create) itself.
@@ -2021,6 +2036,12 @@ export default function FidelQuestApp() {
       </div>
       {/* Outside the inert app shell, so it is the only live surface. */}
       {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
+      {coreLockOpen && (
+        <CoreLockSheet
+          onClose={() => setCoreLockOpen(false)}
+          onGrownUps={() => { setCoreLockOpen(false); setScreen({ name: 'grownups' }) }}
+        />
+      )}
       {paywallOpen && (
         <WebTrialPaywall
           onClose={() => setPaywallOpen(false)}
@@ -2298,6 +2319,11 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             <span className="relative">{nodeGlyph(node)}</span>
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+          {unlocked && !coreNodeOpen(node, JOURNEY) && (
+            <span className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: 'var(--accent)', border: '2px solid var(--card)' }} aria-hidden="true" data-testid={`pkg-lock-${node.id}`}>
+              <Lock className="h-4 w-4" style={{ color: 'var(--glyph)' }} />
+            </span>
+          )}
           {!unlocked && (
             <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-hidden="true">
               <Lock className="h-3 w-3" style={{ color: 'var(--muted)' }} />
