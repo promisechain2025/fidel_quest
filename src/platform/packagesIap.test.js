@@ -106,12 +106,37 @@ describe('packages flag on (free-download build)', () => {
     expect(await iap.restorePurchases()).toBe('none')
   })
 
-  it('a rep code grant counts, and is never mirrored away by the store', async () => {
+  it('a rep code grant is ignored by the store app (3.1.1) and survives store sync', async () => {
     const { pk, iap } = await fresh(true)
     pk.grantRepPackage('bundle', { repId: 'ER01', code: 'EGR-BER01-AAAA-BBBB' })
     await iap.initIap()
-    expect(pk.hasPackage('core')).toBe(true)
-    expect(pk.hasPackage('prayer')).toBe(true)
+    // native shell: EGR never unlocks
+    expect(pk.hasPackage('core')).toBe(false)
+    expect(pk.hasPackage('prayer')).toBe(false)
+    // the stored grant is untouched by the store mirror; the web app honours it
+    expect(pk.repGrants({ native: false }).map((g) => g.pkg)).toEqual(['bundle'])
     expect(pk.grantRepPackage('gold')).toBe(false)
+  })
+
+  it('core gate: first unit free, later units and games locked, prayer/explore free', async () => {
+    const { pk } = await fresh(true)
+    const J = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }, { id: 'e' }, { id: 'f' }, { id: 'g' }]
+    expect(pk.coreNodeOpen({ id: 'x', unitIndex: 1 }, J)).toBe(true)
+    expect(pk.coreNodeOpen({ id: 'y', unitIndex: 2 }, J)).toBe(false)
+    expect(pk.coreNodeOpen({ id: 'f' }, J)).toBe(true)
+    expect(pk.coreNodeOpen({ id: 'g' }, J)).toBe(false)
+    expect(pk.coreScreenOpen({ name: 'prayer' })).toBe(true)
+    expect(pk.coreScreenOpen({ name: 'explore' })).toBe(true)
+    expect(pk.coreScreenOpen({ name: 'arcade' })).toBe(false)
+    expect(pk.coreScreenOpen({ name: 'stone', freeNode: true })).toBe(true)
+    pk.setStorePackages(['core_unlock'])
+    expect(pk.coreNodeOpen({ id: 'y', unitIndex: 2 }, J)).toBe(true)
+    expect(pk.coreScreenOpen({ name: 'arcade' })).toBe(true)
+  })
+
+  it('core gate is off when the flag is off', async () => {
+    const { pk } = await fresh(false)
+    expect(pk.coreNodeOpen({ id: 'y', unitIndex: 9 }, [])).toBe(true)
+    expect(pk.coreScreenOpen({ name: 'arcade' })).toBe(true)
   })
 })

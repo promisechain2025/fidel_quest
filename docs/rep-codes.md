@@ -39,3 +39,23 @@ The API needs `ADMIN_TOKEN` and `MONGO_URL` set on Fly (memory store loses codes
 
 Free always: ጸሎት ዘዘወትር + today's ውዳሴ ማርያም. Past paid buyers and teacher class codes → Core.
 With the flag off (all current builds) nothing is gated and nothing new is sold.
+
+## Gating details (1.4)
+- **Core lock**: School Path unit 1 (or the first 6 path nodes on a pack
+  without units) is free; later nodes show a lock badge and open a kid sheet
+  (no English, no price: "ask a grown-up" → Grown-Ups, which has its own
+  ParentalGate). Free screens without Core: home, Grown-Ups, teacher, join
+  class, plan, prayer, Explore, practice log/report, name, family voice,
+  placement (`CORE_FREE_SCREENS` in `src/platform/packages.js`).
+- **Prayer lock**: ጸሎት ዘዘወትር + today's ውዳሴ ማርያም free on every build; the
+  other days show a lock on the shelf.
+- **Rep codes are web only**: `repGrants()` returns nothing on a native
+  shell, so an EGR grant can never unlock the store apps (3.1.1 / Play
+  Payments). Store apps unlock only via IAP, Apple Offer Codes, Play promo codes.
+
+## iOS build (Xcode Cloud)
+- Set `VITE_PACKAGES=1` in the 1.4 workflow env. `ci_post_clone.sh` then
+  checks the bundle contains `core_unlock`, `prayer_book`, `bundle_core_prayer`.
+- `ios/App/App/Products.storekit` is a local StoreKit test config (Xcode →
+  Scheme → Run → Options → StoreKit Configuration). It is NOT the store:
+  the real products are created in App Store Connect (pending, owner).

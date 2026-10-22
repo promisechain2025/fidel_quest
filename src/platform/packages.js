@@ -26,6 +26,7 @@
 import { isPaidBuyer } from './paidBuyer'
 import { classUnlockActive } from './classUnlock'
 import { packagesEnabled, __setPackagesFlag } from './packagesFlag'
+import { isNativePlatform } from './native'
 
 export { packagesEnabled, __setPackagesFlag }
 
@@ -85,7 +86,11 @@ export function grantRepPackage(pkg, { repId = '', code = '' } = {}) {
   return true
 }
 
-export function repGrants() {
+export function repGrants({ native = isNativePlatform() } = {}) {
+  // Store builds never honour EGR codes (Apple 3.1.1 / Play Payments): a
+  // native shell only unlocks through the store (purchase, Offer Code,
+  // promo code). Rep grants count on the web app only.
+  if (native) return []
   const r = load().rep
   return Array.isArray(r) ? r.filter((x) => x && PACKAGE_IDS.includes(x.pkg)) : []
 }
@@ -121,4 +126,30 @@ export function prayerBookOpen(bookId, now = new Date()) {
   if (hasPackage('prayer')) return true
   if (bookId === FREE_PRAYER_BOOK) return true
   return bookId === WUDASE_BY_DAY[now.getDay()]
+}
+
+/* ---- Core gate (1.4) -----------------------------------------------------
+   Free without core: the first unit of the School Path (unitIndex 1, or the
+   first FREE_CORE_NODES path nodes on a pack without units), plus the
+   browse / grown-up / prayer screens below. Everything else (later path
+   nodes, games, stories, word tools) needs core_unlock or the bundle. */
+export const FREE_CORE_NODES = 6
+export const CORE_FREE_SCREENS = Object.freeze([
+  'home', 'grownups', 'teacher', 'joinclass', 'plan', 'prayer', 'explore',
+  'practicelog', 'practiceview', 'name', 'family', 'familyvoice', 'placement',
+])
+
+/** May this path node open? `journey` is the ordered path (JOURNEY). */
+export function coreNodeOpen(node, journey = []) {
+  if (hasPackage('core') || !node) return true
+  if (node.unitIndex != null) return Number(node.unitIndex) <= 1
+  const at = journey.findIndex((n) => n.id === node.id)
+  return at >= 0 && at < FREE_CORE_NODES
+}
+
+/** May this screen be pushed? Path nodes of the free unit carry freeNode. */
+export function coreScreenOpen(next) {
+  if (hasPackage('core') || !next || !next.name) return true
+  if (next.freeNode) return true
+  return CORE_FREE_SCREENS.includes(next.name)
 }
