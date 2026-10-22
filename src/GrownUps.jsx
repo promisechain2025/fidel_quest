@@ -28,6 +28,8 @@ import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import ProfileSlotOffer from './components/ProfileSlotOffer'
 import PaidBuyerCard from './components/PaidBuyerCard'
+import PackageOffer from './components/PackageOffer'
+import RepCodeCard from './components/RepCodeCard'
 import { needsSlot } from './platform/profileSlots'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
@@ -821,6 +823,12 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
 
           {/* paid-buyer re-entry code (1.3.3): native paid installs only */}
           {isNativePlatform() && <PaidBuyerCard />}
+
+          {/* content packages (free-download build, VITE_PACKAGES=1): store buy + restore */}
+          <PackageOffer />
+
+          {/* representative unlock code: easygeez.com/app only, never in the store apps */}
+          <RepCodeCard />
 
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.

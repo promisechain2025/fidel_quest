@@ -31,6 +31,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { CODE_ALPHABET } from './appCodes'
 import { isNativePlatform } from './native'
+import { packagesEnabled } from './packagesFlag'
 
 export const PAID_BUYER_KEY = 'fq.paidBuyer.v1'
 export const PAID_BUYER_PREFIX = 'EGL'
@@ -146,6 +147,10 @@ export async function ensurePaidBuyerMark({ native = isNativePlatform(), platfor
   if (!native) return loadPaidBuyer()
   const plat = platform || (Capacitor.getPlatform?.() === 'ios' ? 'ios' : 'android')
   let m = await verifyStoredPaidBuyer()
+  // The free-download build (VITE_PACKAGES=1) must never mint a NEW mark:
+  // that would hand Core to every new install. It only keeps marks written
+  // by the paid builds (or re-entered with an EGL code).
+  if (!m && packagesEnabled()) return null
   if (!m) {
     const code = await mintPaidBuyerCode({ platform: plat, now })
     if (!code) return null
