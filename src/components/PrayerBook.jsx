@@ -125,7 +125,7 @@ function PageFace({ UNITS, units, pageNo, markMode, glowFor, onTap }) {
 }
 
 /* ---- shelf: which reading is open (remembered per device) -------------- */
-export default function PrayerBook({ onBack, pack }) {
+export default function PrayerBook({ onBack, pack, onLocked }) {
   const [id, setId] = useState(() => {
     try { const v = localStorage.getItem(BOOK_KEY); return BOOKS.some((b) => b.id === v) && prayerBookOpen(v) ? v : BOOKS[0].id } catch { return BOOKS[0].id }
   })
@@ -134,10 +134,10 @@ export default function PrayerBook({ onBack, pack }) {
   // Practice tracking contract (platform/prayerPractice.js): the page is open
   // while the book is mounted; leaving the book ends a practice session.
   useEffect(() => { prayerOpen(); return () => { prayerAudio(false); prayerClose(); endPractice() } }, [])
-  return <BookView key={book.id} book={book} onBack={onBack} pack={pack} onPick={setId} />
+  return <BookView key={book.id} book={book} onBack={onBack} pack={pack} onPick={setId} onLocked={onLocked} />
 }
 
-function BookView({ book: BOOK, onBack, pack, onPick }) {
+function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const UNITS = BOOK.units
   const [shelf, setShelf] = useState(false)
   const NAMES = markNames(pack || getActivePackId())
@@ -493,7 +493,7 @@ function BookView({ book: BOOK, onBack, pack, onPick }) {
         {shelf && (
           <div className="pb-shelf geez-book" role="menu">
             {BOOKS.map((b) => (
-              <button key={b.id} type="button" role="menuitem" aria-disabled={!prayerBookOpen(b.id) || undefined} className={`pb-shelf-item${b.id === BOOK.id ? ' pb-on' : ''}${prayerBookOpen(b.id) ? '' : ' pb-locked'}`} data-testid={`book-${b.id}`} onClick={() => { if (!prayerBookOpen(b.id)) return; setShelf(false); if (b.id !== BOOK.id) onPick(b.id) }}>{!prayerBookOpen(b.id) && <Lock size={16} aria-hidden="true" className="pb-lock-ic" />}{b.title}</button>
+              <button key={b.id} type="button" role="menuitem" aria-disabled={!prayerBookOpen(b.id) || undefined} className={`pb-shelf-item${b.id === BOOK.id ? ' pb-on' : ''}${prayerBookOpen(b.id) ? '' : ' pb-locked'}`} data-testid={`book-${b.id}`} onClick={() => { if (!prayerBookOpen(b.id)) { setShelf(false); onLocked?.(b.id); return } setShelf(false); if (b.id !== BOOK.id) onPick(b.id) }}>{!prayerBookOpen(b.id) && <Lock size={16} aria-hidden="true" className="pb-lock-ic" />}{b.title}</button>
             ))}
           </div>
         )}
