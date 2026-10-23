@@ -6,6 +6,7 @@
    until the owner adds people who agreed to be listed). Grown-Ups only,
    behind the parental gate; Amharic + Tigrinya first, English underneath.
    ========================================================================== */
+import { repCodeApiBase } from '../platform/repCodes'
 import { useEffect, useState } from 'react'
 import { Globe, Users } from 'lucide-react'
 import { regionOverride, setRegionOverride } from '../platform/repCountries'
@@ -47,7 +48,13 @@ export function RepresentativesList({ load }) {
   const [reps, setReps] = useState(null)
   useEffect(() => {
     let live = true
-    const get = load || (() => fetch(`${import.meta.env?.BASE_URL || '/'}representatives.json`).then((r) => r.json()))
+    // Live list from the rep-code server (reps marked "Show on website", test reps hidden), else the static file.
+    const local = () => fetch(`${import.meta.env?.BASE_URL || '/'}representatives.json`).then((r) => r.json())
+    const api = repCodeApiBase()
+    const get = load || (() => (api
+      ? fetch(`${api}/api/representatives`).then((r) => { if (!r.ok) throw new Error('rep api'); return r.json() })
+        .then((d) => ({ representatives: (d?.representatives || []).filter((x) => !x.test) })).catch(local)
+      : local()))
     get().then((d) => { if (live) setReps(Array.isArray(d?.representatives) ? d.representatives : []) }).catch(() => { if (live) setReps([]) })
     return () => { live = false }
   }, [load])
@@ -64,6 +71,7 @@ export function RepresentativesList({ load }) {
               <span className="block font-black">{r.name}</span>
               <span className="block" style={muted}>{[r.city, r.country].filter(Boolean).join(', ')}</span>
               {r.phone && <span className="block mono">{r.phone}</span>}
+              {r.whatsapp && <span className="block mono">WhatsApp {r.whatsapp}</span>}
               {r.telegram && <span className="block mono">{r.telegram}</span>}
             </li>
           ))}

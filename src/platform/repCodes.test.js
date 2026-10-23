@@ -55,3 +55,12 @@ describe('rep codes (web only, server-verified)', () => {
     expect(hasFullAccess({ native: false, base: '/app/', state })).toBe(true)
   })
 })
+
+describe('rep-code server reasons', () => {
+  it('maps void / inactive to the cancelled message', async () => {
+    const { redeemRepCode } = await import('./repCodes')
+    const f = (reason) => async () => ({ ok: false, json: async () => ({ ok: false, reason }) })
+    expect(await redeemRepCode('EGR-CER01-ABCD-EF23', { fetchImpl: f('void'), base: 'https://x', native: false })).toEqual({ ok: false, reason: 'revoked' })
+    expect(await redeemRepCode('EGR-CER01-ABCD-EF23', { fetchImpl: f('inactive'), base: 'https://x', native: false })).toEqual({ ok: false, reason: 'revoked' })
+  })
+})
