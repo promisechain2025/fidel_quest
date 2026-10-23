@@ -29,6 +29,7 @@ const ERR = {
   expired: 'This code has expired.',
   revoked: 'This code was cancelled.',
   offline: 'No connection. Try again.',
+  devices: 'This code is already used on 2 devices. Contact your representative.',
   other: 'That code did not work. Check the letters.',
 }
 
@@ -42,6 +43,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [done, setDone] = useState(false)
   const [owned, setOwned] = useState(() => repGrants().map((g) => g.pkg))
   if (!show) return null
 
@@ -54,6 +56,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
     if (r.ok) {
       setOwned((o) => [...new Set([...o, r.pkg])])
       setCode('')
+      setDone(true)
       onUnlocked?.(r.pkg)
     } else setErr(ERR[r.reason] ? r.reason : 'other')
   }
@@ -72,6 +75,9 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
             </li>
           ))}
         </ul>
+      )}
+      {done && (
+        <p className="mt-2 text-sm font-bold" data-testid="rep-keep-code">Keep this code. You can use it again if you change phone (up to 2 devices).</p>
       )}
       <form onSubmit={submit} className="mt-3">
         <label htmlFor="rep-code" className="sr-only">Code</label>

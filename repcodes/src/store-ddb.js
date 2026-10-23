@@ -35,9 +35,41 @@ export function ddbStore({ table = process.env.TABLE, client } = {}) {
         await db.send(new UpdateCommand({
           TableName: table, Key: { pk: `CODE#${code}` },
           ConditionExpression: '#s = :u',
-          UpdateExpression: 'SET #s = :used, usedAt = :at, household = :hh',
+          UpdateExpression: 'SET #s = :used, usedAt = :at, household = :hh, devices = :dl',
           ExpressionAttributeNames: { '#s': 'status' },
-          ExpressionAttributeValues: { ':u': 'unused', ':used': 'used', ':at': at, ':hh': household },
+          ExpressionAttributeValues: { ':u': 'unused', ':used': 'used', ':at': at, ':hh': household, ':dl': household ? [household] : [] },
+        }))
+        return true
+      } catch (e) { if (isCond(e)) return false; throw e }
+    },
+    /** Atomic: append a device hash only while the code is used, the hash is
+        not there yet and the list is under `max`. Older rows with only
+        `household` get [household, hh] in the same conditional write. */
+    async addDeviceIfRoom(code, hh, at, max, seen = {}) {
+      const legacy = !Array.isArray(seen.devices)
+      try {
+        await db.send(new UpdateCommand(legacy ? {
+          TableName: table, Key: { pk: `CODE#${code}` },
+          ConditionExpression: '#s = :used AND attribute_not_exists(devices) AND ' + (seen.household ? 'household = :old' : 'attribute_not_exists(household)'),
+          UpdateExpression: 'SET devices = :dl, lastRestoreAt = :at',
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: { ':used': 'used', ':at': at, ':dl': [seen.household, hh].filter(Boolean).slice(0, max), ...(seen.household ? { ':old': seen.household } : {}) },
+        } : {
+          TableName: table, Key: { pk: `CODE#${code}` },
+          ConditionExpression: '#s = :used AND size(devices) < :max AND NOT contains(devices, :hh)',
+          UpdateExpression: 'SET devices = list_append(devices, :one), lastRestoreAt = :at',
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: { ':used': 'used', ':max': max, ':hh': hh, ':one': [hh], ':at': at },
+        }))
+        return true
+      } catch (e) { if (isCond(e)) return false; throw e }
+    },
+    async resetDevices(code, at) {
+      try {
+        await db.send(new UpdateCommand({
+          TableName: table, Key: { pk: `CODE#${code}` }, ConditionExpression: '#s = :used',
+          UpdateExpression: 'SET devices = :e, devicesResetAt = :at REMOVE household', ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: { ':used': 'used', ':e': [], ':at': at },
         }))
         return true
       } catch (e) { if (isCond(e)) return false; throw e }

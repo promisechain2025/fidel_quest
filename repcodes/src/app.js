@@ -32,8 +32,15 @@ export function makeApp({ store, sendMail, log = () => {} }) {
     if (path === '/api/repcodes/redeem' && method === 'POST') {
       const n = await store.hit(`redeem:${ip}`, 900)
       if (n > 20) return json(429, { ok: false, reason: 'limited', message: REDEEM_MSG.limited }, cors)
-      const r = await svc.redeem(body.code, body.installId)
-      log('redeem', { ok: r.ok, reason: r.reason || '', restored: !!r.restored }) // never logs the code
+      // Adding a second device to a used code: tighter limits (per IP and
+      // per code) so one code cannot be passed around.
+      const code = String(body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+      const beforeNewDevice = async () => {
+        const [a, b] = await Promise.all([store.hit(`restore:${ip}`, 3600), store.hit(`restorecode:${code}`, 86400)])
+        return a <= 5 && b <= 5
+      }
+      const r = await svc.redeem(body.code, body.installId, { beforeNewDevice })
+      log('redeem', { ok: r.ok, reason: r.reason || '', restored: !!r.restored, newDevice: !!r.newDevice }) // never logs the code
       return r.ok
         ? json(200, { ok: true, pkg: r.pkg, repId: r.repId, restored: !!r.restored, message: `Unlocked: ${PKG_NAME[r.pkg]}` }, cors)
         : json(409, { ok: false, reason: r.reason, message: REDEEM_MSG[r.reason] || REDEEM_MSG.unknown }, cors)
@@ -80,13 +87,14 @@ export function makeApp({ store, sendMail, log = () => {} }) {
       if (p === 'reps' && method === 'PUT') return json(200, { rep: await svc.saveRep(body, { create: false }) })
       if (p === 'generate' && method === 'POST') { const r = await svc.generate(body); log('generate', { repId: body.repId, pkg: body.pkg, n: r.codes.length }); return json(200, r) }
       if (p === 'void' && method === 'POST') return json(200, await svc.voidCode(body.code))
+      if (p === 'reset-devices' && method === 'POST') { const r = await svc.resetDevices(body.code); log('reset-devices', {}); return json(200, r) }
       if (p === 'codes' && method === 'GET') {
         const rows = await svc.codesFor(user, qs)
         return json(200, { codes: rows.map((c) => publicCode(c, { forAdmin: true })), totals: totals(rows) })
       }
       if (p === 'codes.csv' && method === 'GET') {
         const rows = (await svc.codesFor(user, qs)).map((c) => publicCode(c, { forAdmin: true }))
-        return { statusCode: 200, headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="egeez-codes-${qs.repId || 'all'}.csv"`, 'cache-control': 'no-store' }, body: toCsv(rows, ['code', 'repId', 'pkg', 'status', 'createdAt', 'usedAt', 'household', 'batch', 'voidedAt', 'test']) }
+        return { statusCode: 200, headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="egeez-codes-${qs.repId || 'all'}.csv"`, 'cache-control': 'no-store' }, body: toCsv(rows, ['code', 'repId', 'pkg', 'status', 'createdAt', 'usedAt', 'household', 'devices', 'lastRestoreAt', 'batch', 'voidedAt', 'test']) }
       }
       if (p === 'totals.csv' && method === 'GET') {
         return { statusCode: 200, headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="egeez-rep-totals.csv"' }, body: toCsv(await svc.perRepTotals(), ['repId', 'name', 'issued', 'used', 'unused', 'void', 'test']) }

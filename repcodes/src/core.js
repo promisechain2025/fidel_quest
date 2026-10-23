@@ -9,6 +9,8 @@ export const PKG_NAME = { core: 'Full course', prayer: 'Prayer Book', bundle: 'F
 export const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 export const ADMIN_EMAIL = 'promisechain.net@gmail.com'
 export const REP_ID_RE = /^[A-Z0-9]{2,6}$/
+/** One sale, up to this many devices (restore after a phone change / wiped browser). */
+export const MAX_DEVICES = 2
 
 export const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest('hex')
 export const normalizeCode = (raw) => String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -41,10 +43,14 @@ export function canonical(raw) {
 export const maskHousehold = (hh) => (hh ? `HH-••••${String(hh).slice(-4).toUpperCase()}` : '')
 export const householdTag = (installId) => sha256(`hh:${installId}`).slice(0, 16)
 
+/** Device hashes on a code (older rows only have `household`). */
+export const devicesOf = (c) => (Array.isArray(c?.devices) ? c.devices : c?.household ? [c.household] : [])
+
 export function publicCode(c, { forAdmin = false } = {}) {
   const o = {
     code: c.code, repId: c.repId, pkg: c.pkg, status: c.status, createdAt: c.createdAt,
     usedAt: c.usedAt || null, household: maskHousehold(c.household), batch: c.batch, test: !!c.test,
+    devices: c.status === 'used' ? devicesOf(c).length : 0, maxDevices: MAX_DEVICES, lastRestoreAt: c.lastRestoreAt || null,
   }
   if (forAdmin) o.voidedAt = c.voidedAt || null
   return o
@@ -81,6 +87,7 @@ export const REDEEM_MSG = {
   format: 'That does not look like an eGeez code.',
   inactive: 'This representative is not active. Contact eGeez.',
   limited: 'Too many tries. Wait 15 minutes and try again.',
+  devices: `This code is already used on ${MAX_DEVICES} devices. Contact your representative.`,
 }
 
 /** Service: everything the HTTP layer calls. */
@@ -125,7 +132,7 @@ export function makeService(store, { now = () => new Date().toISOString(), sendM
       return { ok: true }
     },
     /** Single-use, atomic. Same household re-entering its own code = restore. */
-    async redeem(raw, installId) {
+    async redeem(raw, installId, { beforeNewDevice } = {}) {
       const code = canonical(raw)
       if (!code) return { ok: false, reason: 'format' }
       const hh = installId ? householdTag(String(installId).slice(0, 64)) : null
@@ -134,14 +141,35 @@ export function makeService(store, { now = () => new Date().toISOString(), sendM
       if (c.status === 'void') return { ok: false, reason: 'void' }
       const rep = await store.getRep(c.repId)
       if (!rep || !rep.active) return { ok: false, reason: 'inactive' }
-      if (c.status === 'used') {
-        return hh && c.household === hh ? { ok: true, pkg: c.pkg, repId: c.repId, restored: true } : { ok: false, reason: 'used' }
-      }
+      if (c.status === 'used') return this.restore(c, hh, beforeNewDevice)
       const won = await store.markUsedIfUnused(code, now(), hh)
       if (won) return { ok: true, pkg: c.pkg, repId: c.repId }
       const again = await store.getCode(code) // lost a race: maybe the same household double-tapped
-      if (again?.status === 'used' && hh && again.household === hh) return { ok: true, pkg: c.pkg, repId: c.repId, restored: true }
+      if (again?.status === 'used') return this.restore(again, hh, beforeNewDevice)
       return { ok: false, reason: again?.status === 'void' ? 'void' : 'used' }
+    },
+    /** A used code: known device = restore; new device = add it if there is room (atomic). */
+    async restore(c, hh, beforeNewDevice) {
+      if (!hh) return { ok: false, reason: 'used' }
+      const ok = { ok: true, pkg: c.pkg, repId: c.repId, restored: true }
+      let cur = c
+      for (let i = 0; i < 3; i++) {
+        const list = devicesOf(cur)
+        if (list.includes(hh)) return ok
+        if (list.length >= MAX_DEVICES) return { ok: false, reason: 'devices' }
+        if (i === 0 && beforeNewDevice && !(await beforeNewDevice())) return { ok: false, reason: 'limited' }
+        if (await store.addDeviceIfRoom(cur.code, hh, now(), MAX_DEVICES, cur)) return { ...ok, newDevice: true }
+        cur = await store.getCode(cur.code) // raced another device: re-check
+        if (!cur || cur.status !== 'used') return { ok: false, reason: 'used' }
+      }
+      return { ok: false, reason: 'devices' }
+    },
+    /** Admin: forget every device on a used code (it stays used / one sale). */
+    async resetDevices(raw) {
+      const code = canonical(raw)
+      if (!code) throw new HttpError(400, 'Bad code.')
+      if (!(await store.resetDevices(code, now()))) throw new HttpError(409, 'Only used codes have devices to reset.')
+      return { ok: true }
     },
     async codesFor(user, { repId, status } = {}) {
       let rows
