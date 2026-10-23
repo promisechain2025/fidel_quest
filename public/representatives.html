@@ -9,8 +9,21 @@
 <ul id="reps"></ul>
 <p id="empty" hidden><span lang="ti">ወኪላት ኣብ ቀረባ ክዝርዘሩ እዮም።</span><br><span lang="am">ወኪሎች በቅርቡ ይዘረዘራሉ።</span><br><span class="en" lang="en">Representatives will be listed here soon.</span></p>
 <script>
-fetch('representatives.json').then(r=>r.json()).then(d=>{const l=(d&&d.representatives)||[];const u=document.getElementById('reps');
+// Live list from the rep-code server (reps the admin marked "Show on website");
+// falls back to the static representatives.json. Test reps only with ?test=1.
+var REP_API='__REPCODE_API__';
+var showTest=/[?&]test=1/.test(location.search);
+function load(u){return fetch(u,{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
+(REP_API.indexOf('http')===0?load(REP_API+'/api/representatives').catch(function(){return load('representatives.json')}):load('representatives.json')).then(function(d){
+var l=((d&&d.representatives)||[]).filter(function(r){return showTest||!r.test});var u=document.getElementById('reps');
 if(!l.length){document.getElementById('empty').hidden=false;return}
-for(const r of l){const li=document.createElement('li');li.textContent=[r.name,[r.city,r.country].filter(Boolean).join(', '),r.phone,r.telegram].filter(Boolean).join(' · ');u.appendChild(li)}
-}).catch(()=>{document.getElementById('empty').hidden=false})
+l.forEach(function(r){var li=document.createElement('li');var b=document.createElement('b');b.textContent=r.name+(r.test?' (TEST)':'');li.appendChild(b);
+var place=[r.city,r.country].filter(Boolean).join(', ');if(place){li.appendChild(document.createElement('br'));li.appendChild(document.createTextNode(place))}
+function link(href,text){li.appendChild(document.createElement('br'));var a=document.createElement('a');a.href=href;a.textContent=text;a.rel='noopener';li.appendChild(a)}
+if(r.phone)link('tel:'+r.phone.replace(/[^+0-9]/g,''),'☎ '+r.phone);
+if(r.whatsapp)link('https://wa.me/'+r.whatsapp.replace(/[^0-9]/g,''),'WhatsApp '+r.whatsapp);
+if(r.email)link('mailto:'+r.email,r.email);
+if(r.telegram)link('https://t.me/'+String(r.telegram).replace(/^@/,''),'Telegram '+r.telegram);
+u.appendChild(li)})
+}).catch(function(){document.getElementById('empty').hidden=false})
 </script></body></html>
