@@ -28,10 +28,6 @@
    ========================================================================== */
 
 import { FIDEL_FAMILIES, getActivePackId } from './ethiopic'
-import { AM_PACK } from '../packs/am'
-import { TI_PACK } from '../packs/ti'
-
-const PACKS = { am: AM_PACK, ti: TI_PACK }
 import { schoolPathStoryTimeEntries } from '../data/schoolPathGr1Stories'
 import { bibleStoryTimeEntries } from '../data/bibleStories'
 
@@ -139,31 +135,14 @@ export function isBibleStory(story) {
 /* ── word audio lookup ────────────────────────────────────────────────── */
 
 let WORD_AUDIO = null
-const addWord = (map, w) => {
-  if (w && w.geez && w.latin && !map.has(w.geez)) map.set(w.geez, { latin: w.latin, noAudio: !!w.noAudio })
-}
-/** { latin, noAudio } for a Ge'ez word that has a recorded clip at
-    words/<latin>.mp3, else null - the reader then falls back to
-    letter-by-letter spelling.
-    Looks in the active pack first - each family's word list AND its headline
-    `word` (several Tigrinya families only carry the headline word, e.g. ወርሒ,
-    ጤል) - then in the other pack, for words spelled identically in both
-    languages (e.g. ዝናብ). Matching is by exact Ge'ez spelling only: variant
-    spellings (ኣ/አ, ሓ/ሐ...) are different words with different sounds. */
+/** { latin, noAudio } for a Ge'ez word that exists in the pack's word list
+    (those may have a recorded clip at words/<latin>.mp3), else null - the
+    reader then falls back to letter-by-letter spelling. */
 export function wordAudioFor(geez) {
   if (!WORD_AUDIO) {
     WORD_AUDIO = new Map()
-    const active = getActivePackId()
-    const others = Object.values(PACKS).filter((p) => p && p.id !== active)
     for (const f of FIDEL_FAMILIES) {
-      for (const w of f.words || []) addWord(WORD_AUDIO, w)
-      addWord(WORD_AUDIO, f.word)
-    }
-    for (const p of others) {
-      for (const f of Object.values(p.families || {})) {
-        for (const w of f.words || []) addWord(WORD_AUDIO, w)
-        addWord(WORD_AUDIO, f.word)
-      }
+      for (const w of f.words || []) if (!WORD_AUDIO.has(w.geez)) WORD_AUDIO.set(w.geez, { latin: w.latin, noAudio: !!w.noAudio })
     }
   }
   return WORD_AUDIO.get(geez) || null
