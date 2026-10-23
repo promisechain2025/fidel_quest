@@ -7,8 +7,7 @@
    It is checked by the hub API (single-use, tied to the rep).
 
    Only mounted inside Grown-Ups, which is already behind the parental gate.
-   Labels are Amharic + Tigrinya first, with the English line underneath
-   (Grown-Ups is the one place English is allowed). Never rendered in the
+   Labels are English only (app UI text is never Amharic / Tigrinya). Never rendered in the
    iOS / Android apps (store rules, docs/rep-codes.md): repCodesAvailable()
    is false there, and the card returns null.
    ========================================================================== */
@@ -21,26 +20,20 @@ const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outli
 const primary = { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }
 
 export const PKG_NAMES = {
-  core: { am: 'ሙሉ ትምህርት', ti: 'ምሉእ ትምህርቲ', en: 'Full course' },
-  prayer: { am: 'የጸሎት መጽሐፍ', ti: 'መጽሓፍ ጸሎት', en: 'Prayer Book' },
-  bundle: { am: 'ሙሉ ትምህርት + ጸሎት', ti: 'ምሉእ ትምህርቲ + ጸሎት', en: 'Full course + Prayer Book' },
+  core: 'Full course',
+  prayer: 'Prayer Book',
+  bundle: 'Full course + Prayer Book',
 }
 const ERR = {
-  used: { am: 'ይህ ኮድ ቀድሞ ተጠቅሟል።', ti: 'እዚ ኮድ ድሮ ተጠቒሙሉ እዩ።', en: 'This code was already used.' },
-  expired: { am: 'ይህ ኮድ ጊዜው አልፏል።', ti: 'ግዜ እዚ ኮድ ሓሊፉ።', en: 'This code has expired.' },
-  revoked: { am: 'ይህ ኮድ ተሰርዟል።', ti: 'እዚ ኮድ ተሰሪዙ።', en: 'This code was cancelled.' },
-  offline: { am: 'ኢንተርኔት ያስፈልጋል። እንደገና ይሞክሩ።', ti: 'ኢንተርነት የድሊ። ደጊምኩም ፈትኑ።', en: 'No connection. Try again.' },
-  other: { am: 'ኮዱ አልሰራም። ፊደላቱን ያረጋግጡ።', ti: 'ኮድ ኣይሰርሐን። ፊደላት ኣረጋግጹ።', en: 'That code did not work. Check the letters.' },
+  used: 'This code was already used.',
+  expired: 'This code has expired.',
+  revoked: 'This code was cancelled.',
+  offline: 'No connection. Try again.',
+  other: 'That code did not work. Check the letters.',
 }
 
 function Tri({ s, className = '' }) {
-  return (
-    <span className={className}>
-      <span lang="am" className="block">{s.am}</span>
-      <span lang="ti" className="block">{s.ti}</span>
-      <span lang="en" className="block text-xs font-semibold" style={{ color: 'var(--muted)' }}>{s.en}</span>
-    </span>
-  )
+  return <span lang="en" className={className}>{s}</span>
 }
 
 /** available / redeem are test + screenshot seams. */
@@ -69,7 +62,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} data-testid="rep-code-card">
       <h3 className="flex items-start gap-2 text-base font-black">
         <KeyRound className="mt-1 h-5 w-5 shrink-0" aria-hidden="true" />
-        <Tri s={{ am: 'ከወኪል የተገዛ ኮድ', ti: 'ካብ ወኪል ዝተዓደገ ኮድ', en: 'Code from an eGeez representative' }} />
+        <Tri s="Code from an eGeez representative" />
       </h3>
       {owned.length > 0 && (
         <ul className="mt-3 grid gap-1" data-testid="rep-owned">
@@ -81,7 +74,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
         </ul>
       )}
       <form onSubmit={submit} className="mt-3">
-        <label htmlFor="rep-code" className="sr-only">ኮድ / Code</label>
+        <label htmlFor="rep-code" className="sr-only">Code</label>
         <div className="flex gap-2">
           <input
             id="rep-code"
@@ -94,7 +87,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
             style={{ background: 'var(--paper)', borderColor: err ? 'var(--bad)' : 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
           />
           <button type="submit" disabled={busy || !code.trim()} className={`chunk shrink-0 rounded-2xl px-4 font-extrabold text-white ${FOCUS}`} style={primary} data-testid="rep-code-submit">
-            <span lang="am">{busy ? '…' : 'ክፈት'}</span>
+            <span>{busy ? '…' : 'Unlock'}</span>
           </button>
         </div>
         {err && <p role="alert" className="mt-2 text-sm font-bold" style={{ color: 'var(--bad)' }}><Tri s={ERR[err]} /></p>}

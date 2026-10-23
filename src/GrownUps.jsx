@@ -561,7 +561,7 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport, highlight }) {
   const repWeb = repCodesAvailable()
   const [repLead, setRepLead] = useState(() => repFirst())
   const [open, setOpen] = useState(false)
@@ -836,11 +836,11 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
             <>
               <RepCodeCard />
               <RepresentativesList />
-              <PackageOffer />
+              <PackageOffer highlight={highlight} />
             </>
           ) : (
             <>
-              <PackageOffer />
+              <PackageOffer highlight={highlight} />
               <RepCodeCard />
               {repWeb && <RepresentativesList />}
             </>

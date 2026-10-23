@@ -1552,6 +1552,7 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onTrialChange={() => setTrialRev((n) => n + 1)}
                 onPracticeReport={() => setScreen({ name: 'practicelog' })}
+                highlight={screen.highlight}
               />
             </Screen>
           )}
@@ -1685,7 +1686,7 @@ export default function FidelQuestApp() {
           {screen.name === 'prayer' && (
             <Screen key="prayer">
               <Suspense fallback={null}>
-                <PrayerBook onBack={goBack} />
+                <PrayerBook onBack={goBack} onLocked={() => setCoreLockOpen('prayer')} />
               </Suspense>
             </Screen>
           )}
@@ -2038,8 +2039,9 @@ export default function FidelQuestApp() {
       {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
       {coreLockOpen && (
         <CoreLockSheet
+          pkg={coreLockOpen === 'prayer' ? 'prayer' : 'core'}
           onClose={() => setCoreLockOpen(false)}
-          onGrownUps={() => { setCoreLockOpen(false); setScreen({ name: 'grownups' }) }}
+          onGrownUps={(pkg) => { setCoreLockOpen(false); setScreen({ name: 'grownups', highlight: pkg }) }}
         />
       )}
       {paywallOpen && (
@@ -2910,11 +2912,12 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
 // whole toolkit on one screen so nothing (Explorer, Review...) gets buried.
-function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
+function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0, locked = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-locked={locked || undefined}
       className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
@@ -2929,6 +2932,11 @@ function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 
       {badge > 0 && (
         <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
           {badge}
+        </span>
+      )}
+      {locked && (
+        <span data-testid="tile-lock" className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
+          <Lock className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       )}
     </button>
@@ -3296,16 +3304,16 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                sell - the screen, unlock logic, and tests all stay wired, so
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
-            <BackpackTile art="words" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            {ready('workshop') && <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
-            {ready('ladder') && <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />}
-            {ready('train') && <BackpackTile art="train" title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
-            {ready('echo') && <BackpackTile art="match" title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
-            {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
-            {ready('market') && <BackpackTile art="market" title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
-            {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
+            <BackpackTile art="words" locked={!coreScreenOpen({ name: 'words' })} title={t('wordsShort', 'First Words')} onClick={onWords} />
+            {ready('workshop') && <BackpackTile art="build" locked={!coreScreenOpen({ name: 'workshop' })} title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
+            {ready('ladder') && <BackpackTile art="ladder" locked={!coreScreenOpen({ name: 'ladder' })} title={t('ladderShort', 'Order')} onClick={onLadder} />}
+            {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
+            {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
+            {ready('traffic') && <BackpackTile art="traffic" locked={!coreScreenOpen({ name: 'traffic' })} title={t('trShort', 'Traffic')} onClick={onTraffic} />}
+            {ready('market') && <BackpackTile art="market" locked={!coreScreenOpen({ name: 'market' })} title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
+            {ready('bingo') && <BackpackTile art="bingo" locked={!coreScreenOpen({ name: 'bingo' })} title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
-            {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
+            {packHasStories() && <BackpackTile art="stories" locked={!coreScreenOpen({ name: 'stories' })} title={t('storiesShort', 'Stories')} onClick={onStories} />}
             {/* Prayer book (ጸሎት ዘዘወትር): Ge'ez for every pack, never gated. */}
             {onPrayer && <BackpackTile icon={<BookOpen size={24} />} tone="var(--accent, #d9731c)" title="ጸሎት" onClick={onPrayer} />}
             {/* Twin Drill appears once a same-sound pair is learned - the
@@ -3316,10 +3324,10 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                 const s = twinSiblingOf(f)
                 return s && learned.has(f.id) && learned.has(s.id)
               })
-              return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
+              return ready ? <BackpackTile art="twins" locked={!coreScreenOpen({ name: 'twins' })} title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
             <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            {ready('beats') && <BackpackTile art="kebero" title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
+            {ready('beats') && <BackpackTile art="kebero" locked={!coreScreenOpen({ name: 'beats' })} title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
             {troubleCount > 0 && (
               <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
