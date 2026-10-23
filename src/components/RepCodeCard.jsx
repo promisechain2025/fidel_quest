@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { KeyRound, Check } from 'lucide-react'
 import { repCodesAvailable, redeemRepCode } from '../platform/repCodes'
 import { repGrants } from '../platform/packages'
+import AddToHomeScreen from './AddToHomeScreen'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const primary = { background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }
@@ -37,11 +38,12 @@ function Tri({ s, className = '' }) {
 }
 
 /** available / redeem are test + screenshot seams. */
-export default function RepCodeCard({ available, redeem = redeemRepCode, onUnlocked }) {
+export default function RepCodeCard({ available, redeem = redeemRepCode, onUnlocked, installProps }) {
   const show = available ?? repCodesAvailable()
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [justUnlocked, setJustUnlocked] = useState(false)
   const [owned, setOwned] = useState(() => repGrants().map((g) => g.pkg))
   if (!show) return null
 
@@ -54,6 +56,7 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
     if (r.ok) {
       setOwned((o) => [...new Set([...o, r.pkg])])
       setCode('')
+      setJustUnlocked(true)
       onUnlocked?.(r.pkg)
     } else setErr(ERR[r.reason] ? r.reason : 'other')
   }
@@ -73,6 +76,8 @@ export default function RepCodeCard({ available, redeem = redeemRepCode, onUnloc
           ))}
         </ul>
       )}
+      {justUnlocked && <p className="mt-2 text-sm font-black" style={{ color: 'var(--go-ink)' }} data-testid="rep-unlocked">Unlocked!</p>}
+      {owned.length > 0 && <AddToHomeScreen {...installProps} />}
       <form onSubmit={submit} className="mt-3">
         <label htmlFor="rep-code" className="sr-only">Code</label>
         <div className="flex gap-2">
