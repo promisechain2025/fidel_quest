@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 
-/* Bible stories are for the child to read alone: nothing in the reader may
-   speak them (no narration, no tap hint, no word or letter audio). Other
-   stories (School Path) keep their reading help. */
+/* No story is read aloud - Bible or Story Path. Kids practise reading on
+   their own: nothing on a story page may trigger audio (no narration, no
+   tap hint, no Read-to-me, no word or letter audio, no auto-play). */
 
 const played = []
 const waits = []
@@ -11,7 +11,7 @@ vi.mock('../platform/audioEngine', async (orig) => {
   const real = await orig()
   return {
     ...real,
-    playEffect: () => {},
+    playEffect: (k) => played.push(`effect:${k}`),
     afterVoice: (cb) => {
       const w = { cb, cancelled: false }
       waits.push(w)
@@ -98,16 +98,26 @@ describe('StoryTime: Bible stories are read by the child alone', () => {
     })
   }
 
-  it('School Path (non-Bible) stories keep narration, Read-to-me and word taps', async () => {
-    await openStory(PATH)
-    expect(played.some((k) => k.startsWith('stories/'))).toBe(true)
-    expect(screen.getByRole('button', { name: /read to me/i })).toBeTruthy()
-    expect(document.querySelectorAll('[data-story-word]').length).toBe(0)
-    played.length = 0
-    const chips = document.querySelectorAll('button.geez')
-    expect(chips.length).toBeGreaterThan(0)
-    fireEvent.click(chips[0])
-    await flush()
-    expect(played.some((k) => k.startsWith('words/') || k.startsWith('letters/'))).toBe(true)
+  it('every page of every story (Bible and Story Path) is silent', async () => {
+    const all = [...STORIES, ...bibleStoryTimeEntries(), ...schoolPathStoryTimeEntries()]
+    expect(all.length).toBeGreaterThan(10)
+    for (const story of all) {
+      document.body.innerHTML = ''
+      played.length = 0
+      await openStory(story)
+      for (let p = 0; p < story.pages.length; p++) {
+        expect(screen.queryByRole('button', { name: /read to me/i })).toBeNull()
+        const words = document.querySelectorAll('[data-story-word]')
+        expect(words.length, `${story.id} page ${p + 1}`).toBeGreaterThan(0)
+        expect(document.querySelectorAll('button.geez').length).toBe(0)
+        for (const w of words) fireEvent.click(w)
+        await flush()
+        expect(played, `${story.id} page ${p + 1}`).toEqual([])
+        if (p + 1 < story.pages.length) {
+          fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+          await flush()
+        }
+      }
+    }
   })
 })
