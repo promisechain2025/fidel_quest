@@ -20,7 +20,7 @@ describe('rep codes (web only, server-verified)', () => {
     const { redeemRepCode } = await import('./repCodes')
     const { repGrants } = await import('./packages')
     const f = ok({ ok: true, pkg: 'prayer', repId: 'ER01' })
-    expect(await redeemRepCode('EGR-PER01-ABCD-EF23', { fetchImpl: f, base: 'https://api.x', native: false })).toEqual({ ok: true, pkg: 'prayer' })
+    expect(await redeemRepCode('EGR-PER01-ABCD-EF23', { fetchImpl: f, base: 'https://api.x', native: false })).toEqual({ ok: true, pkg: 'prayer', restored: false })
     expect(f).toHaveBeenCalledWith('https://api.x/api/repcodes/redeem', expect.objectContaining({ method: 'POST' }))
     expect(JSON.parse(f.mock.calls[0][1].body).installId).toBeTruthy()
     expect(repGrants().map((g) => g.pkg)).toEqual(['prayer'])

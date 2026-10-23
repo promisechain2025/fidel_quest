@@ -14,7 +14,20 @@ export function memStore() {
       await tick()
       const c = codes.get(code)
       if (!c || c.status !== 'unused') return false
-      c.status = 'used'; c.usedAt = at; c.household = household; return true
+      c.status = 'used'; c.usedAt = at; c.household = household; c.devices = household ? [household] : []; return true
+    },
+    async addDeviceIfRoom(code, hh, at, max) {
+      await tick()
+      const c = codes.get(code)
+      if (!c || c.status !== 'used') return false
+      const list = Array.isArray(c.devices) ? c.devices : c.household ? [c.household] : []
+      if (list.includes(hh) || list.length >= max) return false
+      c.devices = [...list, hh]; c.lastRestoreAt = at; return true
+    },
+    async resetDevices(code, at) {
+      const c = codes.get(code)
+      if (!c || c.status !== 'used') return false
+      c.devices = []; delete c.household; c.devicesResetAt = at; return true
     },
     async voidIfUnused(code, at) {
       const c = codes.get(code)
@@ -25,6 +38,8 @@ export function memStore() {
     async listAllCodes() { return [...codes.values()].map((c) => ({ ...c })) },
     async putOtp(e, r) { otp.set(e, { ...r }) }, async getOtp(e) { return otp.get(e) || null }, async deleteOtp(e) { otp.delete(e) },
     async putSession(h, s) { sess.set(h, s) }, async getSession(h) { return sess.get(h) || null }, async deleteSession(h) { sess.delete(h) },
+    /** test-only: edit a stored row */
+    async __patch(code, fn) { fn(codes.get(code)) },
     async hit(key, windowSec) {
       const k = `${key}#${Math.floor(Date.now() / 1000 / windowSec)}`
       const n = (rl.get(k) || 0) + 1; rl.set(k, n); return n

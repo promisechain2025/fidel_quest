@@ -128,6 +128,7 @@ export function redeemUnlockCode(raw) {
   const s = loadWebTrial()
   s.unlocked = true
   s.unlockSource = 'code'
+  import('./persistStorage').then((m) => m.requestPersistentStorage()).catch(() => {})
   save(s)
   return true
 }

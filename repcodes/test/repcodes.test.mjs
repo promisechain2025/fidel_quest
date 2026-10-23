@@ -50,17 +50,19 @@ test('single-use redeem, restore on same household, clear message for others', a
   assert.equal(a.statusCode, 200); assert.equal(a.j.pkg, 'core')
   const again = await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'house-A' })
   assert.equal(again.j.ok, true); assert.equal(again.j.restored, true)
-  const b = await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'house-B' })
-  assert.equal(b.statusCode, 409); assert.equal(b.j.reason, 'used'); assert.match(b.j.message, /already used/)
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'house-B' })).j.ok, true) // 2nd device allowed
+  const c = await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'house-C' })
+  assert.equal(c.statusCode, 409); assert.equal(c.j.reason, 'devices'); assert.match(c.j.message, /already used on 2 devices/)
   const bad = await call('POST', '/api/repcodes/redeem', { code: 'EGR-CTST1-AAAA-AAAA', installId: 'x' })
   assert.equal(bad.j.reason, 'unknown')
 })
 
-test('concurrency: 25 simultaneous redeems from different households -> exactly one wins', async () => {
-  const { call, c1 } = await seeded()
+test('concurrency: 25 simultaneous redeems from different households -> one sale, at most 2 devices', async () => {
+  const { call, c1, store } = await seeded()
   const rs = await Promise.all(Array.from({ length: 25 }, (_, i) => call('POST', '/api/repcodes/redeem', { code: c1[1], installId: `h${i}` }, null, `9.9.9.${i}`)))
-  assert.equal(rs.filter((r) => r.j.ok).length, 1)
-  assert.ok(rs.filter((r) => !r.j.ok).every((r) => r.j.reason === 'used'))
+  assert.equal(rs.filter((r) => r.j.ok && !r.j.restored).length, 1)
+  assert.ok(rs.filter((r) => r.j.ok).length <= 2)
+  assert.equal((await store.getCode(c1[1])).devices.length <= 2, true)
 })
 
 test('void: only unused, voided code cannot be redeemed', async () => {
@@ -124,4 +126,70 @@ test('public representatives list only shows reps marked shown + active; CSV exp
   assert.deepEqual(p.representatives.map((r) => r.id), ['TST1'])
   const csv = await call('GET', '/api/admin/codes.csv', null, admin)
   assert.equal(csv.body.trim().split('\n').length, 9)
+})
+
+test('restore: a used code works on up to 2 devices, still one sale', async () => {
+  const { call, c1, admin, signIn } = await seeded()
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'phone-A' })).j.ok, true)
+  const b = await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'phone-B' })
+  assert.equal(b.j.ok, true); assert.equal(b.j.restored, true)
+  // both devices keep working
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'phone-A' })).j.ok, true)
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'phone-B' })).j.ok, true)
+  const c = await call('POST', '/api/repcodes/redeem', { code: c1[0], installId: 'phone-C' })
+  assert.equal(c.statusCode, 409); assert.equal(c.j.reason, 'devices')
+  assert.equal(c.j.message, 'This code is already used on 2 devices. Contact your representative.')
+  const rep = await signIn('rep1@example.com')
+  const r = (await call('GET', '/api/rep/codes', null, rep)).j
+  assert.equal(r.totals.used, 1)
+  const row = r.codes.find((x) => x.code === c1[0])
+  assert.equal(row.devices, 2); assert.equal(row.maxDevices, 2); assert.ok(row.lastRestoreAt)
+  const a = (await call('GET', '/api/admin/codes', null, admin)).j.codes.find((x) => x.code === c1[0])
+  assert.equal(a.devices, 2)
+})
+
+test('restore: concurrent new devices never exceed 2', async () => {
+  const { call, c1 } = await seeded()
+  await call('POST', '/api/repcodes/redeem', { code: c1[1], installId: 'first' })
+  const rs = await Promise.all(Array.from({ length: 10 }, (_, i) => call('POST', '/api/repcodes/redeem', { code: c1[1], installId: `n${i}` }, null, `8.8.8.${i}`)))
+  assert.equal(rs.filter((r) => r.j.ok).length, 1)
+  assert.ok(rs.filter((r) => !r.j.ok).every((r) => ['devices', 'limited'].includes(r.j.reason)))
+})
+
+test('restore: legacy rows with only household get a device list', async () => {
+  const { call, c1, store } = await seeded()
+  await call('POST', '/api/repcodes/redeem', { code: c1[2], installId: 'old' })
+  // simulate a row written before this change
+  await store.__patch(c1[2], (c) => { delete c.devices })
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[2], installId: 'old' })).j.ok, true)
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[2], installId: 'new' })).j.ok, true)
+  assert.equal((await store.getCode(c1[2])).devices.length, 2)
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[2], installId: 'third' })).j.reason, 'devices')
+})
+
+test('restore: rate limited per code', async () => {
+  const { call, c1, admin } = await seeded()
+  await call('POST', '/api/repcodes/redeem', { code: c1[3], installId: 'a' })
+  let last
+  for (let i = 0; i < 6; i++) {
+    last = await call('POST', '/api/repcodes/redeem', { code: c1[3], installId: 'b' + i }, null, `6.6.${i}.1`)
+    await call('POST', '/api/admin/reset-devices', { code: c1[3] }, admin)
+  }
+  assert.equal(last.j.reason, 'limited')
+})
+
+test('admin reset devices: admin only, code stays used, room again', async () => {
+  const { call, c1, admin, signIn } = await seeded()
+  await call('POST', '/api/repcodes/redeem', { code: c1[4], installId: 'x1' })
+  await call('POST', '/api/repcodes/redeem', { code: c1[4], installId: 'x2' })
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[4], installId: 'x3' })).j.reason, 'devices')
+  const rep = await signIn('rep1@example.com')
+  assert.equal((await call('POST', '/api/admin/reset-devices', { code: c1[4] }, rep)).statusCode, 403)
+  assert.equal((await call('POST', '/api/admin/reset-devices', { code: c1[4] }, admin)).j.ok, true)
+  assert.equal((await call('POST', '/api/repcodes/redeem', { code: c1[4], installId: 'x3' })).j.ok, true)
+  const row = (await call('GET', '/api/admin/codes', null, admin)).j.codes.find((x) => x.code === c1[4])
+  assert.equal(row.status, 'used'); assert.equal(row.devices, 1)
+  // unused codes cannot be reset
+  const fresh = (await call('POST', '/api/admin/generate', { repId: 'TST1', pkg: 'core', quantity: 1 }, admin)).j.codes[0].code
+  assert.equal((await call('POST', '/api/admin/reset-devices', { code: fresh }, admin)).statusCode, 409)
 })

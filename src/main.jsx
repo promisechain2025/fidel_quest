@@ -13,6 +13,9 @@ import { reminderTexts } from './platform/firstRun'
 import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
 import { snapshotInstall } from './platform/installSeen'
+import { requestPersistentStorage } from './platform/persistStorage'
+import { repGrants } from './platform/packages'
+import { loadWebTrial } from './platform/webTrial'
 
 // First, before anything writes storage: did this device already have
 // pre-1.4 (paid-download) household data? Grandfathers paid buyers.
@@ -71,6 +74,9 @@ createRoot(document.getElementById('root')).render(
 
 // Native shell setup (status bar, splash, Android back button). No-op on web.
 initNative()
+
+// Keep a web unlock (rep code / app code) from being evicted by the browser.
+if (repGrants().length || loadWebTrial().unlocked) requestPersistentStorage().catch(() => {})
 
 // Background-warm the whole voice set into the SW runtime cache so the app
 // speaks every letter offline (the atomic audio precache was dropped so the

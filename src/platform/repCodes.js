@@ -13,6 +13,7 @@ import { apiBase } from './practiceSync'
 import { ensureInstallId, webTrialActive } from './webTrial'
 import { isNativePlatform } from './native'
 import { grantRepPackage } from './packages'
+import { requestPersistentStorage } from './persistStorage'
 
 export const looksLikeRepCode = (raw) => /^EGR[CPB][A-Z0-9]{2,6}[A-Z2-9]{8}$/.test(String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, ''))
 
@@ -32,7 +33,7 @@ export function repCodesAvailable({ native = isNativePlatform(), web = webTrialA
   return !native && web && !!base
 }
 
-/** Resolves { ok, pkg } or { ok:false, reason: 'format'|'used'|'expired'|'revoked'|'unknown'|'offline'|'unavailable' }. */
+/** Resolves { ok, pkg, restored } or { ok:false, reason: 'format'|'used'|'expired'|'revoked'|'unknown'|'offline'|'unavailable'|'devices' }. */
 export async function redeemRepCode(raw, { fetchImpl = globalThis.fetch, base = repCodeApiBase(), native = isNativePlatform() } = {}) {
   if (native) return { ok: false, reason: 'unavailable' }
   if (!looksLikeRepCode(raw)) return { ok: false, reason: 'format' }
@@ -52,5 +53,6 @@ export async function redeemRepCode(raw, { fetchImpl = globalThis.fetch, base = 
   try { body = await res.json() } catch { /* empty */ }
   if (!res.ok || !body.ok) { const r = body.reason || 'unknown'; return { ok: false, reason: REASON[r] || r } }
   grantRepPackage(body.pkg, { repId: body.repId, code })
-  return { ok: true, pkg: body.pkg }
+  requestPersistentStorage().catch(() => {})
+  return { ok: true, pkg: body.pkg, restored: !!body.restored }
 }
