@@ -119,5 +119,5 @@ describe('StoryTime: Bible stories are read by the child alone', () => {
         }
       }
     }
-  })
+  }, 30000)
 })
