@@ -18,6 +18,7 @@ vi.mock('../platform/audioEngine', async (orig) => {
 import BrickWords from './BrickWords'
 import { BRICK_WORDS, wordAt, initBrickWord } from '../brickWordsCore'
 import { wordToKeys } from '../workshopCore'
+import { expectGuideOnlyLatin } from './brickTestUtils'
 
 const SEED = 3
 const word = wordAt(SEED, 0)
@@ -28,13 +29,13 @@ const tap = (el) => { fireEvent.pointerDown(el, { clientX: 0, clientY: 0, pointe
 beforeEach(() => { played.length = 0; effects.length = 0; clips.length = 0; vi.useFakeTimers() })
 
 describe('BrickWords sample', () => {
-  it('shows the picture, one slot per letter, says the word, and has no English text', () => {
+  it('shows the picture, one slot per letter, says the word, with i18n guide text and no transliteration', () => {
     render(<BrickWords soundOn onBack={() => {}} seed={SEED} />)
     act(() => { vi.advanceTimersByTime(500) })
     expect(clips).toContain(`words/${word.latin}`)
     expect(document.querySelectorAll('[data-testid="slot"]').length).toBe(target.length)
     expect(document.querySelector('[data-testid="picture"] img').getAttribute('src')).toContain(`/bw/${word.pic}.webp`)
-    expect(screen.getByTestId('brick-words').textContent).not.toMatch(/[A-Za-z]/)
+    expectGuideOnlyLatin(screen.getByTestId('brick-words'), 'Build the word')
     expect(document.querySelectorAll('[data-testid="piece"]').length).toBe(initBrickWord(word, 102 + SEED, 0).tray.length)
   })
 
@@ -43,6 +44,7 @@ describe('BrickWords sample', () => {
     const wrongKey = [...document.querySelectorAll('[data-testid="piece"]')].map((b) => b.dataset.order).find((k) => k !== target[0])
     tap(brick(wrongKey))
     expect(effects).toContain('bad')
+    expectGuideOnlyLatin(screen.getByTestId('brick-words'), 'Try again!')
     act(() => { vi.advanceTimersByTime(400) })
     expect(played).toContain(target[0]) // re-cues the wanted letter
     expect(document.querySelectorAll('[data-testid="placed"]').length).toBe(0)
@@ -52,7 +54,7 @@ describe('BrickWords sample', () => {
     expect(effects).toContain('win')
     expect(screen.getByTestId('confetti')).toBeTruthy()
     expect(screen.getByTestId('next')).toBeTruthy()
-    expect(screen.getByTestId('brick-words').textContent).not.toMatch(/[A-Za-z]/)
+    expectGuideOnlyLatin(screen.getByTestId('brick-words'), 'Nice!')
   })
 
   it('next goes to a different word and every sample word is spellable from real forms', () => {
