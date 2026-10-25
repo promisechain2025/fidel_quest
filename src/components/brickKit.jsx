@@ -12,11 +12,17 @@
      Baseplate      studded green plate (slots/tower sit on it)
      DragBrick      glossy studded brick: pointer-drag with tap/Enter fallback
      Confetti       a burst of falling bricks
-   No text is baked in: kid UI stays letters, numerals, icons and pictures.
+   GUIDE TEXT: short instructions and feedback ("Drag the bricks in order",
+   "Nice!", "Try again!") come from the app's i18n (t(key, English fallback)),
+   in the child's app-text language, shown on a wooden GuideSign with an icon.
+   Amharic and Tigrinya are never app-text languages (English fallback). Fidel,
+   words and recordings are content: no Latin transliteration, no "sounds
+   like" hints and no English glosses ever appear beside them.
    ========================================================================== */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Star } from 'lucide-react'
+import { t } from '../platform/i18n'
 import { shade, brickCss, studCss, WOOD, WOOD_DARK } from './blockArt'
 
 export { shade, brickCss, studCss, WOOD, WOOD_DARK }
@@ -52,7 +58,7 @@ export function RoundButton({ onClick, label, color, border, children, testId, c
 export function WoodTopBar({ onBack, value, total, done }) {
   return (
     <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-3">
-      <WoodButton onClick={onBack} label="back">
+      <WoodButton onClick={onBack} label={t('back', 'Back')}>
         <ArrowLeft className="h-7 w-7" strokeWidth={3} color="#f6c22c" style={{ filter: 'drop-shadow(0 2px 0 #7a4a20)' }} aria-hidden="true" />
       </WoodButton>
       <div className="flex gap-1 rounded-full p-1.5" data-testid="progress" style={{ background: 'rgba(30,60,110,.35)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.3)' }}>
@@ -68,6 +74,58 @@ export function WoodTopBar({ onBack, value, total, done }) {
     </div>
   )
 }
+
+const SIGN_TONES = {
+  guide: { bg: 'linear-gradient(180deg,#fff8e2,#f4dfb0)', fg: '#5a3414', ring: '#8a5426', badge: '#2f86d6' },
+  ok: { bg: 'linear-gradient(180deg,#a6ec78,#4fb23a)', fg: '#fff', ring: '#2e7a1e', badge: '#2e9a28' },
+  try: { bg: 'linear-gradient(180deg,#ffc27a,#f08a24)', fg: '#fff', ring: '#a85410', badge: '#d9701c' },
+}
+
+/** Wooden guide sign: a big round icon + one short line of i18n text. */
+export function GuideSign({ icon: Icon, text, tone = 'guide', className = '' }) {
+  const c = SIGN_TONES[tone] || SIGN_TONES.guide
+  return (
+    <motion.div key={`${tone}:${text}`} data-testid="guide" data-tone={tone} role="status" aria-live="polite"
+      initial={{ scale: 0.9, opacity: 0.4 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}
+      className={`flex items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-4 ${className}`}
+      style={{ background: c.bg, border: `4px solid ${c.ring}`, boxShadow: `inset 0 3px 0 rgba(255,255,255,.55), 0 5px 0 ${shade(c.ring, -0.35)}, 0 10px 14px rgba(0,0,0,.3)` }}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={roundBtnCss(c.badge)}>
+        <Icon className="h-6 w-6" color="#fff" strokeWidth={3} aria-hidden="true" />
+      </span>
+      <span className="text-[20px] font-black leading-tight" style={{ color: c.fg, textShadow: tone === 'guide' ? '0 1px 0 rgba(255,255,255,.7)' : '0 2px 0 rgba(0,0,0,.35)' }}>{text}</span>
+    </motion.div>
+  )
+}
+
+/** Feedback state for the sign: flash('ok'|'try') shows it for a moment, then
+    the instruction returns. `hold` keeps it (e.g. the win "Nice!"). */
+export function useGuideFeedback() {
+  const [fb, setFb] = useState(null)
+  const id = useRef(null)
+  useEffect(() => () => clearTimeout(id.current), [])
+  const flash = (tone, ms = 1500) => { clearTimeout(id.current); setFb(tone); if (ms) id.current = setTimeout(() => setFb(null), ms) }
+  const clear = () => { clearTimeout(id.current); setFb(null) }
+  return [fb, flash, clear]
+}
+
+/** Dot pips for 1..n: language-free numbers a child can count. */
+export function Pips({ n, color = '#fff', size = 5, className = '' }) {
+  return (
+    <span data-testid="pips" data-n={n} aria-hidden="true" className={`flex flex-wrap items-center justify-center gap-[2px] ${className}`} style={{ width: (size + 2) * 4 }}>
+      {Array.from({ length: n }, (_, i) => <span key={i} className="rounded-full" style={{ width: size, height: size, background: color, boxShadow: '0 1px 0 rgba(0,0,0,.35)' }} />)}
+    </span>
+  )
+}
+
+/** Shared accessible names for the round buttons (i18n, English fallback). */
+export const brickLabels = () => ({
+  listen: t('echoTapHear', 'Tap to hear'),
+  again: t('brickAgain', 'Start over'),
+  hint: t('brickHint', 'Show me'),
+  next: t('brickNext', 'Next'),
+  good: t('nice', 'Nice!'),
+  retry: t('brickTryAgain', 'Try again!'),
+})
 
 export function WoodBottomBar({ children }) {
   return (

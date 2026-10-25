@@ -8,14 +8,16 @@
    drags (or taps) the matching piece onto the slot. Right: the block turns
    into that form, says it, and one block flies into the church. Wrong: the
    piece wobbles and bounces home. Seven right answers finish the dome and
-   cross. No English in the kid UI - only letters, sounds and pictures.
+   cross. Guide text goes through i18n (app-text language, English fallback);
+   no Latin transliteration or gloss is ever shown beside the fidel.
    ONE family (ለ) on purpose: this is a sample before any bulk work.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Volume2, RotateCcw, Check } from 'lucide-react'
+import { Volume2, RotateCcw, Check, Hand, ThumbsUp, Ear } from 'lucide-react'
+import { t } from '../platform/i18n'
 import { publicUrl } from '../platform/publicUrl'
-import { shade, brickCss, studCss, WOOD, BRICK_COLORS, BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, DragBrick, overRect } from './brickKit'
+import { shade, brickCss, studCss, WOOD, BRICK_COLORS, BrickScreen, GuideSign, useGuideFeedback, brickLabels, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, DragBrick, overRect } from './brickKit'
 import { afterVoice, playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { initRound, snap, target, isComplete, SAMPLE_FAMILY, ORDERS } from '../blockChurchCore'
@@ -30,8 +32,8 @@ const formOf = (family, order) => INDEXES.byAudioKey.get(`${family}-${order}`)
 const SCENE = publicUrl('/img/games/block-church-3d.webp')
 const RIDGE = ORDERS.map((_, i) => {
   // the ridge runs left->right across the roof in a gentle 3D curve
-  const t = i / (ORDERS.length - 1)
-  return { x: 240 + t * 290, y: 350 - Math.sin(t * Math.PI) * 6 }
+  const u = i / (ORDERS.length - 1)
+  return { x: 240 + u * 290, y: 350 - Math.sin(u * Math.PI) * 6 }
 })
 const BRW = 42, BRH = 26, DEP = 12
 
@@ -135,6 +137,8 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
   const [shown, setShown] = useState(null) // order currently shown on the big block
   const [wobbleOrder, setWobbleOrder] = useState(null)
   const slotRef = useRef(null)
+  const [fb, flash, clearFb] = useGuideFeedback()
+  const L = brickLabels()
   const timers = useRef([])
   const forms = useMemo(() => ORDERS.map((o) => formOf(family, o)).filter(Boolean), [family])
   const base = formOf(family, 1)
@@ -143,8 +147,8 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
 
   const say = (order) => { const f = formOf(family, order); if (f) playForm(f, soundOn) }
   useEffect(() => {
-    const t = setTimeout(() => { if (want) say(want) }, 450)
-    return () => clearTimeout(t)
+    const id = setTimeout(() => { if (want) say(want) }, 450)
+    return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.built])
   useEffect(() => () => timers.current.forEach((c) => c()), [])
@@ -159,9 +163,11 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
       setWobbleOrder(null)
       requestAnimationFrame(() => setWobbleOrder(order))
       playEffect('bad', soundOn)
+      flash('try')
       setS(next)
       return
     }
+    flash('ok', next.last === 'done' ? 0 : 1100)
     setShown(order)
     say(order)
     timers.current.push(afterVoice(() => {
@@ -173,6 +179,7 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
 
   const restart = () => {
     seedRef.current += 1
+    clearFb()
     setShown(null)
     setWobbleOrder(null)
     setS(initRound(seedRef.current))
@@ -193,6 +200,11 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
       <div className="relative min-h-0" style={{ flex: '1 1 auto' }}>
         <Church built={s.built} complete={done} reduce={reduce} />
         <WoodTopBar onBack={onBack} value={s.built} total={ORDERS.length} done={done} />
+        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
+          {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+            : (done || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+              : <GuideSign icon={Hand} text={t('brickChurchGuide', 'Drag the matching block')} />}
+        </div>
       </div>
       {/* bottom: wooden tray */}
       <WoodTray>
@@ -225,14 +237,14 @@ export default function BlockChurch({ soundOn = true, onBack, family = SAMPLE_FA
       </WoodTray>
       {/* bottom wooden bar */}
       <WoodBottomBar>
-        <RoundButton onClick={() => want && say(want)} label="listen" testId="listen" color="#f6e6c4" border="#c49a5a">
+        <RoundButton onClick={() => want && say(want)} label={L.listen} testId="listen" color="#f6e6c4" border="#c49a5a">
           <Volume2 className="h-8 w-8" color="#1f5fb8" strokeWidth={2.6} aria-hidden="true" />
         </RoundButton>
         <div className="flex gap-3">
-          <RoundButton onClick={restart} label="again" testId="again" color="#2f86d6">
+          <RoundButton onClick={restart} label={L.again} testId="again" color="#2f86d6">
             <RotateCcw className="h-7 w-7" color="#fff" strokeWidth={3} aria-hidden="true" />
           </RoundButton>
-          <RoundButton onClick={hint} label="hint" testId="hint" color="#43b02e">
+          <RoundButton onClick={hint} label={L.hint} testId="hint" color="#43b02e">
             <Check className="h-8 w-8" color="#fff" strokeWidth={3.5} aria-hidden="true" />
           </RoundButton>
         </div>
