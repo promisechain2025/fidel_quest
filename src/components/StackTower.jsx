@@ -2,23 +2,25 @@
    STACK THE TOWER (sample) - replaces "Order" (the vowel ladder)
    ----------------------------------------------------------------------------
    Seven shuffled fidel bricks (one family, vowel order 1-7) wait in a wooden
-   tray, each with a small Ge'ez numeral. A tower is built on a studded
+   tray, each with a row of pips (dots) that count its place, 1-7. A tower is built on a studded
    baseplate: the game says the next form (existing recording) and the child
    drags (or taps) that brick onto the glowing level. Right: it snaps on and
    says its sound. Wrong: wobble + the wanted sound again, softly. When all
    seven are stacked the tower turns gold and grows cross arms: a Meskel cross.
-   Logic is the existing ladderCore (no new rules). No English on screen.
+   Logic is the existing ladderCore (no new rules). A wooden guide sign gives
+   the short instruction through i18n (English by default, never am/ti); no
+   Latin transliteration or gloss is ever shown beside the fidel.
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Volume2, RotateCcw, Check, ArrowRight, Star } from 'lucide-react'
+import { Volume2, RotateCcw, Check, ArrowRight, Star, Hand, ThumbsUp, Ear } from 'lucide-react'
 import { publicUrl } from '../platform/publicUrl'
 import { afterVoice, playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
-import { GEEZ_DIGITS } from '../data/numerals'
+import { t } from '../platform/i18n'
 import { initLadder, ladderTransition, LadderEvent, Phase } from '../ladderCore'
-import { BRICK_COLORS, BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, overRect, brickCss, studCss, shade } from './brickKit'
+import { BRICK_COLORS, BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, GuideSign, Pips, useGuideFeedback, brickLabels, overRect, brickCss, studCss, shade } from './brickKit'
 
 const TOWER_FAMILIES = ['me', 'se', 'ke', 'le']
 const formOf = (k) => INDEXES.byAudioKey.get(k)
@@ -42,7 +44,7 @@ function Level({ k, i, color, top, win, reduce }) {
           style={{ background: `linear-gradient(180deg, #fff2a6, ${GOLD} 45%, #b8780e)`, boxShadow: 'inset 0 3px 0 rgba(255,255,255,.6)' }} />
       )}
       <span className="relative">{f?.char}</span>
-      <span className="absolute right-1 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[13px] font-black leading-none" style={{ color: shade(color, -0.35) }}>{GEEZ_DIGITS[i]}</span>
+      <Pips n={i + 1} size={6} perRow={3} color={win ? '#7a4a08' : 'rgba(255,255,255,.95)'} className="absolute left-2 top-1/2 -translate-y-1/2" />
     </motion.div>
   )
 }
@@ -67,6 +69,8 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
   const family = TOWER_FAMILIES[round % TOWER_FAMILIES.length]
   const [ctx, setCtx] = useState(() => initLadder(family, seedRef.current))
   const [wobble, setWobble] = useState(null)
+  const [fb, flash, clearFb] = useGuideFeedback()
+  const L = brickLabels()
   const slotRef = useRef(null)
   const timers = useRef([])
   const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.current.push(id) }
@@ -78,6 +82,7 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
   useEffect(() => {
     setCtx(initLadder(family, seedRef.current + round * 17))
     setWobble(null)
+    clearFb()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round])
   useEffect(() => {
@@ -97,25 +102,35 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
     recordAnswer(want, k, 'ladder')
     const r = ladderTransition(ctx, { type: LadderEvent.TAP, payload: { key: k } })
     if (r.accepted) {
+      flash('ok', r.next.phase === Phase.WIN ? 0 : 1100)
       say(k)
       afterVoice(() => playEffect(r.next.phase === Phase.WIN ? 'win' : 'good', soundOn), 300)
       setCtx(r.next)
     } else {
       bump(k)
+      flash('try')
       playEffect('bad', soundOn)
       later(() => say(want), 300)
     }
   }
   const hint = () => { if (!won) { bump(want); say(want) } }
-  const again = () => { setCtx(initLadder(family, seedRef.current + round * 17 + 5)); setWobble(null) }
+  const again = () => { setCtx(initLadder(family, seedRef.current + round * 17 + 5)); setWobble(null); clearFb() }
 
   const placedKeys = ctx.order.slice(0, ctx.placed)
   const usedSet = useMemo(() => new Set(placedKeys), [placedKeys.join()])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <BrickScreen testId="stack-tower">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: `#8fd0ff url(${SCENE}) center bottom / cover no-repeat` }}>
+      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: '#cfe8f7' }}>
+        {/* calm backdrop: the meadow, blurred and softened so the tower is the only sharp thing */}
+        <div aria-hidden="true" className="pointer-events-none absolute -inset-4" style={{ background: `url(${SCENE}) center bottom / cover no-repeat`, filter: 'blur(7px) saturate(.75) brightness(1.08)' }} />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 62% 55% at 50% 56%, rgba(255,255,255,.72), rgba(255,255,255,.28) 60%, rgba(255,255,255,0) 100%)' }} />
         <WoodTopBar onBack={onBack} value={ctx.placed} total={7} done={won} />
+        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
+          {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+            : (won || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+              : <GuideSign icon={Hand} text={t('brickTowerGuide', 'Drag the bricks in order')} />}
+        </div>
         {won && <Confetti reduce={reduce} />}
         {won && !reduce && (
           <>
@@ -148,7 +163,7 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
                     <div className="geez flex h-full w-full items-center justify-center rounded-md text-[30px] font-black text-white"
                       style={{ background: active ? 'rgba(30,60,20,.45)' : 'rgba(30,60,20,.38)', border: `3px dashed ${active ? '#fff7a8' : 'rgba(255,255,255,.8)'}`, textShadow: '0 2px 0 rgba(0,0,0,.6), 0 0 6px rgba(0,0,0,.5)',
                         boxShadow: active ? '0 0 20px 8px rgba(255,240,130,.9)' : 'none' }}>
-                      {GEEZ_DIGITS[i]}
+                      <Pips n={i + 1} size={9} perRow={4} color="rgba(255,255,255,.95)" />
                     </div>
                   )}
                 </div>
@@ -162,32 +177,32 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
       <WoodTray>
         <TrayWell className="flex flex-wrap items-end justify-center gap-x-2.5 gap-y-4 px-2 pt-5">
           {ctx.tray.map((k) => (usedSet.has(k)
-            ? <div key={`${ctx.seed}-${k}`} className="rounded-lg" style={{ width: 72, height: 50, border: '2px dashed rgba(60,30,10,.35)', background: 'rgba(60,30,10,.12)' }} />
+            ? <div key={`${ctx.seed}-${k}`} className="rounded-lg" style={{ width: 72, height: 58, border: '2px dashed rgba(60,30,10,.35)', background: 'rgba(60,30,10,.12)' }} />
             : (
               <DragBrick key={`${ctx.seed}-${k}`} char={formOf(k)?.char} dataOrder={k} color={colorOf(k)} reduce={reduce}
-                w={72} h={50} fontSize={30} studs={2} studSize={20} wobble={wobble === k} onDrop={(pt) => tryBrick(k, pt)}>
-                <span className="absolute right-1 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[13px] font-black leading-none" style={{ color: shade(colorOf(k), -0.35) }}>{GEEZ_DIGITS[ctx.order.indexOf(k)]}</span>
+                w={72} h={58} fontSize={30} className="pb-3" studs={2} studSize={20} wobble={wobble === k} onDrop={(pt) => tryBrick(k, pt)}>
+                <Pips n={ctx.order.indexOf(k) + 1} size={5} perRow={7} color="rgba(255,255,255,.95)" className="absolute inset-x-0 bottom-1.5" />
               </DragBrick>
             )))}
         </TrayWell>
       </WoodTray>
 
       <WoodBottomBar>
-        <RoundButton onClick={() => want && say(want)} label="listen" testId="listen" color="#f6e6c4" border="#c49a5a">
+        <RoundButton onClick={() => want && say(want)} label={L.listen} testId="listen" color="#f6e6c4" border="#c49a5a">
           <Volume2 className="h-8 w-8" color="#1f5fb8" strokeWidth={2.6} aria-hidden="true" />
         </RoundButton>
         <div className="flex gap-3">
-          <RoundButton onClick={again} label="again" testId="again" color="#2f86d6">
+          <RoundButton onClick={again} label={L.again} testId="again" color="#2f86d6">
             <RotateCcw className="h-7 w-7" color="#fff" strokeWidth={3} aria-hidden="true" />
           </RoundButton>
           {won ? (
             <motion.div animate={reduce ? undefined : { scale: [1, 1.12, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
-              <RoundButton onClick={() => setRound((r) => r + 1)} label="next" testId="next" color="#43b02e">
+              <RoundButton onClick={() => setRound((r) => r + 1)} label={L.next} testId="next" color="#43b02e">
                 <ArrowRight className="h-8 w-8" color="#fff" strokeWidth={3.6} aria-hidden="true" />
               </RoundButton>
             </motion.div>
           ) : (
-            <RoundButton onClick={hint} label="hint" testId="hint" color="#43b02e">
+            <RoundButton onClick={hint} label={L.hint} testId="hint" color="#43b02e">
               <Check className="h-8 w-8" color="#fff" strokeWidth={3.5} aria-hidden="true" />
             </RoundButton>
           )}
