@@ -33,6 +33,7 @@ import KokebSvg from './KokebSvg'
 import {
   BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodBottomBar, RoundButton, Confetti,
   BRICK_COLORS, WOOD, brickCss, studCss, shade, brickLabels,
+  GameStage, FitBox, useLandscapeShort,
 } from './brickKit'
 import { BrickLevels, BrickStreak, BrickSummary, sceneStyle } from './brickRoundKit'
 import BrickExample from './brickExample'
@@ -210,8 +211,9 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
 
 
   /* ── layout ── */
-  const cols = 4
+  const land = useLandscapeShort()
   const n = ctx?.cards.length || 8
+  const cols = land && n > 8 ? Math.ceil(n / 2) : 4
   const cardW = n <= 8 ? 80 : n <= 12 ? 76 : 72
   const cardH = n <= 8 ? 112 : n <= 12 ? 100 : 88
   const celebrating = ctx?.phase === Phase.WIN && !result
@@ -333,24 +335,28 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
   )
 
   const showing = voiced !== null && enough && ctx && !result
+  const rowsN = Math.ceil(n / cols)
+  const boardW = cols * cardW + (cols - 1) * 10 + 46
+  const boardH = rowsN * (cardH + 6) + (rowsN - 1) * 10 + 46 + 12
+  const fitW = Math.max(boardW, cfg?.seconds > 0 ? 304 : 0)
+  const fitH = 88 + (cfg?.seconds > 0 ? 24 : 0) + boardH + 14
   return (
     <BrickScreen testId="brick-echo">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onBack} value={ctx ? ctx.matches : 0} total={ctx ? ctx.pairs : 4} done={celebrating} />
-        {celebrating && <Confetti reduce={reduce} count={36} />}
-        {showing && (
-          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-            {celebrating ? <GuideSign icon={PartyPopper} tone="ok" text={t('echoBrickWin', 'You found them all!')} />
+      <GameStage style={sceneStyle}
+        head={(
+          <WoodTopBar onBack={onBack} value={ctx ? ctx.matches : 0} total={ctx ? ctx.pairs : 4} done={celebrating}
+            guide={showing ? (celebrating ? <GuideSign icon={PartyPopper} tone="ok" text={t('echoBrickWin', 'You found them all!')} />
               : fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
                 : fb === 'ok' ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
                   : held ? <GuideSign icon={Ear} text={held.face === Face.VOICE ? t('echoBrickFindLetter', 'Find the letter that says it') : t('echoBrickFindSound', 'Find its sound card')} />
-                    : <GuideSign icon={Hand} text={t('echoBrickGuide', 'Match each sound to its letter')} />}
-          </div>
-        )}
+                    : <GuideSign icon={Hand} text={t('echoBrickGuide', 'Match each sound to its letter')} />) : null} />
+        )}>
+        {celebrating && <Confetti reduce={reduce} count={36} />}
         {voiced === null ? null : !enough ? (
-          <div className="flex h-full items-center justify-center px-6 pt-16"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
+          <div className="flex h-full items-center justify-center px-6"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
         ) : !ctx ? null : result ? summaryView : (
-          <div className="absolute inset-x-0 bottom-0 top-[124px] flex flex-col items-center px-2">
+          <FitBox w={fitW} h={fitH} anchor="center" pad={2}>
+          <div className="flex h-full w-full flex-col items-center">
             <BrickExample example={example && { id: example.key, glyph: glyphOf(example.key), word: example.word }} color={exCard ? pairColor(exCard) : undefined}
               onTap={() => { voiceOf(example.key); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
             {cfg.seconds > 0 && (
@@ -396,8 +402,9 @@ export default function EchoMatch({ soundOn, onBack, pool = [] }) {
               </div>
             </div>
           </div>
+          </FitBox>
         )}
-      </div>
+      </GameStage>
 
       {showing && (
         <WoodBottomBar>

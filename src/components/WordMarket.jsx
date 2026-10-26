@@ -33,7 +33,7 @@ import { FOCUS, ALL_WORDS } from '../FidelQuestApp'
 import AnbessaSvg from './AnbessaSvg'
 import KokebSvg from './KokebSvg'
 import { NeedMore } from './gameKit'
-import { brickLabels, BrickScreen, WoodTopBar, WoodBottomBar, RoundButton, GuideSign, BrickPicture, Confetti, useGuideFeedback, woodBtnCss } from './brickKit'
+import { brickLabels, BrickScreen, GameStage, useShortScreen, WoodTopBar, WoodBottomBar, RoundButton, GuideSign, BrickPicture, Confetti, useGuideFeedback, woodBtnCss } from './brickKit'
 import { BrickLevels, BrickStreak, BrickSummary, sceneStyle } from './brickRoundKit'
 import {
   marketStock, readableIds, initMarket, marketTransition, marketSummary, maxPlayableLevel, letterMiss,
@@ -61,6 +61,7 @@ function useVoiced(keys) {
 }
 
 export default function WordMarket({ soundOn, onBack, pool = [] }) {
+  const short = useShortScreen()
   // Only letters with a clip can be sounded out, so a target word must be
   // made entirely of learned AND voiced letters.
   const voiced = useVoiced(pool)
@@ -326,14 +327,14 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
               whileTap={reduce ? undefined : { scale: 0.92 }}
               transition={{ duration: 0.45 }}
               aria-label={`${t('marketItem', 'Stall item')} ${n + 1}`}
-              className={`relative flex h-[88px] items-center justify-center rounded-2xl ${FOCUS}`}
+              className={`relative flex ${short ? 'h-[64px]' : 'h-[88px]'} items-center justify-center rounded-2xl ${FOCUS}`}
               style={{
                 background: 'radial-gradient(circle at 50% 40%, #fffef6, #f1dfb2)', border: '3px solid #c49a5a',
                 boxShadow: glow ? '0 0 0 4px var(--go), 0 0 18px var(--go)' : 'inset 0 3px 8px rgba(90,52,20,.3), 0 4px 0 #4a2c12',
                 outlineColor: 'var(--sky)', opacity: ctx.peek === 'show' ? 0.55 : 1,
               }}
             >
-              <BrickPicture geez={w.geez} emoji={w.picture} size={68} />
+              <BrickPicture geez={w.geez} emoji={w.picture} size={short ? 50 : 68} />
               {glow && !reduce && (
                 <motion.span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl" style={{ border: '3px solid var(--go)' }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.9, repeat: Infinity }} />
               )}
@@ -353,7 +354,7 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
         <AnimatePresence>
           {basket.map((b) => (
             <motion.span key={b.n} initial={reduce ? { opacity: 0 } : { opacity: 0, y: -40, scale: 0.4 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}>
-              <BrickPicture geez={b.geez} emoji={b.picture} size={38} />
+              <BrickPicture geez={b.geez} emoji={b.picture} size={short ? 30 : 38} />
             </motion.span>
           ))}
         </AnimatePresence>
@@ -377,22 +378,19 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
 
   return (
     <BrickScreen testId="word-market">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onBack} value={ctx ? ctx.list.filter((l) => l.done).length : 0} total={ctx ? ctx.list.length : 1} done={won} />
+      <GameStage style={sceneStyle}
+        head={<WoodTopBar onBack={onBack} value={ctx ? ctx.list.filter((l) => l.done).length : 0} total={ctx ? ctx.list.length : 1} done={won} guide={!result && ctx ? guide : null} />}>
         {won && <Confetti reduce={reduce} />}
-        {!result && ctx && (
-          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">{guide}</div>
-        )}
         {!ready ? null : !enough ? (
           <div className="flex h-full items-center justify-center px-4"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
         ) : !ctx ? null : result ? summaryView : (
-          <div className="absolute inset-x-0 bottom-0 top-[122px] flex flex-col items-center gap-3 overflow-y-auto px-3 pb-3 pt-2">
-            {listNote}
-            {stallView}
-            {basketView}
+          <div className="bk-split absolute inset-0 flex flex-col items-center gap-3 overflow-y-auto px-3 pb-3 pt-2">
+            <div className="bk-split-a w-full">{listNote}</div>
+            <div className="bk-split-b w-full">{stallView}</div>
+            <div className="bk-split-c w-full">{basketView}</div>
           </div>
         )}
-      </div>
+      </GameStage>
       {ready && enough && ctx && !result && (
         <WoodBottomBar>
           <BrickLevels max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />

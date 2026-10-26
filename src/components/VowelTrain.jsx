@@ -31,7 +31,7 @@ import { t } from '../platform/i18n'
 import { exampleWord } from '../platform/exampleWord'
 import { ALL_WORDS } from '../FidelQuestApp'
 import {
-  BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, TrayWell, WoodBottomBar, RoundButton, Baseplate,
+  BrickScreen, GameStage, FitBox, useShortScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, TrayWell, WoodBottomBar, RoundButton, Baseplate,
   BrickTile, DragBrick, Pips, Confetti, Brick, BRICK_COLORS, shade, brickLabels, overRect,
 } from './brickKit'
 import { BrickLevels, BrickStreak, BrickSummary, sceneStyle } from './brickRoundKit'
@@ -295,45 +295,48 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
   )
 
   const playing = ready && enough && ctx && !result
+  const short = useShortScreen()
+  const trainW = 374
+  const trainH = 88 + rows.length * (bodyH + 22 + 36 + 14) + 18
   return (
-    <BrickScreen testId="brick-train">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onBack} value={loadedCount} total={ctx ? ctx.cargo.length : 6} done={win} />
-        {win && <Confetti reduce={reduce} />}
-        {playing && (
-          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-            {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+    <BrickScreen testId="brick-train" side>
+      <GameStage style={sceneStyle}
+        head={(
+          <WoodTopBar onBack={onBack} value={loadedCount} total={ctx ? ctx.cargo.length : 6} done={win}
+            guide={playing ? (fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
               : (win || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
                 : ctx.held != null ? <GuideSign icon={Ear} text={t('trainBrickHeld', 'Now tap its wagon')} />
-                  : <GuideSign icon={Hand} text={t('trainBrickGuide', 'Find the matching wagon')} />}
-          </div>
-        )}
+                  : <GuideSign icon={Hand} text={t('trainBrickGuide', 'Find the matching wagon')} />) : null} />
+        )}>
+        {win && <Confetti reduce={reduce} />}
         {!ready ? null : !enough ? (
-          <div className="flex h-full items-center justify-center px-6 pt-16"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
+          <div className="flex h-full items-center justify-center px-6"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
         ) : !ctx ? null : result ? summaryView : (
-          <div className="absolute inset-x-0 bottom-0 top-[124px] flex flex-col items-center px-2">
-            <BrickExample example={example} color={example ? colorOfCar(orderOf(example.id)) : undefined}
-              onTap={() => { say(example.id); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
-            <motion.div className="flex w-full flex-1 flex-col items-center justify-around pb-8" data-testid="train"
-              animate={departing && !reduce ? { x: '125vw' } : { x: 0 }} transition={departing ? { duration: 1.4, ease: 'easeIn', delay: 0.5 } : { duration: 0 }}>
-              {rows.map((orders, ri) => (
-                <div key={ri} className="relative flex items-end justify-center gap-1.5 pt-9">
-                  <Baseplate className="-left-3 -right-3 h-[34px]" stud={22} style={{ position: 'absolute', bottom: -12, zIndex: 0 }} />
-                  <div className="relative z-10 flex items-end justify-center gap-1.5">
-                    {ri === 0 && renderEngine()}
-                    {orders.map((o) => renderWagon(o))}
+          <FitBox w={trainW} h={trainH} anchor="center" pad={2}>
+            <div className="flex h-full w-full flex-col items-center">
+              <BrickExample example={example} color={example ? colorOfCar(orderOf(example.id)) : undefined}
+                onTap={() => { say(example.id); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
+              <motion.div className="flex w-full flex-1 flex-col items-center justify-around pb-3" data-testid="train"
+                animate={departing && !reduce ? { x: '125vw' } : { x: 0 }} transition={departing ? { duration: 1.4, ease: 'easeIn', delay: 0.5 } : { duration: 0 }}>
+                {rows.map((orders, ri) => (
+                  <div key={ri} className="relative flex items-end justify-center gap-1.5 pt-9">
+                    <Baseplate className="-left-3 -right-3 h-[34px]" stud={22} style={{ position: 'absolute', bottom: -12, zIndex: 0 }} />
+                    <div className="relative z-10 flex items-end justify-center gap-1.5">
+                      {ri === 0 && renderEngine()}
+                      {orders.map((o) => renderWagon(o))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </motion.div>
-          </div>
+                ))}
+              </motion.div>
+            </div>
+          </FitBox>
         )}
-      </div>
+      </GameStage>
 
       {playing && (
         <WoodTray>
           <div className="absolute -top-4 right-4 z-20"><BrickStreak streak={ctx.streak} /></div>
-          <TrayWell className="flex min-h-[170px] flex-wrap content-center items-end justify-center gap-x-3 gap-y-5 px-2 pt-5" >
+          <TrayWell className={`flex flex-wrap content-center items-end justify-center px-2 ${short ? 'min-h-0 gap-x-2 gap-y-3 pt-3' : 'min-h-[170px] gap-x-3 gap-y-5 pt-5'}`}>
             <div className="contents" data-testid="platform" role="group" aria-label={t('trainCargo', 'Cargo')}>
               {ctx.cargo.filter((c) => !c.done).map((c) => {
                 const held = ctx.held === c.id
@@ -341,7 +344,7 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
                   <motion.div key={c.id} data-key={c.key} data-held={held ? 'true' : undefined}
                     animate={held && !reduce ? { y: -12, scale: 1.1 } : { y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16 }}
                     style={{ borderRadius: 10, boxShadow: held ? '0 0 0 4px #fff59a, 0 0 22px 8px rgba(255,235,90,.95)' : 'none' }}>
-                    <DragBrick testId="cargo" dataOrder={c.key} color="#f7efd9" reduce={reduce} w={58} h={64} fontSize={38} studSize={22}
+                    <DragBrick testId="cargo" dataOrder={c.key} color="#f7efd9" reduce={reduce} w={short ? 48 : 58} h={short ? 54 : 64} fontSize={short ? 30 : 38} studSize={short ? 17 : 22}
                       label={ctx.earsOnly ? t('trainSoundCargo', 'Sound cargo. Tap to hear it') : `${glyphOf(c.key)}. ${t('trainPick', 'Tap to pick it up')}`}
                       onDrop={(pt) => dropOn(c, pt)}>
                       {ctx.earsOnly

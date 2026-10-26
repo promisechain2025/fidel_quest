@@ -3646,9 +3646,9 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 shrink-0 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
@@ -3690,7 +3690,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
               const on = order === o.index
               return (
                 <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on} aria-label={o.geezName}
-                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
+                  className={`flex min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
                   style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
                   <span className="geez text-xl">{INDEXES.byAudioKey.get(`a-${o.index}`)?.char}</span>
                   <span className="mono mt-0.5 text-[10px] font-bold" style={{ opacity: on ? 0.9 : 0.75 }}>-{o.vowel}</span>
@@ -3704,7 +3704,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
       {/* Autoplay: chant the chosen vowel across every family (say-all) */}
       {!family && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
+          <Chunky tone={playing ? 'bad' : 'sky'} className="flex min-h-[44px] items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
           </Chunky>
