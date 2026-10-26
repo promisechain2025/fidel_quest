@@ -10,17 +10,17 @@ import { Ear, Hand, Check, X, Volume2, ArrowRight, Sparkles } from 'lucide-react
 import { t } from '../platform/i18n'
 import AnbessaSvg from './AnbessaSvg'
 import { KokebSvg } from './KokebSvg'
-import { BrickScreen, WoodTopBar, WoodBottomBar, RoundButton, GuideSign } from './brickKit'
+import { BrickScreen, GameStage, WoodTopBar, WoodBottomBar, RoundButton, GuideSign, useShortScreen, useLandscapeShort } from './brickKit'
 import { BrickStreak, sceneStyle } from './brickRoundKit'
 import { brickCss, studCss, shade } from './blockArt'
 
 // Resting bricks avoid red/green: those two colours are reserved for answers.
 const QUIZ_COLORS = ['#2f86d6', '#f2c230', '#7a4fc9', '#f08a24', '#d94f9a', '#16a4b8']
 
-function OptionBrick({ ch, index, state, disabled, onPick, tut }) {
+function OptionBrick({ ch, index, state, disabled, onPick, tut, short }) {
   const reduce = useReducedMotion()
   const base = state === 'correct' ? '#43b02e' : state === 'wrong' ? '#e2453c' : state === 'dim' ? '#a9b4be' : QUIZ_COLORS[index % QUIZ_COLORS.length]
-  const sz = 22
+  const sz = short ? 16 : 22
   return (
     <motion.button
       type="button"
@@ -32,7 +32,7 @@ function OptionBrick({ ch, index, state, disabled, onPick, tut }) {
       animate={reduce ? {} : state === 'wrong' ? { x: [0, -9, 9, -6, 6, 0] } : state === 'correct' ? { scale: [1, 1.08, 1] } : {}}
       transition={{ duration: 0.4 }}
       whileTap={disabled || reduce ? undefined : { y: 4 }}
-      className="geez relative flex h-[122px] select-none items-center justify-center rounded-2xl text-[70px] font-black leading-none text-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white"
+      className={`geez relative flex ${short ? 'h-[84px] text-[52px]' : 'h-[122px] text-[70px]'} select-none items-center justify-center rounded-2xl font-black leading-none text-white focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-white`}
       style={{
         ...brickCss(base, 7),
         opacity: state === 'dim' ? 0.8 : 1,
@@ -60,39 +60,39 @@ export default function BrickQuizPlay({ ctx, status, question, progress, formOf,
     : error ? t('notQuite', 'Not quite!')
       : presenting ? t('listen', 'Listen…') : t('brickQuizGuide', 'Tap the letter you hear')
   const icon = success ? Check : error ? Hand : presenting ? Ear : Sparkles
+  const short = useShortScreen()
+  const land = useLandscapeShort()
+  const kk = short ? 56 : 78, an = short ? 60 : 86
   return (
     <BrickScreen testId="brick-quiz">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onQuit} value={progress.answered} total={progress.total} done={false} />
-        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-          <GuideSign icon={icon} tone={tone} text={text} />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 top-[124px] flex flex-col items-center gap-3 px-4 pb-6">
-          <div className="flex w-full items-end justify-center gap-5 pt-1">
+      <GameStage style={sceneStyle}
+        head={<WoodTopBar onBack={onQuit} value={progress.answered} total={progress.total} done={false} guide={<GuideSign icon={icon} tone={tone} text={text} />} />}>
+        <div className={`absolute inset-0 flex flex-col items-center ${short ? 'gap-1 px-3 pb-2' : 'gap-3 px-4 pb-6'}`}>
+          <div className="flex w-full flex-none items-end justify-center gap-5 pt-1">
             <motion.span animate={presenting ? { rotate: [0, -6, 0, 6, 0] } : {}} transition={{ duration: 1.6, repeat: presenting ? Infinity : 0 }} aria-hidden="true">
-              <KokebSvg size={78} />
+              <KokebSvg size={kk} />
             </motion.span>
-            <RoundButton onClick={onHear} label={t('hearIt', 'Hear it again')} color="#2f86d6" testId="quiz-hear" className="!h-[84px] !w-[84px]">
-              <Volume2 className="h-11 w-11" color="#fff" strokeWidth={3} aria-hidden="true" />
+            <RoundButton onClick={onHear} label={t('hearIt', 'Hear it again')} color="#2f86d6" testId="quiz-hear" className={short ? '!h-[56px] !w-[56px]' : '!h-[84px] !w-[84px]'}>
+              <Volume2 className={short ? 'h-7 w-7' : 'h-11 w-11'} color="#fff" strokeWidth={3} aria-hidden="true" />
             </RoundButton>
-            <AnbessaSvg size={86} mood={error ? 'worried' : 'happy'} />
+            <AnbessaSvg size={an} mood={error ? 'worried' : 'happy'} />
           </div>
-          <div className="flex w-full flex-1 items-center justify-center pb-2">
-          <div className="grid w-full max-w-[352px] grid-cols-2 gap-x-5 gap-y-7" role="group" aria-label={t('whichLetter', 'Which letter says')} data-testid="quiz-options">
+          <div className="flex min-h-0 w-full flex-1 items-center justify-center pb-1">
+          <div className={`grid w-full ${land ? 'max-w-[600px] grid-cols-4 gap-x-3' : 'max-w-[352px] grid-cols-2 gap-x-5'} ${short ? 'gap-y-3' : 'gap-y-7'}`} role="group" aria-label={t('whichLetter', 'Which letter says')} data-testid="quiz-options">
             {question?.options.map((key, i) => {
               const isTarget = key === question.target
               const isWrongPick = ctx.wrongPicks.includes(key)
               const state = success && isTarget ? 'correct' : error && key === lastWrong ? 'wrong' : isWrongPick ? 'dim' : 'rest'
               return (
                 <OptionBrick key={`${ctx.cursor}-${key}`} ch={formOf(key).char} index={i} state={state}
-                  disabled={presenting || feedback || isWrongPick} onPick={() => onPick(key)} tut={`opt-${key}`} />
+                  short={short} disabled={presenting || feedback || isWrongPick} onPick={() => onPick(key)} tut={`opt-${key}`} />
               )
             })}
           </div>
           </div>
         </div>
         {children}
-      </div>
+      </GameStage>
       <WoodBottomBar>
         <span className="flex w-16 justify-start"><BrickStreak streak={ctx.streak} /></span>
         <span className="flex h-14 items-center justify-center" aria-hidden="true">

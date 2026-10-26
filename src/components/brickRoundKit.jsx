@@ -10,7 +10,7 @@ import { Star, Lock, Flame, Unlock, ArrowRight, RotateCcw, Check, Volume2 } from
 import { t } from '../platform/i18n'
 import { publicUrl } from '../platform/publicUrl'
 import AnbessaSvg from './AnbessaSvg'
-import { BrickPicture, GuideSign, RoundButton, Pips, roundBtnCss, woodBtnCss, BRICK_COLORS } from './brickKit'
+import { BrickPicture, GuideSign, RoundButton, useShortScreen, Pips, roundBtnCss, woodBtnCss, BRICK_COLORS } from './brickKit'
 import { shade } from './blockArt'
 
 export const SCENE = publicUrl('/img/games/brick-sunrise.webp')
@@ -19,7 +19,7 @@ export const sceneStyle = { background: `#f7c9a0 url(${SCENE}) center bottom / c
 /** Level buttons: n dots per level (language-free), stars below, padlock when locked. */
 export function BrickLevels({ max, current, unlocked, playable = max, best = {}, onPick }) {
   return (
-    <div className="flex items-center justify-center gap-2.5" role="group" aria-label={t('echoLevels', 'Levels')}>
+    <div className="bk-lvs flex min-w-0 items-center justify-center gap-1.5 min-[380px]:gap-2.5" role="group" aria-label={t('echoLevels', 'Levels')}>
       {Array.from({ length: max }, (_, i) => i + 1).map((lv) => {
         const open = lv <= unlocked && lv <= playable
         const on = lv === current
@@ -28,7 +28,7 @@ export function BrickLevels({ max, current, unlocked, playable = max, best = {},
           <button key={lv} type="button" disabled={!open} aria-pressed={on}
             aria-label={`${t('echoLevel', 'Level')} ${lv}${open ? '' : ` (${t('echoLocked', 'locked')})`}`}
             onClick={() => onPick(lv)} data-testid={`level-${lv}`}
-            className="flex h-[54px] w-[54px] flex-col items-center justify-center gap-0.5 rounded-full"
+            className="bk-lv flex flex-col items-center justify-center gap-0.5 rounded-full"
             style={{ ...roundBtnCss(bg), opacity: open ? 1 : 0.75, transform: on ? 'translateY(-2px) scale(1.08)' : 'none' }}>
             {open
               ? (<><Pips n={lv} size={6} color={on ? '#fff' : '#7a4a10'} />
@@ -78,14 +78,15 @@ export function BrickChip({ label, geez, picture, good, onHear, i = 0 }) {
 /** End-of-round summary on a wooden board over the scene. Icons carry most of the meaning. */
 export function BrickSummary({ summary, unlockedNew, canNext, atMax, belowUnlock, item, onHear, onNext, onAgain, onDone, testId = 'game-summary' }) {
   const reduce = useReducedMotion()
+  const short = useShortScreen()
   return (
-    <div className="relative flex h-full flex-col items-center justify-center gap-3 px-4" data-testid={testId}>
-      <div className="flex w-full flex-col items-center gap-3 rounded-[28px] px-3 pb-5 pt-3" style={{ ...woodBtnCss, border: '5px solid #8a5426', boxShadow: 'inset 0 4px 0 rgba(255,255,255,.35), inset 0 -5px 8px rgba(0,0,0,.25), 0 8px 0 #5a3414, 0 16px 22px rgba(0,0,0,.35)' }}>
-        <AnbessaSvg size={104} mood="happy" pose={summary.passed ? 'cheer' : undefined} />
+    <div className="bk-sum relative flex h-full flex-col items-center gap-3 overflow-y-auto px-4 py-2" data-testid={testId}>
+      <div className="bk-sum-card flex w-full flex-col items-center gap-3 rounded-[28px] px-3 pb-5 pt-3" style={{ ...woodBtnCss, border: '5px solid #8a5426', boxShadow: 'inset 0 4px 0 rgba(255,255,255,.35), inset 0 -5px 8px rgba(0,0,0,.25), 0 8px 0 #5a3414, 0 16px 22px rgba(0,0,0,.35)' }}>
+        <AnbessaSvg size={short ? 64 : 104} mood="happy" pose={summary.passed ? 'cheer' : undefined} />
         <div className="flex gap-1.5" aria-label={`${summary.stars} / 3`} role="img">
           {[0, 1, 2].map((i) => (
             <motion.span key={i} initial={reduce ? false : { scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: reduce ? 0 : 0.2 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
-              <Star className="h-14 w-14" fill={i < summary.stars ? '#ffd23a' : 'rgba(255,255,255,.4)'} color={i < summary.stars ? '#e0971c' : '#c9a56a'} strokeWidth={2} style={{ filter: i < summary.stars ? 'drop-shadow(0 0 6px #fff59a)' : 'none' }} aria-hidden="true" />
+              <Star className={short ? 'h-10 w-10' : 'h-14 w-14'} fill={i < summary.stars ? '#ffd23a' : 'rgba(255,255,255,.4)'} color={i < summary.stars ? '#e0971c' : '#c9a56a'} strokeWidth={2} style={{ filter: i < summary.stars ? 'drop-shadow(0 0 6px #fff59a)' : 'none' }} aria-hidden="true" />
             </motion.span>
           ))}
         </div>
@@ -103,7 +104,7 @@ export function BrickSummary({ summary, unlockedNew, canNext, atMax, belowUnlock
       </div>
       {unlockedNew ? <GuideSign icon={Unlock} tone="ok" text={t('echoUnlocked', 'New level unlocked!')} />
         : !summary.passed && !atMax && belowUnlock ? <GuideSign icon={Lock} tone="try" text={t('brickKeepGoing', 'Try again to open the next level')} /> : null}
-      <div className="flex items-center justify-center gap-4 rounded-full px-4 py-2" style={{ ...woodBtnCss, borderRadius: 999 }}>
+      <div className="bk-sum-actions flex items-center justify-center gap-4 rounded-full px-4 py-2" style={{ ...woodBtnCss, borderRadius: 999 }}>
         <RoundButton onClick={onDone} label={t('orderDone', 'Done')} testId="done" color="#f6e6c4" border="#c49a5a"><Check className="h-8 w-8" color="#2e7a1e" strokeWidth={3.6} aria-hidden="true" /></RoundButton>
         <RoundButton onClick={onAgain} label={t('matchAgain', 'Again!')} testId="again" color="#2f86d6"><RotateCcw className="h-7 w-7" color="#fff" strokeWidth={3} aria-hidden="true" /></RoundButton>
         {canNext && <RoundButton onClick={onNext} label={t('echoNext', 'Next level')} testId="next" color="#43b02e"><ArrowRight className="h-8 w-8" color="#fff" strokeWidth={3.6} aria-hidden="true" /></RoundButton>}

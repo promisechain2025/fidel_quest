@@ -1,5 +1,7 @@
 /* Explorer: the ኣቡጊዳ (abugida) arrangement option. */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
+vi.setConfig({ testTimeout: 20000 }) // slow CI runners (timeouts only)
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Explore } from '../FidelQuestApp'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'

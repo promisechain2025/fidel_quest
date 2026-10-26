@@ -20,7 +20,7 @@ import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
 import { initCatch, catchTransition, Phase, CatchEvent } from './letterCatchCore'
 import {
-  BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, RoundButton, BrickTile, Confetti,
+  BrickScreen, GameStage, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, RoundButton, BrickTile, Confetti, useShortScreen,
   roundBtnCss, brickLabels, WOOD,
 } from './components/brickKit'
 import { BrickStreak, sceneStyle } from './components/brickRoundKit'
@@ -55,16 +55,17 @@ const Lion = memo(function Lion({ mood, pose, filled = 0, size = 210 }) {
 })
 
 /** The wooden bin that fills up with the letters caught so far. */
-function Bin({ need, keys }) {
+function Bin({ need, keys, short }) {
+  const cw = short ? 44 : 54, ch = short ? 40 : 44
   return (
     <div className="mx-auto flex flex-wrap justify-center gap-1.5 rounded-2xl px-2 py-2" data-testid="catch-bin"
       style={{ maxWidth: 330, background: 'rgba(90,52,20,.28)', boxShadow: 'inset 0 3px 6px rgba(0,0,0,.35)' }}>
       {Array.from({ length: need }, (_, i) => keys[i] ? (
         <motion.div key={i} data-testid="bin-brick" initial={{ scale: 0.3, y: -16 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 14 }}>
-          <BrickTile color={colorOf(i + 1)} studs={1} width={54} height={44} depth={4} className="text-[26px]">{formOf(keys[i])?.char}</BrickTile>
+          <BrickTile color={colorOf(i + 1)} studs={1} width={cw} height={ch} depth={4} className={short ? 'text-[22px]' : 'text-[26px]'}>{formOf(keys[i])?.char}</BrickTile>
         </motion.div>
       ) : (
-        <span key={i} className="block rounded-lg" style={{ width: 54, height: 44, border: '3px dashed rgba(255,244,214,.55)', background: 'rgba(60,34,12,.3)' }} />
+        <span key={i} className="block rounded-lg" style={{ width: cw, height: ch, border: '3px dashed rgba(255,244,214,.55)', background: 'rgba(60,34,12,.3)' }} />
       ))}
     </div>
   )
@@ -81,6 +82,9 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   const [flights, setFlights] = useState([]) // bricks in flight to the basket (or falling away)
   const [bin, setBin] = useState([]) // keys caught so far
   const L = brickLabels()
+  const short = useShortScreen()
+  const bw = short ? 64 : 84, bh = short ? 68 : 88, tw = bw, th = short ? 58 : 76, tdep = short ? 5 : 7
+  const fh = short ? 124 : 196, lionSize = short ? 112 : 210, rb = short ? '!h-[52px] !w-[52px]' : '!h-[68px] !w-[68px]'
 
   /* per-frame game clock */
   useEffect(() => {
@@ -127,14 +131,14 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
   if (ctx.phase === Phase.LOSE) {
     return (
       <BrickScreen testId="brick-catch-lose">
-        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-hidden" style={sceneStyle}>
+        <div className={`relative flex min-h-0 flex-1 flex-col items-center justify-center ${short ? 'gap-2' : 'gap-6'} overflow-hidden`} style={sceneStyle}>
           <GuideSign icon={Heart} tone="try" text={t('catchLose', 'Out of hearts!')} />
-          <Lion mood="sad" pose="stand" filled={bin.length} size={230} />
+          <Lion mood="sad" pose="stand" filled={bin.length} size={short ? 120 : 230} />
           <div className="flex gap-5">
-            <RoundButton testId="catch-again" onClick={again} label={t('runAgain', 'Run again')} color="#2f86d6" className="!h-[68px] !w-[68px]">
+            <RoundButton testId="catch-again" onClick={again} label={t('runAgain', 'Run again')} color="#2f86d6" className={rb}>
               <RotateCcw className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
             </RoundButton>
-            <RoundButton testId="catch-home" onClick={() => onExit({ won: false })} label={t('home', 'Home')} color="#4fb04a" className="!h-[68px] !w-[68px]">
+            <RoundButton testId="catch-home" onClick={() => onExit({ won: false })} label={t('home', 'Home')} color="#4fb04a" className={rb}>
               <Home className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
             </RoundButton>
           </div>
@@ -145,29 +149,29 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
   const win = ctx.phase === Phase.WIN
   return (
-    <BrickScreen testId="brick-catch">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={() => onExit({ won: false })} value={ctx.caught} total={ctx.need} done={win} />
+    <BrickScreen testId="brick-catch" side>
+      <GameStage style={sceneStyle}
+        head={(
+          <WoodTopBar onBack={() => onExit({ won: false })} value={ctx.caught} total={ctx.need} done={win}
+            guide={win ? <GuideSign icon={PartyPopper} tone="ok" text={t('catchBrickWin', 'Great catching!')} />
+              : fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+                : fb === 'ok' ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+                  : <GuideSign icon={Ear} text={t('catchBrickGuide', 'Listen, then catch it!')} />} />
+        )}>
         {win && <Confetti reduce={reduce} count={40} />}
-        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-          {win ? <GuideSign icon={PartyPopper} tone="ok" text={t('catchBrickWin', 'Great catching!')} />
-            : fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
-              : fb === 'ok' ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
-                : <GuideSign icon={Ear} text={t('catchBrickGuide', 'Listen, then catch it!')} />}
-        </div>
-        <div className="pointer-events-none absolute right-3 top-[128px] z-20"><BrickStreak streak={ctx.combo} /></div>
+        <div className="pointer-events-none absolute right-3 top-1 z-20"><BrickStreak streak={ctx.combo} /></div>
 
         {/* play field: the bricks fall here */}
         <motion.div animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} data-testid="catch-field"
-          className="absolute inset-x-0 top-[118px] bottom-[196px] z-[5]" style={{ touchAction: 'none' }}>
+          className="absolute inset-x-0 top-0 z-[5]" style={{ bottom: fh, touchAction: 'none' }}>
           {ctx.items.map((it) => {
             const f = formOf(it.key)
             return (
               <motion.button key={it.id} type="button" data-fam={it.key} data-testid="catch-brick" onClick={() => onShoot(it)} whileTap={{ scale: 0.88 }}
                 aria-label={`${t('lcShoot', 'Catch')} ${f?.char}`}
                 className={`absolute rounded-xl ${FOCUS}`}
-                style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', width: 84, height: 88, paddingTop: 12, background: 'transparent', border: 'none', outlineColor: '#fff59a' }}>
-                <BrickTile color={colorOf(it.id)} studs={2} width={84} height={76} depth={7} className="text-[46px]">{f?.char}</BrickTile>
+                style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', width: bw, height: bh, paddingTop: short ? 8 : 12, background: 'transparent', border: 'none', outlineColor: '#fff59a' }}>
+                <BrickTile color={colorOf(it.id)} studs={2} width={tw} height={th} depth={tdep} className={short ? 'text-[34px]' : 'text-[46px]'}>{f?.char}</BrickTile>
               </motion.button>
             )
           })}
@@ -179,30 +183,30 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
               animate={fl.good ? { left: '50%', top: '108%', scale: 0.55, opacity: 1 } : { top: `${fl.y * 100 + 22}%`, opacity: 0, rotate: 24 }}
               transition={{ duration: fl.good ? 0.38 : 0.5, ease: 'easeIn' }}
               onAnimationComplete={() => setFlights((f) => f.filter((x) => x.id !== fl.id))}>
-              <BrickTile color={fl.good ? colorOf(fl.id) : '#9aa3ad'} studs={2} width={84} height={76} depth={7} className="text-[46px]">{formOf(fl.key)?.char}</BrickTile>
+              <BrickTile color={fl.good ? colorOf(fl.id) : '#9aa3ad'} studs={2} width={tw} height={th} depth={tdep} className={short ? 'text-[34px]' : 'text-[46px]'}>{formOf(fl.key)?.char}</BrickTile>
             </motion.div>
           ))}
         </motion.div>
 
         {/* Anbessa and his basket, on a baseplate */}
-        <div className="absolute inset-x-0 bottom-0 z-10 flex h-[196px] items-end justify-center">
+        <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-center" style={{ height: fh }}>
           <div className="absolute bottom-1 left-3">{lives}</div>
-          <motion.div animate={basketCtl} className="relative mb-3"><Lion mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={win ? 'cheer' : 'stand'} filled={bin.length} /></motion.div>
+          <motion.div animate={basketCtl} className={`relative ${short ? 'mb-2' : 'mb-3'}`}><Lion mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={win ? 'cheer' : 'stand'} filled={bin.length} size={lionSize} /></motion.div>
           <div className="absolute bottom-2 right-4 flex items-center gap-2">
             {revealTarget && (
-              <BrickTile color="#f7efd9" studs={1} width={54} height={50} depth={5} className="text-[34px]" style={{ color: '#2c4a7a', textShadow: '0 1px 0 #fff' }}>{targetForm?.char}</BrickTile>
+              <BrickTile color="#f7efd9" studs={1} width={short ? 44 : 54} height={short ? 44 : 50} depth={5} className={short ? 'text-[26px]' : 'text-[34px]'} style={{ color: '#2c4a7a', textShadow: '0 1px 0 #fff' }}>{targetForm?.char}</BrickTile>
             )}
             <motion.div key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }}>
-              <RoundButton testId="catch-hear" onClick={() => playForm(targetForm, soundOn)} label={t('hearAgain', 'Hear it again')} color="#2f86d6" className="!h-[68px] !w-[68px]">
+              <RoundButton testId="catch-hear" onClick={() => playForm(targetForm, soundOn)} label={t('hearAgain', 'Hear it again')} color="#2f86d6" className={rb}>
                 <Volume2 className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
               </RoundButton>
             </motion.div>
           </div>
         </div>
-      </div>
+      </GameStage>
 
-      <WoodTray style={{ paddingTop: 22, paddingBottom: 14 }}>
-        <Bin need={ctx.need} keys={bin} />
+      <WoodTray style={short ? undefined : { paddingTop: 22, paddingBottom: 14 }}>
+        <Bin need={ctx.need} keys={bin} short={short} />
       </WoodTray>
     </BrickScreen>
   )
