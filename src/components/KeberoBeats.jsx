@@ -25,6 +25,7 @@ import KokebSvg from './KokebSvg'
 import {
   BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, TrayWell, WoodBottomBar, RoundButton, Baseplate,
   BrickTile, BrickPicture, Confetti, Stud, BRICK_COLORS, roundBtnCss, shade, brickLabels,
+  GameStage, FitBox, useShortScreen,
 } from './brickKit'
 import { BrickLevels, BrickSummary, BrickStreak, sceneStyle } from './brickRoundKit'
 import { NeedMore } from './gameKit'
@@ -340,11 +341,13 @@ export default function KeberoBeats({ soundOn, onBack, pool = [] }) {
   /* ── views ── */
   const L = brickLabels()
   const celebrating = !!ctx && ctx.phase === Phase.WIN && !result
-  const tileW = item && item.keys && item.keys.length > 4 ? 60 : 70
+  const short = useShortScreen()
+  const many = !!(item && item.keys && item.keys.length > 4)
+  const tileW = short ? (many ? 48 : 54) : (many ? 60 : 70)
   const tp = { shake, lit, reduce, w: tileW, h: tileW + 10 }
 
   const hearBtn = item && (
-    <RoundButton testId="beats-hear" onClick={() => sayWord(word)} label={t('beatsHearWord', 'Hear the word')} color="#2f86d6">
+    <RoundButton testId="beats-hear" onClick={() => sayWord(word)} label={t('beatsHearWord', 'Hear the word')} color="#2f86d6" className="bk-unscale">
       <Volume2 className="h-7 w-7" color="#fff" strokeWidth={3} aria-hidden="true" />
     </RoundButton>
   )
@@ -406,7 +409,7 @@ export default function KeberoBeats({ soundOn, onBack, pool = [] }) {
           aria-label={t('beatsDrum', 'Drum: tap once for every beat')}
           className={`rounded-full ${FOCUS}`} style={{ outlineColor: '#fff59a' }}
         >
-          <Kebero size={206} hit={hit} />
+          <Kebero size={short ? 128 : 206} hit={hit} />
         </motion.button>
         <RoundButton testId="beats-done" onClick={() => { if (!busy && taps) done() }} label={t('beatsDone', 'That is all the beats')} color="#4fb04a" className={`${busy || !taps ? 'opacity-40' : ''}`}>
           <Check className="h-8 w-8" color="#fff" strokeWidth={4} aria-hidden="true" />
@@ -420,10 +423,10 @@ export default function KeberoBeats({ soundOn, onBack, pool = [] }) {
     trayView = (
       <div className="flex items-center justify-center gap-6 pt-1">
         <button type="button" data-testid="beats-ask" onClick={() => playForm(formOf(item.ask), soundOn)} aria-label={t('beatsAsk', 'Hear the beat to find')}
-          className={`flex h-[84px] w-[84px] items-center justify-center rounded-full ${FOCUS}`} style={{ ...roundBtnCss('#f08a24'), outlineColor: '#fff59a' }}>
+          className={`flex ${short ? 'h-[60px] w-[60px]' : 'h-[84px] w-[84px]'} items-center justify-center rounded-full ${FOCUS}`} style={{ ...roundBtnCss('#f08a24'), outlineColor: '#fff59a' }}>
           <Volume2 className="h-11 w-11" color="#fff" strokeWidth={3} aria-hidden="true" />
         </button>
-        <Kebero size={130} hit={hit} />
+        <Kebero size={short ? 96 : 130} hit={hit} />
       </div>
     )
   } else if (item && ctx.kind === Kind.MISSING) {
@@ -470,35 +473,41 @@ export default function KeberoBeats({ soundOn, onBack, pool = [] }) {
   )
 
   const showing = ready && enough && ctx && !result
+  const nTiles = item?.keys?.length || 4
+  const perRow = Math.max(1, Math.floor((356 - 16) / (tileW + 10 + 10)))
+  const boardRows = Math.max(1, Math.ceil(Math.max(nTiles, 5) / perRow))
+  const fitH = 104 + 14 + Math.max(150, 44 + boardRows * (tileW + 20))
   return (
-    <BrickScreen testId="brick-beats">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onBack} value={ctx ? Math.min(ctx.idx, ctx.items.length) : 0} total={ctx ? ctx.items.length : 5} done={celebrating} />
-        {celebrating && <Confetti reduce={reduce} count={36} />}
-        {showing && (
-          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-            {celebrating ? <GuideSign icon={PartyPopper} tone="ok" text={t('beatsBrickWin', 'Great drumming!')} />
+    <BrickScreen testId="brick-beats" side>
+      <GameStage style={sceneStyle}
+        head={(
+          <WoodTopBar onBack={onBack} value={ctx ? Math.min(ctx.idx, ctx.items.length) : 0} total={ctx ? ctx.items.length : 5} done={celebrating}
+            guide={showing ? (celebrating ? <GuideSign icon={PartyPopper} tone="ok" text={t('beatsBrickWin', 'Great drumming!')} />
               : fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
                 : fb === 'ok' ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
-                  : <GuideSign icon={GuideIcon} text={guideText || t('beatsBrickCount', 'Drum once for each beat')} />}
-          </div>
-        )}
+                  : <GuideSign icon={GuideIcon} text={guideText || t('beatsBrickCount', 'Drum once for each beat')} />) : null} />
+        )}>
+        {celebrating && <Confetti reduce={reduce} count={36} />}
         {!ready ? null : !enough ? (
-          <div className="flex h-full items-center justify-center px-6 pt-16"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
+          <div className="flex h-full items-center justify-center px-6"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
         ) : !ctx ? null : result ? summaryView : (
-          <div className="absolute inset-x-0 bottom-0 top-[124px] flex flex-col items-center justify-between pb-5">
+          <>
             <div className="absolute right-3 top-1 z-20"><BrickStreak streak={ctx.streak} /></div>
-            <div className="flex min-h-[104px] items-center">{clue}</div>
-            <motion.div key={`${ctx.idx}`} initial={reduce ? { opacity: 0 } : { opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="w-full">
-              {board}
-            </motion.div>
-          </div>
+            <FitBox w={392} h={fitH} anchor="center" pad={2}>
+              <div className="flex h-full w-full flex-col items-center justify-between">
+                <div className="flex min-h-[104px] items-center">{clue}</div>
+                <motion.div key={`${ctx.idx}`} initial={reduce ? { opacity: 0 } : { opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} className="w-full">
+                  {board}
+                </motion.div>
+              </div>
+            </FitBox>
+          </>
         )}
-      </div>
+      </GameStage>
 
       {showing && (
         <>
-          <WoodTray style={{ minHeight: 200 }}>
+          <WoodTray style={short ? undefined : { minHeight: 200 }}>
             <div className="flex flex-1 flex-col justify-center" data-testid="beat-tray-area">{trayView}</div>
           </WoodTray>
           <WoodBottomBar>

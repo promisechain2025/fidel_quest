@@ -176,7 +176,7 @@ describe('Echo Match screen', () => {
     await mount()
     const lv2 = screen.getByRole('button', { name: /Level 2/ })
     expect(lv2).toBeDisabled()
-    expect(lv2.className).toMatch(/h-\[54px\]/)
+    expect(lv2.className).toMatch(/bk-lv/) // 44px+ is enforced by .bk-lv in brickKit.css
   })
 
   it('look: brick cards on a wooden board, guide text via i18n, nothing but fidel beside fidel', async () => {

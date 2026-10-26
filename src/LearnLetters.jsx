@@ -42,7 +42,7 @@ import AnbessaSvg from './components/AnbessaSvg'
 import JibbySvg from './components/JibbySvg'
 import KokebSvg from './components/KokebSvg'
 import FidelTracePad from './components/FidelTracePad'
-import { BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, GuideSign, Baseplate, BrickTile, BrickPicture, Confetti, BRICK_COLORS } from './components/brickKit'
+import { BrickScreen, GameStage, useMedia, useShortScreen, useLandscapeShort, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, GuideSign, Baseplate, BrickTile, BrickPicture, Confetti, BRICK_COLORS } from './components/brickKit'
 import { sceneStyle } from './components/brickRoundKit'
 import { brickCss, studCss, shade, WOOD } from './components/blockArt'
 
@@ -356,18 +356,18 @@ function BubblePop({ left, top, color }) {
 /** The shelf of letters met so far: seven slots, one per letter. A met letter
     is a studded brick; the rest are empty wells, so progress reads without
     a number. */
-function MeetShelf({ forms, met }) {
+function MeetShelf({ forms, met, short }) {
   return (
     <WoodTray className="w-full" style={{ marginTop: 0 }}>
       <div className="grid grid-cols-7 gap-1.5 px-0.5 pt-1" data-testid="meet-shelf" aria-hidden="true">
         {forms.map((k, i) => (
-          <div key={k} className="flex h-[58px] items-end justify-center rounded-lg" style={{ background: 'rgba(90,52,20,.28)', boxShadow: 'inset 0 3px 6px rgba(0,0,0,.35)' }}>
+          <div key={k} className={`flex ${short ? 'h-[46px]' : 'h-[58px]'} items-end justify-center rounded-lg`} style={{ background: 'rgba(90,52,20,.28)', boxShadow: 'inset 0 3px 6px rgba(0,0,0,.35)' }}>
             {i < met ? (
               <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 14 }} className="w-full">
                 <BrickTile color={brickColorOf(i)} width={40} height={46} style={{ width: '100%' }} depth={4} className="text-[26px]">{formOf(k)?.char}</BrickTile>
               </motion.div>
             ) : (
-              <span className="mb-3 block h-3 w-3 rounded-full" style={{ background: 'rgba(0,0,0,.22)', boxShadow: 'inset 0 2px 2px rgba(0,0,0,.4)' }} />
+              <span className={`${short ? 'mb-2' : 'mb-3'} block h-3 w-3 rounded-full`} style={{ background: 'rgba(0,0,0,.22)', boxShadow: 'inset 0 2px 2px rgba(0,0,0,.4)' }} />
             )}
           </div>
         ))}
@@ -386,6 +386,10 @@ function BubbleMeet({ ctx, onTouch }) {
   const reduce = useReducedMotion()
   const stageRef = useRef(null)
   const btnRef = useRef(null)
+  const short = useShortScreen()
+  const land = useLandscapeShort()
+  const bs = land ? 92 : short ? 112 : 160
+  const k = bs / 160
   if (!form) return null
   const color = brickColorOf(ctx.idx)
   const showWord = ctx.idx === 0 && Boolean(ctx.meetWord?.geez)
@@ -405,13 +409,14 @@ function BubbleMeet({ ctx, onTouch }) {
     onTouch(form.audioKey)
   }
   return (
-    <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex h-full w-full flex-col items-center gap-2">
-      <GuideSign icon={Hand} tone="guide" text={t('popHint', 'Pop the bubble!')} />
-      <div ref={stageRef} className="relative min-h-0 w-full flex-1" data-testid="meet-stage">
+    <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className={`flex h-full w-full ${land ? 'flex-wrap content-start' : 'flex-col'} items-center gap-2`}>
+      <div className={land ? 'flex w-full justify-center' : ''}><GuideSign icon={Hand} tone="guide" text={t('popHint', 'Pop the bubble!')} /></div>
+      <div className={`flex min-h-0 w-full flex-1 ${land ? 'flex-row' : 'flex-col'} items-stretch gap-2`}>
+      <div ref={stageRef} className="relative min-h-0 min-w-0 flex-1" data-testid="meet-stage">
         {showWord && (
           <div className="absolute left-1/2 top-1 z-0 flex -translate-x-1/2 items-center gap-2 rounded-2xl py-1 pl-1.5 pr-4" data-testid="meet-word"
             style={{ ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.35), 0 4px 0 #5a3414, 0 8px 12px rgba(0,0,0,.3)' }}>
-            <BrickPicture geez={ctx.meetWord.geez} emoji={ctx.meetWord.picture} size={64} />
+            <BrickPicture geez={ctx.meetWord.geez} emoji={ctx.meetWord.picture} size={short ? 44 : 64} />
             <span className="geez text-3xl font-black text-white" style={{ textShadow: '0 2px 0 #5a3414' }}>{ctx.meetWord.geez}</span>
           </div>
         )}
@@ -420,7 +425,7 @@ function BubbleMeet({ ctx, onTouch }) {
           type="button"
           onPointerDown={pop}
           disabled={popped}
-          initial={{ x: '-30%', y: 30, scale: 0.5 }}
+          initial={{ x: '-30%', y: Math.round(30 * k), scale: 0.5 }}
           animate={
             popped
               ? { scale: 1.4, opacity: 0 }
@@ -428,14 +433,15 @@ function BubbleMeet({ ctx, onTouch }) {
                   // A wandering loop (roughly a figure-8) with a rocking tilt and a
                   // bouncy squash-stretch so the letter looks like it is dancing.
                   x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-                  y: [(showWord ? 96 : 20), (showWord ? 110 : 8), (showWord ? 130 : 40), (showWord ? 160 : 90), (showWord ? 180 : 130), (showWord ? 150 : 100), (showWord ? 120 : 50), (showWord ? 96 : 20)],
+                  y: [(showWord ? 96 : 20), (showWord ? 110 : 8), (showWord ? 130 : 40), (showWord ? 160 : 90), (showWord ? 180 : 130), (showWord ? 150 : 100), (showWord ? 120 : 50), (showWord ? 96 : 20)].map((v) => Math.round(v * k)),
                   rotate: [0, 9, -5, 8, -9, 6, -3, 0],
                   scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
                 }
           }
           transition={popped ? { duration: 0.85, ease: 'easeInOut' } : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
-          className={`geez absolute left-1/2 top-4 -ml-20 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
+          className={`geez absolute left-1/2 top-4 flex items-center justify-center rounded-full font-black ${short ? 'text-6xl' : 'text-8xl'} ${FOCUS}`}
           style={{
+            width: bs, height: bs, marginLeft: -bs / 2,
             // A glossy toy balloon: the brick colour melts from a bright core to a deep
             // rim, a white sheen sits top-left, and three studs crown it.
             background: `radial-gradient(circle at 36% 26%, ${shade(color, 0.45)} 0%, ${color} 56%, ${shade(color, -0.35)} 100%)`,
@@ -460,7 +466,8 @@ function BubbleMeet({ ctx, onTouch }) {
         </motion.button>
         {popAt && <BubblePop left={popAt.left} top={popAt.top} color={color} />}
       </div>
-      <MeetShelf forms={ctx.forms} met={ctx.idx} />
+      <div className={land ? 'w-[40%] min-w-0 self-center' : ''}><MeetShelf forms={ctx.forms} met={ctx.idx} short={short} /></div>
+      </div>
     </motion.div>
   )
 }
@@ -539,6 +546,8 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const activeKey = ctx.forms[ctx.idx]
   const activeForm = formOf(activeKey)
   const rem = useRootRem()
+  const land = useLandscapeShort()
+  const narrow = useMedia('(max-width: 399px)')
   // Wrong-pick feedback is view-local: which card is shaking and how many
   // misses on the CURRENT stone. At SINK_MISSES Anbessa slips into the
   // water and the rescue banner takes over; a correct pick (the pulsing
@@ -581,16 +590,17 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   const stand = standIdx < 0 ? BANKS.left : standIdx >= ctx.forms.length ? BANKS.right : STONE_POINTS[standIdx]
   const wrongNow = wrongKey != null && !sunk
   return (
-    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center gap-2">
-      <GuideSign
+    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`flex h-full w-full ${land ? 'flex-wrap content-start' : 'flex-col'} items-center gap-2`}>
+      <div className={land ? 'flex w-full justify-center' : ''}><GuideSign
         icon={Ear}
         tone={wrongNow ? 'try' : 'guide'}
         text={wrongNow ? t('brickTry', 'Listen again!') : forward ? t('stoneFwd', 'Listen! Tap the letter to hop across!') : t('stoneBack', 'Listen! Hop back home!')}
-      />
+      /></div>
       {/* The river is a picture, not a touch target: the child plays the
           TRAY below, and the stones show where Anbessa is going. A blue
           studded baseplate for the water, green bank plates at each end. */}
-      <div className="flex min-h-0 w-full flex-1 items-center"><div className="pointer-events-none relative h-full max-h-[310px] w-full" data-testid="stone-river" aria-hidden="true">
+      <div className={`flex min-h-0 w-full flex-1 gap-2 ${land ? 'flex-row' : 'flex-col'}`}>
+      <div className="flex min-h-0 min-w-0 w-full flex-1 items-center"><div className="pointer-events-none relative h-full max-h-[310px] w-full" data-testid="stone-river" aria-hidden="true">
         <div className="absolute inset-x-1 inset-y-2"><Baseplate color="#2f86d6" stud={24} className="h-full w-full" /></div>
         <div className="absolute -left-1 z-[1] h-[40%] w-[17%]" style={{ top: '40%' }}><Baseplate color="#3fae4a" stud={22} className="h-full w-full" /></div>
         <div className="absolute -right-1 z-[1] h-[40%] w-[17%]" style={{ top: '40%' }}><Baseplate color="#3fae4a" stud={22} className="h-full w-full" /></div>
@@ -681,9 +691,9 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
         </AnimatePresence>
       </div></div>
       {/* the tray: FORWARD keeps reading order, BACKWARD is lightly mixed */}
-      <WoodTray className="w-full">
+      <WoodTray className={land ? 'w-[46%] min-w-0 shrink-0 self-center' : 'w-full'}>
         <TrayWell>
-          <div className="grid w-full grid-cols-7 gap-1.5 pt-1" role="group" aria-label={t('stoneTray', 'Letter cards')}>
+          <div className={`grid w-full ${land || narrow ? 'grid-cols-4' : 'grid-cols-7'} gap-1.5 pt-1`} role="group" aria-label={t('stoneTray', 'Letter cards')}>
             {tray.map((k) => {
               const form = formOf(k)
               const ci = ctx.forms.indexOf(k)
@@ -726,6 +736,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           </div>
         </TrayWell>
       </WoodTray>
+      </div>
     </motion.div>
   )
 }
@@ -867,6 +878,8 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const [dragging, setDragging] = useState(false)
   const [flyers, setFlyers] = useState([]) // letters mid-flight into the mouth
   const reduce = useReducedMotion()
+  const land = useLandscapeShort()
+  const short = useShortScreen()
   const [chomp, setChomp] = useState(0) // bumps a crumb burst each swallow
   // Only letters still on the tray; always keep the current target so a wrong
   // drag on a removed letter can never strand the round.
@@ -907,12 +920,12 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
 
   return (
     <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center" data-testid="brick-feed-field" role="group" aria-label={isShuffle ? t('catchHint', 'Feed Anbessa before Jibby grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}>
-      <div ref={trayRef} className="relative flex h-full w-full flex-col items-center gap-2">
+      <div ref={trayRef} className={`relative flex h-full w-full ${land ? 'flex-row items-center justify-center gap-3' : 'flex-col items-center gap-2'}`}>
         {/* Kokeb calls the letter; Jibby creeps in on the other side (SHUFFLE). */}
-        <div className="relative z-20 flex w-full items-end justify-between px-1">
+        <div className={`relative z-20 flex items-end justify-between px-1 ${land ? 'order-1 w-auto' : 'w-full'}`}>
           <KokebSpeaker pulse={speakPulse} />
         </div>
-        <WoodTray className="w-full" style={{ marginTop: -6 }}>
+        <WoodTray className={land ? 'order-3 min-w-0 flex-1' : 'w-full'} style={{ marginTop: land ? 0 : -6 }}>
           <div className="relative z-10 grid grid-cols-4 place-items-center gap-x-2 gap-y-4 pt-2" data-testid="feed-tray">
             <AnimatePresence>
               {visible.map((k, i) => (
@@ -974,7 +987,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
         {/* Anbessa waits on a studded baseplate - alive: he breathes and sways, leans in when a
             letter is dragged near, chews on a correct feed, and shakes+swats
             on a wrong one. He is the drop target (mouthRef). */}
-        <div className="relative z-10 mt-auto flex w-full flex-col items-center pb-4">
+        <div className={`relative z-10 flex flex-col items-center ${land ? 'order-2 w-[30%] shrink-0 pb-2' : 'mt-auto w-full pb-4'}`}>
           <motion.div
             ref={mouthRef}
             className="relative z-10 origin-bottom"
@@ -994,7 +1007,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
                     : { scale: 1, y: [0, -2.5, 0], rotate: [0, -1.5, 0, 1.5, 0], transition: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }
             }
           >
-            <AnbessaSvg mood={mood} size={124} />
+            <AnbessaSvg mood={mood} size={land ? 84 : short ? 108 : 124} />
             {!reduce && <ChompCrumbs key={chomp} />}
             {/* the swatting paw on a refusal */}
             <AnimatePresence>
@@ -1011,7 +1024,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
               )}
             </AnimatePresence>
           </motion.div>
-          <Baseplate color="#3fae4a" stud={24} className="z-0 -mt-9 h-[64px] w-[72%]" style={{ borderRadius: 20 }} />
+          <Baseplate color="#3fae4a" stud={24} className={`z-0 -mt-9 ${land ? 'h-[44px] w-[90%]' : 'h-[64px] w-[72%]'}`} style={{ borderRadius: 20 }} />
         </div>
       </div>
     </motion.div>
@@ -1224,22 +1237,20 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const signText = done ? (stone.type === 'family' ? t('familyDone', 'Family mastered!') : t('mixDone', 'Great mixing!'))
     : lionMood === 'eating' ? t('nice', 'Nice!') : refuseKey ? t('brickTryAgain', 'Try again!')
       : ctx.phase === LearnPhase.SHUFFLE ? t('brickFeedQuick', 'Be quick, feed Anbessa!') : t('brickFeedGuide', 'Feed Anbessa what you hear')
+  const land = useLandscapeShort()
+  const short = useShortScreen()
   const signIcon = tone === 'guide' ? (ctx.phase === LearnPhase.SHUFFLE ? Hand : Ear) : tone === 'ok' ? Check : Hand
   return (
     <BrickScreen testId={spoken || done ? 'brick-feed' : 'brick-learn'}>
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-        <WoodTopBar onBack={onBack} value={barValue} total={barTotal} done={done} />
+      <GameStage style={sceneStyle}
+        head={<WoodTopBar onBack={onBack} value={barValue} total={barTotal} done={done}
+          guide={(spoken || done) ? <GuideSign icon={signIcon} tone={tone} text={signText} /> : null} />}>
         {done && <Confetti reduce={false} />}
-        {(spoken || done) && (
-          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-            <GuideSign icon={signIcon} tone={tone} text={signText} />
-          </div>
-        )}
-        <div className={`absolute inset-x-0 bottom-0 flex flex-col items-center px-3 pb-2 ${spoken || done ? 'top-[118px]' : 'top-[62px]'}`}>
+        <div className="absolute inset-0 flex flex-col items-center px-3 pb-2">
           {done ? (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-6" data-testid={stone.type === 'family' ? 'family-done' : 'mix-done'}>
-              <div className="flex w-full flex-col items-center">
-                <AnbessaSvg mood="happy" size={140} className="relative z-10" />
+            <div className={`flex h-full w-full ${land ? 'flex-row gap-4' : 'flex-col gap-6'} items-center justify-center`} data-testid={stone.type === 'family' ? 'family-done' : 'mix-done'}>
+              <div className={`flex ${land ? 'w-[40%]' : 'w-full'} flex-col items-center`}>
+                <AnbessaSvg mood="happy" size={land ? 96 : short ? 112 : 140} className="relative z-10" />
                 <Baseplate color="#3fae4a" stud={24} className="-mt-10 h-[72px] w-[72%]" style={{ borderRadius: 20 }} />
               </div>
               <div className="flex max-w-[260px] flex-wrap items-end justify-center gap-x-2 gap-y-3" aria-hidden="true">
@@ -1255,7 +1266,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
               {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
               {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
               {ctx.phase === LearnPhase.TRACE && (
-                <motion.div key={`trace-${traceIdx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center gap-3">
+                <motion.div key={`trace-${traceIdx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center gap-3 overflow-y-auto">
                   <GuideSign icon={Hand} tone="guide" text={t('traceHint', 'Hear it, then trace it with your finger')} />
                   <div className="w-full rounded-3xl p-3" data-testid="trace-board"
                     style={{ background: 'linear-gradient(#fff8e2,#f4dfb0)', border: '4px solid #8a5426', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.6), 0 6px 0 #5a3414, 0 14px 18px rgba(0,0,0,.3)', color: '#5a3414' }}>
@@ -1300,7 +1311,7 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </GameStage>
       {!done && hearKey && (
         <WoodBottomBar>
           <span className="w-14" aria-hidden="true" />
