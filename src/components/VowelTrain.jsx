@@ -1,5 +1,5 @@
 /* ============================================================================
-   VOWEL TRAIN — the renderer (replaces Line Up)
+   VOWEL TRAIN — the renderer (toy-brick train; replaces Line Up)
    ----------------------------------------------------------------------------
    Thin shell over the pure trainCore. The cars carry an anchor family, one
    vowel order per car (tap a car to hear it). Cargo letters from other
@@ -11,25 +11,33 @@
    difference; after two misses the right car glows. Fill the train and it
    pulls out of the station; then the round summary.
 
+   LOOK: a studded green baseplate track carries a brick engine and one
+   coloured brick wagon per vowel order (colour + dot pips = the order, no
+   numerals). Cargo letters are cream bricks on a wooden tray: drag one onto a
+   wagon (or tap it, then tap a wagon) and it snaps on in that wagon's colour.
+
    L4 is ears-only: cargo shows a speaker instead of the letter.
    Only letters with a real recording are used. First attempts go to the
    answer ledger (mode 'train'); picked = the same consonant in the chosen
    order, so the confusion matrix reads "heard ሉ, chose ሊ".
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { motion, LayoutGroup, useReducedMotion } from 'framer-motion'
-import { Volume2 } from 'lucide-react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Volume2, Hand, Ear, ThumbsUp, RotateCcw } from 'lucide-react'
 import { audio, afterVoice, playForm, playEffect, playPluck } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { exampleWord } from '../platform/exampleWord'
-import { useWide } from '../platform/gameUi'
-import { GEEZ_ONES } from '../data/numerals'
-import { FOCUS, ALL_WORDS } from '../FidelQuestApp'
+import { ALL_WORDS } from '../FidelQuestApp'
+import {
+  BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, TrayWell, WoodBottomBar, RoundButton, Baseplate,
+  BrickTile, DragBrick, Pips, Confetti, Brick, BRICK_COLORS, shade, brickLabels, overRect,
+} from './brickKit'
+import { BrickLevels, BrickStreak, BrickSummary, sceneStyle } from './brickRoundKit'
+import BrickExample from './brickExample'
+import { NeedMore } from './gameKit'
 import KokebSvg from './KokebSvg'
-import WordPicture from './Pictures'
-import { GameHeader, LevelPills, StreakStars, ExampleSlot, RoundSummary, NeedMore } from './gameKit'
 import {
   initTrain, trainTransition, trainSummary, maxPlayableLevel, loadTrain, saveTrain, applyRound,
   TRAIN_LEVELS, MAX_LEVEL, Phase, TrainEvent, Outcome,
@@ -75,7 +83,8 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
   const [talkingCar, setTalkingCar] = useState(null)
   const [departing, setDeparting] = useState(false)
   const reduce = useReducedMotion()
-  const wide = useWide()
+  const carRefs = useRef({})
+  const [fb, flash, clearFb] = useGuideFeedback()
   const timers = useRef([])
   const later = (c) => { timers.current.push(c) }
   const clearTimers = () => { timers.current.forEach((c) => c()); timers.current = [] }
@@ -136,12 +145,17 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
     if (ctx.held == null) { say(anchorKey(order), order); return } // hear the car
     const r = trainTransition(ctx, { type: TrainEvent.LOAD, payload: { order } })
     if (!r.accepted) return
-    setCtx(r.next)
-    const last = r.next.last
+    applyLoad(r.next, order)
+  }
+
+  const applyLoad = (next, order) => {
+    setCtx(next)
+    const last = next.last
     if (last.log) recordAnswer(last.log.heard, last.log.picked, 'train')
     if (last.outcome === Outcome.LOADED) {
       playPluck(order, soundOn)
       playEffect('good', soundOn)
+      flash('ok', 1100)
       const word = exampleWord(last.key, ALL_WORDS, { strict: true })
       setExample({ id: last.key, glyph: glyphOf(last.key), word })
       later(afterVoice(() => {
@@ -151,6 +165,7 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
     } else {
       // Hear the difference: the cargo, then the car it was put in.
       playEffect('bad', soundOn)
+      flash('try', 1400)
       setShakeCar(order)
       later(afterVoice(() => setShakeCar(null), 450, 1000))
       later(afterVoice(() => {
@@ -161,68 +176,110 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
   }
 
   /* ── layout ── */
-  const carW = wide ? 112 : 80
-  const tileW = wide ? 84 : 62
+  const L = brickLabels()
   const cfg = TRAIN_LEVELS[effLevel]
+  const carW = 84
+  const bodyH = effLevel === 1 ? 104 : 80
+  const colorOfCar = (order) => BRICK_COLORS[(order - 1) % BRICK_COLORS.length]
+  const win = ctx?.phase === Phase.WIN
+  const loadedCount = ctx ? ctx.cargo.filter((c) => c.done).length : 0
 
-  const car = (order) => {
+  // Drop on a wagon (or tap it): the brick drop picks the nearest wagon under the finger.
+  const dropOn = (c, pt) => {
+    if (!pt) { pick(c); return }
+    let hit = null
+    for (const o of cfg.orders) { if (overRect(carRefs.current[o], pt, 14)) { hit = o; break } }
+    if (hit == null) { pick(c); return } // dropped on nothing: just pick it up (no penalty)
+    if (!ctx || ctx.phase !== Phase.PLAY) return
+    const r = trainTransition(ctx, { type: TrainEvent.PICK, payload: { id: c.id } })
+    if (!r.accepted) return
+    // pick + load in one go, through the same core transitions
+    const r2 = trainTransition(r.next, { type: TrainEvent.LOAD, payload: { order: hit } })
+    if (!r2.accepted) { setCtx(r.next); return }
+    clearTimers()
+    setExample(null)
+    applyLoad(r2.next, hit)
+  }
+
+  const renderWagon = (order) => {
     const loaded = ctx.cargo.filter((c) => c.done && orderOf(c.key) === order)
     const glow = ctx.hint === order
     const talking = talkingCar === order
+    const color = win ? '#f2b324' : colorOfCar(order)
     return (
       <motion.button
-        key={order}
         type="button"
+        key={order}
+        ref={(el) => { carRefs.current[order] = el }}
         data-testid={`car-${order}`}
+        data-glow={glow ? '1' : undefined}
         onClick={() => tapCar(order)}
         animate={reduce ? { x: 0, y: 0 }
+          : win ? { y: [0, -10, 0] }
           : shakeCar === order ? { x: [0, -8, 8, -5, 5, 0], y: 0 }
-          : ctx.held != null ? { x: 0, y: [0, -4, 0] } // "now pick a car"
+          : ctx.held != null ? { x: 0, y: [0, -5, 0] } // "now pick a wagon"
+          : talking ? { x: 0, y: [0, -6, 0] }
           : { x: 0, y: 0 }}
-        transition={shakeCar === order ? { duration: 0.45 } : ctx.held != null ? { duration: 0.9, repeat: Infinity, delay: order * 0.08 } : { duration: 0.2 }}
+        transition={win ? { duration: 0.5, delay: order * 0.07, repeat: 2 } : shakeCar === order ? { duration: 0.45 } : ctx.held != null ? { duration: 0.9, repeat: Infinity, delay: order * 0.08 } : { duration: 0.3 }}
         aria-label={`${t('trainCar', 'Car')} ${order}: ${glyphOf(anchorKey(order))}`}
-        className={`relative flex flex-col items-center rounded-2xl ${FOCUS}`}
-        style={{ width: carW, outlineColor: 'var(--sky)' }}
+        className="relative shrink-0 touch-manipulation"
+        style={{ width: carW, height: bodyH + 22 }}
       >
-        <span
-          className="relative flex w-full flex-col items-center rounded-xl pb-2 pt-1"
-          style={{
-            minHeight: carW * 0.95,
-            background: talking ? 'linear-gradient(180deg,#5aa0e6,#2c6cb0)' : 'linear-gradient(180deg,#d8553f,#a63a28)',
-            border: '3px solid #6b2417',
-            boxShadow: glow ? '0 0 0 4px var(--go), 0 0 18px var(--go)' : '0 3px 0 #4a1a10',
-          }}
-        >
-          <span className="absolute left-1 top-0.5 text-xs font-black text-white/80" aria-hidden="true">{GEEZ_ONES[order]}</span>
-          <span className="geez mt-1 flex items-center justify-center rounded-lg bg-[#fff6dc] font-black" style={{ width: carW * 0.62, height: carW * 0.5, fontSize: carW * 0.36, color: '#6d4501' }}>
-            {glyphOf(anchorKey(order))}
-          </span>
-          <span className="mt-1 flex min-h-[22px] flex-wrap justify-center gap-0.5 px-1">
-            {loaded.map((c) => (
-              <motion.span
-                key={c.id}
-                layoutId={reduce ? undefined : `cargo-${c.id}`}
-                className="geez flex items-center justify-center rounded-md bg-white font-black"
-                style={{ width: carW * 0.26, height: carW * 0.26, fontSize: carW * 0.18, color: '#2c4373' }}
-              >
-                {glyphOf(c.key)}
-              </motion.span>
-            ))}
-          </span>
+        {/* loaded cargo: small bricks snapped onto the wagon's studs */}
+        <span className="pointer-events-none absolute bottom-full left-0 right-0 flex flex-wrap-reverse items-end justify-center gap-[3px]" style={{ marginBottom: -3 }}>
+          {loaded.map((c) => (
+            <motion.span key={c.id} initial={reduce ? false : { y: -46, scale: 1.3, opacity: 0.3 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 14 }}>
+              <BrickTile testId="loaded" color={shade(color, 0.12)} studs={1} width={(carW - 10) / 2} height={30} depth={3} className="text-[20px]">{glyphOf(c.key)}</BrickTile>
+            </motion.span>
+          ))}
         </span>
+        <BrickTile color={color} studs={2} width={carW} height={bodyH} depth={6}
+          style={glow ? { boxShadow: `${brickShadow(color)}, 0 0 0 5px #fff59a, 0 0 22px 8px rgba(255,235,90,.95)` } : talking ? { boxShadow: `${brickShadow(color)}, 0 0 20px 6px rgba(255,255,255,.9)` } : undefined}>
+          <span className="flex flex-col items-center gap-1">
+            <span className="geez flex items-center justify-center rounded-lg font-black" style={{ width: carW * 0.7, height: effLevel === 1 ? carW * 0.7 : carW * 0.52, fontSize: effLevel === 1 ? carW * 0.46 : carW * 0.38, background: '#fff8e6', color: shade(color, -0.35), textShadow: 'none', boxShadow: 'inset 0 2px 5px rgba(0,0,0,.3)' }}>
+              {glyphOf(anchorKey(order))}
+            </span>
+            <Pips n={order} size={5} />
+          </span>
+        </BrickTile>
         {/* wheels */}
-        <span className="-mt-2 flex w-full justify-around" aria-hidden="true">
-          {[0, 1].map((i) => <span key={i} className="block rounded-full" style={{ width: carW * 0.22, height: carW * 0.22, background: '#2b2b2b', border: '3px solid #9aa0a6' }} />)}
+        <span className="absolute -bottom-0.5 left-0 right-0 flex justify-around px-2" aria-hidden="true">
+          {[0, 1].map((i) => (
+            <span key={i} className="block rounded-full" style={{ width: 22, height: 22, background: 'radial-gradient(circle at 50% 50%, #cfd5db 0 22%, #3a3f47 26%)', border: '2px solid #1f2329', boxShadow: '0 2px 0 rgba(0,0,0,.35)' }} />
+          ))}
         </span>
         {glow && !reduce && (
-          <motion.span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl" style={{ border: '3px solid var(--go)' }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.9, repeat: Infinity }} />
+          <motion.span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 rounded-lg" style={{ height: bodyH, border: '4px solid #fff59a' }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.9, repeat: Infinity }} />
         )}
       </motion.button>
     )
   }
 
+  const engW = carW + 10
+  const renderEngine = () => (
+    <span className="relative shrink-0" aria-hidden="true" data-testid="engine" style={{ width: engW, height: engW * (100 / 90) }}>
+      <svg viewBox="0 0 90 100" width={engW} height={engW * (100 / 90)} style={{ overflow: 'visible', filter: 'drop-shadow(0 6px 4px rgba(0,0,0,.25))' }}>
+        <Brick x={10} y={0} w={20} h={20} color="#3b3f47" studs={1} />
+        <Brick x={4} y={22} w={52} h={34} color="#e2453c" studs={2} />
+        <Brick x={56} y={8} w={32} h={48} color="#2f86d6" studs={2} />
+        <rect x={62} y={18} width={20} height={16} rx={4} fill="#fff8e6" stroke="#1d5a9a" strokeWidth={2} />
+        <Brick x={2} y={56} w={86} h={14} color="#f2c230" studs={0} />
+        <circle cx={6} cy={44} r={5} fill="#fff59a" stroke="#b9871c" strokeWidth={2} />
+        {[20, 46, 72].map((x, i) => (
+          <g key={i}><circle cx={x} cy={78} r={i === 2 ? 13 : 11} fill="#3a3f47" stroke="#1f2329" strokeWidth={2.5} /><circle cx={x} cy={78} r={4} fill="#cfd5db" /></g>
+        ))}
+      </svg>
+      {(departing || win) && !reduce && [0, 1, 2].map((i) => (
+        <motion.span key={i} className="absolute rounded-full" style={{ left: 14 * (engW / 90), top: -6, width: 18, height: 18, background: 'rgba(255,255,255,.9)' }}
+          initial={{ opacity: 0, y: 0, scale: 0.4 }} animate={{ opacity: [0, 0.9, 0], y: -70, x: -20 - i * 10, scale: 1.6 }} transition={{ duration: 1.2, delay: i * 0.3, repeat: 2 }} />
+      ))}
+    </span>
+  )
+
+  const rows = effLevel === 1 ? [cfg.orders] : [cfg.orders.slice(0, 3), cfg.orders.slice(3)]
+
   const summaryView = result && ctx && (
-    <RoundSummary
+    <BrickSummary
       testId="train-summary"
       summary={result.summary}
       unlockedNew={result.unlockedNew}
@@ -234,72 +291,81 @@ export default function VowelTrain({ soundOn, onBack, pool = [], extra = [] }) {
       onNext={() => { setLevel(effLevel + 1); setRound((r) => r + 1) }}
       onAgain={() => setRound((r) => r + 1)}
       onDone={onBack}
-      wide={wide}
     />
   )
 
+  const playing = ready && enough && ctx && !result
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-4 pb-6 pt-4">
-      <GameHeader title={t('trainTitle', 'Vowel Train')} onBack={onBack} />
-      <main className="flex flex-1 flex-col items-center justify-center gap-3">
-        {!ready ? null : !enough ? (
-          <NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore>
-        ) : !ctx ? null : result ? summaryView : (
-          <>
-            <LevelPills max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />
-            <StreakStars streak={ctx.streak} />
-            {/* picture instructions: pick up a letter, put it in the car that sounds the same */}
-            <p className="flex items-center gap-2 text-2xl" aria-hidden="true" data-testid="train-howto">
-              <span>👆</span><span>📦</span><span>➜</span><span>🚃</span><span>👂</span>
-            </p>
-            <ExampleSlot wide={wide} example={example} onTap={() => { say(example.id); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
-            <LayoutGroup>
-              {/* the train */}
-              <motion.div
-                className="flex w-full flex-wrap items-end justify-center gap-x-2 gap-y-3"
-                animate={departing && !reduce ? { x: '120vw' } : { x: 0 }}
-                transition={departing ? { duration: 1.3, ease: 'easeIn' } : { duration: 0 }}
-                data-testid="train"
-              >
-                <span className="flex items-end" aria-hidden="true" style={{ width: carW, height: carW }}>
-                  <WordPicture emoji="🚂" size={carW} />
-                </span>
-                {cfg.orders.map(car)}
-              </motion.div>
-              <div className="h-1.5 w-full rounded-full" style={{ background: 'repeating-linear-gradient(90deg,#7a5a3a 0 14px,transparent 14px 22px)' }} aria-hidden="true" />
-              {/* the platform */}
-              <div className="mt-2 flex flex-wrap justify-center gap-3" data-testid="platform" role="group" aria-label={t('trainCargo', 'Cargo')}>
-                {ctx.cargo.filter((c) => !c.done).map((c) => {
-                  const held = ctx.held === c.id
-                  return (
-                    <motion.button
-                      key={c.id}
-                      layoutId={reduce ? undefined : `cargo-${c.id}`}
-                      type="button"
-                      data-key={c.key}
-                      data-held={held || undefined}
-                      onClick={() => pick(c)}
-                      animate={held && !reduce ? { y: -10, scale: 1.08 } : { y: 0, scale: 1 }}
-                      aria-pressed={held}
-                      aria-label={ctx.earsOnly ? t('trainSoundCargo', 'Sound cargo. Tap to hear it and pick it up') : `${glyphOf(c.key)}. ${t('trainPick', 'Tap to pick it up')}`}
-                      className={`geez flex items-center justify-center rounded-2xl font-black ${FOCUS}`}
-                      style={{
-                        width: tileW, height: tileW, fontSize: tileW * 0.55,
-                        background: '#f3e2b3', color: '#6d4501',
-                        border: `3px solid ${held ? 'var(--sky)' : '#b8892f'}`,
-                        boxShadow: held ? '0 8px 16px rgba(0,0,0,.35)' : '0 3px 0 #8a6420',
-                        outlineColor: 'var(--sky)',
-                      }}
-                    >
-                      {ctx.earsOnly ? <Volume2 style={{ width: tileW * 0.5, height: tileW * 0.5 }} aria-hidden="true" /> : glyphOf(c.key)}
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </LayoutGroup>
-          </>
+    <BrickScreen testId="brick-train">
+      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
+        <WoodTopBar onBack={onBack} value={loadedCount} total={ctx ? ctx.cargo.length : 6} done={win} />
+        {win && <Confetti reduce={reduce} />}
+        {playing && (
+          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
+            {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+              : (win || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+                : ctx.held != null ? <GuideSign icon={Ear} text={t('trainBrickHeld', 'Now tap its wagon')} />
+                  : <GuideSign icon={Hand} text={t('trainBrickGuide', 'Find the matching wagon')} />}
+          </div>
         )}
-      </main>
-    </div>
+        {!ready ? null : !enough ? (
+          <div className="flex h-full items-center justify-center px-6 pt-16"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
+        ) : !ctx ? null : result ? summaryView : (
+          <div className="absolute inset-x-0 bottom-0 top-[124px] flex flex-col items-center px-2">
+            <BrickExample example={example} color={example ? colorOfCar(orderOf(example.id)) : undefined}
+              onTap={() => { say(example.id); later(afterVoice(() => sayWord(example.word), 300, 3000)) }} />
+            <motion.div className="flex w-full flex-1 flex-col items-center justify-around pb-8" data-testid="train"
+              animate={departing && !reduce ? { x: '125vw' } : { x: 0 }} transition={departing ? { duration: 1.4, ease: 'easeIn', delay: 0.5 } : { duration: 0 }}>
+              {rows.map((orders, ri) => (
+                <div key={ri} className="relative flex items-end justify-center gap-1.5 pt-9">
+                  <Baseplate className="-left-3 -right-3 h-[34px]" stud={22} style={{ position: 'absolute', bottom: -12, zIndex: 0 }} />
+                  <div className="relative z-10 flex items-end justify-center gap-1.5">
+                    {ri === 0 && renderEngine()}
+                    {orders.map((o) => renderWagon(o))}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        )}
+      </div>
+
+      {playing && (
+        <WoodTray>
+          <div className="absolute -top-4 right-4 z-20"><BrickStreak streak={ctx.streak} /></div>
+          <TrayWell className="flex min-h-[170px] flex-wrap content-center items-end justify-center gap-x-3 gap-y-5 px-2 pt-5" >
+            <div className="contents" data-testid="platform" role="group" aria-label={t('trainCargo', 'Cargo')}>
+              {ctx.cargo.filter((c) => !c.done).map((c) => {
+                const held = ctx.held === c.id
+                return (
+                  <motion.div key={c.id} data-key={c.key} data-held={held ? 'true' : undefined}
+                    animate={held && !reduce ? { y: -12, scale: 1.1 } : { y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 16 }}
+                    style={{ borderRadius: 10, boxShadow: held ? '0 0 0 4px #fff59a, 0 0 22px 8px rgba(255,235,90,.95)' : 'none' }}>
+                    <DragBrick testId="cargo" dataOrder={c.key} color="#f7efd9" reduce={reduce} w={58} h={64} fontSize={38} studSize={22}
+                      label={ctx.earsOnly ? t('trainSoundCargo', 'Sound cargo. Tap to hear it') : `${glyphOf(c.key)}. ${t('trainPick', 'Tap to pick it up')}`}
+                      onDrop={(pt) => dropOn(c, pt)}>
+                      {ctx.earsOnly
+                        ? <Volume2 style={{ width: 30, height: 30 }} color="#2f6fb8" strokeWidth={3} aria-hidden="true" />
+                        : <span style={{ color: '#2c4a7a', textShadow: '0 1px 0 #fff' }}>{glyphOf(c.key)}</span>}
+                    </DragBrick>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </TrayWell>
+        </WoodTray>
+      )}
+
+      {playing && (
+        <WoodBottomBar>
+          <BrickLevels max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />
+          <RoundButton onClick={() => setRound((r) => r + 1)} label={L.again} testId="again" color="#2f86d6">
+            <RotateCcw className="h-7 w-7" color="#fff" strokeWidth={3} aria-hidden="true" />
+          </RoundButton>
+        </WoodBottomBar>
+      )}
+    </BrickScreen>
   )
 }
+
+const brickShadow = (c) => `inset 0 3px 0 rgba(255,255,255,.4), inset 0 -3px 0 rgba(0,0,0,.12), 0 6px 0 ${shade(c, -0.45)}, 0 10px 10px rgba(0,0,0,.25)`
