@@ -1,48 +1,86 @@
 /* ============================================================================
-   FIDEL SKY SHOOTER (renderer)
+   LETTER CATCH (renderer) - Anbessa's brick basket
    ----------------------------------------------------------------------------
-   Letters rain from the night sky; Kokeb calls a letter (SOUND ONLY) and the
-   child SHOOTS the matching one as it falls - Anbessa fires a spark that flies
-   up and the letter bursts into a firework. Fill the meter to win.
+   Big glossy fidel bricks float down in the daylight; Kokeb calls a letter
+   (SOUND ONLY) and the child taps the matching brick - it zips into Anbessa's
+   basket and lands in the wooden bin. Fill the bin to win; a wrong tap costs
+   a heart.
 
    All logic is the pure seeded machine (letterCatchCore.js). This file is the
    shell: a per-frame rAF that feeds TICK dt into the machine, DOM falling
-   letters you tap to shoot, and a capped 2D-canvas firework layer.
+   bricks you tap, and a small flight layer (presentation only).
    ========================================================================== */
 import { useReducer, useEffect, useRef, useState, memo } from 'react'
-import { motion, AnimatePresence, useAnimationControls, useReducedMotion } from 'framer-motion'
-import { X, Volume2, Heart, Star } from 'lucide-react'
+import { motion, useAnimationControls, useReducedMotion } from 'framer-motion'
+import { Volume2, Heart, Ear, ThumbsUp, PartyPopper, RotateCcw, Home } from 'lucide-react'
 import AnbessaSvg from './components/AnbessaSvg'
-import KokebSvg from './components/KokebSvg'
-import JibbySvg from './components/JibbySvg'
 import { INDEXES } from './platform/ethiopic'
 import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { t } from './platform/i18n'
 import { initCatch, catchTransition, Phase, CatchEvent } from './letterCatchCore'
+import {
+  BrickScreen, WoodTopBar, GuideSign, useGuideFeedback, WoodTray, RoundButton, BrickTile, Confetti,
+  roundBtnCss, brickLabels, WOOD,
+} from './components/brickKit'
+import { BrickStreak, sceneStyle } from './components/brickRoundKit'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const reseed = (s) => ((s * 1664525 + 1013904223) >>> 0) | 1
-const SPARK = ['#ffd25a', '#ff8a3d', '#8affc1', '#7db8ff', '#ffffff']
+// glyph bricks skip gold (white fidel on gold is too faint)
+const TILE_COLORS = ['#e2453c', '#f08a24', '#4fb04a', '#2f86d6', '#7a4fc9', '#d94f9a']
+const colorOf = (id) => TILE_COLORS[id % TILE_COLORS.length]
 
 const reducer = (ctx, e) => (e.type === '__reset__' ? initCatch(ctx.level, reseed(ctx.seed), ctx.pool) : catchTransition(ctx, e).next)
 
+/** Anbessa holding his wicker basket; the bricks he has caught peek out. */
+const Lion = memo(function Lion({ mood, pose, filled = 0, size = 210 }) {
+  const peek = ['#e2453c', '#2f86d6', '#4fb04a', '#f08a24', '#7a4fc9']
+  return (
+    <div className="relative" style={{ width: size, height: size * 0.98 }} data-testid="catch-lion">
+      <AnbessaSvg size={size} mood={mood} pose={pose} title="" />
+      <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -6, width: size * 0.62, height: size * 0.27 }} data-testid="catch-basket">
+        <div className="absolute inset-x-3 flex justify-center gap-1" style={{ top: -14 }} aria-hidden="true">
+          {Array.from({ length: Math.min(filled, 5) }, (_, i) => (
+            <span key={i} className="block rounded-[5px]" style={{ width: size * 0.12, height: size * 0.11, background: peek[i % peek.length], boxShadow: 'inset 0 3px 0 rgba(255,255,255,.5), 0 2px 0 rgba(0,0,0,.35)' }} />
+          ))}
+        </div>
+        <div className="absolute inset-0 rounded-b-[26px] rounded-t-[10px]"
+          style={{ background: 'repeating-linear-gradient(90deg, #c98a45 0 9px, #a96b2c 9px 11px), linear-gradient(180deg,#d9a05c,#a96b2c)', backgroundBlendMode: 'multiply', border: '4px solid #6e3f14', boxShadow: 'inset 0 5px 0 rgba(255,255,255,.3), inset 0 -6px 8px rgba(0,0,0,.3), 0 6px 8px rgba(0,0,0,.3)' }} />
+        <div className="absolute inset-x-[-3px] top-0 h-[10px] rounded-full" style={{ background: 'linear-gradient(180deg,#e8b36e,#b9792f)', border: '3px solid #6e3f14' }} />
+      </div>
+    </div>
+  )
+})
+
+/** The wooden bin that fills up with the letters caught so far. */
+function Bin({ need, keys }) {
+  return (
+    <div className="mx-auto flex flex-wrap justify-center gap-1.5 rounded-2xl px-2 py-2" data-testid="catch-bin"
+      style={{ maxWidth: 330, background: 'rgba(90,52,20,.28)', boxShadow: 'inset 0 3px 6px rgba(0,0,0,.35)' }}>
+      {Array.from({ length: need }, (_, i) => keys[i] ? (
+        <motion.div key={i} data-testid="bin-brick" initial={{ scale: 0.3, y: -16 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 14 }}>
+          <BrickTile color={colorOf(i + 1)} studs={1} width={54} height={44} depth={4} className="text-[26px]">{formOf(keys[i])?.char}</BrickTile>
+        </motion.div>
+      ) : (
+        <span key={i} className="block rounded-lg" style={{ width: 54, height: 44, border: '3px dashed rgba(255,244,214,.55)', background: 'rgba(60,34,12,.3)' }} />
+      ))}
+    </div>
+  )
+}
+
 export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, pool, onExit }) {
   const [ctx, dispatch] = useReducer(reducer, { level, seed, pool }, (a) => initCatch(a.level, a.seed, a.pool))
-  const areaRef = useRef(null)
-  const canvasRef = useRef(null)
-  const partsRef = useRef([])
-  const rocketRef = useRef(null) // { x0,y0,tx,ty,born,combo } a spark in flight
   const targetForm = formOf(ctx.target)
   const revealTarget = !soundOn // sound-only; only show the letter when muted
-  // Game-feel layer (presentation only - never touches the pure machine):
-  // Anbessa recoils when firing, the field shakes on a miss, and a running
-  // combo makes the burst bigger and pops a "xN!".
   const reduce = useReducedMotion()
-  const anbessaCtl = useAnimationControls()
   const fieldCtl = useAnimationControls()
-  const [comboPop, setComboPop] = useState(null)
+  const basketCtl = useAnimationControls()
+  const [fb, flash] = useGuideFeedback()
+  const [flights, setFlights] = useState([]) // bricks in flight to the basket (or falling away)
+  const [bin, setBin] = useState([]) // keys caught so far
+  const L = brickLabels()
 
   /* per-frame game clock */
   useEffect(() => {
@@ -52,270 +90,120 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  /* firework layer: a spark rises from Anbessa to the shot letter, then bursts */
-  const disperse = (cx, cy, combo = 1) => {
-    const P = partsRef.current
-    // A bigger, more golden burst as the combo climbs - the reward for a streak.
-    const n = 60 + Math.min(combo, 8) * 12
-    const boost = 1 + Math.min(combo, 8) * 0.06
-    for (let i = 0; i < n; i++) {
-      const a = (Math.PI * 2 * i) / n + Math.random() * 0.25
-      const sp = 3.2 * boost * (0.35 + Math.random())
-      const gold = combo >= 3 && i % 2 === 0
-      P.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.012 + Math.random() * 0.009, color: gold ? '#ffd25a' : SPARK[i % SPARK.length], size: (1.8 + Math.random() * 2.2) * (combo >= 5 ? 1.25 : 1) })
-    }
-    if (P.length > 420) P.splice(0, P.length - 420)
-  }
-  const shootFireworkTo = (nx, ny, combo = 1) => {
-    const el = areaRef.current
-    if (!el) return
-    rocketRef.current = { x0: el.clientWidth * 0.5, y0: el.clientHeight * 0.9, tx: el.clientWidth * nx, ty: el.clientHeight * ny, born: performance.now(), combo }
-  }
-  useEffect(() => {
-    const c = canvasRef.current, el = areaRef.current
-    // Reduced motion: no fireworks at all, so don't run a second 60fps canvas
-    // rAF loop just to clear an empty canvas forever - skip it entirely.
-    if (!c || !el || reduce) return undefined
-    const size = () => { const dpr = Math.min(2, window.devicePixelRatio || 1); c.width = el.clientWidth * dpr; c.height = el.clientHeight * dpr; c.style.width = `${el.clientWidth}px`; c.style.height = `${el.clientHeight}px`; const g = c.getContext('2d'); if (g) g.setTransform(dpr, 0, 0, dpr, 0, 0) }
-    size(); window.addEventListener('resize', size)
-    let raf
-    const loop = () => {
-      const g = c.getContext('2d')
-      if (g) {
-        g.clearRect(0, 0, c.clientWidth, c.clientHeight)
-        g.globalCompositeOperation = 'lighter'
-        const rk = rocketRef.current
-        if (rk) {
-          const p = Math.min(1, (performance.now() - rk.born) / 240)
-          const x = rk.x0 + (rk.tx - rk.x0) * p
-          const y = rk.y0 + (rk.ty - rk.y0) * (p * (2 - p))
-          g.globalAlpha = 1; g.fillStyle = '#ffe9a6'
-          g.beginPath(); g.arc(x | 0, y | 0, 4, 0, 6.283); g.fill()
-          g.globalAlpha = 0.5; g.fillStyle = '#ff9a4d'
-          g.beginPath(); g.arc(x | 0, (y + 10) | 0, 2.6, 0, 6.283); g.fill()
-          if (p >= 1) { disperse(rk.tx, rk.ty, rk.combo || 1); rocketRef.current = null }
-        }
-        const P = partsRef.current
-        for (let i = P.length - 1; i >= 0; i--) {
-          const q = P[i]; q.x += q.vx; q.y += q.vy; q.vy += 0.05; q.vx *= 0.985; q.life -= q.decay
-          if (q.life <= 0) { P.splice(i, 1); continue }
-          g.globalAlpha = Math.max(0, q.life); g.fillStyle = q.color
-          g.beginPath(); g.arc(q.x | 0, q.y | 0, q.size, 0, 6.283); g.fill()
-        }
-        g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'
-      }
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', size) }
-  }, [reduce])
-
-  /* SHOOT a falling letter */
+  /* tap a falling brick */
   const onShoot = (item) => {
     if (ctx.phase !== Phase.PLAY) return
     const good = item.key === ctx.target
     recordAnswer(ctx.target, item.key, 'catch')
     dispatch({ type: CatchEvent.SHOOT, payload: { id: item.id } })
+    if (!reduce) setFlights((f) => [...f, { id: item.id, key: item.key, x: item.x, y: item.y, good }])
     if (good) {
+      setBin((b) => [...b, item.key])
       playEffect('good', soundOn); playForm(formOf(item.key), soundOn)
-      if (!reduce) {
-        shootFireworkTo(item.x, item.y, ctx.combo + 1)
-        anbessaCtl.start({ y: [0, -9, 0], scale: [1, 1.12, 1] }, { duration: 0.3, ease: 'easeOut' })
-      }
+      flash('ok', 1100)
+      if (!reduce) basketCtl.start({ scale: [1, 1.14, 1], y: [0, 6, 0] }, { duration: 0.35, delay: 0.3 })
     } else {
-      // A wrong shot re-plays the CALLED letter so the miss is a listen-again
-      // teaching moment, not just a buzzer - now with a little shake.
+      // A wrong tap re-plays the CALLED letter so the miss is a listen-again moment.
       playEffect('bad', soundOn); setTimeout(() => playForm(targetForm, soundOn), 420)
-      if (!reduce) {
-        fieldCtl.start({ x: [0, -9, 8, -6, 4, 0] }, { duration: 0.34 })
-        anbessaCtl.start({ y: [0, 5, 0] }, { duration: 0.24 })
-      }
+      flash('try', 1300)
+      if (!reduce) fieldCtl.start({ x: [0, -9, 8, -6, 4, 0] }, { duration: 0.34 })
     }
   }
 
   /* announce the called letter (sound only) */
   useEffect(() => { if (ctx.phase === Phase.PLAY) playForm(targetForm, soundOn) }, [ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (ctx.phase === Phase.WIN) { playEffect('win', soundOn); const id = setTimeout(() => onExit({ won: true }), 1700); return () => clearTimeout(id) } }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
-  /* streak celebration: pop "xN!" at each combo milestone */
-  useEffect(() => {
-    if (ctx.combo < 3) return undefined
-    setComboPop(ctx.combo)
-    const id = setTimeout(() => setComboPop(null), 850)
-    return () => clearTimeout(id)
-  }, [ctx.combo])
+  useEffect(() => { if (ctx.phase === Phase.WIN) { playEffect('win', soundOn); const id = setTimeout(() => onExit({ won: true }), reduce ? 900 : 2300); return () => clearTimeout(id) } }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const again = () => { setBin([]); setFlights([]); dispatch({ type: '__reset__' }) }
+  const lives = (
+    <div className="flex items-center gap-1 rounded-full px-2.5 py-1.5" data-testid="catch-lives" aria-label={t('lives', 'Lives')}
+      style={{ ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.3), 0 3px 0 #5a3414' }}>
+      {Array.from({ length: ctx.cfg.lives }, (_, i) => (
+        <Heart key={i} className="h-6 w-6" strokeWidth={2.5} color={i < ctx.lives ? '#fff' : 'rgba(255,255,255,.35)'} fill={i < ctx.lives ? '#e2453c' : 'rgba(0,0,0,.2)'} aria-hidden="true" />
+      ))}
+    </div>
+  )
 
   if (ctx.phase === Phase.LOSE) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center gap-5 px-6 text-center" style={{ background: 'linear-gradient(180deg,#12182a,#24362a)', color: '#fdf4e2' }}>
-        <JibbySvg size={120} />
-        <h2 className="text-2xl font-black">{t('catchLose', 'Out of hearts!')}</h2>
-        <p className="font-bold" style={{ color: '#c9bfe6' }}>{t('caughtCount', `Shot ${ctx.caught}`, { n: ctx.caught })}</p>
-        <div className="flex gap-3">
-          <button type="button" onClick={() => dispatch({ type: '__reset__' })} className={`chunk rounded-2xl px-5 py-3 font-black text-white ${FOCUS}`} style={{ background: '#ff8a3d', boxShadow: '0 4px 0 #b5561f', '--chunk-depth': '4px' }}>
-            {t('runAgain', 'Run again')}
-          </button>
-          <button type="button" onClick={() => onExit({ won: false })} className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.1)', border: '2px solid rgba(255,210,90,0.4)', color: '#fdf4e2' }}>
-            {t('home', 'Home')}
-          </button>
+      <BrickScreen testId="brick-catch-lose">
+        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-hidden" style={sceneStyle}>
+          <GuideSign icon={Heart} tone="try" text={t('catchLose', 'Out of hearts!')} />
+          <Lion mood="sad" pose="stand" filled={bin.length} size={230} />
+          <div className="flex gap-5">
+            <RoundButton testId="catch-again" onClick={again} label={t('runAgain', 'Run again')} color="#2f86d6" className="!h-[68px] !w-[68px]">
+              <RotateCcw className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
+            </RoundButton>
+            <RoundButton testId="catch-home" onClick={() => onExit({ won: false })} label={t('home', 'Home')} color="#4fb04a" className="!h-[68px] !w-[68px]">
+              <Home className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
+            </RoundButton>
+          </div>
         </div>
-      </div>
+      </BrickScreen>
     )
   }
 
+  const win = ctx.phase === Phase.WIN
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col" style={{ background: 'linear-gradient(180deg,#12182a 0%,#1a2340 46%,#24362a 100%)', color: '#fdf4e2' }}>
-      <header className="flex items-center gap-2 px-4 pt-3">
-        <button type="button" onClick={() => onExit({ won: false })} aria-label={t('quit', 'Quit')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: '#c9bfe6', outlineColor: '#ffd25a' }}>
-          <X className="h-6 w-6" />
-        </button>
-        <div className="flex items-center gap-1" aria-label={t('lives', 'Lives')}>
-          {Array.from({ length: ctx.cfg.lives }, (_, i) => (
-            <Heart key={i} className="h-5 w-5" style={{ color: i < ctx.lives ? '#ff5d73' : 'rgba(253,244,226,0.2)' }} fill={i < ctx.lives ? '#ff5d73' : 'none'} aria-hidden="true" />
-          ))}
+    <BrickScreen testId="brick-catch">
+      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
+        <WoodTopBar onBack={() => onExit({ won: false })} value={ctx.caught} total={ctx.need} done={win} />
+        {win && <Confetti reduce={reduce} count={40} />}
+        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
+          {win ? <GuideSign icon={PartyPopper} tone="ok" text={t('catchBrickWin', 'Great catching!')} />
+            : fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+              : fb === 'ok' ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+                : <GuideSign icon={Ear} text={t('catchBrickGuide', 'Listen, then catch it!')} />}
         </div>
-        <div className="flex flex-1 items-center justify-end gap-1.5" role="progressbar" aria-valuenow={ctx.caught} aria-valuemax={ctx.need}>
-          <Star className="h-4 w-4" style={{ color: '#ffd25a' }} fill="#ffd25a" aria-hidden="true" />
-          <span className="mono text-sm font-black" style={{ color: '#ffe6a6' }}>{ctx.caught}/{ctx.need}</span>
-          {ctx.combo >= 2 && <span className="ml-1 rounded-full px-2 py-0.5 text-xs font-black" style={{ background: '#ff8a3d', color: '#2a1204' }}>x{ctx.combo}</span>}
-        </div>
-      </header>
+        <div className="pointer-events-none absolute right-3 top-[128px] z-20"><BrickStreak streak={ctx.combo} /></div>
 
-      {/* sound-only prompt: tap the ear to hear the called letter again */}
-      <div className="flex items-center justify-center gap-2 px-6 pt-2 pb-1">
-        <KokebSvg size={34} />
-        <p className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('catchPrompt', 'Listen, then shoot it!')}</p>
-        <motion.button key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }} type="button" onClick={() => playForm(targetForm, soundOn)} aria-label={t('hearAgain', 'Hear it again')}
-          className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${FOCUS}`} style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,210,90,0.5)', outlineColor: '#ffd25a' }}>
-          {revealTarget && <span className="geez text-2xl font-black" style={{ color: '#fff' }}>{targetForm?.char}</span>}
-          <Volume2 className="h-6 w-6" style={{ color: '#ffd25a' }} aria-hidden="true" />
-          <span className="text-sm font-black" style={{ color: '#ffe6a6' }}>{t('lcListen', 'Listen')}</span>
-        </motion.button>
+        {/* play field: the bricks fall here */}
+        <motion.div animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} data-testid="catch-field"
+          className="absolute inset-x-0 top-[118px] bottom-[196px] z-[5]" style={{ touchAction: 'none' }}>
+          {ctx.items.map((it) => {
+            const f = formOf(it.key)
+            return (
+              <motion.button key={it.id} type="button" data-fam={it.key} data-testid="catch-brick" onClick={() => onShoot(it)} whileTap={{ scale: 0.88 }}
+                aria-label={`${t('lcShoot', 'Catch')} ${f?.char}`}
+                className={`absolute rounded-xl ${FOCUS}`}
+                style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', width: 84, height: 88, paddingTop: 12, background: 'transparent', border: 'none', outlineColor: '#fff59a' }}>
+                <BrickTile color={colorOf(it.id)} studs={2} width={84} height={76} depth={7} className="text-[46px]">{f?.char}</BrickTile>
+              </motion.button>
+            )
+          })}
+          {/* bricks flying into the basket (or dropping away after a wrong tap) */}
+          {flights.map((fl) => (
+            <motion.div key={fl.id} className="pointer-events-none absolute" aria-hidden="true"
+              style={{ left: `${fl.x * 100}%`, top: `${fl.y * 100}%`, translateX: '-50%', translateY: '-50%' }}
+              initial={{ scale: 1, opacity: 1 }}
+              animate={fl.good ? { left: '50%', top: '108%', scale: 0.55, opacity: 1 } : { top: `${fl.y * 100 + 22}%`, opacity: 0, rotate: 24 }}
+              transition={{ duration: fl.good ? 0.38 : 0.5, ease: 'easeIn' }}
+              onAnimationComplete={() => setFlights((f) => f.filter((x) => x.id !== fl.id))}>
+              <BrickTile color={fl.good ? colorOf(fl.id) : '#9aa3ad'} studs={2} width={84} height={76} depth={7} className="text-[46px]">{formOf(fl.key)?.char}</BrickTile>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Anbessa and his basket, on a baseplate */}
+        <div className="absolute inset-x-0 bottom-0 z-10 flex h-[196px] items-end justify-center">
+          <div className="absolute bottom-1 left-3">{lives}</div>
+          <motion.div animate={basketCtl} className="relative mb-3"><Lion mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={win ? 'cheer' : 'stand'} filled={bin.length} /></motion.div>
+          <div className="absolute bottom-2 right-4 flex items-center gap-2">
+            {revealTarget && (
+              <BrickTile color="#f7efd9" studs={1} width={54} height={50} depth={5} className="text-[34px]" style={{ color: '#2c4a7a', textShadow: '0 1px 0 #fff' }}>{targetForm?.char}</BrickTile>
+            )}
+            <motion.div key={ctx.target} initial={{ scale: 0.85 }} animate={{ scale: 1 }}>
+              <RoundButton testId="catch-hear" onClick={() => playForm(targetForm, soundOn)} label={t('hearAgain', 'Hear it again')} color="#2f86d6" className="!h-[68px] !w-[68px]">
+                <Volume2 className="h-9 w-9" color="#fff" strokeWidth={3} aria-hidden="true" />
+              </RoundButton>
+            </motion.div>
+          </div>
+        </div>
       </div>
 
-      {/* play field */}
-      <motion.div ref={areaRef} animate={fieldCtl} data-catch-target={ctx.target} data-catch-phase={ctx.phase} className="relative flex-1 overflow-hidden" style={{ touchAction: 'none' }}>
-        <SkyScape reduce={reduce} />
-        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
-        {/* falling letters - tap to shoot */}
-        {ctx.items.map((it) => {
-          const f = formOf(it.key)
-          return (
-            <motion.button key={it.id} type="button" data-fam={it.key} onClick={() => onShoot(it)} whileTap={{ scale: 0.86 }}
-              aria-label={`${t('lcShoot', 'Shoot')} ${f?.sound}`}
-              className={`geez absolute flex h-14 w-14 items-center justify-center rounded-2xl text-3xl font-black ${FOCUS}`}
-              style={{ left: `${it.x * 100}%`, top: `${it.y * 100}%`, transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle at 32% 28%, #f4e4c0, #e0c07a 62%, #c4a060)', border: '1.5px solid #b08958', color: '#5c4020', boxShadow: '0 2px 0 #8a6840, 0 3px 8px rgba(0,0,0,0.28)', outlineColor: '#ffd25a' }}>
-              {f?.char}
-            </motion.button>
-          )
-        })}
-        {/* shot feedback */}
-        <AnimatePresence>
-          {ctx.flash && (
-            <motion.div key={`${ctx.caught}-${ctx.lives}`} initial={{ scale: 0.6, opacity: 1 }} animate={{ scale: ctx.flash.type === 'good' ? 1.6 : 1, opacity: 0, x: ctx.flash.type === 'bad' ? [0, -6, 6, 0] : 0 }} transition={{ duration: 0.5 }}
-              className="pointer-events-none absolute" style={{ left: `${ctx.flash.x * 100}%`, top: `${ctx.flash.y * 100}%`, transform: 'translate(-50%,-50%)' }}>
-              <span className="geez text-4xl font-black" style={{ color: ctx.flash.type === 'good' ? '#8affc1' : '#ff5d73' }}>{formOf(ctx.flash.key)?.char}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {/* combo pop */}
-        <AnimatePresence>
-          {comboPop && (
-            <motion.div key={comboPop} initial={{ scale: 0.4, opacity: 0, y: 12 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.5 }} transition={{ type: 'spring', stiffness: 420, damping: 15 }}
-              className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 text-center">
-              <span className="text-4xl font-black" style={{ color: '#ffd25a', textShadow: '0 2px 16px rgba(255,150,60,0.85)' }}>x{comboPop}!</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        {/* Anbessa the launcher, at the bottom (recoils when firing) */}
-        <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2">
-          <motion.div animate={anbessaCtl}>
-            <AnbessaSvg size={84} mood={ctx.flash?.type === 'bad' ? 'sad' : 'happy'} pose={ctx.phase === Phase.WIN ? 'cheer' : 'stand'} />
-          </motion.div>
-        </div>
-        {/* win banner */}
-        <AnimatePresence>
-          {ctx.phase === Phase.WIN && (
-            <motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-              <AnbessaSvg size={130} mood="happy" pose="cheer" />
-              <h2 className="text-3xl font-black" style={{ color: '#ffd25a', textShadow: '0 2px 16px rgba(255,150,60,0.7)' }}>{t('catchWin', 'Great shooting!')}</h2>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      <p className="px-4 pb-5 pt-2 text-center text-sm font-black" style={{ color: '#c9bfe6' }}>
-        {t('lcTapHint', 'Tap the letter you hear')}
-      </p>
-    </div>
+      <WoodTray style={{ paddingTop: 22, paddingBottom: 14 }}>
+        <Bin need={ctx.need} keys={bin} />
+      </WoodTray>
+    </BrickScreen>
   )
 }
-
-/* A living night sky (no game logic): a glowing moon, lapis and gold haze,
-   layered twinkling stars, two slow shooting stars, and a highland ridge
-   that grounds Anbessa. Deterministic positions (stable across renders);
-   all motion is dropped when the player prefers reduced motion. */
-const SKY_CSS = `
-@keyframes lc-twk { 0%,100% { opacity: var(--o); } 50% { opacity: calc(var(--o) * 0.3); } }
-@keyframes lc-shoot {
-  0% { transform: translate(-10%, -10%) rotate(18deg) scaleX(0.2); opacity: 0; }
-  6% { opacity: 1; }
-  16% { transform: translate(120%, 120%) rotate(18deg) scaleX(1); opacity: 0; }
-  100% { opacity: 0; }
-}`
-// Star positions are a pure function of the index (no RNG), so they are built
-// once at module load - never per render. SkyScape lives inside LetterCatch's
-// ~60fps TICK re-render, so rebuilding this each frame would be pure waste on
-// the low-end devices this game targets.
-const SKY_STARS = Array.from({ length: 66 }, (_, i) => ({
-  left: `${(i * 71 + 7) % 100}%`, top: `${(i * 37 + 3) % 82}%`,
-  s: 1 + (i % 4) * 0.9, o: 0.32 + (i % 5) * 0.13, dur: 2.2 + (i % 5) * 0.6, delay: (i % 7) * 0.5,
-  fill: i % 8 === 0 ? '#ffd34d' : i % 8 === 3 ? '#9eb6e6' : '#fff',
-}))
-// memo: the sky only depends on `reduce`, so it stays out of the per-frame
-// TICK re-render loop entirely.
-const SkyScape = memo(function SkyScape({ reduce = false }) {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <style>{SKY_CSS}</style>
-      {/* nebula haze — lapis and a warm gold wash, manuscript night */}
-      <div className="absolute" style={{ left: '-12%', top: '4%', width: '58%', height: '46%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(63,99,160,0.34), rgba(63,99,160,0) 68%)', filter: 'blur(8px)' }} />
-      <div className="absolute" style={{ right: '-8%', top: '8%', width: '46%', height: '36%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(226,192,105,0.16), rgba(226,192,105,0) 70%)', filter: 'blur(10px)' }} />
-      {/* moon */}
-      <div className="absolute" style={{ right: '11%', top: '7%', width: 58, height: 58, borderRadius: '50%', background: 'radial-gradient(circle at 36% 32%, #fff7e0, #f3d998 62%, #e6c273)', boxShadow: '0 0 34px 10px rgba(255,230,160,0.4), 0 0 90px 30px rgba(255,220,150,0.16)' }}>
-        <span className="absolute rounded-full" style={{ left: 14, top: 12, width: 10, height: 10, background: 'rgba(198,160,90,0.35)' }} />
-        <span className="absolute rounded-full" style={{ left: 30, top: 30, width: 14, height: 14, background: 'rgba(198,160,90,0.28)' }} />
-        <span className="absolute rounded-full" style={{ left: 20, top: 38, width: 6, height: 6, background: 'rgba(198,160,90,0.3)' }} />
-      </div>
-      {/* stars */}
-      {SKY_STARS.map((st, i) => (
-        <span key={i} className="absolute rounded-full" style={{
-          left: st.left, top: st.top, width: st.s, height: st.s, background: st.fill, '--o': st.o, opacity: st.o,
-          boxShadow: st.s > 2.6 ? '0 0 5px 1px rgba(255,255,255,0.7)' : 'none',
-          animation: reduce ? 'none' : `lc-twk ${st.dur}s ease-in-out ${st.delay}s infinite`,
-        }} />
-      ))}
-      {/* shooting stars */}
-      {!reduce && [0, 1].map((k) => (
-        <span key={k} className="absolute" style={{
-          left: `${18 + k * 34}%`, top: `${6 + k * 10}%`, width: 90, height: 2, borderRadius: 2,
-          background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 90%, #fff 100%)',
-          animation: `lc-shoot ${7 + k * 4}s ease-in ${2 + k * 5}s infinite`,
-        }} />
-      ))}
-      {/* highland night ridge under the moon; Anbessa stands in front of it */}
-      <svg className="absolute inset-x-0 bottom-0 h-[32%] w-full" viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-        <path d="M0 52 L28 30 L58 46 L96 18 L138 42 L176 16 L220 40 L264 20 L310 44 L352 22 L400 38 L400 120 L0 120 Z" fill="#1a2744" />
-        <path d="M96 18 H138 M176 16 H220 M264 20 H310" stroke="#efe4d4" strokeWidth="1.2" opacity="0.28" />
-        <path d="M0 72 L46 50 L88 68 L136 46 L186 66 L240 48 L296 68 L348 50 L400 64 L400 120 L0 120 Z" fill="#1c3324" />
-        <path d="M0 96 C70 82 130 104 210 88 C280 76 340 98 400 84 L400 120 L0 120 Z" fill="#16321f" />
-        <path d="M304 70 L316 54 L328 70 Z" fill="#8a3830" />
-        <rect x="310" y="70" width="10" height="9" fill="#3a2a22" />
-        <g stroke="#2f6a32" strokeWidth="1.6" fill="none" strokeLinecap="round" opacity="0.8">
-          <path d="M18 116 q2 -12 0 -22" />
-          <path d="M28 118 q3 -10 0 -18" />
-          <path d="M372 116 q-2 -10 1 -18" />
-        </g>
-      </svg>
-    </div>
-  )
-})
