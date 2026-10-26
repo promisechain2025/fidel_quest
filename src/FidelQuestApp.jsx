@@ -46,8 +46,8 @@ import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } f
 import { StoneLessonForNode } from './LearnLetters'
 import { Harag, JewelRim } from './components/Manuscript'
 import BrickQuizPlay from './components/BrickQuizPlay'
-import { BrickResultScreen, BrickCta, BrickStat, RESULT_MUTED } from './components/BrickResult'
-import { Confetti as BrickConfetti } from './components/brickKit'
+import { BrickResultScreen, BrickCta, BrickStat, BrickBanner, BrickStage, RESULT_MUTED } from './components/BrickResult'
+import { Confetti as BrickConfetti, BrickTile, BRICK_COLORS } from './components/brickKit'
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
@@ -4093,7 +4093,7 @@ function FixItGate({ missedCount, onPractice, onHome }) {
   return (
     <BrickResultScreen
       testId="fixit-gate"
-      above={<Hero size={110} />}
+      above={<BrickStage color="#f08a24"><Hero size={110} /></BrickStage>}
       actions={(
         <>
           <BrickCta onClick={onPractice}>{t('fixCta', 'Practice the tricky ones')}</BrickCta>
@@ -4101,10 +4101,15 @@ function FixItGate({ missedCount, onPractice, onHome }) {
         </>
       )}
     >
-      <h2 className="text-3xl font-black">{t('fixTitle', 'Almost!')}</h2>
+      <BrickBanner color="#f08a24">{t('fixTitle', 'Almost!')}</BrickBanner>
       <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixBody', '{n} letters want a little more practice. Master them, then try again!', { n: missedCount })}
       </p>
+      <div className="mt-3 flex flex-wrap items-end justify-center gap-x-1.5 gap-y-3" aria-hidden="true" data-testid="fixit-bricks">
+        {Array.from({ length: Math.min(missedCount, 8) }, (_, i) => (
+          <BrickTile key={i} color={BRICK_COLORS[i % BRICK_COLORS.length]} width={30} height={24} depth={4} />
+        ))}
+      </div>
     </BrickResultScreen>
   )
 }
@@ -4113,7 +4118,8 @@ function FixItReady({ onRetry, onHome }) {
   return (
     <BrickResultScreen
       testId="fixit-ready"
-      above={<Hero size={110} />}
+      rays
+      above={<BrickStage><Hero size={110} pose="cheer" /></BrickStage>}
       actions={(
         <>
           <BrickCta onClick={onRetry}>{t('fixRetry', 'Try the quiz again')}</BrickCta>
@@ -4123,7 +4129,7 @@ function FixItReady({ onRetry, onHome }) {
         </>
       )}
     >
-      <h2 className="text-3xl font-black">{t('fixReady', 'Nice practice!')}</h2>
+      <BrickBanner color="#43b02e">{t('fixReady', 'Nice practice!')}</BrickBanner>
       <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixReadyBody', 'You are ready. Show those letters who is the boss!')}
       </p>
@@ -4135,10 +4141,10 @@ function FixItCap({ onHome }) {
   return (
     <BrickResultScreen
       testId="fixit-cap"
-      above={<Hero size={110} />}
+      above={<BrickStage color="#2f86d6"><Hero size={110} /></BrickStage>}
       actions={<BrickCta onClick={onHome}>{t('home', 'Home')}</BrickCta>}
     >
-      <h2 className="text-3xl font-black">{t('fixCapTitle', 'Great practice today!')}</h2>
+      <BrickBanner color="#2f86d6" className="!text-[22px]">{t('fixCapTitle', 'Great practice today!')}</BrickBanner>
       <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixCapBody', 'Those letters are getting stronger. We will warm up with them next time and beat this quiz!')}
       </p>
@@ -4210,18 +4216,21 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
   return (
     <BrickResultScreen
       testId="level-complete"
+      rays
       above={(
         <>
           <BrickConfetti count={30} reduce={false} />
           <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
-            <motion.span
-              className="flex items-end gap-3"
-              animate={{ y: [0, -10, 0] }}
-              transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
-            >
-              <ZebraSvg size={72} />
-              <Hero size={110} pose="cheer" />
-            </motion.span>
+            <BrickStage width={230}>
+              <motion.span
+                className="flex items-end gap-3"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
+              >
+                <ZebraSvg size={72} />
+                <Hero size={110} pose="cheer" />
+              </motion.span>
+            </BrickStage>
           </motion.div>
         </>
       )}
@@ -4239,9 +4248,11 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
         </>
       )}
     >
-      <motion.h1 className="text-[28px] font-black uppercase leading-tight tracking-wide" style={{ color: '#2e7a1e' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        {stars === null ? t('practiceComplete', 'Practice complete!') : t('levelComplete', 'Level complete!')}
-      </motion.h1>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <BrickBanner as="h1" color="#43b02e" className="!text-[24px] uppercase tracking-wide">
+          {stars === null ? t('practiceComplete', 'Practice complete!') : t('levelComplete', 'Level complete!')}
+        </BrickBanner>
+      </motion.div>
       <p className="mt-0.5 font-bold" style={{ color: RESULT_MUTED }}>
         {t(`${level.id}.title`, level.title)}
       </p>
@@ -4251,26 +4262,27 @@ function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onRepla
           {t('practicePraise', 'Those tricky letters are getting stronger. Kokeb is proud of you!')}
         </p>
       ) : (
-      <div className="mt-3 flex items-end justify-center gap-2" aria-label={`${stars} of 3 stars earned`}>
-        {[0, 1, 2].map((i) => (
-          <motion.div key={i} initial={{ scale: 0, rotate: -30 }} animate={{ scale: i < stars ? 1 : 0.72, rotate: 0 }} transition={{ delay: 0.35 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
-            <Star
-              className={i === 1 ? 'h-16 w-16' : 'h-12 w-12'}
-              style={i < stars ? { color: '#e0971c', fill: '#ffd23a', filter: 'drop-shadow(0 4px 0 rgba(90,52,20,0.25))' } : { color: '#c9a36a', fill: 'rgba(138,84,38,.12)' }}
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-          </motion.div>
-        ))}
+      <div className="mt-5 flex items-end justify-center gap-2" aria-label={`${stars} of 3 stars earned`}>
+        {[0, 1, 2].map((i) => {
+          const on = i < stars
+          const color = on ? '#f2b21c' : '#b9a27c'
+          return (
+            <motion.div key={i} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.35 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
+              <BrickTile color={color} studs={2} width={i === 1 ? 84 : 72} height={i === 1 ? 76 : 60} depth={6} className="!rounded-xl">
+                <Star className={i === 1 ? 'h-12 w-12' : 'h-10 w-10'} style={on ? { color: '#fff7c9', fill: '#fff1a0', filter: 'drop-shadow(0 3px 0 rgba(120,70,0,.5))' } : { color: '#8a7650', fill: 'rgba(90,60,20,.25)' }} strokeWidth={1.5} aria-hidden="true" />
+              </BrickTile>
+            </motion.div>
+          )
+        })}
       </div>
       )}
 
       <motion.div className="mt-4 grid w-full grid-cols-2 gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
-        <BrickStat label={t('firstTry', 'First-try')}>
-          <p className="mono text-2xl font-black" style={{ color: '#2e7a1e' }}>{accuracy}%</p>
+        <BrickStat label={t('firstTry', 'First-try')} color="#2f86d6">
+          <p className="mono text-2xl font-black">{accuracy}%</p>
         </BrickStat>
-        <BrickStat label={t('bestStreak', 'Best streak')}>
-          <p className="mono flex items-center justify-center gap-1 text-2xl font-black" style={{ color: '#c4621c' }}>
+        <BrickStat label={t('bestStreak', 'Best streak')} color="#e8731a">
+          <p className="mono flex items-center justify-center gap-1 text-2xl font-black">
             <Flame className="h-6 w-6" fill="currentColor" aria-hidden="true" />
             {bestStreak}
           </p>
