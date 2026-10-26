@@ -1,4 +1,4 @@
-/* Brick pictures by word: the toy-brick art made for Brick Words, reusable by
+/* Brick pictures by word: the toy-brick art made for Word Bricks, reusable by
    any screen that shows a word (Word Market stall, quiz cards ...). */
 import { BRICK_WORDS } from './brickWordsCore'
 import { MARKET_PICS } from './brickPicturesMarket'

@@ -210,6 +210,9 @@ describe('app shell', () => {
     // tracing/chart tools moved into Explorer.
     expect(screen.queryByText('Classic')).toBeNull()
     expect(screen.getByText('First Words')).toBeInTheDocument()
+    // The brick-building word game is named "Word Bricks" (i18n, English fallback), not a sample word.
+    expect(screen.getByText('Word Bricks')).toBeInTheDocument()
+    expect(screen.queryByText('ላም')).toBeNull()
   })
 })
 

@@ -1,4 +1,4 @@
-/* BRICK WORDS (sample) - word list + round helpers.
+/* WORD BRICKS (sample) - word list + round helpers.
    Reuses the Word Workshop core (wordToKeys / initWorkshop / workshopTransition)
    so the spelling rules stay in ONE place; this file only adds the words that
    have a 3D toy-brick picture and a tray that never offers a stranger letter. */
