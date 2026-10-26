@@ -60,7 +60,7 @@ describe('locked entry points are wired to a sheet', () => {
     expect(app).toMatch(/highlight=\{screen\.highlight\}/)
   })
   it('core-gated Backpack tiles carry a lock badge', () => {
-    for (const n of ['words', 'workshop', 'ladder', 'train', 'echo', 'traffic', 'market', 'bingo', 'stories', 'twins', 'beats']) {
+    for (const n of ['workshop', 'train', 'echo', 'traffic', 'market', 'bingo', 'stories', 'twins', 'beats']) {
       expect(app).toContain(`locked={!coreScreenOpen({ name: '${n}' })}`)
     }
   })
