@@ -209,7 +209,11 @@ describe('app shell', () => {
     // Classic was replaced by Kebero Beats (gated until 2 families) and its
     // tracing/chart tools moved into Explorer.
     expect(screen.queryByText('Classic')).toBeNull()
-    expect(screen.getByText('First Words')).toBeInTheDocument()
+    // Retired in favour of Brick Words (ላም) and Stack the tower (፯).
+    expect(screen.queryByText('First Words')).toBeNull()
+    expect(screen.queryByText('Order')).toBeNull()
+    expect(screen.getByText('ላም')).toBeInTheDocument()
+    expect(screen.getByText('፯')).toBeInTheDocument()
   })
 })
 
