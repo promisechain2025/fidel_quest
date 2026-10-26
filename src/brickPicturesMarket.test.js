@@ -11,7 +11,7 @@ describe('Word Market brick pictures', () => {
       expect(fs.existsSync(path.resolve(__dirname, '../public/img/games/bw', `${pic}.webp`)), pic).toBe(true)
     }
   })
-  it('does not overlap or change the Brick Words pictures', () => {
+  it('does not overlap or change the Word Bricks pictures', () => {
     for (const w of BRICK_WORDS) {
       expect(MARKET_PICS[w.geez]).toBeUndefined()
       expect(brickPicOf(w.geez)).toBe(w.pic)

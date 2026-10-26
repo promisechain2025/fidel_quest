@@ -28,7 +28,7 @@ const tap = (el) => { fireEvent.pointerDown(el, { clientX: 0, clientY: 0, pointe
 
 beforeEach(() => { played.length = 0; effects.length = 0; clips.length = 0; vi.useFakeTimers() })
 
-describe('BrickWords sample', () => {
+describe('Word Bricks sample', () => {
   it('shows the picture, one slot per letter, says the word, with i18n guide text and no transliteration', () => {
     render(<BrickWords soundOn onBack={() => {}} seed={SEED} />)
     act(() => { vi.advanceTimersByTime(500) })

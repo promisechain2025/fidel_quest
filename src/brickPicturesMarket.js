@@ -1,4 +1,4 @@
-/* Brick pictures for the Word Market stock beyond the 28 Brick Words.
+/* Brick pictures for the Word Market stock beyond the 28 Word Bricks.
    Same toy-brick art style; each picture is a 480px cutout in public/img/games/bw/m-<id>.webp. */
 export const MARKET_PICS = {
   'ልጅ': 'm-lij',

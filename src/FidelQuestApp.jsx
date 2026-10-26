@@ -3348,8 +3348,8 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
             {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
             {/* Block Church SAMPLE (ለ only). Ge'ez-only title: no English in kid UI. */}
             {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title="ለሉሊ" onClick={onBlocks} />}
-            {/* Brick Words SAMPLE (replaces Build / First Words). Fidel-only title. */}
-            {onBrickWords && <BackpackTile icon={<ToyBrick className="h-6 w-6" />} tone="#d94f2a" title="ላም" onClick={onBrickWords} />}
+            {/* Word Bricks SAMPLE (replaces Build / First Words). Titled like the other game tiles: i18n key, English fallback. */}
+            {onBrickWords && <BackpackTile icon={<ToyBrick className="h-6 w-6" />} tone="#d94f2a" title={t('wordBricksShort', 'Word Bricks')} onClick={onBrickWords} />}
             {/* Stack the tower SAMPLE (replaces Order). Numeral title, no English. */}
             {onTower && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="#2f86d6" title="፯" onClick={onTower} />}
             {ready('traffic') && <BackpackTile art="traffic" locked={!coreScreenOpen({ name: 'traffic' })} title={t('trShort', 'Traffic')} onClick={onTraffic} />}

@@ -1,5 +1,5 @@
 /* ============================================================================
-   BRICK WORDS (sample) - replaces Word Build, Find the letter, First Words
+   WORD BRICKS (sample) - replaces Word Build, Find the letter, First Words
    ----------------------------------------------------------------------------
    A 3D toy-brick picture sits on a wooden board. The word is spoken (existing
    recording). Under it, a studded baseplate has one slot per letter; the child
