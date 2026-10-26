@@ -65,4 +65,26 @@ describe('BrickWords sample', () => {
     expect(clips).toContain(`words/${wordAt(SEED, 1).latin}`)
     for (const w of BRICK_WORDS) expect(wordToKeys(w.geez).length).toBe(Array.from(w.geez).length)
   })
+
+  it('shrinks the picture board to the room above the baseplate so the baseplate never covers it', () => {
+    const rect = (top, height) => ({ top, height, bottom: top + height, left: 0, right: 390, width: 390, x: 0, y: top })
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function () {
+      if (this.firstElementChild?.dataset?.testid === 'baseplate') return rect(300, 150) // baseplate wrapper: starts at y=300
+      if (this.querySelector(':scope > [data-testid="picture-fit"]')) return rect(0, 700) // the scene
+      return rect(0, 0)
+    })
+    try {
+      render(<BrickWords soundOn onBack={() => {}} seed={SEED} />)
+      const fit = screen.getByTestId('picture-fit')
+      // room = 300 - 132 (board top) - 22 (badge + air) = 146 of 262 => ~0.56
+      expect(Number(fit.dataset.scale)).toBeGreaterThan(0.5)
+      expect(Number(fit.dataset.scale)).toBeLessThan(0.6)
+      expect(fit.style.transform).toContain('scale(')
+    } finally { spy.mockRestore() }
+  })
+
+  it('keeps the picture board at full size when there is room (no layout in jsdom)', () => {
+    render(<BrickWords soundOn onBack={() => {}} seed={SEED} />)
+    expect(screen.getByTestId('picture-fit').dataset.scale).toBe('1')
+  })
 })
