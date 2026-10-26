@@ -112,9 +112,9 @@ export function useGuideFeedback() {
 }
 
 /** Dot pips for 1..n: language-free numbers a child can count. */
-export function Pips({ n, color = '#fff', size = 5, className = '' }) {
+export function Pips({ n, color = '#fff', size = 5, perRow = 4, className = '' }) {
   return (
-    <span data-testid="pips" data-n={n} aria-hidden="true" className={`flex flex-wrap items-center justify-center gap-[2px] ${className}`} style={{ width: (size + 2) * 4 }}>
+    <span data-testid="pips" data-n={n} aria-hidden="true" className={`flex flex-wrap items-center justify-center gap-[2px] ${className}`} style={{ width: (size + 2) * perRow }}>
       {Array.from({ length: n }, (_, i) => <span key={i} className="rounded-full" style={{ width: size, height: size, background: color, boxShadow: '0 1px 0 rgba(0,0,0,.35)' }} />)}
     </span>
   )
