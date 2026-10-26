@@ -36,6 +36,7 @@ import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
+import SpeedControl from './components/SpeedControl'
 import AnbessaSvg from './components/AnbessaSvg'
 import KokebSvg from './components/KokebSvg'
 import NameInFidel from './components/NameInFidel'
@@ -3663,7 +3664,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
 
       {/* Autoplay: chant the chosen vowel across every family (say-all) */}
       {!family && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
@@ -3672,15 +3673,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
             <Music className="h-5 w-5" aria-hidden="true" />
             {t('masterShort', 'Chant')}
           </Chunky>
-          <div className="flex gap-1">
-            {['slow', 'normal', 'fast'].map((p) => (
-              <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
-                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
-                {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
-              </button>
-            ))}
-          </div>
+          <SpeedControl value={pace} onChange={setPace} testId="explore-pace" />
         </div>
       )}
 
