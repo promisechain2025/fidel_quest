@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check } from 'lucide-react'
+import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check, Ear, Hand } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { meetPictureForFamily } from './data/schoolPathGr1'
 import { meetHeroSrc } from './data/meetHeroes'
@@ -43,7 +43,10 @@ import AnbessaSvg from './components/AnbessaSvg'
 import JibbySvg from './components/JibbySvg'
 import KokebSvg from './components/KokebSvg'
 import FidelTracePad from './components/FidelTracePad'
-import { BubbleSky, RiverCrossing, FeedMeadow } from './components/StepScenery'
+import { BubbleSky, RiverCrossing } from './components/StepScenery'
+import { BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, RoundButton, GuideSign, Baseplate, BrickTile, Confetti, BRICK_COLORS } from './components/brickKit'
+import { sceneStyle } from './components/brickRoundKit'
+import { brickCss, studCss, shade } from './components/blockArt'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -458,7 +461,7 @@ function BubbleMeet({ ctx, onTouch }) {
             touchAction: 'none',
             outlineColor: 'var(--sky)',
           }}
-          aria-label={`Pop the bubble to hear ${form.sound}`}
+          aria-label={t('learnPopBubble', 'Pop the bubble')}
         >
           {/* counter-rotate the glyph a touch so it stays readable while the
               bubble rocks, then give it its own gentle wiggle (the dance) */}
@@ -473,14 +476,10 @@ function BubbleMeet({ ctx, onTouch }) {
         {hero && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 3px rgba(196,176,138,0.75)' }} />}
         {popAt && <BubblePop left={popAt.left} top={popAt.top} color={c} />}
       </div>
-      <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>
-        {form.sound}
-      </p>
       {ctx.idx === 0 && ctx.meetWord?.geez && (
         <p className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
           {!hero && ctx.meetWord.picture ? <span className="text-2xl" aria-hidden="true">{ctx.meetWord.picture}</span> : null}
           <span className="geez text-xl font-black">{ctx.meetWord.geez}</span>
-          {ctx.meetWord.meaning ? <span style={{ color: 'var(--muted)' }}>{ctx.meetWord.meaning}</span> : null}
         </p>
       )}
       {/* Anbessa's shelf of collected letters */}
@@ -736,7 +735,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
               type="button"
               onClick={() => pick(k)}
               disabled={done}
-              aria-label={`Letter ${form?.sound}`}
+              aria-label={form?.char}
               animate={
                 wrong
                   ? { x: [0, -7, 7, -5, 5, 0], transition: { duration: 0.42 } }
@@ -771,8 +770,9 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
     feed him. `mouthRef` is the drop target; a drop within it feeds `k`.
     `onFeed(k, rect)` reports the card's screen rect so the parent can fly the
     letter from here into the mouth. */
-function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing }) {
+function LetterCard({ k, color, hinted, delay, mouthRef, onFeed, onDragActive, refusing }) {
   const form = formOf(k)
+  const tone = color
   const elRef = useRef(null)
   const feed = () => onFeed(k, elRef.current?.getBoundingClientRect())
   const overMouth = (event, info) => {
@@ -792,7 +792,7 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
       data-form={k}
       role="button"
       tabIndex={0}
-      aria-label={`Letter ${form?.sound} — drag to Anbessa or tap`}
+      aria-label={form?.char}
       drag
       dragSnapToOrigin
       dragElastic={0.5}
@@ -820,16 +820,16 @@ function LetterCard({ k, hinted, delay, mouthRef, onFeed, onDragActive, refusing
       // Quick lift-off: the flying letter (in CookieField) carries the char
       // into the mouth, so the card itself just clears out fast.
       exit={{ scale: 0.2, opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
-      className={`geez relative flex h-16 w-16 cursor-grab touch-none select-none items-center justify-center rounded-2xl border-4 text-3xl font-black active:cursor-grabbing ${FOCUS}`}
+      className={`geez relative flex h-[64px] w-[64px] cursor-grab touch-none select-none items-center justify-center rounded-xl text-[34px] font-black text-white active:cursor-grabbing ${FOCUS}`}
       style={{
-        // Wrong pick: the card goes red so the child sees which letter missed.
-        background: refusing ? 'radial-gradient(circle at 32% 26%, #ff9a8a, #e23b2c)' : 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
-        borderColor: refusing ? '#b21e12' : hinted ? 'var(--accent)' : '#c68a44',
-        color: refusing ? '#fff' : '#5b3a12',
-        boxShadow: refusing ? '0 4px 0 #8f160c, 0 0 0 4px rgba(226,59,44,0.30)' : '0 4px 0 #a06a30',
+        // Wrong pick: the brick shakes and gets a white-and-red ring so the child sees which letter missed.
+        ...brickCss(tone, 6),
+        boxShadow: refusing ? `${brickCss(tone, 6).boxShadow}, 0 0 0 4px #fff, 0 0 0 8px #d33a2c` : hinted ? `${brickCss(tone, 6).boxShadow}, 0 0 0 4px #fff, 0 0 20px 8px rgba(255,226,122,.95)` : brickCss(tone, 6).boxShadow,
+        textShadow: `0 2px 0 ${shade(tone, -0.4)}`,
         outlineColor: 'var(--sky)',
       }}
     >
+      <span className="absolute" aria-hidden="true" style={{ top: -9, left: '50%', transform: 'translateX(-50%)', ...studCss(tone, 22) }} />
       {form?.char}
     </motion.div>
   )
@@ -895,7 +895,6 @@ function KokebSpeaker({ pulse }) {
 
 function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const isShuffle = ctx.phase === LearnPhase.SHUFFLE
-  const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
   const trayRef = useRef(null)
   const mouthRef = useRef(null)
   const pendingRef = useRef({}) // key -> tray-relative point where it was fed
@@ -943,42 +942,38 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   }, [ctx.eaten])
 
   return (
-    <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-4">
-      <p className="text-lg font-extrabold">
-        {isShuffle ? t('catchHint', 'Feed Anbessa before Jibby grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}{' '}
-        <span className="mono" style={{ color: 'var(--muted)' }}>
-          {ctx.round + 1}/{roundLimit}
-        </span>
-      </p>
-      <div ref={trayRef} className="relative w-full overflow-hidden rounded-3xl p-4" style={{ background: 'transparent', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.18)' }}>
-        <FeedMeadow />
-        {/* Kokeb sits in the sky of the lawn: the companion who called the letter. */}
-        <div className="relative z-20 mb-2 flex items-start">
+    <motion.div key={`${ctx.phase}-field`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center" data-testid="brick-feed-field" role="group" aria-label={isShuffle ? t('catchHint', 'Feed Anbessa before Jibby grabs it!') : t('feedHint', 'Drag the letter Kokeb says to Anbessa')}>
+      <div ref={trayRef} className="relative flex h-full w-full flex-col items-center gap-2">
+        {/* Kokeb calls the letter; Jibby creeps in on the other side (SHUFFLE). */}
+        <div className="relative z-20 flex w-full items-end justify-between px-1">
           <KokebSpeaker pulse={speakPulse} />
         </div>
-        <div className="relative z-10 grid grid-cols-4 place-items-center gap-3 sm:gap-4">
-          <AnimatePresence>
-            {visible.map((k, i) => (
-              <LetterCard
-                key={`${ctx.phase}-${k}`}
-                k={k}
-                hinted={ctx.wrongs >= 2 && k === ctx.target}
-                delay={(i % 4) * 0.12}
-                mouthRef={mouthRef}
-                onFeed={feed}
-                onDragActive={setDragging}
-                refusing={k === refuseKey}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-        {/* Letters in flight: arc from the card into Anbessa's open mouth. */}
+        <WoodTray className="w-full" style={{ marginTop: -6 }}>
+          <div className="relative z-10 grid grid-cols-4 place-items-center gap-x-2 gap-y-4 pt-2" data-testid="feed-tray">
+            <AnimatePresence>
+              {visible.map((k, i) => (
+                <LetterCard
+                  key={`${ctx.phase}-${k}`}
+                  k={k}
+                  color={BRICK_COLORS[ctx.order.indexOf(k) % BRICK_COLORS.length]}
+                  hinted={ctx.wrongs >= 2 && k === ctx.target}
+                  delay={(i % 4) * 0.12}
+                  mouthRef={mouthRef}
+                  onFeed={feed}
+                  onDragActive={setDragging}
+                  refusing={k === refuseKey}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </WoodTray>
+        {/* Letters in flight: arc from the brick into Anbessa's open mouth. */}
         <AnimatePresence>
           {flyers.map((fl) => (
             <motion.span
               key={fl.id}
-              className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-9 w-9 items-center justify-center rounded-lg text-xl font-black"
-              style={{ background: 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)', color: '#5b3a12', boxShadow: '0 2px 0 #a06a30' }}
+              className="geez pointer-events-none absolute left-0 top-0 z-40 flex h-9 w-9 items-center justify-center rounded-lg text-xl font-black text-white"
+              style={{ ...brickCss('#f2c230', 3), textShadow: '0 2px 0 #8a6410' }}
               // A slow, watchable arc: shrink steadily so it never covers
               // Anbessa, but stay fully visible until it reaches the mouth,
               // then pop out (swallowed) as he chomps - so it is clear he ate
@@ -1003,7 +998,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
         {isShuffle && (
           <motion.div
             key={`jibby-${ctx.round}`}
-            className="pointer-events-none absolute -right-2 top-2 z-20"
+            className="pointer-events-none absolute -right-2 top-0 z-20"
             initial={{ x: 90, rotate: 8 }}
             animate={{ x: 14 }}
             transition={{ duration: 6.5, ease: 'linear' }}
@@ -1012,13 +1007,13 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
             <JibbySvg size={56} />
           </motion.div>
         )}
-        {/* Anbessa waits below — alive: he breathes and sways, leans in when a
+        {/* Anbessa waits on a studded baseplate - alive: he breathes and sways, leans in when a
             letter is dragged near, chews on a correct feed, and shakes+swats
             on a wrong one. He is the drop target (mouthRef). */}
-        <div className="relative z-10 mt-3 flex justify-center">
+        <div className="relative z-10 mt-auto flex w-full flex-col items-center pb-4">
           <motion.div
             ref={mouthRef}
-            className="relative origin-bottom"
+            className="relative z-10 origin-bottom"
             animate={
               mood === 'refuse'
                 ? { rotate: [0, -12, 12, -7, 0], y: [0, -2, 0], transition: { duration: 0.5 } }
@@ -1035,7 +1030,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
                     : { scale: 1, y: [0, -2.5, 0], rotate: [0, -1.5, 0, 1.5, 0], transition: { duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }
             }
           >
-            <AnbessaSvg mood={mood} size={88} />
+            <AnbessaSvg mood={mood} size={124} />
             {!reduce && <ChompCrumbs key={chomp} />}
             {/* the swatting paw on a refusal */}
             <AnimatePresence>
@@ -1052,6 +1047,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
               )}
             </AnimatePresence>
           </motion.div>
+          <Baseplate color="#3fae4a" stud={24} className="z-0 -mt-9 h-[64px] w-[72%]" style={{ borderRadius: 20 }} />
         </div>
       </div>
     </motion.div>
@@ -1243,6 +1239,56 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
 
   const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
   const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE, LearnPhase.TRACE].indexOf(ctx.phase)
+
+  // ECHO / SHUFFLE (and a mix stone's finish) wear the brick look; the other
+  // phases keep their own scenery until they are re-skinned.
+  const mixDone = stone.type !== 'family' && ctx.phase === LearnPhase.DONE
+  if (spoken || mixDone) {
+    const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
+    const tone = mixDone || lionMood === 'eating' ? 'ok' : refuseKey ? 'try' : 'guide'
+    const signText = mixDone ? t('mixDone', 'Great mixing!') : lionMood === 'eating' ? t('nice', 'Nice!') : refuseKey ? t('brickTryAgain', 'Try again!')
+      : ctx.phase === LearnPhase.SHUFFLE ? t('brickFeedQuick', 'Be quick, feed Anbessa!') : t('brickFeedGuide', 'Feed Anbessa what you hear')
+    const signIcon = tone === 'guide' ? (ctx.phase === LearnPhase.SHUFFLE ? Hand : Ear) : tone === 'ok' ? Check : Hand
+    return (
+      <BrickScreen testId="brick-feed">
+        <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
+          <WoodTopBar onBack={onBack} value={mixDone ? roundLimit : ctx.round} total={roundLimit} done={mixDone} />
+          {mixDone && <Confetti reduce={false} />}
+          <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
+            <GuideSign icon={signIcon} tone={tone} text={signText} />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 top-[118px] flex flex-col items-center px-3 pb-2">
+            {mixDone ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-6" data-testid="mix-done">
+                <div className="flex w-full flex-col items-center">
+                  <AnbessaSvg mood="happy" size={140} className="relative z-10" />
+                  <Baseplate color="#3fae4a" stud={24} className="-mt-10 h-[72px] w-[72%]" style={{ borderRadius: 20 }} />
+                </div>
+                <div className="flex flex-wrap items-end justify-center gap-x-2 gap-y-4" aria-hidden="true">
+                  {ctx.forms.slice(0, 8).map((k, i) => (
+                    <BrickTile key={k} color={BRICK_COLORS[i % BRICK_COLORS.length]} width={52} height={52} className="text-[28px]">{formOf(k)?.char}</BrickTile>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />
+            )}
+          </div>
+        </div>
+        {spoken && (
+          <WoodBottomBar>
+            <span className="w-14" aria-hidden="true" />
+            <RoundButton
+              onClick={() => { playForm(formOf(ctx.target), soundOn); setSpeakPulse((n) => n + 1) }}
+              label={t('hearIt', 'Hear it again')} color="#2f86d6" testId="hear-again" className="!h-16 !w-16">
+              <Volume2 className="h-8 w-8" color="#fff" strokeWidth={3} aria-hidden="true" />
+            </RoundButton>
+            <span className="w-14" aria-hidden="true" />
+          </WoodBottomBar>
+        )}
+      </BrickScreen>
+    )
+  }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
