@@ -1,8 +1,9 @@
-/* BLOCK CHURCH (sample) - pure core for the snap-on vowel blocks game.
-   One consonant family (ለ for the sample). The game calls a target form,
-   the child snaps the matching vowel piece onto the consonant block; each
-   correct snap adds one block to the toy church; all 7 completes the dome
-   and cross. Pure + deterministic so it is easy to test. */
+/* BLOCK CHURCH - pure core for the snap-on vowel blocks game.
+   Any consonant family (all of them, in halehame order). The game calls a
+   target form, the child snaps the matching vowel piece onto the consonant
+   block; each correct snap adds one block to the toy church roof; all 7
+   completes the dome and cross and adds that family to the church wall.
+   Pure + deterministic so it is easy to test. */
 
 export const SAMPLE_FAMILY = 'le'
 export const ORDERS = [1, 2, 3, 4, 5, 6, 7]
@@ -40,3 +41,18 @@ export function snap(s, order) {
   const built = s.built + 1
   return { ...s, built, last: built >= s.total ? 'done' : 'right' }
 }
+
+/** The family to suggest next: the first not-yet-built one after `afterId`
+    (wrapping round), or the first not-yet-built overall. null when every
+    family is built. `ids` is the halehame-ordered list of family ids. */
+export function nextFamilyId(ids, done, afterId = null) {
+  const open = (id) => !done[id]
+  const at = afterId ? ids.indexOf(afterId) : -1
+  for (let k = 1; k <= ids.length; k++) {
+    const id = ids[(at + k) % ids.length]
+    if (open(id)) return id
+  }
+  return null
+}
+
+export const builtCount = (ids, done) => ids.reduce((n, id) => n + (done[id] ? 1 : 0), 0)

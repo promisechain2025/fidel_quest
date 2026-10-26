@@ -3346,8 +3346,8 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
             {ready('ladder') && <BackpackTile art="ladder" locked={!coreScreenOpen({ name: 'ladder' })} title={t('ladderShort', 'Order')} onClick={onLadder} />}
             {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
             {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
-            {/* Block Church SAMPLE (ለ only). Ge'ez-only title: no English in kid UI. */}
-            {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title="ለሉሊ" onClick={onBlocks} />}
+            {/* Block Church: every consonant family. Titled via i18n, English fallback. */}
+            {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title={t('blockChurchShort', 'Block Church')} onClick={onBlocks} />}
             {/* Word Bricks SAMPLE (replaces Build / First Words). Titled like the other game tiles: i18n key, English fallback. */}
             {onBrickWords && <BackpackTile icon={<ToyBrick className="h-6 w-6" />} tone="#d94f2a" title={t('wordBricksShort', 'Word Bricks')} onClick={onBrickWords} />}
             {/* Stack the tower SAMPLE (replaces Order). Numeral title, no English. */}

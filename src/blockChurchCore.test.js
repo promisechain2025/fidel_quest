@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { initRound, snap, target, isComplete, shuffled, ORDERS } from './blockChurchCore'
+import { initRound, snap, target, isComplete, shuffled, ORDERS, nextFamilyId, builtCount } from './blockChurchCore'
 
 describe('blockChurchCore', () => {
   it('shuffles all 7 orders deterministically', () => {
@@ -17,5 +17,14 @@ describe('blockChurchCore', () => {
     expect(s.last).toBe('done')
     expect(target(s)).toBe(null)
     expect(snap(s, 1)).toBe(s)
+  })
+  it('suggests the next unbuilt family in order, wrapping, null when all built', () => {
+    const ids = ['ha', 'le', 'hha', 'me']
+    expect(nextFamilyId(ids, {})).toBe('ha')
+    expect(nextFamilyId(ids, { ha: 3 })).toBe('le')
+    expect(nextFamilyId(ids, { ha: 3, le: 1 }, 'le')).toBe('hha')
+    expect(nextFamilyId(ids, { le: 2, hha: 2, me: 2 }, 'me')).toBe('ha')
+    expect(nextFamilyId(ids, { ha: 1, le: 1, hha: 1, me: 1 }, 'le')).toBe(null)
+    expect(builtCount(ids, { ha: 1, me: 3, zz: 2 })).toBe(2)
   })
 })

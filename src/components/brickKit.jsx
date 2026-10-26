@@ -45,9 +45,9 @@ export function BrickScreen({ testId, children }) {
   )
 }
 
-export function WoodButton({ onClick, label, children, testId }) {
+export function WoodButton({ onClick, label, children, testId, className = '' }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} data-testid={testId} className={BTN} style={woodBtnCss}>{children}</button>
+    <button type="button" onClick={onClick} aria-label={label} data-testid={testId} className={`${BTN} ${className}`} style={woodBtnCss}>{children}</button>
   )
 }
 
@@ -85,17 +85,17 @@ const SIGN_TONES = {
 }
 
 /** Wooden guide sign: a big round icon + one short line of i18n text. */
-export function GuideSign({ icon: Icon, text, tone = 'guide', className = '' }) {
+export function GuideSign({ icon: Icon, text, tone = 'guide', className = '', compact = false }) {
   const c = SIGN_TONES[tone] || SIGN_TONES.guide
   return (
     <motion.div key={`${tone}:${text}`} data-testid="guide" data-tone={tone} role="status" aria-live="polite"
       initial={{ scale: 0.9, opacity: 0.4 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}
-      className={`flex items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-4 ${className}`}
+      className={`flex items-center rounded-2xl ${compact ? 'gap-2 py-1 pl-1 pr-3' : 'gap-2.5 py-1.5 pl-1.5 pr-4'} ${className}`}
       style={{ background: c.bg, border: `4px solid ${c.ring}`, boxShadow: `inset 0 3px 0 rgba(255,255,255,.55), 0 5px 0 ${shade(c.ring, -0.35)}, 0 10px 14px rgba(0,0,0,.3)` }}>
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={roundBtnCss(c.badge)}>
         <Icon className="h-6 w-6" color="#fff" strokeWidth={3} aria-hidden="true" />
       </span>
-      <span className="text-[20px] font-black leading-tight" style={{ color: c.fg, textShadow: tone === 'guide' ? '0 1px 0 rgba(255,255,255,.7)' : '0 2px 0 rgba(0,0,0,.35)' }}>{text}</span>
+      <span className={`${compact ? 'text-[clamp(13px,min(4.2vw,3.8dvh),19px)]' : 'text-[20px]'} font-black leading-tight`} style={{ color: c.fg, textShadow: tone === 'guide' ? '0 1px 0 rgba(255,255,255,.7)' : '0 2px 0 rgba(0,0,0,.35)' }}>{text}</span>
     </motion.div>
   )
 }
