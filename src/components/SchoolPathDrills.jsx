@@ -141,9 +141,6 @@ export function WordBuildScreen({ words = [], unitIndex, seed = 1, soundOn = tru
             ? t('wordBuildDone', 'You built it!')
             : t('wordBuildPrompt', 'Tap the letters in order')}
         </p>
-        {word?.meaningEn && (
-          <p className="text-base font-bold" style={{ color: 'var(--muted)' }}>{word.meaningEn}</p>
-        )}
         <div className="flex flex-wrap items-center justify-center gap-2" aria-hidden="true">
           {chars.map((ch, i) => (
             <span
@@ -276,9 +273,6 @@ export function FindFidelScreen({ targets = [], unitIndex, soundOn = true, onDon
         )}
         {found && (
           <div className="flex w-full flex-col items-center gap-2" data-testid="find-fidel-found">
-            {item.meaningEn && (
-              <p className="text-base font-bold" style={{ color: 'var(--muted)' }}>{item.meaningEn}</p>
-            )}
             <p className="geez text-5xl font-black">{item.geez}</p>
             <GoButton onClick={next}>
               {ctx.ti + 1 < ctx.targets.length ? t('findFidelNext', 'Next word') : t('keepGoing', 'Keep going!')}
