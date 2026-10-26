@@ -27,7 +27,11 @@ vi.mock('../platform/telemetry', async (orig) => ({
   recordAnswer: (k, p, m) => ledger.push({ k, p, m }),
 }))
 
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import EchoMatch from './EchoMatch'
+import { expectGuideOnlyLatin } from './brickTestUtils'
 import { FIDEL_FAMILIES } from '../platform/ethiopic'
 import { loadEcho, saveEcho } from '../echoMatchCore'
 
@@ -104,22 +108,29 @@ describe('Echo Match screen', () => {
     expect(ledger).toEqual([])
   })
 
-  it('a clean round ends in a summary with mastered letters and unlocks the next level', async () => {
+  it('a clean round celebrates, then ends in a summary with mastered letters and unlocks the next level', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     await mount()
     for (const k of pairKeys()) {
       fireEvent.click(byFace('voice', k))
       fireEvent.click(byFace('letter', k))
       flush()
     }
-    await act(async () => {})
+    // the celebration shows first: confetti + win sign, still on the board
+    expect(screen.getByTestId('confetti')).toBeInTheDocument()
+    expect(screen.getByTestId('guide')).toHaveTextContent('You found them all!')
+    expect(screen.queryByTestId('echo-summary')).toBeNull()
+    await act(async () => { vi.advanceTimersByTime(2500) })
+    vi.useRealTimers()
     const summary = screen.getByTestId('echo-summary')
-    expect(summary).toHaveTextContent('You know these')
+    expect(screen.getByLabelText('You know these')).toBeInTheDocument()
     expect(summary).toHaveTextContent('New level unlocked!')
     expect(loadEcho().unlocked).toBe(2)
     expect(screen.getByRole('button', { name: /Next level/ })).toBeInTheDocument()
   })
 
   it('an inaccurate round ends with letters to practise, stays locked, and re-deals them next round', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     await mount()
     const keys = pairKeys()
     // Two informed misses: reveal letter p, then pair voice p with the wrong letter.
@@ -131,8 +142,10 @@ describe('Echo Match screen', () => {
       if (byFace('voice', k).dataset.state === 'matched') continue
       fireEvent.click(byFace('voice', k)); fireEvent.click(byFace('letter', k)); flush()
     }
-    await act(async () => {})
-    expect(screen.getByTestId('echo-summary')).toHaveTextContent('Practise these')
+    await act(async () => { vi.advanceTimersByTime(2500) })
+    vi.useRealTimers()
+    expect(screen.getByTestId('echo-summary')).toBeInTheDocument()
+    expect(screen.getByLabelText('Practise these')).toBeInTheDocument()
     expect(loadEcho().unlocked).toBe(1)
     expect(Object.keys(loadEcho().due).sort()).toEqual([keys[0], keys[1]].sort())
     fireEvent.click(screen.getByRole('button', { name: /Again/ }))
@@ -163,6 +176,30 @@ describe('Echo Match screen', () => {
     await mount()
     const lv2 = screen.getByRole('button', { name: /Level 2/ })
     expect(lv2).toBeDisabled()
-    expect(lv2.className).toMatch(/h-11/)
+    expect(lv2.className).toMatch(/h-\[54px\]/)
+  })
+
+  it('look: brick cards on a wooden board, guide text via i18n, nothing but fidel beside fidel', async () => {
+    await mount({ unlocked: 2, due: {}, best: {} })
+    const root = screen.getByTestId('brick-echo')
+    expect(screen.getByTestId('echo-board')).toBeInTheDocument()
+    expectGuideOnlyLatin(root, 'Match each sound to its letter')
+    const [k0, k1] = pairKeys()
+    fireEvent.click(byFace('voice', k0))
+    expectGuideOnlyLatin(root, 'Find the letter that says it')
+    fireEvent.click(byFace('letter', k1))
+    expectGuideOnlyLatin(root, 'Try again!')
+    flush()
+    fireEvent.click(byFace('letter', k0))
+    expectGuideOnlyLatin(root, 'Find its sound card')
+    fireEvent.click(byFace('voice', k0))
+    expectGuideOnlyLatin(root, 'Nice!')
+    // matched pair share a colour; unmatched backs all look the same
+    const a = byFace('voice', k0).querySelector('.geez')
+    expect(a).toHaveTextContent(/\S/)
+    const src = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'EchoMatch.jsx'), 'utf8')
+    expect([...src.matchAll(/>\s*([A-Za-z][A-Za-z ,.!']{2,})\s*</g)]).toEqual([])
+    expect([...src.matchAll(/(?:aria-label|label)="([^"]*[A-Za-z][^"]*)"/g)]).toEqual([])
+    for (const m of src.matchAll(/(?<![\w.$])t\(\s*'([^']+)'\s*,\s*'([^']*)'/g)) { expect(m[2]).toMatch(/^[A-Za-z][A-Za-z !.,']*$/); expect(m[2].length).toBeLessThanOrEqual(40) }
   })
 })
