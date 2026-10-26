@@ -30,7 +30,6 @@ import {
   RUNNER_LEVELS,
   RUNNER_BASE_SPEED,
   RUNNER_SPEEDS,
-  RUNNER_SPEED_ORDER,
   SIGN_SPAWN_Z,
   loadRunnerSpeed,
   saveRunnerSpeed,
@@ -48,6 +47,7 @@ import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
 import { RUNNER_CAST } from './components/runnerCast'
 import RunnerSummary from './components/RunnerSummary'
+import SpeedControl from './components/SpeedControl'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
@@ -1181,19 +1181,8 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
           </div>
         )}
         {/* Speed selector — kids pick how fast the letters come. */}
-        <div className="absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full p-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          {RUNNER_SPEED_ORDER.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSpeedName(s)}
-              aria-pressed={speedName === s}
-              className={`min-h-[44px] rounded-full px-3 py-1 text-xs font-black ${FOCUS}`}
-              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
-            >
-              {t(`speed_${s}`, s)}
-            </button>
-          ))}
+        <div className="absolute left-2 top-2 z-20">
+          <SpeedControl tone="dark" value={speedName} onChange={setSpeedName} testId="runner-speed" />
         </div>
         <AnimatePresence>
           {banner && (

@@ -26,6 +26,7 @@ import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice, confirmActivePack, languageChoicePending } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
+import { LAYOUTS, abugidaChart, getLayout, setLayout } from './platform/abugida'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
 // at the question factory). Wired here, after both sides exist.
 queueMicrotask(() => setDuePriorityProvider(() => dueKeys()))
@@ -35,6 +36,7 @@ import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
+import SpeedControl from './components/SpeedControl'
 import AnbessaSvg from './components/AnbessaSvg'
 import KokebSvg from './components/KokebSvg'
 import NameInFidel from './components/NameInFidel'
@@ -204,6 +206,8 @@ import {
   Church,
   ToyBrick,
   Layers,
+  LayoutGrid,
+  Rows3,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -3577,12 +3581,17 @@ function exploreFace(i) {
 // the slower tiers add real breathing room on top of the voice.
 const EXPLORE_PACE = { slow: 2300, normal: 1700, fast: 850 }
 
-function Explore({ soundOn, onBack, initialFamily = null }) {
+export function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
   // Rehomed from Classic: trace any family, and Fidel Master's chart/chant.
   const [tracing, setTracing] = useState(false)
   const [master, setMaster] = useState(false)
   const [order, setOrder] = useState(1) // which vowel order the grid shows
+  // How the Explorer is arranged: by vowel (default) or as the traditional
+  // ኣቡጊዳ rotation chart. Persisted per child (fq.explorer.layout.v1).
+  const [layout, setLayoutState] = useState(getLayout)
+  const abugida = layout === LAYOUTS.ABUGIDA
+  const chart = useMemo(() => abugidaChart(FIDEL_FAMILIES, ORDERS.length), [])
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
   // Autoplay: chant the selected vowel order across every family, the way the
@@ -3592,6 +3601,20 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   const [pace, setPace] = useState('normal')
   const stopPlay = useCallback(() => setPlaying(false), [])
   const startPlay = () => { setPlayIdx(0); setPlaying(true) }
+  const chooseLayout = (next) => {
+    if (next === layout) return
+    stopPlay()
+    setLayoutState(next)
+    setLayout(next)
+  }
+  // The recordings chanted by "Play all": one vowel order down every family, or
+  // the ኣቡጊዳ chart read row by row. Same clips either way (formOf / playForm).
+  const chantCells = useMemo(
+    () => (abugida
+      ? chart.flat().map((c) => formOf(c.key))
+      : FIDEL_FAMILIES.map((f) => formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`))),
+    [abugida, chart, order],
+  )
   // Autoplay marches through all 33 tiles; on a phone most of the grid is
   // below the fold, so follow the active tile - the class must SEE the
   // letter being said, especially when the screen is mirrored to a TV.
@@ -3602,9 +3625,8 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
 
   useEffect(() => {
     if (!playing || family) return undefined
-    if (playIdx >= FIDEL_FAMILIES.length) { setPlaying(false); return undefined }
-    const f = FIDEL_FAMILIES[playIdx]
-    const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+    if (playIdx >= chantCells.length) { setPlaying(false); return undefined }
+    const cell = chantCells[playIdx]
     playForm(cell, soundOn)
     // VOICE-PAGE SYNC: the pace is the MINIMUM gap; the step then yields to
     // the letter's voice. Without the yield, "fast" (750ms) outran the ~1.2s
@@ -3613,7 +3635,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
     // spoken in full and "fast" simply means no pause between letters.
     const cancel = afterVoice(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
     return cancel
-  }, [playing, playIdx, order, pace, family, soundOn])
+  }, [playing, playIdx, chantCells, pace, family, soundOn])
 
   if (master) {
     return (
@@ -3632,7 +3654,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
         <div>
           <h1 className="text-xl font-black leading-tight">{family ? t('exploreFamilyTitle', `The ${family.name} family`, { name: family.name }) : t('exploreHeader', 'Letter Explorer')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
+            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : abugida ? t('exploreAbugidaSub', 'Tap any letter to hear it') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
           </p>
         </div>
       </header>
@@ -3643,7 +3665,26 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
          matching Fidel Master's selector, with the traditional order name on
          the aria-label for screen readers. */}
       {!family && (
-        <div className="mt-4 pb-1">
+        <div className="mt-4 flex gap-2" role="group" aria-label={t('exploreLayoutLabel', 'How to arrange the letters')} data-testid="explore-layout">
+          {[
+            { id: LAYOUTS.VOWEL, Icon: Rows3, label: t('exploreLayoutVowel', 'Arrange by vowel'), glyphs: ['a-1', 'a-2', 'a-3'].map((k) => INDEXES.byAudioKey.get(k)?.char).join(' '), tid: 'explore-layout-vowel' },
+            { id: LAYOUTS.ABUGIDA, Icon: LayoutGrid, label: t('exploreLayoutAbugida', 'Arrange as the abugida chart'), glyphs: getActivePackId() === 'ti' ? 'ኣቡጊዳ' : 'አቡጊዳ', tid: 'explore-layout-abugida' },
+          ].map(({ id, Icon, label, glyphs, tid }) => {
+            const on = layout === id
+            return (
+              <button key={id} type="button" onClick={() => chooseLayout(id)} aria-pressed={on} aria-label={label} data-testid={tid}
+                className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
+                style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="geez text-lg">{glyphs}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {!family && !abugida && (
+        <div className="mt-3 pb-1">
           <div className="flex flex-wrap gap-1.5">
             {ORDERS.map((o) => {
               const on = order === o.index
@@ -3662,7 +3703,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
 
       {/* Autoplay: chant the chosen vowel across every family (say-all) */}
       {!family && (
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
@@ -3671,20 +3712,43 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
             <Music className="h-5 w-5" aria-hidden="true" />
             {t('masterShort', 'Chant')}
           </Chunky>
-          <div className="flex gap-1">
-            {['slow', 'normal', 'fast'].map((p) => (
-              <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
-                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
-                {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
-              </button>
-            ))}
-          </div>
+          <SpeedControl value={pace} onChange={setPace} testId="explore-pace" />
         </div>
       )}
 
       <AnimatePresence mode="wait">
-        {!family ? (
+        {!family && abugida ? (
+          <motion.div key="abugida" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="-mx-3 mt-4 grid grid-cols-7 gap-1.5" data-testid="abugida-chart">
+            {chart.flat().map((c, i) => {
+              const cell = formOf(c.key)
+              const face = exploreFace(c.order - 1) // colour = vowel order (column), so the rotation reads as diagonals
+              const isActive = playing && playIdx === i
+              const topRow = i < ORDERS.length // the row that spells the name አ ቡ ጊ ዳ ሄ ው ዞ
+              return (
+                <motion.button
+                  key={c.key}
+                  data-play-active={isActive ? 1 : undefined}
+                  data-chart-key={c.key}
+                  type="button"
+                  aria-label={cell.char}
+                  onClick={() => { stopPlay(); playForm(cell, soundOn) }}
+                  animate={isActive ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className={`chunk relative flex min-h-[48px] items-center justify-center rounded-xl py-2 ${FOCUS}`}
+                  style={{
+                    background: `radial-gradient(circle at 30% 22%, ${face.wash}, rgba(255,255,255,0) 55%), ${face.bg}`,
+                    border: `2px solid ${isActive ? '#fff' : topRow ? '#F2D27A' : face.rim}`,
+                    boxShadow: isActive ? `0 0 0 3px ${face.rim}, 0 6px 14px rgba(0,0,0,0.35)` : topRow ? `0 0 0 1.5px #F2D27A, 0 3px 0 ${face.shadow}` : `0 3px 0 ${face.shadow}`,
+                    color: face.fg,
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  <span className="geez text-2xl font-black leading-none" style={{ color: face.fg }}>{cell.char}</span>
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        ) : !family ? (
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {FIDEL_FAMILIES.map((f, i) => {
               const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
