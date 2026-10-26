@@ -33,7 +33,6 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check, Ear, Hand } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
 import { meetPictureForFamily } from './data/schoolPathGr1'
-import { meetHeroSrc } from './data/meetHeroes'
 import { playForm, playEffect, playPluck, afterVoice } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
 import { sameSound, soundKeyOf } from './platform/sameSound'
@@ -43,10 +42,9 @@ import AnbessaSvg from './components/AnbessaSvg'
 import JibbySvg from './components/JibbySvg'
 import KokebSvg from './components/KokebSvg'
 import FidelTracePad from './components/FidelTracePad'
-import { BubbleSky, RiverCrossing } from './components/StepScenery'
-import { BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, RoundButton, GuideSign, Baseplate, BrickTile, Confetti, BRICK_COLORS } from './components/brickKit'
+import { BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, GuideSign, Baseplate, BrickTile, BrickPicture, Confetti, BRICK_COLORS } from './components/brickKit'
 import { sceneStyle } from './components/brickRoundKit'
-import { brickCss, studCss, shade } from './components/blockArt'
+import { brickCss, studCss, shade, WOOD } from './components/blockArt'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -325,68 +323,80 @@ export function groupMastered(learn, group) {
    The machine (§1) is untouched - these are pure presentation.
    ========================================================================== */
 
-/* Bubble palette: vivid, glossy balls carrying a WHITE letter. Legibility here
-   is luminance-based, not hue-based, so it stays clear for color-blind kids and
-   in both themes - every base is dark enough for white large text to clear a
-   3:1 contrast ratio. One color per letter index for variety, not meaning. */
-const BUBBLE_COLORS = [
-  { hi: '#ff8ea0', base: '#e6304f', lo: '#a5183a' }, // strawberry
-  { hi: '#ffb152', base: '#f0700f', lo: '#b04c06' }, // tangerine
-  { hi: '#b48bf2', base: '#7d43d8', lo: '#532c99' }, // grape
-  { hi: '#56b7f7', base: '#1f83db', lo: '#135a97' }, // blue raspberry
-  { hi: '#ff92c8', base: '#e6459a', lo: '#a52a6d' }, // bubblegum
-  { hi: '#66cf83', base: '#1aa15a', lo: '#0f6d3c' }, // apple green
-  { hi: '#48d3ca', base: '#0c988f', lo: '#086862' }, // turquoise
-]
+/* Brick look for the learn phases: the letter bricks come in the same seven
+   toy colours as the tray, so a letter keeps its colour from the bubble to the
+   stones to the shelf. One colour per letter index for variety, not meaning;
+   white glyphs on these saturated bases stay readable by luminance. */
+const brickColorOf = (i) => BRICK_COLORS[i % BRICK_COLORS.length]
 
-/* The burst a bubble makes when a child pops it: an expanding ring plus a
-   spray of droplets in the bubble's own colour. Presentation only; dropped
-   under reduced motion. */
+/* The burst a bubble makes when a child pops it: a ring plus a spray of tiny
+   studded bricks in the bubble's own colour. Presentation only; dropped under
+   reduced motion. */
 function BubblePop({ left, top, color }) {
   const bits = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]
   return (
     <div className="pointer-events-none absolute z-20" style={{ left: `${left}%`, top: `${top}%` }} aria-hidden="true">
-      <motion.span className="absolute rounded-full" style={{ left: -24, top: -24, width: 48, height: 48, border: `3px solid ${color.hi}` }}
-        initial={{ opacity: 0.9, scale: 0.3 }} animate={{ opacity: 0, scale: 1.9 }} transition={{ duration: 0.5, ease: 'easeOut' }} />
+      <motion.span className="absolute rounded-full" style={{ left: -26, top: -26, width: 52, height: 52, border: `4px solid ${shade(color, 0.4)}` }}
+        initial={{ opacity: 0.9, scale: 0.3 }} animate={{ opacity: 0, scale: 2.2 }} transition={{ duration: 0.5, ease: 'easeOut' }} />
       {bits.map((deg, i) => {
-        const r = 36 + (i % 3) * 9
+        const r = 44 + (i % 3) * 12
+        const size = 12 - (i % 3) * 2
         return (
-          <motion.span key={i} className="absolute rounded-full"
-            style={{ left: -4, top: -4, width: 8 - (i % 3), height: 8 - (i % 3), background: i % 2 ? color.hi : color.base }}
-            initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-            animate={{ opacity: [1, 1, 0], x: Math.cos((deg * Math.PI) / 180) * r, y: Math.sin((deg * Math.PI) / 180) * r, scale: [1, 1.1, 0.3] }}
-            transition={{ duration: 0.55, ease: 'easeOut' }} />
+          <motion.span key={i} className="absolute"
+            style={{ left: -size / 2, top: -size / 2, width: size, height: size, ...brickCss(i % 2 ? shade(color, 0.3) : color, 2), borderRadius: 3 }}
+            initial={{ opacity: 1, x: 0, y: 0, scale: 1, rotate: 0 }}
+            animate={{ opacity: [1, 1, 0], x: Math.cos((deg * Math.PI) / 180) * r, y: Math.sin((deg * Math.PI) / 180) * r, scale: [1, 1.1, 0.4], rotate: i % 2 ? 140 : -140 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }} />
         )
       })}
     </div>
   )
 }
 
-/** MEET: pop the drifting bubble to hear the letter.
-    School Path's first card paints the picture-word behind the bubble so
-    the fidel stays the thing you read. A missing painting falls back to
-    the highland sky. */
+/** The shelf of letters met so far: seven slots, one per letter. A met letter
+    is a studded brick; the rest are empty wells, so progress reads without
+    a number. */
+function MeetShelf({ forms, met }) {
+  return (
+    <WoodTray className="w-full" style={{ marginTop: 0 }}>
+      <div className="grid grid-cols-7 gap-1.5 px-0.5 pt-1" data-testid="meet-shelf" aria-hidden="true">
+        {forms.map((k, i) => (
+          <div key={k} className="flex h-[58px] items-end justify-center rounded-lg" style={{ background: 'rgba(90,52,20,.28)', boxShadow: 'inset 0 3px 6px rgba(0,0,0,.35)' }}>
+            {i < met ? (
+              <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 14 }} className="w-full">
+                <BrickTile color={brickColorOf(i)} width={40} height={46} style={{ width: '100%' }} depth={4} className="text-[26px]">{formOf(k)?.char}</BrickTile>
+              </motion.div>
+            ) : (
+              <span className="mb-3 block h-3 w-3 rounded-full" style={{ background: 'rgba(0,0,0,.22)', boxShadow: 'inset 0 2px 2px rgba(0,0,0,.4)' }} />
+            )}
+          </div>
+        ))}
+      </div>
+    </WoodTray>
+  )
+}
+
+/** MEET: pop the drifting brick balloon to hear the letter.
+    School Path's first card shows that word's brick picture on a wood plaque,
+    so the fidel stays the thing you read. */
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
-  const met = ctx.forms.slice(0, ctx.idx)
   const [popped, setPopped] = useState(false)
   const [popAt, setPopAt] = useState(null)
-  const [heroFailed, setHeroFailed] = useState(false)
   const reduce = useReducedMotion()
   const stageRef = useRef(null)
   const btnRef = useRef(null)
   if (!form) return null
-  const c = BUBBLE_COLORS[ctx.idx % BUBBLE_COLORS.length]
-  const heroSrc = ctx.idx === 0 ? meetHeroSrc(ctx.meetWord) : null
-  const hero = Boolean(heroSrc) && !heroFailed
-  // On pop: freeze the wandering, voice the letter, and let the bubble swell and
+  const color = brickColorOf(ctx.idx)
+  const showWord = ctx.idx === 0 && Boolean(ctx.meetWord?.geez)
+  // On pop: freeze the wandering, voice the letter, and let the balloon swell and
   // fade. The parent holds the advance (~0.9s) so the next letter only drifts in
   // once this one has been fully spoken and cleared.
   const pop = () => {
     if (popped) return
     setPopped(true)
-    // Fire the burst at the bubble's live position (it wanders), read from the
-    // button rect relative to the stage so the droplets spray from the pop.
+    // Fire the burst at the balloon's live position (it wanders), read from the
+    // button rect relative to the stage so the bricks spray from the pop.
     const s = stageRef.current?.getBoundingClientRect()
     const b = btnRef.current?.getBoundingClientRect()
     if (!reduce && s && b && s.width && s.height) {
@@ -395,102 +405,62 @@ function BubbleMeet({ ctx, onTouch }) {
     onTouch(form.audioKey)
   }
   return (
-    <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex w-full flex-col items-center gap-5">
-      <p className="font-extrabold" style={{ color: 'var(--muted)' }}>
-        {t('popHint', 'Pop the bubble!')} · {ctx.idx + 1}/7
-      </p>
-      <div ref={stageRef} className="fq-land-short relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#d7ecfb', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }}>
-        {hero ? (
-          <img
-            src={heroSrc}
-            alt=""
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-            onError={() => setHeroFailed(true)}
-          />
-        ) : (
-          <BubbleSky />
+    <motion.div key={`meet-${ctx.idx}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.1 } }} className="flex h-full w-full flex-col items-center gap-2">
+      <GuideSign icon={Hand} tone="guide" text={t('popHint', 'Pop the bubble!')} />
+      <div ref={stageRef} className="relative min-h-0 w-full flex-1" data-testid="meet-stage">
+        {showWord && (
+          <div className="absolute left-1/2 top-1 z-0 flex -translate-x-1/2 items-center gap-2 rounded-2xl py-1 pl-1.5 pr-4" data-testid="meet-word"
+            style={{ ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.35), 0 4px 0 #5a3414, 0 8px 12px rgba(0,0,0,.3)' }}>
+            <BrickPicture geez={ctx.meetWord.geez} emoji={ctx.meetWord.picture} size={64} />
+            <span className="geez text-3xl font-black text-white" style={{ textShadow: '0 2px 0 #5a3414' }}>{ctx.meetWord.geez}</span>
+          </div>
         )}
         <motion.button
           ref={btnRef}
           type="button"
           onPointerDown={pop}
           disabled={popped}
-          initial={hero ? { x: '-50%', y: '-50%', scale: 0.6 } : { x: '-30%', y: 30, scale: 0.5 }}
+          initial={{ x: '-30%', y: 30, scale: 0.5 }}
           animate={
             popped
-              ? // Popped: stop wandering, swell and fade out slowly while the
-                // letter is voiced, so the stage clears before the next drifts in.
-                hero
-                  ? { x: '-50%', y: '-50%', scale: 1.25, opacity: 0 }
-                  : { scale: 1.4, opacity: 0 }
-              : hero
-                ? {
-                    // Stay centered on the picture-word so the scene reads
-                    // around the letter. A small bob keeps it alive.
-                    x: '-50%',
-                    y: reduce ? '-50%' : ['-56%', '-50%', '-44%', '-50%'],
-                    scale: reduce ? 1 : [1, 1.04, 1],
-                  }
-                : {
-                    // A wandering loop (roughly a figure-8) instead of a straight
-                    // back-and-forth, with a rocking tilt and a bouncy squash-stretch
-                    // so the letter looks like it is dancing around the stage.
-                    x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-                    y: [24, 8, 26, 52, 66, 54, 30, 24],
-                    rotate: [0, 9, -5, 8, -9, 6, -3, 0],
-                    scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
-                  }
+              ? { scale: 1.4, opacity: 0 }
+              : {
+                  // A wandering loop (roughly a figure-8) with a rocking tilt and a
+                  // bouncy squash-stretch so the letter looks like it is dancing.
+                  x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
+                  y: [(showWord ? 96 : 20), (showWord ? 110 : 8), (showWord ? 130 : 40), (showWord ? 160 : 90), (showWord ? 180 : 130), (showWord ? 150 : 100), (showWord ? 120 : 50), (showWord ? 96 : 20)],
+                  rotate: [0, 9, -5, 8, -9, 6, -3, 0],
+                  scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
+                }
           }
-          transition={
-            popped
-              ? { duration: 0.85, ease: 'easeInOut' }
-              : hero
-                ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
-                : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }
-          }
-          className={`geez absolute flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${hero ? 'left-1/2 top-1/2' : 'left-1/2 top-4'} ${FOCUS}`}
+          transition={popped ? { duration: 0.85, ease: 'easeInOut' } : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
+          className={`geez absolute left-1/2 top-4 -ml-20 flex h-40 w-40 items-center justify-center rounded-full text-8xl font-black ${FOCUS}`}
           style={{
-            // Glossy candy ball: a bright off-centre core melts into the rich
-            // base and a deep rim, an inner top-light gives the sheen, and a
-            // soft glow in the bubble's own colour makes it pop off the stage.
-            background: `radial-gradient(circle at 36% 26%, ${c.hi} 0%, ${c.base} 56%, ${c.lo} 100%)`,
+            // A glossy toy balloon: the brick colour melts from a bright core to a deep
+            // rim, a white sheen sits top-left, and three studs crown it.
+            background: `radial-gradient(circle at 36% 26%, ${shade(color, 0.45)} 0%, ${color} 56%, ${shade(color, -0.35)} 100%)`,
             border: '4px solid rgba(255,255,255,0.95)',
-            boxShadow: `inset -7px -11px 24px rgba(0,0,0,0.20), inset 7px 9px 20px rgba(255,255,255,0.28), 0 12px 30px ${c.base}59`,
+            boxShadow: `inset -7px -11px 24px rgba(0,0,0,0.20), inset 7px 9px 20px rgba(255,255,255,0.28), 0 6px 0 ${shade(color, -0.45)}, 0 14px 22px rgba(0,0,0,.3)`,
             color: '#ffffff',
-            textShadow: '0 2px 5px rgba(0,0,0,0.4)',
+            textShadow: `0 3px 0 ${shade(color, -0.45)}`,
             touchAction: 'none',
-            outlineColor: 'var(--sky)',
+            outlineColor: '#fff',
           }}
           aria-label={t('learnPopBubble', 'Pop the bubble')}
         >
+          <span className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-3" aria-hidden="true">
+            {[0, 1, 2].map((i) => <span key={i} style={{ ...studCss(color, 18), marginTop: i === 1 ? -4 : 0 }} />)}
+          </span>
+          <span className="pointer-events-none absolute left-[18%] top-[12%] h-8 w-14 -rotate-[28deg] rounded-full" style={{ background: 'linear-gradient(#fff9,#fff0)' }} aria-hidden="true" />
           {/* counter-rotate the glyph a touch so it stays readable while the
-              bubble rocks, then give it its own gentle wiggle (the dance) */}
-          <motion.span
-            animate={{ rotate: [0, -6, 4, -5, 0], y: [0, -2, 1, -2, 0] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            className="block"
-          >
+              balloon rocks, then give it its own gentle wiggle (the dance) */}
+          <motion.span animate={{ rotate: [0, -6, 4, -5, 0], y: [0, -2, 1, -2, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }} className="block">
             {form.char}
           </motion.span>
         </motion.button>
-        {hero && <div className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 3px rgba(196,176,138,0.75)' }} />}
-        {popAt && <BubblePop left={popAt.left} top={popAt.top} color={c} />}
+        {popAt && <BubblePop left={popAt.left} top={popAt.top} color={color} />}
       </div>
-      {ctx.idx === 0 && ctx.meetWord?.geez && (
-        <p className="flex items-center justify-center gap-2 text-sm font-bold" style={{ color: 'var(--ink)' }}>
-          {!hero && ctx.meetWord.picture ? <span className="text-2xl" aria-hidden="true">{ctx.meetWord.picture}</span> : null}
-          <span className="geez text-xl font-black">{ctx.meetWord.geez}</span>
-        </p>
-      )}
-      {/* Anbessa's shelf of collected letters */}
-      <div className="flex min-h-12 items-end gap-2">
-        <Hero size={48} />
-        {met.map((k) => (
-          <motion.span key={k} initial={{ scale: 0 }} animate={{ scale: 1 }} className="geez flex h-11 w-9 items-center justify-center rounded-xl border-2 text-xl font-black" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)', borderColor: 'var(--go)' }}>
-            {formOf(k)?.char}
-          </motion.span>
-        ))}
-      </div>
+      <MeetShelf forms={ctx.forms} met={ctx.idx} />
     </motion.div>
   )
 }
@@ -609,56 +579,47 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
   // on the bank he is crossing FROM.
   const standIdx = forward ? ctx.idx - 1 : ctx.idx + 1
   const stand = standIdx < 0 ? BANKS.left : standIdx >= ctx.forms.length ? BANKS.right : STONE_POINTS[standIdx]
+  const wrongNow = wrongKey != null && !sunk
   return (
-    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
-      <div className="flex items-center gap-3">
-        <p className="flex items-center gap-2 text-lg font-extrabold">
-          {forward ? <ArrowRight className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" /> : <ArrowLeft className="h-7 w-7" style={{ color: 'var(--star)' }} aria-hidden="true" />}
-          {forward ? t('stoneFwd', 'Listen! Tap the letter to hop across!') : t('stoneBack', 'Listen! Hop back home!')}
-        </p>
-        <button
-          type="button"
-          onClick={() => playForm(activeForm, soundOn)}
-          aria-label={t('hearIt', 'Hear it again')}
-          className={`chunk flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white ${FOCUS}`}
-          style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
-        >
-          <Volume2 className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
-      {/* The river is a picture now, not a touch target: the child plays the
-          TRAY below, and the stones show where Anbessa is going. */}
-      <div className="fq-land-short pointer-events-none relative h-64 w-full overflow-hidden rounded-3xl" style={{ background: '#1f8ec8', boxShadow: '0 10px 24px rgba(20, 16, 8, 0.22)' }} aria-hidden="true">
-        <RiverCrossing />
+    <motion.div key={ctx.phase} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center gap-2">
+      <GuideSign
+        icon={Ear}
+        tone={wrongNow ? 'try' : 'guide'}
+        text={wrongNow ? t('brickTry', 'Listen again!') : forward ? t('stoneFwd', 'Listen! Tap the letter to hop across!') : t('stoneBack', 'Listen! Hop back home!')}
+      />
+      {/* The river is a picture, not a touch target: the child plays the
+          TRAY below, and the stones show where Anbessa is going. A blue
+          studded baseplate for the water, green bank plates at each end. */}
+      <div className="flex min-h-0 w-full flex-1 items-center"><div className="pointer-events-none relative h-full max-h-[310px] w-full" data-testid="stone-river" aria-hidden="true">
+        <div className="absolute inset-x-1 inset-y-2"><Baseplate color="#2f86d6" stud={24} className="h-full w-full" /></div>
+        <div className="absolute -left-1 z-[1] h-[40%] w-[17%]" style={{ top: '40%' }}><Baseplate color="#3fae4a" stud={22} className="h-full w-full" /></div>
+        <div className="absolute -right-1 z-[1] h-[40%] w-[17%]" style={{ top: '40%' }}><Baseplate color="#3fae4a" stud={22} className="h-full w-full" /></div>
         {/* The stones are BLANK until crossed: showing their letters would
             let the child shape-match card to stone instead of picking by
-            ear. A stone earns its letter (golden) once Anbessa lands on
-            it, leaving a readable trail of the crossing so far. */}
+            ear. A stone earns its letter (in the card's colour) once
+            Anbessa lands on it, leaving a readable trail of the crossing. */}
         {ctx.forms.map((k, i) => {
           const form = formOf(k)
           const p2 = STONE_POINTS[i]
           const active = k === activeKey
           const done = isDone(i)
+          const c = brickColorOf(i)
           return (
             <motion.div
               key={k}
               animate={active ? { scale: [1, 1.12, 1], transition: { duration: 0.9, repeat: Infinity } } : { scale: 1 }}
-              className="geez absolute flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center rounded-[45%] text-2xl font-black"
+              className="geez absolute z-[2] flex h-[52px] w-[52px] -translate-x-1/2 -translate-y-1/2 select-none items-center justify-center rounded-full text-[26px] font-black text-white"
               style={{
                 left: `${p2.left}%`,
                 top: `${p2.top}%`,
-                background: done
-                  ? 'radial-gradient(circle at 35% 30%, #efe2c4, #cbb892)'
-                  : active
-                    ? 'radial-gradient(circle at 35% 30%, #f7f1e4, #e4d8c4)'
-                    : 'radial-gradient(circle at 35% 30%, #d5dde2, #8f9aa6)',
-                color: '#5c4630',
-                border: `2px solid ${done ? '#a89070' : active ? '#d2c2a4' : 'rgba(255,255,255,0.45)'}`,
-                boxShadow: active
-                  ? '0 0 0 3px rgba(210, 194, 164, 0.45), 0 5px 0 rgba(0,0,0,0.18)'
-                  : '0 5px 0 rgba(0,0,0,0.18)',
+                ...brickCss(done ? c : active ? '#f4ead0' : '#cdbf9b', 5),
+                borderRadius: '50%',
+                textShadow: `0 2px 0 ${shade(c, -0.4)}`,
+                outline: active ? '4px solid rgba(255,255,255,.85)' : 'none',
+                outlineOffset: 2,
               }}
             >
+              {!done && <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={studCss(active ? '#f4ead0' : '#cdbf9b', 22)} />}
               {done ? form?.char : ''}
             </motion.div>
           )
@@ -673,7 +634,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
         <motion.div
           className="absolute z-10 h-0 w-0"
           initial={false}
-          animate={{ left: `${stand.left}%`, top: `${stand.top + (sunk ? 15 : 0)}%` }}
+          animate={{ left: `${stand.left}%`, top: `${stand.top + (sunk ? 12 : 0)}%` }}
           transition={{ type: 'spring', stiffness: 300, damping: 15 }}
         >
           {/* Offsets in rem and size from the live root font, so he scales
@@ -700,68 +661,71 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
           )}
         </AnimatePresence>
         {/* Rescue banner: the sink becomes the lesson - the missed letter,
-            big and voiced, with its card pulsing in the tray below. */}
+            big and voiced, with its brick pulsing in the tray below. */}
         <AnimatePresence>
           {sunk && (
             <motion.div
               key="teach"
-              className="absolute inset-x-0 top-2 z-20 mx-auto flex w-fit max-w-[92%] items-center gap-3 rounded-2xl px-4 py-2"
-              style={{ background: 'var(--card)', boxShadow: '0 6px 18px rgba(0,0,0,0.3)' }}
+              className="absolute inset-x-0 top-1 z-20 mx-auto flex w-fit max-w-[94%] items-center gap-3 rounded-2xl py-1.5 pl-2 pr-4"
+              style={{ background: 'linear-gradient(#fff8e2,#f4dfb0)', border: '4px solid #8a5426', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.6), 0 5px 0 #5a3414, 0 10px 14px rgba(0,0,0,.3)' }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <span className="geez text-4xl font-black" style={{ color: 'var(--accent-deep)' }}>{formOf(teachKey)?.char}</span>
-              <span className="text-left text-sm font-extrabold leading-tight" style={{ color: 'var(--ink)' }}>
+              <BrickTile color={brickColorOf(ctx.forms.indexOf(teachKey))} width={52} height={52} depth={4} className="text-[32px]">{formOf(teachKey)?.char}</BrickTile>
+              <span className="text-left text-[15px] font-black leading-tight" style={{ color: '#5a3414' }}>
                 {t('stoneTeach', 'This is the letter! Tap it below to pull Anbessa up')}
               </span>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </div></div>
       {/* the tray: FORWARD keeps reading order, BACKWARD is lightly mixed */}
-      <div className="grid w-full grid-cols-7 gap-1.5" role="group" aria-label={t('stoneTray', 'Letter cards')}>
-        {tray.map((k) => {
-          const form = formOf(k)
-          const done = isDone(ctx.forms.indexOf(k))
-          const wrong = k === wrongKey
-          // Once Anbessa is in the water the right card pulses: the rescue
-          // is guided, so the sink teaches instead of stalling the child.
-          // Keyed to the MISSED letter, never the live target.
-          const hinted = sunk && k === teachKey
-          return (
-            <motion.button
-              key={k}
-              type="button"
-              onClick={() => pick(k)}
-              disabled={done}
-              aria-label={form?.char}
-              animate={
-                wrong
-                  ? { x: [0, -7, 7, -5, 5, 0], transition: { duration: 0.42 } }
-                  : hinted
-                    ? { scale: [1, 1.12, 1], transition: { duration: 0.8, repeat: Infinity } }
-                    : { x: 0, scale: 1 }
-              }
-              className={`geez fq-land-card flex h-14 w-full select-none items-center justify-center rounded-xl border-b-4 text-2xl font-black ${FOCUS}`}
-              style={{
-                background: done
-                  ? 'var(--line)'
-                  : wrong
-                    ? 'radial-gradient(circle at 32% 26%, #ff9a8a, #e23b2c)'
-                    : 'radial-gradient(circle at 32% 26%, #f7d9a2, #e0a856)',
-                borderColor: done ? 'transparent' : wrong ? '#8f160c' : hinted ? 'var(--accent)' : '#a06a30',
-                color: done ? 'var(--muted)' : wrong ? '#fff' : '#5b3a12',
-                opacity: done ? 0.45 : 1,
-                boxShadow: hinted ? '0 0 0 4px rgba(255,150,0,0.4)' : undefined,
-                outlineColor: 'var(--sky)',
-              }}
-            >
-              {form?.char}
-            </motion.button>
-          )
-        })}
-      </div>
+      <WoodTray className="w-full">
+        <TrayWell>
+          <div className="grid w-full grid-cols-7 gap-1.5 pt-1" role="group" aria-label={t('stoneTray', 'Letter cards')}>
+            {tray.map((k) => {
+              const form = formOf(k)
+              const ci = ctx.forms.indexOf(k)
+              const done = isDone(ci)
+              const wrong = k === wrongKey
+              // Once Anbessa is in the water the right brick pulses: the rescue
+              // is guided, so the sink teaches instead of stalling the child.
+              // Keyed to the MISSED letter, never the live target.
+              const hinted = sunk && k === teachKey
+              return (
+                <motion.button
+                  key={k}
+                  type="button"
+                  onClick={() => pick(k)}
+                  disabled={done}
+                  aria-label={form?.char}
+                  animate={
+                    wrong
+                      ? { x: [0, -7, 7, -5, 5, 0], transition: { duration: 0.42 } }
+                      : hinted
+                        ? { scale: [1, 1.12, 1], transition: { duration: 0.8, repeat: Infinity } }
+                        : { x: 0, scale: 1 }
+                  }
+                  className={`block w-full select-none rounded-lg pt-2 ${FOCUS}`}
+                  style={{ opacity: done ? 0.4 : 1, outlineColor: '#fff' }}
+                >
+                  <BrickTile
+                    color={done ? '#8a97a3' : wrong ? '#e23b2c' : brickColorOf(ci)}
+                    width={40}
+                    height={52}
+                    depth={5}
+                    className="text-[26px]"
+                    style={{ width: '100%', ...(hinted ? { outline: '4px solid #fff59a', outlineOffset: 2 } : null) }}
+                  >
+                    {form?.char}
+                  </BrickTile>
+                </motion.button>
+              )
+            })}
+          </div>
+        </TrayWell>
+      </WoodTray>
     </motion.div>
   )
 }
@@ -1240,168 +1204,115 @@ function StoneLesson({ stone, seed, soundOn, onDone, onBack }) {
   const spoken = ctx.phase === LearnPhase.ECHO || ctx.phase === LearnPhase.SHUFFLE
   const phaseIndex = [LearnPhase.MEET, LearnPhase.FORWARD, LearnPhase.BACKWARD, LearnPhase.ECHO, LearnPhase.SHUFFLE, LearnPhase.TRACE].indexOf(ctx.phase)
 
-  // ECHO / SHUFFLE (and a mix stone's finish) wear the brick look; the other
-  // phases keep their own scenery until they are re-skinned.
-  const mixDone = stone.type !== 'family' && ctx.phase === LearnPhase.DONE
-  if (spoken || mixDone) {
-    const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
-    const tone = mixDone || lionMood === 'eating' ? 'ok' : refuseKey ? 'try' : 'guide'
-    const signText = mixDone ? t('mixDone', 'Great mixing!') : lionMood === 'eating' ? t('nice', 'Nice!') : refuseKey ? t('brickTryAgain', 'Try again!')
+  // Every phase wears the brick look now: one wood-framed scene, the wood top
+  // bar for progress, a guide sign, and a wood bottom bar with the hear button.
+  const done = ctx.phase === LearnPhase.DONE
+  const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
+  const traceIdx = ctx.traceIdx ?? 0
+  const traceForm = formOf(traceForms[traceIdx])
+  const learnPhase = ctx.phase === LearnPhase.MEET || ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD
+  const hearKey = spoken ? ctx.target : learnPhase ? ctx.forms?.[ctx.idx] : ctx.phase === LearnPhase.TRACE ? traceForms[traceIdx] : null
+  const roundLimit = ctx.phase === LearnPhase.ECHO ? ECHO_ROUNDS : ctx.rounds
+  // Language-free progress: letters met / hopped / traced, or feeding rounds.
+  let barValue = ctx.round
+  let barTotal = roundLimit
+  if (ctx.phase === LearnPhase.MEET || ctx.phase === LearnPhase.FORWARD) { barValue = ctx.idx; barTotal = ctx.forms.length }
+  else if (ctx.phase === LearnPhase.BACKWARD) { barValue = ctx.forms.length - 1 - ctx.idx; barTotal = ctx.forms.length }
+  else if (ctx.phase === LearnPhase.TRACE) { barValue = traceIdx; barTotal = traceForms.length }
+  else if (done) { barValue = 1; barTotal = 1 }
+  const tone = done || lionMood === 'eating' ? 'ok' : refuseKey ? 'try' : 'guide'
+  const signText = done ? (stone.type === 'family' ? t('familyDone', 'Family mastered!') : t('mixDone', 'Great mixing!'))
+    : lionMood === 'eating' ? t('nice', 'Nice!') : refuseKey ? t('brickTryAgain', 'Try again!')
       : ctx.phase === LearnPhase.SHUFFLE ? t('brickFeedQuick', 'Be quick, feed Anbessa!') : t('brickFeedGuide', 'Feed Anbessa what you hear')
-    const signIcon = tone === 'guide' ? (ctx.phase === LearnPhase.SHUFFLE ? Hand : Ear) : tone === 'ok' ? Check : Hand
-    return (
-      <BrickScreen testId="brick-feed">
-        <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
-          <WoodTopBar onBack={onBack} value={mixDone ? roundLimit : ctx.round} total={roundLimit} done={mixDone} />
-          {mixDone && <Confetti reduce={false} />}
+  const signIcon = tone === 'guide' ? (ctx.phase === LearnPhase.SHUFFLE ? Hand : Ear) : tone === 'ok' ? Check : Hand
+  return (
+    <BrickScreen testId={spoken || done ? 'brick-feed' : 'brick-learn'}>
+      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', ...sceneStyle }}>
+        <WoodTopBar onBack={onBack} value={barValue} total={barTotal} done={done} />
+        {done && <Confetti reduce={false} />}
+        {(spoken || done) && (
           <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
             <GuideSign icon={signIcon} tone={tone} text={signText} />
           </div>
-          <div className="absolute inset-x-0 bottom-0 top-[118px] flex flex-col items-center px-3 pb-2">
-            {mixDone ? (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-6" data-testid="mix-done">
-                <div className="flex w-full flex-col items-center">
-                  <AnbessaSvg mood="happy" size={140} className="relative z-10" />
-                  <Baseplate color="#3fae4a" stud={24} className="-mt-10 h-[72px] w-[72%]" style={{ borderRadius: 20 }} />
-                </div>
-                <div className="flex flex-wrap items-end justify-center gap-x-2 gap-y-4" aria-hidden="true">
-                  {ctx.forms.slice(0, 8).map((k, i) => (
-                    <BrickTile key={k} color={BRICK_COLORS[i % BRICK_COLORS.length]} width={52} height={52} className="text-[28px]">{formOf(k)?.char}</BrickTile>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />
-            )}
-          </div>
-        </div>
-        {spoken && (
-          <WoodBottomBar>
-            <span className="w-14" aria-hidden="true" />
-            <RoundButton
-              onClick={() => { playForm(formOf(ctx.target), soundOn); setSpeakPulse((n) => n + 1) }}
-              label={t('hearIt', 'Hear it again')} color="#2f86d6" testId="hear-again" className="!h-16 !w-16">
-              <Volume2 className="h-8 w-8" color="#fff" strokeWidth={3} aria-hidden="true" />
-            </RoundButton>
-            <span className="w-14" aria-hidden="true" />
-          </WoodBottomBar>
         )}
-      </BrickScreen>
-    )
-  }
-
-  return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
-      <header className="flex items-center gap-3">
-        <button type="button" onClick={onBack} aria-label="Back" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <div className="flex flex-1 justify-center gap-1.5" aria-label="Lesson steps">
-          {(stone.type === 'family' ? [0, 1, 2, 3, 4, 5] : [4]).map((i) => (
-            <span key={i} className="block h-2.5 w-8 rounded-full" style={{ background: phaseIndex > i || ctx.phase === LearnPhase.DONE ? 'var(--go)' : phaseIndex === i ? 'var(--accent)' : 'var(--line)' }} />
-          ))}
-        </div>
-        <span className="geez w-10 text-center text-xl font-black" aria-hidden="true">
-          {stone.type === 'family' ? formOf(`${stone.id}-1`)?.char : '፨'}
-        </span>
-      </header>
-
-      <main className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center">
-        <AnimatePresence mode="wait">
-          {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
-          {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
-          {spoken && <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />}
-          {ctx.phase === LearnPhase.TRACE && (() => {
-            const traceForms = ctx.traceForms?.length ? ctx.traceForms : [`${ctx.familyId}-1`]
-            const traceForm = formOf(traceForms[ctx.traceIdx ?? 0])
-            return (
-              <motion.div key={`trace-${ctx.traceIdx ?? 0}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex w-full flex-col items-center gap-3">
-                <p className="text-lg font-extrabold">
-                  {t('traceHint', 'Hear it, then trace it with your finger')}{' '}
-                  <span className="mono" style={{ color: 'var(--muted)' }}>{(ctx.traceIdx ?? 0) + 1}/{traceForms.length}</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => playForm(traceForm, soundOn)}
-                  className={`chunk flex items-center gap-2 rounded-2xl px-5 py-2 font-black text-white ${FOCUS}`}
-                  style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
-                  aria-label={t('hearIt', 'Hear it again')}
-                >
-                  <Volume2 className="h-6 w-6" aria-hidden="true" />
-                  <span className="geez text-2xl">{traceForm?.char}</span>
-                </button>
-                <FidelTracePad
-                  key={`pad-${traceForms[ctx.traceIdx ?? 0]}`}
-                  char={traceForm?.char}
-                  chapter={stone.group}
-                  familyId={ctx.familyId}
-                  labels={{
-                    clear: t('traceClear', 'Clear'),
-                    check: t('traceCheck', 'Check'),
-                    instruction: '',
-                    unsupported: '-',
-                    scribble: t('traceScribble', 'Trace on the gray letter, not all over the pad. Clear and try again!'),
-                  }}
-                  onScored={(r) => {
-                    // Celebration-grade acceptance: covering the letter always
-                    // wins (never blocks). A miss soft-cues origin/direction via
-                    // the pad's overlays and lets the child try again.
-                    // Honesty lives in the LEDGER, not the gate: the trace
-                    // quality is recorded as an answer (a sloppy trace counts
-                    // as a miss for mastery/warm-up targeting) while the child
-                    // still advances - assessment without a wall.
-                    const key = traceForms[ctx.traceIdx ?? 0]
-                    if (key) recordAnswer(key, r.pass ? key : `trace:${key}`, 'trace')
-                    // ...but a scribble over the whole pad is not a trace: it
-                    // never advances (the pad shows why and lets them retry).
-                    if (r.pass || (r.coverage >= 0.5 && !r.scribble)) touch('__traced__')
-                    else playEffect('bad', soundOn)
-                  }}
-                />
-              </motion.div>
-            )
-          })()}
-          {ctx.phase === LearnPhase.DONE && (
-            <motion.div key="done" initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-4">
-              <Hero size={120} />
-              <p className="text-3xl font-black uppercase" style={{ color: 'var(--go-ink)' }}>
-                {stone.type === 'family' ? t('familyDone', 'Family mastered!') : t('mixDone', 'Great mixing!')}
-              </p>
-              <div className="flex gap-1" aria-hidden="true">
-                {ctx.forms.map((k) => (
-                  <span key={k} className="geez text-2xl font-black" style={{ color: 'var(--star)' }}>
-                    {formOf(k)?.char}
-                  </span>
+        <div className={`absolute inset-x-0 bottom-0 flex flex-col items-center px-3 pb-2 ${spoken || done ? 'top-[118px]' : 'top-[62px]'}`}>
+          {done ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-6" data-testid={stone.type === 'family' ? 'family-done' : 'mix-done'}>
+              <div className="flex w-full flex-col items-center">
+                <AnbessaSvg mood="happy" size={140} className="relative z-10" />
+                <Baseplate color="#3fae4a" stud={24} className="-mt-10 h-[72px] w-[72%]" style={{ borderRadius: 20 }} />
+              </div>
+              <div className="flex max-w-[260px] flex-wrap items-end justify-center gap-x-2 gap-y-3" aria-hidden="true">
+                {ctx.forms.slice(0, 8).map((k, i) => (
+                  <BrickTile key={k} color={brickColorOf(i)} width={52} height={52} className="text-[28px]">{formOf(k)?.char}</BrickTile>
                 ))}
               </div>
-            </motion.div>
+            </div>
+          ) : spoken ? (
+            <CookieField key={`${ctx.phase}-field`} ctx={ctx} lionMood={lionMood} refuseKey={refuseKey} onTouch={touch} speakPulse={speakPulse} />
+          ) : (
+            <AnimatePresence mode="wait">
+              {ctx.phase === LearnPhase.MEET && <BubbleMeet key={`meet-${ctx.idx}`} ctx={ctx} onTouch={popMeet} />}
+              {(ctx.phase === LearnPhase.FORWARD || ctx.phase === LearnPhase.BACKWARD) && <StoneHops key={ctx.phase} ctx={ctx} onTouch={touch} soundOn={soundOn} seed={seed} />}
+              {ctx.phase === LearnPhase.TRACE && (
+                <motion.div key={`trace-${traceIdx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex h-full w-full flex-col items-center gap-3">
+                  <GuideSign icon={Hand} tone="guide" text={t('traceHint', 'Hear it, then trace it with your finger')} />
+                  <div className="w-full rounded-3xl p-3" data-testid="trace-board"
+                    style={{ background: 'linear-gradient(#fff8e2,#f4dfb0)', border: '4px solid #8a5426', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.6), 0 6px 0 #5a3414, 0 14px 18px rgba(0,0,0,.3)', color: '#5a3414' }}>
+                    <FidelTracePad
+                      key={`pad-${traceForms[traceIdx]}`}
+                      char={traceForm?.char}
+                      chapter={stone.group}
+                      familyId={ctx.familyId}
+                      labels={{
+                        clear: t('traceClear', 'Clear'),
+                        check: t('traceCheck', 'Check'),
+                        instruction: '',
+                        unsupported: '-',
+                        scribble: t('traceScribble', 'Trace on the gray letter, not all over the pad. Clear and try again!'),
+                      }}
+                      onScored={(r) => {
+                        // Celebration-grade acceptance: covering the letter always
+                        // wins (never blocks). A miss soft-cues origin/direction via
+                        // the pad's overlays and lets the child try again.
+                        // Honesty lives in the LEDGER, not the gate: the trace
+                        // quality is recorded as an answer (a sloppy trace counts
+                        // as a miss for mastery/warm-up targeting) while the child
+                        // still advances - assessment without a wall.
+                        const key = traceForms[traceIdx]
+                        if (key) recordAnswer(key, r.pass ? key : `trace:${key}`, 'trace')
+                        // ...but a scribble over the whole pad is not a trace: it
+                        // never advances (the pad shows why and lets them retry).
+                        if (r.pass || (r.coverage >= 0.5 && !r.scribble)) touch('__traced__')
+                        else playEffect('bad', soundOn)
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
-        </AnimatePresence>
-
-        {spoken && (
-          <button
-            type="button"
-            onClick={() => {
-              playForm(formOf(ctx.target), soundOn)
-              setSpeakPulse((n) => n + 1)
-            }}
-            className={`chunk flex items-center gap-2 rounded-full px-5 py-3 font-black text-white ${FOCUS}`}
-            style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px', outlineColor: 'var(--accent)' }}
-            aria-label={t('hearIt', 'Hear it again')}
-          >
-            <Volume2 className="h-7 w-7" aria-hidden="true" /> {t('hearIt', 'Hear it again')}
-          </button>
-        )}
-
+        </div>
         <AnimatePresence>
-          {burst > 0 && (
-            <motion.div key={burst} className="pointer-events-none fixed inset-x-0 top-24 flex justify-center" initial={{ opacity: 1, y: 0, scale: 0.6 }} animate={{ opacity: 0, y: -34, scale: 1.25 }} transition={{ duration: 0.7 }} aria-hidden="true">
-              <Star className="h-9 w-9" style={{ color: 'var(--star)', fill: 'var(--star)' }} />
+          {burst > 0 && !spoken && !done && (
+            <motion.div key={burst} className="pointer-events-none absolute inset-x-0 top-24 z-30 flex justify-center" initial={{ opacity: 1, y: 0, scale: 0.6 }} animate={{ opacity: 0, y: -34, scale: 1.25 }} transition={{ duration: 0.7 }} aria-hidden="true">
+              <Star className="h-9 w-9" style={{ color: '#ffd23a', fill: '#ffd23a' }} />
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
-    </div>
+      </div>
+      {!done && hearKey && (
+        <WoodBottomBar>
+          <span className="w-14" aria-hidden="true" />
+          <RoundButton
+            onClick={() => { playForm(formOf(hearKey), soundOn); if (spoken) setSpeakPulse((n) => n + 1) }}
+            label={t('hearIt', 'Hear it again')} color="#2f86d6" testId="hear-again" className="!h-16 !w-16">
+            <Volume2 className="h-8 w-8" color="#fff" strokeWidth={3} aria-hidden="true" />
+          </RoundButton>
+          <span className="w-14" aria-hidden="true" />
+        </WoodBottomBar>
+      )}
+    </BrickScreen>
   )
 }
 
