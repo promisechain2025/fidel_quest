@@ -36,7 +36,7 @@ android {
         // CI (.github/workflows/android-play.yml) passes -PegeezVersionCode=<n>
         // so every Play upload gets a new, higher code; local builds keep 8.
         versionCode((project.findProperty('egeezVersionCode') ?: '118') as Integer)
-        versionName "1.4.1"
+        versionName "1.4.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
