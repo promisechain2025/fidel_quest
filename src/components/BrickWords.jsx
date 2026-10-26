@@ -20,7 +20,7 @@ import { playForm, playEffect, audio } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { BRICK_COLORS, BrickScreen, GuideSign, useGuideFeedback, brickLabels, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, overRect, brickCss, studCss, shade, WOOD } from './brickKit'
-import { BRICK_WORDS, wordAt, initBrickWord, usedIndices, place } from '../brickWordsCore'
+import { BRICK_SESSION, wordAt, initBrickWord, usedIndices, place } from '../brickWordsCore'
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const SCENE = publicUrl('/img/games/brick-sunrise.webp')
@@ -100,7 +100,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
   return (
     <BrickScreen testId="brick-words">
       <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: `#f7c9a0 url(${SCENE}) center bottom / cover no-repeat` }}>
-        <WoodTopBar onBack={onBack} value={round + (won ? 1 : 0)} total={BRICK_WORDS.length} done={won} />
+        <WoodTopBar onBack={onBack} value={(round % BRICK_SESSION) + (won ? 1 : 0)} total={BRICK_SESSION} done={won} />
         {won && <Confetti reduce={reduce} />}
         <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
           {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
