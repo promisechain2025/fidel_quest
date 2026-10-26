@@ -23,6 +23,9 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Star } from 'lucide-react'
 import { t } from '../platform/i18n'
+import { publicUrl } from '../platform/publicUrl'
+import WordPicture from './Pictures'
+import { brickPicOf } from '../brickPictures'
 import { shade, brickCss, studCss, WOOD, WOOD_DARK } from './blockArt'
 
 export { shade, brickCss, studCss, WOOD, WOOD_DARK }
@@ -251,5 +254,19 @@ export function Confetti({ count = 24, reduce }) {
         )
       })}
     </div>
+  )
+}
+
+/** A word's picture: the 3D brick art when it exists, otherwise the drawn
+    picture on a round cream plate so every stall item still looks deliberate. */
+export function BrickPicture({ geez, emoji, size = 72, className = '' }) {
+  const pic = brickPicOf(geez)
+  if (pic) {
+    return <img src={publicUrl(`/img/games/bw/${pic}.webp`)} alt="" draggable={false} data-testid="brick-picture" className={`select-none object-contain ${className}`} style={{ width: size, height: size, filter: 'drop-shadow(0 4px 3px rgba(70,40,10,.35))' }} />
+  }
+  return (
+    <span data-testid="plate-picture" className={`flex items-center justify-center rounded-full ${className}`} style={{ width: size, height: size, background: 'radial-gradient(circle at 35% 30%, #fffdf6, #f1dfb2)', boxShadow: 'inset 0 -3px 0 rgba(120,80,30,.25), 0 3px 3px rgba(70,40,10,.3)' }}>
+      <WordPicture emoji={emoji} size={Math.round(size * 0.78)} />
+    </span>
   )
 }
