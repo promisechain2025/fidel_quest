@@ -19,7 +19,7 @@ import WUDASE_THU from '../data/wudaseThursdayMarks.json'
 import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle } from '../platform/prayerBook'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle, nextBookId } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -430,7 +430,20 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
     animateTo(now, target, () => { finishTurn(commit); turning.current = false })
   }
   const canBack = pageSafe > 0
-  const canNext = pageSafe < pages.length - 1
+  // On a book's last page, Next carries on to the following book (Mon -> Tue -> ... -> Sun; Sunday is the end).
+  const followId = nextBookId(BOOKS.map((b) => b.id), BOOK.id)
+  const atEnd = pageSafe >= pages.length - 1
+  const canNext = !atEnd || !!followId
+  const followLocked = atEnd && !!followId && !prayerBookOpen(followId)
+  const onNextTap = () => {
+    if (!atEnd) { goTurn(1); return }
+    if (!followId || turning.current || drag.current) return
+    stopForTurn()
+    // Locked day: same purchase path as the shelf. Open day: start it from its first page.
+    if (!prayerBookOpen(followId)) { onLocked?.(followId); return }
+    saveResume(followId, { page: 0, unit: -1 })
+    onPick(followId)
+  }
 
   // Put a freshly mounted flap at its start angle before paint.
   useEffect(() => { if (turn) setAngle(turn.dir === 1 ? 0 : 180) }, [turn, setAngle])
@@ -538,7 +551,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
           )}
         </div>
         <button type="button" className="pb-edge pb-edge-l" onClick={() => goTurn(-1)} disabled={!canBack} aria-label="ወደ ኋላ" data-testid="page-back"><span className="pb-arrow"><ChevronLeft size={22} /></span></button>
-        <button type="button" className="pb-edge pb-edge-r" onClick={() => goTurn(1)} disabled={!canNext} aria-label="ቀጣይ" data-testid="page-next"><span className="pb-arrow"><ChevronRight size={22} /></span></button>
+        <button type="button" className="pb-edge pb-edge-r" onClick={onNextTap} disabled={!canNext} aria-label="ቀጣይ" data-testid="page-next" data-next-book={atEnd && followId ? followId : undefined} data-locked={followLocked || undefined}><span className="pb-arrow">{followLocked ? <Lock size={20} aria-hidden="true" /> : <ChevronRight size={22} />}</span></button>
       </div>
 
       <footer className="pb-fb" data-testid="controls">{speedEl}{playEl(26)}{sizeEl}</footer>
