@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { MARKET_PICS } from './brickPicturesMarket'
 import { brickPicOf } from './brickPictures'
-import { BRICK_WORDS } from './brickWordsCore'
+import { AM_BRICK_WORDS as BRICK_WORDS } from './brickWordsAm'
 
 describe('Word Market brick pictures', () => {
   it('every market picture file is bundled', () => {

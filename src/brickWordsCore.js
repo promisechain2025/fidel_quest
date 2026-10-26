@@ -1,48 +1,69 @@
 /* WORD BRICKS (sample) - word list + round helpers.
    Reuses the Word Workshop core (wordToKeys / initWorkshop / workshopTransition)
    so the spelling rules stay in ONE place; this file only adds the words that
-   have a 3D toy-brick picture and a tray that never offers a stranger letter. */
-import { initWorkshop, workshopTransition, wordToKeys, Phase, WorkshopEvent } from './workshopCore'
+   have a 3D toy-brick picture and a tray that never offers a stranger letter.
 
-/** Words: each has a bundled 3D picture (public/img/games/bw/<pic>.webp)
-    and an existing word recording (audio words/<latin>). */
-export const BRICK_WORDS = [
-  { geez: 'ላም', latin: 'lam', pic: 'cow' },
-  { geez: 'ቤት', latin: 'biet', pic: 'house' },
-  { geez: 'ማር', latin: 'mar', pic: 'honey' },
-  { geez: 'አሳ', latin: 'asa', pic: 'fish' },
-  { geez: 'ሎሚ', latin: 'lomi', pic: 'lemon' },
-  { geez: 'ኮከብ', latin: 'kokeb', pic: 'star' },
-  { geez: 'ሙዝ', latin: 'muz', pic: 'banana' },
-  { geez: 'ንብ', latin: 'nib', pic: 'bee' },
-  { geez: 'ዶሮ', latin: 'doro', pic: 'chicken' },
-  { geez: 'ዳቦ', latin: 'dabo', pic: 'bread' },
-  { geez: 'ኬክ', latin: 'kek', pic: 'cake' },
-  { geez: 'ዛፍ', latin: 'zaf', pic: 'tree' },
-  { geez: 'ወፍ', latin: 'wef', pic: 'bird' },
-  { geez: 'ጀልባ', latin: 'jelba', pic: 'boat' },
-  { geez: 'መኪና', latin: 'mekina', pic: 'car' },
-  { geez: 'ድመት', latin: 'dimet', pic: 'cat' },
-  { geez: 'ዝሆን', latin: 'zihon', pic: 'elephant' },
-  { geez: 'አንበሳ', latin: 'anbesa', pic: 'lion' },
-  { geez: 'ፈረስ', latin: 'feres', pic: 'horse' },
-  { geez: 'ግመል', latin: 'gimel', pic: 'camel' },
-  { geez: 'ቡና', latin: 'buna', pic: 'coffee' },
-  { geez: 'ሻማ', latin: 'shama', pic: 'candle' },
-  { geez: 'ቁልፍ', latin: 'qulf', pic: 'key' },
-  { geez: 'ጫማ', latin: 'chama', pic: 'shoe' },
-  { geez: 'ካሮት', latin: 'karot', pic: 'carrot' },
-  { geez: 'ፀሐይ', latin: 'tsehay', pic: 'sun' },
-  { geez: 'ጨረቃ', latin: 'chereqa', pic: 'moon' },
-  { geez: 'ፍየል', latin: 'fiyel', pic: 'goat' },
-]
+   The word list follows the learn language (fq.pack): Amharic keeps its
+   curated list (brickWordsAm.js); every other pack - Tigrinya - gets the words
+   of ITS OWN pack word list that have a toy-brick picture and a recording, so a
+   Tigrinya child never sees (or hears) an Amharic word. A Tigrinya word with no
+   picture or no recording is simply left out. */
+import { initWorkshop, workshopTransition, wordToKeys, Phase, WorkshopEvent } from './workshopCore'
+import { AM_BRICK_WORDS } from './brickWordsAm'
+import { brickPicOf } from './brickPictures'
+import { PACKS, INDEXES, mergeFamilies, getActivePackId } from './platform/ethiopic'
+import { ETHIOPIC_SCRIPT } from './script/ethiopic'
+
+/** Every word of a pack's own list, as { geez, latin, noAudio }. Pure. */
+export function packWordList(packId) {
+  const pack = PACKS[packId]
+  if (!pack) return []
+  const out = []
+  for (const f of mergeFamilies(ETHIOPIC_SCRIPT, pack)) {
+    const list = Array.isArray(f.words) && f.words.length ? f.words : f.word ? [f.word] : []
+    for (const w of list) if (w && w.geez && w.latin) out.push(w)
+  }
+  return out
+}
+
+/** Tigrinya words whose only brick picture is a near-miss (sugar is drawn as candy),
+    fine for a market stall but not for a spelling game that names the picture. */
+const NEAR_MISS_PICTURE = new Set(['ሽኮር'])
+
+/** The Word Bricks words for a learn language: { geez, latin, pic }.
+    Amharic = the curated list; any other pack = its recorded, pictured,
+    2-4 fidel words (one per picture, so two answers never share art). */
+export function brickWordsFor(packId) {
+  if (packId === 'am') return AM_BRICK_WORDS
+  const seenPic = new Set()
+  const seenGeez = new Set()
+  const out = []
+  for (const w of packWordList(packId)) {
+    if (w.noAudio || seenGeez.has(w.geez) || NEAR_MISS_PICTURE.has(w.geez)) continue
+    const pic = brickPicOf(w.geez)
+    const n = Array.from(w.geez).length
+    if (!pic || seenPic.has(pic) || n < 2 || n > 4) continue
+    if (!Array.from(w.geez).every((c) => INDEXES.byChar.has(c))) continue
+    seenGeez.add(w.geez)
+    seenPic.add(pic)
+    out.push({ geez: w.geez, latin: w.latin, pic })
+  }
+  return out
+}
+
+/** The words of the language the child is learning (fixed per load; a pack switch reloads). */
+export const BRICK_WORDS = brickWordsFor(getActivePackId())
 
 /** Tray distractors come from the letters of the other sample words. */
 export const LETTER_POOL = [...new Set(BRICK_WORDS.flatMap((w) => wordToKeys(w.geez)))]
 
-/** A round is 6 words; the stride walks the list so neighbours differ (5 is coprime with 28). */
+/** A round is 6 words; the stride walks the list so neighbours differ. It is the
+    first number from 5 up that shares no factor with the list length, so the
+    walk visits every word before it repeats (5 for the 28 Amharic words). */
 export const BRICK_SESSION = 6
-const STRIDE = 5
+const gcd = (a, b) => (b ? gcd(b, a % b) : a)
+const strideFor = (n) => { let s = 5; while (n > 1 && gcd(s, n) !== 1) s += 1; return s }
+const STRIDE = strideFor(BRICK_WORDS.length)
 export const wordAt = (start, round) => BRICK_WORDS[(start + round * STRIDE) % BRICK_WORDS.length]
 export const distractorsFor = (round) => Math.min(4, 2 + Math.floor(round / 2))
 
