@@ -11,7 +11,7 @@
    No Latin transliteration or English gloss is ever shown beside the fidel or
    the picture: the picture and the recording carry the meaning.
    ========================================================================== */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Volume2, RotateCcw, Check, ArrowRight, Star, Hand, ThumbsUp, Ear } from 'lucide-react'
 import { t } from '../platform/i18n'
@@ -24,6 +24,8 @@ import { BRICK_SESSION, wordAt, initBrickWord, usedIndices, place } from '../bri
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const SCENE = publicUrl('/img/games/brick-sunrise.webp')
+const PIC_TOP = 132 // px from the top of the scene
+const PIC_FULL = 262 // px: board (212 + padding + border) incl. shadow at scale 1
 const colorOf = (i, seed) => BRICK_COLORS[(i * 3 + seed) % BRICK_COLORS.length]
 
 export default function BrickWords({ soundOn = true, onBack, seed }) {
@@ -36,6 +38,29 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
   const [wobble, setWobble] = useState(null)
   const [miss, setMiss] = useState(false)
   const slotRefs = useRef([])
+  // The picture board is pinned under the guide sign and the baseplate to the
+  // bottom of the scene, so on a short screen (a desktop browser window, a
+  // small phone) the baseplate used to sit ON TOP of the lower part of the
+  // picture. Scale the board down to the room that is actually left.
+  const sceneRef = useRef(null)
+  const plateRef = useRef(null)
+  const [pScale, setPScale] = useState(1)
+  useLayoutEffect(() => {
+    const fit = () => {
+      const scene = sceneRef.current, plate = plateRef.current
+      if (!scene || !plate) return
+      const sr = scene.getBoundingClientRect()
+      if (!sr.height) return // no layout (tests): keep full size
+      const room = plate.getBoundingClientRect().top - sr.top - PIC_TOP - 22 // 22 = speaker badge overhang + breathing room
+      const next = Math.round(Math.min(1, Math.max(0.3, room / PIC_FULL)) * 100) / 100
+      setPScale((cur) => (cur === next ? cur : next))
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    if (ro) { ro.observe(sceneRef.current); ro.observe(plateRef.current) }
+    return () => { window.removeEventListener('resize', fit); ro?.disconnect() }
+  }, [ctx.target.length])
   const [fb, flash, clearFb] = useGuideFeedback()
   const L = brickLabels()
   const timers = useRef([])
@@ -99,7 +124,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
 
   return (
     <BrickScreen testId="brick-words">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: `#f7c9a0 url(${SCENE}) center bottom / cover no-repeat` }}>
+      <div ref={sceneRef} className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: `#f7c9a0 url(${SCENE}) center bottom / cover no-repeat` }}>
         <WoodTopBar onBack={onBack} value={(round % BRICK_SESSION) + (won ? 1 : 0)} total={BRICK_SESSION} done={won} />
         {won && <Confetti reduce={reduce} />}
         <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
@@ -122,7 +147,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
           </>
         )}
         {/* picture on a wooden board */}
-        <div className="absolute inset-x-0 top-[132px] flex justify-center">
+        <div className="absolute inset-x-0 top-[132px] flex justify-center" style={{ transform: `scale(${pScale})`, transformOrigin: 'top center' }} data-testid="picture-fit" data-scale={pScale}>
           <motion.button type="button" onClick={sayWord} aria-label={L.listen} data-testid="picture"
             key={word.pic}
             initial={reduce ? false : { y: -40, opacity: 0, rotate: -3 }}
@@ -143,7 +168,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
         </div>
 
         {/* studded baseplate with one slot per letter */}
-        <div className="absolute inset-x-0 bottom-9 flex justify-center">
+        <div ref={plateRef} className="absolute inset-x-0 bottom-9 flex justify-center">
           <Baseplate testId="baseplate" className="px-5 pb-5 pt-7" style={{ minWidth: 300 }}>
             <div className="flex items-end justify-center gap-2.5">
               {ctx.target.map((k, i) => {
