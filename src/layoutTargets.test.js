@@ -29,7 +29,7 @@ describe('tap targets and tablet widths', () => {
 
   it('full-screen columns widen on tablets', () => {
     const narrow = lines
-      .filter(({ l }) => /className=/.test(l) && /\bmx-auto\b/.test(l) && /\b(min-h-screen|min-h-dvh|h-screen)\b/.test(l) && /(^|[\s"`])max-w-(md|xl|lg)\b/.test(l) && !/md:max-w-/.test(l))
+      .filter(({ l }) => /className=/.test(l) && /\bmx-auto\b/.test(l) && /\b(min-h-screen|min-h-dvh|h-screen|h-dvh)\b/.test(l) && /(^|[\s"`])max-w-(md|xl|lg)\b/.test(l) && !/md:max-w-/.test(l))
       .map((x) => x.where)
     expect(narrow).toEqual([])
   })

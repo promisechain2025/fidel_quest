@@ -120,7 +120,7 @@ body {
 /* Bigger screens get a proportionally bigger game. Tailwind sizes are
    rem-based, so raising the root font size scales layout, type, spacing,
    and the max-w-* content columns together - while viewport-unit math
-   (min-h-screen, the TV chant board) and the pure game logic stay exact.
+   (min-h-dvh, the TV chant board) and the pure game logic stay exact.
    The min-height guard keeps phones held sideways out of this tier: short
    landscape has its own fq-land-* rules further down. */
 @media (min-width: 700px) and (min-height: 640px) {
@@ -408,3 +408,13 @@ input, textarea, [contenteditable='true'] {
 /* Prayer Book shelf: a book not owned yet (free-download build only). */
 .pb-shelf-item.pb-locked { opacity: 0.55; }
 .pb-lock-ic { display: inline-block; vertical-align: -2px; margin-inline-end: 6px; }
+
+/* Safe areas for full-page screens (notch / Dynamic Island / home bar). The
+   inset is a transparent border so each page keeps its own padding and the
+   page still fills exactly one dynamic viewport (border-box). The brick shells
+   and Block Church add their own insets. */
+.fq-safe {
+  box-sizing: border-box;
+  border-top: env(safe-area-inset-top) solid transparent;
+  border-bottom: env(safe-area-inset-bottom) solid transparent;
+}

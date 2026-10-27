@@ -1479,7 +1479,7 @@ export default function FidelQuestApp() {
           the manuscript ground gradient, glow, lattice and watermark live on
           that canvas, and body already paints var(--paper) behind it as the
           fallback. An opaque background here would occlude the whole ground. */}
-      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
+      <div className="min-h-dvh" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
         <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
@@ -2509,7 +2509,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
   const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
   const eta = formatDual(etaStamp(today, learned, per), getLang())
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -2612,7 +2612,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-7 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
         <div className="flex min-w-[6.5rem] flex-1 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
@@ -3646,7 +3646,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6 fq-safe">
       <header className="flex items-center gap-3">
         <Chunky tone="card" className="flex h-11 w-11 shrink-0 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -4416,7 +4416,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
   const who = challenge.by || t('aFriend', 'A friend')
   const levelTitle = t(`${level.id}.title`, level.title)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4443,7 +4443,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
 
 function ChallengeMissing({ onHome }) {
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <Hero size={112} mood="worried" />
       <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
         {t('challengeGone', 'This challenge is not available.')}
@@ -4491,7 +4491,7 @@ function JoinClassIntro({ invite, onHome }) {
     setJoined(true)
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4584,7 +4584,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
 function AssignmentIntro({ assignment, count, onStart, onHome }) {
   useEscapeKey(onHome)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4649,7 +4649,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     } catch { /* clipboard blocked */ }
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -5243,7 +5243,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
   const busy = ctx.status !== GameState.AWAITING_INPUT
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />

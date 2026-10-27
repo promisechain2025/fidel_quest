@@ -614,7 +614,7 @@ export default function TeacherMode({ onBack, onTv, incomingReceipt = null, need
   const inviteUrl = useMemo(() => (code ? classUrl({ code, teacher: cls.teacher, goalMin: cls.goalMin, unlock: unlockLive(cls.unlock) ? cls.unlock.code : null }, appLinkUrl()) : null), [code, cls?.teacher, cls?.goalMin, cls?.unlock])
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-5 pb-12 pt-6 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

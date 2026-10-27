@@ -28,7 +28,7 @@
    the UI dispatches TOUCH events and renders the phase.
    ========================================================================== */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ArrowRight, ArrowLeft, Volume2, Star, Lock, Check, Ear, Hand } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from './platform/ethiopic'
@@ -379,6 +379,7 @@ function MeetShelf({ forms, met, short }) {
 /** MEET: pop the drifting brick balloon to hear the letter.
     School Path's first card shows that word's brick picture on a wood plaque,
     so the fidel stays the thing you read. */
+const showWordEarly = (ctx) => ctx.idx === 0 && Boolean(ctx.meetWord?.geez)
 function BubbleMeet({ ctx, onTouch }) {
   const form = formOf(ctx.forms[ctx.idx])
   const [popped, setPopped] = useState(false)
@@ -388,11 +389,29 @@ function BubbleMeet({ ctx, onTouch }) {
   const btnRef = useRef(null)
   const short = useShortScreen()
   const land = useLandscapeShort()
-  const bs = land ? 92 : short ? 112 : 160
+  // Measured room: the bubble shrinks and its wander is squeezed to fit the
+  // stage, so turning the phone sideways never clips or hides the bubble.
+  const [stageH, setStageH] = useState(0)
+  useLayoutEffect(() => {
+    const el = stageRef.current
+    if (!el) return undefined
+    const m = () => setStageH(Math.round(el.getBoundingClientRect().height))
+    m()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(m) : null
+    ro?.observe(el)
+    window.addEventListener('resize', m)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', m) }
+  }, [])
+  const bsBase = land ? 92 : short ? 112 : 160
+  const bs = stageH ? Math.max(56, Math.min(bsBase, Math.floor((stageH - 24) * 0.8))) : bsBase
   const k = bs / 160
+  // y travel: whatever room is left under the bubble (top-4 = 16px margin + 14px for the drop shadow)
+  const wanderMax = showWordEarly(ctx) ? 180 : 130
+  const room = stageH ? Math.max(0, stageH - bs - 30) : Infinity
+  const yk = Math.min(k, room / wanderMax)
   if (!form) return null
   const color = brickColorOf(ctx.idx)
-  const showWord = ctx.idx === 0 && Boolean(ctx.meetWord?.geez)
+  const showWord = showWordEarly(ctx)
   // On pop: freeze the wandering, voice the letter, and let the balloon swell and
   // fade. The parent holds the advance (~0.9s) so the next letter only drifts in
   // once this one has been fully spoken and cleared.
@@ -425,7 +444,7 @@ function BubbleMeet({ ctx, onTouch }) {
           type="button"
           onPointerDown={pop}
           disabled={popped}
-          initial={{ x: '-30%', y: Math.round(30 * k), scale: 0.5 }}
+          initial={{ x: '-30%', y: Math.round(30 * yk), scale: 0.5 }}
           animate={
             popped
               ? { scale: 1.4, opacity: 0 }
@@ -433,15 +452,15 @@ function BubbleMeet({ ctx, onTouch }) {
                   // A wandering loop (roughly a figure-8) with a rocking tilt and a
                   // bouncy squash-stretch so the letter looks like it is dancing.
                   x: ['-34%', '0%', '32%', '38%', '10%', '-24%', '-40%', '-34%'],
-                  y: [(showWord ? 96 : 20), (showWord ? 110 : 8), (showWord ? 130 : 40), (showWord ? 160 : 90), (showWord ? 180 : 130), (showWord ? 150 : 100), (showWord ? 120 : 50), (showWord ? 96 : 20)].map((v) => Math.round(v * k)),
+                  y: [(showWord ? 96 : 20), (showWord ? 110 : 8), (showWord ? 130 : 40), (showWord ? 160 : 90), (showWord ? 180 : 130), (showWord ? 150 : 100), (showWord ? 120 : 50), (showWord ? 96 : 20)].map((v) => Math.round(v * yk)),
                   rotate: [0, 9, -5, 8, -9, 6, -3, 0],
                   scale: [1, 1.06, 0.95, 1.05, 0.97, 1.07, 0.96, 1],
                 }
           }
           transition={popped ? { duration: 0.85, ease: 'easeInOut' } : { duration: 8.5, repeat: Infinity, ease: 'easeInOut', times: [0, 0.14, 0.3, 0.45, 0.6, 0.74, 0.88, 1] }}
-          className={`geez absolute left-1/2 top-4 flex items-center justify-center rounded-full font-black ${short ? 'text-6xl' : 'text-8xl'} ${FOCUS}`}
+          className={`geez absolute left-1/2 top-4 flex items-center justify-center rounded-full font-black ${FOCUS}`}
           style={{
-            width: bs, height: bs, marginLeft: -bs / 2,
+            width: bs, height: bs, marginLeft: -bs / 2, fontSize: Math.round(bs * (short ? 0.54 : 0.6)),
             // A glossy toy balloon: the brick colour melts from a bright core to a deep
             // rim, a white sheen sits top-left, and three studs crown it.
             background: `radial-gradient(circle at 36% 26%, ${shade(color, 0.45)} 0%, ${color} 56%, ${shade(color, -0.35)} 100%)`,
@@ -745,7 +764,7 @@ function StoneHops({ ctx, onTouch, soundOn = true, seed = 1 }) {
     feed him. `mouthRef` is the drop target; a drop within it feeds `k`.
     `onFeed(k, rect)` reports the card's screen rect so the parent can fly the
     letter from here into the mouth. */
-function LetterCard({ k, color, hinted, delay, mouthRef, onFeed, onDragActive, refusing }) {
+function LetterCard({ k, color, hinted, delay, mouthRef, onFeed, onDragActive, refusing, size = 64 }) {
   const form = formOf(k)
   const tone = color
   const elRef = useRef(null)
@@ -795,8 +814,9 @@ function LetterCard({ k, color, hinted, delay, mouthRef, onFeed, onDragActive, r
       // Quick lift-off: the flying letter (in CookieField) carries the char
       // into the mouth, so the card itself just clears out fast.
       exit={{ scale: 0.2, opacity: 0, transition: { duration: 0.16, ease: 'easeIn' } }}
-      className={`geez relative flex h-[64px] w-[64px] cursor-grab touch-none select-none items-center justify-center rounded-xl text-[34px] font-black text-white active:cursor-grabbing ${FOCUS}`}
+      className={`geez relative flex cursor-grab touch-none select-none items-center justify-center rounded-xl font-black text-white active:cursor-grabbing ${FOCUS}`}
       style={{
+        width: size, height: size, fontSize: Math.round(size * 0.53),
         // Wrong pick: the brick shakes and gets a white-and-red ring so the child sees which letter missed.
         ...brickCss(tone, 6),
         boxShadow: refusing ? `${brickCss(tone, 6).boxShadow}, 0 0 0 4px #fff, 0 0 0 8px #d33a2c` : hinted ? `${brickCss(tone, 6).boxShadow}, 0 0 0 4px #fff, 0 0 20px 8px rgba(255,226,122,.95)` : brickCss(tone, 6).boxShadow,
@@ -881,11 +901,27 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const land = useLandscapeShort()
   const short = useShortScreen()
   const [chomp, setChomp] = useState(0) // bumps a crumb burst each swallow
+  // Rotation / small screens: size the cards to the room the field really has
+  // (measured, so a turn of the phone re-fits live). Never below 44px.
+  const [fieldH, setFieldH] = useState(0)
+  useLayoutEffect(() => {
+    const el = trayRef.current
+    if (!el) return undefined
+    const m = () => setFieldH(Math.round(el.getBoundingClientRect().height))
+    m()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(m) : null
+    ro?.observe(el)
+    window.addEventListener('resize', m)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', m) }
+  }, [])
   // Only letters still on the tray; always keep the current target so a wrong
   // drag on a removed letter can never strand the round.
   const eaten = ctx.eaten || []
   const visible = ctx.order.filter((k) => !eaten.includes(k) || k === ctx.target)
   const mood = dragging ? 'hungry' : lionMood
+  const rows = Math.max(1, Math.ceil(ctx.order.length / 4))
+  const room = fieldH ? fieldH - (land ? 28 : 54 + 8 + 28) : 0
+  const cardSize = fieldH ? Math.max(44, Math.min(64, Math.floor((room - (rows - 1) * 16) / rows))) : 64
 
   // Record where a card was when fed, so its flight can start from there.
   const feed = (k, rect) => {
@@ -939,6 +975,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
                   onFeed={feed}
                   onDragActive={setDragging}
                   refusing={k === refuseKey}
+                  size={cardSize}
                 />
               ))}
             </AnimatePresence>
@@ -1370,7 +1407,7 @@ export default function LearnLetters({ soundOn, onBack }) {
   const groups = [1, 2, 3, 4]
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-7 pb-12 pt-6 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />

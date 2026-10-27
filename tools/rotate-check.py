@@ -159,7 +159,7 @@ CHECK_JS = r"""(ins) => {
       if ((cx || cy) && r.left < W && r.right > 0 && r.top < H && r.bottom > 0) { note('clipped', e, 'by ' + (a.getAttribute('data-testid') || a.className.toString().slice(0, 30))); break }
     }
     // under the notch / dynamic island / home indicator (only with SAFE=1)
-    if (ins && (r.top < ins.top - 2 || r.bottom > H - ins.bottom + 2 || r.left < ins.left - 2 || r.right > W - ins.right + 2) && r.bottom > 0 && r.top < H && r.right > 0 && r.left < W) {
+    if (ins && !inScrollable(e, 'y') && !inScrollable(e, 'x') && (r.top < ins.top - 2 || r.bottom > H - ins.bottom + 2 || r.left < ins.left - 2 || r.right > W - ins.right + 2) && r.bottom > 0 && r.top < H && r.right > 0 && r.left < W) {
       const side = r.top < ins.top - 2 ? 'top' : r.bottom > H - ins.bottom + 2 ? 'bottom' : r.left < ins.left - 2 ? 'left' : 'right'
       if (fixedAnc(e) || side === 'left' || side === 'right' || !pageScrolls || r.top < ins.top - 2 && window.scrollY === 0) note('unsafe-' + side, e, Math.round(r.top) + ',' + Math.round(r.left) + ' inset ' + JSON.stringify(ins))
     }

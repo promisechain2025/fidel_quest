@@ -98,7 +98,7 @@ export default function PracticeReport({ onBack, today: todayProp }) {
   }
   const tableDays = rows.map((r) => ({ day: r.day, minutes: activeMinutes(r), prayer: prayerMinutes(r), sessions: r.sessions, items: r.items, answered: r.answered, correct: r.correct, lessons: r.lessons, games: r.games, flags: flagCount(r) }))
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6" data-testid="practice-report">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-5 pb-12 pt-6 fq-safe" data-testid="practice-report">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
