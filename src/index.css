@@ -318,8 +318,8 @@ input, textarea, [contenteditable='true'] {
 .pb-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: var(--pb-paper); border: 1.5px solid var(--pb-paper-edge); }
 .pb-stage { flex: 1; position: relative; overflow: hidden; padding: 4px 14px 8px; touch-action: none; }
 .pb-edge { position: absolute; top: 0; bottom: 0; width: 36px; z-index: 4; display: flex; align-items: center; background: transparent; padding: 0; border: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
-.pb-edge-l { left: 0; justify-content: flex-start; }
-.pb-edge-r { right: 0; justify-content: flex-end; }
+.pb-edge-l { left: env(safe-area-inset-left, 0px); justify-content: flex-start; }
+.pb-edge-r { right: env(safe-area-inset-right, 0px); justify-content: flex-end; }
 .pb-edge:disabled { visibility: hidden; }
 .pb-arrow { width: 28px; height: 44px; display: grid; place-items: center; color: #7a6347; background: rgba(251, 243, 226, .85); box-shadow: 0 1px 4px rgba(90, 60, 20, .25); }
 .pb-edge-l .pb-arrow { border-radius: 0 14px 14px 0; }

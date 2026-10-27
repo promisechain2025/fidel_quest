@@ -77,7 +77,9 @@ def open_home(pg):
 
 
 def open_setup(pg):
-    pg.goto(URL + '?unlock'); pg.wait_for_timeout(2200)
+    pg.goto(URL + '?unlock'); pg.wait_for_timeout(1200)
+    if pg.get_by_role('button', name='Next').count() == 0:  # a fresh install: wipe state and look again
+        pg.evaluate('localStorage.clear(); sessionStorage.clear()'); pg.goto(URL); pg.wait_for_timeout(2200)
     return pg.get_by_role('button', name='Next').count() > 0
 
 
@@ -251,6 +253,8 @@ def run_one(b, name, opener, pair, start_landscape, pack, results, tmp, frames):
         for i, (lbl, w, h) in enumerate(steps):
             if i: pg.set_viewport_size({'width': w, 'height': h}); pg.wait_for_timeout(350 if lbl == 'rotated' else 600)
             s = sig(pg, cdp)
+            if name == 'catch':  # letters fall past the head by design; that is not a covered control
+                s['issues'] = [i for i in s['issues'] if not i.startswith('covered')]
             if base is None: base = s['tid']
             elif s['tid'] != base and base: s['issues'].append(f'state: screen {base!r} -> {s["tid"]!r}')
             p = f'{tmp}/{name}-{key}-{lbl}.png'; pg.screenshot(path=p); row.append(p)

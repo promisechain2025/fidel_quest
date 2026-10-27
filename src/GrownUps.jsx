@@ -853,7 +853,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {qaUnlockEnabled() && (
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmUnlock ? (
-              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex min-h-11 items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
                 <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('gpUnlockAll', 'Open everything (for testing)…')}
               </button>
             ) : (
