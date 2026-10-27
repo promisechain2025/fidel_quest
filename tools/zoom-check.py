@@ -91,8 +91,10 @@ def run(b, name, opener, pack):
         if sx: res['fails'].append(f'sideways scroll x={sx}')
         # desktop browser zoom guard
         pg.keyboard.down('Control'); pg.mouse.wheel(0, -300); pg.keyboard.up('Control'); pg.wait_for_timeout(150)
-        pg.keyboard.press('Control+Equal'); pg.keyboard.press('Control+Plus'); pg.wait_for_timeout(150)
-        res['prevented'] = pg.evaluate('window.__zoomKeysPrevented')
+        pg.evaluate("window.__zk=[]; window.addEventListener('keydown',e=>{ if(e.ctrlKey && ['+','-','=','_','0'].includes(e.key)) window.__zk.push(e.defaultPrevented) })")
+        pg.keyboard.press('Control+Equal'); pg.keyboard.press('Control+Shift+Equal'); pg.keyboard.press('Control+Minus'); pg.wait_for_timeout(150)
+        res['prevented'] = pg.evaluate('window.__zk')
+        if not all(res['prevented']): res['fails'].append('ctrl zoom key not default-prevented')
         sc = pg.evaluate('visualViewport.scale')
         if abs(sc - scale0) > 0.01: res['fails'].append(f'zoom after ctrl: {sc}')
     except Exception as e:  # noqa: BLE001
