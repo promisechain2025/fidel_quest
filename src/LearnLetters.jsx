@@ -782,7 +782,6 @@ function LetterCard({ k, color, hinted, delay, mouthRef, onFeed, onDragActive, r
   return (
     <motion.div
       ref={elRef}
-      layout
       data-form={k}
       role="button"
       tabIndex={0}
@@ -907,10 +906,19 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   useLayoutEffect(() => {
     const el = trayRef.current
     if (!el) return undefined
-    const m = () => setFieldH(Math.round(el.getBoundingClientRect().height))
+    // Room = from the top of the field down to the stage floor (or the sound bar that overlays it),
+    // not the field's own height: the field is content-tall and would never report a shortage.
+    const stage = el.closest('.bk-stage')
+    const m = () => {
+      const r = el.getBoundingClientRect()
+      const bar = el.closest('.bk-screen')?.querySelector('.bk-bar')
+      const floor = Math.min(stage ? stage.getBoundingClientRect().bottom : Infinity, bar ? bar.getBoundingClientRect().top : Infinity)
+      setFieldH(Number.isFinite(floor) ? Math.max(0, Math.round(floor - r.top)) : Math.round(r.height))
+    }
     m()
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(m) : null
     ro?.observe(el)
+    if (stage) ro?.observe(stage)
     window.addEventListener('resize', m)
     return () => { ro?.disconnect(); window.removeEventListener('resize', m) }
   }, [])
@@ -920,8 +928,8 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const visible = ctx.order.filter((k) => !eaten.includes(k) || k === ctx.target)
   const mood = dragging ? 'hungry' : lionMood
   const rows = Math.max(1, Math.ceil(ctx.order.length / 4))
-  const rowGap = land ? 6 : 16
-  const room = fieldH ? fieldH - (land ? 28 : 54 + 8 + 28) : 0
+  const rowGap = land ? 2 : 16
+  const room = fieldH ? fieldH - (land ? 20 : 104) : 0
   const cardSize = fieldH ? Math.max(44, Math.min(64, Math.floor((room - (rows - 1) * rowGap) / rows))) : 64
 
   // Record where a card was when fed, so its flight can start from there.
