@@ -139,15 +139,44 @@ body {
 html, body, #root, #root * {
   touch-action: pan-x pan-y;
 }
+html {
+  /* No pull-to-refresh, no rubber-band bounce, no edge-swipe chaining, and
+     the browser may not inflate text after a rotate. */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 body {
+  overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
+#root, #root * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Pictures: no drag ghost, no 'save image' preview on a long press. */
+img, svg, canvas, video {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
+/* Typing fields stay editable and selectable. */
+#root input, #root textarea, #root [contenteditable='true'],
 input, textarea, [contenteditable='true'] {
   user-select: text;
   -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
+/* The Grown-Ups area (data-allow-zoom) may be pinch-zoomed for readability;
+   every kid screen may not. Game surfaces that set an inline touch-action
+   (tracing, dragging) still win over these rules. */
+[data-allow-zoom], [data-allow-zoom] * {
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .geez {

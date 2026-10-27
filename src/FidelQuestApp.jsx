@@ -2613,8 +2613,8 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
-      <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-        <div className="flex min-w-0 items-center gap-2">
+      <header className="sticky top-0 z-20 -mx-7 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
+        <div className="flex min-w-[6.5rem] flex-1 items-center gap-2">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
             <Hero size={48} worn={worn} />
           </button>
@@ -2635,7 +2635,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
+                <span className="geez hidden max-w-28 truncate align-middle min-[380px]:inline">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
             {SCHOOL_PATH_ON && (
@@ -2647,7 +2647,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
         </div>
         {/* Header stays minimal: the streak lives in the bottom power bar and
             sound is a device-level control, so neither clutters the header. */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {/* Who is playing: the active child's friend + name. Tapping it
               opens the picker (switch, add, or - behind the gate - edit). */}
           {kid && onWho && (
