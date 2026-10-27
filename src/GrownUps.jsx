@@ -886,7 +886,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* reset */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmReset ? (
-              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
+              <button type="button" onClick={() => setConfirmReset(true)} className={`flex min-h-11 items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
                 <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('gpReset', 'Reset all progress…')}
               </button>
             ) : (

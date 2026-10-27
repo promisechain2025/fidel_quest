@@ -119,7 +119,7 @@ export default function TeeShop({ stats, collection, onBack }) {
       {/* Preview + purchase modal */}
       <AnimatePresence>
         {preview && (
-          <motion.div className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPreview(null)}>
+          <motion.div className="fq-modal fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPreview(null)}>
             <motion.div role="dialog" aria-modal="true" aria-label={teeName(preview, lang)} className="w-full max-w-sm rounded-3xl p-5" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} onClick={(e) => e.stopPropagation()}>
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-lg font-black">{teeName(preview, lang)}{lang === 'en' && <span className="geez font-black" style={{ color: 'var(--muted)' }}> · {teeGezzName(preview, packId)}</span>}</h2>

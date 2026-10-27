@@ -2463,7 +2463,7 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
 function WarmupNudge({ enforced, parentRule = false, onStart, onSkip, onClose, onNotNow = onClose }) {
   useEscapeKey(onClose)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <AnbessaSvg size={104} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
@@ -3047,7 +3047,7 @@ function StreakSheet({ streak, onClose }) {
   useEscapeKey(onClose)
   const best = Math.max(loadStreak().best || 0, streak)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3114,7 +3114,7 @@ export function FirstRunSetup({ steps, before = 0, soundOn = true, onToggleSound
   const nextLabel = last ? t('setupDone', "Let's go!") : t('setupNext', 'Next')
   if (!step) return null
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3255,7 +3255,7 @@ export function LanguageSheet({ onClose }) {
   }
   useEscapeKey(close)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3302,7 +3302,7 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
   const ready = (game) => gameReady(game, { scope, learned: learnedFamilies })
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-end justify-center p-4"
+      className="fq-modal fixed inset-0 z-50 flex items-end justify-center p-4"
       style={{ background: 'var(--overlay)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -3449,7 +3449,7 @@ function InstallBanner() {
         </button>
       </motion.div>
       {iosOpen && (
-        <motion.div key="ios" className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
+        <motion.div key="ios" className="fq-modal fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
           <motion.div role="dialog" aria-modal="true" aria-label={t('installTitle', 'Add Anbessa to your home screen')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
             <Hero size={72} />
             <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
@@ -3476,7 +3476,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
     onClose()
   }
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <Confetti count={40} />
       <motion.div role="dialog" aria-modal="true" aria-label={t('giftTitle', 'A gift from Anbessa!')} onClick={(e) => e.stopPropagation()} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
@@ -3524,7 +3524,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
     onClose()
   }
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <Confetti count={42} />
       <motion.div role="dialog" aria-modal="true" aria-label={t('chapterDone', `Chapter ${chapter} complete!`, { n: chapter })} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
