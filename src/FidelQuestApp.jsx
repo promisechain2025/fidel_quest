@@ -2614,7 +2614,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
   return (
     <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
       <header className="sticky top-0 z-20 -mx-7 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-        <div className="flex min-w-[6.5rem] flex-1 items-center gap-2 max-[379px]:min-w-[9.75rem]">
+        <div className="flex min-w-[6.5rem] flex-1 items-center gap-2 max-[439px]:min-w-[12rem]">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
             <Hero size={48} worn={worn} />
           </button>
