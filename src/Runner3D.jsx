@@ -1145,7 +1145,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4 md:max-w-2xl">
+    <div className="mx-auto flex h-dvh max-w-xl flex-col px-4 pb-4 pt-4 md:max-w-2xl fq-safe">
       <header className="flex items-center gap-2">
         <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />

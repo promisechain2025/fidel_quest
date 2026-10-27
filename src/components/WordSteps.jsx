@@ -130,7 +130,7 @@ export default function WordSteps({ words, seed, soundOn = true, onDone, onSkip 
   const stepIndex = ctx.phase === WordPhase.DONE ? totalSteps : ctx.phase === WordPhase.PROVE ? ctx.words.length + ctx.qi : ctx.wi
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onSkip} aria-label={t('dismiss', 'Not now')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" aria-hidden="true" />
