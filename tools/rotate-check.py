@@ -186,7 +186,7 @@ SAFE = os.environ.get('SAFE') == '1'
 def insets(w, h):
     if max(w, h) >= 1100:
         return None
-    return {'top': 47, 'bottom': 34, 'left': 0, 'right': 0} if h > w else {'top': 0, 'bottom': 21, 'left': 47, 'right': 47}
+    return {'top': 47, 'bottom': 34, 'left': 0, 'right': 0} if h > w else {'top': 0, 'bottom': 21, 'left': 47 if w >= 780 else 0, 'right': 47 if w >= 780 else 0}  # notch phones are >= ~780 wide sideways
 
 
 def sig(pg, cdp=None):

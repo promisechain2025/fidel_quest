@@ -920,8 +920,9 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
   const visible = ctx.order.filter((k) => !eaten.includes(k) || k === ctx.target)
   const mood = dragging ? 'hungry' : lionMood
   const rows = Math.max(1, Math.ceil(ctx.order.length / 4))
+  const rowGap = land ? 6 : 16
   const room = fieldH ? fieldH - (land ? 28 : 54 + 8 + 28) : 0
-  const cardSize = fieldH ? Math.max(44, Math.min(64, Math.floor((room - (rows - 1) * 16) / rows))) : 64
+  const cardSize = fieldH ? Math.max(44, Math.min(64, Math.floor((room - (rows - 1) * rowGap) / rows))) : 64
 
   // Record where a card was when fed, so its flight can start from there.
   const feed = (k, rect) => {
@@ -962,7 +963,7 @@ function CookieField({ ctx, lionMood, refuseKey, onTouch, speakPulse = 0 }) {
           <KokebSpeaker pulse={speakPulse} />
         </div>
         <WoodTray className={land ? 'order-3 min-w-0 flex-1' : 'w-full'} style={{ marginTop: land ? 0 : -6 }}>
-          <div className="relative z-10 grid grid-cols-4 place-items-center gap-x-2 gap-y-4 pt-2" data-testid="feed-tray">
+          <div className="relative z-10 grid grid-cols-4 place-items-center gap-x-2 pt-2" style={{ rowGap }} data-testid="feed-tray">
             <AnimatePresence>
               {visible.map((k, i) => (
                 <LetterCard
