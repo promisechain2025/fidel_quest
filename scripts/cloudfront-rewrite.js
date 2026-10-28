@@ -25,8 +25,7 @@
    Keep this list identical to website/src/siteAccess.js CLOSED_PREFIXES.
    A request for one of them goes home (302) instead of serving the old HTML. */
 var CLOSED = [
-  '/amharic', '/tigrinya', '/teachers', '/homeschool', '/alphabet',
-  '/about', '/guides', '/family', '/teach', '/family-pack',
+  '/amharic', '/tigrinya', '/homeschool', '/alphabet', '/guides', '/family', '/teach', '/family-pack',
 ]
 
 function isClosed(uri) {

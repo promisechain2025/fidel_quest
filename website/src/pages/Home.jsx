@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Sparkles, Users, BookOpen, Smartphone, PenLine } from 'lucide-react'
-import { Card, CtaButton, LetterTile, Picture, Reveal, Section, Tibeb } from '../components.jsx'
+import { Card, CtaButton, LetterTile, Picture, Reveal, Section, StoreButtons, Tibeb } from '../components.jsx'
 import AppGallery from '../components/AppGallery.jsx'
 import { nameToFidel } from '../fidel.js'
 import { t } from '../i18n.js'
 import Seo from '../Seo.jsx'
-import { APP_URL } from '../config.js'
+import { APP_URL, WEB_TRIAL_SESSIONS } from '../config.js'
 
 const HERO_TILES = ['ሀ', 'ለ', 'መ', 'ሠ', 'ረ', 'ሰ', 'በ', 'ተ']
 
@@ -69,6 +69,7 @@ export default function Home() {
               <CtaButton to="/pricing" tone="green">{t('buyCta', 'Get eGeez - $12.99')}</CtaButton>
               <CtaButton href={APP_URL} tone="ghost">{t('openApp', 'Open the app')}</CtaButton>
             </div>
+            <StoreButtons className="mt-5" />
             <p className="mt-3 text-xs" style={{ color: 'var(--muted)' }}>{t('heroNote2', '$12.99 once on the App Store and Google Play, with every path and 1 kid profile. No ads, no subscriptions. Works offline. Ages 3-9.')}</p>
           </Reveal>
         </div>
@@ -151,6 +152,42 @@ export default function Home() {
       </Section>
 
       {/* Real screens between the how-it-works cards and the trust band. */}
+      {/* Web trial: what happens on easygeez.com/app before a family buys. */}
+      <Section mark="ሙ" eyebrow={t('trialE', 'Try before you buy')} title={t('trialT', 'Try it free on the web')} center>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            ['1', t('trialS1t', `${WEB_TRIAL_SESSIONS} free sessions`), t('trialS1b', `Open easygeez.com/app in any browser. Your child gets ${WEB_TRIAL_SESSIONS} full sessions of the real journey - no account, no card.`)],
+            ['2', t('trialS2t', 'Then keep it on a phone'), t('trialS2b', 'After the free sessions, the path stays visible and a grown-up is asked to get the app from the App Store or Google Play.')],
+            ['3', t('trialS3t', 'Or enter an unlock code'), t('trialS3b', 'Bought the app already, or your teacher gave your class a code? A grown-up types it in the app on the web (behind the grown-up gate) and the full web app opens on that browser.')],
+          ].map(([n, h, b]) => (
+            <Card key={n}>
+              <div className="geez text-2xl font-black" style={{ color: 'var(--accent-text)' }}>{n}</div>
+              <h3 className="mt-1 text-lg font-black">{h}</h3>
+              <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>{b}</p>
+            </Card>
+          ))}
+        </div>
+        <div className="mt-7 flex justify-center"><CtaButton href={APP_URL} tone="green">{t('trialCta', 'Start the free trial')}</CtaButton></div>
+      </Section>
+
+      {/* Prayer book: ጸሎት ዘዘወትር and ውዳሴ ማርያም with reading marks. */}
+      <Section mark="ጸ" eyebrow={t('prayE', 'ጸሎት · ውዳሴ ማርያም')} title={t('prayT', 'Read the prayers of the Church')} center>
+        <div className="grid items-center gap-6 md:grid-cols-[1fr_1fr]">
+          <Card wash>
+            <p className="geez text-center text-3xl font-black leading-snug" lang="gez">ጸሎት ዘዘወትር<br />ውዳሴ ማርያም</p>
+            <p className="mt-3 text-center text-sm" style={{ color: 'var(--muted)' }}>{t('prayDays', 'ዘሰኑይ · ዘሠሉስ · ዘረቡዕ · ዘሐሙስ · ዘዓርብ · ዘቀዳሚት · ዘእሁድ')}</p>
+          </Card>
+          <div className="space-y-3 text-left">
+            {[
+              t('prayB1', 'The daily prayer and the Praises of Mary for each day of the week, in Ge’ez, page by page.'),
+              t('prayB2', 'Traditional reading marks (ተነሽ, ተጣይ, ሰያፍ, ወዳቂ, ተናባቢ) shown above the words, so a child learns how the words are said in church, not just the letters. Tigrinya names (ተለዓሊ, ተዋሓጢ) when learning in Tigrinya.'),
+              t('prayB3', 'Read aloud in a church teacher’s own recorded voice, word by word (recordings are still being added).'),
+            ].map((x, i) => <p key={i} className="flex gap-2 text-sm leading-relaxed"><span aria-hidden="true" style={{ color: 'var(--accent-text)' }}>✚</span><span>{x}</span></p>)}
+            <div className="pt-2"><CtaButton to="/teachers" tone="ghost">{t('prayTeach', 'Teaching a church class? See the teachers page')}</CtaButton></div>
+          </div>
+        </div>
+      </Section>
+
       <Section mark="ዐ" eyebrow={t('seeE', 'A look inside')} title={t('seeT', 'This is what your child sees')} center>
         <AppGallery pack="am" keys={['learn', 'trace', 'words']} className="mx-auto max-w-2xl" />
         <div className="mt-8 text-center">

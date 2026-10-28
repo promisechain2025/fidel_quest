@@ -1,6 +1,7 @@
 import { Check, Apple, Play, Ban, UserPlus } from 'lucide-react'
 import { Card, CtaButton, Picture, Reveal, Section } from '../components.jsx'
-import { APP_PRICE, SECOND_PROFILE_PRICE, EXTRA_PROFILE_PRICE, APP_STORE_URL, PLAY_STORE_URL, CONTACT_EMAIL } from '../config.js'
+import PricingFree from './PricingFree.jsx'
+import { FREE_PRICING, APP_PRICE, SECOND_PROFILE_PRICE, EXTRA_PROFILE_PRICE, APP_STORE_URL, PLAY_STORE_URL, CONTACT_EMAIL } from '../config.js'
 import Seo from '../Seo.jsx'
 import { t } from '../i18n.js'
 
@@ -78,6 +79,7 @@ export const PRICING_LD = {
 }
 
 export default function Pricing() {
+  if (FREE_PRICING) return <PricingFree />
   return (
     <>
       <Seo title="Pricing - eGeez" description="One-time $12.99 with 1 kid profile. More children: $4.99 for a 2nd child, $2.49 for each child after, up to 6. No ads, no subscriptions." path="/pricing" jsonLd={PRICING_LD} />

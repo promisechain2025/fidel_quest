@@ -150,7 +150,11 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     const hits = []
     for (const f of files) {
       const src = fs.readFileSync(f, 'utf8')
-      for (const re of banned) if (re.test(src)) hits.push(`${path.relative(ROOT, f)}: ${re}`)
+      // Owner-approved (Oct 2026): the home page's web-trial explainer tells
+      // store buyers and class students where the existing web unlock code
+      // goes. Only that file may mention it; no web checkout either way.
+      const rel = path.relative(ROOT, f)
+      for (const re of banned) if (re.test(src) && !(rel === 'website/src/pages/Home.jsx' && re === banned[0])) hits.push(`${rel}: ${re}`)
     }
     expect(hits).toEqual([])
     expect(fs.existsSync(path.join(ROOT, 'website/src/pages/PricingSuccess.jsx'))).toBe(false)

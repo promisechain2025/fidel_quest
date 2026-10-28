@@ -30,24 +30,26 @@ describe('marketing site stays on the app', () => {
   })
 
   it('does not prerender or list a closed page, and leaves the app public', () => {
-    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/classes', '/pricing', '/privacy', '/progress', '/terms', '/verify'])
+    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/about', '/classes', '/pricing', '/privacy', '/progress', '/teachers', '/teachers/guide', '/terms', '/verify'])
     for (const p of ['/classes', '/verify', '/progress']) expect(ROUTE_META[p].noindex, p).toBe(true)
     const sitemap = read('website/public/sitemap.xml')
-    for (const p of CLOSED_PREFIXES) expect(sitemap).not.toContain(`https://easygeez.com${p}`)
+    for (const p of CLOSED_PREFIXES) expect(sitemap).not.toContain(`https://easygeez.com${p}<`)
     expect(sitemap).toContain('https://easygeez.com/pricing')
     expect(sitemap).not.toContain('https://easygeez.com/progress')
 
-    for (const open of ['/', '/classes', '/verify', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
+    for (const open of ['/', '/classes', '/verify', '/teachers', '/teachers/guide', '/about', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
       expect(isClosedPath(open), open).toBe(false)
     }
-    expect(isClosedPath('/teachers')).toBe(true)
-    expect(isClosedPath('/teachers/')).toBe(true)
+    expect(isClosedPath('/teachers')).toBe(false)
+    expect(isClosedPath('/teachers/guide')).toBe(false)
+    expect(isClosedPath('/about')).toBe(false)
+    expect(isClosedPath('/teach')).toBe(true)
     expect(isClosedPath('/guides/the-fidel-explained')).toBe(true)
     expect(isClosedPath('/family-pack')).toBe(true)
     expect(isClosedPath('/family/child')).toBe(true)
     // /teach is closed on its own; it must not swallow /teachers via a bare prefix.
     expect(CLOSED_PREFIXES).toContain('/teach')
-    expect(CLOSED_PREFIXES).toContain('/teachers')
+    expect(CLOSED_PREFIXES).not.toContain('/teachers')
   })
 
   it('keeps prerender descriptions inside the 50-160 band', () => {
