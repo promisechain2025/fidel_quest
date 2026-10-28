@@ -14,8 +14,6 @@
 /family/*         /    302
 /teach            /    302
 /teach/*          /    302
-/verify           /    302
-/verify/*         /    302
 /family-pack      /    302
 /family-pack/*    /    302
 

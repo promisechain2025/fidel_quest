@@ -3,27 +3,22 @@
    ----------------------------------------------------------------------------
    Library -> reader -> celebration. The library shows every story; locked
    ones display exactly which letters will open them (motivation pointing
-   back at the Journey). In the reader every word is a tappable chip: words
-   with a recorded clip play it, everything else is spelled letter-by-letter
-   through the letter audio - the mp3-optional contract holds. Page turns
-   are user actions (cut the voice, act); "Read to me" chains word audio
-   through afterVoice so it always plays out.
+   back at the Journey).
 
-   Bible stories (isBibleStory) are the exception: the child reads them
-   alone. No page narration, no tap hint, no Read-to-me button, and the
-   words are plain text (no word or letter audio). Other stories keep the
-   reading help above.
+   Nothing in a story is read aloud - Bible or Story Path. Kids practise
+   reading on their own: no narration, no Read-to-me button, no tap-to-hear
+   on words, no auto-play. Words are plain text. (Prayer reading and the
+   game/lesson word clips live elsewhere and are unaffected.)
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Lock, Volume2, BookOpen } from 'lucide-react'
-import { audio, afterVoice, playEffect } from '../platform/audioEngine'
+import { ChevronLeft, ChevronRight, Lock, BookOpen } from 'lucide-react'
+import { playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
-import { isBibleStory, storyLibrary, storyShelves, storyWords, wordAudioFor, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { storyLibrary, storyShelves, storyWords, loadStoriesRead, markStoryRead } from '../platform/stories'
 import { BIBLE_SHELF } from '../data/bibleStories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
-import { sayPrompt } from '../platform/prompts'
 import { t, getLang } from '../platform/i18n'
 import { FOCUS } from '../FidelQuestApp'
 import AnbessaSvg from './AnbessaSvg'
@@ -57,30 +52,6 @@ const SCENE_BG =
   'radial-gradient(120% 82% at 50% 16%, rgba(120,190,255,0.22), rgba(120,190,255,0.06) 46%, transparent 62%),' +
   'linear-gradient(180deg, transparent 58%, rgba(122,182,96,0.20))'
 
-/** Speak one Ge'ez word: recorded clip when the pack has one, else spell
-    it letter-by-letter. Returns a cancel fn for the spelling chain. */
-function speakWord(geez, soundOn) {
-  const w = wordAudioFor(geez)
-  if (w && !w.noAudio) {
-    audio.play(`words/${w.latin}`, { enabled: soundOn })
-    return () => {}
-  }
-  const chars = Array.from(geez).filter((ch) => INDEXES.byChar.has(ch))
-  let cancelled = false
-  let cancelStep = () => {}
-  const step = (i) => {
-    if (cancelled || i >= chars.length) return
-    const form = INDEXES.byChar.get(chars[i])
-    audio.play(`letters/${form.audioKey}`, { enabled: soundOn, chime: { familyIndex: form.familyIndex, order: form.order + 1 } })
-    cancelStep = afterVoice(() => step(i + 1), 350)
-  }
-  step(0)
-  return () => {
-    cancelled = true
-    cancelStep()
-  }
-}
-
 export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [library] = useState(() => storyLibrary(learnedFamilyIds(loadJourney()), undefined, getActivePackId()))
   const [readCounts, setReadCounts] = useState(() => loadStoriesRead().read)
@@ -89,22 +60,10 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   const [dir, setDir] = useState(1) // page-turn direction: +1 forward, -1 back
   const [finished, setFinished] = useState(false)
   const [quiz, setQuiz] = useState(null) // null | 'asking' | 'missed' | 'done'
-  const [spokenWord, setSpokenWord] = useState(-1)
-  const cancelRef = useRef(() => {})
-  const narrGen = useRef(0) // bumps on every nav; late narration for an old page bails
   const finishedOnceRef = useRef(false) // did this open reach the celebration?
   const reduceMotion = useReducedMotion()
 
-  useEffect(() => () => cancelRef.current(), [])
-  const stopSpeech = () => {
-    narrGen.current++
-    cancelRef.current()
-    audio.stopVoice()
-    setSpokenWord(-1)
-  }
-
   const openStory = (s) => {
-    stopSpeech()
     finishedOnceRef.current = false
     setDir(1)
     setStory(s)
@@ -113,7 +72,6 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     setFinished(false)
   }
   const closeReader = () => {
-    stopSpeech()
     setStory(null)
     setFinished(false)
   }
@@ -125,88 +83,10 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   }
 
   const page = story?.pages[pageIdx]
-  // Bible text is read by the child alone - nothing in the reader speaks it.
-  const selfRead = isBibleStory(story)
   const words = useMemo(() => (page ? storyWords(page.g) : []), [page])
   const showGloss = getLang() === 'en' // English meaning captions only for an English UI
 
-  const tapWord = (w, i) => {
-    if (selfRead) return
-    stopSpeech()
-    setSpokenWord(i)
-    // Reading telemetry: a tapped word is a help request - the one signal
-    // the reading surface produces. Prefixed key so letter-practice
-    // consumers (which filter on real audio keys) never see it.
-    recordAnswer(`sword:${w}`, `sword:${w}:help`, 'story')
-    cancelRef.current = speakWord(w, soundOn)
-  }
-
-  /** The page's recorded-narration key, pack-aware (Amharic under stories/,
-      Tigrinya under stories/ti/). */
-  const narrationKey = (idx) => `stories/${getActivePackId() === 'ti' ? 'ti/' : ''}${story.id}-${idx + 1}`
-
-  /** Play the page's human narration when one is recorded; resolves to
-      whether it played, so callers can fall back to word-by-word reading. */
-  const playNarration = async (idx = pageIdx) => {
-    if (!story) return false
-    const gen = narrGen.current
-    const key = narrationKey(idx)
-    const ok = await audio.covered(key)
-    // Superseded by a page turn while covered() was resolving, or nothing recorded.
-    if (!ok || gen !== narrGen.current) return false
-    audio.stopVoice()
-    setSpokenWord(-1)
-    // chimeOnMiss:false -> if the clip fails to load, stay silent (never a
-    // letter-chime mid-story); word-by-word is the explicit fallback.
-    audio.play(key, { enabled: soundOn, chimeOnMiss: false })
-    return true
-  }
-
-  /** Read the whole page: prefer the recorded narration, else chain each
-      word (real clip where one exists, else spell it out). */
-  const readWordsAloud = () => {
-    stopSpeech()
-    let cancelled = false
-    let cancelStep = () => {}
-    const step = (i) => {
-      if (cancelled || i >= words.length) {
-        if (!cancelled) setSpokenWord(-1)
-        return
-      }
-      setSpokenWord(i)
-      const cancelWord = speakWord(words[i], soundOn)
-      cancelStep = afterVoice(() => step(i + 1), 500)
-      const prev = cancelStep
-      cancelStep = () => {
-        cancelWord()
-        prev()
-      }
-    }
-    step(0)
-    cancelRef.current = () => {
-      cancelled = true
-      cancelStep()
-    }
-  }
-  const readToMe = () => {
-    if (selfRead) return
-    playNarration().then((played) => { if (!played) readWordsAloud() })
-  }
-
-  // Auto-read each page: play the recorded narration when there is one; on the
-  // first page with no recording yet, fall back to the spoken tap-hint.
-  useEffect(() => {
-    if (!story || finished || quiz || selfRead) return
-    let alive = true
-    playNarration(pageIdx).then((played) => {
-      if (alive && !played && pageIdx === 0) sayPrompt('tapWords', soundOn)
-    })
-    return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageIdx, story, finished, quiz])
-
   const nextPage = () => {
-    stopSpeech()
     if (pageIdx + 1 < story.pages.length) {
       setDir(1)
       setPageIdx(pageIdx + 1)
@@ -246,7 +126,6 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
     }
   }
   const prevPage = () => {
-    stopSpeech()
     if (pageIdx === 0) leaveReader()
     else {
       setDir(-1)
@@ -311,7 +190,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   /* ── reader ── */
   if (story) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4">
+      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4 fq-safe">
         <header className="flex items-center gap-2">
           <button type="button" onClick={prevPage} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
             <ChevronLeft className="h-6 w-6" />
@@ -354,7 +233,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                 </div>
               )}
               <div className="flex flex-wrap items-center justify-center gap-2 px-1">
-                {words.map((w, i) => (selfRead ? (
+                {words.map((w, i) => (
                   <span
                     key={`${pageIdx}-${i}`}
                     data-story-word=""
@@ -363,22 +242,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
                   >
                     {w}
                   </span>
-                ) : (
-                  <button
-                    key={`${pageIdx}-${i}`}
-                    type="button"
-                    onClick={() => tapWord(w, i)}
-                    className={`geez chunk rounded-2xl border-2 px-3 py-2 text-4xl font-black ${FOCUS}`}
-                    style={{
-                      background: spokenWord === i ? 'var(--go-soft)' : 'var(--paper)',
-                      borderColor: spokenWord === i ? 'var(--go)' : 'var(--line)',
-                      boxShadow: '0 3px 0 var(--line)',
-                      '--chunk-depth': '3px',
-                    }}
-                  >
-                    {w}
-                  </button>
-                )))}
+                ))}
                 <span className="geez text-4xl font-black" style={{ color: 'var(--muted)' }}>{pageStop(page.g)}</span>
               </div>
               {showGloss && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{page.en}</p>}
@@ -387,9 +251,6 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
         </main>
 
         <div className="flex items-center gap-3">
-          {!selfRead && <button type="button" onClick={readToMe} aria-label={t('storyReadToMe', 'Read to me')} className={`chunk flex h-14 w-14 items-center justify-center rounded-2xl text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 4px 0 var(--sky-deep)', '--chunk-depth': '4px' }}>
-            <Volume2 className="h-6 w-6" />
-          </button>}
           <button type="button" onClick={nextPage} className={`chunk flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl text-lg font-black text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }}>
             {pageIdx + 1 < story.pages.length ? t('storyNext', 'Next page') : t('storyFinish', 'The end!')}
             <ChevronRight className="h-5 w-5" />
@@ -401,7 +262,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
 
   /* ── library ── */
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-7 pb-6 pt-4 fq-safe">
       <header className="flex items-center gap-2">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" />

@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, RotateCcw, ArrowRight, Gauge, Users } from 'lucide-react'
+import { ChevronLeft, Volume2, Play, Pause, Mic, Shuffle, RotateCcw, ArrowRight, Users } from 'lucide-react'
 import { FIDEL_FAMILIES, ORDERS, INDEXES } from '../platform/ethiopic'
 import { playForm, afterVoice } from '../platform/audioEngine'
 import { t } from '../platform/i18n'
 import { buildMasterSequence, AUTOPLAY_SPEEDS, SPEED_ORDER, CLIP_LEAD_MS, nextOrder } from '../fidelMaster'
 import { getScope, setScope, scopedForms, scopedFamilySet } from '../platform/letterScope'
 import ScopeToggle from './ScopeToggle'
+import SpeedControl from './SpeedControl'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 
@@ -119,7 +120,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
   const step = (d) => { setPlaying(false); setIdx((i) => (i + d + seq.length) % seq.length) }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-12 pt-5">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-12 pt-5 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -272,14 +273,7 @@ export default function FidelMaster({ onBack, soundOn = true }) {
                 </button>
               </div>
               <div className="flex items-center gap-2">
-                <Gauge className="h-4 w-4" style={{ color: 'var(--muted)' }} aria-hidden="true" />
-                {SPEED_ORDER.map((s) => (
-                  <button key={s} type="button" onClick={() => setSpeed(s)} aria-pressed={speed === s}
-                    className={`rounded-full px-3 py-1 text-sm font-black ${FOCUS}`}
-                    style={{ background: speed === s ? 'var(--sky)' : 'var(--card)', color: speed === s ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
-                    {t(`speed_${s}`, s)}
-                  </button>
-                ))}
+                <SpeedControl value={speed} onChange={setSpeed} testId="master-speed" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <ToggleChip on={sayWithMe} icon={Users} label={t('sayWithMe', 'Say with me')} onClick={() => setSayWithMe((v) => !v)} />

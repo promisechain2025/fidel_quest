@@ -13,6 +13,7 @@
 
 import { progressChanged } from './childModel'
 import { srsReview } from './srs'
+import { noteAnswer } from './appProgress'
 const KEY = 'fq.telemetry.v1'
 const CAP = 600
 
@@ -37,6 +38,7 @@ export function setAnswerHook(fn) { answerHook = typeof fn === 'function' ? fn :
 /** Record one answer. Fire-and-forget; storage failures never surface. */
 export function recordAnswer(heardKey, pickedKey, mode) {
   try { answerHook?.(heardKey === pickedKey, mode) } catch { /* never break play */ }
+  noteAnswer(heardKey === pickedKey) // app-level progress (platform/appProgress.js)
   try {
     const events = loadLedger()
     events.push({ k: heardKey, p: pickedKey, m: mode, d: dayStamp() })

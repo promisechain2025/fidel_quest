@@ -30,13 +30,14 @@ describe('marketing site stays on the app', () => {
   })
 
   it('does not prerender or list a closed page, and leaves the app public', () => {
-    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/about', '/pricing', '/privacy', '/teachers', '/teachers/guide', '/terms'])
+    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/about', '/classes', '/pricing', '/privacy', '/progress', '/teachers', '/teachers/guide', '/terms', '/verify'])
+    for (const p of ['/classes', '/verify', '/progress']) expect(ROUTE_META[p].noindex, p).toBe(true)
     const sitemap = read('website/public/sitemap.xml')
     for (const p of CLOSED_PREFIXES) expect(sitemap).not.toContain(`https://easygeez.com${p}<`)
     expect(sitemap).toContain('https://easygeez.com/pricing')
     expect(sitemap).not.toContain('https://easygeez.com/progress')
 
-    for (const open of ['/', '/teachers', '/teachers/guide', '/about', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
+    for (const open of ['/', '/classes', '/verify', '/teachers', '/teachers/guide', '/about', '/pricing', '/privacy', '/terms', '/progress', '/app', '/app/']) {
       expect(isClosedPath(open), open).toBe(false)
     }
     expect(isClosedPath('/teachers')).toBe(false)

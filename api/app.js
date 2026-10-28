@@ -8,6 +8,7 @@ import formRoutes from './routes/forms.js'
 import childrenRoutes from './routes/children.js'
 import introRoutes from './routes/intros.js'
 import practiceRoutes from './routes/practice.js'
+import repcodeRoutes from './routes/repcodes.js'
 import { store } from './store.js'
 
 export function createApp() {
@@ -36,6 +37,7 @@ export function createApp() {
 
   app.get('/healthz', (_req, res) => res.json({ ok: true, backend: store.backend }))
   app.use('/api/auth', authRoutes)
+  app.use('/api', repcodeRoutes)
   app.use('/api', childrenRoutes)
   app.use('/api', introRoutes)
   app.use('/api/practice', practiceRoutes)

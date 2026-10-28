@@ -12,6 +12,7 @@ Disallow: /family
 Disallow: /teach$
 Disallow: /teach/
 Disallow: /verify
+Disallow: /classes
 Disallow: /family-pack
 # Shared progress cards are for the person who received the link.
 Disallow: /progress

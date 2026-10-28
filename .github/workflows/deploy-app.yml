@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - run: npm ci --no-audit --no-fund
@@ -67,7 +67,13 @@ jobs:
         run: npx vitest run
 
       - name: Build PWA for /app/
-        run: VITE_BASE=/app/ npm run build
+        env:
+          # Rep-code server URL (repo variable REPCODE_API). Empty = the web
+          # code card stays hidden, as before.
+          VITE_REPCODE_API: ${{ vars.REPCODE_API }}
+        run: |
+          VITE_BASE=/app/ npm run build
+          sed -i "s#__REPCODE_API__#${VITE_REPCODE_API}#" dist/representatives.html
 
       - name: Sanity check the build
         run: |

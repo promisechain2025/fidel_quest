@@ -16,7 +16,6 @@ export const CLOSED_PREFIXES = Object.freeze([
   '/guides',
   '/family',
   '/teach',
-  '/verify',
   '/family-pack',
 ])
 

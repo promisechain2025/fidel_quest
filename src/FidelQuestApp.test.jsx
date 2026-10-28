@@ -209,7 +209,13 @@ describe('app shell', () => {
     // Classic was replaced by Kebero Beats (gated until 2 families) and its
     // tracing/chart tools moved into Explorer.
     expect(screen.queryByText('Classic')).toBeNull()
-    expect(screen.getByText('First Words')).toBeInTheDocument()
+    // Retired in favour of Word Bricks and Stack the tower (flag-free, i18n title).
+    expect(screen.queryByText('First Words')).toBeNull()
+    expect(screen.queryByText('Order')).toBeNull()
+    // The brick-building word game is named "Word Bricks" (i18n, English fallback), not a sample word.
+    expect(screen.getByText('Word Bricks')).toBeInTheDocument()
+    expect(screen.getByText('፯')).toBeInTheDocument()
+    expect(screen.queryByText('ላም')).toBeNull()
   })
 })
 

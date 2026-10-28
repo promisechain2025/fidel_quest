@@ -15,6 +15,8 @@ const Terms = lazy(() => import('./pages/Terms.jsx'))
 const Teachers = lazy(() => import('./pages/Teachers.jsx'))
 const TeacherGuide = lazy(() => import('./pages/TeacherGuide.jsx'))
 const About = lazy(() => import('./pages/About.jsx'))
+const ClassDashboard = lazy(() => import('./pages/ClassDashboard.jsx'))
+const Verify = lazy(() => import('./pages/Verify.jsx'))
 
 function NotFound() {
   const { pathname } = useLocation()
@@ -46,6 +48,8 @@ export default function App() {
       <Route path="/teachers" element={<Teachers />} />
       <Route path="/teachers/guide" element={<TeacherGuide />} />
       <Route path="/about" element={<About />} />
+      <Route path="/classes" element={<ClassDashboard />} />
+      <Route path="/verify" element={<Verify />} />
       {CLOSED_PREFIXES.map((path) => (
         <Route key={path} path={path === '/guides' ? '/guides/*' : `${path}/*`} element={<Navigate to="/" replace />} />
       ))}

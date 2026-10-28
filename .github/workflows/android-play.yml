@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       # Capacitor 7 / AGP 8.7 need JDK 21.
@@ -113,12 +113,23 @@ jobs:
             fi
           done
 
+          # 1.4 packages build: VITE_PACKAGES must be exactly 1 or unset.
+          if [ -n "${VITE_PACKAGES:-}" ] && [ "${VITE_PACKAGES}" != "1" ]; then
+            echo "::error::VITE_PACKAGES must be 1 or unset."
+            exit 1
+          fi
+
       - run: npm ci --no-audit --no-fund
 
       - name: Unit tests
         run: npx vitest run
 
       - name: Web build + cap sync android
+        # 1.4 free-download build: per-package IAP (core_unlock, prayer_book,
+        # bundle_core_prayer). Scoped to the build only - unit tests run with
+        # the flag unset. Rep codes stay web-only; native ignores them.
+        env:
+          VITE_PACKAGES: '1'
         run: |
           npm run build
           npx cap sync android
@@ -177,8 +188,15 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      # minifyEnabled is false, so there is no mapping.txt to attach. If R8 is
-      # ever turned on, add: mappingFile: android/app/build/outputs/mapping/release/mapping.txt
+      - name: Check R8 mapping file
+        run: test -s android/app/build/outputs/mapping/release/mapping.txt || { echo "::error::mapping.txt missing (R8 did not run)"; exit 1; }
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: egeez-android-mapping-${{ github.run_number }}
+          path: android/app/build/outputs/mapping/release/mapping.txt
+          retention-days: 90
+
       - name: Upload to Google Play (internal testing)
         if: github.event_name == 'push' || inputs.upload
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
@@ -186,6 +204,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: net.promisechain.fidelquest
           releaseFiles: ${{ env.AAB }}
+          mappingFile: android/app/build/outputs/mapping/release/mapping.txt
           track: internal
           status: completed
 
