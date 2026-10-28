@@ -1,8 +1,9 @@
 /* ============================================================================
    Static content for eGeez (pages/AmharicFidelGame.jsx).
 
-   All 33 consonant families of the Ge'ez script in traditional abugida
-   order, each with seven vocalized orders, plus:
+   All 33 consonant families of the Ge'ez script in traditional halehame
+   (ሀ ለ ሐ መ ...) order - NOT the ኣቡጊዳ order (see
+   platform/abugida.js) - each with seven vocalized orders, plus:
 
    - `twinOf`:    families that share a modern Amharic pronunciation
    - `nickname`:  the traditional disambiguating name Ethiopian schools use

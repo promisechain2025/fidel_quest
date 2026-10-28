@@ -39,13 +39,6 @@
   </head>
   <body translate="no" class="notranslate">
     <div id="root" translate="no" class="notranslate"></div>
-    <script>
-      // iOS pinch zoom fires gesture* events. CSS touch-action does not
-      // cancel those. Kids hit this by accident; taps and scrolling stay.
-      ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (type) {
-        document.addEventListener(type, function (e) { e.preventDefault() }, { passive: false })
-      })
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

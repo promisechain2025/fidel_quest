@@ -101,7 +101,7 @@ export function Runner2D({ seed, soundOn, onExit, pool }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-4 pb-6 pt-4">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-4 pb-6 pt-4 fq-safe">
       <header className="flex items-center gap-2">
         <button type="button" onClick={() => onExit({ level: ctx.level, survivedBoss: ctx.survivedBoss })} aria-label="Quit run" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />

@@ -103,7 +103,7 @@ export default function WebTrialPaywall({ onClose, onUnlocked }) {
   const [pastGate, setPastGate] = useState(false)
   const [done, setDone] = useState(false)
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-center" style={{ background: 'rgba(0,0,0,0.55)' }}>
+    <div className="fq-modal fixed inset-0 z-[70] flex items-end justify-center p-3 sm:items-center" style={{ background: 'rgba(0,0,0,0.55)' }}>
       <div
         role="dialog"
         aria-modal="true"
