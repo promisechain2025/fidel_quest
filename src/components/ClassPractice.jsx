@@ -270,7 +270,7 @@ export function ReportViewer({ token, onBack }) {
   const [v, setV] = useState(undefined)
   useEffect(() => { let alive = true; verifyReport(token).then((r) => alive && setV(r)); return () => { alive = false } }, [token])
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-5 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-5 pb-12 pt-6 fq-safe">
       <button type="button" onClick={onBack} className={`chunk rounded-2xl px-4 py-2 font-black ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>{t('back', 'Back')}</button>
       {v === null && <p className="mt-6 font-bold" style={{ color: 'var(--bad-ink)' }}>{t('ptReportBad', 'This report link is damaged or incomplete.')}</p>}
       {v && (

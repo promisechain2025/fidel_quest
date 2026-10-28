@@ -27,7 +27,7 @@ export const FORM_BY_KEY = new Map(BASE_FORMS.map((f) => [f.audioKey, f]))
 const SESSION_FRUIT = ['#ff7a59', '#ffc24b', '#8ed069', '#5db7ff']
 
 /* Island geography follows the language being learned (platform/places.js):
-   Ethiopian islands for Amharic, Eritrea + Axum for Tigrinya. */
+   Numbered sections (platform/places.js). */
 const SESSION_TITLES = ['First Letters', 'More Letters', 'Even More Letters', 'The Last Letters']
 
 export const SESSIONS = skylandsPlaces().map((placeSpec, i) => ({

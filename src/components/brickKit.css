@@ -1,0 +1,121 @@
+/* BRICK KIT responsive shell. Every brick game is: stage (head + body) / tray / bottom bar.
+   Portrait: stacked, the head is two rows (back + progress + star, then the guide sign).
+   Short phones shrink the chrome (48px buttons). Landscape phones (<= 560px tall): the tray
+   and the bottom bar move to a right-hand column when the game has a tray (data-side), the
+   head becomes one row when it does not. Tap targets never go below 44px. The screen honours
+   the safe-area insets (notches, rounded corners, home bar). */
+.bk-screen {
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.bk-stage { position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
+.bk-body { position: relative; flex: 1 1 0; min-height: 0; min-width: 0; }
+.bk-head {
+  position: relative;
+  z-index: 10;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'back pill star' 'guide guide guide';
+  align-items: center;
+  gap: 6px 8px;
+  padding: 12px 12px 4px;
+}
+.bk-head > .bk-back { grid-area: back; }
+.bk-head > .bk-pill { grid-area: pill; justify-self: center; min-width: 0; max-width: 100%; }
+.bk-head > .bk-star { grid-area: star; }
+.bk-head > .bk-guide { grid-area: guide; display: flex; justify-content: center; min-width: 0; pointer-events: none; }
+.bk-head > .bk-guide > [data-testid='guide'] { max-width: 100%; min-width: 0; }
+.bk-pill > span { flex: 0 1 28px; min-width: 8px; }
+.bk-tray { min-width: 0; }
+.bk-bar { min-width: 0; }
+
+/* short portrait phones: tighter chrome, 48px buttons */
+@media (orientation: portrait) and (max-height: 700px) {
+  .bk-screen .bk-btn { width: 48px; height: 48px; }
+  .bk-head { padding: 8px 10px 2px; gap: 4px 8px; }
+  .bk-screen .bk-bar { margin-top: 4px; margin-bottom: 4px; padding-top: 4px; padding-bottom: 4px; }
+  .bk-screen .bk-tray { padding-top: 22px; padding-bottom: 8px; }
+}
+@media (orientation: portrait) and (max-height: 600px) {
+  .bk-head { padding: 6px 8px 2px; gap: 2px 8px; }
+}
+
+/* landscape phones */
+@media (orientation: landscape) and (max-height: 560px) {
+  .bk-screen { max-width: none; }
+  .bk-screen .bk-btn { width: 44px; height: 44px; }
+  .bk-head { padding: 6px 10px 2px; gap: 4px 8px; }
+  .bk-screen .bk-bar { margin-top: 4px; margin-bottom: 4px; padding-top: 3px; padding-bottom: 3px; }
+  .bk-screen .bk-tray { padding-top: 16px; padding-bottom: 6px; }
+  /* no tray: one head row [back] [guide] [pill] [star] */
+  .bk-screen:not([data-side]) .bk-head {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'back guide pill star';
+    padding-bottom: 0;
+  }
+  /* tray game: stage left, tray + buttons right */
+  .bk-screen[data-side] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 44%, 400px);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .bk-screen[data-side] > .bk-stage { grid-column: 1; grid-row: 1 / span 2; }
+  .bk-screen[data-side] > .bk-tray { grid-column: 2; grid-row: 1; align-self: center; margin-top: 0 !important; margin-left: 2px; }
+  .bk-screen[data-side] > .bk-bar { grid-column: 2; grid-row: 2; }
+}
+/* wide screens (tablet / desktop): keep the column readable, do not stretch */
+@media (min-width: 900px) and (min-height: 600px) {
+  .bk-screen { max-width: 36rem; }
+}
+
+/* scrolling content blocks (market): stack in portrait, two columns on a landscape phone */
+.bk-split { scrollbar-width: none; }
+@media (orientation: portrait) and (max-height: 700px) {
+  .bk-split { gap: 6px; padding-top: 4px; padding-bottom: 6px; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .bk-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'a b' 'c b';
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: start;
+    gap: 8px 14px;
+    padding-top: 2px;
+  }
+  .bk-split > .bk-split-a { grid-area: a; }
+  .bk-split > .bk-split-b { grid-area: b; align-self: center; }
+  .bk-split > .bk-split-c { grid-area: c; }
+}
+
+/* level chips: 44-54px, fit four across at 320px */
+.bk-lv { width: clamp(44px, 14vw, 54px); height: clamp(44px, 14vw, 54px); flex: 0 0 auto; }
+
+/* round summary: content centred when it fits, scrolls (never clips) when it does not */
+.bk-sum > :first-child { margin-top: auto; }
+.bk-sum > :last-child { margin-bottom: auto; }
+@media (orientation: portrait) and (max-height: 700px) {
+  .bk-sum { gap: 8px; padding-top: 4px; padding-bottom: 4px; }
+  .bk-sum-card { gap: 6px; padding-bottom: 12px; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  .bk-sum { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-content: center; align-items: center; gap: 8px 14px; }
+  .bk-sum > .bk-sum-card { grid-column: 1; grid-row: 1 / span 3; margin: 0; gap: 4px; padding-bottom: 10px; }
+  .bk-sum > :not(.bk-sum-card) { grid-column: 2; justify-self: center; margin: 0; }
+}
+
+/* the tray overlaps the stage by 18px (marginTop -18): keep game content out of that strip */
+.bk-screen[data-side] > .bk-stage > .bk-body { margin-bottom: 18px; }
+@media (orientation: landscape) and (max-height: 560px) {
+  .bk-screen[data-side] > .bk-stage > .bk-body { margin-bottom: 0; }
+}
+
+/* a control inside a scaled FitBox that must still measure >= 44px on screen */
+.bk-screen .bk-unscale { min-width: calc(44px / var(--fit, 1)); min-height: calc(44px / var(--fit, 1)); }
+@media (orientation: landscape) and (max-height: 560px) {
+  .bk-screen .bk-lvs { gap: 4px; }
+  .bk-screen .bk-lv { width: 44px; height: 44px; }
+  .bk-screen .bk-bar { padding-left: 8px; padding-right: 8px; gap: 4px; }
+}

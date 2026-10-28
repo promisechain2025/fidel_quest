@@ -26,6 +26,7 @@ import { rngNext, rngShuffle } from './platform/rng'
 import { ORDERS, FIDEL_FAMILIES, ALL_FORMS, INDEXES, PACKS, getActivePackId, setActivePack, needsLanguageChoice, confirmActivePack, languageChoicePending } from './platform/ethiopic'
 import { recordAnswer, loadLedger, troubleLetters, confusions } from './platform/telemetry'
 import { dueKeys } from './platform/srs'
+import { LAYOUTS, abugidaChart, getLayout, setLayout } from './platform/abugida'
 // Boss quizzes service the spaced-repetition backlog (see the provider note
 // at the question factory). Wired here, after both sides exist.
 queueMicrotask(() => setDuePriorityProvider(() => dueKeys()))
@@ -35,6 +36,7 @@ import { chapterPlaces } from './platform/places'
 import { soundEnabled, setSoundEnabled } from './platform/sound'
 import GrownUps from './GrownUps'
 import FamilyVoice from './components/FamilyVoice'
+import SpeedControl from './components/SpeedControl'
 import AnbessaSvg from './components/AnbessaSvg'
 import KokebSvg from './components/KokebSvg'
 import NameInFidel from './components/NameInFidel'
@@ -45,6 +47,9 @@ import { buildWarmup, loadPlan, makePlan, warmupDoneToday, markWarmupDone, etaSt
 import { toEthiopic, formatEthiopic, formatGregorian, formatDual, holidayFor } from './platform/ethioCalendar'
 import { StoneLessonForNode } from './LearnLetters'
 import { Harag, JewelRim } from './components/Manuscript'
+import BrickQuizPlay from './components/BrickQuizPlay'
+import { BrickResultScreen, BrickCta, BrickStat, BrickBanner, BrickStage, RESULT_MUTED } from './components/BrickResult'
+import { Confetti as BrickConfetti, BrickTile, BRICK_COLORS } from './components/brickKit'
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
@@ -85,10 +90,12 @@ import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { installPracticeTracker, notePractice } from './platform/practiceTracker'
+import { noteDone, trackScreen } from './platform/appProgress'
 import { setPracticeGoal } from './platform/practice'
 import { joinClassSync, flushSync, queueHomeworkSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
 import StudyTimer from './components/StudyTimer'
+import { AppProgressChip, AppProgressSheet } from './components/AppProgress'
 import { redeemClassUnlock } from './platform/classUnlock'
 /* Joining with a class unlock changes trial access; screens read it on demand. */
 const setTrialRevGlobal = () => { try { window.dispatchEvent(new Event('fq:access')) } catch { /* ignore */ } }
@@ -113,6 +120,8 @@ import { setCommunityCode } from './platform/community'
 import { appLinkUrl } from './platform/appLink'
 import { loadFromStorage } from './utils/loadFromStorage'
 import { isNativePlatform } from './platform/native'
+import { coreNodeOpen, coreScreenOpen } from './platform/packages'
+import CoreLockSheet from './components/CoreLockSheet'
 import { noteWebSession, isWebTrialLimited, screenBlockedByTrial } from './platform/webTrial'
 import { maybeRequestReview, noteCompletion } from './platform/reviewPrompt'
 import { planSetup, parkSetup, finishSetup, reminderTexts } from './platform/firstRun'
@@ -157,6 +166,8 @@ const PrayerBook = lazyRetry(() => import('./components/PrayerBook'))
 const VowelLadder = lazyRetry(() => import('./components/VowelLadder'))
 const EchoMatch = lazyRetry(() => import('./components/EchoMatch'))
 const BlockChurch = lazyRetry(() => import('./components/BlockChurch'))
+const BrickWords = lazyRetry(() => import('./components/BrickWords'))
+const StackTower = lazyRetry(() => import('./components/StackTower'))
 const FidelTraffic = lazyRetry(() => import('./components/FidelTraffic'))
 const VowelTrain = lazyRetry(() => import('./components/VowelTrain'))
 const WordWorkshop = lazyRetry(() => import('./components/WordWorkshop'))
@@ -195,6 +206,10 @@ import {
   Pencil,
   Music,
   Church,
+  ToyBrick,
+  Layers,
+  LayoutGrid,
+  Rows3,
 } from 'lucide-react'
 import { getTheme, toggleTheme } from './platform/theme'
 
@@ -720,7 +735,7 @@ export function saveRunnerSpeed(s) {
 export const RUNNER_DEFAULT_POOL = FIDEL_FAMILIES.map((f) => `${f.id}-1`)
 
 // The runner quizzes ONLY what the child has learned (their `pool`); the place
-// (Aksum/Gondar/Adulis) and pace still change per level, but never the scope of
+// (per-section scenery) and pace still change per level, but never the scope of
 // letters. Falls back to the whole table if the pool is too small to make a
 // 3-option question.
 function runnerLevelSpec(pool) {
@@ -1082,6 +1097,7 @@ export default function FidelQuestApp() {
     const next = initialScreens()
     const top = next[next.length - 1]
     if (screenBlockedByTrial(top?.name)) return [{ name: 'home' }]
+    if (!coreScreenOpen(top)) return [{ name: 'home' }]
     return next
   })
   // Auto-open once per limited browser session. The flag is written in an
@@ -1094,10 +1110,16 @@ export default function FidelQuestApp() {
     return true
   })
   const [trialRev, setTrialRev] = useState(0)
+  // 1.4 packages: a Core-only screen was tapped without core_unlock.
+  const [coreLockOpen, setCoreLockOpen] = useState(false)
   // trialRev is a bump: redeeming a code writes localStorage, and reading it
   // here is what makes the home banner leave after an unlock.
   const trialLimited = isWebTrialLimited() || trialRev < 0
   const screen = stack[stack.length - 1]
+  // App-level progress: every screen reports into one store (platform/appProgress).
+  useEffect(() => trackScreen(screen.name), [screen.name])
+  const stackRef = useRef(stack)
+  stackRef.current = stack
   // "Who is playing?": greets a shared device (2+ children) once per app
   // session when the app opens on the path - never over a deep link. Also
   // opened from the home kid chip and the Backpack.
@@ -1111,6 +1133,11 @@ export default function FidelQuestApp() {
   const setScreen = useCallback((next) => {
     if (next && screenBlockedByTrial(next.name)) {
       setPaywallOpen(true)
+      return
+    }
+    const topNow = stackRef.current[stackRef.current.length - 1]
+    if (next && !coreScreenOpen(next) && !(topNow?.freeNode && topNow.name === next.name)) {
+      setCoreLockOpen(true)
       return
     }
     setStack((s) => {
@@ -1333,6 +1360,7 @@ export default function FidelQuestApp() {
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
     track('lesson_complete')
+    noteDone()
     notePractice(NODE_BY_ID.get(nodeId)?.kind === NodeKind.ARCADE ? 'game' : 'lesson')
     // Replaying a done node must not re-run the chapter party or re-announce
     // a reward the child already owns - only newly earned things celebrate.
@@ -1425,22 +1453,25 @@ export default function FidelQuestApp() {
       setWarmupNudge({ node, enforced: true })
       return
     }
+    if (!coreNodeOpen(node, JOURNEY)) { setCoreLockOpen(true); return }
+    const free = !coreScreenOpen({ name: 'lesson' }) // core locked: tag the free-unit screens
+    const go = (n) => setScreen(free ? { ...n, freeNode: true } : n)
     setRunSeed((Date.now() % 1000000) | 1)
-    if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return setScreen({ name: 'stone', node })
-    if (node.kind === NodeKind.BLEND) return setScreen({ name: 'wordbuild', node })
-    if (node.kind === NodeKind.FIND) return setScreen({ name: 'findfidel', node })
-    if (node.kind === NodeKind.QUIZ) return setScreen({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
-    if (node.kind === NodeKind.STORY) return setScreen({ name: 'stories', nodeId: node.id })
+    if (node.kind === NodeKind.LEARN || node.kind === NodeKind.MIX) return go({ name: 'stone', node })
+    if (node.kind === NodeKind.BLEND) return go({ name: 'wordbuild', node })
+    if (node.kind === NodeKind.FIND) return go({ name: 'findfidel', node })
+    if (node.kind === NodeKind.QUIZ) return go({ name: 'lesson', levelId: node.levelId, nodeId: node.id })
+    if (node.kind === NodeKind.STORY) return go({ name: 'stories', nodeId: node.id })
     if (node.kind === NodeKind.REVIEW) {
       const seed = (Date.now() % 1000000) | 1
       setRunSeed(seed)
-      return setScreen({
+      return go({
         name: 'review-node',
         nodeId: node.id,
         queue: buildWarmup(seed, learnedFamilyIds(journeyRef.current), loadLedger(), 8, dueKeys()),
       })
     }
-    return setScreen({ name: 'arcade', node }) // ARCADE gateway
+    return go({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
   // Lets the gate above retry itself once the daily window opens, without
   // openNode having to depend on (and re-create) itself.
@@ -1453,7 +1484,7 @@ export default function FidelQuestApp() {
           the manuscript ground gradient, glow, lattice and watermark live on
           that canvas, and body already paints var(--paper) behind it as the
           fallback. An opaque background here would occlude the whole ground. */}
-      <div className="min-h-screen" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
+      <div className="min-h-dvh" style={{ background: 'transparent', color: 'var(--ink)' }} inert={whoOpen}>
         <ErrorBoundary onReset={goHome} title="Oops! Let us go back to the path.">
         <AnimatePresence mode="wait">
           {screen.name === 'home' && (
@@ -1499,7 +1530,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
                 onTreasure={() => { goBack(); openGift() }}
-                onDone={() => { markHuntDone(); track('hunt_complete'); notePractice('game') }}
+                onDone={() => { markHuntDone(); track('hunt_complete'); noteDone(); notePractice('game') }}
                 onBack={goBack}
               />
             </Screen>
@@ -1539,6 +1570,7 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onTrialChange={() => setTrialRev((n) => n + 1)}
                 onPracticeReport={() => setScreen({ name: 'practicelog' })}
+                highlight={screen.highlight}
               />
             </Screen>
           )}
@@ -1672,7 +1704,7 @@ export default function FidelQuestApp() {
           {screen.name === 'prayer' && (
             <Screen key="prayer">
               <Suspense fallback={null}>
-                <PrayerBook onBack={goBack} />
+                <PrayerBook onBack={goBack} onLocked={() => setCoreLockOpen('prayer')} />
               </Suspense>
             </Screen>
           )}
@@ -1703,6 +1735,20 @@ export default function FidelQuestApp() {
             <Screen key="blocks">
               <Suspense fallback={null}>
                 <BlockChurch soundOn={soundOn} onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'brickwords' && (
+            <Screen key="brickwords">
+              <Suspense fallback={null}>
+                <BrickWords soundOn={soundOn} onBack={goBack} />
+              </Suspense>
+            </Screen>
+          )}
+          {screen.name === 'tower' && (
+            <Screen key="tower">
+              <Suspense fallback={null}>
+                <StackTower soundOn={soundOn} onBack={goBack} />
               </Suspense>
             </Screen>
           )}
@@ -1998,6 +2044,8 @@ export default function FidelQuestApp() {
               onLadder={() => { setBackpackOpen(false); setScreen({ name: 'ladder' }) }}
               onEcho={() => { setBackpackOpen(false); setScreen({ name: 'echo' }) }}
               onBlocks={() => { setBackpackOpen(false); setScreen({ name: 'blocks' }) }}
+              onBrickWords={() => { setBackpackOpen(false); setScreen({ name: 'brickwords' }) }}
+              onTower={() => { setBackpackOpen(false); setScreen({ name: 'tower' }) }}
               onTraffic={() => { setBackpackOpen(false); setScreen({ name: 'traffic' }) }}
               onTrain={() => { setBackpackOpen(false); setScreen({ name: 'train' }) }}
               onWorkshop={() => { setBackpackOpen(false); setScreen({ name: 'workshop' }) }}
@@ -2031,6 +2079,13 @@ export default function FidelQuestApp() {
       </div>
       {/* Outside the inert app shell, so it is the only live surface. */}
       {whoOpen && <ProfilePicker onClose={() => setWhoOpen(false)} />}
+      {coreLockOpen && (
+        <CoreLockSheet
+          pkg={coreLockOpen === 'prayer' ? 'prayer' : 'core'}
+          onClose={() => setCoreLockOpen(false)}
+          onGrownUps={(pkg) => { setCoreLockOpen(false); setScreen({ name: 'grownups', highlight: pkg }) }}
+        />
+      )}
       {paywallOpen && (
         <WebTrialPaywall
           onClose={() => setPaywallOpen(false)}
@@ -2308,6 +2363,11 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
             <span className="relative">{nodeGlyph(node)}</span>
           )}
           {done && <Check className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
+          {unlocked && !coreNodeOpen(node, JOURNEY) && (
+            <span className="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full" style={{ background: 'var(--accent)', border: '2px solid var(--card)' }} aria-hidden="true" data-testid={`pkg-lock-${node.id}`}>
+              <Lock className="h-4 w-4" style={{ color: 'var(--glyph)' }} />
+            </span>
+          )}
           {!unlocked && (
             <span className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} aria-hidden="true">
               <Lock className="h-3 w-3" style={{ color: 'var(--muted)' }} />
@@ -2332,7 +2392,7 @@ function PathNode({ node, done, unlocked, highlight, innerRef, onClick }) {
 const PATH_COLS = 3
 
 /* Each chapter of the path is a place on the journey - Ethiopian places for
-   the Amharic pack, Eritrea + Axum for Tigrinya (platform/places.js) - with
+   numbered sections (platform/places.js) - with
    its own gentle tint band so the home screen changes as the child climbs
    instead of being one long amber wall. Tints are translucent over
    var(--paper), so they hold in both themes. */
@@ -2408,7 +2468,7 @@ function PlanChip({ icon: Icon, art, done, label, onClick, pulse }) {
 function WarmupNudge({ enforced, parentRule = false, onStart, onSkip, onClose, onNotNow = onClose }) {
   useEscapeKey(onClose)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-label={t('warmNudgeTitle', 'Warm up first!')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <AnbessaSvg size={104} mood="happy" />
         <h2 className="mt-2 text-2xl font-black">{t('warmNudgeTitle', 'Warm up first!')}</h2>
@@ -2454,7 +2514,7 @@ function PlanSetup({ learned, today, onSave, onBack }) {
   const per = (PACES.find((p) => p.id === pace) || PACES[1]).perWeek
   const eta = formatDual(etaStamp(today, learned, per), getLang())
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-6 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -2532,6 +2592,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
     setLangOpen(false)
   }
   const [streakOpen, setStreakOpen] = useState(false)
+  const [progressOpen, setProgressOpen] = useState(false)
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -2557,9 +2618,9 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
   }, [current?.id])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
-      <header className="sticky top-0 z-20 -mx-7 flex items-center justify-between gap-2 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-        <div className="flex min-w-0 items-center gap-2">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-28 pt-3">
+      <header className="sticky top-0 z-20 -mx-7 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-7 py-2" style={{ background: 'var(--paper)', paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
+        <div className="flex min-w-[6.5rem] flex-1 items-center gap-2 max-[439px]:min-w-[12rem]">
           <button type="button" onClick={onCloset} aria-label={t('openCloset', "Open Anbessa's Closet")} className={`shrink-0 rounded-2xl ${FOCUS}`} style={{ outlineColor: 'var(--sky)' }}>
             <Hero size={48} worn={worn} />
           </button>
@@ -2576,11 +2637,11 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 type="button"
                 onClick={() => setLangOpen(true)}
                 aria-label={t('langTitle', 'Language')}
-                className={`relative flex min-w-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-black before:absolute before:-inset-x-1 before:-inset-y-[11px] before:content-[''] ${FOCUS}`}
+                className={`relative flex min-w-0 shrink-0 items-center gap-1 rounded-full px-1.5 py-1 text-[11px] font-black before:absolute before:-inset-x-[7px] before:-inset-y-[10px] before:content-[''] ${FOCUS}`}
                 style={{ background: 'var(--card)', border: '1.5px solid var(--line)', color: 'var(--muted)', outlineColor: 'var(--sky)' }}
               >
                 <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                <span className="geez max-w-28 truncate align-middle">{PACKS[getActivePackId()].nativeName}</span>
+                <span className="geez hidden max-w-28 truncate align-middle min-[380px]:inline">{PACKS[getActivePackId()].nativeName}</span>
               </button>
             </div>
             {SCHOOL_PATH_ON && (
@@ -2592,7 +2653,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
         </div>
         {/* Header stays minimal: the streak lives in the bottom power bar and
             sound is a device-level control, so neither clutters the header. */}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {/* Who is playing: the active child's friend + name. Tapping it
               opens the picker (switch, add, or - behind the gate - edit). */}
           {kid && onWho && (
@@ -2640,6 +2701,8 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
             <SpecialtyIcon name="backpack" bare size={26} />
           </button>
         </div>
+        {/* App-level progress: one bar every lesson and game reports into. */}
+        <AppProgressChip onClick={() => setProgressOpen(true)} />
       </header>
 
       {trialLimited && onTrial && (
@@ -2668,6 +2731,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
         )}
         {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
+        {progressOpen && <AppProgressSheet key="progress-sheet" onClose={() => setProgressOpen(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -2795,8 +2859,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
                 <>
                   <div className="mb-2 mt-3 flex items-center gap-2 first:mt-0" aria-hidden="true">
                     <span className="h-0.5 flex-1 rounded" style={{ background: CHAPTER_TINT[chapter]?.line }} />
-                    {/* Place names are proper nouns from the active pack's
-                       geography - never translated. */}
+                    {/* Generic numbered sections (owner decision, Oct 2026: no city names). */}
                     <span className="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest" style={{ background: CHAPTER_TINT[chapter]?.band, color: CHAPTER_TINT[chapter]?.ink?.[theme] || CHAPTER_TINT[chapter]?.ink?.dark }}>
                       {CHAPTER_TINT[chapter]?.name || `Chapter ${chapter}`}
                     </span>
@@ -2895,11 +2958,12 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
 
 // Compact square tile for the Backpack grid: icon + short label. Keeps the
 // whole toolkit on one screen so nothing (Explorer, Review...) gets buried.
-function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0 }) {
+function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 0, locked = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-locked={locked || undefined}
       className={`chunk relative flex flex-col items-center justify-start gap-1.5 rounded-2xl px-1 py-3 text-center ${FOCUS}`}
       style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)', outlineColor: 'var(--sky)' }}
     >
@@ -2914,6 +2978,11 @@ function BackpackTile({ icon, art, title, onClick, tone = 'var(--sky)', badge = 
       {badge > 0 && (
         <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black text-white" style={{ background: 'var(--bad)', border: '2px solid var(--card)' }}>
           {badge}
+        </span>
+      )}
+      {locked && (
+        <span data-testid="tile-lock" className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full" style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--muted)' }}>
+          <Lock className="h-3.5 w-3.5" aria-hidden="true" />
         </span>
       )}
     </button>
@@ -2987,7 +3056,7 @@ function StreakSheet({ streak, onClose }) {
   useEscapeKey(onClose)
   const best = Math.max(loadStreak().best || 0, streak)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3054,7 +3123,7 @@ export function FirstRunSetup({ steps, before = 0, soundOn = true, onToggleSound
   const nextLabel = last ? t('setupDone', "Let's go!") : t('setupNext', 'Next')
   if (!step) return null
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-5" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3195,7 +3264,7 @@ export function LanguageSheet({ onClose }) {
   }
   useEscapeKey(close)
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'var(--overlay)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -3226,7 +3295,7 @@ export function LanguageSheet({ onClose }) {
   )
 }
 
-function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onBlocks, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
+function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, onFamilyVoice, onName, onPostcard, onWords, onStories, onPrayer, onTwins, onLadder, onEcho, onBlocks, onBrickWords, onTower, onTraffic, onTrain, onWorkshop, onMarket, onBingo, onPractice, onCloset, onTees, onTeacher, teeBadge = 0, troubleCount }) {
   useEscapeKey(onClose)
   // Global letter-scope preference: the games practise learned letters by
   // default; this switches them (and the arcade games) to the whole abugida.
@@ -3242,7 +3311,7 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
   const ready = (game) => gameReady(game, { scope, learned: learnedFamilies })
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-end justify-center p-4"
+      className="fq-modal fixed inset-0 z-50 flex items-end justify-center p-4"
       style={{ background: 'var(--overlay)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -3281,18 +3350,21 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                sell - the screen, unlock logic, and tests all stay wired, so
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
-            <BackpackTile art="words" title={t('wordsShort', 'First Words')} onClick={onWords} />
-            {ready('workshop') && <BackpackTile art="build" title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
-            {ready('ladder') && <BackpackTile art="ladder" title={t('ladderShort', 'Order')} onClick={onLadder} />}
-            {ready('train') && <BackpackTile art="train" title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
-            {ready('echo') && <BackpackTile art="match" title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
-            {/* Block Church SAMPLE (ለ only). Ge'ez-only title: no English in kid UI. */}
-            {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title="ለሉሊ" onClick={onBlocks} />}
-            {ready('traffic') && <BackpackTile art="traffic" title={t('trShort', 'Traffic')} onClick={onTraffic} />}
-            {ready('market') && <BackpackTile art="market" title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
-            {ready('bingo') && <BackpackTile art="bingo" title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
+            {/* First Words and Order retired from the Backpack: Brick Words and Stack the tower (tiles below) replace them. */}
+            {ready('workshop') && <BackpackTile art="build" locked={!coreScreenOpen({ name: 'workshop' })} title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
+            {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
+            {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
+            {/* Block Church: every consonant family. Titled via i18n, English fallback. */}
+            {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title={t('blockChurchShort', 'Block Church')} onClick={onBlocks} />}
+            {/* Word Bricks SAMPLE (replaces Build / First Words). Titled like the other game tiles: i18n key, English fallback. */}
+            {onBrickWords && <BackpackTile icon={<ToyBrick className="h-6 w-6" />} tone="#d94f2a" title={t('wordBricksShort', 'Word Bricks')} onClick={onBrickWords} />}
+            {/* Stack the tower SAMPLE (replaces Order). Numeral title, no English. */}
+            {onTower && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="#2f86d6" title="፯" onClick={onTower} />}
+            {ready('traffic') && <BackpackTile art="traffic" locked={!coreScreenOpen({ name: 'traffic' })} title={t('trShort', 'Traffic')} onClick={onTraffic} />}
+            {ready('market') && <BackpackTile art="market" locked={!coreScreenOpen({ name: 'market' })} title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
+            {ready('bingo') && <BackpackTile art="bingo" locked={!coreScreenOpen({ name: 'bingo' })} title={t('bingoShort', 'Bingo')} onClick={onBingo} />}
             {/* Stories only exist for packs that ship them - no empty room. */}
-            {packHasStories() && <BackpackTile art="stories" title={t('storiesShort', 'Stories')} onClick={onStories} />}
+            {packHasStories() && <BackpackTile art="stories" locked={!coreScreenOpen({ name: 'stories' })} title={t('storiesShort', 'Stories')} onClick={onStories} />}
             {/* Prayer book (ጸሎት ዘዘወትር): Ge'ez for every pack, never gated. */}
             {onPrayer && <BackpackTile icon={<BookOpen size={24} />} tone="var(--accent, #d9731c)" title="ጸሎት" onClick={onPrayer} />}
             {/* Twin Drill appears once a same-sound pair is learned - the
@@ -3303,10 +3375,10 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                 const s = twinSiblingOf(f)
                 return s && learned.has(f.id) && learned.has(s.id)
               })
-              return ready ? <BackpackTile art="twins" title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
+              return ready ? <BackpackTile art="twins" locked={!coreScreenOpen({ name: 'twins' })} title={t('twinsShort', 'Twins')} onClick={onTwins} /> : null
             })()}
             <BackpackTile art="explorer" title={t('explorerShort', 'Explorer')} onClick={onExplore} />
-            {ready('beats') && <BackpackTile art="kebero" title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
+            {ready('beats') && <BackpackTile art="kebero" locked={!coreScreenOpen({ name: 'beats' })} title={t('beatsShort', 'Kebero Beats')} onClick={onBeats} />}
             {troubleCount > 0 && (
               <BackpackTile art="practice" badge={troubleCount} title={t('practiceShort', 'Practice')} onClick={onPractice} />
             )}
@@ -3385,7 +3457,7 @@ function InstallBanner() {
         </button>
       </motion.div>
       {iosOpen && (
-        <motion.div key="ios" className="fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
+        <motion.div key="ios" className="fq-modal fixed inset-0 z-50 flex items-end justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIosOpen(false)}>
           <motion.div role="dialog" aria-modal="true" aria-label={t('installTitle', 'Add Anbessa to your home screen')} className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ y: 40 }} animate={{ y: 0 }} onClick={(e) => e.stopPropagation()}>
             <Hero size={72} />
             <p className="mt-3 font-extrabold">{t('installIosHint', "Tap the Share button, then 'Add to Home Screen'")}</p>
@@ -3412,7 +3484,7 @@ function GiftModal({ reward, worn, forms, onClose }) {
     onClose()
   }
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <Confetti count={40} />
       <motion.div role="dialog" aria-modal="true" aria-label={t('giftTitle', 'A gift from Anbessa!')} onClick={(e) => e.stopPropagation()} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
@@ -3460,7 +3532,7 @@ function Celebration({ chapter, rewardName, worn, forms, onClose, onPostcard }) 
     onClose()
   }
   return (
-    <motion.div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div className="fq-modal fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(0,0,0,0.55)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <Confetti count={42} />
       <motion.div role="dialog" aria-modal="true" aria-label={t('chapterDone', `Chapter ${chapter} complete!`, { n: chapter })} className="relative w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: 'var(--paper)' }} initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 16 }}>
         <motion.div initial={{ scale: 0, rotate: -12 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 11, delay: 0.1 }}>
@@ -3517,12 +3589,17 @@ function exploreFace(i) {
 // the slower tiers add real breathing room on top of the voice.
 const EXPLORE_PACE = { slow: 2300, normal: 1700, fast: 850 }
 
-function Explore({ soundOn, onBack, initialFamily = null }) {
+export function Explore({ soundOn, onBack, initialFamily = null }) {
   const [openFamily, setOpenFamily] = useState(initialFamily)
   // Rehomed from Classic: trace any family, and Fidel Master's chart/chant.
   const [tracing, setTracing] = useState(false)
   const [master, setMaster] = useState(false)
   const [order, setOrder] = useState(1) // which vowel order the grid shows
+  // How the Explorer is arranged: by vowel (default) or as the traditional
+  // ኣቡጊዳ rotation chart. Persisted per child (fq.explorer.layout.v1).
+  const [layout, setLayoutState] = useState(getLayout)
+  const abugida = layout === LAYOUTS.ABUGIDA
+  const chart = useMemo(() => abugidaChart(FIDEL_FAMILIES, ORDERS.length), [])
   const family = FIDEL_FAMILIES.find((f) => f.id === openFamily)
 
   // Autoplay: chant the selected vowel order across every family, the way the
@@ -3532,6 +3609,20 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   const [pace, setPace] = useState('normal')
   const stopPlay = useCallback(() => setPlaying(false), [])
   const startPlay = () => { setPlayIdx(0); setPlaying(true) }
+  const chooseLayout = (next) => {
+    if (next === layout) return
+    stopPlay()
+    setLayoutState(next)
+    setLayout(next)
+  }
+  // The recordings chanted by "Play all": one vowel order down every family, or
+  // the ኣቡጊዳ chart read row by row. Same clips either way (formOf / playForm).
+  const chantCells = useMemo(
+    () => (abugida
+      ? chart.flat().map((c) => formOf(c.key))
+      : FIDEL_FAMILIES.map((f) => formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`))),
+    [abugida, chart, order],
+  )
   // Autoplay marches through all 33 tiles; on a phone most of the grid is
   // below the fold, so follow the active tile - the class must SEE the
   // letter being said, especially when the screen is mirrored to a TV.
@@ -3542,9 +3633,8 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
 
   useEffect(() => {
     if (!playing || family) return undefined
-    if (playIdx >= FIDEL_FAMILIES.length) { setPlaying(false); return undefined }
-    const f = FIDEL_FAMILIES[playIdx]
-    const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
+    if (playIdx >= chantCells.length) { setPlaying(false); return undefined }
+    const cell = chantCells[playIdx]
     playForm(cell, soundOn)
     // VOICE-PAGE SYNC: the pace is the MINIMUM gap; the step then yields to
     // the letter's voice. Without the yield, "fast" (750ms) outran the ~1.2s
@@ -3553,7 +3643,7 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
     // spoken in full and "fast" simply means no pause between letters.
     const cancel = afterVoice(() => setPlayIdx((i) => i + 1), EXPLORE_PACE[pace])
     return cancel
-  }, [playing, playIdx, order, pace, family, soundOn])
+  }, [playing, playIdx, chantCells, pace, family, soundOn])
 
   if (master) {
     return (
@@ -3564,15 +3654,15 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl md:max-w-2xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6 fq-safe">
       <header className="flex items-center gap-3">
-        <Chunky tone="card" className="flex h-11 w-11 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
+        <Chunky tone="card" className="flex h-11 w-11 shrink-0 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
         </Chunky>
         <div>
           <h1 className="text-xl font-black leading-tight">{family ? t('exploreFamilyTitle', `The ${family.name} family`, { name: family.name }) : t('exploreHeader', 'Letter Explorer')}</h1>
           <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
-            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
+            {family ? t('exploreFamilySub', 'Seven forms, one letter — tap to hear each') : abugida ? t('exploreAbugidaSub', 'Tap any letter to hear it') : t('exploreHeaderSub', 'Pick a vowel, then tap any family to hear it')}
           </p>
         </div>
       </header>
@@ -3583,13 +3673,32 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
          matching Fidel Master's selector, with the traditional order name on
          the aria-label for screen readers. */}
       {!family && (
-        <div className="mt-4 pb-1">
+        <div className="mt-4 flex gap-2" role="group" aria-label={t('exploreLayoutLabel', 'How to arrange the letters')} data-testid="explore-layout">
+          {[
+            { id: LAYOUTS.VOWEL, Icon: Rows3, label: t('exploreLayoutVowel', 'Arrange by vowel'), glyphs: ['a-1', 'a-2', 'a-3'].map((k) => INDEXES.byAudioKey.get(k)?.char).join(' '), tid: 'explore-layout-vowel' },
+            { id: LAYOUTS.ABUGIDA, Icon: LayoutGrid, label: t('exploreLayoutAbugida', 'Arrange as the abugida chart'), glyphs: getActivePackId() === 'ti' ? 'ኣቡጊዳ' : 'አቡጊዳ', tid: 'explore-layout-abugida' },
+          ].map(({ id, Icon, label, glyphs, tid }) => {
+            const on = layout === id
+            return (
+              <button key={id} type="button" onClick={() => chooseLayout(id)} aria-pressed={on} aria-label={label} data-testid={tid}
+                className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
+                style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
+                <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="geez text-lg">{glyphs}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {!family && !abugida && (
+        <div className="mt-3 pb-1">
           <div className="flex flex-wrap gap-1.5">
             {ORDERS.map((o) => {
               const on = order === o.index
               return (
                 <button key={o.index} type="button" onClick={() => setOrder(o.index)} aria-pressed={on} aria-label={o.geezName}
-                  className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
+                  className={`flex min-h-[44px] min-w-[44px] shrink-0 flex-col items-center justify-center rounded-xl px-3 py-1.5 font-black leading-none ${FOCUS}`}
                   style={{ background: on ? 'var(--go)' : 'var(--card)', color: on ? '#fff' : 'var(--ink)', border: '2px solid var(--line)', outlineColor: 'var(--sky)' }}>
                   <span className="geez text-xl">{INDEXES.byAudioKey.get(`a-${o.index}`)?.char}</span>
                   <span className="mono mt-0.5 text-[10px] font-bold" style={{ opacity: on ? 0.9 : 0.75 }}>-{o.vowel}</span>
@@ -3602,8 +3711,8 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
 
       {/* Autoplay: chant the chosen vowel across every family (say-all) */}
       {!family && (
-        <div className="mt-3 flex items-center gap-2">
-          <Chunky tone={playing ? 'bad' : 'sky'} className="flex items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Chunky tone={playing ? 'bad' : 'sky'} className="flex min-h-[44px] items-center gap-2 px-4 py-2.5 text-sm" onClick={() => (playing ? stopPlay() : startPlay())} depth={3}>
             {playing ? <Pause className="h-5 w-5" aria-hidden="true" /> : <Play className="h-5 w-5" aria-hidden="true" />}
             {playing ? t('stop', 'Stop') : t('playAll', 'Play all')}
           </Chunky>
@@ -3611,20 +3720,43 @@ function Explore({ soundOn, onBack, initialFamily = null }) {
             <Music className="h-5 w-5" aria-hidden="true" />
             {t('masterShort', 'Chant')}
           </Chunky>
-          <div className="flex gap-1">
-            {['slow', 'normal', 'fast'].map((p) => (
-              <button key={p} type="button" onClick={() => setPace(p)} aria-pressed={pace === p}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-black ${FOCUS}`}
-                style={{ background: pace === p ? 'var(--sky)' : 'var(--card)', color: pace === p ? '#fff' : 'var(--muted)', border: '2px solid var(--line)', outlineColor: 'var(--accent)' }}>
-                {t(`pace_${p}`, p === 'slow' ? 'Slow' : p === 'fast' ? 'Fast' : 'Normal')}
-              </button>
-            ))}
-          </div>
+          <SpeedControl value={pace} onChange={setPace} testId="explore-pace" />
         </div>
       )}
 
       <AnimatePresence mode="wait">
-        {!family ? (
+        {!family && abugida ? (
+          <motion.div key="abugida" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="-mx-3 mt-4 grid grid-cols-7 gap-1.5" data-testid="abugida-chart">
+            {chart.flat().map((c, i) => {
+              const cell = formOf(c.key)
+              const face = exploreFace(c.order - 1) // colour = vowel order (column), so the rotation reads as diagonals
+              const isActive = playing && playIdx === i
+              const topRow = i < ORDERS.length // the row that spells the name አ ቡ ጊ ዳ ሄ ው ዞ
+              return (
+                <motion.button
+                  key={c.key}
+                  data-play-active={isActive ? 1 : undefined}
+                  data-chart-key={c.key}
+                  type="button"
+                  aria-label={cell.char}
+                  onClick={() => { stopPlay(); playForm(cell, soundOn) }}
+                  animate={isActive ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className={`chunk relative flex min-h-[48px] items-center justify-center rounded-xl py-2 ${FOCUS}`}
+                  style={{
+                    background: `radial-gradient(circle at 30% 22%, ${face.wash}, rgba(255,255,255,0) 55%), ${face.bg}`,
+                    border: `2px solid ${isActive ? '#fff' : topRow ? '#F2D27A' : face.rim}`,
+                    boxShadow: isActive ? `0 0 0 3px ${face.rim}, 0 6px 14px rgba(0,0,0,0.35)` : topRow ? `0 0 0 1.5px #F2D27A, 0 3px 0 ${face.shadow}` : `0 3px 0 ${face.shadow}`,
+                    color: face.fg,
+                    outlineColor: 'var(--sky)',
+                  }}
+                >
+                  <span className="geez text-2xl font-black leading-none" style={{ color: face.fg }}>{cell.char}</span>
+                </motion.button>
+              )
+            })}
+          </motion.div>
+        ) : !family ? (
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {FIDEL_FAMILIES.map((f, i) => {
               const cell = formOf(`${f.id}-${order}`) ?? formOf(`${f.id}-1`)
@@ -3960,171 +4092,31 @@ function Lesson({ level, seed, soundOn, onFinish, onReplay, onQuit = null, pract
 
   const showSheet = ctx.status === GameState.SUCCESS_BURST || ctx.status === GameState.ERROR_RECOVERY
   const presenting = ctx.status === GameState.PRESENTATION
+  const status = ctx.status === GameState.SUCCESS_BURST ? 'success' : ctx.status === GameState.ERROR_RECOVERY ? 'error' : 'ask'
 
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col overflow-hidden px-7 pb-32 pt-5">
-      {/* Scene framing: a soft ground swell with Anbessa watching from the
-         corner, so the quiz floats in a place instead of empty paper. Purely
-         decorative - zero pointer events, behind everything. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0" style={{ zIndex: 0 }} aria-hidden="true">
-        <div className="relative">
-          <div style={{ height: 110, background: 'var(--paper-2)', borderRadius: '55% 45% 0 0 / 100% 80% 0 0', opacity: 0.7, transform: 'scaleX(1.35)' }} />
-          <div className="absolute bottom-0 left-1" style={{ opacity: 0.95 }}>
-            <AnbessaSvg size={54} mood={ctx.status === GameState.ERROR_RECOVERY ? 'worried' : 'happy'} />
-          </div>
-        </div>
-      </div>
-      <header className="relative flex items-center gap-3" style={{ zIndex: 1 }}>
-        <button type="button" onClick={() => (onQuit || onFinish)(level.id, null)} aria-label="Quit lesson" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-          <X className="h-6 w-6" />
-        </button>
-        <div className="flex h-4 flex-1 gap-1.5" role="progressbar" aria-valuenow={progress.answered} aria-valuemin={0} aria-valuemax={progress.total} aria-label="Lesson progress">
-          {Array.from({ length: progress.total }, (_, i) => (
-            <motion.div
-              key={i}
-              className="h-full flex-1 rounded-full"
-              animate={{ background: i < progress.answered ? 'var(--go)' : i === ctx.cursor ? 'var(--accent)' : 'var(--line)' }}
-              transition={{ duration: 0.3 }}
-            />
-          ))}
-        </div>
-        <AnimatePresence>
-          {ctx.streak >= 2 && (
-            <motion.div
-              initial={{ scale: 0, rotate: -20 }}
-              animate={{ scale: 1, rotate: 0 }}
-              exit={{ scale: 0 }}
-              className="flex items-center gap-1 rounded-xl px-2.5 py-1 font-black"
-              style={{ background: 'var(--accent)', color: 'var(--glyph)' }}
-              aria-label={`Streak: ${ctx.streak}`}
-            >
-              <Flame className="h-4 w-4" fill="currentColor" aria-hidden="true" />
-              {ctx.streak}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
-
-      <main className="relative flex flex-1 flex-col justify-center gap-6 py-6" style={{ zIndex: 1 }}>
-        <div className="text-center">
-          <p className="flex items-center justify-center gap-2 text-lg font-extrabold">
-            {/* Kokeb ASKS the question - the caller finally has a face. */}
-            <motion.span animate={{ rotate: [0, -8, 0, 8, 0] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} aria-hidden="true">
-              <KokebSvg size={34} />
-            </motion.span>
-            {t('whichLetter', 'Which letter says')}{' '}
-            <button
-              type="button"
-              onClick={() => playForm(targetForm, soundOn)}
-              className={`chunk inline-flex items-center gap-1.5 rounded-xl px-3 py-1 align-middle text-white ${FOCUS}`}
-              style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}
-              aria-label={`Play the sound ${targetForm?.sound} again`}
-            >
-              <Volume2 className="h-5 w-5" aria-hidden="true" />“{targetForm?.sound}”
-            </button>
-            ?
-          </p>
-        </div>
-
-        <div className="fq-land-grid4 grid grid-cols-2 gap-3">
-          {question?.options.map((key) => {
-            const form = formOf(key)
-            const isTarget = key === question.target
-            const isWrongPick = ctx.wrongPicks.includes(key)
-            const showAsCorrect = ctx.status === GameState.SUCCESS_BURST && isTarget
-            const showAsWrong = ctx.status === GameState.ERROR_RECOVERY && key === ctx.wrongPicks[ctx.wrongPicks.length - 1]
-            return (
-              <motion.button
-                key={`${ctx.cursor}-${key}`}
-                type="button"
-                disabled={presenting || showSheet || isWrongPick}
-                onClick={() => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: key } })}
-                animate={showAsWrong ? { x: [0, -9, 9, -6, 6, 0] } : showAsCorrect ? { scale: [1, 1.08, 1] } : {}}
-                transition={{ duration: 0.4 }}
-                className={`chunk geez fq-land-tile relative flex h-32 items-center justify-center rounded-3xl border-2 text-6xl font-black sm:h-36 ${FOCUS}`}
-                style={{
-                  // Resting = the shared gold letter-tile (matches Home); only
-                  // the answer FEEDBACK flips to green (correct) / red (wrong).
-                  background: showAsCorrect ? 'var(--go-soft)' : showAsWrong ? 'var(--bad-soft)' : 'var(--tile)',
-                  borderColor: showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--tile-deep)',
-                  color: showAsCorrect ? 'var(--go-ink)' : showAsWrong ? 'var(--bad-ink)' : 'var(--glyph)',
-                  boxShadow: `0 5px 0 ${showAsCorrect ? 'var(--go)' : showAsWrong ? 'var(--bad)' : 'var(--tile-deep)'}`,
-                  '--chunk-depth': '5px',
-                  opacity: isWrongPick && !showAsWrong ? 0.35 : presenting ? 0.6 : 1,
-                  outlineColor: 'var(--sky)',
-                }}
-                aria-label={`Choose the letter that says ${form.sound}`}
-                data-tut={`opt-${key}`}
-              >
-                {!showAsCorrect && !showAsWrong && <JewelRim />}
-                {form.char}
-                {/* Shape + color, not color alone: a check/cross so a
-                   colorblind child gets the same right/wrong signal. */}
-                {showAsCorrect && <Check className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--go)' }} aria-hidden="true" />}
-                {showAsWrong && <X className="absolute right-2 top-2 h-7 w-7 rounded-full bg-white p-0.5" style={{ color: 'var(--bad)' }} aria-hidden="true" />}
-              </motion.button>
-            )
-          })}
-        </div>
-
-        <div className="h-6 text-center" aria-live="polite">
-          {presenting && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-bold" style={{ color: 'var(--muted)' }}>
-              {t('listen', 'Listen…')}
-            </motion.p>
-          )}
-        </div>
-      </main>
-
-      <FeedbackSheet ctx={ctx} targetForm={targetForm} onContinue={() => dispatch({ type: GameEvent.FEEDBACK_DONE })} />
+    <BrickQuizPlay
+      ctx={ctx}
+      status={status}
+      question={question}
+      progress={progress}
+      formOf={formOf}
+      presenting={presenting}
+      feedback={showSheet}
+      onQuit={() => (onQuit || onFinish)(level.id, null)}
+      onPick={(key) => dispatch({ type: GameEvent.SELECT_OPTION, payload: { audioKey: key } })}
+      onHear={() => playForm(targetForm, soundOn)}
+      onContinue={() => dispatch({ type: GameEvent.FEEDBACK_DONE })}
+    >
       {demo && <GhostHand x={hand.x} y={hand.y} visible onSkip={endDemo} />}
       <AnimatePresence>
         {yourTurn && (
-          <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none fixed inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: 'var(--go-ink)' }}>
+          <motion.p initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-1/3 z-50 text-center text-3xl font-black" style={{ color: '#fff', textShadow: '0 3px 0 #2e7a1e, 0 6px 14px rgba(0,0,0,.35)' }}>
             {t('nowYouTry', 'Your turn!')}
           </motion.p>
         )}
       </AnimatePresence>
-    </div>
-  )
-}
-
-function FeedbackSheet({ ctx, targetForm, onContinue }) {
-  const success = ctx.status === GameState.SUCCESS_BURST
-  const error = ctx.status === GameState.ERROR_RECOVERY
-  return (
-    <AnimatePresence>
-      {(success || error) && (
-        <motion.div
-          initial={{ y: '100%' }}
-          animate={{ y: 0 }}
-          exit={{ y: '100%' }}
-          transition={{ type: 'spring', stiffness: 500, damping: 42 }}
-          className="fixed inset-x-0 bottom-0 z-40"
-          style={{ background: success ? 'var(--go-soft)' : 'var(--bad-soft)' }}
-          role="alertdialog"
-          aria-live="assertive"
-          aria-label={success ? 'Correct answer' : 'Wrong answer'}
-        >
-          <div className="mx-auto flex max-w-xl items-center gap-4 px-5 py-6">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full" style={{ background: success ? 'var(--go)' : 'var(--bad)', color: '#fff' }} aria-hidden="true">
-              {success ? <Check className="h-7 w-7" strokeWidth={3.5} /> : <X className="h-7 w-7" strokeWidth={3.5} />}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-lg font-black" style={{ color: success ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
-                {success ? (ctx.streak >= 3 ? t('amazing', `Amazing! ${ctx.streak} in a row!`, { n: ctx.streak }) : t('nice', 'Nice!')) : t('notQuite', 'Not quite!')}
-              </p>
-              <p className="font-bold" style={{ color: success ? 'var(--go-ink)' : 'var(--bad-ink)' }}>
-                <span className="geez text-xl">{targetForm?.char}</span> {t('saysWord', 'says')} “{targetForm?.sound}”{error && t('tryAgain', ' — listen and try again')}
-              </p>
-            </div>
-            <Chunky tone={success ? 'go' : 'bad'} className="shrink-0 px-6 py-3.5 text-sm uppercase" onClick={onContinue} data-tut="continue">
-              {success ? t('continue', 'Continue') : t('gotIt', 'Got it')}
-            </Chunky>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </BrickQuizPlay>
   )
 }
 
@@ -4165,12 +4157,12 @@ function ChallengeShareButton({ payload, label }) {
   }
   return (
     <>
-      <Chunky tone="sky" className="w-full py-4 text-base uppercase" onClick={() => requestShare(share)}>
+      <BrickCta tone="sky" onClick={() => requestShare(share)}>
         <span className="flex items-center justify-center gap-2">
           <Share2 className="h-5 w-5" aria-hidden="true" />
           {copied ? t('linkCopied', 'Link copied!') : label}
         </span>
-      </Chunky>
+      </BrickCta>
       {gate}
     </>
   )
@@ -4183,56 +4175,64 @@ function ChallengeShareButton({ payload, label }) {
 
 function FixItGate({ missedCount, onPractice, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
-      <Hero size={110} />
-      <h2 className="text-3xl font-black">{t('fixTitle', 'Almost!')}</h2>
-      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+    <BrickResultScreen
+      testId="fixit-gate"
+      above={<BrickStage color="#f08a24"><Hero size={110} /></BrickStage>}
+      actions={(
+        <>
+          <BrickCta onClick={onPractice}>{t('fixCta', 'Practice the tricky ones')}</BrickCta>
+          <BrickCta tone="wood" onClick={onHome}>{t('home', 'Home')}</BrickCta>
+        </>
+      )}
+    >
+      <BrickBanner color="#f08a24">{t('fixTitle', 'Almost!')}</BrickBanner>
+      <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixBody', '{n} letters want a little more practice. Master them, then try again!', { n: missedCount })}
       </p>
-      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onPractice}>
-        {t('fixCta', 'Practice the tricky ones')}
-      </Chunky>
-      <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-        {t('home', 'Home')}
-      </button>
-    </div>
+      <div className="mt-3 flex flex-wrap items-end justify-center gap-x-1.5 gap-y-3" aria-hidden="true" data-testid="fixit-bricks">
+        {Array.from({ length: Math.min(missedCount, 8) }, (_, i) => (
+          <BrickTile key={i} color={BRICK_COLORS[i % BRICK_COLORS.length]} width={30} height={24} depth={4} />
+        ))}
+      </div>
+    </BrickResultScreen>
   )
 }
 
 function FixItReady({ onRetry, onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
-      <Hero size={110} />
-      <h2 className="text-3xl font-black">{t('fixReady', 'Nice practice!')}</h2>
-      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+    <BrickResultScreen
+      testId="fixit-ready"
+      rays
+      above={<BrickStage><Hero size={110} pose="cheer" /></BrickStage>}
+      actions={(
+        <>
+          <BrickCta onClick={onRetry}>{t('fixRetry', 'Try the quiz again')}</BrickCta>
+          {/* Always leave a way back to the path - a tired child must not be forced
+             into another full quiz to escape (same exit the fix-it gate/cap give). */}
+          {onHome && <BrickCta tone="wood" onClick={onHome}>{t('backToPath', 'Back to the path')}</BrickCta>}
+        </>
+      )}
+    >
+      <BrickBanner color="#43b02e">{t('fixReady', 'Nice practice!')}</BrickBanner>
+      <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixReadyBody', 'You are ready. Show those letters who is the boss!')}
       </p>
-      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onRetry}>
-        {t('fixRetry', 'Try the quiz again')}
-      </Chunky>
-      {/* Always leave a way back to the path - a tired child must not be forced
-         into another full quiz to escape (same exit the fix-it gate/cap give). */}
-      {onHome && (
-        <button type="button" onClick={onHome} className={`min-h-[44px] min-w-[44px] px-3 font-black underline ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-          {t('backToPath', 'Back to the path')}
-        </button>
-      )}
-    </div>
+    </BrickResultScreen>
   )
 }
 
 function FixItCap({ onHome }) {
   return (
-    <div className="fq-anim-pop mx-auto flex min-h-screen max-w-md md:max-w-2xl flex-col items-center justify-center gap-5 px-7 text-center">
-      <Hero size={110} />
-      <h2 className="text-3xl font-black">{t('fixCapTitle', 'Great practice today!')}</h2>
-      <p className="text-lg font-bold" style={{ color: 'var(--muted)' }}>
+    <BrickResultScreen
+      testId="fixit-cap"
+      above={<BrickStage color="#2f86d6"><Hero size={110} /></BrickStage>}
+      actions={<BrickCta onClick={onHome}>{t('home', 'Home')}</BrickCta>}
+    >
+      <BrickBanner color="#2f86d6" className="!text-[22px]">{t('fixCapTitle', 'Great practice today!')}</BrickBanner>
+      <p className="mt-2 text-lg font-bold" style={{ color: RESULT_MUTED }}>
         {t('fixCapBody', 'Those letters are getting stronger. We will warm up with them next time and beat this quiz!')}
       </p>
-      <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onHome}>
-        {t('home', 'Home')}
-      </Chunky>
-    </div>
+    </BrickResultScreen>
   )
 }
 
@@ -4273,8 +4273,8 @@ function NextUpTeaser({ levelId }) {
     )
   return (
     <motion.div
-      className="mt-5 flex w-full max-w-sm items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left"
-      style={{ background: 'var(--card)', borderColor: 'var(--line)' }}
+      className="mt-4 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left"
+      style={{ background: 'rgba(138,84,38,.12)', border: '3px solid #c9a36a' }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 1.0 }}
@@ -4285,7 +4285,7 @@ function NextUpTeaser({ levelId }) {
           {t('nextUp', 'Next on the path:')} {what}
         </p>
         {streak.count >= 2 && (
-          <p className="mt-0.5 flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
+          <p className="mt-0.5 flex items-center gap-1 text-xs font-bold" style={{ color: '#c4621c' }}>
             <Flame className="h-3.5 w-3.5" fill="currentColor" aria-hidden="true" />
             {t('nextUpStreak', `Come back tomorrow to keep the ${streak.count}-day flame!`, { n: streak.count })}
           </p>
@@ -4298,108 +4298,100 @@ function NextUpTeaser({ levelId }) {
 function LevelComplete({ level, accuracy, stars, bestStreak, onContinue, onReplay, incoming = null, challengePayload = null }) {
   const outcome = incoming ? challengeOutcome(accuracy, incoming.accuracy) : null
   return (
-    <div className="relative mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center overflow-hidden px-7 py-10 text-center">
-      <Confetti />
-      <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
-        <motion.span
-          className="flex items-end gap-3"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
-        >
-          <ZebraSvg size={84} />
-          <Hero size={124} pose="cheer" />
-        </motion.span>
+    <BrickResultScreen
+      testId="level-complete"
+      rays
+      above={(
+        <>
+          <BrickConfetti count={30} reduce={false} />
+          <motion.div initial={{ scale: 0.5, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
+            <BrickStage width={230}>
+              <motion.span
+                className="flex items-end gap-3"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ delay: 0.5, duration: 0.55, repeat: 3, ease: 'easeInOut' }}
+              >
+                <ZebraSvg size={72} />
+                <Hero size={110} pose="cheer" />
+              </motion.span>
+            </BrickStage>
+          </motion.div>
+        </>
+      )}
+      actions={incoming ? (
+        <>
+          {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeBack', 'Challenge back')} />}
+          <BrickCta tone="wood" onClick={onReplay}>{t('playAgain', 'Play again')}</BrickCta>
+          <BrickCta onClick={onContinue}>{t('goHome', 'Home')}</BrickCta>
+        </>
+      ) : (
+        <>
+          <BrickCta onClick={onContinue}>{t('continue', 'Continue')}</BrickCta>
+          {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeFriend', 'Challenge a friend')} />}
+          <BrickCta tone="wood" onClick={onReplay}>{t('playAgain', 'Play again')}</BrickCta>
+        </>
+      )}
+    >
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <BrickBanner as="h1" color="#43b02e" className="!text-[24px] uppercase tracking-wide">
+          {stars === null ? t('practiceComplete', 'Practice complete!') : t('levelComplete', 'Level complete!')}
+        </BrickBanner>
       </motion.div>
-
-      <motion.h1 className="mt-4 text-3xl font-black uppercase tracking-wide" style={{ color: 'var(--go-ink)' }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        {stars === null ? t('practiceComplete', 'Practice complete!') : t('levelComplete', 'Level complete!')}
-      </motion.h1>
-      <p className="mt-1 font-bold" style={{ color: 'var(--muted)' }}>
+      <p className="mt-0.5 font-bold" style={{ color: RESULT_MUTED }}>
         {t(`${level.id}.title`, level.title)}
       </p>
 
       {stars === null ? (
-        <p className="mt-5 max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
+        <p className="mx-auto mt-4 max-w-xs font-bold" style={{ color: RESULT_MUTED }}>
           {t('practicePraise', 'Those tricky letters are getting stronger. Kokeb is proud of you!')}
         </p>
       ) : (
-      <div className="mt-5 flex items-end gap-2" aria-label={`${stars} of 3 stars earned`}>
-        {[0, 1, 2].map((i) => (
-          <motion.div key={i} initial={{ scale: 0, rotate: -30 }} animate={{ scale: i < stars ? 1 : 0.72, rotate: 0 }} transition={{ delay: 0.35 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
-            <Star
-              className={i === 1 ? 'h-20 w-20' : 'h-14 w-14'}
-              style={i < stars ? { color: 'var(--star)', fill: 'var(--star)', filter: 'drop-shadow(0 4px 0 rgba(0,0,0,0.12))' } : { color: 'var(--line)' }}
-              strokeWidth={1}
-              aria-hidden="true"
-            />
-          </motion.div>
-        ))}
+      <div className="mt-5 flex items-end justify-center gap-2" aria-label={`${stars} of 3 stars earned`}>
+        {[0, 1, 2].map((i) => {
+          const on = i < stars
+          const color = on ? '#f2b21c' : '#b9a27c'
+          return (
+            <motion.div key={i} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.35 + i * 0.18, type: 'spring', stiffness: 300, damping: 12 }}>
+              <BrickTile color={color} studs={2} width={i === 1 ? 84 : 72} height={i === 1 ? 76 : 60} depth={6} className="!rounded-xl">
+                <Star className={i === 1 ? 'h-12 w-12' : 'h-10 w-10'} style={on ? { color: '#fff7c9', fill: '#fff1a0', filter: 'drop-shadow(0 3px 0 rgba(120,70,0,.5))' } : { color: '#8a7650', fill: 'rgba(90,60,20,.25)' }} strokeWidth={1.5} aria-hidden="true" />
+              </BrickTile>
+            </motion.div>
+          )
+        })}
       </div>
       )}
 
-      <motion.div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
-        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {t('firstTry', 'First-try')}
-          </p>
-          <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>
-            {accuracy}%
-          </p>
-        </div>
-        <div className="rounded-2xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-          <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-            {t('bestStreak', 'Best streak')}
-          </p>
-          <p className="mono flex items-center justify-center gap-1 text-2xl font-black" style={{ color: 'var(--accent)' }}>
+      <motion.div className="mt-4 grid w-full grid-cols-2 gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}>
+        <BrickStat label={t('firstTry', 'First-try')} color="#2f86d6">
+          <p className="mono text-2xl font-black">{accuracy}%</p>
+        </BrickStat>
+        <BrickStat label={t('bestStreak', 'Best streak')} color="#e8731a">
+          <p className="mono flex items-center justify-center gap-1 text-2xl font-black">
             <Flame className="h-6 w-6" fill="currentColor" aria-hidden="true" />
             {bestStreak}
           </p>
-        </div>
+        </BrickStat>
       </motion.div>
 
       {incoming && (
         <motion.div
-          className="mt-6 w-full max-w-sm rounded-2xl border-2 p-4 text-center"
-          style={{ background: outcome === 'win' ? 'var(--go-soft)' : 'var(--card)', borderColor: 'var(--line)' }}
+          className="mt-4 w-full rounded-2xl p-3 text-center"
+          style={{ background: outcome === 'win' ? 'rgba(67,176,46,.2)' : 'rgba(138,84,38,.12)', border: '3px solid #c9a36a' }}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
         >
-          <p className="text-lg font-black" style={{ color: 'var(--ink)' }}>
+          <p className="text-lg font-black">
             {outcome === 'win' ? t('challengeWin', 'You win!') : outcome === 'lose' ? t('challengeLose', 'So close!') : t('challengeTie', "It's a tie!")}
           </p>
-          <p className="mono mt-1 font-black" style={{ color: 'var(--muted)' }}>
+          <p className="mono mt-1 font-black" style={{ color: RESULT_MUTED }}>
             {t('you', 'You')}: {accuracy}% · {incoming.by || t('aFriend', 'A friend')}: {incoming.accuracy}%
           </p>
         </motion.div>
       )}
 
       {!incoming && <NextUpTeaser levelId={level.id} />}
-
-      <motion.div className="mt-8 flex w-full max-w-sm flex-col gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
-        {incoming ? (
-          <>
-            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeBack', 'Challenge back')} />}
-            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
-              {t('playAgain', 'Play again')}
-            </Chunky>
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
-              {t('goHome', 'Home')}
-            </Chunky>
-          </>
-        ) : (
-          <>
-            <Chunky tone="go" className="w-full py-4 text-base uppercase" onClick={onContinue}>
-              {t('continue', 'Continue')}
-            </Chunky>
-            {challengePayload && <ChallengeShareButton payload={challengePayload} label={t('challengeFriend', 'Challenge a friend')} />}
-            <Chunky tone="card" className="w-full py-4 text-base uppercase" onClick={onReplay}>
-              {t('playAgain', 'Play again')}
-            </Chunky>
-          </>
-        )}
-      </motion.div>
-    </div>
+    </BrickResultScreen>
   )
 }
 
@@ -4432,7 +4424,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
   const who = challenge.by || t('aFriend', 'A friend')
   const levelTitle = t(`${level.id}.title`, level.title)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4459,7 +4451,7 @@ function ChallengeIntro({ challenge, level, onStart, onHome }) {
 
 function ChallengeMissing({ onHome }) {
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <Hero size={112} mood="worried" />
       <h1 className="mt-4 text-2xl font-black" style={{ color: 'var(--ink)' }}>
         {t('challengeGone', 'This challenge is not available.')}
@@ -4507,7 +4499,7 @@ function JoinClassIntro({ invite, onHome }) {
     setJoined(true)
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4600,7 +4592,7 @@ function AssignmentFlow({ assignment, soundOn, onHome, onDone }) {
 function AssignmentIntro({ assignment, count, onStart, onHome }) {
   useEscapeKey(onHome)
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -4665,7 +4657,7 @@ function AssignmentDone({ assignment, total, accuracy, missed = [], onHome }) {
     } catch { /* clipboard blocked */ }
   }
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col items-center justify-center px-7 py-10 text-center">
       <motion.div initial={{ scale: 0.6, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 15 }}>
         <Hero size={128} />
       </motion.div>
@@ -5259,7 +5251,7 @@ export function WordMatch({ seed, soundOn, onFinish, onReplay, twinsOnly = false
   const busy = ctx.status !== GameState.AWAITING_INPUT
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5">
+    <div className="mx-auto flex min-h-dvh max-w-xl md:max-w-2xl flex-col px-7 pb-10 pt-5 fq-safe">
       <header className="flex items-center gap-3">
         <button type="button" onClick={() => onFinish()} aria-label="Quit words" className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />

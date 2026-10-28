@@ -30,7 +30,6 @@ import {
   RUNNER_LEVELS,
   RUNNER_BASE_SPEED,
   RUNNER_SPEEDS,
-  RUNNER_SPEED_ORDER,
   SIGN_SPAWN_Z,
   loadRunnerSpeed,
   saveRunnerSpeed,
@@ -48,12 +47,13 @@ import { runnerPlaces } from './platform/places'
 import GhostHand from './GhostHand'
 import { RUNNER_CAST } from './components/runnerCast'
 import RunnerSummary from './components/RunnerSummary'
+import SpeedControl from './components/SpeedControl'
 const LANE_X = [-2.4, 0, 2.4]
 const CHUNK = 48
 const CHUNK_COUNT = 7
 
 /* The run's geography follows the language being learned: Ethiopian places
-   for Amharic, Eritrea + Axum for Tigrinya (platform/places.js). */
+   per pack (platform/places.js); signs show numbered sections. */
 export const PLACES = runnerPlaces()
 export const placeForLevel = (level) => PLACES[(level - 1) % PLACES.length]
 
@@ -217,7 +217,7 @@ function paintRepeat(draw, w, h, repeatX, repeatY) {
 }
 function turfTexture(groundNum) {
   const place = [(groundNum >> 16) & 255, (groundNum >> 8) & 255, groundNum & 255]
-  // Meadow first. The place tint is only a wash, so Lalibela stays green
+  // Meadow first. The place tint is only a wash, so the first section stays green
   // highland instead of a brown slab.
   const grass = [86, 158, 58]
   const base = grass.map((v, i) => Math.round(v * 0.72 + place[i] * 0.28))
@@ -465,7 +465,7 @@ function palm(g, x, z, s = 1) {
   sph(g, 0.42 * s, 0x2f6330, x, 3 * s, z)
 }
 
-function chunkLalibela(g, i) {
+function chunkRockChurch(g, i) {
   // Red-rock mounds and, on alternating chunks, the sunken cross church.
   for (const side of [-1, 1]) {
     cone(g, 2.6, 3 + ((i * 7 + side) % 3), 0x7d4b2a, side * (11 + ((i * 5) % 4)), 1.4, -10, 7)
@@ -485,7 +485,7 @@ function chunkLalibela(g, i) {
   acacia(g, -18 - ((i * 11) % 5), -44, 0.9)
 }
 
-function chunkAksum(g, i) {
+function chunkStelae(g, i) {
   // The stelae field: tall carved obelisks and acacia savanna.
   for (const side of [-1, 1]) {
     const h = 7 + ((i * 5 + side * 3) % 7)
@@ -523,7 +523,7 @@ function buildHighlandVista() {
   return g
 }
 
-function chunkSimien(g, i) {
+function chunkHighlands(g, i) {
   // Roadside amba you pass, off the lanes. The far valley is the static vista.
   for (const side of [-1, 1]) {
     const x = side * (17 + ((i * 3) % 4))
@@ -534,7 +534,7 @@ function chunkSimien(g, i) {
   if (i % 3 === 0) zebraAt(g, -13, -26, 1.8)
 }
 
-function chunkGondar(g, i) {
+function chunkCastle(g, i) {
   // Fasil Ghebbi: round dome-capped towers and crenellated walls.
   if (i % 2 === 0) {
     const side = i % 4 === 0 ? 1 : -1
@@ -551,7 +551,7 @@ function chunkGondar(g, i) {
   cone(g, 2.2, 2.6, 0x5e7d4e, -10, 1.3, -6, 7)
 }
 
-function chunkAsmara(g, i) {
+function chunkTown(g, i) {
   // Art-deco boulevard; every other chunk carries the winged Fiat Tagliero.
   const pastels = [0xe8c9a0, 0xd8a7a0, 0xc9d3c0, 0xd9c9ae]
   for (const side of [-1, 1]) {
@@ -570,7 +570,7 @@ function chunkAsmara(g, i) {
   }
 }
 
-function chunkMassawa(g, i) {
+function chunkCoast(g, i) {
   // Red Sea port: white coral-stone arches on the left, open sea to the right.
   box(g, 60, 0.12, CHUNK, 0x2e86b8, 26, 0.06, -CHUNK / 2 + 4) // the sea
   const bx = -(10 + ((i * 3) % 3))
@@ -588,12 +588,12 @@ function chunkMassawa(g, i) {
 }
 
 const CHUNK_BUILDERS = {
-  lalibela: chunkLalibela,
-  aksum: chunkAksum,
-  simien: chunkSimien,
-  gondar: chunkGondar,
-  asmara: chunkAsmara,
-  massawa: chunkMassawa,
+  rockchurch: chunkRockChurch,
+  stelae: chunkStelae,
+  highlands: chunkHighlands,
+  castle: chunkCastle,
+  town: chunkTown,
+  coast: chunkCoast,
 }
 
 /* ── the world ── */
@@ -1134,7 +1134,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
 
   if (over) {
     const p = placeForLevel(ctx.level)
-    return <RunnerSummary ctx={ctx} onRetry={onRetry} onExit={onExit} placeName={`${p.name}, ${p.country}`} />
+    return <RunnerSummary ctx={ctx} onRetry={onRetry} onExit={onExit} placeName={p.name} />
   }
 
   // WebGL unavailable (context creation failed, or lost mid-run): fall to the
@@ -1145,7 +1145,7 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
   }
 
   return (
-    <div className="mx-auto flex h-screen max-w-xl flex-col px-4 pb-4 pt-4 md:max-w-2xl">
+    <div className="mx-auto flex h-dvh max-w-xl flex-col px-4 pb-4 pt-4 md:max-w-2xl fq-safe">
       <header className="flex items-center gap-2">
         <button type="button" onClick={() => onExit({ level: ctxRef.current.level, survivedBoss: ctxRef.current.survivedBoss })} aria-label={t('runQuit', 'Quit run')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
           <X className="h-6 w-6" />
@@ -1181,25 +1181,14 @@ export default function Runner({ seed, soundOn, onExit, onRetry, pool }) {
           </div>
         )}
         {/* Speed selector — kids pick how fast the letters come. */}
-        <div className="absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full p-1" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          {RUNNER_SPEED_ORDER.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSpeedName(s)}
-              aria-pressed={speedName === s}
-              className={`min-h-[44px] rounded-full px-3 py-1 text-xs font-black ${FOCUS}`}
-              style={{ background: speedName === s ? 'var(--sky)' : 'transparent', color: '#fff', outlineColor: 'var(--sky)' }}
-            >
-              {t(`speed_${s}`, s)}
-            </button>
-          ))}
+        <div className="absolute left-2 top-2 z-20">
+          <SpeedControl tone="dark" value={speedName} onChange={setSpeedName} testId="runner-speed" />
         </div>
         <AnimatePresence>
           {banner && (
             <motion.div initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pointer-events-none absolute inset-x-0 top-14 text-center">
               <span className="rounded-2xl px-4 py-2 text-sm font-black uppercase tracking-widest text-white" style={{ background: 'rgba(0,0,0,0.45)' }}>
-                Level {ctx.level} — {place.name}, {place.country}
+                Level {ctx.level} — {place.name}
               </span>
             </motion.div>
           )}

@@ -99,3 +99,9 @@ export function saveResume(book, pos) {
     localStorage.setItem(KEY, JSON.stringify(v))
   } catch { /* storage full/blocked - ignore */ }
 }
+
+/** The book that follows `id` on the shelf (Mon -> Tue ... -> Sun), or null after the last one. */
+export function nextBookId(ids, id) {
+  const k = ids.indexOf(id)
+  return k >= 0 && k < ids.length - 1 ? ids[k + 1] : null
+}
