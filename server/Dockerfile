@@ -1,6 +1,6 @@
 # eGeez server - zero runtime dependencies, so this image is tiny and
 # needs no `npm install`. Just copy the source and run it.
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY package.json ./
 COPY src ./src
