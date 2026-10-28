@@ -25,3 +25,17 @@ A new game only needs its screen name in `AREA_GROUPS` and a label in `AppProgre
 ## Checks
 - Unit: `src/platform/appProgress.test.js`, `src/components/AppProgress.test.jsx`.
 - Live: `python3 tools/progress-check.py URL [shots_dir]` (chip moves, reload, sheet, second child, back to first, slots 2-6 owned). `tools/rotate-check.py` and `zoom-check.py` gained a `progress` screen.
+
+## ጸሎት (prayer book) tracker
+- Prayer is one of the 30 areas (group *read*). Each page turn in the prayer book reports `noteDone('prayer')` (opening the book is not a turn; StrictMode safe).
+- `prayerStats()` joins the practice log: minutes over the last 7 days and pages turned. `AppProgressPanel` renders `PrayerTracker` under the groups; `summarize()` returns `prayer` and `mask`.
+
+## Share link (parent-gated, not made by kids)
+Grown-Ups > Progress card makes `https://easygeez.com/progress#p=<base64url JSON>`; the website decodes it locally (`website/src/progressCard.js` is a verbatim port of `src/platform/progressCard.js`, cross-checked by vitest). Fields: `v n d s L m c T` plus
+- `a` 30-char tried mask for the app areas (`APP_AREA_COUNT`, `APP_GROUP_SIZES` 9/13/2/6)
+- `r` `[prayer minutes over 7 days, pages turned]`
+Older cards (no `a`/`r`) still render, without the app block.
+- **Tigrinya fix:** the Tigrinya pack has 34 families (ቐ after Qe, 238 letters). The card used to hard-code 33 / 231, so every Tigrinya child's link was rejected on the website. Both decoders now take a 33 or 34 mask (`CARD_FAMILY_COUNTS`, `MAX_CARD_LETTERS`), and the site renders the extra ቐ tile for a 34 mask.
+- A child with no name gives an empty `n` (it used to say "1"); the page heading falls back to "Fidel journey progress".
+- Website header: `/progress#p=...` no longer throws in the anchor-scroll interval (`getElementById`, not `querySelector`).
+- Check: `python3 tools/share-check.py APP_URL SITE_URL [shots_dir]` (tablet, desktop, phone, landscape, 320 px, reload, two children, old card, garbage token, nothing sent to the network).

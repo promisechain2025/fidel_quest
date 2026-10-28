@@ -68,3 +68,19 @@ describe('AppProgressSheet / Panel', () => {
     expect(screen.getByTestId('app-progress-panel').textContent).toContain('Accuracy 50%')
   })
 })
+
+describe('ጸሎት tracker in the sheet', () => {
+  it('shows pages and minutes as icons + numbers, with the wording only in aria-labels', () => {
+    localStorage.setItem('fq.practice.v1', JSON.stringify({ v: 1, days: { [new Date().toLocaleDateString('en-CA')]: { day: new Date().toLocaleDateString('en-CA'), activeMs: 0, prayerMs: 4 * 60000, flags: {} } }, goal: null }))
+    noteDone('prayer'); noteDone('prayer')
+    render(<AppProgressSheet onClose={() => {}} />)
+    const tile = screen.getByTestId('ap-prayer')
+    expect(tile.textContent).toBe('ጸሎት' + '4' + '2')
+    expect(tile.textContent).not.toMatch(/[A-Za-z]/)
+    expect(screen.getByTestId('ap-prayer-pages').textContent).toBe('2')
+    expect(screen.getByTestId('ap-prayer-min').textContent).toBe('4')
+    expect(tile.querySelector('[aria-label="4 minutes this week"]')).toBeTruthy()
+    expect(tile.querySelector('[aria-label="2 pages turned"]')).toBeTruthy()
+    expect(screen.getByTestId('ap-area-prayer').dataset.tried).toBe('true')
+  })
+})

@@ -6,7 +6,7 @@
    fidel (there are no fidel on these surfaces at all). */
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Compass, Star, X } from 'lucide-react'
+import { BookOpen, Check, Clock, Compass, Star, X } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { useAppProgress } from './useAppProgress'
 
@@ -85,6 +85,25 @@ export function AppProgressChip({ onClick }) {
   )
 }
 
+/** The ጸሎት (Prayer Book) tracker: icons + numbers only, so no Latin sits
+    beside the fidel title. Full wording lives in aria-labels via t(). */
+function PrayerTracker({ prayer }) {
+  if (!prayer) return null
+  const minLabel = t('apPrayerMin', '{n} minutes this week', { n: prayer.minutes })
+  const pageLabel = t('apPrayerPages', '{n} pages turned', { n: prayer.pages })
+  return (
+    <div data-testid="ap-prayer" data-tried={prayer.tried || undefined} className="mt-3 flex min-w-0 items-center gap-3 rounded-2xl border-2 px-3 py-2" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <span className="geez text-lg font-black" lang="am">ጸሎት</span>
+      <span className="mono ml-auto flex items-center gap-1 text-base font-black tabular-nums" role="img" aria-label={minLabel}>
+        <Clock className="h-4 w-4" style={{ color: 'var(--accent)' }} aria-hidden="true" /><span data-testid="ap-prayer-min">{prayer.minutes}</span>
+      </span>
+      <span className="mono flex items-center gap-1 text-base font-black tabular-nums" role="img" aria-label={pageLabel}>
+        <BookOpen className="h-4 w-4" style={{ color: 'var(--go)' }} aria-hidden="true" /><span data-testid="ap-prayer-pages">{prayer.pages}</span>
+      </span>
+    </div>
+  )
+}
+
 function Stat({ icon, value, label, testId }) {
   return (
     <div className="min-w-0 rounded-2xl border-2 p-2.5 text-center" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -111,6 +130,7 @@ export function AppProgressPanel({ summary }) {
       <p className="mt-2 text-center text-xs font-bold" style={{ color: 'var(--muted)' }}>
         {t('apAccuracy', `Accuracy ${accuracy}`, { pct: accuracy })}
       </p>
+      <PrayerTracker prayer={s.prayer} />
       <div className="mt-3 flex flex-col gap-3">
         {s.groups.map((g) => (
           <section key={g.id} data-testid={`ap-group-${g.id}`}>

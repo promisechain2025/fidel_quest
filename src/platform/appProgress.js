@@ -22,6 +22,7 @@
    ========================================================================== */
 import { progressChanged } from './childModel'
 import { dayStamp } from './streak'
+import { loadPractice, lastDays, prayerMinutes } from './practice'
 
 export const APP_PROGRESS_KEY = 'fq.appprogress.v1'
 export const VISIT_MS = 8000
@@ -91,12 +92,23 @@ export function applyReport(state, report, today = dayStamp()) {
 /** An area counts as "tried" once the child stayed, answered or finished. */
 export const isTried = (a) => !!a && (a.visits > 0 || a.answers > 0 || a.done > 0)
 
-/** Pure read model for every surface (home chip, sheet, Grown-Ups). */
-export function summarize(state, today = dayStamp()) {
+/** The ጸሎት (Prayer Book) tracker: pages turned (an app-level `done` on the
+    prayer area) + verified prayer minutes over the last 7 days (the practice
+    tracker's prayerMs). Both are per child. */
+export function prayerStats(state, today = dayStamp(), practiceDays = loadPractice().days) {
+  const a = normalize(state).areas.prayer || blankArea()
+  const minutes = lastDays(practiceDays || {}, today, 7).reduce((n, r) => n + prayerMinutes(r), 0)
+  return { pages: a.done, minutes, tried: isTried(a) || minutes > 0 }
+}
+
+/** Pure read model for every surface (home chip, sheet, Grown-Ups, share card). */
+export function summarize(state, today = dayStamp(), practiceDays) {
   const s = normalize(state)
+  const prayer = prayerStats(s, today, practiceDays)
   const groups = AREA_GROUPS.map((g) => ({
     id: g.id,
-    areas: g.areas.map((id) => ({ id, ...(s.areas[id] || blankArea()), tried: isTried(s.areas[id]) })),
+    // Prayer minutes already on this device (before this store existed) still count.
+    areas: g.areas.map((id) => ({ id, ...(s.areas[id] || blankArea()), tried: isTried(s.areas[id]) || (id === 'prayer' && prayer.tried) })),
   }))
   const all = groups.flatMap((g) => g.areas)
   const tried = all.filter((a) => a.tried).length
@@ -111,6 +123,9 @@ export function summarize(state, today = dayStamp()) {
     correct: sum('correct'),
     done: sum('done'),
     today: { answers: t.answers, correct: t.correct, done: t.done, areas: t.areas.length },
+    /** '1'/'0' per area in AREA_IDS order (travels in the share card). */
+    mask: all.map((a) => (a.tried ? '1' : '0')).join(''),
+    prayer,
   }
 }
 

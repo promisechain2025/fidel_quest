@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import {
   APP_PROGRESS_KEY, AREA_IDS, VISIT_MS, KEEP_DAYS, applyReport, emptyAppProgress, normalize, summarize,
-  loadAppProgress, noteAnswer, noteDone, noteVisit, setActiveArea, getActiveArea, trackScreen,
+  loadAppProgress, prayerStats, noteAnswer, noteDone, noteVisit, setActiveArea, getActiveArea, trackScreen,
 } from './appProgress'
 import { PROGRESS_KEYS, snapshotProgress, restoreProgress, wipeProgress } from './progress'
 import { SWAP_KEYS, loadProfiles, addProfile, switchProfile } from './profiles'
@@ -169,5 +169,36 @@ describe('appProgress is per child and survives backup/wipe', () => {
     expect(loadAppProgress()).toEqual(emptyAppProgress())
     expect(restoreProgress(snap)).toBeGreaterThan(0)
     expect(loadAppProgress().areas.market.done).toBe(1)
+  })
+})
+
+describe('ጸሎት (prayer) tracker is part of the app-level progress', () => {
+  const practice = (days) => localStorage.setItem('fq.practice.v1', JSON.stringify({ v: 1, days, goal: null }))
+  const row = (day, prayerMs) => ({ day, activeMs: 0, prayerMs, flags: {} })
+
+  it('counts pages (done on the prayer area) and the last 7 days of prayer minutes', () => {
+    practice({ '2026-10-28': row('2026-10-28', 5 * 60000 + 30000), '2026-10-25': row('2026-10-25', 3 * 60000), '2026-10-01': row('2026-10-01', 60 * 60000) })
+    let s = emptyAppProgress()
+    for (let i = 0; i < 4; i++) s = applyReport(s, { type: 'done', area: 'prayer' }, TODAY)
+    expect(prayerStats(s, TODAY)).toEqual({ pages: 4, minutes: 8, tried: true })
+    const sum = summarize(s, TODAY)
+    expect(sum.prayer).toEqual({ pages: 4, minutes: 8, tried: true })
+    expect(sum.groups.find((g) => g.id === 'read').areas.find((a) => a.id === 'prayer').tried).toBe(true)
+  })
+
+  it('minutes prayed before this store existed still mark the area tried', () => {
+    practice({ [TODAY]: row(TODAY, 2 * 60000) })
+    const sum = summarize(emptyAppProgress(), TODAY)
+    expect(sum.tried).toBe(1)
+    expect(sum.mask[AREA_IDS.indexOf('prayer')]).toBe('1')
+    expect(sum.mask).toHaveLength(AREA_IDS.length)
+    expect(summarize(emptyAppProgress(), TODAY).prayer.tried).toBe(true)
+  })
+
+  it('a fresh child has an all-zero mask and no prayer', () => {
+    localStorage.clear()
+    const sum = summarize(emptyAppProgress(), TODAY)
+    expect(sum.mask).toBe('0'.repeat(AREA_IDS.length))
+    expect(sum.prayer).toEqual({ pages: 0, minutes: 0, tried: false })
   })
 })

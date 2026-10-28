@@ -61,7 +61,7 @@ with sync_playwright() as p:
     check(pg.get_by_test_id('app-progress-sheet').count() == 1, 'tap opens the sheet')
     check(pg.get_by_test_id('ap-area-stories').get_attribute('data-tried') == 'true', 'sheet marks Stories tried')
     if SHOTS: pg.screenshot(path=f'{SHOTS}/progress-sheet-phone.png')
-    pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+    pg.keyboard.press('Escape'); pg.wait_for_timeout(700)
     check(pg.get_by_test_id('app-progress-sheet').count() == 0, 'Escape closes the sheet')
     # per child: add a 2nd child, chip back at 0, then switch back to child 1
     pg.get_by_role('button', name=re.compile('^Playing: ')).click(); pg.wait_for_timeout(600)
