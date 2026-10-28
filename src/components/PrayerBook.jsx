@@ -19,7 +19,8 @@ import WUDASE_THU from '../data/wudaseThursdayMarks.json'
 import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle } from '../platform/prayerBook'
+import { noteDone } from '../platform/appProgress'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle, nextBookId } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -36,6 +37,16 @@ export const SPEEDS = [0.5, 0.75, 1, 1.25]
 const SPEED_DEFAULT = 2
 const SPEED_KEY = 'fq.prayer.speed'
 const MARKS_KEY = 'fq.prayer.marks'
+// Three ways to follow the owner's voice; the choice is remembered per device.
+//  letter (ቅጽሪ): the word being read glows and its letters light up one by one (default)
+//  word (ንባብ):   the whole word being read glows at once (no letter run)
+//  listen (ወርድ): plain page, no highlight at all; the page still turns with the voice
+export const READ_MODES = [
+  { id: 'letter', label: 'ቅጽሪ', icon: 'ቅ' },
+  { id: 'listen', label: 'ወርድ', icon: 'ወ' },
+  { id: 'word', label: 'ንባብ', icon: 'ን' },
+]
+const READ_KEY = 'fq.prayer.readmode'
 function applyRate(el, rate) {
   if (!el) return
   el.preservesPitch = true; el.mozPreservesPitch = true; el.webkitPreservesPitch = true
@@ -225,6 +236,11 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   // Legend is a sheet opened by its own button; it sits in the layout (never over the text) and closes on tap.
   const [legendOpen, setLegendOpen] = useState(false)
   useEffect(() => { if (!showAll) setLegendOpen(false) }, [showAll])
+  const [readMode, setReadMode] = useState(() => {
+    try { const v = localStorage.getItem(READ_KEY); return READ_MODES.some((m) => m.id === v) ? v : 'letter' } catch { return 'letter' }
+  })
+  useEffect(() => { try { localStorage.setItem(READ_KEY, readMode) } catch { /* ignore */ } }, [readMode])
+  const [modeOpen, setModeOpen] = useState(false)
   const [playing, setPlaying] = useState(false)
   // Practice mode: prayer time is tracked, and playback stops after the current prayer.
   const [practice, setPractice] = useState(isPracticeMode)
@@ -253,8 +269,10 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   pageRef.current = pageSafe
 
   useEffect(() => { shownFirst.current = pages[pageSafe][0] }, [pages, pageSafe])
-  const firstPage = useRef(true)
-  useEffect(() => { if (firstPage.current) { firstPage.current = false; return } prayerPage() }, [pageSafe])
+  // Count a turn only when the page really changed from the one last seen: the first run (and
+  // StrictMode's second dev run) sees the same page, so opening the book is not a "page turned".
+  const lastPage = useRef(pageSafe)
+  useEffect(() => { if (lastPage.current === pageSafe) return; lastPage.current = pageSafe; prayerPage(); noteDone('prayer') }, [pageSafe])
   useEffect(() => { saveResume(BOOK.id, { page: pageSafe, unit: cur >= 0 ? cur : pages[pageSafe][0] }) }, [BOOK.id, pageSafe, cur, pages])
 
   /* ---- audio ------------------------------------------------------------ */
@@ -430,7 +448,20 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
     animateTo(now, target, () => { finishTurn(commit); turning.current = false })
   }
   const canBack = pageSafe > 0
-  const canNext = pageSafe < pages.length - 1
+  // On a book's last page, Next carries on to the following book (Mon -> Tue -> ... -> Sun; Sunday is the end).
+  const followId = nextBookId(BOOKS.map((b) => b.id), BOOK.id)
+  const atEnd = pageSafe >= pages.length - 1
+  const canNext = !atEnd || !!followId
+  const followLocked = atEnd && !!followId && !prayerBookOpen(followId)
+  const onNextTap = () => {
+    if (!atEnd) { goTurn(1); return }
+    if (!followId || turning.current || drag.current) return
+    stopForTurn()
+    // Locked day: same purchase path as the shelf. Open day: start it from its first page.
+    if (!prayerBookOpen(followId)) { onLocked?.(followId); return }
+    saveResume(followId, { page: 0, unit: -1 })
+    onPick(followId)
+  }
 
   // Put a freshly mounted flap at its start angle before paint.
   useEffect(() => { if (turn) setAngle(turn.dir === 1 ? 0 : 180) }, [turn, setAngle])
@@ -438,12 +469,13 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   /* ---- what each unit shows ---------------------------------------------- */
   const nextUnit = playing && cur >= 0 ? nextRecorded(UNITS, cur) : -1
   const markMode = (i) => {
+    if (readMode === 'listen') return showAll ? 'all' : 'hidden'
     if (playing && i === cur) return 'current'
     if (showAll) return 'all'
     if (playing && i === nextUnit) return 'next'
     return 'hidden'
   }
-  const glowFor = (i) => (playing && i === cur ? glow : -1)
+  const glowFor = (i) => (playing && i === cur && readMode === 'letter' ? glow : -1)
   const face = (p) => <PageFace UNITS={UNITS} units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} />
 
   // Layers: base (what will be revealed) under the flap (the turning page).
@@ -479,7 +511,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
         </div>)
 
   return (
-    <div className="pb-root" data-testid="prayer-book" style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
+    <div className="pb-root" data-testid="prayer-book" data-readmode={readMode} style={{ '--pb-scale': scale }} data-fit={size === null ? 'auto' : 'user'}>
       <header className="pb-top">
         <div className="pb-top-side">
           <button type="button" className="pb-icon" onClick={onBack} aria-label="ተመለስ"><ChevronLeft size={24} /></button>
@@ -498,6 +530,11 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
           </div>
         )}
         <div className="pb-top-side pb-top-end">
+          {voiced && (
+            <button type="button" className={`pb-icon pb-mode-btn${modeOpen ? ' pb-on' : ''}`} onClick={() => setModeOpen((v) => !v)} aria-label="የንባብ ዓይነት" aria-expanded={modeOpen} data-testid="read-mode" data-mode={readMode}>
+              <span className="geez-book pb-mode-ic">{READ_MODES.find((m) => m.id === readMode).icon}</span>
+            </button>
+          )}
           <button type="button" className={`pb-icon pb-practice${practice ? ' pb-on' : ''}`} onClick={() => (practice ? endPractice() : startPractice('button'))} aria-label="ልምምድ" aria-pressed={practice} data-testid="practice-toggle">
             <Target size={24} />
             {practice && <span className="pb-practice-dot" aria-hidden="true" />}
@@ -507,6 +544,17 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
           </button>
         </div>
       </header>
+
+      {modeOpen && (
+        <div className="pb-shelf pb-modes geez-book" role="menu" data-testid="read-mode-menu">
+          {READ_MODES.map((m) => (
+            <button key={m.id} type="button" role="menuitemradio" aria-checked={m.id === readMode} className={`pb-shelf-item pb-mode-item${m.id === readMode ? ' pb-on' : ''}`} data-testid={`read-mode-${m.id}`} onClick={() => { setReadMode(m.id); setModeOpen(false) }}>
+              <span className={`pb-mode-demo pb-demo-${m.id}`} aria-hidden="true">{m.id === 'letter' ? <><span className="d1">ሰ</span><span className="d2">ላ</span><span className="d3">ም</span></> : 'ሰላም'}</span>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {showAll && legendOpen && (
         <div className="pb-legend geez-book" role="button" tabIndex={0} aria-label="ዝጋ" data-testid="legend" onClick={() => setLegendOpen(false)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setLegendOpen(false) }}>
@@ -538,7 +586,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
           )}
         </div>
         <button type="button" className="pb-edge pb-edge-l" onClick={() => goTurn(-1)} disabled={!canBack} aria-label="ወደ ኋላ" data-testid="page-back"><span className="pb-arrow"><ChevronLeft size={22} /></span></button>
-        <button type="button" className="pb-edge pb-edge-r" onClick={() => goTurn(1)} disabled={!canNext} aria-label="ቀጣይ" data-testid="page-next"><span className="pb-arrow"><ChevronRight size={22} /></span></button>
+        <button type="button" className="pb-edge pb-edge-r" onClick={onNextTap} disabled={!canNext} aria-label="ቀጣይ" data-testid="page-next" data-next-book={atEnd && followId ? followId : undefined} data-locked={followLocked || undefined}><span className="pb-arrow">{followLocked ? <Lock size={20} aria-hidden="true" /> : <ChevronRight size={22} />}</span></button>
       </div>
 
       <footer className="pb-fb" data-testid="controls">{speedEl}{playEl(26)}{sizeEl}</footer>

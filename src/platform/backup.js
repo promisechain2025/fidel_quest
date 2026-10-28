@@ -20,7 +20,7 @@ const STAMP_KEY = 'fq.backup.day'
 
 // Household keys that hold RAW strings (not JSON), so they must NOT be run
 // through JSON.parse on restore - they are copied through verbatim.
-const RAW_STRING_EXTRA = new Set(['fq.nickname', 'fq.scope.v1', 'fq.runnerSpeed'])
+const RAW_STRING_EXTRA = new Set(['fq.nickname', 'fq.scope.v1', 'fq.runnerSpeed', 'fq.explorer.layout.v1'])
 
 /* The backup carries the full household: registry keys, profile registry,
    and every parked profile slot. Exported so the web export/import path

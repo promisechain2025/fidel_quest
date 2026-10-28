@@ -1,5 +1,5 @@
 /* ============================================================================
-   BRICK WORDS (sample) - replaces Word Build, Find the letter, First Words
+   WORD BRICKS (sample) - replaces Word Build, Find the letter, First Words
    ----------------------------------------------------------------------------
    A 3D toy-brick picture sits on a wooden board. The word is spoken (existing
    recording). Under it, a studded baseplate has one slot per letter; the child
@@ -19,11 +19,13 @@ import { publicUrl } from '../platform/publicUrl'
 import { playForm, playEffect, audio } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
-import { BRICK_COLORS, BrickScreen, GuideSign, useGuideFeedback, brickLabels, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, overRect, brickCss, studCss, shade, WOOD } from './brickKit'
+import { BRICK_COLORS, BrickScreen, GameStage, FitBox, useShortScreen, GuideSign, useGuideFeedback, brickLabels, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, overRect, brickCss, studCss, shade, WOOD } from './brickKit'
 import { BRICK_SESSION, wordAt, initBrickWord, usedIndices, place } from '../brickWordsCore'
 
 const formOf = (k) => INDEXES.byAudioKey.get(k)
 const SCENE = publicUrl('/img/games/brick-sunrise.webp')
+const PIC_H = 262 // px: picture board (212 + padding + border) incl. shadow, at scale 1
+const PLATE_H = 156 // px: baseplate (slot row + padding + shadow)
 const colorOf = (i, seed) => BRICK_COLORS[(i * 3 + seed) % BRICK_COLORS.length]
 
 export default function BrickWords({ soundOn = true, onBack, seed }) {
@@ -57,7 +59,8 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
   const want = ctx.target[ctx.placed]
   const used = useMemo(() => usedIndices(ctx), [ctx])
   const big = ctx.tray.length <= 5
-  const TW_ = big ? 68 : 56, TH_ = big ? 80 : 66
+  const short = useShortScreen()
+  const TW_ = short ? (big ? 56 : 48) : (big ? 68 : 56), TH_ = short ? (big ? 64 : 56) : (big ? 80 : 66)
   const bump = (i) => { setWobble(null); requestAnimationFrame(() => setWobble(i)) }
   const flashMiss = () => { setMiss(true); later(() => setMiss(false), 650) }
 
@@ -97,32 +100,34 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
     return colorOf(i, startRef.current)
   })
 
-  return (
-    <BrickScreen testId="brick-words">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: `#f7c9a0 url(${SCENE}) center bottom / cover no-repeat` }}>
-        <WoodTopBar onBack={onBack} value={(round % BRICK_SESSION) + (won ? 1 : 0)} total={BRICK_SESSION} done={won} />
-        {won && <Confetti reduce={reduce} />}
-        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-          {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
-            : (won || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
-              : <GuideSign icon={Hand} text={t('brickWordsGuide', 'Build the word')} />}
-        </div>
+  const n = ctx.target.length
+  const plateW = Math.max(300, n * 72 + (n - 1) * 10 + 44)
+  const guide = fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+    : (won || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+      : <GuideSign icon={Hand} text={t('brickWordsGuide', 'Build the word')} />
 
+  return (
+    <BrickScreen testId="brick-words" side>
+      <GameStage style={{ background: `#f7c9a0 url(${SCENE}) center bottom / cover no-repeat` }}
+        head={<WoodTopBar onBack={onBack} value={(round % BRICK_SESSION) + (won ? 1 : 0)} total={BRICK_SESSION} done={won} guide={guide} />}>
+        {won && <Confetti reduce={reduce} />}
         {won && !reduce && (
           <>
-            <motion.div className="pointer-events-none absolute left-1/2 top-[132px] h-[420px] w-[420px] -translate-x-1/2 -translate-y-[60px] rounded-full" data-testid="rays"
+            <motion.div className="pointer-events-none absolute left-1/2 top-[34%] h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full" data-testid="rays"
               initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 0.9, rotate: 90 }} transition={{ opacity: { duration: 0.4 }, rotate: { duration: 12, ease: 'linear' } }}
               style={{ background: 'repeating-conic-gradient(from 0deg, rgba(255,240,150,.85) 0 9deg, rgba(255,240,150,0) 9deg 22deg)', WebkitMaskImage: 'radial-gradient(circle, #000 25%, transparent 70%)', maskImage: 'radial-gradient(circle, #000 25%, transparent 70%)' }} />
-            {[0, 1, 2, 3, 4, 5].map((n) => (
-              <motion.span key={n} className="pointer-events-none absolute left-1/2 top-[230px]" initial={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
-                animate={{ opacity: [0, 1, 1, 0], x: Math.cos(n * 1.05) * 150, y: Math.sin(n * 1.05) * 130 - 20, scale: [0.3, 1.2, 1] }} transition={{ duration: 1.6, delay: n * 0.08 }}>
+            {[0, 1, 2, 3, 4, 5].map((k) => (
+              <motion.span key={k} className="pointer-events-none absolute left-1/2 top-[40%]" initial={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
+                animate={{ opacity: [0, 1, 1, 0], x: Math.cos(k * 1.05) * 150, y: Math.sin(k * 1.05) * 130 - 20, scale: [0.3, 1.2, 1] }} transition={{ duration: 1.6, delay: k * 0.08 }}>
                 <Star className="h-8 w-8" fill="#ffd23a" color="#e0971c" strokeWidth={2} style={{ filter: 'drop-shadow(0 0 6px #fff59a)' }} />
               </motion.span>
             ))}
           </>
         )}
-        {/* picture on a wooden board */}
-        <div className="absolute inset-x-0 top-[132px] flex justify-center">
+        {/* picture board + studded baseplate, fitted together into the room the stage really has */}
+        <FitBox testId="picture-fit" w={plateW} h={PIC_H + 18 + PLATE_H} anchor="center" pad={4}>
+          <div className="flex h-full w-full flex-col items-center justify-between">
+            <div className="flex w-full justify-center">
           <motion.button type="button" onClick={sayWord} aria-label={L.listen} data-testid="picture"
             key={word.pic}
             initial={reduce ? false : { y: -40, opacity: 0, rotate: -3 }}
@@ -140,10 +145,10 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
               <Volume2 className="h-6 w-6" color="#1f5fb8" strokeWidth={2.8} aria-hidden="true" />
             </span>
           </motion.button>
-        </div>
+            </div>
 
         {/* studded baseplate with one slot per letter */}
-        <div className="absolute inset-x-0 bottom-9 flex justify-center">
+            <div className="flex w-full justify-center">
           <Baseplate testId="baseplate" className="px-5 pb-5 pt-7" style={{ minWidth: 300 }}>
             <div className="flex items-end justify-center gap-2.5">
               {ctx.target.map((k, i) => {
@@ -151,7 +156,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
                 const active = i === ctx.placed && !won
                 return (
                   <div key={i} ref={(el) => { slotRefs.current[i] = el }} data-testid="slot" data-filled={filled ? '1' : '0'}
-                    className="relative flex h-[92px] w-[72px] items-end justify-center rounded-xl"
+                    className="relative flex h-[92px] w-[72px] flex-none items-end justify-center rounded-xl"
                     style={filled ? undefined : {
                       background: 'rgba(0,40,0,.28)', border: `3px dashed ${active && miss ? '#ff8a80' : active ? '#fff7a8' : 'rgba(255,255,255,.55)'}`,
                       boxShadow: active && miss ? 'inset 0 3px 6px rgba(0,0,0,.35), 0 0 18px 6px rgba(255,110,90,.8)' : active ? 'inset 0 3px 6px rgba(0,0,0,.35), 0 0 18px 6px rgba(255,240,130,.85)' : 'inset 0 3px 6px rgba(0,0,0,.35)',
@@ -171,16 +176,18 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
               })}
             </div>
           </Baseplate>
-        </div>
-      </div>
+            </div>
+          </div>
+        </FitBox>
+      </GameStage>
 
       <WoodTray>
-        <TrayWell className="flex flex-wrap items-end justify-center gap-x-3 gap-y-4 px-2 pt-5">
+        <TrayWell className={`flex flex-wrap items-end justify-center px-2 ${short ? 'gap-x-2 gap-y-3 pt-3' : 'gap-x-3 gap-y-4 pt-5'}`}>
           {ctx.tray.map((k, i) => (used.has(i)
             ? <div key={`${roundSeed}-${i}`} className="rounded-lg" style={{ width: TW_, height: TH_, border: '2px dashed rgba(60,30,10,.35)', background: 'rgba(60,30,10,.12)' }} />
             : (
               <DragBrick key={`${roundSeed}-${i}`} char={formOf(k)?.char} dataOrder={k} color={colorOf(i, startRef.current)} reduce={reduce}
-                w={TW_} h={TH_} fontSize={big ? 42 : 34} studSize={big ? 26 : 22} wobble={wobble === i} onDrop={(pt) => tryBrick(i, pt)} />
+                w={TW_} h={TH_} fontSize={short ? (big ? 34 : 28) : big ? 42 : 34} studSize={short ? 18 : big ? 26 : 22} wobble={wobble === i} onDrop={(pt) => tryBrick(i, pt)} />
             )))}
         </TrayWell>
       </WoodTray>

@@ -35,8 +35,8 @@ retry() {
 
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
-# Node: Xcode Cloud images ship Homebrew but not Node. (Vite 6 needs >=18;
-# brew's current node satisfies that.)
+# Node: Xcode Cloud images ship Homebrew but not Node. (This repo needs
+# Node 22; brew's current node satisfies that.)
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1
 retry 3 brew install node

@@ -22,19 +22,19 @@
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { Volume2, Eye, ShoppingBasket } from 'lucide-react'
+import { Volume2, Eye, ShoppingBasket, Check, Hand, Ear, ThumbsUp } from 'lucide-react'
 import { audio, afterVoice, playForm, playEffect, playPluck } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
-import { useWide, GO_BTN } from '../platform/gameUi'
 import { dueList } from '../platform/roundProgress'
 import { GEEZ_ONES } from '../data/numerals'
 import { FOCUS, ALL_WORDS } from '../FidelQuestApp'
 import AnbessaSvg from './AnbessaSvg'
 import KokebSvg from './KokebSvg'
-import WordPicture from './Pictures'
-import { GameHeader, LevelPills, StreakStars, ExampleSlot, RoundSummary, NeedMore } from './gameKit'
+import { NeedMore } from './gameKit'
+import { brickLabels, BrickScreen, GameStage, useShortScreen, WoodTopBar, WoodBottomBar, RoundButton, GuideSign, BrickPicture, Confetti, useGuideFeedback, woodBtnCss } from './brickKit'
+import { BrickLevels, BrickStreak, BrickSummary, sceneStyle } from './brickRoundKit'
 import {
   marketStock, readableIds, initMarket, marketTransition, marketSummary, maxPlayableLevel, letterMiss,
   loadMarket, saveMarket, applyRound, MARKET_LEVELS, MAX_LEVEL, Phase, MarketEvent, Outcome,
@@ -61,6 +61,7 @@ function useVoiced(keys) {
 }
 
 export default function WordMarket({ soundOn, onBack, pool = [] }) {
+  const short = useShortScreen()
   // Only letters with a clip can be sounded out, so a target word must be
   // made entirely of learned AND voiced letters.
   const voiced = useVoiced(pool)
@@ -81,7 +82,7 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
   const [pulse, setPulse] = useState(null)
   const [basket, setBasket] = useState([]) // [{ n, picture }]
   const reduce = useReducedMotion()
-  const wide = useWide()
+  const [fb, flash, clearFb] = useGuideFeedback()
   const timers = useRef([])
   const later = (c) => { timers.current.push(c) }
   const clearTimers = () => { timers.current.forEach((c) => c()); timers.current = [] }
@@ -101,8 +102,9 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
     setExample(null)
     setReading(null)
     setBasket([])
+    clearFb()
     return clearTimers
-  }, [enough, effLevel, round, readable])
+  }, [enough, effLevel, round, readable]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // L4: the list hides itself after a peek.
   useEffect(() => {
@@ -167,7 +169,8 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
       readToken.current += 1
       setReading(null)
       playPluck(Math.min(7, last.got), soundOn)
-      setBasket((b) => [...b, { n: b.length, picture: w.picture }])
+      flash('ok', 900)
+      setBasket((b) => [...b, { n: b.length, picture: w.picture, geez: w.geez }])
       if (last.outcome === Outcome.DONE) {
         playEffect('good', soundOn)
         setExample({ id: w.id, glyph: '', word: { geez: w.geez, picture: w.picture } })
@@ -182,6 +185,7 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
       later(afterVoice(() => { setPulse(null); setWobble(null) }, 500, 900))
     } else {
       playEffect('bad', soundOn)
+      flash('try', 1200)
       const want = BY_ID.get(last.want)
       if (last.log) {
         const lm = letterMiss(want, w)
@@ -207,20 +211,20 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
   }
 
   /* ── views ── */
+  const L = brickLabels()
   const summaryView = result && ctx && (
-    <RoundSummary
+    <BrickSummary
       testId="market-summary"
       summary={result.summary}
       unlockedNew={result.unlockedNew}
       canNext={effLevel < Math.min(progress.unlocked, playable)}
       atMax={effLevel >= MAX_LEVEL}
       belowUnlock={effLevel >= progress.unlocked}
-      item={(id) => ({ label: BY_ID.get(id)?.geez || '', picture: BY_ID.get(id)?.picture })}
+      item={(id) => ({ label: BY_ID.get(id)?.geez || '', geez: BY_ID.get(id)?.geez, picture: BY_ID.get(id)?.picture })}
       onHear={(id) => { const w = BY_ID.get(id); if (w) soundOut(w, -1, () => sayWord(w)) }}
       onNext={() => { setLevel(effLevel + 1); setRound((r) => r + 1) }}
       onAgain={() => setRound((r) => r + 1)}
       onDone={onBack}
-      wide={wide}
     />
   )
 
@@ -240,33 +244,29 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
         transition={{ duration: 0.35 }}
         aria-pressed={selected}
         aria-label={hidden ? `${t('marketLine', 'List line')} ${i + 1}` : `${w.geez}${cfg.qty ? ` x${l.qty}` : ''}. ${t('marketSoundOut', 'Tap to sound it out')}`}
-        className={`flex min-h-[52px] w-full items-center gap-2 rounded-2xl px-2 py-1 text-left ${FOCUS}`}
+        className={`flex min-h-[56px] w-full items-center gap-2 rounded-2xl px-2 py-1 text-left ${FOCUS}`}
         style={{
-          background: selected ? 'rgba(90,160,230,.18)' : 'transparent',
-          border: `2px ${selected ? 'solid' : 'dashed'} ${selected ? 'var(--sky)' : 'rgba(109,69,1,.25)'}`,
+          background: selected ? 'linear-gradient(180deg,#fff3b0,#ffe27a)' : 'rgba(255,255,255,.55)',
+          border: `3px solid ${selected ? '#e0971c' : 'rgba(138,84,38,.35)'}`,
+          boxShadow: selected ? '0 0 14px 3px rgba(255,226,90,.8), 0 3px 0 #b8892f' : 'inset 0 2px 3px rgba(90,52,20,.15)',
           outlineColor: 'var(--sky)',
         }}
       >
         {cfg.qty && (
-          <span className="flex h-9 min-w-[36px] flex-col items-center justify-center rounded-lg px-1" style={{ background: '#6d4501', color: '#fff6dc' }}>
+          <span className="flex h-10 min-w-[40px] flex-col items-center justify-center rounded-lg px-1" style={{ background: '#6d4501', color: '#fff6dc' }}>
             <span className="geez text-lg font-black leading-none">{GEEZ_ONES[l.qty]}</span>
             <span className="mt-0.5 flex gap-0.5" aria-hidden="true">
-              {Array.from({ length: l.qty }).map((_, k) => <span key={k} className="block rounded-full" style={{ width: 5, height: 5, background: k < l.got ? '#8fd16a' : 'rgba(255,246,220,.4)' }} />)}
+              {Array.from({ length: l.qty }).map((_, k) => <span key={k} className="block rounded-full" style={{ width: 6, height: 6, background: k < l.got ? '#8fd16a' : 'rgba(255,246,220,.4)' }} />)}
             </span>
           </span>
         )}
-        <span className={`geez flex flex-1 items-center font-black ${wide ? 'text-4xl' : 'text-3xl'}`} style={{ color: l.done ? '#3b7a1f' : '#3a2a10', textDecoration: l.done ? 'line-through' : 'none', textDecorationThickness: 3 }}>
+        <span className="geez flex flex-1 items-center text-3xl font-black" style={{ color: l.done ? '#3b7a1f' : '#3a2a10', textDecoration: l.done ? 'line-through' : 'none', textDecorationThickness: 3 }}>
           {hidden
-            ? chars.map((_, k) => <span key={k} className="inline-block rounded-md" style={{ width: wide ? 30 : 24, height: wide ? 36 : 30, background: 'rgba(109,69,1,.18)' }} />)
+            ? chars.map((_, k) => <span key={k} className="inline-block rounded-md" style={{ width: 24, height: 30, background: 'rgba(109,69,1,.18)' }} />)
             : chars.map((c, k) => {
               const lit = reading && reading.line === i && reading.i === k
               return (
-                <motion.span
-                  key={k}
-                  animate={lit && !reduce ? { y: -6, scale: 1.18 } : { y: 0, scale: 1 }}
-                  className="inline-block rounded-md"
-                  style={{ background: lit ? '#ffd65a' : 'transparent' }}
-                >
+                <motion.span key={k} animate={lit && !reduce ? { y: -6, scale: 1.18 } : { y: 0, scale: 1 }} className="inline-block rounded-md" style={{ background: lit ? '#ffd65a' : 'transparent' }}>
                   {c}
                 </motion.span>
               )
@@ -274,11 +274,11 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
         </span>
         {l.done ? (
           <motion.span initial={reduce ? false : { scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-1">
-            <WordPicture emoji={w.picture} size={wide ? 40 : 34} />
-            <span className="text-xl" aria-hidden="true">✅</span>
+            <BrickPicture geez={w.geez} emoji={w.picture} size={40} />
+            <span className="flex h-7 w-7 items-center justify-center rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%,#9be86a,#43a92e)', border: '2px solid #fff' }} aria-hidden="true"><Check className="h-4 w-4" color="#fff" strokeWidth={4} /></span>
           </motion.span>
         ) : !hidden ? (
-          <Volume2 className="h-5 w-5 shrink-0" style={{ color: '#6d4501' }} aria-hidden="true" />
+          <Volume2 className="h-6 w-6 shrink-0" style={{ color: '#1f5fb8' }} aria-hidden="true" />
         ) : null}
       </motion.button>
     )
@@ -286,23 +286,22 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
 
   const listNote = ctx && (
     <div
-      className="relative w-full rounded-2xl px-3 pb-3 pt-2"
-      style={{ background: '#fff6dc', boxShadow: '0 4px 0 #c9a560, 0 8px 20px rgba(0,0,0,.25)', transform: reduce ? undefined : 'rotate(-1deg)', maxWidth: wide ? 300 : 420 }}
+      className="relative w-full rounded-3xl px-3 pb-3 pt-2"
+      style={{ background: 'linear-gradient(180deg,#fffaf0,#f8ecd0)', border: '4px solid #8a5426', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.7), 0 6px 0 #5a3414, 0 12px 18px rgba(0,0,0,.35)' }}
       data-testid="market-list"
     >
       <div className="mb-1 flex items-center gap-2">
-        <AnbessaSvg size={wide ? 52 : 40} mood="happy" />
-        <span className="text-2xl" aria-hidden="true">📝</span>
-        <span className="flex-1" />
+        <AnbessaSvg size={44} mood={fb === 'try' ? 'worried' : 'happy'} />
+        <span className="flex flex-1 justify-center [&>div]:!bg-[rgba(138,84,38,.2)]"><BrickStreak streak={ctx.streak} /></span>
         {ctx.peek === 'show' && (
-          <button type="button" data-testid="market-ready" onClick={hideNow} className={`chunk flex min-h-[44px] items-center gap-1 rounded-xl px-3 font-black ${FOCUS}`} style={GO_BTN} aria-label={t('marketReady', 'I remember - go shopping')}>
-            <ShoppingBasket className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <RoundButton onClick={hideNow} testId="market-ready" label={t('marketReady', 'I remember - go shopping')} color="#43b02e" className="!h-12 !w-12">
+            <ShoppingBasket className="h-6 w-6" color="#fff" strokeWidth={3} aria-hidden="true" />
+          </RoundButton>
         )}
         {listHidden && (
-          <button type="button" data-testid="market-peek" onClick={peekAgain} className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl ${FOCUS}`} style={{ background: '#6d4501', color: '#fff6dc' }} aria-label={t('marketPeek', 'Peek at the list')}>
-            <Eye className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <RoundButton onClick={peekAgain} testId="market-peek" label={t('marketPeek', 'Peek at the list')} color="#2f86d6" className="!h-12 !w-12">
+            <Eye className="h-6 w-6" color="#fff" strokeWidth={3} aria-hidden="true" />
+          </RoundButton>
         )}
       </div>
       <div className="flex flex-col gap-1.5">{ctx.list.map(line)}</div>
@@ -310,12 +309,9 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
   )
 
   const stallView = ctx && (
-    <div
-      className="w-full rounded-3xl p-3"
-      style={{ background: 'linear-gradient(180deg,#8a5a2b,#6b4220)', boxShadow: 'inset 0 -6px 0 rgba(0,0,0,.25)' }}
-    >
+    <div className="w-full rounded-3xl p-3" style={{ background: 'linear-gradient(180deg,#a8682f,#7a4a20)', border: '4px solid #8a5426', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.3), inset 0 -6px 0 rgba(0,0,0,.25), 0 6px 0 #5a3414, 0 12px 18px rgba(0,0,0,.35)' }}>
       {/* awning */}
-      <div className="-mx-3 -mt-3 mb-3 h-5 rounded-t-3xl" aria-hidden="true" style={{ background: 'repeating-linear-gradient(90deg,#d8553f 0 22px,#fff6dc 22px 44px)' }} />
+      <div className="-mx-3 -mt-3 mb-2.5 h-5 rounded-t-[20px]" aria-hidden="true" style={{ background: 'repeating-linear-gradient(90deg,#e2453c 0 24px,#fff6dc 24px 48px)', boxShadow: '0 3px 0 rgba(0,0,0,.25)' }} />
       <div className="grid grid-cols-3 gap-2.5" data-testid="stall" role="group" aria-label={t('marketStall', 'Market stall')}>
         {ctx.stall.map((id, n) => {
           const w = BY_ID.get(id)
@@ -331,13 +327,14 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
               whileTap={reduce ? undefined : { scale: 0.92 }}
               transition={{ duration: 0.45 }}
               aria-label={`${t('marketItem', 'Stall item')} ${n + 1}`}
-              className={`relative flex aspect-square min-h-[72px] items-center justify-center rounded-2xl ${FOCUS}`}
+              className={`relative flex ${short ? 'h-[64px]' : 'h-[88px]'} items-center justify-center rounded-2xl ${FOCUS}`}
               style={{
-                background: '#f3e2b3', border: '3px solid #b8892f', boxShadow: glow ? '0 0 0 4px var(--go), 0 0 18px var(--go)' : '0 3px 0 #4a2c12',
+                background: 'radial-gradient(circle at 50% 40%, #fffef6, #f1dfb2)', border: '3px solid #c49a5a',
+                boxShadow: glow ? '0 0 0 4px var(--go), 0 0 18px var(--go)' : 'inset 0 3px 8px rgba(90,52,20,.3), 0 4px 0 #4a2c12',
                 outlineColor: 'var(--sky)', opacity: ctx.peek === 'show' ? 0.55 : 1,
               }}
             >
-              <WordPicture emoji={w.picture} size={wide ? 92 : 62} />
+              <BrickPicture geez={w.geez} emoji={w.picture} size={short ? 50 : 68} />
               {glow && !reduce && (
                 <motion.span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl" style={{ border: '3px solid var(--go)' }} animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.9, repeat: Infinity }} />
               )}
@@ -349,46 +346,56 @@ export default function WordMarket({ soundOn, onBack, pool = [] }) {
   )
 
   const basketView = ctx && (
-    <div className="flex min-h-[56px] w-full items-center gap-2 rounded-2xl px-3 py-1" style={{ background: 'var(--card)', border: '2px solid var(--line)' }} data-testid="basket">
-      <span className="text-3xl" aria-hidden="true">🧺</span>
+    <div className="flex min-h-[60px] w-full items-center gap-2 rounded-2xl px-2 py-1" style={{ ...woodBtnCss, borderRadius: 20, border: '3px solid #7a4a20' }} data-testid="basket">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: 'radial-gradient(circle at 35% 30%,#fff,#f6e6c4 60%,#d8bd8a)', border: '3px solid #c49a5a' }} aria-hidden="true">
+        <ShoppingBasket className="h-6 w-6" color="#8a5426" strokeWidth={2.6} />
+      </span>
       <div className="flex flex-1 flex-wrap items-center gap-1">
         <AnimatePresence>
           {basket.map((b) => (
             <motion.span key={b.n} initial={reduce ? { opacity: 0 } : { opacity: 0, y: -40, scale: 0.4 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 18 }}>
-              <WordPicture emoji={b.picture} size={30} />
+              <BrickPicture geez={b.geez} emoji={b.picture} size={short ? 30 : 38} />
             </motion.span>
           ))}
         </AnimatePresence>
       </div>
+      {example && (
+        <motion.button type="button" data-testid="game-example" onClick={() => { const w = BY_ID.get(example.id); soundOut(w, -1, () => sayWord(w)) }}
+          initial={reduce ? false : { scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          aria-label={`${example.word.geez}. ${t('echoTapHear', 'Tap to hear')}`}
+          className={`geez flex min-h-[44px] items-center gap-1.5 rounded-xl px-2.5 text-2xl font-black ${FOCUS}`}
+          style={{ background: 'linear-gradient(180deg,#a6ec78,#4fb23a)', color: '#fff', border: '3px solid #2e7a1e', textShadow: '0 2px 0 rgba(0,0,0,.35)', outlineColor: 'var(--sky)' }}>
+          {example.word.geez}<Volume2 className="h-5 w-5" aria-hidden="true" />
+        </motion.button>
+      )}
     </div>
   )
 
+  const won = ctx?.phase === Phase.WIN
+  const guide = fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+    : (fb === 'ok' || won) ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+      : <GuideSign icon={Hand} text={t('marketGuide', 'Find what the list says')} />
+
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-3xl flex-col px-4 pb-6 pt-4">
-      <GameHeader title={t('wordMarketTitle', 'Word Market')} onBack={onBack} />
-      <main className="flex flex-1 flex-col items-center justify-center gap-3">
+    <BrickScreen testId="word-market">
+      <GameStage style={sceneStyle}
+        head={<WoodTopBar onBack={onBack} value={ctx ? ctx.list.filter((l) => l.done).length : 0} total={ctx ? ctx.list.length : 1} done={won} guide={!result && ctx ? guide : null} />}>
+        {won && <Confetti reduce={reduce} />}
         {!ready ? null : !enough ? (
-          <NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore>
+          <div className="flex h-full items-center justify-center px-4"><NeedMore onBack={onBack}><KokebSvg size={72} /></NeedMore></div>
         ) : !ctx ? null : result ? summaryView : (
-          <>
-            <LevelPills max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />
-            <StreakStars streak={ctx.streak} />
-            <ExampleSlot wide={wide} example={example} onTap={() => { const w = BY_ID.get(example.id); soundOut(w, -1, () => sayWord(w)) }} />
-            {wide ? (
-              <div className="flex w-full items-start gap-5">
-                <div className="w-[300px] shrink-0">{listNote}</div>
-                <div className="flex flex-1 flex-col gap-3">{stallView}{basketView}</div>
-              </div>
-            ) : (
-              <>
-                {listNote}
-                {stallView}
-                {basketView}
-              </>
-            )}
-          </>
+          <div className="bk-split absolute inset-0 flex flex-col items-center gap-3 overflow-y-auto px-3 pb-3 pt-2">
+            <div className="bk-split-a w-full">{listNote}</div>
+            <div className="bk-split-b w-full">{stallView}</div>
+            <div className="bk-split-c w-full">{basketView}</div>
+          </div>
         )}
-      </main>
-    </div>
+      </GameStage>
+      {ready && enough && ctx && !result && (
+        <WoodBottomBar>
+          <BrickLevels max={MAX_LEVEL} current={effLevel} unlocked={progress.unlocked} playable={playable} best={progress.best} onPick={(lv) => { setLevel(lv); setRound((r) => r + 1) }} />
+        </WoodBottomBar>
+      )}
+    </BrickScreen>
   )
 }

@@ -261,7 +261,10 @@ export function Header() {
     if (!hash) { window.scrollTo(0, 0); return undefined }
     let tries = 0
     const id = setInterval(() => {
-      const el = document.querySelector(hash)
+      // getElementById, not querySelector: a data fragment such as /progress#p=<token>
+      // is not a valid selector and used to throw on every tick (20x per load).
+      let el = null
+      try { el = document.getElementById(decodeURIComponent(hash.slice(1))) } catch { /* malformed escape: no target */ }
       if (el) { el.scrollIntoView(); clearInterval(id) }
       else if (++tries > 20) clearInterval(id)
     }, 50)

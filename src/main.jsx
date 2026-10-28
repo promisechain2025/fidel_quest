@@ -12,6 +12,7 @@ import { initReminder } from './platform/notify'
 import { reminderTexts } from './platform/firstRun'
 import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
+import { installGestureGuards } from './platform/gestureGuard'
 import { snapshotInstall } from './platform/installSeen'
 
 // First, before anything writes storage: did this device already have
@@ -38,6 +39,8 @@ if (typeof document !== 'undefined' && document.fonts?.load) {
 // `.dark` in lockstep so Classic mode's dark: styles match the resolved theme
 // rather than the OS. Doing it here, ahead of render, avoids a theme flash.
 initTheme()
+// Kids pinch, hold and drag: no zoom, no select/callout/context menu (platform/gestureGuard.js).
+installGestureGuards()
 // Before first paint: html lang="am" used to invite Chrome to translate the
 // fidel. The lock keeps translate off while lang stays the UI language.
 lockDocumentTranslate()

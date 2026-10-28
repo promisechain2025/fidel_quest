@@ -132,15 +132,15 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     expect(post).toMatch(/grep -rq "profile_slot_" dist/)
   })
 
-  it('Android and iOS ship the same version: 1.4.1 (local default 118)', () => {
+  it('Android and iOS ship the same version: 1.4.2 (local default 118)', () => {
     const gradle = read('android/app/build.gradle')
     // Local default is 118; CI overrides it per upload with -PegeezVersionCode.
     expect(gradle).toMatch(/versionCode\(\(project\.findProperty\('egeezVersionCode'\) \?: '118'\) as Integer\)/)
-    expect(gradle).toMatch(/versionName "1\.4\.1"/)
+    expect(gradle).toMatch(/versionName "1\.4\.2"/)
     const pbx = read('ios/App/App.xcodeproj/project.pbxproj')
-    expect([...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['1.4.1', '1.4.1'])
+    expect([...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['1.4.2', '1.4.2'])
     expect([...pbx.matchAll(/CURRENT_PROJECT_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['10', '10'])
-    expect(JSON.parse(read('package.json')).version).toBe('1.4.1')
+    expect(JSON.parse(read('package.json')).version).toBe('1.4.2')
   })
 
   it('the website: $12.99 app with 1 kid profile; $4.99 for a 2nd child, $2.49 each after, in-app; no codes, no web checkout', () => {

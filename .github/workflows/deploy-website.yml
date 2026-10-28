@@ -1,0 +1,86 @@
+name: Deploy website (easygeez.com)
+
+# MANUAL ONLY. Builds website/ and uploads it to the bucket root of s3://easygeez-com/.
+# Never writes app/*, audio/* or art/*, and never uses --delete (old fingerprinted bundles stay
+# for cached pages). Needs its own IAM role (infra/aws/github-actions-egeez-website.*.json) in the
+# repo secret AWS_ROLE_ARN_WEBSITE: the app role is limited to app/* on purpose.
+# Run:  gh workflow run deploy-website.yml --ref main [-f dry_run=true]
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Show what would upload, do not write to S3'
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: easygeez-com
+  DISTRIBUTION: E1SP7A6AIN6IQF
+
+jobs:
+  deploy:
+    name: Build and upload website
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Only deploy from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "Refusing to deploy ${GITHUB_REF}; run this workflow on main."
+          exit 1
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: website
+      - name: Build (forms stay mailto unless VITE_API_URL is set, as in the current live site)
+        run: npm run build
+        working-directory: website
+      - name: Sanity check
+        run: |
+          test -f website/dist/index.html
+          test -f website/dist/progress/index.html
+          grep -q 'noindex' website/dist/progress/index.html
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_WEBSITE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: egeez-website-deploy-${{ github.run_id }}
+      - name: Upload to s3://easygeez-com/ (no --delete, not app/audio/art)
+        env:
+          DRY: ${{ inputs.dry_run && '--dryrun' || '' }}
+        run: |
+          set -euo pipefail
+          B="s3://${BUCKET}/"
+          IMM='public, max-age=31536000, immutable'
+          NOC='no-cache, no-store, must-revalidate'
+          cd website
+          aws s3 sync dist "$B" $DRY --exclude 'app/*' --exclude 'audio/*' --exclude 'art/*' \
+            --exclude '*.html' --exclude 'sitemap.xml' --exclude 'robots.txt' --exclude '_redirects' --cache-control "$IMM"
+          aws s3 cp dist/_redirects "${B}_redirects" $DRY --cache-control "$NOC"
+          aws s3 cp dist/sitemap.xml "${B}sitemap.xml" $DRY --content-type application/xml --cache-control "$NOC"
+          aws s3 cp dist/robots.txt "${B}robots.txt" $DRY --content-type 'text/plain; charset=utf-8' --cache-control "$NOC"
+          aws s3 sync dist "$B" $DRY --exclude '*' --include '*.html' --exclude 'app/*' \
+            --content-type 'text/html; charset=utf-8' --cache-control "$NOC"
+      - name: Invalidate CloudFront
+        if: ${{ !inputs.dry_run }}
+        run: |
+          ID=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION" --paths '/*' --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION" --id "$ID"
+      - name: Smoke test
+        if: ${{ !inputs.dry_run }}
+        run: |
+          curl -fsS -o /dev/null -w '%{http_code} /progress\n' https://easygeez.com/progress
+          curl -fsS -o /dev/null -w '%{http_code} /app/\n' https://easygeez.com/app/

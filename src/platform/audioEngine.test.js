@@ -167,6 +167,22 @@ describe('AudioEngine', () => {
     createGain() { const n = { gain: { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} }, connect: () => n }; return n }
     createOscillator() { const n = { type: '', frequency: { value: 0 }, connect: () => n, start() {}, stop() {} }; return n }
   }
+  it('declares playback audio on iOS Safari so the silent switch does not mute the voice', () => {
+    const prevCtx = window.AudioContext
+    const prevSession = Object.getOwnPropertyDescriptor(navigator, 'audioSession')
+    window.AudioContext = FakeCtx
+    Object.defineProperty(navigator, 'audioSession', { value: { type: 'auto' }, configurable: true })
+    try {
+      const engine = new AudioEngine({ fetchImpl: vi.fn(), getMemory: () => null })
+      expect(engine.getCtx()).toBeTruthy()
+      expect(navigator.audioSession.type).toBe('playback')
+    } finally {
+      window.AudioContext = prevCtx
+      if (prevSession) Object.defineProperty(navigator, 'audioSession', prevSession)
+      else delete navigator.audioSession
+    }
+  })
+
   const manifested = (clipResponse) =>
     vi.fn().mockImplementation((url) =>
       url.endsWith('manifest.json')

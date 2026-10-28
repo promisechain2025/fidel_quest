@@ -39,6 +39,13 @@ export const ROUTE_META = Object.freeze({
     description: 'Confirm the email address for your eGeez account so you can use the teacher dashboard and other account features.',
     noindex: true,
   },
+  // The parent's progress card (/progress#p=...). noindex: it is a private, per-child page; it is
+  // prerendered only so S3/CloudFront answers 200 instead of the SPA's 404 shell.
+  '/progress': {
+    title: 'Progress report - eGeez',
+    description: 'A private progress card a parent shared from the eGeez app. It is read in your browser only and stored nowhere.',
+    noindex: true,
+  },
   '/privacy': {
     title: 'Privacy - eGeez',
     description: 'What the offline app stores on the device, what the website and accounts collect, and what never leaves your phone. No ads, no child data.',

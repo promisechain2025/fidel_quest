@@ -20,7 +20,7 @@ import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
 import { t } from '../platform/i18n'
 import { initLadder, ladderTransition, LadderEvent, Phase } from '../ladderCore'
-import { BRICK_COLORS, BrickScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, GuideSign, Pips, useGuideFeedback, brickLabels, overRect, brickCss, studCss, shade } from './brickKit'
+import { BRICK_COLORS, BrickScreen, GameStage, FitBox, useShortScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, GuideSign, Pips, useGuideFeedback, brickLabels, overRect, brickCss, studCss, shade } from './brickKit'
 
 const TOWER_FAMILIES = ['me', 'se', 'ke', 'le']
 const formOf = (k) => INDEXES.byAudioKey.get(k)
@@ -116,29 +116,32 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
   const hint = () => { if (!won) { bump(want); say(want) } }
   const again = () => { setCtx(initLadder(family, seedRef.current + round * 17 + 5)); setWobble(null); clearFb() }
 
+  const short = useShortScreen()
+  const BW = short ? 54 : 72, BH = short ? 48 : 58
   const placedKeys = ctx.order.slice(0, ctx.placed)
   const usedSet = useMemo(() => new Set(placedKeys), [placedKeys.join()])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <BrickScreen testId="stack-tower">
-      <div className="relative min-h-0 overflow-hidden" style={{ flex: '1 1 auto', background: '#cfe8f7' }}>
-        {/* calm backdrop: the meadow, blurred and softened so the tower is the only sharp thing */}
+    <BrickScreen testId="stack-tower" side>
+      <GameStage style={{ background: '#cfe8f7' }}
+        behind={(
+          <>
+          {/* calm backdrop: the meadow, blurred and softened so the tower is the only sharp thing */}
         <div aria-hidden="true" className="pointer-events-none absolute -inset-4" style={{ background: `url(${SCENE}) center bottom / cover no-repeat`, filter: 'blur(7px) saturate(.75) brightness(1.08)' }} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 62% 55% at 50% 56%, rgba(255,255,255,.72), rgba(255,255,255,.28) 60%, rgba(255,255,255,0) 100%)' }} />
-        <WoodTopBar onBack={onBack} value={ctx.placed} total={7} done={won} />
-        <div className="pointer-events-none absolute inset-x-0 top-[62px] z-30 flex justify-center">
-          {fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
-            : (won || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
-              : <GuideSign icon={Hand} text={t('brickTowerGuide', 'Drag the bricks in order')} />}
-        </div>
+          </>
+        )}
+        head={<WoodTopBar onBack={onBack} value={ctx.placed} total={7} done={won} guide={fb === 'try' ? <GuideSign icon={Ear} tone="try" text={L.retry} />
+          : (won || fb === 'ok') ? <GuideSign icon={ThumbsUp} tone="ok" text={L.good} />
+            : <GuideSign icon={Hand} text={t('brickTowerGuide', 'Drag the bricks in order')} />} />}>
         {won && <Confetti reduce={reduce} />}
         {won && !reduce && (
           <>
-            <motion.div className="pointer-events-none absolute left-1/2 top-[150px] h-[520px] w-[520px] -translate-x-1/2 rounded-full" data-testid="rays"
+            <motion.div className="pointer-events-none absolute left-1/2 top-[30%] h-[520px] w-[520px] -translate-x-1/2 rounded-full" data-testid="rays"
               initial={{ opacity: 0, rotate: 0 }} animate={{ opacity: 0.95, rotate: 90 }} transition={{ opacity: { delay: 1, duration: 0.6 }, rotate: { duration: 14, ease: 'linear' } }}
               style={{ background: 'repeating-conic-gradient(from 0deg, rgba(255,244,160,.9) 0 9deg, rgba(255,244,160,0) 9deg 22deg)', WebkitMaskImage: 'radial-gradient(circle, #000 20%, transparent 68%)', maskImage: 'radial-gradient(circle, #000 20%, transparent 68%)' }} />
             {[0, 1, 2, 3, 4, 5].map((n) => (
-              <motion.span key={n} className="pointer-events-none absolute left-1/2 top-[230px]" initial={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
+              <motion.span key={n} className="pointer-events-none absolute left-1/2 top-[45%]" initial={{ opacity: 0, x: 0, y: 0, scale: 0.3 }}
                 animate={{ opacity: [0, 1, 1, 0], x: Math.cos(n * 1.05 + 0.4) * 150, y: Math.sin(n * 1.05 + 0.4) * 110, scale: [0.3, 1.2, 1] }} transition={{ duration: 1.6, delay: 1.2 + n * 0.08 }}>
                 <Star className="h-8 w-8" fill="#ffd23a" color="#e0971c" strokeWidth={2} style={{ filter: 'drop-shadow(0 0 6px #fff59a)' }} />
               </motion.span>
@@ -146,7 +149,8 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
           </>
         )}
 
-        <div className="absolute inset-x-0 bottom-4 flex flex-col items-center">
+        <FitBox w={350} h={TH * 7 + 46 - 6 + 6} anchor="bottom" pad={6}>
+        <div className="flex h-full w-full flex-col items-center justify-end">
           {/* the tower: level 0 at the bottom */}
           <div className="relative flex flex-col-reverse items-center" data-testid="tower" style={{ marginBottom: -6, zIndex: 3 }}>
             {ctx.order.map((k, i) => {
@@ -170,17 +174,18 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
               )
             })}
           </div>
-          <Baseplate testId="baseplate" stud={26} className="h-[46px]" style={{ width: 340 }} />
+          <Baseplate testId="baseplate" stud={26} className="h-[46px] flex-none" style={{ width: 340 }} />
         </div>
-      </div>
+        </FitBox>
+      </GameStage>
 
       <WoodTray>
-        <TrayWell className="flex flex-wrap items-end justify-center gap-x-2.5 gap-y-4 px-2 pt-5">
+        <TrayWell className={`flex flex-wrap items-end justify-center px-2 ${short ? 'gap-x-2 gap-y-3 pt-3' : 'gap-x-2.5 gap-y-4 pt-5'}`}>
           {ctx.tray.map((k) => (usedSet.has(k)
-            ? <div key={`${ctx.seed}-${k}`} className="rounded-lg" style={{ width: 72, height: 58, border: '2px dashed rgba(60,30,10,.35)', background: 'rgba(60,30,10,.12)' }} />
+            ? <div key={`${ctx.seed}-${k}`} className="rounded-lg" style={{ width: BW, height: BH, border: '2px dashed rgba(60,30,10,.35)', background: 'rgba(60,30,10,.12)' }} />
             : (
               <DragBrick key={`${ctx.seed}-${k}`} char={formOf(k)?.char} dataOrder={k} color={colorOf(k)} reduce={reduce}
-                w={72} h={58} fontSize={30} className="pb-3" studs={2} studSize={20} wobble={wobble === k} onDrop={(pt) => tryBrick(k, pt)}>
+                w={BW} h={BH} fontSize={short ? 26 : 30} className={short ? 'pb-2.5' : 'pb-3'} studs={2} studSize={short ? 15 : 20} wobble={wobble === k} onDrop={(pt) => tryBrick(k, pt)}>
                 <Pips n={ctx.order.indexOf(k) + 1} size={5} perRow={7} color="rgba(255,255,255,.95)" className="absolute inset-x-0 bottom-1.5" />
               </DragBrick>
             )))}

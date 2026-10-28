@@ -10,6 +10,14 @@ vi.mock('./platform/placement', async (importOriginal) => {
   return { ...real, placementWindows: () => [['ha']] }
 })
 
+// The quiz shows no Latin sound label any more, so the test learns the spoken
+// letter from the recording the app asks to play (the same thing a child hears).
+const spoken = { char: null }
+vi.mock('./platform/audioEngine', async (importOriginal) => {
+  const real = await importOriginal()
+  return { ...real, playForm: (form, ...rest) => { if (form?.char) spoken.char = form.char; return real.playForm(form, ...rest) } }
+})
+
 const { default: FidelQuestApp } = await import('./FidelQuestApp')
 
 beforeEach(() => {
@@ -26,9 +34,8 @@ describe('placement refreshes home progress', () => {
       await act(async () => { vi.advanceTimersByTime(1500) })
       const cont = screen.queryAllByRole('button').find((b) => /^(continue|got it)$/i.test(b.textContent.trim()))
       if (cont) { fireEvent.click(cont); continue }
-      const prompt = /“([^”]+)”/.exec(document.body.textContent)
-      if (!prompt) continue
-      const right = screen.queryAllByRole('button').find((b) => (b.getAttribute('aria-label') || '').endsWith(`says ${prompt[1]}`))
+      if (!spoken.char) continue
+      const right = screen.queryAllByRole('button').find((b) => b.getAttribute('aria-label') === spoken.char)
       if (right && !right.disabled) fireEvent.click(right)
     }
     expect(screen.getByText('Placed!')).toBeInTheDocument()

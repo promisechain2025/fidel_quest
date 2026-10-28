@@ -19,7 +19,7 @@
    words and recordings are content: no Latin transliteration, no "sounds
    like" hints and no English glosses ever appear beside them.
    ========================================================================== */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Star } from 'lucide-react'
 import { t } from '../platform/i18n'
@@ -27,6 +27,7 @@ import { publicUrl } from '../platform/publicUrl'
 import WordPicture from './Pictures'
 import { brickPicOf } from '../brickPictures'
 import { shade, brickCss, studCss, WOOD, WOOD_DARK } from './blockArt'
+import './brickKit.css'
 
 export { shade, brickCss, studCss, WOOD, WOOD_DARK }
 export { Brick, Stud } from './blockArt'
@@ -35,19 +36,82 @@ export const BRICK_COLORS = ['#e2453c', '#f08a24', '#f2c230', '#4fb04a', '#2f86d
 
 export const woodBtnCss = { ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.35), 0 4px 0 #5a3414, 0 8px 12px rgba(0,0,0,.3)' }
 export const roundBtnCss = (bg) => ({ background: `radial-gradient(circle at 35% 30%, ${shade(bg, 0.35)}, ${bg} 60%, ${shade(bg, -0.25)})`, border: '3px solid #fff', boxShadow: `0 4px 0 ${shade(bg, -0.45)}, 0 8px 12px rgba(0,0,0,.3)` })
-const BTN = 'flex h-14 w-14 items-center justify-center rounded-full'
+const BTN = 'bk-btn flex h-14 w-14 shrink-0 items-center justify-center rounded-full'
 
-export function BrickScreen({ testId, children }) {
+/** Full-height wooden shell. `side`: the game has a WoodTray, so on a landscape phone the tray
+    and the bottom bar move to a right-hand column (see brickKit.css). */
+export function BrickScreen({ testId, children, side = false }) {
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden" data-testid={testId} style={{ ...WOOD_DARK }}>
+    <div className="bk-screen mx-auto flex h-[100dvh] max-w-md flex-col overflow-hidden" data-testid={testId} data-side={side ? '1' : undefined} style={{ ...WOOD_DARK }}>
       {children}
     </div>
   )
 }
 
-export function WoodButton({ onClick, label, children, testId }) {
+/** The game's stage: the head (back / progress / star + guide sign) sits IN FLOW above the body,
+    so nothing in the body can slide under it. Put the game's scene in `style`; absolute
+    decorations go inside the body (it is `position: relative`). */
+export function GameStage({ head, behind, children, style, className = '', bodyClassName = '', stageRef }) {
   return (
-    <button type="button" onClick={onClick} aria-label={label} data-testid={testId} className={BTN} style={woodBtnCss}>{children}</button>
+    <div ref={stageRef} className={`bk-stage ${className}`} style={{ flex: '1 1 auto', ...style }}>
+      {behind}
+      {head}
+      <div className={`bk-body ${bodyClassName}`}>{children}</div>
+    </div>
+  )
+}
+
+export function useMedia(q) {
+  const get = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(q).matches : false)
+  const [on, setOn] = useState(get)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined
+    const m = window.matchMedia(q)
+    const f = () => setOn(m.matches)
+    f()
+    m.addEventListener?.('change', f)
+    return () => m.removeEventListener?.('change', f)
+  }, [q])
+  return on
+}
+/** True on a short viewport (a small phone, or any phone held sideways): games use it to shrink
+    their tray bricks. They stay >= 44px, so they are still comfortable tap targets. */
+export const useShortScreen = () => useMedia('(max-height: 700px)')
+/** True on a phone held sideways (short and wide): boards get wider and flatter. */
+export const useLandscapeShort = () => useMedia('(orientation: landscape) and (max-height: 560px)')
+
+/** Measured fit: lays `children` out at their natural w x h and scales the whole block down
+    (never up) to the room the body actually has. Anchored `bottom` (default), `center` or `top`. */
+export function FitBox({ w, h, children, anchor = 'bottom', pad = 0, min = 0.2, className = '', style, testId }) {
+  const hostRef = useRef(null)
+  const [s, setS] = useState(1)
+  useLayoutEffect(() => {
+    const el = hostRef.current
+    if (!el) return undefined
+    const fit = () => {
+      const r = el.getBoundingClientRect()
+      if (!r.width || !r.height) return
+      const next = Math.round(Math.min(1, Math.max(min, Math.min((r.width - pad * 2) / w, (r.height - pad * 2) / h))) * 1000) / 1000
+      setS((cur) => (cur === next ? cur : next))
+    }
+    fit()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    ro?.observe(el)
+    window.addEventListener('resize', fit)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', fit) }
+  }, [w, h, pad, min])
+  const v = anchor === 'top' ? { top: pad, transformOrigin: 'top center' } : anchor === 'center' ? { top: '50%', transformOrigin: 'center center' } : { bottom: pad, transformOrigin: 'bottom center' }
+  const ty = anchor === 'center' ? ' translateY(-50%)' : ''
+  return (
+    <div ref={hostRef} className={`absolute inset-0 ${className}`} data-testid={testId} data-fit={s}>
+      <div style={{ position: 'absolute', left: '50%', width: w, height: h, transform: `translateX(-50%)${ty} scale(${s})`, '--fit': s, ...v, ...style }}>{children}</div>
+    </div>
+  )
+}
+
+export function WoodButton({ onClick, label, children, testId, className = '' }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} data-testid={testId} className={`${BTN} ${className}`} style={woodBtnCss}>{children}</button>
   )
 }
 
@@ -58,22 +122,23 @@ export function RoundButton({ onClick, label, color, border, children, testId, c
   )
 }
 
-export function WoodTopBar({ onBack, value, total, done }) {
+export function WoodTopBar({ onBack, value, total, done, guide }) {
   return (
-    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-3">
-      <WoodButton onClick={onBack} label={t('back', 'Back')}>
+    <div className="bk-head" data-testid="head">
+      <WoodButton onClick={onBack} label={t('back', 'Back')} className="bk-back">
         <ArrowLeft className="h-7 w-7" strokeWidth={3} color="#f6c22c" style={{ filter: 'drop-shadow(0 2px 0 #7a4a20)' }} aria-hidden="true" />
       </WoodButton>
-      <div className="flex gap-1 rounded-full p-1.5" data-testid="progress" style={{ background: 'rgba(30,60,110,.35)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.3)' }}>
+      <div className="bk-pill flex gap-1 rounded-full p-1.5" data-testid="progress" style={{ background: 'rgba(30,60,110,.35)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.3)' }}>
         {Array.from({ length: total }, (_, i) => (
-          <span key={i} className="h-4 rounded-full" style={{ width: total > 7 ? 18 : 28, ...(i < value
+          <span key={i} className="h-4 rounded-full" style={i < value
             ? { background: 'linear-gradient(#9be86a,#43a92e)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,.5), 0 1px 0 #2e7a1e' }
-            : { background: 'linear-gradient(#fff,#d8e4ee)', boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.12)' }) }} />
+            : { background: 'linear-gradient(#fff,#d8e4ee)', boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.12)' } } />
         ))}
       </div>
-      <div className={BTN} style={woodBtnCss} aria-hidden="true">
+      <div className={`${BTN} bk-star`} style={woodBtnCss} aria-hidden="true">
         <Star className="h-7 w-7" fill={done ? '#ffd23a' : '#f6c22c'} color="#c4841c" strokeWidth={2} style={{ filter: done ? 'drop-shadow(0 0 6px #fff59a)' : 'none' }} />
       </div>
+      {guide && <div className="bk-guide">{guide}</div>}
     </div>
   )
 }
@@ -85,17 +150,17 @@ const SIGN_TONES = {
 }
 
 /** Wooden guide sign: a big round icon + one short line of i18n text. */
-export function GuideSign({ icon: Icon, text, tone = 'guide', className = '' }) {
+export function GuideSign({ icon: Icon, text, tone = 'guide', className = '', compact = false }) {
   const c = SIGN_TONES[tone] || SIGN_TONES.guide
   return (
     <motion.div key={`${tone}:${text}`} data-testid="guide" data-tone={tone} role="status" aria-live="polite"
       initial={{ scale: 0.9, opacity: 0.4 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}
-      className={`flex items-center gap-2.5 rounded-2xl py-1.5 pl-1.5 pr-4 ${className}`}
+      className={`flex items-center rounded-2xl ${compact ? 'gap-2 py-1 pl-1 pr-3' : 'gap-2.5 py-1.5 pl-1.5 pr-4'} ${className}`}
       style={{ background: c.bg, border: `4px solid ${c.ring}`, boxShadow: `inset 0 3px 0 rgba(255,255,255,.55), 0 5px 0 ${shade(c.ring, -0.35)}, 0 10px 14px rgba(0,0,0,.3)` }}>
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={roundBtnCss(c.badge)}>
         <Icon className="h-6 w-6" color="#fff" strokeWidth={3} aria-hidden="true" />
       </span>
-      <span className="text-[20px] font-black leading-tight" style={{ color: c.fg, textShadow: tone === 'guide' ? '0 1px 0 rgba(255,255,255,.7)' : '0 2px 0 rgba(0,0,0,.35)' }}>{text}</span>
+      <span className={`${compact ? 'text-[clamp(13px,min(4.2vw,3.8dvh),19px)]' : 'text-[20px]'} font-black leading-tight`} style={{ color: c.fg, textShadow: tone === 'guide' ? '0 1px 0 rgba(255,255,255,.7)' : '0 2px 0 rgba(0,0,0,.35)' }}>{text}</span>
     </motion.div>
   )
 }
@@ -132,7 +197,7 @@ export const brickLabels = () => ({
 
 export function WoodBottomBar({ children }) {
   return (
-    <div className="mx-2 my-2 flex items-center justify-between rounded-full px-3 py-2" style={{ ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.3), 0 4px 0 #5a3414' }}>
+    <div className="bk-bar mx-2 my-2 flex items-center justify-between rounded-full px-3 py-2" style={{ ...WOOD, border: '3px solid #7a4a20', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.3), 0 4px 0 #5a3414' }}>
       {children}
     </div>
   )
@@ -140,7 +205,7 @@ export function WoodBottomBar({ children }) {
 
 export function WoodTray({ children, className = '', style }) {
   return (
-    <div className={`relative flex flex-col gap-2 rounded-3xl px-3 pb-3 pt-6 ${className}`}
+    <div className={`bk-tray relative flex flex-col gap-2 rounded-3xl px-3 pb-3 pt-6 ${className}`}
       style={{ ...WOOD, flex: '0 0 auto', marginTop: -18, border: '4px solid #8a5426', boxShadow: 'inset 0 4px 0 rgba(255,255,255,.3), inset 0 -6px 10px rgba(0,0,0,.25), 0 -6px 14px rgba(0,0,0,.25)', ...style }}>
       {children}
     </div>

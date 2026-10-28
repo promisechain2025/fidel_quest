@@ -126,7 +126,7 @@ export function WordBuildScreen({ words = [], unitIndex, seed = 1, soundOn = tru
   const built = ctx.phase === WordBuildPhase.BUILT || ctx.phase === WordBuildPhase.DONE
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4" data-testid="word-build">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4 fq-safe" data-testid="word-build">
       <DrillHeader
         title={t('wordBuildTitle', 'Word Build')}
         unitIndex={unitIndex}
@@ -141,9 +141,6 @@ export function WordBuildScreen({ words = [], unitIndex, seed = 1, soundOn = tru
             ? t('wordBuildDone', 'You built it!')
             : t('wordBuildPrompt', 'Tap the letters in order')}
         </p>
-        {word?.meaningEn && (
-          <p className="text-base font-bold" style={{ color: 'var(--muted)' }}>{word.meaningEn}</p>
-        )}
         <div className="flex flex-wrap items-center justify-center gap-2" aria-hidden="true">
           {chars.map((ch, i) => (
             <span
@@ -228,7 +225,7 @@ export function FindFidelScreen({ targets = [], unitIndex, soundOn = true, onDon
     : t('findFidelMid', 'It is in the middle')
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4" data-testid="find-fidel">
+    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-5 pb-8 pt-4 fq-safe" data-testid="find-fidel">
       <DrillHeader
         title={t('findFidelTitle', 'Find the letter')}
         unitIndex={unitIndex}
@@ -276,9 +273,6 @@ export function FindFidelScreen({ targets = [], unitIndex, soundOn = true, onDon
         )}
         {found && (
           <div className="flex w-full flex-col items-center gap-2" data-testid="find-fidel-found">
-            {item.meaningEn && (
-              <p className="text-base font-bold" style={{ color: 'var(--muted)' }}>{item.meaningEn}</p>
-            )}
             <p className="geez text-5xl font-black">{item.geez}</p>
             <GoButton onClick={next}>
               {ctx.ti + 1 < ctx.targets.length ? t('findFidelNext', 'Next word') : t('keepGoing', 'Keep going!')}

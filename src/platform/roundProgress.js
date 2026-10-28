@@ -13,6 +13,7 @@
      sent), sanitised on load.
    Pure helpers + a tiny storage adapter.
    ========================================================================== */
+import { noteDone } from './appProgress'
 
 export const UNLOCK_ACCURACY = 0.75
 export const REDEAL_ROUNDS = 2
@@ -76,6 +77,7 @@ export function roundStore(key, maxLevel, validId = (id) => typeof id === 'strin
       } catch {
         /* session-only */
       }
+      noteDone() // a finished round is app-level progress too
     },
   }
 }
