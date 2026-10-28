@@ -3350,9 +3350,8 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                sell - the screen, unlock logic, and tests all stay wired, so
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
-            <BackpackTile art="words" locked={!coreScreenOpen({ name: 'words' })} title={t('wordsShort', 'First Words')} onClick={onWords} />
+            {/* First Words and Order retired from the Backpack: Brick Words and Stack the tower (tiles below) replace them. */}
             {ready('workshop') && <BackpackTile art="build" locked={!coreScreenOpen({ name: 'workshop' })} title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
-            {ready('ladder') && <BackpackTile art="ladder" locked={!coreScreenOpen({ name: 'ladder' })} title={t('ladderShort', 'Order')} onClick={onLadder} />}
             {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
             {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
             {/* Block Church: every consonant family. Titled via i18n, English fallback. */}
