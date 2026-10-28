@@ -562,6 +562,69 @@ const DRAWERS = {
     g.lineWidth = s * 0.03
     g.stroke()
   },
+  /* sling and one smooth stone — David question */
+  '🪨': (g, s) => {
+    const cx = s / 2
+    g.strokeStyle = '#8a5a34'
+    g.lineWidth = s * 0.035
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(cx - s * 0.28, s * 0.22)
+    g.quadraticCurveTo(cx - s * 0.02, s * 0.55, cx - s * 0.16, s * 0.72)
+    g.moveTo(cx + s * 0.28, s * 0.22)
+    g.quadraticCurveTo(cx + s * 0.02, s * 0.55, cx + s * 0.16, s * 0.72)
+    g.stroke()
+    g.fillStyle = '#c4a574'
+    g.beginPath()
+    g.ellipse(cx, s * 0.7, s * 0.14, s * 0.09, 0, 0, 7)
+    g.fill()
+    g.strokeStyle = '#8a5a34'
+    g.lineWidth = s * 0.02
+    g.stroke()
+    circle(g, cx + s * 0.02, s * 0.4, s * 0.09, '#d9d3c8')
+    g.strokeStyle = '#a39888'
+    g.lineWidth = s * 0.02
+    g.beginPath()
+    g.arc(cx + s * 0.02, s * 0.4, s * 0.09, 0, 7)
+    g.stroke()
+  },
+  /* one bronze sword — not the sling */
+  '⚔️': (g, s) => {
+    const cx = s / 2
+    g.save()
+    g.translate(cx, s / 2)
+    g.rotate(-0.7)
+    g.fillStyle = '#b9b3a4'
+    g.beginPath()
+    g.moveTo(0, -s * 0.38)
+    g.lineTo(s * 0.045, s * 0.12)
+    g.lineTo(-s * 0.045, s * 0.12)
+    g.closePath()
+    g.fill()
+    g.fillStyle = '#8a5a34'
+    g.fillRect(-s * 0.12, s * 0.12, s * 0.24, s * 0.045)
+    g.fillStyle = '#6b3a22'
+    g.fillRect(-s * 0.03, s * 0.16, s * 0.06, s * 0.16)
+    g.restore()
+  },
+  /* one spear — longer than the sword, with a small tip */
+  '🔱': (g, s) => {
+    const cx = s / 2
+    g.strokeStyle = '#8a5a34'
+    g.lineWidth = s * 0.04
+    g.lineCap = 'round'
+    g.beginPath()
+    g.moveTo(cx, s * 0.28)
+    g.lineTo(cx, s * 0.84)
+    g.stroke()
+    g.fillStyle = '#b9b3a4'
+    g.beginPath()
+    g.moveTo(cx, s * 0.12)
+    g.lineTo(cx + s * 0.07, s * 0.32)
+    g.lineTo(cx - s * 0.07, s * 0.32)
+    g.closePath()
+    g.fill()
+  },
 }
 
 /* Aliases: emoji that share a drawing (dog variants, cat variants, tea). */

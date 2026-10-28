@@ -163,6 +163,23 @@ the first time. The book spells Jonah `ዮናስ`, Nineveh `ነነዌ`, Tarshish
 24th family. On the Tigrinya pack that family is `ye` (የ). Creation stays
 free. Noah stays on band 1. Moses stays on band 2.
 
+The fifth book is `ዳዊትን ጐልያድን` / David and Goliath, a connected kid
+paraphrase of 1 Samuel 17. David is a young shepherd with his father's
+sheep. When a lion or a bear comes, he saves the sheep. His father sends
+him, carrying food, to his brothers in the army. There, big Goliath from
+the Philistines shouts at Israel. The soldiers are afraid. David tells
+King Saul that God will help him. Saul puts his armor on David, but it
+is too big. David takes his sling and five smooth stones from the stream,
+faces Goliath, and slings one stone. Goliath falls. No blood and no
+beheading. The people rejoice, and little David is brave because he
+trusted God. The lesson is that a little one is brave when he trusts
+God. The book spells David `ዳዊት`, Goliath `ጐልያድ`, Saul `ሳኦል`, the
+Philistines `ፍልስጥኤማውያን`, and Israel `እስራኤል`, the forms in ትመ15. The
+book is band 4: the last family, the same gate the Amharic band-4
+library uses. On the Tigrinya pack that family is `pe` (ፐ). Creation
+stays free. Noah stays on band 1. Moses stays on band 2. Jonah stays
+on band 3.
+
 ## P1 follow-ups
 
 - Twin drills inside a unit (vowel-family and look-alike pairs).
