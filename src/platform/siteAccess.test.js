@@ -30,8 +30,8 @@ describe('marketing site stays on the app', () => {
   })
 
   it('does not prerender or list a closed page, and leaves the app public', () => {
-    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/classes', '/pricing', '/privacy', '/terms', '/verify'])
-    for (const p of ['/classes', '/verify']) expect(ROUTE_META[p].noindex, p).toBe(true)
+    expect(Object.keys(ROUTE_META).sort()).toEqual(['/', '/classes', '/pricing', '/privacy', '/progress', '/terms', '/verify'])
+    for (const p of ['/classes', '/verify', '/progress']) expect(ROUTE_META[p].noindex, p).toBe(true)
     const sitemap = read('website/public/sitemap.xml')
     for (const p of CLOSED_PREFIXES) expect(sitemap).not.toContain(`https://easygeez.com${p}`)
     expect(sitemap).toContain('https://easygeez.com/pricing')

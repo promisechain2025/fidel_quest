@@ -6,6 +6,20 @@ const helloWord = { geez: 'ሀሎ', meaningEn: 'hello', familyIds: ['ha', 'le'],
 const helloTarget = { geez: 'ሀሎ', target: 'ሎ', index: 1, position: 'final', meaningEn: 'hello', familyId: 'le' }
 
 describe('school path drill screens', () => {
+  it('never shows an English gloss next to the word', () => {
+    const { container, unmount } = render(
+      <WordBuildScreen words={[helloWord]} unitIndex={1} seed={1} soundOn={false} onDone={() => {}} onBack={() => {}} />,
+    )
+    expect(container.textContent).not.toMatch(/hello/i)
+    fireEvent.click(screen.getByRole('button', { name: 'Letter ሀ' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Letter ሎ' }))
+    expect(container.textContent).not.toMatch(/hello/i)
+    unmount()
+    const found = render(<FindFidelScreen targets={[helloTarget]} unitIndex={1} soundOn={false} onDone={() => {}} onBack={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Letter ሎ' }))
+    expect(found.container.textContent).not.toMatch(/hello/i)
+  })
+
   it('builds a word from the syllable tiles', () => {
     const onDone = vi.fn()
     render(

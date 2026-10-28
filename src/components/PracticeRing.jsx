@@ -33,7 +33,7 @@ export default function PracticeRing({ size = 40, onClick, today: todayProp }) {
   return (
     <button type="button" onClick={onClick} data-testid="practice-ring"
       className="relative flex min-h-[44px] shrink-0 items-center justify-center rounded-2xl px-1"
-      style={{ background: 'var(--paper-2)' }} aria-label={`ዛሬ ${minutes}/${goal}`}>
+      style={{ background: 'var(--paper-2)' }} aria-label={`${minutes}/${goal}`}>
       <RingSvg minutes={minutes} goal={goal} size={size} />
       <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black tabular-nums" style={{ color: done ? 'var(--go-ink)' : 'var(--ink)' }}>
         {done ? <Star className="h-4 w-4" fill="currentColor" style={{ color: 'var(--go)' }} /> : minutes}

@@ -139,6 +139,11 @@ export class AudioEngine {
     const Ctor = window.AudioContext || window.webkitAudioContext
     if (!Ctor) return null
     try {
+      // iPhone/iPad Safari (16.4+) treats WebAudio as "ambient" by default, so
+      // the hardware silent switch (and a muted ringer) silences every clip -
+      // the web build then looks voiceless. Declare it playback audio: the
+      // voice plays like a video would. No-op where audioSession is absent.
+      try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback' } catch { /* unsupported */ }
       this.ctx = this.ctx || new Ctor()
       // 'suspended' is the autoplay-policy state; iOS also parks a context in
       // 'interrupted' after backgrounding or a phone call. Try to wake both.

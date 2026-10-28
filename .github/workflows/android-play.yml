@@ -113,12 +113,23 @@ jobs:
             fi
           done
 
+          # 1.4 packages build: VITE_PACKAGES must be exactly 1 or unset.
+          if [ -n "${VITE_PACKAGES:-}" ] && [ "${VITE_PACKAGES}" != "1" ]; then
+            echo "::error::VITE_PACKAGES must be 1 or unset."
+            exit 1
+          fi
+
       - run: npm ci --no-audit --no-fund
 
       - name: Unit tests
         run: npx vitest run
 
       - name: Web build + cap sync android
+        # 1.4 free-download build: per-package IAP (core_unlock, prayer_book,
+        # bundle_core_prayer). Scoped to the build only - unit tests run with
+        # the flag unset. Rep codes stay web-only; native ignores them.
+        env:
+          VITE_PACKAGES: '1'
         run: |
           npm run build
           npx cap sync android

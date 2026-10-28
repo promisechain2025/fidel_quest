@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import PrayerBook from './PrayerBook'
 import { splitTitle } from '../platform/prayerBook'
+import { loadAppProgress } from '../platform/appProgress'
 
 beforeEach(() => localStorage.clear())
 
@@ -197,5 +198,30 @@ describe('PrayerBook', () => {
     const back = screen.getByTestId('page-back'), next = screen.getByTestId('page-next')
     expect(back.disabled).toBe(true)
     for (const b of [back, next]) expect(b.getAttribute('aria-label')).not.toMatch(/[A-Za-z]/)
+  })
+
+  it('turning a page reports a ጸሎት page to the app-level tracker (the first page does not)', async () => {
+    render(<PrayerBook onBack={() => {}} />)
+    expect(loadAppProgress().areas.prayer?.done || 0).toBe(0)
+    fireEvent.click(screen.getByTestId('page-next'))
+    await waitFor(() => expect(loadAppProgress().areas.prayer?.done).toBe(1), { timeout: 4000 })
+  })
+})
+
+describe('PrayerBook reading modes', () => {
+  it('offers three modes and remembers the choice', async () => {
+    const { render, screen, fireEvent } = await import('@testing-library/react')
+    const { default: PB } = await import('./PrayerBook')
+    localStorage.removeItem('fq.prayer.readmode')
+    const r = render(<PB onBack={() => {}} pack="ti" />)
+    expect(screen.getByTestId('read-mode').dataset.mode).toBe('letter')
+    fireEvent.click(screen.getByTestId('read-mode'))
+    expect(screen.getByTestId('read-mode-menu').querySelectorAll('button')).toHaveLength(3)
+    expect([...screen.getByTestId('read-mode-menu').querySelectorAll('button')].map((b) => b.textContent.replace('ሰላም', ''))).toEqual(['ቅጽሪ', 'ወርድ', 'ንባብ'])
+    fireEvent.click(screen.getByTestId('read-mode-word'))
+    expect(localStorage.getItem('fq.prayer.readmode')).toBe('word')
+    r.unmount()
+    render(<PB onBack={() => {}} pack="ti" />)
+    expect(screen.getByTestId('read-mode').dataset.mode).toBe('word')
   })
 })

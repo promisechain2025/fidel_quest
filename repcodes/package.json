@@ -1,0 +1,7 @@
+{
+  "name": "egeez-repcodes",
+  "private": true,
+  "type": "module",
+  "description": "eGeez representative unlock codes: AWS Lambda (Function URL) + DynamoDB + SES",
+  "scripts": { "test": "node --test test/" }
+}

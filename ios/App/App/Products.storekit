@@ -1,0 +1,139 @@
+{
+  "identifier": "A8B61630-3214-4066-9B84-9ACC22A225F1",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "12.99",
+      "familyShareable": true,
+      "internalID": "1998743124",
+      "localizations": [
+        {
+          "description": "Full course: letters, lessons, games, School Path",
+          "displayName": "eGeez Core",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "core_unlock",
+      "referenceName": "core_unlock",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": true,
+      "internalID": "1428861815",
+      "localizations": [
+        {
+          "description": "All prayer books",
+          "displayName": "Prayer Book",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "prayer_book",
+      "referenceName": "prayer_book",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "19.99",
+      "familyShareable": true,
+      "internalID": "2040155384",
+      "localizations": [
+        {
+          "description": "Core and Prayer Book together",
+          "displayName": "Core + Prayer Book",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "bundle_core_prayer",
+      "referenceName": "bundle_core_prayer",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": true,
+      "internalID": "6894627150",
+      "localizations": [
+        {
+          "description": "Adds child profile 2",
+          "displayName": "Child profile 2",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "profile_slot_2",
+      "referenceName": "profile_slot_2",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.49",
+      "familyShareable": true,
+      "internalID": "2688510926",
+      "localizations": [
+        {
+          "description": "Adds child profile 3",
+          "displayName": "Child profile 3",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "profile_slot_3",
+      "referenceName": "profile_slot_3",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.49",
+      "familyShareable": true,
+      "internalID": "7231704944",
+      "localizations": [
+        {
+          "description": "Adds child profile 4",
+          "displayName": "Child profile 4",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "profile_slot_4",
+      "referenceName": "profile_slot_4",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.49",
+      "familyShareable": true,
+      "internalID": "2061774720",
+      "localizations": [
+        {
+          "description": "Adds child profile 5",
+          "displayName": "Child profile 5",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "profile_slot_5",
+      "referenceName": "profile_slot_5",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "2.49",
+      "familyShareable": true,
+      "internalID": "1299504649",
+      "localizations": [
+        {
+          "description": "Adds child profile 6",
+          "displayName": "Child profile 6",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "profile_slot_6",
+      "referenceName": "profile_slot_6",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

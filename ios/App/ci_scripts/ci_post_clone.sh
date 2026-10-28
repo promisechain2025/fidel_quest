@@ -83,6 +83,23 @@ if ! grep -rq "profile_slot_" dist; then
   echo "ci_post_clone: ERROR the built app has no profile_slot purchase; extra kids profiles and Restore purchases would be missing." >&2
   exit 1
 fi
+# 1.4 free-download build (VITE_PACKAGES=1 set in the Xcode Cloud workflow):
+# the bundle must also sell the three content packages via StoreKit
+# (core_unlock, prayer_book, bundle_core_prayer). Rep codes (EGR-...) are
+# web only: the native shell ignores them (Apple 3.1.1); reps serve iOS users
+# with App Store Offer Codes instead.
+if [ "${VITE_PACKAGES:-}" = "1" ]; then
+  for p in core_unlock prayer_book bundle_core_prayer; do
+    if ! grep -rq "$p" dist; then
+      echo "ci_post_clone: ERROR VITE_PACKAGES=1 but the built app has no $p product." >&2
+      exit 1
+    fi
+  done
+  echo "ci_post_clone: packages build; sells profile_slot_2..6 + core_unlock, prayer_book, bundle_core_prayer"
+elif [ -n "${VITE_PACKAGES:-}" ]; then
+  echo "ci_post_clone: ERROR VITE_PACKAGES must be 1 or unset (got another value)." >&2
+  exit 1
+fi
 if ! grep -q "CapgoNativePurchases" ios/App/Podfile; then
   echo "ci_post_clone: ERROR the StoreKit plugin (CapgoNativePurchases) is not in ios/App/Podfile; run npx cap sync ios." >&2
   exit 1
@@ -102,4 +119,6 @@ cd ios/App
 retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
-echo "ci_post_clone: paid-upfront build; the only in-app purchases are kids-profile slots (profile_slot_2..6)"
+if [ "${VITE_PACKAGES:-}" != "1" ]; then
+  echo "ci_post_clone: paid-upfront build; the only in-app purchases are kids-profile slots (profile_slot_2..6)"
+fi

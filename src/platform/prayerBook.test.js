@@ -234,3 +234,14 @@ describe('helpers', () => {
     expect(nextRecorded(units, 3)).toBe(-1)
   })
 })
+
+import { nextBookId } from './prayerBook'
+describe('nextBookId', () => {
+  const ids = ['tselot', 'mon', 'tue', 'sun']
+  it('follows shelf order and ends after the last book', () => {
+    expect(nextBookId(ids, 'mon')).toBe('tue')
+    expect(nextBookId(ids, 'tselot')).toBe('mon')
+    expect(nextBookId(ids, 'sun')).toBeNull()
+    expect(nextBookId(ids, 'nope')).toBeNull()
+  })
+})
