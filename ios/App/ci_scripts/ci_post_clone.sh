@@ -35,8 +35,8 @@ retry() {
 
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
-# Node: Xcode Cloud images ship Homebrew but not Node. (Vite 6 needs >=18;
-# brew's current node satisfies that.)
+# Node: Xcode Cloud images ship Homebrew but not Node. (This repo needs
+# Node 22; brew's current node satisfies that.)
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1
 retry 3 brew install node
@@ -47,9 +47,63 @@ npm --version
 # capacitor.config.json but runs NO pod install (cap sync would, and its
 # embedded install failing on a CDN reset is exactly what killed archives);
 # the pods get their own retry/fallback below instead.
+# In-app purchase guard, part 1 (before the build): eGeez is paid upfront
+# and sells only kids-profile slots in-app (profile_slot_2..profile_slot_6,
+# one per extra child, bought in order). The
+# variables below belonged to the retired "buy the app in the app" model
+# (full_app via RevenueCat). Nothing reads them any more, but a workflow
+# that still sets them was configured for the wrong model - stop and say so.
+set +x # do not echo env values into the log
+for v in VITE_STORE_IAP VITE_MONETIZE; do
+  eval "_val=\${$v:-}"
+  if [ -n "$_val" ]; then
+    echo "ci_post_clone: ERROR $v is set; eGeez sells only kids-profile slots in-app (no full_app). Remove $v from the Xcode Cloud workflow." >&2
+    exit 1
+  fi
+done
+if [ -n "${VITE_REVENUECAT_APPLE_KEY:-}${VITE_REVENUECAT_GOOGLE_KEY:-}" ]; then
+  echo "ci_post_clone: WARNING RevenueCat keys are set but unused (purchases use StoreKit directly); remove them from the workflow." >&2
+fi
+set -x
+
 retry 3 npm ci --no-audit --no-fund
 npm run build
 retry 3 npx cap copy ios
+
+# In-app purchase guard, part 2 (after the build): the shipped bundle must
+# offer kids-profile slots and NOTHING else. The only store products the app
+# can sell are profile_slot_2..6 (src/platform/iap.js SELLABLE_PRODUCTS;
+# family_pack is only recognised on restore, for 1.2 buyers); the retired
+# full_app id must not appear anywhere in the compiled web app.
+if grep -rqE "full_app|FULL_APP_ENTITLEMENT|buyFullApp" dist; then
+  echo "ci_post_clone: ERROR the built app references full_app; only kids-profile slots (profile_slot_N) may be sold in-app." >&2
+  exit 1
+fi
+if ! grep -rq "profile_slot_" dist; then
+  echo "ci_post_clone: ERROR the built app has no profile_slot purchase; extra kids profiles and Restore purchases would be missing." >&2
+  exit 1
+fi
+# 1.4 free-download build (VITE_PACKAGES=1 set in the Xcode Cloud workflow):
+# the bundle must also sell the three content packages via StoreKit
+# (core_unlock, prayer_book, bundle_core_prayer). Rep codes (EGR-...) are
+# web only: the native shell ignores them (Apple 3.1.1); reps serve iOS users
+# with App Store Offer Codes instead.
+if [ "${VITE_PACKAGES:-}" = "1" ]; then
+  for p in core_unlock prayer_book bundle_core_prayer; do
+    if ! grep -rq "$p" dist; then
+      echo "ci_post_clone: ERROR VITE_PACKAGES=1 but the built app has no $p product." >&2
+      exit 1
+    fi
+  done
+  echo "ci_post_clone: packages build; sells profile_slot_2..6 + core_unlock, prayer_book, bundle_core_prayer"
+elif [ -n "${VITE_PACKAGES:-}" ]; then
+  echo "ci_post_clone: ERROR VITE_PACKAGES must be 1 or unset (got another value)." >&2
+  exit 1
+fi
+if ! grep -q "CapgoNativePurchases" ios/App/Podfile; then
+  echo "ci_post_clone: ERROR the StoreKit plugin (CapgoNativePurchases) is not in ios/App/Podfile; run npx cap sync ios." >&2
+  exit 1
+fi
 
 # CocoaPods. EVERY pod in this Podfile is a local :path pod into
 # node_modules - nothing is resolved from the CocoaPods CDN. The only CDN
@@ -65,10 +119,6 @@ cd ios/App
 retry 3 pod install
 
 echo "ci_post_clone: web assets, capacitor config, and Pods ready"
-# Vite inlines VITE_* from the environment at `npm run build` above.
-# Xcode Cloud does not set these unless they are workflow environment
-# variables. An archive without the Apple key never configures RevenueCat,
-# so App Store purchases cannot show up for that build.
-if [ -z "$VITE_REVENUECAT_APPLE_KEY" ]; then
-  echo "ci_post_clone: VITE_REVENUECAT_APPLE_KEY is unset; this archive will not record App Store purchases"
+if [ "${VITE_PACKAGES:-}" != "1" ]; then
+  echo "ci_post_clone: paid-upfront build; the only in-app purchases are kids-profile slots (profile_slot_2..6)"
 fi

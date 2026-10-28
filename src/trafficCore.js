@@ -49,7 +49,7 @@ export const TrafficEvent = Object.freeze({
 export const DIRS = Object.freeze(['N', 'E', 'S', 'W'])
 const OPPOSITE = Object.freeze({ N: 'S', S: 'N', E: 'W', W: 'E' })
 
-/** Cosmetic vehicle kinds. `bus` is the Anbessa bus (Addis's real city bus);
+/** Cosmetic vehicle kinds. `bus` is the Anbessa bus (a city bus);
     `bajaj` the three-wheeler; `taxi` the blue-and-white minibus. */
 export const KINDS = Object.freeze(['taxi', 'bajaj', 'bus', 'lorry'])
 export const AMBULANCE = 'ambulance'

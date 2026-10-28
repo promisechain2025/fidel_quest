@@ -7,42 +7,55 @@
    pure selectors over the answer ledger (src/platform/telemetry.js).
 
    The gate is two non-reading-child steps: hold a button for two seconds,
-   then match a written number word to its digits.
+   then type a random number shown only in words (e.g. "forty-seven") on a
+   keypad (components/ParentalGate.jsx, platform/gateCore.js).
    ========================================================================== */
 
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Star, Flame, Sparkles, Trash2, Sun, Moon, Globe, Volume2, VolumeX } from 'lucide-react'
+import { ChevronLeft, Star, Flame, Sparkles, Trash2, Pencil, Sun, Moon, Globe, Volume2, VolumeX } from 'lucide-react'
 import { loadLedger, clearLedger, letterStats, troubleLetters, confusions, tipFor, accuracyOf } from './platform/telemetry'
 import { resetEverything, unlockEverything } from './utils/devUnlock'
 import { useChildModel, progressChanged } from './platform/childModel'
-import { licenseState, markSupported, grantFeedbackGrace, FEEDBACK_GRACE_DAYS, MONETIZE } from './platform/license'
-import { buyUrl, feedbackMailto, shareWithFamily, privacyUrl } from './platform/support'
+import { privacyUrl, qaUnlockEnabled } from './platform/support'
 import { shareProgressSnapshot } from './platform/progress'
 import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
 import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
-import { LEVELS, loadProgress, loadRunnerBest } from './FidelQuestApp'
+import { loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
+import { AppProgressPanel } from './components/AppProgress'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
+import ProfileSlotOffer from './components/ProfileSlotOffer'
+import PaidBuyerCard from './components/PaidBuyerCard'
+import PackageOffer from './components/PackageOffer'
+import RepCodeCard from './components/RepCodeCard'
+import { RepRegionToggle, RepresentativesList } from './components/RepRegion'
+import { repFirst } from './platform/repCountries'
+import { repCodesAvailable } from './platform/repCodes'
+import { needsSlot } from './platform/profileSlots'
 import { Harag } from './components/Manuscript'
 import { LanguageSheet } from './FidelQuestApp'
 import { getTheme, toggleTheme } from './platform/theme'
 import { PACKS, getActivePackId } from './platform/ethiopic'
 import { isNativePlatform } from './platform/native'
-import { reminderOn, setReminder } from './platform/notify'
+import { reminderOn, setReminder, getReminderTime, setReminderTime, formatReminderTime, timeInputValue } from './platform/notify'
+import { reminderTexts } from './platform/firstRun'
 import { communityCode, setCommunityCode } from './platform/community'
 import { loadCrashes, clearCrashes } from './platform/crashLog'
 import { loadStoriesRead } from './platform/stories'
-import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
-import { familyPackUnlocked, unlockFamilyPack, redeemFamilyCode, familyPackUrl, FAMILY_PACK_PRICE } from './platform/familyPack'
-import { iapAvailable, familyPackStorePrice, buyFamilyPack, restoreFamilyPack, buyFullApp, restorePurchasesAll } from './platform/iap'
+import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, updateProfile, activeProfile, profileLabel, MAX_PROFILES } from './platform/profiles'
+import ProfileAvatar from './components/ProfileAvatar'
+import { ProfileForm } from './components/ProfilePicker'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
-import { learnedFamilyIds, loadJourney } from './journey'
+import { JOURNEY, learnedFamilyIds, loadJourney } from './journey'
+import { echoStore, trainStore, marketStore, beatsStore } from './platform/gameStores'
+import { dueList } from './platform/roundProgress'
 import { dayStamp } from './platform/streak'
 import { formatDual } from './platform/ethioCalendar'
 import { Bell, Heart } from 'lucide-react'
+import { GrownUpWebTrialCard } from './components/WebTrialPaywall'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2'
 const formOf = (key) => INDEXES.byAudioKey.get(key)
@@ -98,33 +111,59 @@ function NicknameField() {
   )
 }
 
-/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden). */
+/** Opt-in daily reminder (native only; a no-op toggle on the web is hidden).
+    Shows the reminder time; changing it re-arms the notification. */
 function ReminderCard() {
   const [on, setOn] = useState(reminderOn())
+  const [time, setTime] = useState(getReminderTime)
   const [busy, setBusy] = useState(false)
   if (!isNativePlatform()) return null
   const toggle = async () => {
     setBusy(true)
-    const next = await setReminder(!on, {
-      title: t('remindTitle', 'Anbessa misses you!'),
-      body: t('remindBody', 'Come learn a letter today.'),
-      hour: 17,
-    })
+    const next = await setReminder(!on, reminderTexts())
     setOn(next)
+    setTime(getReminderTime())
     setBusy(false)
   }
+  const changeTime = async (value) => {
+    const m = /^(\d{2}):(\d{2})$/.exec(value || '')
+    if (!m) return
+    const hour = Number(m[1])
+    const minute = Number(m[2])
+    if (!setReminderTime(hour, minute)) return
+    setTime({ hour, minute })
+    if (on) {
+      setBusy(true)
+      setOn(await setReminder(true, reminderTexts()))
+      setBusy(false)
+    }
+  }
+  const at = formatReminderTime(time, getLang())
   return (
-    <section className="flex items-center justify-between gap-3 rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-      <div className="flex items-center gap-3">
-        <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
-        <div>
-          <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
-          <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDesc', 'A gentle nudge each afternoon to keep the streak going.')}</p>
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Bell className="h-5 w-5" style={{ color: 'var(--accent)' }} aria-hidden="true" />
+          <div>
+            <h2 className="text-sm font-black">{t('remindTitleLabel', 'Daily reminder')}</h2>
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('remindDescAt', 'A gentle nudge every day at {time}.', { time: at })}</p>
+          </div>
         </div>
+        <button type="button" role="switch" aria-checked={on} aria-label={t('remindTitleLabel', 'Daily reminder')} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
+          <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
+        </button>
       </div>
-      <button type="button" role="switch" aria-checked={on} disabled={busy} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: on ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)', opacity: busy ? 0.6 : 1 }}>
-        <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: on ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
-      </button>
+      <label className="mt-3 flex items-center justify-between gap-3 text-sm font-bold">
+        <span>{t('remindTimeLabel', 'Reminder time')}</span>
+        <input
+          type="time"
+          value={timeInputValue(time)}
+          disabled={busy}
+          onChange={(e) => changeTime(e.target.value)}
+          className={`rounded-xl border-2 px-3 py-2 font-black ${FOCUS}`}
+          style={{ background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
+        />
+      </label>
     </section>
   )
 }
@@ -148,7 +187,7 @@ function PlanCard() {
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{t('gpPlanTitle', 'Learning plan')}</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {PACES.map((p) => (
-          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
+          <button key={p.id} type="button" aria-pressed={plan?.pace === p.id} onClick={() => pick(p.id)} className={`min-h-[44px] rounded-full border-2 px-3 py-1.5 text-xs font-black ${FOCUS}`} style={plan?.pace === p.id
             ? { background: 'var(--go)', borderColor: 'var(--go)', color: '#fff', outlineColor: 'var(--sky)' }
             : { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
             {paceLabels[p.id]}
@@ -168,7 +207,7 @@ function PlanCard() {
             <p className="text-sm font-black">{t('gpRequireWarmup', 'Require warm-up before games')}</p>
             <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpRequireHint', "When on, the child must finish the day's review before the games open.")}</p>
           </div>
-          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+          <button type="button" role="switch" aria-checked={!!plan.requireWarmup} onClick={toggle} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: plan.requireWarmup ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
             <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: plan.requireWarmup ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
           </button>
         </div>
@@ -178,180 +217,117 @@ function PlanCard() {
 }
 
 /** Community / affiliate code: credit a church, school, or community group. */
-/* One device, several children: each child gets their own path, streak,
-   rewards, and trouble letters. Adding a second child is the paid Family
-   Pack; on native store builds only a redeem code is offered (store rules
-   forbid pointing at outside payment). Switching reloads the app - every
-   screen holds the active child's state. */
+/* One device, several children: each child gets their own path, stars,
+   streak, rewards and trouble letters. The paid app includes ONE child
+   profile; each further child is a one-time in-app purchase bought in
+   order, up to 6 (ProfileSlotOffer: buy the next slot + Restore purchases). Grown-Ups is already behind the parental
+   gate, so the offer can show here directly. Profiles live only on this
+   device. The kid-facing picker (components/ProfilePicker) offers the same
+   actions; this card is the grown-up view of it. Switching reloads the app
+   - every screen holds the active child's state. */
 function ProfilesCard() {
   const [reg, setReg] = useState(loadProfiles)
-  const [adding, setAdding] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [code, setCode] = useState('')
-  const [codeState, setCodeState] = useState('') // '' | 'bad'
-  const [unlocked, setUnlocked] = useState(familyPackUnlocked)
-  // Native store price for the IAP button; '' until fetched (or unavailable).
-  const [storePrice, setStorePrice] = useState('')
-  const [iapMsg, setIapMsg] = useState('') // '' | 'error' | 'none'
-  useEffect(() => {
-    if (!unlocked && iapAvailable()) familyPackStorePrice().then(setStorePrice)
-  }, [unlocked])
-  const refresh = () => {
-    setReg(loadProfiles())
-    setUnlocked(familyPackUnlocked())
-  }
-  const doBuyNative = async () => {
-    setIapMsg('')
-    const r = await buyFamilyPack()
-    if (r === 'purchased') refresh()
-    else if (r === 'pending') setIapMsg('pending')
-    else if (r === 'error' || r === 'unavailable') setIapMsg('error')
-  }
-  const doRestore = async () => {
-    setIapMsg('')
-    const r = await restoreFamilyPack()
-    if (r === 'restored') refresh()
-    else if (r === 'none') setIapMsg('none')
-    else if (r === 'error') setIapMsg('error')
-  }
+  const [form, setForm] = useState(null) // null | { mode: 'add' } | { mode: 'edit', id }
+  const [packTick, setPackTick] = useState(0) // re-render after a purchase / restore
+  const refresh = () => setReg(loadProfiles())
+  const locked = needsSlot(reg.list.length)
 
   const doSwitch = (id) => {
     if (switchProfile(id)) window.location.reload()
   }
-  const doAdd = () => {
-    if (addProfile(newName)) window.location.reload()
-  }
-  const doRedeem = () => {
-    if (redeemFamilyCode(code)) {
-      setCodeState('')
-      refresh()
-    } else setCodeState('bad')
-  }
-
-  const inputCls = `w-full rounded-2xl border-2 px-4 py-3 font-bold ${FOCUS}`
-  const inputStyle = { background: 'var(--paper)', borderColor: 'var(--line)', color: 'var(--ink)', outlineColor: 'var(--sky)' }
-  const buyLink = familyPackUrl() || buyUrl()
+  const editing = form?.mode === 'edit' ? reg.list.find((p) => p.id === form.id) : null
 
   return (
     <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
       <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
         {t('gpProfilesTitle', 'Children on this device')}
       </h2>
-      <ul className="mt-3 space-y-2">
-        {reg.list.map((p) => (
-          <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
-            <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
-            {p.id === reg.active ? (
-              <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go)' }}>
-                {t('gpActiveNow', 'Playing')}
-              </span>
-            ) : (
-              <>
-                <button type="button" onClick={() => doSwitch(p.id)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-                  {t('gpSwitchTo', 'Switch')}
-                </button>
+      {form ? (
+        <div className="mt-3">
+          <ProfileForm
+            initial={editing}
+            takenAvatars={reg.list.map((p) => p.avatar)}
+            saveLabel={form.mode === 'add' ? t('gpAddStart', 'Add and start fresh') : undefined}
+            onCancel={() => setForm(null)}
+            onSave={(f) => {
+              if (form.mode === 'add') {
+                if (addProfile(f.name, f)) window.location.reload()
+                return
+              }
+              updateProfile(form.id, f)
+              setForm(null)
+              refresh()
+            }}
+          />
+          {form.mode === 'add' && (
+            <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+              {t('gpAddHint', 'The child playing now keeps everything; the new child starts at the first letter.')}
+            </p>
+          )}
+        </div>
+      ) : (
+        <>
+          <ul className="mt-3 space-y-2">
+            {reg.list.map((p) => (
+              <li key={p.id} className="flex items-center gap-2 rounded-2xl border-2 px-3 py-2" style={{ borderColor: p.id === reg.active ? 'var(--go)' : 'var(--line)', background: 'var(--paper)' }}>
+                <ProfileAvatar avatar={p.avatar} size={40} />
+                <span className="flex-1 truncate font-extrabold">{profileLabel(p, t('gpChild', 'Child'))}</span>
                 <button
                   type="button"
-                  aria-label={t('gpDeleteChild', `Delete ${profileLabel(p)}`, { name: profileLabel(p) })}
-                  onClick={() => {
-                    if (window.confirm(t('gpDeleteConfirm', `Delete ${profileLabel(p)} and all their progress? This cannot be undone.`, { name: profileLabel(p) }))) {
-                      deleteProfile(p.id)
-                      refresh()
-                    }
-                  }}
-                  className={`flex h-8 w-8 items-center justify-center rounded-xl ${FOCUS}`}
-                  style={{ color: 'var(--bad-ink)' }}
+                  onClick={() => setForm({ mode: 'edit', id: p.id })}
+                  aria-label={t('kpEditChild', 'Edit {name}', { name: profileLabel(p, t('gpChild', 'Child')) })}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`}
+                  style={{ color: 'var(--muted)' }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {reg.list.length < MAX_PROFILES &&
-        (unlocked || (!MONETIZE && !iapAvailable()) ? (
-          adding ? (
-            <div className="mt-3 space-y-2">
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={16} placeholder={t('gpChildNamePh', "Child's name")} aria-label={t('gpChildNamePh', "Child's name")} className={inputCls} style={inputStyle} />
-              <div className="flex gap-2">
-                <button type="button" onClick={doAdd} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                  {t('gpAddStart', 'Add and start fresh')}
-                </button>
-                <button type="button" onClick={() => setAdding(false)} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpCancel', 'Cancel')}
-                </button>
-              </div>
-              <p className="text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                {t('gpAddHint', 'The child playing now keeps everything; the new child starts at the first letter.')}
-              </p>
+                {p.id === reg.active ? (
+                  <span className="rounded-lg px-2 py-0.5 text-[11px] font-black uppercase text-white" style={{ background: 'var(--go-deep)' }}>
+                    {t('gpActiveNow', 'Playing')}
+                  </span>
+                ) : (
+                  <>
+                    <button type="button" onClick={() => doSwitch(p.id)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
+                      {t('gpSwitchTo', 'Switch')}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t('gpDeleteChild', `Delete ${profileLabel(p)}`, { name: profileLabel(p) })}
+                      onClick={() => {
+                        if (window.confirm(t('gpDeleteConfirm', `Delete ${profileLabel(p)} and all their progress? This cannot be undone.`, { name: profileLabel(p) }))) {
+                          deleteProfile(p.id)
+                          refresh()
+                        }
+                      }}
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`}
+                      style={{ color: 'var(--bad-ink)' }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+          {locked ? (
+            <div className="mt-3">
+              <ProfileSlotOffer key={packTick} onUnlocked={() => setPackTick((n) => n + 1)} />
             </div>
-          ) : (
-            <button type="button" onClick={() => setAdding(true)} className={`chunk mt-3 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
+          ) : reg.list.length < MAX_PROFILES ? (
+            <button type="button" onClick={() => setForm({ mode: 'add' })} className={`chunk mt-3 min-h-[44px] rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
               {t('gpAddChild', 'Add another child')}
             </button>
-          )
-        ) : (
-          <div className="mt-3 rounded-2xl border-2 p-3" style={{ borderColor: 'var(--line)', background: 'var(--paper)' }}>
-            <p className="text-sm font-extrabold">{t('gpPackTitle', 'Family Pack — profiles for every child')}</p>
-            <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-              {isNativePlatform() && !iapAvailable()
-                ? t('gpPackNative', 'Each child gets their own path, streak, and rewards on this device. Have a Family Pack code? Enter it below.')
-                : t('gpPackWeb', `One ${FAMILY_PACK_PRICE} unlock gives every child in the family their own path, streak, and rewards on this device — instead of buying the app again.`, { price: FAMILY_PACK_PRICE })}
-            </p>
-            {iapAvailable() && (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button type="button" onClick={doBuyNative} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                  {storePrice
-                    ? t('gpPackBuyStore', `Get the Family Pack (${storePrice})`, { price: storePrice })
-                    : t('gpPackBuyStoreNoPrice', 'Get the Family Pack')}
-                </button>
-                <button type="button" onClick={doRestore} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpPackRestore', 'Restore purchase')}
-                </button>
-                {iapMsg === 'error' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackIapError', 'The store did not respond — try again in a moment.')}</span>
-                )}
-                {iapMsg === 'none' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('gpPackIapNone', 'No Family Pack found on this account.')}</span>
-                )}
-                {iapMsg === 'pending' && (
-                  <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</span>
-                )}
-              </div>
-            )}
-            {!isNativePlatform() && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {buyLink ? (
-                  <a href={buyLink} target="_blank" rel="noreferrer" className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px' }}>
-                    {t('gpPackBuy', `Get the Family Pack (${FAMILY_PACK_PRICE})`, { price: FAMILY_PACK_PRICE })}
-                  </a>
-                ) : null}
-                <button type="button" onClick={() => { unlockFamilyPack('web'); refresh() }} className={`chunk rounded-xl px-4 py-2 text-sm font-extrabold ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}>
-                  {t('gpPackPaid', 'I already paid')}
-                </button>
-              </div>
-            )}
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => { setCode(e.target.value); setCodeState('') }}
-                placeholder={t('gpPackCodePh', 'FAM code')}
-                aria-label={t('gpPackCodePh', 'FAM code')}
-                className={inputCls}
-                style={{ ...inputStyle, ...(codeState === 'bad' ? { borderColor: 'var(--bad)' } : null) }}
-              />
-              <button type="button" onClick={doRedeem} className={`chunk shrink-0 rounded-xl px-4 py-2 text-sm font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px' }}>
-                {t('gpPackRedeem', 'Redeem')}
-              </button>
-            </div>
-            {codeState === 'bad' && (
-              <p className="mt-1 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('gpPackCodeBad', 'That code does not look right — check it and try again.')}</p>
-            )}
-          </div>
-        ))}
+          ) : (
+            <p className="mt-3 text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('kpFull', 'Six children is the most one device can hold.')}</p>
+          )}
+          {!locked && (
+            <div className="mt-3"><ProfileSlotOffer key={packTick} compact /></div>
+          )}
+          <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+            {t('kpLocalOnly', 'Profiles live only on this device. Nothing is sent anywhere.')}
+          </p>
+        </>
+      )}
     </section>
   )
 }
@@ -387,6 +363,63 @@ function ReadingCard({ events }) {
       <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
         {t('gpReadingHint', 'Fewer word helps on a re-read means growing fluency. Re-reading favorites is exactly right at this age.')}
       </p>
+    </section>
+  )
+}
+
+/* The learning games' cards: first-try accuracy from the answer ledger
+   (each game logs only first attempts under its own mode), items tried, the
+   level reached, and what the game is re-dealing for practice. */
+const GAME_CARDS = [
+  { mode: 'echo', title: () => t('gpEchoTitle', 'Echo Match: hear it, find it'), load: echoStore.load },
+  { mode: 'train', title: () => t('gpTrainTitle', 'Vowel Train: the vowel orders'), load: trainStore.load },
+  // Word Market logs whole words (word:<id>) plus the letter a decoy exposed;
+  // the card counts the words.
+  {
+    mode: 'market', title: () => t('gpMarketTitle', 'Word Market: reading words'), load: marketStore.load,
+    only: (e) => String(e.k).startsWith('word:'), label: (id) => ALL_WORDS.find((w) => w.latin === id)?.geez || null,
+    triedLabel: () => t('gpWordsTried', 'Words tried'),
+  },
+  // Kebero Beats: letters found in words (L2-L4) plus L1 beat-counting
+  // (logged as beats:<word>); practice list shows letters or words.
+  {
+    mode: 'beats', title: () => t('gpBeatsTitle', 'Kebero Beats: letters in words'), load: beatsStore.load,
+    label: (id) => INDEXES.byAudioKey.get(id)?.char || ALL_WORDS.find((w) => w.latin === id)?.geez || null,
+  },
+]
+const dueLabel = (id) => INDEXES.byAudioKey.get(id)?.char || null
+
+function GameCard({ events, mode, title, load, only = () => true, label = dueLabel, triedLabel = () => t('gpEchoLetters', 'Letters tried') }) {
+  const mine = events.filter((e) => e.m === mode && only(e))
+  if (!mine.length) return null
+  const right = mine.filter((e) => e.p === e.k).length
+  const tried = new Set(mine.map((e) => e.k)).size
+  const st = load()
+  const due = dueList(st.due).map(label).filter(Boolean)
+  return (
+    <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} data-testid={`gp-game-${mode}`}>
+      <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+        {title()}
+      </h2>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--sky)' }}>{Math.round((right / mine.length) * 100)}%</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoFirstTry', 'First try')}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--go-ink)' }}>{tried}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{triedLabel()}</p>
+        </div>
+        <div>
+          <p className="mono text-2xl font-black" style={{ color: 'var(--accent)' }}>{st.unlocked}</p>
+          <p className="text-[11px] font-black uppercase" style={{ color: 'var(--muted)' }}>{t('gpEchoLevel', 'Level reached')}</p>
+        </div>
+      </div>
+      {due.length > 0 && (
+        <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
+          {t('gpEchoDue', 'Coming back for practice:')} <span className="geez text-base font-black" style={{ color: 'var(--ink)' }}>{due.join(' ')}</span>
+        </p>
+      )}
     </section>
   )
 }
@@ -484,7 +517,7 @@ function CrashCard() {
           clearCrashes()
           setCrashes([])
         }}
-        className="chunk mt-3 rounded-xl px-3 py-1.5 text-xs font-extrabold"
+        className="min-h-[44px] chunk mt-3 rounded-xl px-3 py-1.5 text-xs font-extrabold"
         style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px' }}
       >
         {t('gpCrashClear', 'Clear the notes')}
@@ -529,13 +562,14 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport, highlight }) {
+  const repWeb = repCodesAvailable()
+  const [repLead, setRepLead] = useState(() => repFirst())
   const [open, setOpen] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmUnlock, setConfirmUnlock] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const [importErr, setImportErr] = useState(false)
-  const [appIapMsg, setAppIapMsg] = useState('')
   // Theme + language moved here (behind the gate) so a child cannot flip them
   // mid-task; the grown-up sets them where they set everything else.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -553,28 +587,13 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const letterEvents = useMemo(() => events.filter((e) => INDEXES.byAudioKey.has(e.k)), [events])
   const trouble = useMemo(() => troubleLetters(letterEvents), [letterEvents])
   const pairs = useMemo(() => confusions(letterEvents), [letterEvents])
-  const progress = loadProgress()
+  const journeyDone = loadJourney().done || {}
   const runnerBest = loadRunnerBest()
-  const stars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
-  const doBuyApp = async () => {
-    setAppIapMsg('')
-    const r = await buyFullApp()
-    if (r === 'purchased') {
-      try { window.location.reload() } catch { /* ignore */ }
-    } else if (r === 'pending') setAppIapMsg('pending')
-    else if (r === 'error' || r === 'unavailable') setAppIapMsg('error')
-  }
-  const doRestoreApp = async () => {
-    setAppIapMsg('')
-    const r = await restorePurchasesAll()
-    if (r === 'restored') {
-      try { window.location.reload() } catch { /* ignore */ }
-    } else if (r === 'none') setAppIapMsg('none')
-    else if (r !== 'unavailable') setAppIapMsg('error')
-  }
+  // Stars come from the Journey (the classic-mode stars this used to read are retired).
+  const stars = JOURNEY.reduce((sum, n) => sum + (journeyDone[n.id]?.stars ?? 0), 0)
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-7 pb-12 pt-6">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-7 pb-12 pt-6 fq-safe" data-allow-zoom="">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} aria-label="Back" className={`chunk flex h-11 w-11 items-center justify-center rounded-2xl ${FOCUS}`} style={{ background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -595,7 +614,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* totals */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, t('gpLessonStars', 'Lesson stars')],
+              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${JOURNEY.length * 3}`, t('gpLessonStars', 'Lesson stars')],
               [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, t('gpRunnerBest', 'Runner best')],
               [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, t('gpAccuracy', 'Accuracy')],
             ].map(([icon, value, label]) => (
@@ -610,6 +629,27 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             ))}
           </div>
+
+          {/* App-level progress: every lesson and game, one store (platform/appProgress.js). */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} data-testid="gp-app-progress">
+            <h2 className="mb-3 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('apTitle', 'My progress')}
+            </h2>
+            <AppProgressPanel />
+          </section>
+
+          {/* Verified practice time (platform/practice.js) + teacher share. */}
+          {onPracticeReport && (
+            <button type="button" onClick={onPracticeReport} data-testid="open-practice-report"
+              className={`chunk flex items-center justify-between gap-3 rounded-3xl border-2 p-4 text-left ${FOCUS}`}
+              style={{ background: 'var(--card)', borderColor: 'var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+              <span>
+                <span className="block text-sm font-black">{t('prTitle', 'Practice report')}</span>
+                <span className="block text-xs font-semibold" style={{ color: 'var(--muted)' }}>{t('gpPracticeHint', 'Active minutes per day, 7-day chart, send to the teacher')}</span>
+              </span>
+              <Flame className="h-6 w-6 shrink-0" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />
+            </button>
+          )}
 
           {/* Settings: theme + language, deliberately behind the gate. */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
@@ -650,12 +690,14 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                   {soundOn ? <Volume2 className="h-5 w-5" style={{ color: 'var(--go-ink)' }} aria-hidden="true" /> : <VolumeX className="h-5 w-5" style={{ color: 'var(--muted)' }} aria-hidden="true" />}
                   {t('gpSound', 'Sound')}
                 </span>
-                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
+                <button type="button" role="switch" aria-checked={soundOn} onClick={onToggleSound} className={`relative h-8 w-14 shrink-0 rounded-full before:absolute before:-inset-y-1.5 before:inset-x-0 before:content-[''] ${FOCUS}`} style={{ background: soundOn ? 'var(--go)' : 'var(--line)', outlineColor: 'var(--sky)' }}>
                   <span className="absolute top-1 h-6 w-6 rounded-full bg-white transition-all" style={{ left: soundOn ? '1.75rem' : '0.25rem' }} aria-hidden="true" />
                 </button>
               </div>
             )}
           </section>
+
+          <GrownUpWebTrialCard onUnlocked={onTrialChange} />
 
           <ProfilesCard />
 
@@ -683,6 +725,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           <CommunityCard />
 
           <ReadingCard events={events} />
+          {GAME_CARDS.map((g) => <GameCard key={g.mode} events={events} {...g} />)}
 
           <ProgressReportCard />
 
@@ -739,10 +782,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                           {tip.text}
                         </p>
                         <div className="mt-2 flex gap-2">
-                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+                          <button type="button" onClick={() => onPractice(tip.familyId)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                             {t('gpOpenExplorer', 'Open in Explorer')}
                           </button>
-                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
+                          <button type="button" onClick={() => onReplayLevel(`level-${tip.level}`)} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
                             {t('gpReplayLevel', `Replay Level ${tip.level}`, { n: tip.level })}
                           </button>
                         </div>
@@ -753,81 +796,6 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
-
-          {/* support / license: the paid-app picture and every way to help -
-             buy, ask a relative abroad to gift it, or honest feedback for
-             more free days. Mirrors the once-a-day SupportAsk dialog. Hidden
-             entirely while monetization is off (the app is simply free). */}
-          {(MONETIZE || iapAvailable()) && (() => {
-            const lic = licenseState()
-            const buy = buyUrl()
-            return (
-              <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
-                <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
-                  <Heart className="h-4 w-4" aria-hidden="true" /> {t('paySupport', 'Support eGeez')}
-                </h2>
-                <p className="mt-2 text-sm font-bold" style={{ color: lic.phase === 'ended' ? 'var(--bad-ink)' : 'var(--go-ink)' }}>
-                  {lic.phase === 'licensed'
-                    ? t('payThanks', 'Thank you for supporting eGeez!')
-                    : lic.phase === 'trial'
-                      ? t('payLeft', 'Free try-out: {n} days left', { n: lic.daysLeft })
-                      : t('payEnded', 'Your free try-out has ended.')}
-                </p>
-                {lic.phase !== 'licensed' && (
-                  <>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {iapAvailable() ? (
-                        <button type="button" onClick={doBuyApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                          {t('payBuy', 'Buy the app')}
-                        </button>
-                      ) : buy ? (
-                        <a href={buy} target="_blank" rel="noopener noreferrer" className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}>
-                          {t('payBuy', 'Buy the app')}
-                        </a>
-                      ) : null}
-                      {iapAvailable() && (
-                        <button type="button" onClick={doRestoreApp} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}>
-                          {t('payRestore', 'Restore a previous purchase')}
-                        </button>
-                      )}
-                      <button type="button" onClick={shareWithFamily} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
-                        {t('payFamily', 'Ask family to gift it')}
-                      </button>
-                      {lic.feedbackAvailable && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            grantFeedbackGrace()
-                            try { window.open(feedbackMailto(), '_blank', 'noopener') } catch { /* no mail app */ }
-                          }}
-                          className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`}
-                          style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)', outlineColor: 'var(--sky)' }}
-                        >
-                          {t('payFeedback', 'Not buying? Tell us honestly why')}
-                        </button>
-                      )}
-                    </div>
-                    {appIapMsg === 'error' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--bad-ink)' }}>{t('iapError', 'Purchase is unavailable right now - please try again later.')}</p>
-                    )}
-                    {appIapMsg === 'none' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('payRestoreNone', 'No previous purchase found on this store account.')}</p>
-                    )}
-                    {appIapMsg === 'pending' && (
-                      <p className="mt-2 text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('iapPending', 'Waiting for a grown-up to approve this purchase. It unlocks when they do.')}</p>
-                    )}
-                    <p className="mt-2 text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-                      {t('payFamilyHint', 'No way to pay where you live? A relative anywhere in the world can gift it - share this with them.')}
-                      {lic.feedbackAvailable && <> {t('payFeedbackHint', 'Honest feedback earns {n} more free days.', { n: FEEDBACK_GRACE_DAYS })}</>}
-                    </p>
-                    <button type="button" onClick={() => markSupported('grownups')} className={`mt-2 text-xs font-extrabold underline ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
-                      {t('payOwned', 'My family already bought it')}
-                    </button>
-                  </>
-                )}
-              </section>
-            )
-          })()}
 
           {/* move to another phone: the child's whole progress as one small
              file (platform/progress.js) - share it out, load it on the new
@@ -840,10 +808,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               {t('gpMoveHint', 'Save all learning progress as one small file, send it to the new phone (WhatsApp works), then load it there.')}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
+              <button type="button" onClick={() => shareProgressSnapshot(fullSnapshot())} className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`} style={{ background: 'var(--sky)', boxShadow: '0 3px 0 var(--sky-deep)', '--chunk-depth': '3px', outlineColor: 'var(--accent)' }}>
                 {t('gpExport', 'Save progress file')}
               </button>
-              <label className={`chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
+              <label className={`min-h-[44px] chunk cursor-pointer rounded-xl px-3 py-1.5 text-xs font-extrabold ${FOCUS}`} style={{ background: 'var(--paper)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)', '--chunk-depth': '3px', color: 'var(--ink)' }}>
                 {t('gpImport', 'Load progress file')}
                 <input
                   type="file"
@@ -868,12 +836,34 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
             )}
           </section>
 
+          {/* paid-buyer re-entry code (1.3.3): native paid installs only */}
+          {isNativePlatform() && <PaidBuyerCard />}
+
+          {/* Buy order. Rep countries (platform/repCountries.js, web only): the
+             representative code + rep list lead; elsewhere the store / card
+             buy leads. Store apps never render the rep parts. */}
+          {repWeb && repLead ? (
+            <>
+              <RepCodeCard />
+              <RepresentativesList />
+              <PackageOffer highlight={highlight} />
+            </>
+          ) : (
+            <>
+              <PackageOffer highlight={highlight} />
+              <RepCodeCard />
+              {repWeb && <RepresentativesList />}
+            </>
+          )}
+          {repWeb && <RepRegionToggle onChange={() => setRepLead(repFirst())} />}
+
           {/* QA unlock: open every level, island and letter without playing
              through - same as the ?unlock URL param, but reachable on a phone.
-             Reversible with the reset right below. */}
+             Reversible with the reset right below. Dev/QA builds only. */}
+          {qaUnlockEnabled() && (
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmUnlock ? (
-              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
+              <button type="button" onClick={() => setConfirmUnlock(true)} className={`flex min-h-11 items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--go-ink)', outlineColor: 'var(--go)' }}>
                 <Sparkles className="h-4 w-4" aria-hidden="true" /> {t('gpUnlockAll', 'Open everything (for testing)…')}
               </button>
             ) : (
@@ -890,7 +880,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     // state hides (and then re-persists over) the unlock.
                     try { window.location.reload() } catch { setConfirmUnlock(false) }
                   }}
-                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--go)', boxShadow: '0 3px 0 var(--go-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
                   {t('gpUnlockYes', 'Yes, open all')}
@@ -901,11 +891,12 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             )}
           </section>
+          )}
 
           {/* reset */}
           <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }}>
             {!confirmReset ? (
-              <button type="button" onClick={() => setConfirmReset(true)} className={`flex items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
+              <button type="button" onClick={() => setConfirmReset(true)} className={`flex min-h-11 items-center gap-2 text-sm font-extrabold ${FOCUS}`} style={{ color: 'var(--bad-ink)', outlineColor: 'var(--bad)' }}>
                 <Trash2 className="h-4 w-4" aria-hidden="true" /> {t('gpReset', 'Reset all progress…')}
               </button>
             ) : (
@@ -929,7 +920,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
                     // itself and the reset appears to do nothing.
                     try { window.location.reload() } catch { setConfirmReset(false) }
                   }}
-                  className={`chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
+                  className={`min-h-[44px] chunk rounded-xl px-3 py-1.5 text-xs font-extrabold text-white ${FOCUS}`}
                   style={{ background: 'var(--bad)', boxShadow: '0 3px 0 var(--bad-deep)', '--chunk-depth': '3px', outlineColor: 'var(--sky)' }}
                 >
                   {t('gpResetYes', 'Yes, erase')}
@@ -944,13 +935,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* In-app privacy-policy link (Apple 5.1.1(i)) + contact, in the
               gated grown-ups area. eGeez collects no data; the policy says so. */}
           <p className="mt-6 text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-            {privacyUrl() && (
-              <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className="underline" style={{ color: 'var(--sky)' }}>
-                {t('gpPrivacy', 'Privacy policy')}
-              </a>
-            )}
-            {privacyUrl() && <span aria-hidden="true"> · </span>}
-            {t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}
+            <a href={privacyUrl()} target="_blank" rel="noopener noreferrer" className={`inline-flex min-h-11 items-center px-2 text-sm font-extrabold underline ${FOCUS}`} style={{ color: 'var(--sky)' }}>
+              {t('gpPrivacy', 'Privacy policy')}
+            </a>
+            <span className="block">{t('gpNoData', 'eGeez keeps everything on this device and collects no data.')}</span>
           </p>
         </div>
       )}

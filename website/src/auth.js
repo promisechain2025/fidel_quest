@@ -1,6 +1,7 @@
 /* Parent-account session for the website (hub API JWT). Token lives in
    localStorage egz.site.token; helpers wrap fetch with the bearer header. */
 import { API_URL } from './config.js'
+import { UNREACHABLE } from './api.js'
 
 const KEY = 'egz.site.token'
 
@@ -13,14 +14,19 @@ export function setToken(tok) {
 export const signedIn = () => !!getToken()
 
 export async function apiFetch(path, { method = 'GET', body } = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers: {
-      'content-type': 'application/json',
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  let res
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method,
+      headers: {
+        'content-type': 'application/json',
+        ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    throw new Error(UNREACHABLE)
+  }
   const json = await res.json().catch(() => ({}))
   // Only 401 means "your token is bad, sign in again". A 403 is a valid
   // session doing something not permitted (e.g. "link a teacher first") and

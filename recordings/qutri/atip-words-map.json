@@ -1,0 +1,606 @@
+{
+ "source": "atip-words.m4a",
+ "text": "አአትብ ገጽየ ወኵለንታየ በትእምርተ መስቀል በስመ አብ ወወልድ ወመንፈስ ቅዱስ አሐዱ አምላክ በቅድስት ሥላሴ እንዘ አአምን ወእትመሐፀን እክሕደከ ፀርየ ሰይጣን በቅድመ ዛቲ እምየ ቅድስት ቤተ ክርስቲያን እንተ ይእቲ ስምዕየ ማርያም ጽዮን ለዓለመ ዓለም",
+ "words": [
+  "አአትብ",
+  "ገጽየ",
+  "ወኵለንታየ",
+  "በትእምርተ",
+  "መስቀል",
+  "በስመ",
+  "አብ",
+  "ወወልድ",
+  "ወመንፈስ",
+  "ቅዱስ",
+  "አሐዱ",
+  "አምላክ",
+  "በቅድስት",
+  "ሥላሴ",
+  "እንዘ",
+  "አአምን",
+  "ወእትመሐፀን",
+  "እክሕደከ",
+  "ፀርየ",
+  "ሰይጣን",
+  "በቅድመ",
+  "ዛቲ",
+  "እምየ",
+  "ቅድስት",
+  "ቤተ",
+  "ክርስቲያን",
+  "እንተ",
+  "ይእቲ",
+  "ስምዕየ",
+  "ማርያም",
+  "ጽዮን",
+  "ለዓለመ",
+  "ዓለም"
+ ],
+ "mode": "word-by-word (units may join 2 words)",
+ "method": "energy silence split (gap>=0.18 s) + faster-whisper medium phonetic check in am/ar/en/hi/so (Amharic output unusable; Arabic/English transliteration used to confirm units)",
+ "skipped": [
+  {
+   "wordIndex": 18,
+   "word": "ፀርየ"
+  }
+ ],
+ "joinedUnits": [
+  "በትእምርተ መስቀል",
+  "በስመ አብ",
+  "ወመንፈስ ቅዱስ",
+  "እንዘ አአምን",
+  "በቅድመ ዛቲ",
+  "ቤተ ክርስቲያን",
+  "እንተ ይእቲ",
+  "ለዓለመ ዓለም"
+ ],
+ "units": [
+  {
+   "i": 0,
+   "text": "አአትብ",
+   "words": [
+    "አአትብ"
+   ],
+   "wordIndices": [
+    0
+   ],
+   "joined": false,
+   "start": 1.92,
+   "end": 4.37,
+   "clipStart": 1.84,
+   "clipEnd": 4.49,
+   "file": "atip-words/000.mp3",
+   "gainDb": -3.7,
+   "silenceSegments": [
+    0
+   ],
+   "stt": "АААААААТ (hi)"
+  },
+  {
+   "i": 1,
+   "text": "ገጽየ",
+   "words": [
+    "ገጽየ"
+   ],
+   "wordIndices": [
+    1
+   ],
+   "joined": false,
+   "start": 5.24,
+   "end": 7.48,
+   "clipStart": 5.16,
+   "clipEnd": 7.6,
+   "file": "atip-words/001.mp3",
+   "gainDb": -0.4,
+   "silenceSegments": [
+    1
+   ],
+   "stt": "Get to ya (en)"
+  },
+  {
+   "i": 2,
+   "text": "ወኵለንታየ",
+   "words": [
+    "ወኵለንታየ"
+   ],
+   "wordIndices": [
+    2
+   ],
+   "joined": false,
+   "start": 8.38,
+   "end": 10.74,
+   "clipStart": 8.3,
+   "clipEnd": 10.86,
+   "file": "atip-words/002.mp3",
+   "gainDb": -1.8,
+   "silenceSegments": [
+    2
+   ],
+   "stt": "وكلا تاااا (ar)"
+  },
+  {
+   "i": 3,
+   "text": "በትእምርተ መስቀል",
+   "words": [
+    "በትእምርተ",
+    "መስቀል"
+   ],
+   "wordIndices": [
+    3,
+    4
+   ],
+   "joined": true,
+   "start": 11.55,
+   "end": 14.09,
+   "clipStart": 11.47,
+   "clipEnd": 14.21,
+   "file": "atip-words/003.mp3",
+   "gainDb": -0.4,
+   "silenceSegments": [
+    3
+   ],
+   "stt": "بتأمر تمسكال (ar)",
+   "approxWordSplits": [
+    12.96
+   ]
+  },
+  {
+   "i": 4,
+   "text": "በስመ አብ",
+   "words": [
+    "በስመ",
+    "አብ"
+   ],
+   "wordIndices": [
+    5,
+    6
+   ],
+   "joined": true,
+   "start": 14.64,
+   "end": 16.36,
+   "clipStart": 14.56,
+   "clipEnd": 16.48,
+   "file": "atip-words/004.mp3",
+   "gainDb": -0.5,
+   "silenceSegments": [
+    4
+   ],
+   "stt": "That's my app (en)",
+   "approxWordSplits": [
+    15.33
+   ]
+  },
+  {
+   "i": 5,
+   "text": "ወወልድ",
+   "words": [
+    "ወወልድ"
+   ],
+   "wordIndices": [
+    7
+   ],
+   "joined": false,
+   "start": 16.89,
+   "end": 18.3,
+   "clipStart": 16.81,
+   "clipEnd": 18.42,
+   "file": "atip-words/005.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    5
+   ],
+   "stt": "والوالد (ar)"
+  },
+  {
+   "i": 6,
+   "text": "ወመንፈስ ቅዱስ",
+   "words": [
+    "ወመንፈስ",
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    8,
+    9
+   ],
+   "joined": true,
+   "start": 18.78,
+   "end": 20.87,
+   "clipStart": 18.7,
+   "clipEnd": 20.99,
+   "file": "atip-words/006.mp3",
+   "gainDb": 1.6,
+   "silenceSegments": [
+    6
+   ],
+   "stt": "ومن فسك الدوس (ar)",
+   "approxWordSplits": [
+    19.8
+   ]
+  },
+  {
+   "i": 7,
+   "text": "አሐዱ",
+   "words": [
+    "አሐዱ"
+   ],
+   "wordIndices": [
+    10
+   ],
+   "joined": false,
+   "start": 21.52,
+   "end": 22.99,
+   "clipStart": 21.44,
+   "clipEnd": 23.11,
+   "file": "atip-words/007.mp3",
+   "gainDb": -0.7,
+   "silenceSegments": [
+    7
+   ],
+   "stt": "أهدو (ar)"
+  },
+  {
+   "i": 8,
+   "text": "አምላክ",
+   "words": [
+    "አምላክ"
+   ],
+   "wordIndices": [
+    11
+   ],
+   "joined": false,
+   "start": 24.26,
+   "end": 25.54,
+   "clipStart": 24.18,
+   "clipEnd": 25.66,
+   "file": "atip-words/008.mp3",
+   "gainDb": -2.5,
+   "silenceSegments": [
+    8
+   ],
+   "stt": "I'm la (en)"
+  },
+  {
+   "i": 9,
+   "text": "በቅድስት",
+   "words": [
+    "በቅድስት"
+   ],
+   "wordIndices": [
+    12
+   ],
+   "joined": false,
+   "start": 26.48,
+   "end": 28.23,
+   "clipStart": 26.4,
+   "clipEnd": 28.35,
+   "file": "atip-words/009.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    9
+   ],
+   "stt": "Back (en)"
+  },
+  {
+   "i": 10,
+   "text": "ሥላሴ",
+   "words": [
+    "ሥላሴ"
+   ],
+   "wordIndices": [
+    13
+   ],
+   "joined": false,
+   "start": 28.83,
+   "end": 30.53,
+   "clipStart": 28.75,
+   "clipEnd": 30.65,
+   "file": "atip-words/010.mp3",
+   "gainDb": 0.9,
+   "silenceSegments": [
+    10
+   ],
+   "stt": "سلاسيه/Salace (hi/en)"
+  },
+  {
+   "i": 11,
+   "text": "እንዘ አአምን",
+   "words": [
+    "እንዘ",
+    "አአምን"
+   ],
+   "wordIndices": [
+    14,
+    15
+   ],
+   "joined": true,
+   "start": 31.02,
+   "end": 33.45,
+   "clipStart": 30.94,
+   "clipEnd": 33.57,
+   "file": "atip-words/011.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    11
+   ],
+   "stt": "and the arm (en)",
+   "approxWordSplits": [
+    31.87
+   ]
+  },
+  {
+   "i": 12,
+   "text": "ወእትመሐፀን",
+   "words": [
+    "ወእትመሐፀን"
+   ],
+   "wordIndices": [
+    16
+   ],
+   "joined": false,
+   "start": 34.22,
+   "end": 36.76,
+   "clipStart": 34.14,
+   "clipEnd": 36.88,
+   "file": "atip-words/012.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    12
+   ],
+   "stt": "وقت محااا (ar)"
+  },
+  {
+   "i": 13,
+   "text": "እክሕደከ",
+   "words": [
+    "እክሕደከ"
+   ],
+   "wordIndices": [
+    17
+   ],
+   "joined": false,
+   "start": 37.41,
+   "end": 39.62,
+   "clipStart": 37.33,
+   "clipEnd": 39.74,
+   "file": "atip-words/013.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    13
+   ],
+   "stt": "أكه داكا (so)",
+   "note": "ፀርየ appears skipped (STT hears only 'akhdaka'; next unit is ሰይጣን)"
+  },
+  {
+   "i": 14,
+   "text": "ሰይጣን",
+   "words": [
+    "ሰይጣን"
+   ],
+   "wordIndices": [
+    19
+   ],
+   "joined": false,
+   "start": 40.18,
+   "end": 41.71,
+   "clipStart": 40.1,
+   "clipEnd": 41.83,
+   "file": "atip-words/014.mp3",
+   "gainDb": -1.0,
+   "silenceSegments": [
+    14
+   ],
+   "stt": "سيطان (ar)"
+  },
+  {
+   "i": 15,
+   "text": "በቅድመ ዛቲ",
+   "words": [
+    "በቅድመ",
+    "ዛቲ"
+   ],
+   "wordIndices": [
+    20,
+    21
+   ],
+   "joined": true,
+   "start": 42.38,
+   "end": 44.79,
+   "clipStart": 42.3,
+   "clipEnd": 44.91,
+   "file": "atip-words/015.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    15,
+    16
+   ],
+   "stt": "بايك ادماز ذات + بي-ي-ي (so)",
+   "approxWordSplits": [
+    43.56
+   ],
+   "note": "two silence pieces 0.18 s apart (42.38-43.47 and 43.65-44.79); STT hears 'bayk adma zat' then a held 'iii', so treated as one unit በቅድመ ዛቲ with a drawn-out ቲ"
+  },
+  {
+   "i": 16,
+   "text": "እምየ",
+   "words": [
+    "እምየ"
+   ],
+   "wordIndices": [
+    22
+   ],
+   "joined": false,
+   "start": 45.41,
+   "end": 47.17,
+   "clipStart": 45.33,
+   "clipEnd": 47.29,
+   "file": "atip-words/016.mp3",
+   "gainDb": 1.8,
+   "silenceSegments": [
+    17
+   ],
+   "stt": "emmm ye (en)"
+  },
+  {
+   "i": 17,
+   "text": "ቅድስት",
+   "words": [
+    "ቅድስት"
+   ],
+   "wordIndices": [
+    23
+   ],
+   "joined": false,
+   "start": 47.79,
+   "end": 49.26,
+   "clipStart": 47.71,
+   "clipEnd": 49.38,
+   "file": "atip-words/017.mp3",
+   "gainDb": 0.2,
+   "silenceSegments": [
+    18
+   ],
+   "stt": "Get dis (en)"
+  },
+  {
+   "i": 18,
+   "text": "ቤተ ክርስቲያን",
+   "words": [
+    "ቤተ",
+    "ክርስቲያን"
+   ],
+   "wordIndices": [
+    24,
+    25
+   ],
+   "joined": true,
+   "start": 49.89,
+   "end": 52.05,
+   "clipStart": 49.81,
+   "clipEnd": 52.17,
+   "file": "atip-words/018.mp3",
+   "gainDb": -0.2,
+   "silenceSegments": [
+    19
+   ],
+   "stt": "بيته كريستيان (ar)",
+   "approxWordSplits": [
+    50.78
+   ]
+  },
+  {
+   "i": 19,
+   "text": "እንተ ይእቲ",
+   "words": [
+    "እንተ",
+    "ይእቲ"
+   ],
+   "wordIndices": [
+    26,
+    27
+   ],
+   "joined": true,
+   "start": 53.01,
+   "end": 55.74,
+   "clipStart": 52.93,
+   "clipEnd": 55.86,
+   "file": "atip-words/019.mp3",
+   "gainDb": 1.0,
+   "silenceSegments": [
+    20
+   ],
+   "stt": "انت يأتي (ar)",
+   "approxWordSplits": [
+    54.17
+   ]
+  },
+  {
+   "i": 20,
+   "text": "ስምዕየ",
+   "words": [
+    "ስምዕየ"
+   ],
+   "wordIndices": [
+    28
+   ],
+   "joined": false,
+   "start": 56.44,
+   "end": 58.42,
+   "clipStart": 56.36,
+   "clipEnd": 58.54,
+   "file": "atip-words/020.mp3",
+   "gainDb": 0.7,
+   "silenceSegments": [
+    21
+   ],
+   "stt": "سمئة (ar)"
+  },
+  {
+   "i": 21,
+   "text": "ማርያም",
+   "words": [
+    "ማርያም"
+   ],
+   "wordIndices": [
+    29
+   ],
+   "joined": false,
+   "start": 59.01,
+   "end": 60.88,
+   "clipStart": 58.93,
+   "clipEnd": 61.0,
+   "file": "atip-words/021.mp3",
+   "gainDb": -0.2,
+   "silenceSegments": [
+    22
+   ],
+   "stt": "ماريا (ar)"
+  },
+  {
+   "i": 22,
+   "text": "ጽዮን",
+   "words": [
+    "ጽዮን"
+   ],
+   "wordIndices": [
+    30
+   ],
+   "joined": false,
+   "start": 61.72,
+   "end": 63.55,
+   "clipStart": 61.64,
+   "clipEnd": 63.67,
+   "file": "atip-words/022.mp3",
+   "gainDb": 1.3,
+   "silenceSegments": [
+    23
+   ],
+   "stt": "صيون (ar)"
+  },
+  {
+   "i": 23,
+   "text": "ለዓለመ ዓለም",
+   "words": [
+    "ለዓለመ",
+    "ዓለም"
+   ],
+   "wordIndices": [
+    31,
+    32
+   ],
+   "joined": true,
+   "start": 64.14,
+   "end": 66.38,
+   "clipStart": 64.06,
+   "clipEnd": 66.5,
+   "file": "atip-words/023.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    24
+   ],
+   "stt": "لعلم علام (ar)",
+   "approxWordSplits": [
+    64.98
+   ]
+  }
+ ]
+}

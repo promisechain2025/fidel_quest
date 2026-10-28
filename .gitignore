@@ -9,3 +9,9 @@ coverage
 # commit them once real native builds start.
 # native projects are tracked (Capacitor); their own .gitignores skip builds
 dist-artifact
+
+# Android release signing - never commit the upload key or its passwords
+*.jks
+*.keystore
+keystore.properties
+key.properties

@@ -80,3 +80,15 @@ describe('starter library content contract', () => {
     }
   })
 })
+
+describe('isBibleStory (Bible text is read by the child alone)', () => {
+  it('flags every Amharic starter story and the Tigrinya Bible shelf, not the School Path', async () => {
+    const { isBibleStory, STORIES } = await import('./stories')
+    const { bibleStoryTimeEntries } = await import('../data/bibleStories')
+    const { schoolPathStoryTimeEntries } = await import('../data/schoolPathGr1Stories')
+    expect(STORIES.every(isBibleStory)).toBe(true)
+    expect(bibleStoryTimeEntries().every(isBibleStory)).toBe(true)
+    expect(schoolPathStoryTimeEntries().some(isBibleStory)).toBe(false)
+    expect(isBibleStory(null)).toBe(false)
+  })
+})

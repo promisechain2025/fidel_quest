@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { loadProfiles, activeProfile, profileCount, switchProfile, addProfile, renameProfile, deleteProfile, profileLabel, SWAP_KEYS, MAX_PROFILES } from './profiles'
 import { PROGRESS_KEYS } from './progress'
 
-beforeEach(() => localStorage.clear())
+// These tests exercise several children, so the Family Pack is owned.
+beforeEach(() => { localStorage.clear(); localStorage.setItem('fq.familypack.v1', JSON.stringify({ unlocked: true, method: 'store' })) })
 
 describe('profiles (per-child progress slots)', () => {
   it('migrates the existing device into profile 1 without touching its data', () => {

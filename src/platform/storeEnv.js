@@ -1,15 +1,27 @@
-/* Store-billing environment - split out of iap.js so license.js can ask
-   "can the native store sell right now?" without importing the purchase
-   module (iap.js imports license.js for markSupported; this file keeps the
-   graph acyclic). */
-import { isNativePlatform, isApplePlatform } from './native'
+/* Store-billing environment: "can this build talk to the App Store / Google
+   Play right now?" Split out of iap.js so screens can ask without loading
+   the purchase module.
 
-export function revenueCatKey() {
-  const key = isApplePlatform() ? import.meta.env?.VITE_REVENUECAT_APPLE_KEY : import.meta.env?.VITE_REVENUECAT_GOOGLE_KEY
-  return typeof key === 'string' && key.trim() ? key.trim() : ''
+   1.3.1+: eGeez is paid upfront ($12.99, set in App Store Connect / Play
+   Console) and sells only kids-profile slots in-app (profile_slot_2..6,
+   platform/profileSlots.js). Store billing is on in every native build that bundles the
+   @capgo/native-purchases plugin (StoreKit 2 on iOS, Play Billing on
+   Android, no third-party server). There is no env switch and no
+   RevenueCat key any more; web / PWA builds never have store billing. */
+import { Capacitor } from '@capacitor/core'
+import { isNativePlatform } from './native'
+
+export const STORE_PLUGIN = 'NativePurchases'
+
+export function storePluginAvailable() {
+  try {
+    return Capacitor?.isPluginAvailable?.(STORE_PLUGIN) === true
+  } catch {
+    return false
+  }
 }
 
-/** True when this build can run real store purchases (native + key set). */
+/** True when this build can run a real store purchase / restore. */
 export function iapAvailable() {
-  return isNativePlatform() && !!revenueCatKey()
+  return isNativePlatform() && storePluginAvailable()
 }

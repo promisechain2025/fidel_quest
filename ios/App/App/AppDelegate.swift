@@ -1,12 +1,14 @@
 import UIKit
 import Capacitor
 import WebKit
+import StoreKit
 
 /// Kids double-tap and pinch the WebView by accident. The viewport meta and
 /// CSS cover the page; this locks the WKWebView scroll view the same way.
 class NoZoomBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        bridge?.registerPluginInstance(AppTransactionPlugin())
         lockZoom()
     }
 
@@ -29,6 +31,46 @@ class NoZoomBridgeViewController: CAPBridgeViewController {
     }
 }
 
+/// Read-only access to Apple's signed AppTransaction (StoreKit 2, iOS 16+),
+/// so 1.3.3 can record originalAppVersion before eGeez becomes a free
+/// download (src/platform/paidBuyer.js). It never buys or gates anything.
+/// originalAppVersion is the CFBundleVersion (build number) of the user's
+/// first download; sandbox/TestFlight report "1.0".
+@objc(AppTransactionPlugin)
+public class AppTransactionPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "AppTransactionPlugin"
+    public let jsName = "AppTransaction"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "get", returnType: CAPPluginReturnPromise)
+    ]
+
+    @objc func get(_ call: CAPPluginCall) {
+        guard #available(iOS 16.0, *) else {
+            call.resolve(["verified": false, "reason": "ios<16"])
+            return
+        }
+        Task {
+            do {
+                let result = try await AppTransaction.shared
+                switch result {
+                case .verified(let tx):
+                    call.resolve([
+                        "verified": true,
+                        "originalAppVersion": tx.originalAppVersion,
+                        "originalPurchaseDate": ISO8601DateFormatter().string(from: tx.originalPurchaseDate),
+                        "appVersion": tx.appVersion,
+                        "environment": tx.environment.rawValue
+                    ])
+                case .unverified(_, let error):
+                    call.resolve(["verified": false, "reason": "\(error)"])
+                }
+            } catch {
+                call.resolve(["verified": false, "reason": "\(error)"])
+            }
+        }
+    }
+}
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -37,6 +79,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         return true
+    }
+
+    // MARK: UIScene lifecycle (required when building with the iOS/iPadOS 27 SDK;
+    // without it UIKit asserts in _UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption
+    // and the app dies at launch). See Apple TN3187.
+    func application(_ application: UIApplication,
+                     configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: "Default Configuration",
+                                          sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        config.storyboard = UIStoryboard(name: "Main", bundle: nil)
+        return config
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

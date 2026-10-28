@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { resolveSource } from './audioEngine'
+import { AM_PACK } from '../packs/am'
+import { FIDEL_AUDIO_BASE, publicUrl } from './publicUrl'
 import { packToFileText, fileTextToPack, dataUrlToBlob, voiceSlots, LETTER_SLOT_COUNT, GREETING_KEY, encodeWav } from './voicePack'
 
 describe('voicePack slots', () => {
@@ -24,6 +26,12 @@ describe('family voice takes priority in the audio cascade', () => {
   it('leaves uncovered keys to the normal cascade', () => {
     const r = resolveSource('letters/le-1', { familyPack, manifest: new Set(['letters/le-1']), audioBase: '/a/' })
     expect(r).toEqual({ type: 'file', src: '/a/letters/le-1.mp3' })
+  })
+
+  it('uses the pack audio base, which includes the Vite /app/ prefix on web builds', () => {
+    const r = resolveSource('letters/le-1', { familyPack, manifest: new Set(['letters/le-1']), audioBase: AM_PACK.audioBase })
+    expect(AM_PACK.audioBase).toBe(FIDEL_AUDIO_BASE)
+    expect(r).toEqual({ type: 'file', src: publicUrl('/audio/fidel/letters/le-1.mp3') })
   })
 })
 

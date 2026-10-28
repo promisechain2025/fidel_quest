@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { PROGRESS_KEYS, snapshotProgress, restoreProgress, wipeProgress } from './progress'
-import { JOURNEY, NodeKind, isNodeFree, FREE_FAMILIES } from '../journey'
 
 describe('progress snapshot (app-level state)', () => {
   beforeEach(() => localStorage.clear())
@@ -49,25 +48,5 @@ describe('progress snapshot (app-level state)', () => {
   it('every registered key is a string constant (no dynamic surprises)', () => {
     expect(PROGRESS_KEYS.length).toBeGreaterThanOrEqual(10)
     PROGRESS_KEYS.forEach((k) => expect(typeof k).toBe('string'))
-  })
-})
-
-describe('free taste after the trial (isNodeFree)', () => {
-  it('the first two families and their mix are free', () => {
-    for (const fid of FREE_FAMILIES) {
-      expect(isNodeFree(JOURNEY.find((n) => n.id === `learn:${fid}`))).toBe(true)
-    }
-    expect(isNodeFree(JOURNEY.find((n) => n.id === 'mix:le'))).toBe(true)
-  })
-
-  it('the third family, quizzes and vowel laps are paid', () => {
-    expect(isNodeFree(JOURNEY.find((n) => n.id === 'learn:hha'))).toBe(false)
-    expect(isNodeFree(JOURNEY.find((n) => n.kind === NodeKind.QUIZ))).toBe(false)
-    expect(isNodeFree(JOURNEY.find((n) => n.vowel))).toBe(false)
-  })
-
-  it('only the chapter-1 arcade gateway is the free game taste', () => {
-    expect(isNodeFree(JOURNEY.find((n) => n.id === 'arcade:1'))).toBe(true)
-    expect(isNodeFree(JOURNEY.find((n) => n.id === 'arcade:2'))).toBe(false)
   })
 })

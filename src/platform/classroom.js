@@ -26,6 +26,7 @@ import { b64urlEncode, b64urlDecode, sanitizeName } from '../utils/challenge'
 import { dayStamp } from './streak'
 import { FIDEL_FAMILIES } from './ethiopic'
 import { buildReviewQueue, addDays } from './coach'
+import { linkBase } from '../utils/linkBase'
 
 const CLASS_KEY = 'fq.class.v1'
 const ASSIGN_KEY = 'fq.assign.v1'
@@ -37,15 +38,10 @@ export const MAX_ENROLLED = 60
 
 const FAMILY_IDS = new Set(FIDEL_FAMILIES.map((f) => f.id))
 
-/** Same origin normalization as challengeUrl. */
+/** The app's own URL (origin + path, e.g. https://easygeez.com/app). Keeping
+    the path is the whole point: an origin-only link opens the marketing site. */
 function rootOf(origin) {
-  let root = String(origin || '')
-  try {
-    root = new URL(origin).origin
-  } catch {
-    root = root.replace(/[#?].*$/, '').replace(/\/+$/, '')
-  }
-  return root
+  return linkBase(origin)
 }
 
 /** Class codes are short human tokens: letters/digits, 4..12 chars. */
@@ -77,12 +73,22 @@ function writeJson(key, value) {
 
 /* ── class membership (fq.class.v1) ── */
 
-/** {v:1, c: classCode, t: teacherName} */
-export function encodeClassInvite({ code, teacher }) {
+/** {v:1, c: classCode, t: teacherName, g?: daily practice goal minutes,
+    y?: 1 = the code is a class-view (server) join code, so joining also
+    turns on practice sync}. g/y are optional: old links decode unchanged. */
+const cleanGoal = (g) => {
+  const n = Math.round(Number(g))
+  return Number.isFinite(n) && n > 0 ? Math.max(5, Math.min(180, n)) : null
+}
+export function encodeClassInvite({ code, teacher, goalMin = null, sync = false, unlock = null }) {
   const c = sanitizeClassCode(code)
   const t = sanitizeName(teacher)
   if (!validClassCode(c) || !t) return null
-  return b64urlEncode(JSON.stringify({ v: 1, c, t }))
+  const p = { v: 1, c, t }
+  if (cleanGoal(goalMin)) p.g = cleanGoal(goalMin)
+  if (sync) p.y = 1
+  if (typeof unlock === 'string' && /^EGC-[A-Z0-9]{6}-[A-Z0-9]{7}$/.test(unlock)) p.u = unlock // class unlock (classUnlock.js)
+  return b64urlEncode(JSON.stringify(p))
 }
 
 export function decodeClassInvite(token) {
@@ -92,7 +98,11 @@ export function decodeClassInvite(token) {
     const code = sanitizeClassCode(p.c)
     const teacher = sanitizeName(p.t)
     if (!validClassCode(code) || !teacher) return null
-    return { code, teacher }
+    const out = { code, teacher }
+    if (cleanGoal(p.g)) out.goalMin = cleanGoal(p.g)
+    if (p.y === 1) out.sync = true
+    if (typeof p.u === 'string' && /^EGC-[A-Z0-9]{6}-[A-Z0-9]{7}$/.test(p.u)) out.unlock = p.u
+    return out
   } catch {
     return null
   }
@@ -573,4 +583,25 @@ export function currentWeekIndex(plan, today = dayStamp(), weekCount = termWeeks
 /** The due date of week i (0-based): the day before the next week starts. */
 export function weekDue(plan, i) {
   return addDays(plan.startDay, (i + 1) * 7 - 1)
+}
+
+/** The teacher's daily practice goal (minutes) for a local class; it rides
+    in the class invite link (g) and lands on each child's practice ring. */
+export function setClassGoal(code, goalMin) {
+  const t = loadTeacher()
+  const c = sanitizeClassCode(code)
+  if (!t.classes[c]) return null
+  t.classes = { ...t.classes, [c]: { ...t.classes[c], goalMin: cleanGoal(goalMin) } }
+  writeJson(TEACHER_KEY, t)
+  return t.classes[c].goalMin
+}
+
+/** Store the class's current web unlock (Teacher Mode). {code, days, gen, expiresAt} */
+export function setClassUnlock(code, unlock) {
+  const t = loadTeacher()
+  const c = sanitizeClassCode(code)
+  if (!t.classes[c]) return null
+  t.classes = { ...t.classes, [c]: { ...t.classes[c], unlock } }
+  writeJson(TEACHER_KEY, t)
+  return unlock
 }

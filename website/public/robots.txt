@@ -1,3 +1,19 @@
 User-agent: *
 Allow: /
-Sitemap: https://egeez.app/sitemap.xml
+# Closed until those products are ready. CloudFront and the SPA also
+# redirect them home; this asks crawlers not to keep asking.
+Disallow: /amharic
+Disallow: /tigrinya
+Disallow: /homeschool
+Disallow: /alphabet
+Disallow: /guides
+Disallow: /family
+# $ = exact match, so /teachers stays crawlable.
+Disallow: /teach$
+Disallow: /teach/
+Disallow: /verify
+Disallow: /classes
+Disallow: /family-pack
+# Shared progress cards are for the person who received the link.
+Disallow: /progress
+Sitemap: https://easygeez.com/sitemap.xml

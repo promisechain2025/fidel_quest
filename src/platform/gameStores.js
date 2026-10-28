@@ -1,0 +1,20 @@
+/**
+ * Per-game round-progress stores, kept in one tiny module so the Grown-ups
+ * panel (in the main bundle) can read them without pulling each game's core
+ * logic out of its lazy chunk.
+ */
+import { roundStore, isLetterKey } from './roundProgress'
+
+export const GAME_MAX_LEVEL = 4
+
+export const ECHO_KEY = 'fq.echo.v1'
+export const TRAIN_KEY = 'fq.train.v1'
+
+export const echoStore = roundStore(ECHO_KEY, GAME_MAX_LEVEL, isLetterKey)
+export const trainStore = roundStore(TRAIN_KEY, GAME_MAX_LEVEL, isLetterKey)
+export const MARKET_KEY = 'fq.market.v1'
+/* Word Market re-deals WORDS (by their latin id), not letters. */
+export const marketStore = roundStore(MARKET_KEY, GAME_MAX_LEVEL, (id) => typeof id === 'string' && /^[a-z0-9'_-]{1,40}$/i.test(id))
+export const BEATS_KEY = 'fq.beats.v1'
+/* Kebero Beats re-deals both letters (L2-L4) and whole words (L1). */
+export const beatsStore = roundStore(BEATS_KEY, GAME_MAX_LEVEL, (id) => typeof id === 'string' && /^[a-z0-9'_-]{1,40}$/i.test(id))

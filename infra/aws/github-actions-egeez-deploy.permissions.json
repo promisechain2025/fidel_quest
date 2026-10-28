@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListOnlyTheAppPrefix",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::easygeez-com",
+      "Condition": {
+        "StringLike": { "s3:prefix": ["app", "app/", "app/*"] }
+      }
+    },
+    {
+      "Sid": "ReadWriteObjectsUnderAppOnly",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::easygeez-com/app/*"
+    },
+    {
+      "Sid": "InvalidateTheSiteDistributionOnly",
+      "Effect": "Allow",
+      "Action": ["cloudfront:CreateInvalidation", "cloudfront:GetInvalidation"],
+      "Resource": "arn:aws:cloudfront::326055865221:distribution/E1SP7A6AIN6IQF"
+    }
+  ]
+}

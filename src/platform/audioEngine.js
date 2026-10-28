@@ -8,9 +8,9 @@
      2. FilePack     static mp3s under `audioBase` (deployed app / PWA)
      3. SynthChime   deterministic two-note Web Audio tone (always works)
 
-   Manifest-driven, not 404-driven: when public/audio/fidel/manifest.json is
-   reachable, keys it does not cover skip straight to the chime — no network
-   probing. Keys that fail anyway (decode error, offline miss) are memoized
+   Manifest-driven, not 404-driven: when the fidel manifest is reachable
+   (public/audio/fidel/manifest.json, prefixed with the Vite base), keys it
+   does not cover skip straight to the chime — no network probing. Keys that fail anyway (decode error, offline miss) are memoized
    in `missing` so they never retry. Playback decodes into cached
    AudioBuffers played through gain nodes, which is what enables cross-fades
    and precise timing; environments without AudioContext degrade to
@@ -20,6 +20,8 @@
    is unit-testable without audio hardware. The machines never call this
    directly — only the shell effects do, so game determinism is untouched.
    ========================================================================== */
+
+import { FIDEL_AUDIO_BASE, FIDEL_MANIFEST_URL } from './publicUrl'
 
 /**
  * Redirect a logical key to the pack's physical clip. Two independent kinds of
@@ -82,10 +84,14 @@ export function resolveSource(key, state) {
 
 const FADE_IN_S = 0.015
 
+let listenHook = null
+/** practiceTracker registers here: called when a voice clip finishes. */
+export function setListenHook(fn) { listenHook = typeof fn === 'function' ? fn : null }
+
 export class AudioEngine {
   constructor({
-    audioBase = '/audio/fidel/',
-    manifestUrl = '/audio/fidel/manifest.json',
+    audioBase = FIDEL_AUDIO_BASE,
+    manifestUrl = FIDEL_MANIFEST_URL,
     override = null,
     getMemory = () => (typeof window !== 'undefined' ? window.FIDEL_AUDIO : null),
     fetchImpl = (...a) => fetch(...a),
@@ -133,6 +139,11 @@ export class AudioEngine {
     const Ctor = window.AudioContext || window.webkitAudioContext
     if (!Ctor) return null
     try {
+      // iPhone/iPad Safari (16.4+) treats WebAudio as "ambient" by default, so
+      // the hardware silent switch (and a muted ringer) silences every clip -
+      // the web build then looks voiceless. Declare it playback audio: the
+      // voice plays like a video would. No-op where audioSession is absent.
+      try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback' } catch { /* unsupported */ }
       this.ctx = this.ctx || new Ctor()
       // 'suspended' is the autoplay-policy state; iOS also parks a context in
       // 'interrupted' after backgrounding or a phone call. Try to wake both.
@@ -229,6 +240,16 @@ export class AudioEngine {
     } catch {
       /* no manifest: file source stays optimistic, misses memoize */
     }
+  }
+
+  /**
+   * Is there a REAL recording for `key` (not just the chime fallback)? Used to
+   * hide buttons whose only sound would be a chime. Optimistic when coverage
+   * is unknown (no manifest and no memory pack), matching resolveSource.
+   */
+  async hasClip(key) {
+    await this.ensureManifest()
+    return this.resolve(key).type !== 'chime'
   }
 
   /** Point playback at a family voice pack (map of logical key -> object URL),
@@ -417,6 +438,9 @@ export class AudioEngine {
       this.current = { source: node, gain }
       this._voiceUntil = Date.now() + buffer.duration * 1000 + 800
       node.onended = () => {
+        // a clip that played to its end (not one cut off by the next) counts
+        // as a completed listen for practice tracking
+        if (this.current?.source === node) { try { listenHook?.(key) } catch { /* ignore */ } }
         if (this.current?.source === node) this.current = null
         // The clip audibly finished, so it was never lost to the autoplay
         // policy - the unlock kick must not replay it.
@@ -665,6 +689,22 @@ export function playPluck(order, enabled = true) {
   audio.note(freq, t, 0.5, 0.11, 'triangle')
   audio.note(freq * 1.005, t, 0.35, 0.06, 'triangle')
   audio.note(freq * 2, t, 0.18, 0.03, 'sine')
+}
+/* The kebero: a synthesized hand-drum hit (no audio file). `rim` is the
+   higher, drier slap used for "done"/accents. */
+export function playDrum(rim = false, enabled = true) {
+  if (!enabled) return
+  const ctx = audio.getCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  if (rim) {
+    audio.note(330, t, 0.12, 0.12, 'triangle')
+    audio.note(660, t, 0.06, 0.04, 'square')
+  } else {
+    audio.note(92, t, 0.32, 0.3, 'sine')
+    audio.note(138, t, 0.16, 0.12, 'sine')
+    audio.note(240, t, 0.05, 0.05, 'triangle')
+  }
 }
 export function preloadForms(forms) {
   audio.preload(forms.filter(Boolean).map((f) => `letters/${f.audioKey}`))

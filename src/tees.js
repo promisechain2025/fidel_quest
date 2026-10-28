@@ -25,12 +25,21 @@ export const TEE_DESIGNS = [
 
 export const TEE_BY_ID = new Map(TEE_DESIGNS.map((d) => [d.id, d]))
 
-/** The design's name in the given app language, falling back to English. */
+/** The design's name in the given app language, falling back to English.
+    Tigrinya never falls through to the Amharic Ge'ez line. */
 export function teeName(design, lang) {
   if (!design) return ''
   if (lang === 'am') return design.am || design.name
-  if (lang === 'ti') return design.ti || design.am || design.name
+  if (lang === 'ti') return design.ti || design.name
   return design.name
+}
+
+/** Ge'ez subtitle for the learning pack (English UI still shows the
+    alphabet the child is learning). */
+export function teeGezzName(design, packId) {
+  if (!design) return ''
+  if (packId === 'am') return design.am || design.name
+  return design.ti || design.name
 }
 
 /** A design is unlocked once the child has learned `unlock` families. */

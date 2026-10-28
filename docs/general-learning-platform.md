@@ -83,7 +83,8 @@ First math track (smallest shippable slice), mirroring the fidel arc:
    table in `src/data/`, the single source of truth, test-verified exactly
    like `fidelGameData.js`. **STARTED:** `src/data/numerals.js` is that table
    (glyphs 1..100, `toGeez`/`fromGeez`, exhaustively round-trip tested); the
-   existing `MerkatoMarket` counting game already teaches 1..9 recognition.
+   Word Market game's L3+ shopping quantities (፩..፫) keep a small numeral
+   recognition moment inside a reading task.
    Remaining: spoken number names (native-speaker review) and the journey
    nodes that string counting -> number sense -> arithmetic together.
 2. Counting and number sense (MIX nodes).
@@ -102,9 +103,9 @@ Guardrails (unchanged platform contract):
 ## Brand and packaging
 
 - The name stays eGeez; the promise widens from "learn the fidel" to "learn".
-- Pricing: the app-unlock model already generalizes - math ships inside the
-  paid app (no per-subject paywall for core tracks) or as an add-on pack in
-  the same "never pay twice" EGZ/FAM code system, TBD per track.
+- Pricing: eGeez is paid upfront (1.3.0+), so new core tracks ship inside
+  the paid app with no per-subject paywall. The only in-app purchases are
+  extra kids profiles (1.3.1+).
 - SEO/positioning shifts from "Amharic alphabet" keywords toward
   "Ethiopian/Eritrean kids learning" while keeping the strong fidel landing
   pages as the top funnel.

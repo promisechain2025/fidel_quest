@@ -4,9 +4,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { Moon, Sun, Menu, X, ExternalLink } from 'lucide-react'
-import { APP_URL } from './config.js'
+import { APP_URL, APP_STORE_URL, PLAY_STORE_URL, CONTACT_EMAIL, COMPANY_NAME } from './config.js'
 import { t, currentLang, setLang } from './i18n.js'
 
 /* HIDDEN AT LAUNCH (owner decision): the toggle must not offer Amharic UI
@@ -43,49 +42,63 @@ export function BrandMark({ size = 36, className = '' }) {
 }
 
 export function LetterTile({ ch, size = 44, className = '', float = false, delay = 0 }) {
-  const reduce = useReducedMotion()
   const tile = (
     <span className={`lt geez ${className}`} style={{ width: size, height: size, fontSize: size * 0.5 }} aria-hidden="true">
       {ch}
     </span>
   )
-  if (reduce || !float) return tile
+  if (!float) return tile
+  // .lt-float is CSS (tokens.css); reduced motion is handled there.
+  return <span className="lt-float" style={{ '--lt-delay': `${delay}s` }}>{tile}</span>
+}
+
+/** Scroll-reveal wrapper - once, subtle, honors reduced motion (in CSS).
+    Plain IntersectionObserver: this was the only reason framer-motion sat on
+    the landing critical path. If the observer is missing, the content shows
+    immediately - never hidden by a failure. */
+export function Reveal({ children, delay = 0, className = '' }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    if (typeof IntersectionObserver === 'undefined') { el.classList.add('is-in'); return undefined }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        // Also reveal anything the reader has already scrolled PAST: a fast
+        // flick can coalesce into a single "not intersecting" delivery, and a
+        // section that has been and gone must not stay invisible.
+        const past = e.boundingClientRect.bottom < (e.rootBounds?.top ?? 0)
+        if (e.isIntersecting || past) { e.target.classList.add('is-in'); io.unobserve(e.target) }
+      }
+    }, { rootMargin: '200px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
-    <motion.span
-      initial={{ opacity: 0, y: 18, rotate: -4 }}
-      animate={{ opacity: 1, y: [0, -5, 0], rotate: 0 }}
-      transition={{
-        opacity: { duration: 0.4, delay },
-        rotate: { duration: 0.4, delay },
-        y: { delay: delay + 0.5, duration: 3.2 + delay, repeat: Infinity, ease: 'easeInOut' },
-      }}
-      className="inline-block"
-    >
-      {tile}
-    </motion.span>
+    <div ref={ref} className={`reveal ${className}`} style={delay ? { '--reveal-delay': `${delay}s` } : undefined}>
+      {children}
+    </div>
   )
 }
 
-/** Scroll-reveal wrapper - once, subtle, honors reduced motion. */
-export function Reveal({ children, delay = 0, className = '' }) {
-  const reduce = useReducedMotion()
-  if (reduce) return <div className={className}>{children}</div>
+/** <picture> with a WebP source and the original PNG as the fallback.
+    Every raster in public/ has a matching .webp generated at the size it
+    actually renders, which is where the page weight was going: the hero shot
+    alone was a 160 kB PNG painted into a 298px box. `pic` is
+    display:contents so the wrapper never disturbs the layout. */
+export function Picture({ src, alt = '', className = '', ...rest }) {
+  const webp = src.replace(/\.png$/, '.webp')
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 22 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, delay, ease: [0.21, 0.68, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
+    <picture className="pic">
+      <source srcSet={webp} type="image/webp" />
+      <img src={src} alt={alt} className={className} {...rest} />
+    </picture>
   )
 }
 
 export function CtaButton({ href, to, onClick, children, tone = 'gold', external = false, className = '', type, disabled = false }) {
   const styles = tone === 'green'
-    ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
+    ? { background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }
     : tone === 'ghost'
       ? { background: 'var(--card)', color: 'var(--ink)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }
       : { background: 'var(--accent)', color: '#241a05', boxShadow: '0 4px 0 var(--accent-deep)' }
@@ -96,11 +109,48 @@ export function CtaButton({ href, to, onClick, children, tone = 'gold', external
   return <button type={type || 'button'} onClick={onClick} disabled={disabled} className={cls} style={styles}>{children}</button>
 }
 
+/** Which store this visitor's phone uses: 'ios' | 'android' | null (desktop). */
+export function detectStore(ua = typeof navigator === 'undefined' ? '' : navigator.userAgent) {
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1)) return 'ios'
+  if (/Android/i.test(ua)) return 'android'
+  return null
+}
+
+/* The two store buttons. On a phone, the visitor's own store goes first and
+   gets the solid style, so one tap lands them on the right listing. */
+export function StoreButtons({ className = '', center = false }) {
+  const store = detectStore()
+  const apple = { key: 'ios', href: APP_STORE_URL, top: t('dlOn', 'Download on the'), name: 'App Store', Icon: AppleGlyph }
+  const play = { key: 'android', href: PLAY_STORE_URL, top: t('getOn', 'Get it on'), name: 'Google Play', Icon: PlayGlyph }
+  const list = store === 'android' ? [play, apple] : [apple, play]
+  return (
+    <div className={`flex flex-wrap gap-3 ${center ? 'justify-center' : 'justify-center md:justify-start'} ${className}`}>
+      {list.map(({ key, href, top, name, Icon }) => {
+        const mine = store === key
+        return (
+          <a key={key} href={href} target="_blank" rel="noreferrer" data-store={key}
+            className="chunk inline-flex items-center gap-2.5 px-4 py-2"
+            style={{ minHeight: 52, background: mine || !store ? '#000' : 'var(--card)', color: mine || !store ? '#fff' : 'var(--ink)', border: '2px solid ' + (mine || !store ? '#000' : 'var(--line)') }}>
+            <Icon />
+            <span className="text-left leading-tight"><span className="block text-[11px] font-bold opacity-80">{top}</span><span className="block text-lg font-black">{name}</span></span>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+function AppleGlyph() {
+  return <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.3-.1 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.4-2.8-.1 0-2.6-1-2.6-3.9zM13.9 5c.7-.8 1.1-2 1-3.1-1 0-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3 1.1.1 2.2-.6 2.9-1.4z"/></svg>
+}
+function PlayGlyph() {
+  return <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2.5l10.2 9.5L4 21.5c-.4-.2-.6-.6-.6-1.1V3.6c0-.5.2-.9.6-1.1z" fill="#34a853"/><path d="M17.6 8.8L14.2 12 4 2.5c.2-.1.5-.1.8.1l12.8 6.2z" fill="#4285f4"/><path d="M17.6 15.2L4.8 21.4c-.3.2-.6.2-.8.1L14.2 12l3.4 3.2z" fill="#ea4335"/><path d="M21 12c0 .5-.3 1-.8 1.3l-2.6 1.9L14.2 12l3.4-3.2 2.6 1.9c.5.3.8.8.8 1.3z" fill="#fbbc04"/></svg>
+}
+
 export function Section({ eyebrow, title, children, center = false, className = '', mark = '' }) {
   return (
     <section className={`watermark mx-auto w-full max-w-5xl px-5 py-14 sm:px-6 md:py-20 ${className}`} data-mark={mark}>
       <Reveal>
-        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent)' }}>{eyebrow}</div>}
+        {eyebrow && <div className={`text-xs font-black uppercase tracking-[0.22em] ${center ? 'text-center' : ''}`} style={{ color: 'var(--accent-text)' }}>{eyebrow}</div>}
         {title && <h2 className={`display-2 mt-2 ${center ? 'text-center' : ''}`}>{title}</h2>}
       </Reveal>
       <div className="mt-7 md:mt-9">{children}</div>
@@ -129,15 +179,18 @@ export function Field({ label, children }) {
 export const inputCls = 'w-full rounded-xl px-4 py-3 text-[16px]'
 export const inputStyle = { background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }
 
+/* Only the store price in the bar. The logo is Home. Other product pages
+   redirect home (see siteAccess.js). */
 const NAV = [
-  ['/', 'Home'],
-  ['/amharic', 'Amharic'],
-  ['/tigrinya', 'Tigrinya'],
-  ['/alphabet', 'Alphabet'],
   ['/teachers', 'For teachers'],
-  ['/homeschool', 'Homeschool'],
   ['/pricing', 'Pricing'],
-  ['/family', 'Family'],
+  ['/about', 'About'],
+]
+
+const ALL_NAV = [
+  ['/', 'Home'],
+  ['/teachers', 'For teachers'],
+  ['/pricing', 'Pricing'],
   ['/about', 'About'],
 ]
 
@@ -154,26 +207,46 @@ function useTheme() {
     the close button. */
 function MobileMenu({ open, onClose, dark, setDark }) {
   const closeRef = useRef(null)
+  const panelRef = useRef(null)
   useEffect(() => {
     if (!open) return undefined
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     closeRef.current?.focus()
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    // aria-modal claims the rest of the page is unavailable, so Tab must not
+    // walk out of the overlay into the header and hero behind it.
+    const root = document.getElementById('root')
+    if (root) { root.setAttribute('aria-hidden', 'true'); root.inert = true }
+    const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    const onKey = (e) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Tab') return
+      const items = [...(panelRef.current?.querySelectorAll(FOCUSABLE) || [])].filter((el) => el.offsetParent !== null)
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+      if (root) { root.removeAttribute('aria-hidden'); root.inert = false }
+    }
   }, [open, onClose])
-  // Portal to <body>: the header's backdrop-filter creates a containing
-  // block, which would trap this fixed overlay inside the header's box.
+  // Portal to <body>: keeps this fixed overlay out of the header's stacking
+  // context entirely. (It was required when the header used backdrop-filter,
+  // which created a containing block; it stays because a sticky, shadowed
+  // ancestor is still the wrong place to anchor a full-screen sheet.)
   return createPortal(
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex flex-col lg:hidden"
+        <div
+          className="menu-in fixed inset-0 z-50 flex flex-col lg:hidden"
           style={{ background: 'var(--paper)' }}
           role="dialog" aria-modal="true" aria-label="Menu"
+          ref={panelRef}
         >
           <Tibeb />
           <div className="flex items-center justify-between px-5 py-3">
@@ -186,21 +259,19 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <nav className="flex flex-1 flex-col justify-center gap-1 px-7" aria-label="Main">
-            {NAV.map(([to, label], i) => (
-              <motion.div key={to}
-                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.05 + i * 0.045, duration: 0.3 }}>
+            {ALL_NAV.map(([to, label], i) => (
+              <div key={to} className="menu-item" style={{ '--i': i }}>
                 <NavLink to={to} end={to === '/'} onClick={onClose}
                   className="block rounded-xl px-3 py-3.5 text-2xl font-black"
                   style={({ isActive }) => ({ color: isActive ? 'var(--accent)' : 'var(--ink)' })}>
                   {t(to, label)}
                 </NavLink>
-              </motion.div>
+              </div>
             ))}
           </nav>
           <div className="flex items-center gap-3 px-7 pb-10">
             <a href={APP_URL} className="chunk flex-1 px-4 py-3.5 text-center text-base"
-              style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
+              style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)' }}>
               {t('openApp', 'Open the app')}
             </a>
             <LangToggle className="border-2 p-3" />
@@ -211,9 +282,9 @@ function MobileMenu({ open, onClose, dark, setDark }) {
             </button>
           </div>
           <Tibeb />
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>,
+    </>,
     document.body,
   )
 }
@@ -222,8 +293,24 @@ export function Header() {
   const [dark, setDark] = useTheme()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const { pathname } = useLocation()
-  useEffect(() => { setOpen(false); window.scrollTo(0, 0) }, [pathname])
+  const { pathname, hash } = useLocation()
+  // A deep link with a fragment (/teachers#apply) must not be yanked back
+  // to the top; and because routes are lazy the target usually does not
+  // exist yet on a cold load, so retry briefly until it mounts.
+  useEffect(() => {
+    setOpen(false)
+    if (!hash) { window.scrollTo(0, 0); return undefined }
+    let tries = 0
+    const id = setInterval(() => {
+      // getElementById, not querySelector: a data fragment such as /progress#p=<token>
+      // is not a valid selector and used to throw on every tick (20x per load).
+      let el = null
+      try { el = document.getElementById(decodeURIComponent(hash.slice(1))) } catch { /* malformed escape: no target */ }
+      if (el) { el.scrollIntoView(); clearInterval(id) }
+      else if (++tries > 20) clearInterval(id)
+    }, 50)
+    return () => clearInterval(id)
+  }, [pathname, hash])
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     onScroll()
@@ -235,10 +322,13 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40"
       style={{
-        background: 'color-mix(in srgb, var(--paper) 90%, transparent)',
-        backdropFilter: 'blur(10px)',
+        // Opaque on purpose. At 90% the page slid visibly underneath - the
+        // tibeb border and headings read straight through the bar - and the
+        // blur did not hide it against high-contrast content.
+        background: 'var(--paper)',
         borderBottom: scrolled ? '1px solid var(--line)' : '1px solid transparent',
-        transition: 'border-color .2s ease',
+        boxShadow: scrolled ? '0 6px 20px -12px rgba(0,0,0,0.45)' : 'none',
+        transition: 'border-color .2s ease, box-shadow .2s ease',
       }}>
       <Tibeb />
       <div className="mx-auto flex max-w-5xl items-center gap-1 px-4 sm:px-6"
@@ -253,7 +343,7 @@ export function Header() {
           <button type="button" onClick={() => setDark(!dark)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} className="rounded-lg p-2" style={{ color: 'var(--muted)' }}>
             {dark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <Moon className="h-5 w-5" aria-hidden="true" />}
           </button>
-          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
+          <a href={APP_URL} className="chunk ml-1.5 px-4 py-2 text-sm" style={{ background: 'var(--go-deep)', color: '#fff', boxShadow: '0 3px 0 var(--go-deep)', minHeight: 40 }}>{t('openApp', 'Open the app')}</a>
         </nav>
         <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
           className="ml-auto rounded-xl p-2.5 lg:hidden" style={{ color: 'var(--ink)' }}>
@@ -265,60 +355,29 @@ export function Header() {
   )
 }
 
-function NewsletterRow() {
-  const [email, setEmail] = useState('')
-  const [done, setDone] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const submit = async (e) => {
-    e.preventDefault()
-    setBusy(true)
-    try {
-      const { submitForm } = await import('./api.js')
-      await submitForm('/api/waitlist', { email, language: 'news' }, 'Newsletter signup - eGeez')
-      setDone(true)
-    } catch { /* keep the row usable */ } finally { setBusy(false) }
-  }
-  if (done) {
-    return <p className="text-sm font-bold" style={{ color: 'var(--go-ink)' }}>{t('nlThanks', 'You are in - we write rarely and only when it matters.')}</p>
-  }
-  return (
-    <form onSubmit={submit} className="flex w-full max-w-sm items-stretch gap-2">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-        placeholder={t('nlPlaceholder', 'Email for launch news')} aria-label={t('nlLabel', 'Email for launch news')}
-        className="min-w-0 flex-1 rounded-xl px-3.5 py-2.5 text-[16px]"
-        style={{ background: 'var(--paper)', border: '2px solid var(--line)', color: 'var(--ink)' }} />
-      <button type="submit" disabled={busy} className="chunk px-4 text-sm"
-        style={{ background: 'var(--accent)', color: '#241a05', boxShadow: '0 3px 0 var(--accent-deep)', minHeight: 44 }}>
-        {busy ? '…' : t('nlJoin', 'Join')}
-      </button>
-    </form>
-  )
-}
-
 export function Footer() {
   return (
     <footer className="mt-16" style={{ borderTop: '1px solid var(--line)' }}>
       <div className="mx-auto grid max-w-5xl gap-8 px-5 py-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex min-w-0 items-start gap-4">
-          <img src="/art/anbessa-happy.png" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
+          <Picture src="/art/anbessa-happy.png" loading="lazy" decoding="async" width={64} height={64} alt="" aria-hidden="true" className="mt-1 shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-lg font-black">
               <BrandMark size={26} /> eGeez
             </div>
             <p className="mt-1.5 max-w-md text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {t('footerLine', 'A learning home for Amharic and Tigrinya - built for families, guided by teachers, made with love for the fidel.')}
+              {t('footerLine', 'The fidel app for families. One-time purchase on the App Store and Google Play. Works offline.')}
             </p>
-            <div className="mt-4"><NewsletterRow /></div>
           </div>
         </div>
         <nav className="grid grid-cols-2 gap-x-8 gap-y-1.5 text-sm font-bold" aria-label="Footer" style={{ color: 'var(--muted)' }}>
-          {NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
-          <Link to="/teach" className="rounded py-0.5 hover:underline">{t('navTeachDash', 'Teacher sign-in')}</Link>
+          {ALL_NAV.map(([to, label]) => <Link key={to} to={to} className="rounded py-0.5 hover:underline">{label}</Link>)}
           <Link to="/privacy" className="rounded py-0.5 hover:underline">{t('navPrivacy', 'Privacy')}</Link>
           <Link to="/terms" className="rounded py-0.5 hover:underline">{t('navTerms', 'Terms')}</Link>
+          <a href={`mailto:${CONTACT_EMAIL}`} className="col-span-2 rounded py-0.5 hover:underline">{t('navContact', 'Contact')}: {CONTACT_EMAIL}</a>
         </nav>
       </div>
-      <p className="pb-6 text-center text-xs opacity-60" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} eGeez</p>
+      <p className="pb-6 text-center text-xs" style={{ color: 'var(--muted)' }}>© {new Date().getFullYear()} {COMPANY_NAME} · eGeez</p>
       <Tibeb />
     </footer>
   )

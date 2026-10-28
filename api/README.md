@@ -8,7 +8,7 @@ database and secrets.
 ## What it does
 
 - **Accounts base** — `POST /api/auth/register`, `POST /api/auth/login`,
-  `GET /api/auth/me` (Bearer JWT, bcrypt, roles `parent` | `teacher`). The
+  `GET /api/auth/me` (Bearer JWT, scrypt password hashing, roles `parent` | `teacher`). The
   foundation the teacher directory and booking will build on.
 - **Teacher applications** — `POST /api/teachers/apply`
 - **Language waitlist** — `POST /api/waitlist` (defaults to `ti` Tigrinya)
@@ -38,14 +38,10 @@ website origin in `CORS_ORIGIN`.
 
 ## Payments
 
-Stripe Checkout sells two one-time products (`POST /api/pay/checkout` with
-`{product: 'app' | 'family_pack'}`, $12.99 / $4.99 via `APP_PRICE_CENTS` /
-`FAMILY_PACK_PRICE_CENTS` or dashboard Price ids). Fulfillment mints an
-unlock code with the app's own algorithms (EGZ for the app, FAM for the
-pack), stores an Order, and emails the buyer - idempotently across webhook
-retries and the success-page poll. Dormant until `STRIPE_SECRET_KEY` +
-`STRIPE_WEBHOOK_SECRET` are set; production refuses to sell from the
-in-memory store.
+None. eGeez is paid upfront ($12.99 in the App Store and Google Play, no
+in-app purchases), so this API sells nothing: the old Stripe Checkout routes
+(`/api/pay/*`, EGZ/FAM code minting) were removed in 1.3.0. The `Order`
+model in `store.js` is kept only so historical order records stay readable.
 
 ## Design notes
 

@@ -70,14 +70,16 @@ The MoE Alphabet book opens on በ / ሰ / ሸ.
 
 # IAP findings — why live purchases do not show up
 
+> **Superseded (October 2026).** eGeez 1.3.x is paid upfront ($12.99 in the App Store and Google Play); since 1.3.1 the only in-app purchases are extra kids profiles via StoreKit 2 / Play Billing directly (no RevenueCat, see docs/store-purchases-iap.md), so the issues below no longer apply: the trial, Family Pack, unlock codes, Buy / Restore UI, BILLING permission and RevenueCat plugin are all gone. Kept as a historical record only.
+
 Audited 28 Sep 2026 against this repo (`@revenuecat/purchases-capacitor` 11.3.2). The owner report is that people are not purchasing in real time. That matches the code that ships today: a store build compiled from this repo cannot complete an in-app purchase, so RevenueCat and App Store Connect have nothing to show.
 
-**Live purchases cannot appear in RevenueCat or App Store Connect from the build this repo produces today.** A new store build, with the keys below set at build time, plus the dashboard setup in `docs/family-pack-iap.md`, is required before a real sale can exist. This change does not invent product ids and does not embed API keys (none are in the repo).
+**Live purchases cannot appear in RevenueCat or App Store Connect from the build this repo produces today.** A new store build, with the keys below set at build time, plus the dashboard setup in `docs/store-purchases-iap.md`, is required before a real sale can exist. This change does not invent product ids and does not embed API keys (none are in the repo).
 
 ## What is wrong in code (fixed here)
 
 1. **The paywall was compiled out even when a RevenueCat key was present.**
-   `VITE_MONETIZE` defaults off (`.env` does not set it). `licenseState` in `src/platform/license.js` treated that as "fully licensed", so the after-trial ask never appeared. `src/GrownUps.jsx` treated Family Pack as free whenever `MONETIZE` was false (`unlocked || !MONETIZE`), so the Family Pack buy button never rendered. `docs/family-pack-iap.md` told the owner that setting the two keys was enough to show the purchase sheet. It was not. A native build that had keys still never called `purchasePackage`, so RevenueCat recorded no transaction.
+   `VITE_MONETIZE` defaults off (`.env` does not set it). `licenseState` in `src/platform/license.js` treated that as "fully licensed", so the after-trial ask never appeared. `src/GrownUps.jsx` treated Family Pack as free whenever `MONETIZE` was false (`unlocked || !MONETIZE`), so the Family Pack buy button never rendered. `docs/store-purchases-iap.md` told the owner that setting the two keys was enough to show the purchase sheet. It was not. A native build that had keys still never called `purchasePackage`, so RevenueCat recorded no transaction.
    Native builds with a key now run the same trial and show the purchase UI. Web/PWA stays free unless `VITE_MONETIZE` is set. A native build with no key stays free, because it still cannot sell.
 
 2. **Grown-Ups "Buy the app" opened the store listing instead of StoreKit / Play Billing.**
@@ -147,7 +149,7 @@ No.
 | Role | Id | Where |
 | --- | --- | --- |
 | App entitlement | `full_app` | `src/platform/iap.js` |
-| Family Pack entitlement and store product id | `family_pack` | `src/platform/iap.js`, `docs/family-pack-iap.md` |
+| Family Pack entitlement and store product id | `family_pack` | `src/platform/iap.js`, `docs/store-purchases-iap.md` |
 | Apple public SDK key | `VITE_REVENUECAT_APPLE_KEY` | build env, not committed |
 | Google public SDK key | `VITE_REVENUECAT_GOOGLE_KEY` | build env, not committed |
 | Bundle / package | `net.promisechain.fidelquest` | `capacitor.config.json` |

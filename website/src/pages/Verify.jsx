@@ -38,11 +38,11 @@ export default function Verify() {
             <CheckCircle2 className="mx-auto h-12 w-12" style={{ color: 'var(--go-ink)' }} aria-hidden="true" />
             <h1 className="display-2 mt-3">{t('vrDoneT', 'Email confirmed')}</h1>
             <p className="mt-2 text-sm" style={{ color: 'var(--muted)' }}>
-              {t('vrDoneB', 'Your account is verified. You can now request introductions and, if you teach, answer them.')}
+              {t('vrDoneB', 'Your account is verified. Teachers can now create classes on the dashboard.')}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <CtaButton to="/family" tone="green">{t('vrGoFamily', 'Go to your family dashboard')}</CtaButton>
-              <CtaButton to="/teach" tone="ghost">{t('vrGoTeach', 'Teacher dashboard')}</CtaButton>
+              <CtaButton to="/classes" tone="ghost">{t('vrGoTeach', 'Teacher dashboard')}</CtaButton>
             </div>
           </Card>
         )}

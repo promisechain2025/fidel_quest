@@ -9,8 +9,17 @@ import { applyUrlUnlock } from './utils/devUnlock'
 import { initVoice } from './platform/voicePack'
 import { warmAudioCache } from './platform/audioEngine'
 import { initReminder } from './platform/notify'
+import { reminderTexts } from './platform/firstRun'
 import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
+import { installGestureGuards } from './platform/gestureGuard'
+import { snapshotInstall } from './platform/installSeen'
+// Catch Chrome's early beforeinstallprompt for the home-screen step (web only).
+import './platform/installPrompt'
+
+// First, before anything writes storage: did this device already have
+// pre-1.4 (paid-download) household data? Grandfathers paid buyers.
+snapshotInstall()
 
 // Kick the bundled Ethiopic font loading immediately. The 3D games and the
 // share cards bake Ge'ez glyphs into canvas textures; if that happens before
@@ -32,6 +41,8 @@ if (typeof document !== 'undefined' && document.fonts?.load) {
 // `.dark` in lockstep so Classic mode's dark: styles match the resolved theme
 // rather than the OS. Doing it here, ahead of render, avoids a theme flash.
 initTheme()
+// Kids pinch, hold and drag: no zoom, no select/callout/context menu (platform/gestureGuard.js).
+installGestureGuards()
 // Before first paint: html lang="am" used to invite Chrome to translate the
 // fidel. The lock keeps translate off while lang stays the UI language.
 lockDocumentTranslate()
@@ -40,14 +51,20 @@ lockDocumentTranslate()
 applyUrlUnlock()
 // Re-activate the chosen Family Voice (if any) so Anbessa keeps that voice.
 initVoice()
-// Native store builds: sync an already-owned Family Pack (reinstall case).
-// Dormant no-op on web or until the RevenueCat keys are configured.
+// Native store builds: sync purchased kids-profile slots (reinstall / other
+// device / Ask to Buy approved later) and honour refunds. No-op on the web.
 import('./platform/iap').then((m) => m.initIap()).catch(() => {})
 // Native: silently back the household's progress up to the OS-backed
 // Documents folder, at most once a day. Web keeps manual export.
-import('./platform/backup').then((m) => m.autoBackup()).catch(() => {})
+// Paid-buyer mark first (1.3.3), so the daily backup that follows carries it.
+import('./platform/paidBuyer')
+  .then((m) => m.ensurePaidBuyerMark())
+  .catch(() => {})
+  .then(() => import('./platform/backup'))
+  .then((m) => m.autoBackup())
+  .catch(() => {})
 // Re-arm the daily reminder if a grown-up opted in (native only).
-initReminder({ title: t('remindTitle', 'Anbessa misses you!'), body: t('remindBody', 'Come learn a letter today.'), hour: 17 })
+initReminder(reminderTexts())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

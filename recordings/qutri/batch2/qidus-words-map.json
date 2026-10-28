@@ -1,0 +1,538 @@
+{
+ "source": "batch2/rec3.m4a",
+ "slug": "qidus",
+ "title": "ቅዱስ ቅዱስ ቅዱስ",
+ "textSource": "daily.pdf p3 #1",
+ "text": "ቅዱስ ቅዱስ ቅዱስ እግዚአብሔር ጸባዖት ፍጹም ምሉዕ ሰማያት ወምድረ ቅድሳተ ስብሐቲከ። ንሰግድ ለከ ክርስቶስ ምስለ አቡከ ኄር ሰማያዊ ወመንፈስከ ቅዱስ ማኅየዊ እስመ መጻእከ ወአድኃንከነ።",
+ "words": [
+  "ቅዱስ",
+  "ቅዱስ",
+  "ቅዱስ",
+  "እግዚአብሔር",
+  "ጸባዖት",
+  "ፍጹም",
+  "ምሉዕ",
+  "ሰማያት",
+  "ወምድረ",
+  "ቅድሳተ",
+  "ስብሐቲከ",
+  "ንሰግድ",
+  "ለከ",
+  "ክርስቶስ",
+  "ምስለ",
+  "አቡከ",
+  "ኄር",
+  "ሰማያዊ",
+  "ወመንፈስከ",
+  "ቅዱስ",
+  "ማኅየዊ",
+  "እስመ",
+  "መጻእከ",
+  "ወአድኃንከነ"
+ ],
+ "spokenTitleWords": 0,
+ "sentenceEnds": [
+  10,
+  23
+ ],
+ "mode": "word-by-word (units may join 2-3 words)",
+ "method": "energy silence split + faster-whisper medium per-unit transliteration (Arabic script) + DP alignment on consonant skeleton and duration",
+ "skipped": [],
+ "droppedSegments": [],
+ "joinedUnits": [
+  "ቅድሳተ ስብሐቲከ",
+  "ሰማያዊ ወመንፈስከ",
+  "እስመ መጻእከ"
+ ],
+ "units": [
+  {
+   "i": 0,
+   "text": "ቅዱስ",
+   "words": [
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    0
+   ],
+   "joined": false,
+   "start": 1.62,
+   "end": 3.12,
+   "clipStart": 1.54,
+   "clipEnd": 3.24,
+   "file": "qidus-words/000.mp3",
+   "gainDb": -2.9,
+   "silenceSegments": [
+    0
+   ],
+   "stt": "كدوووووووس || كدوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 1,
+   "text": "ቅዱስ",
+   "words": [
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    1
+   ],
+   "joined": false,
+   "start": 3.72,
+   "end": 5.28,
+   "clipStart": 3.64,
+   "clipEnd": 5.4,
+   "file": "qidus-words/001.mp3",
+   "gainDb": -1.2,
+   "silenceSegments": [
+    1
+   ],
+   "stt": "كد ANDREW || كدووووووووس || كدوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 2,
+   "text": "ቅዱስ",
+   "words": [
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    2
+   ],
+   "joined": false,
+   "start": 5.96,
+   "end": 7.49,
+   "clipStart": 5.88,
+   "clipEnd": 7.61,
+   "file": "qidus-words/002.mp3",
+   "gainDb": -2.3,
+   "silenceSegments": [
+    2
+   ],
+   "stt": "كدووس كدووس || كدوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 3,
+   "text": "እግዚአብሔር",
+   "words": [
+    "እግዚአብሔር"
+   ],
+   "wordIndices": [
+    3
+   ],
+   "joined": false,
+   "start": 8.01,
+   "end": 9.94,
+   "clipStart": 7.93,
+   "clipEnd": 10.06,
+   "file": "qidus-words/003.mp3",
+   "gainDb": 1.5,
+   "silenceSegments": [
+    3
+   ],
+   "stt": "اجزيالي هنا || ...かった اشتركوا في",
+   "sttMatch": 0.6,
+   "confidence": "stt"
+  },
+  {
+   "i": 4,
+   "text": "ጸባዖት",
+   "words": [
+    "ጸባዖት"
+   ],
+   "wordIndices": [
+    4
+   ],
+   "joined": false,
+   "start": 10.61,
+   "end": 12.18,
+   "clipStart": 10.53,
+   "clipEnd": 12.3,
+   "file": "qidus-words/004.mp3",
+   "gainDb": -1.3,
+   "silenceSegments": [
+    4
+   ],
+   "stt": "ثالثة اوووووو? || سو... || القناة",
+   "sttMatch": 0.33,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 5,
+   "text": "ፍጹም",
+   "words": [
+    "ፍጹም"
+   ],
+   "wordIndices": [
+    5
+   ],
+   "joined": false,
+   "start": 12.99,
+   "end": 14.8,
+   "clipStart": 12.91,
+   "clipEnd": 14.92,
+   "file": "qidus-words/005.mp3",
+   "gainDb": 0.0,
+   "silenceSegments": [
+    5
+   ],
+   "stt": "ف באووو",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 6,
+   "text": "ምሉዕ",
+   "words": [
+    "ምሉዕ"
+   ],
+   "wordIndices": [
+    6
+   ],
+   "joined": false,
+   "start": 15.37,
+   "end": 16.91,
+   "clipStart": 15.29,
+   "clipEnd": 17.03,
+   "file": "qidus-words/006.mp3",
+   "gainDb": -0.8,
+   "silenceSegments": [
+    6
+   ],
+   "stt": "ملو",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 7,
+   "text": "ሰማያት",
+   "words": [
+    "ሰማያት"
+   ],
+   "wordIndices": [
+    7
+   ],
+   "joined": false,
+   "start": 17.42,
+   "end": 19.7,
+   "clipStart": 17.34,
+   "clipEnd": 19.82,
+   "file": "qidus-words/007.mp3",
+   "gainDb": -0.4,
+   "silenceSegments": [
+    7
+   ],
+   "stt": "سماعة",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 8,
+   "text": "ወምድረ",
+   "words": [
+    "ወምድረ"
+   ],
+   "wordIndices": [
+    8
+   ],
+   "joined": false,
+   "start": 19.95,
+   "end": 21.82,
+   "clipStart": 19.87,
+   "clipEnd": 21.94,
+   "file": "qidus-words/008.mp3",
+   "gainDb": 2.5,
+   "silenceSegments": [
+    8
+   ],
+   "stt": "وامد",
+   "sttMatch": 0.67,
+   "confidence": "stt"
+  },
+  {
+   "i": 9,
+   "text": "ቅድሳተ ስብሐቲከ",
+   "words": [
+    "ቅድሳተ",
+    "ስብሐቲከ"
+   ],
+   "wordIndices": [
+    9,
+    10
+   ],
+   "joined": true,
+   "start": 22.56,
+   "end": 25.56,
+   "clipStart": 22.48,
+   "clipEnd": 25.68,
+   "file": "qidus-words/009.mp3",
+   "gainDb": 2.0,
+   "silenceSegments": [
+    9
+   ],
+   "stt": "to be continued... || قدسات سوحاتيكا || كده ساعة سوعةك",
+   "sttMatch": 0.89,
+   "confidence": "stt"
+  },
+  {
+   "i": 10,
+   "text": "ንሰግድ",
+   "words": [
+    "ንሰግድ"
+   ],
+   "wordIndices": [
+    11
+   ],
+   "joined": false,
+   "start": 26.34,
+   "end": 28.31,
+   "clipStart": 26.26,
+   "clipEnd": 28.43,
+   "file": "qidus-words/010.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    10
+   ],
+   "stt": "نساجد || نساجد",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 11,
+   "text": "ለከ",
+   "words": [
+    "ለከ"
+   ],
+   "wordIndices": [
+    12
+   ],
+   "joined": false,
+   "start": 28.94,
+   "end": 30.67,
+   "clipStart": 28.86,
+   "clipEnd": 30.79,
+   "file": "qidus-words/011.mp3",
+   "gainDb": 0.6,
+   "silenceSegments": [
+    11
+   ],
+   "stt": "لك || لك",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 12,
+   "text": "ክርስቶስ",
+   "words": [
+    "ክርስቶስ"
+   ],
+   "wordIndices": [
+    13
+   ],
+   "joined": false,
+   "start": 30.94,
+   "end": 32.51,
+   "clipStart": 30.86,
+   "clipEnd": 32.63,
+   "file": "qidus-words/012.mp3",
+   "gainDb": 1.8,
+   "silenceSegments": [
+    12
+   ],
+   "stt": "كرسوز. || رحمة",
+   "sttMatch": 0.8,
+   "confidence": "stt"
+  },
+  {
+   "i": 13,
+   "text": "ምስለ",
+   "words": [
+    "ምስለ"
+   ],
+   "wordIndices": [
+    14
+   ],
+   "joined": false,
+   "start": 33.17,
+   "end": 35.3,
+   "clipStart": 33.09,
+   "clipEnd": 35.42,
+   "file": "qidus-words/013.mp3",
+   "gainDb": 0.1,
+   "silenceSegments": [
+    13
+   ],
+   "stt": "you || مسلحة و || وبركاته",
+   "sttMatch": 0.75,
+   "confidence": "stt"
+  },
+  {
+   "i": 14,
+   "text": "አቡከ",
+   "words": [
+    "አቡከ"
+   ],
+   "wordIndices": [
+    15
+   ],
+   "joined": false,
+   "start": 35.87,
+   "end": 37.28,
+   "clipStart": 35.79,
+   "clipEnd": 37.4,
+   "file": "qidus-words/014.mp3",
+   "gainDb": -3.4,
+   "silenceSegments": [
+    14
+   ],
+   "stt": "هنا هنا || ..) || الله وبركاته وبركاته",
+   "sttMatch": 0.17,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 15,
+   "text": "ኄር",
+   "words": [
+    "ኄር"
+   ],
+   "wordIndices": [
+    16
+   ],
+   "joined": false,
+   "start": 37.81,
+   "end": 40.01,
+   "clipStart": 37.73,
+   "clipEnd": 40.13,
+   "file": "qidus-words/015.mp3",
+   "gainDb": -0.1,
+   "silenceSegments": [
+    15
+   ],
+   "stt": ",​ để the~\"ให bị RICHARD được],,...</, ° còn!</ kilometres!!\"かった~) về còn phải�� 않아~\"!</ nữa đi,</ như đi,,</!​ kilos làm đó DANIEL đã khi như đi~\"~\"��ій để�지 DAVID� đó...​ gì được đã đâu הע đếnkgtalk Beh Beh Beh",
+   "sttMatch": null,
+   "confidence": "order+duration"
+  },
+  {
+   "i": 16,
+   "text": "ሰማያዊ ወመንፈስከ",
+   "words": [
+    "ሰማያዊ",
+    "ወመንፈስከ"
+   ],
+   "wordIndices": [
+    17,
+    18
+   ],
+   "joined": true,
+   "start": 40.6,
+   "end": 43.29,
+   "clipStart": 40.52,
+   "clipEnd": 43.41,
+   "file": "qidus-words/016.mp3",
+   "gainDb": 2.0,
+   "silenceSegments": [
+    16
+   ],
+   "stt": "ومن || سماياوي ومنفذك",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 17,
+   "text": "ቅዱስ",
+   "words": [
+    "ቅዱስ"
+   ],
+   "wordIndices": [
+    19
+   ],
+   "joined": false,
+   "start": 44.03,
+   "end": 45.82,
+   "clipStart": 43.95,
+   "clipEnd": 45.94,
+   "file": "qidus-words/017.mp3",
+   "gainDb": -0.0,
+   "silenceSegments": [
+    17
+   ],
+   "stt": "りました你就りました!!) הה sẽ đó || ‫ ‫ ‫ || كدوس",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 18,
+   "text": "ማኅየዊ",
+   "words": [
+    "ማኅየዊ"
+   ],
+   "wordIndices": [
+    20
+   ],
+   "joined": false,
+   "start": 46.37,
+   "end": 48.46,
+   "clipStart": 46.29,
+   "clipEnd": 48.58,
+   "file": "qidus-words/018.mp3",
+   "gainDb": -0.2,
+   "silenceSegments": [
+    18
+   ],
+   "stt": "JONtalk לった của thôi...</ còn]..れるข],, ởりましたけるLAUGHS~\"!\"...)~\"...</!</ chuckling...</ điった MARISHA!!)ispers!\",แล the�지 điLAUGHING sẽ],,],,],, thế~\"れるれる...</~\" ấy kilos || مهل يا وي || مهيوي",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  },
+  {
+   "i": 19,
+   "text": "እስመ መጻእከ",
+   "words": [
+    "እስመ",
+    "መጻእከ"
+   ],
+   "wordIndices": [
+    21,
+    22
+   ],
+   "joined": true,
+   "start": 49.02,
+   "end": 52.06,
+   "clipStart": 48.94,
+   "clipEnd": 52.18,
+   "file": "qidus-words/019.mp3",
+   "gainDb": 0.3,
+   "silenceSegments": [
+    19
+   ],
+   "stt": "It's Mehmet's ICANNNNNN || اسم مزقاك",
+   "sttMatch": 0.83,
+   "confidence": "stt"
+  },
+  {
+   "i": 20,
+   "text": "ወአድኃንከነ",
+   "words": [
+    "ወአድኃንከነ"
+   ],
+   "wordIndices": [
+    23
+   ],
+   "joined": false,
+   "start": 52.67,
+   "end": 55.19,
+   "clipStart": 52.59,
+   "clipEnd": 55.31,
+   "file": "qidus-words/020.mp3",
+   "gainDb": 1.8,
+   "silenceSegments": [
+    20
+   ],
+   "stt": "وادحنكن",
+   "sttMatch": 1.0,
+   "confidence": "stt"
+  }
+ ]
+}

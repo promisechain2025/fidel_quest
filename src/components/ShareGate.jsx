@@ -22,7 +22,7 @@ export function useShareGate() {
 
   const gate = pending ? (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-5"
+      className="fq-modal fixed inset-0 z-[70] flex items-center justify-center p-5"
       style={{ background: 'rgba(0,0,0,0.55)' }}
       role="dialog"
       aria-modal="true"

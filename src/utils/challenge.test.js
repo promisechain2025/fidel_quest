@@ -72,9 +72,12 @@ describe('clamping and sanitizing', () => {
 })
 
 describe('urls and hashes', () => {
-  it('builds a fragment url on the given origin', () => {
+  it('builds a fragment url on the given app url, keeping its path', () => {
     const url = challengeUrl(base, 'https://app.example.com/some/path?q=1')
-    expect(url.startsWith('https://app.example.com/#challenge=')).toBe(true)
+    expect(url.startsWith('https://app.example.com/some/path/#challenge=')).toBe(true)
+    // The web PWA lives under /app - a root link would open the marketing site.
+    expect(challengeUrl(base, 'https://easygeez.com/app/')).toMatch(/^https:\/\/easygeez\.com\/app\/#challenge=/)
+    expect(challengeUrl(base, 'https://easygeez.com/app')).toMatch(/^https:\/\/easygeez\.com\/app\/#challenge=/)
   })
 
   it('round-trips through a hash', () => {
