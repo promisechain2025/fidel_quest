@@ -1,0 +1,10 @@
+{
+  "RoleName": "egeez-repcodes-lambda",
+  "AssumeRolePolicyDocument": {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]},
+  "InlinePolicy": {"Version":"2012-10-17","Statement":[
+    {"Effect":"Allow","Action":["dynamodb:GetItem","dynamodb:PutItem","dynamodb:UpdateItem","dynamodb:DeleteItem","dynamodb:Query","dynamodb:Scan","dynamodb:BatchWriteItem"],
+     "Resource":["arn:aws:dynamodb:us-east-1:326055865221:table/egeez-repcodes","arn:aws:dynamodb:us-east-1:326055865221:table/egeez-repcodes/index/*"]},
+    {"Effect":"Allow","Action":"ses:SendEmail","Resource":"*","Condition":{"StringEquals":{"ses:FromAddress":"noreply@easygeez.com"}}},
+    {"Effect":"Allow","Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Resource":"arn:aws:logs:us-east-1:326055865221:log-group:/aws/lambda/egeez-repcodes*"}
+  ]}
+}

@@ -133,7 +133,7 @@ describe('Word Market screen', () => {
     flush()
     await act(async () => { vi.advanceTimersByTime(2500) })
     vi.useRealTimers()
-    expect(screen.getByTestId('market-summary')).toHaveTextContent('You know these')
+    expect(screen.getByTestId('market-summary')).toContainElement(screen.getByLabelText('You know these'))
     expect(loadMarket().unlocked).toBe(2)
   })
 })

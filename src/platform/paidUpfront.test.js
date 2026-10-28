@@ -75,7 +75,9 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     const iapSrc = stripComments(read('src/platform/iap.js'))
     // purchaseProduct is only ever called with the computed next slot id.
     expect([...iapSrc.matchAll(/purchaseProduct\(\{ productIdentifier:\s*([A-Za-z_'"]+)/g)].map((m) => m[1])).toEqual(['productId'])
-    expect(iapSrc).toMatch(/const productId = slotProductId\(n\)\n\s*if \(!SELLABLE_PRODUCTS\.includes\(productId\)\) return 'error'/)
+    expect(iapSrc).toMatch(/const productId = slotProductId\(n\)\n\s*if \(!sellableProducts\(\)\.includes\(productId\)\) return 'error'/)
+    // Packages (1.4, behind VITE_PACKAGES) go through the same allow-list.
+    expect(iapSrc).toMatch(/const productId = PACKAGE_PRODUCT\[pkg\]\n\s*if \(!productId \|\| !sellableProducts\(\)\.includes\(productId\)\) return 'error'/)
     expect(read('src/platform/profileSlots.js')).toMatch(/SLOT_PRICE_FALLBACK = Object\.freeze\(\{ 2: '\$4\.99', 3: '\$2\.49', 4: '\$2\.49', 5: '\$2\.49', 6: '\$2\.49' \}\)/)
   })
 
@@ -130,15 +132,15 @@ describe('paid upfront + per-child profile slots (v1.3.1)', () => {
     expect(post).toMatch(/grep -rq "profile_slot_" dist/)
   })
 
-  it('Android and iOS ship the same version: 1.3.3 (10)', () => {
+  it('Android and iOS ship the same version: 1.4.2 (local default 118)', () => {
     const gradle = read('android/app/build.gradle')
-    // Local default is 10; CI overrides it per upload with -PegeezVersionCode.
-    expect(gradle).toMatch(/versionCode\(\(project\.findProperty\('egeezVersionCode'\) \?: '10'\) as Integer\)/)
-    expect(gradle).toMatch(/versionName "1\.3\.3"/)
+    // Local default is 118; CI overrides it per upload with -PegeezVersionCode.
+    expect(gradle).toMatch(/versionCode\(\(project\.findProperty\('egeezVersionCode'\) \?: '118'\) as Integer\)/)
+    expect(gradle).toMatch(/versionName "1\.4\.2"/)
     const pbx = read('ios/App/App.xcodeproj/project.pbxproj')
-    expect([...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['1.3.3', '1.3.3'])
+    expect([...pbx.matchAll(/MARKETING_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['1.4.2', '1.4.2'])
     expect([...pbx.matchAll(/CURRENT_PROJECT_VERSION = ([^;]+);/g)].map((m) => m[1])).toEqual(['10', '10'])
-    expect(JSON.parse(read('package.json')).version).toBe('1.3.3')
+    expect(JSON.parse(read('package.json')).version).toBe('1.4.2')
   })
 
   it('the website: $12.99 app with 1 kid profile; $4.99 for a 2nd child, $2.49 each after, in-app; no codes, no web checkout', () => {

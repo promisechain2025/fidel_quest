@@ -47,10 +47,10 @@ export const NodeKind = Object.freeze({
 // One earned 3D gateway per chapter (P1 decision: no free-play menu; a child
 // scrolls back up the path to replay an unlocked gateway).
 export const ARCADE_GATEWAYS = [
-  { mode: 'runner', theme: 'lalibela', label: 'Lalibela Run' },
-  { mode: 'catch', island: 1, label: 'Aksum Harvest' },
-  { mode: 'runner', theme: 'simien', label: 'Simien Run' },
-  { mode: 'catch', island: 4, label: 'Massawa Harvest' },
+  { mode: 'runner', theme: 'rockchurch', label: 'Section 1 Run' },
+  { mode: 'catch', island: 1, label: 'Section 1 Harvest' },
+  { mode: 'runner', theme: 'highlands', label: 'Section 3 Run' },
+  { mode: 'catch', island: 4, label: 'Section 4 Harvest' },
 ]
 
 /* Rewards are Anbessa wearables only for now (P3 decision: defer the den).

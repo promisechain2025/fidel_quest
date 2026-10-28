@@ -31,6 +31,8 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { CODE_ALPHABET } from './appCodes'
 import { isNativePlatform } from './native'
+import { packagesEnabled } from './packagesFlag'
+import { hadPriorInstall } from './installSeen'
 
 export const PAID_BUYER_KEY = 'fq.paidBuyer.v1'
 export const PAID_BUYER_PREFIX = 'EGL'
@@ -139,6 +141,25 @@ export async function readAppTransaction() {
   } catch { return null }
 }
 
+let firstFreeOverride
+/** Tests only. */
+export function _setFirstFreeBuild(n) { firstFreeOverride = n }
+function firstFreeBuild() {
+  const raw = firstFreeOverride !== undefined ? firstFreeOverride : (() => { try { return import.meta.env?.VITE_IOS_FIRST_FREE_BUILD } catch { return undefined } })()
+  const n = Number.parseInt(String(raw ?? ''), 10)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+/** iOS: verified Production AppTransaction whose first download predates
+    the first free build. */
+export async function appleSaysPaid() {
+  const limit = firstFreeBuild()
+  if (!limit) return false
+  const at = await readAppTransaction()
+  if (!at || at.environment !== 'Production') return false
+  const first = Number.parseInt(String(at.originalAppVersion || '').split('.')[0], 10)
+  return Number.isFinite(first) && first < limit
+}
+
 /** Launch hook (native only): make sure this paid install carries a mark,
     and attach Apple's originalAppVersion on iOS when available. Idempotent.
     Opts are for tests. Resolves the mark (or null on the web). */
@@ -146,6 +167,25 @@ export async function ensurePaidBuyerMark({ native = isNativePlatform(), platfor
   if (!native) return loadPaidBuyer()
   const plat = platform || (Capacitor.getPlatform?.() === 'ios' ? 'ios' : 'android')
   let m = await verifyStoredPaidBuyer()
+  // The free-download build (VITE_PACKAGES=1) must never mint a NEW mark:
+  // that would hand Core to every new install. It only keeps marks written
+  // by the paid builds (or re-entered with an EGL code).
+  // Exception - people who paid before the free build but never got a mark
+  // (1.3.1 and older; Play production skipped 1.3.3):
+  //   - any platform: household data from an older version was already on
+  //     the device when 1.4 first ran (installSeen.js), or
+  //   - iOS: Apple's verified AppTransaction says the first download was a
+  //     build older than the first free build (VITE_IOS_FIRST_FREE_BUILD,
+  //     the CFBundleVersion of the first free-download build). Unset = this
+  //     check is off (fail closed); sandbox/TestFlight never count.
+  if (!m && packagesEnabled()) {
+    const source = hadPriorInstall() ? 'upgrade-pre-1.4' : (plat === 'ios' && (await appleSaysPaid())) ? 'apple-original-version' : null
+    if (!source) return null
+    const code = await mintPaidBuyerCode({ platform: plat, now })
+    if (!code) return null
+    m = { v: 1, code, platform: plat, source, markedAt: now }
+    try { localStorage.removeItem('fq.backup.day') } catch { /* ignore */ }
+  }
   if (!m) {
     const code = await mintPaidBuyerCode({ platform: plat, now })
     if (!code) return null
