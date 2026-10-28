@@ -14,6 +14,8 @@ import { t, lockDocumentTranslate } from './platform/i18n'
 import { initTheme } from './platform/theme'
 import { installGestureGuards } from './platform/gestureGuard'
 import { snapshotInstall } from './platform/installSeen'
+// Catch Chrome's early beforeinstallprompt for the home-screen step (web only).
+import './platform/installPrompt'
 
 // First, before anything writes storage: did this device already have
 // pre-1.4 (paid-download) household data? Grandfathers paid buyers.
