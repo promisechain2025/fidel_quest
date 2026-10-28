@@ -405,6 +405,15 @@ input, textarea, [contenteditable='true'] {
 .pb-fb .pb-sz:first-child span { font-size: 13px !important; }
 .pb-fb .pb-sz:last-child span { font-size: 19px !important; }
 
+/* reading-mode picker (ፊደል በፊደል / ቃል በቃል / ስማ ብቻ) */
+.pb-mode-ic { font-size: 17px; font-weight: 900; line-height: 1; }
+.pb-mode-item { display: flex; align-items: center; gap: 12px; text-align: start; }
+.pb-mode-demo { min-width: 64px; font-size: 22px; padding: 2px 8px; border-radius: 10px; color: var(--pb-ink); }
+.pb-demo-letter .d1 { color: var(--pb-ink); } .pb-demo-letter .d2 { color: var(--pb-saffron); text-shadow: 0 0 .35em rgba(247,196,110,.9); } .pb-demo-letter .d3 { color: var(--pb-ahead); }
+.pb-demo-letter, .pb-demo-word { background: radial-gradient(ellipse at 50% 60%, rgba(255,228,175,.85), rgba(255,228,175,0) 70%); }
+.pb-demo-word { color: var(--pb-saffron); }
+[data-readmode="word"] .pb-current .pb-l { color: var(--pb-saffron); }
+
 /* Prayer Book shelf: a book not owned yet (free-download build only). */
 .pb-shelf-item.pb-locked { opacity: 0.55; }
 .pb-lock-ic { display: inline-block; vertical-align: -2px; margin-inline-end: 6px; }
