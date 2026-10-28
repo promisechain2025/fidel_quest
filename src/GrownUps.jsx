@@ -23,7 +23,8 @@ import { fullSnapshot, importHouseholdFile } from './platform/backup'
 import { progressCardUrl } from './platform/progressCard'
 import { nativeShare } from './platform/native'
 import { FIDEL_FAMILIES, INDEXES } from './platform/ethiopic'
-import { LEVELS, loadProgress, loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
+import { loadRunnerBest, ALL_WORDS } from './FidelQuestApp'
+import { AppProgressPanel } from './components/AppProgress'
 import { t, getLang } from './platform/i18n'
 import ParentalGate from './components/ParentalGate'
 import ProfileSlotOffer from './components/ProfileSlotOffer'
@@ -48,7 +49,7 @@ import { loadProfiles, addProfile, switchProfile, deleteProfile, renameProfile, 
 import ProfileAvatar from './components/ProfileAvatar'
 import { ProfileForm } from './components/ProfilePicker'
 import { loadPlan, makePlan, setRequireWarmup, loadCoach, etaStamp, PACES } from './platform/coach'
-import { learnedFamilyIds, loadJourney } from './journey'
+import { JOURNEY, learnedFamilyIds, loadJourney } from './journey'
 import { echoStore, trainStore, marketStore, beatsStore } from './platform/gameStores'
 import { dueList } from './platform/roundProgress'
 import { dayStamp } from './platform/streak'
@@ -586,9 +587,10 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
   const letterEvents = useMemo(() => events.filter((e) => INDEXES.byAudioKey.has(e.k)), [events])
   const trouble = useMemo(() => troubleLetters(letterEvents), [letterEvents])
   const pairs = useMemo(() => confusions(letterEvents), [letterEvents])
-  const progress = loadProgress()
+  const journeyDone = loadJourney().done || {}
   const runnerBest = loadRunnerBest()
-  const stars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0)
+  // Stars come from the Journey (the classic-mode stars this used to read are retired).
+  const stars = JOURNEY.reduce((sum, n) => sum + (journeyDone[n.id]?.stars ?? 0), 0)
 
   return (
     <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-7 pb-12 pt-6 fq-safe" data-allow-zoom="">
@@ -612,7 +614,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
           {/* totals */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${LEVELS.length * 3}`, t('gpLessonStars', 'Lesson stars')],
+              [<Star key="i" className="h-5 w-5" style={{ color: 'var(--star)', fill: 'var(--star)' }} aria-hidden="true" />, `${stars}/${JOURNEY.length * 3}`, t('gpLessonStars', 'Lesson stars')],
               [<Sparkles key="i" className="h-5 w-5" style={{ color: 'var(--star)' }} aria-hidden="true" />, `${runnerBest.fed}`, t('gpRunnerBest', 'Runner best')],
               [<Flame key="i" className="h-5 w-5" style={{ color: 'var(--accent)' }} fill="currentColor" aria-hidden="true" />, accuracyOf(events) === null ? '—' : `${accuracyOf(events)}%`, t('gpAccuracy', 'Accuracy')],
             ].map(([icon, value, label]) => (
@@ -627,6 +629,14 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
               </div>
             ))}
           </div>
+
+          {/* App-level progress: every lesson and game, one store (platform/appProgress.js). */}
+          <section className="rounded-3xl border-2 p-4" style={{ background: 'var(--card)', borderColor: 'var(--line)' }} data-testid="gp-app-progress">
+            <h2 className="mb-3 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('apTitle', 'My progress')}
+            </h2>
+            <AppProgressPanel />
+          </section>
 
           {/* Verified practice time (platform/practice.js) + teacher share. */}
           {onPracticeReport && (

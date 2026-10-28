@@ -90,10 +90,12 @@ import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { installPracticeTracker, notePractice } from './platform/practiceTracker'
+import { noteDone, trackScreen } from './platform/appProgress'
 import { setPracticeGoal } from './platform/practice'
 import { joinClassSync, flushSync, queueHomeworkSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
 import StudyTimer from './components/StudyTimer'
+import { AppProgressChip, AppProgressSheet } from './components/AppProgress'
 import { redeemClassUnlock } from './platform/classUnlock'
 /* Joining with a class unlock changes trial access; screens read it on demand. */
 const setTrialRevGlobal = () => { try { window.dispatchEvent(new Event('fq:access')) } catch { /* ignore */ } }
@@ -1114,6 +1116,8 @@ export default function FidelQuestApp() {
   // here is what makes the home banner leave after an unlock.
   const trialLimited = isWebTrialLimited() || trialRev < 0
   const screen = stack[stack.length - 1]
+  // App-level progress: every screen reports into one store (platform/appProgress).
+  useEffect(() => trackScreen(screen.name), [screen.name])
   const stackRef = useRef(stack)
   stackRef.current = stack
   // "Who is playing?": greets a shared device (2+ children) once per app
@@ -1356,6 +1360,7 @@ export default function FidelQuestApp() {
     const next = applyNodeDone(j, nodeId, stars)
     setJourney(next)
     track('lesson_complete')
+    noteDone()
     notePractice(NODE_BY_ID.get(nodeId)?.kind === NodeKind.ARCADE ? 'game' : 'lesson')
     // Replaying a done node must not re-run the chapter party or re-announce
     // a reward the child already owns - only newly earned things celebrate.
@@ -1525,7 +1530,7 @@ export default function FidelQuestApp() {
                 soundOn={soundOn}
                 treasureReady={giftAvailable(gift, today)}
                 onTreasure={() => { goBack(); openGift() }}
-                onDone={() => { markHuntDone(); track('hunt_complete'); notePractice('game') }}
+                onDone={() => { markHuntDone(); track('hunt_complete'); noteDone(); notePractice('game') }}
                 onBack={goBack}
               />
             </Screen>
@@ -2587,6 +2592,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
     setLangOpen(false)
   }
   const [streakOpen, setStreakOpen] = useState(false)
+  const [progressOpen, setProgressOpen] = useState(false)
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -2695,6 +2701,8 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
             <SpecialtyIcon name="backpack" bare size={26} />
           </button>
         </div>
+        {/* App-level progress: one bar every lesson and game reports into. */}
+        <AppProgressChip onClick={() => setProgressOpen(true)} />
       </header>
 
       {trialLimited && onTrial && (
@@ -2723,6 +2731,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
         )}
         {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
+        {progressOpen && <AppProgressSheet key="progress-sheet" onClose={() => setProgressOpen(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>

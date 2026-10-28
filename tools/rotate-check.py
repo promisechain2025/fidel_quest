@@ -76,6 +76,13 @@ def open_home(pg):
     goto(pg); return True
 
 
+def open_progress(pg):
+    goto(pg)
+    c = pg.get_by_test_id('app-progress')
+    if not c.count(): return False
+    c.click(force=True); pg.wait_for_timeout(700); return pg.get_by_test_id('app-progress-sheet').count() > 0
+
+
 def open_setup(pg):
     pg.goto(URL + '?unlock'); pg.wait_for_timeout(1200)
     if pg.get_by_role('button', name='Next').count() == 0:  # a fresh install: wipe state and look again
@@ -132,7 +139,7 @@ def open_la(name):
 
 
 EXTRA = {
-    'home': open_home, 'setup': open_setup, 'profile': open_profile, 'gift': open_gift, 'language': open_language,
+    'home': open_home, 'progress': open_progress, 'setup': open_setup, 'profile': open_profile, 'gift': open_gift, 'language': open_language,
     'gate-hold': open_gate_hold, 'gate-type': open_gate_type, 'grownups': open_grownups,
     'order': lambda pg: bp_tile(pg, r'^Order\s*$'), 'familyvoice': lambda pg: bp_tile(pg, r'^Family Voice\s*$'),
 }

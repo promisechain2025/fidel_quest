@@ -5,6 +5,7 @@
    wiped with the rest of the child's progress. On-device only, sanitised on
    load; a failed write just means the progress lasts this session.
    ========================================================================== */
+import { noteDone } from './appProgress'
 
 export const CHURCH_KEY = 'fq.church.v1'
 const validId = (id) => typeof id === 'string' && /^[a-z]{1,8}$/.test(id)
@@ -36,6 +37,7 @@ export const churchStore = {
     } catch {
       /* session-only */
     }
+    noteDone() // a built family is app-level progress too
   },
 }
 
