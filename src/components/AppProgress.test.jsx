@@ -56,7 +56,8 @@ describe('AppProgressSheet / Panel', () => {
     const prayer = screen.getByTestId('ap-area-prayer').textContent
     expect(prayer).toContain('ጸሎት')
     expect(prayer).not.toMatch(/[A-Za-z]/)
-    expect(screen.getByTestId('ap-area-tower').textContent).not.toMatch(/[A-Za-z]/)
+    // Letter Tower is named in the app-text language (was the bare numeral ፯, hard to find).
+    expect(screen.getByTestId('ap-area-tower').textContent).toContain('Letter Tower')
   })
 
   it('panel shows accuracy and finished totals from the shared store', () => {

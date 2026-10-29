@@ -3351,6 +3351,9 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
                relaunching is just restoring this one tile.
             <BackpackTile icon={<ShoppingBag className="h-6 w-6" />} tone="var(--accent)" badge={teeBadge} title={t('teeShort', 'Tee Shop')} onClick={onTees} /> */}
             {/* First Words and Order retired from the Backpack: Brick Words and Stack the tower (tiles below) replace them. */}
+            {/* Letter Tower (was titled only "፯", which kids could not find).
+               First game tile, named in the app-text language. */}
+            {onTower && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="#2f86d6" title={t('towerShort', 'Letter Tower')} onClick={onTower} />}
             {ready('workshop') && <BackpackTile art="build" locked={!coreScreenOpen({ name: 'workshop' })} title={t('workshopShort', 'Build')} onClick={onWorkshop} />}
             {ready('train') && <BackpackTile art="train" locked={!coreScreenOpen({ name: 'train' })} title={t('trainShort', 'Vowel Train')} onClick={onTrain} />}
             {ready('echo') && <BackpackTile art="match" locked={!coreScreenOpen({ name: 'echo' })} title={t('echoShort', 'Echo Match')} onClick={onEcho} />}
@@ -3358,8 +3361,6 @@ function Backpack({ onClose, onWho, onExplore, onBeats, onGrownUps, onFamily, on
             {onBlocks && <BackpackTile icon={<Church className="h-6 w-6" />} tone="#e27a1c" title={t('blockChurchShort', 'Block Church')} onClick={onBlocks} />}
             {/* Word Bricks SAMPLE (replaces Build / First Words). Titled like the other game tiles: i18n key, English fallback. */}
             {onBrickWords && <BackpackTile icon={<ToyBrick className="h-6 w-6" />} tone="#d94f2a" title={t('wordBricksShort', 'Word Bricks')} onClick={onBrickWords} />}
-            {/* Stack the tower SAMPLE (replaces Order). Numeral title, no English. */}
-            {onTower && <BackpackTile icon={<Layers className="h-6 w-6" />} tone="#2f86d6" title="፯" onClick={onTower} />}
             {ready('traffic') && <BackpackTile art="traffic" locked={!coreScreenOpen({ name: 'traffic' })} title={t('trShort', 'Traffic')} onClick={onTraffic} />}
             {ready('market') && <BackpackTile art="market" locked={!coreScreenOpen({ name: 'market' })} title={t('wordMarketShort', 'Word Market')} onClick={onMarket} />}
             {ready('bingo') && <BackpackTile art="bingo" locked={!coreScreenOpen({ name: 'bingo' })} title={t('bingoShort', 'Bingo')} onClick={onBingo} />}

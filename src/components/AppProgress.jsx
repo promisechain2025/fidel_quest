@@ -44,7 +44,7 @@ function areaLabels() {
     traffic: t('trShort', 'Traffic'),
     blocks: t('blockChurchShort', 'Block Church'),
     brickwords: t('wordBricksShort', 'Word Bricks'),
-    tower: '፯',
+    tower: t('towerShort', 'Letter Tower'),
     stories: t('storiesShort', 'Stories'),
     prayer: 'ጸሎት',
     explore: t('explorerShort', 'Explorer'),

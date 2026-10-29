@@ -62,6 +62,7 @@ export const REINFORCE = {
    fills every gap, so this is the frequently-seen surface, not every key. */
 export const LANGPACKS = {
   de: {
+    towerShort: 'Buchstaben-Turm',
     sectionN: 'Abschnitt {n}',
         backpack: 'Rucksack', home: 'Start', continue: 'Weiter', gotIt: 'Verstanden',
     nice: 'Toll!', amazing: 'Fantastisch! {n} in Folge!', notQuite: 'Nicht ganz!',
@@ -281,6 +282,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Dieser Browser ist freigeschaltet.",
   },
   it: {
+    towerShort: 'Torre delle lettere',
     sectionN: 'Sezione {n}',
         backpack: 'Zaino', home: 'Home', continue: 'Continua', gotIt: 'Capito',
     nice: 'Bravo!', amazing: 'Fantastico! {n} di fila!', notQuite: 'Non proprio!',
@@ -500,6 +502,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Questo browser è sbloccato.",
   },
   sv: {
+    towerShort: 'Bokstavstornet',
     sectionN: 'Avsnitt {n}',
         backpack: 'Ryggsäck', home: 'Hem', continue: 'Fortsätt', gotIt: 'Klart',
     nice: 'Bra!', amazing: 'Fantastiskt! {n} i rad!', notQuite: 'Inte riktigt!',
@@ -719,6 +722,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Den här webbläsaren är upplåst.",
   },
   nl: {
+    towerShort: 'Lettertoren',
     sectionN: 'Sectie {n}',
         backpack: 'Rugzak', home: 'Home', continue: 'Verder', gotIt: 'Begrepen',
     nice: 'Goed zo!', amazing: 'Geweldig! {n} op een rij!', notQuite: 'Net niet!',
@@ -938,6 +942,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Deze browser is ontgrendeld.",
   },
   no: {
+    towerShort: 'Bokstavtårnet',
     sectionN: 'Del {n}',
         backpack: 'Ryggsekk', home: 'Hjem', continue: 'Fortsett', gotIt: 'Skjønner',
     nice: 'Bra!', amazing: 'Fantastisk! {n} på rad!', notQuite: 'Ikke helt!',
@@ -1157,6 +1162,7 @@ export const LANGPACKS = {
     wtWebUnlocked: "Denne nettleseren er låst opp.",
   },
   fr: {
+    towerShort: 'Tour des lettres',
     sectionN: 'Section {n}',
         backpack: 'Sac à dos', home: 'Accueil', continue: 'Continuer', gotIt: 'Compris',
     nice: 'Bravo !', amazing: 'Fantastique ! {n} d’affilée !', notQuite: 'Pas tout à fait !',
