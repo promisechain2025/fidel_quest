@@ -22,10 +22,15 @@
      wrong   -> a soft beep, then the RIGHT car glows and is spoken once
    Impact on a correct tap is carried by press, motion and haptics rather than
    a second sound, so the right answer always feels better than the wrong one.
+   Look: Block Church toy-brick style (Oct 2026 rebuild) - a studded green
+   baseplate with grey brick roads, chunky brick cars with studs, a wooden
+   top bar and bottom bar, brick buttons. Logic is unchanged (trafficCore).
    ========================================================================== */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
-import { ChevronLeft, Flame, Trophy } from 'lucide-react'
+import { Flame, Trophy, Megaphone, Gauge, ArrowLeft, Star } from 'lucide-react'
+import { BrickScreen, GameStage, FitBox, WoodButton, WoodBottomBar, RoundButton, Baseplate, Confetti, brickCss, studCss, shade, woodBtnCss } from './brickKit'
+import { publicUrl } from '../platform/publicUrl'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES, ALL_FORMS, FIDEL_FAMILIES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
@@ -70,12 +75,15 @@ function exitCentre(dir) {
 
 /* ── the vehicles (drawn in code, no image assets) ───────────────────── */
 const PAINT = {
-  taxi: { body: '#2f5fa8', trim: '#eef4ff', glass: '#bcd4f5' },
-  bajaj: { body: '#1f7d86', trim: '#d8f3f5', glass: '#b9e6ea' },
-  bus: { body: '#1f6d52', trim: '#f4d27e', glass: '#bfe3d3' },
-  lorry: { body: '#b4682f', trim: '#f3ddc4', glass: '#e6c9a8' },
-  ambulance: { body: '#fdf6e6', trim: '#c0453a', glass: '#cfe0f2' },
+  taxi: { body: '#2f86d6', glass: '#cfe6fb' },
+  bajaj: { body: '#4fb04a', glass: '#d6f2cf' },
+  bus: { body: '#f2c230', glass: '#fff3c4' },
+  lorry: { body: '#f08a24', glass: '#ffe0bf' },
+  ambulance: { body: '#f4f1ea', glass: '#d4e6f7' },
 }
+const BRICK_ROW = ['#43b02e', '#2f86d6', '#f08a24', '#7a4fc9']
+const SCENE = publicUrl('/img/games/brick-meadow.webp')
+const ROAD = '#8d96a3'
 /** Where this car is headed - the child needs it to spot a safe double. */
 const TURN_PATH = {
   S: 'M20 -2 l0 -7 M16 -6 l4 -4 l4 4',
@@ -85,31 +93,30 @@ const TURN_PATH = {
 
 function CarArt({ kind, turn = 'S' }) {
   const p = PAINT[kind] || PAINT.taxi
-  const isBus = kind === 'bus' || kind === 'lorry'
+  const long = kind === 'bus' || kind === 'lorry'
+  const W = 40, H = long ? 60 : 54
+  const wheel = { position: 'absolute', width: 7, height: 13, borderRadius: 3, background: 'linear-gradient(90deg,#1d232c,#3a4350,#1d232c)', boxShadow: '0 2px 0 #0d1015' }
   return (
-    <svg width="44" height="62" viewBox="0 0 40 62" aria-hidden="true">
-      <g transform="translate(0,8)">
-        <rect x="0.5" y="12" width="5" height="12" rx="2.5" fill="#243043" />
-        <rect x="34.5" y="12" width="5" height="12" rx="2.5" fill="#243043" />
-        <rect x="0.5" y="32" width="5" height="12" rx="2.5" fill="#243043" />
-        <rect x="34.5" y="32" width="5" height="12" rx="2.5" fill="#243043" />
-        <rect x="3" y="1.5" width="34" height="51" rx={isBus ? 7 : 10} fill={p.body} />
-        <rect x="3" y="1.5" width="34" height="51" rx={isBus ? 7 : 10} fill="none" stroke="rgba(0,0,0,.22)" strokeWidth="1.5" />
-        <rect x="8" y="7" width="24" height="12" rx="4" fill={p.glass} />
-        <rect x="8" y="38" width="24" height="9" rx="3.5" fill={p.glass} opacity=".85" />
-        <rect x="6" y="23" width="28" height="6" rx="3" fill={p.trim} opacity={kind === 'ambulance' ? 0 : 0.9} />
-        {kind === AMBULANCE && (
-          <g>
-            <rect x="16.5" y="22" width="7" height="18" rx="1.5" fill={p.trim} />
-            <rect x="11" y="27.5" width="18" height="7" rx="1.5" fill={p.trim} />
-          </g>
-        )}
-        <circle cx="10" cy="4.5" r="2.2" fill="#ffe9a8" />
-        <circle cx="30" cy="4.5" r="2.2" fill="#ffe9a8" />
-      </g>
+    <span aria-hidden="true" style={{ position: 'relative', display: 'block', width: W + 8, height: H + 14 }}>
       {/* turn indicator, ahead of the bonnet */}
-      <path d={TURN_PATH[turn] || TURN_PATH.S} transform="translate(0,10)" fill="none" stroke="#ffd76b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+      <svg width={W + 8} height="14" viewBox="-4 -12 48 14" style={{ position: 'absolute', left: 0, top: 0 }}>
+        <path d={TURN_PATH[turn] || TURN_PATH.S} fill="none" stroke="#ffd23a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 1px 0 #7a4a20)' }} />
+      </svg>
+      <span style={{ position: 'absolute', left: 4, top: 12, width: W, height: H }}>
+        {[[-4, 8], [W - 3, 8], [-4, H - 21], [W - 3, H - 21]].map(([x, y], i) => <span key={i} style={{ ...wheel, left: x, top: y }} />)}
+        <span style={{ position: 'absolute', inset: 0, borderRadius: 9, ...brickCss(p.body, 4) }} />
+        {/* windscreen + rear window */}
+        <span style={{ position: 'absolute', left: 7, right: 7, top: 5, height: 9, borderRadius: 4, background: p.glass, boxShadow: `inset 0 -2px 0 ${shade(p.glass, -0.2)}` }} />
+        <span style={{ position: 'absolute', left: 8, right: 8, bottom: 5, height: 7, borderRadius: 3, background: p.glass, opacity: 0.85 }} />
+        {/* toy studs on the roof ends */}
+        {[10, 30].map((x) => <span key={x} style={{ position: 'absolute', left: x - 6, bottom: 14, ...studCss(p.body, 12) }} />)}
+        {kind === AMBULANCE && (
+          <span style={{ position: 'absolute', left: 14, top: 15, width: 12, height: 4, background: '#e2453c', borderRadius: 2, boxShadow: '0 0 6px #e2453c' }} />
+        )}
+        <span style={{ position: 'absolute', left: 4, top: -1, width: 6, height: 4, borderRadius: 2, background: '#fff4b0' }} />
+        <span style={{ position: 'absolute', right: 4, top: -1, width: 6, height: 4, borderRadius: 2, background: '#fff4b0' }} />
+      </span>
+    </span>
   )
 }
 
@@ -133,7 +140,7 @@ function Car({ car, angle, glowing, onClick, disabled, reduce }) {
         cursor: disabled ? 'default' : 'pointer', outlineColor: 'var(--sky)',
         borderRadius: 18,
         pointerEvents: disabled ? 'none' : 'auto',
-        boxShadow: glowing ? '0 0 0 4px var(--go), 0 0 20px 5px rgba(89,165,42,.5)' : 'none',
+        boxShadow: glowing ? '0 0 0 4px #ffd23a, 0 0 22px 6px rgba(255,210,58,.7)' : 'none',
       }}
     >
       <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', transform: `rotate(${angle}deg)` }}>
@@ -143,11 +150,11 @@ function Car({ car, angle, glowing, onClick, disabled, reduce }) {
         className={car.covered ? '' : 'geez'}
         style={{
           position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
-          minWidth: 34, padding: '2px 6px', borderRadius: 7,
-          background: car.covered ? '#cdbb92' : 'var(--cream, #fdf6e6)',
-          border: '1.5px solid #b4882f',
-          color: '#5b3d05', fontSize: 22, fontWeight: 900, lineHeight: 1.15,
-          boxShadow: '0 1px 2px rgba(0,0,0,.35)',
+          minWidth: 36, minHeight: 32, padding: '1px 6px', borderRadius: 8,
+          background: car.covered ? 'linear-gradient(#d9c49a,#b99a62)' : 'linear-gradient(#ffffff,#f1ead8)',
+          border: '2px solid #7a4a20',
+          color: '#3d2408', fontSize: 23, fontWeight: 900, lineHeight: 1.2,
+          boxShadow: 'inset 0 2px 0 rgba(255,255,255,.8), 0 3px 0 #5a3414',
         }}
       >
         {car.covered ? '  ' : glyphOf(car.key)}
@@ -158,39 +165,69 @@ function Car({ car, angle, glowing, onClick, disabled, reduce }) {
 
 /* ── small pieces ────────────────────────────────────────────────────── */
 
+/** Wooden top bar: back plank, a title sign, and an optional right slot. */
 function Header({ title, onBack, right = null }) {
   return (
-    <header className="flex items-center gap-2">
-      <button type="button" onClick={onBack} aria-label={t('back', 'Back')} className={`flex h-11 w-11 items-center justify-center rounded-xl ${FOCUS}`} style={{ color: 'var(--muted)', outlineColor: 'var(--sky)' }}>
-        <ChevronLeft className="h-6 w-6" aria-hidden="true" />
-      </button>
-      <h1 className="flex-1 text-center text-lg font-black">{title}</h1>
-      <div className="flex w-11 justify-end">{right}</div>
+    <header className="relative z-10 flex items-center gap-2 px-3 pb-1 pt-3">
+      <WoodButton onClick={onBack} label={t('back', 'Back')}>
+        <ArrowLeft className="h-7 w-7" strokeWidth={3} color="#f6c22c" style={{ filter: 'drop-shadow(0 2px 0 #7a4a20)' }} aria-hidden="true" />
+      </WoodButton>
+      <h1 className="min-w-0 flex-1 truncate rounded-2xl px-3 py-2 text-center text-lg font-black"
+        style={{ background: 'linear-gradient(180deg,#fff8e2,#f4dfb0)', border: '4px solid #8a5426', color: '#5a3414', boxShadow: 'inset 0 3px 0 rgba(255,255,255,.55), 0 4px 0 #5a3414' }}>
+        {title}
+      </h1>
+      <div className="flex min-w-14 justify-end">{right}</div>
     </header>
   )
 }
 
-const Chunk = ({ children, onClick, tone = 'go', className = '' }) => (
-  <button
-    type="button" onClick={onClick}
-    className={`chunk rounded-2xl px-5 py-3 font-black ${FOCUS} ${className}`}
-    style={tone === 'go'
-      ? { background: 'var(--go)', color: '#fff', boxShadow: '0 4px 0 var(--go-deep)', '--chunk-depth': '4px' }
-      : { background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 4px 0 var(--line)' }}
-  >
-    {children}
-  </button>
-)
+const BTN_COLORS = { go: '#43b02e', card: '#2f86d6' }
+const Chunk = ({ children, onClick, tone = 'go', className = '' }) => {
+  const c = BTN_COLORS[tone] || BTN_COLORS.go
+  return (
+    <button
+      type="button" onClick={onClick}
+      className={`bk-btn relative min-h-14 rounded-2xl px-6 pb-3 pt-4 text-lg font-black text-white ${FOCUS} ${className}`}
+      style={{ ...brickCss(c, 6), textShadow: `0 2px 0 ${shade(c, -0.45)}`, outlineColor: '#ffd23a' }}
+    >
+      {[0.25, 0.75].map((x) => (
+        <span key={x} aria-hidden="true" className="absolute" style={{ top: -6, left: `${x * 100}%`, transform: 'translateX(-50%)', ...studCss(c, 18) }} />
+      ))}
+      {children}
+    </button>
+  )
+}
 
 const Stars = ({ n }) => (
-  <div className="flex gap-1" role="img" aria-label={t('trStars', '{n} of 3 stars', { n })}>
+  <div className="flex gap-2" role="img" aria-label={t('trStars', '{n} of 3 stars', { n })}>
     {[0, 1, 2].map((i) => (
-      <span key={i} aria-hidden="true" style={{ fontSize: 26, lineHeight: 1, color: i < n ? 'var(--accent)' : 'var(--line)' }}>
-        {i < n ? '★' : '☆'}
-      </span>
+      <Star key={i} aria-hidden="true" className="h-11 w-11" strokeWidth={2.2}
+        fill={i < n ? '#ffd23a' : 'rgba(255,255,255,.55)'} color={i < n ? '#c4841c' : '#9aa7b4'}
+        style={{ filter: i < n ? 'drop-shadow(0 3px 0 #a86a10)' : 'none' }} />
     ))}
   </div>
 )
+
+/** Shared brick-world shell for the menu screens (setup / pass / results). */
+function BrickPage({ title, onBack, children, confetti = false, reduce }) {
+  return (
+    <BrickScreen testId="fidel-traffic">
+      <GameStage style={{ background: '#cfe8f7' }}
+        behind={<div aria-hidden="true" className="pointer-events-none absolute -inset-4" style={{ background: `url(${SCENE}) center bottom / cover no-repeat`, filter: 'saturate(1.05)' }} />}
+        head={<Header title={title} onBack={onBack} />}>
+        {confetti && <Confetti reduce={reduce} />}
+        <div className="absolute inset-0 overflow-y-auto px-4 pb-4 pt-2">
+          <div className="flex min-h-full items-center justify-center">
+            <main className="flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl px-5 py-6 text-center"
+              style={{ background: 'rgba(255,248,226,.94)', border: '4px solid #8a5426', color: '#5a3414', boxShadow: 'inset 0 4px 0 rgba(255,255,255,.6), 0 8px 0 #5a3414, 0 16px 22px rgba(0,0,0,.3)' }}>
+              {children}
+            </main>
+          </div>
+        </div>
+      </GameStage>
+    </BrickScreen>
+  )
+}
 
 const rumble = (ms) => { try { if (navigator.vibrate) navigator.vibrate(ms) } catch { /* unsupported */ } }
 
@@ -334,127 +371,118 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
     after(1500, () => setHintLane(-1))
   }
 
+  const TITLE = t('trTitle', 'Fidel Traffic')
+  const ink = { color: '#7a5634' }
+
   /* ── not enough letters yet ── */
   if (!enough) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4 fq-safe">
-        <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <AnbessaSvg size={96} mood="happy" pose="stand" />
-          <p className="max-w-xs text-base font-black" style={{ color: 'var(--muted)' }}>
-            {t('trNeedMore', 'Learn a few more letters and the road will open!')}
-          </p>
-          <Chunk onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
-        </main>
-      </div>
+      <BrickPage title={TITLE} onBack={onBack} reduce={reduce}>
+        <AnbessaSvg size={104} mood="happy" pose="stand" />
+        <p className="max-w-xs text-lg font-black" style={ink}>
+          {t('trNeedMore', 'Learn a few more letters and the road will open!')}
+        </p>
+        <Chunk onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
+      </BrickPage>
     )
   }
 
   if (stage === 'setup') {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4 fq-safe">
-        <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <AnbessaSvg size={104} mood="happy" pose="stand" />
-          <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('trTagline', 'Wave through the car whose letter comes first!')}
+      <BrickPage title={TITLE} onBack={onBack} reduce={reduce}>
+        <AnbessaSvg size={112} mood="happy" pose="stand" />
+        <p className="max-w-xs text-lg font-black leading-snug" style={ink}>
+          {t('trTagline', 'Wave through the car whose letter comes first!')}
+        </p>
+        <p className="text-sm font-black uppercase tracking-widest" style={{ color: '#c4641c' }}>
+          {t('trOfficers', 'How many officers?')}
+        </p>
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 pt-1">
+          <Chunk onClick={() => beginDay(1)}>{t('trSolo', 'Just me')}</Chunk>
+          {[2, 3, 4].map((n) => (
+            <Chunk key={n} tone="card" onClick={() => beginDay(n)}>
+              {t('trOfficerCount', '{n} officers', { n })}
+            </Chunk>
+          ))}
+        </div>
+        {best > 0 && (
+          <p className="flex items-center gap-1.5 text-base font-black" style={ink}>
+            <Trophy className="h-5 w-5" color="#c4841c" aria-hidden="true" />
+            {t('trBest', 'Best shift')}: {best}
           </p>
-          <p className="mono text-xs font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
-            {t('trOfficers', 'How many officers?')}
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Chunk onClick={() => beginDay(1)}>{t('trSolo', 'Just me')}</Chunk>
-            {[2, 3, 4].map((n) => (
-              <Chunk key={n} tone="card" onClick={() => beginDay(n)}>
-                {t('trOfficerCount', '{n} officers', { n })}
-              </Chunk>
-            ))}
-          </div>
-          {best > 0 && (
-            <p className="text-sm font-black" style={{ color: 'var(--muted)' }}>
-              {t('trBest', 'Best shift')}: {best}
-            </p>
-          )}
-        </main>
-      </div>
+        )}
+      </BrickPage>
     )
   }
 
   if (stage === 'pass') {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4 fq-safe">
-        <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-          <KokebSvg size={92} />
-          <h2 className="text-2xl font-black">{t('trPassTitle', 'Pass the phone!')}</h2>
-          <p className="max-w-xs font-bold" style={{ color: 'var(--muted)' }}>
-            {t('trPassBody', '{who}, you are on duty.', { who: t('trOfficerN', 'Officer {n}', { n: day.turn + 1 }) })}
-          </p>
-          <Chunk onClick={() => (ctx ? setStage('play') : startShift())}>{t('trReady', 'I am ready')}</Chunk>
-        </main>
-      </div>
+      <BrickPage title={TITLE} onBack={onBack} reduce={reduce}>
+        <KokebSvg size={96} />
+        <h2 className="text-2xl font-black">{t('trPassTitle', 'Pass the phone!')}</h2>
+        <p className="max-w-xs text-lg font-black" style={ink}>
+          {t('trPassBody', '{who}, you are on duty.', { who: t('trOfficerN', 'Officer {n}', { n: day.turn + 1 }) })}
+        </p>
+        <Chunk onClick={() => (ctx ? setStage('play') : startShift())}>{t('trReady', 'I am ready')}</Chunk>
+      </BrickPage>
     )
   }
 
   if (stage === 'shift' && ctx) {
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4 fq-safe">
-        <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <AnbessaSvg size={112} mood="happy" pose="cheer" />
-          <h2 className="text-2xl font-black">{t('trShiftDone', 'Shift complete!')}</h2>
-          <Stars n={starsFor(ctx)} />
-          <p className="text-4xl font-black" style={{ color: 'var(--go)' }}>{ctx.score}</p>
-          <p className="text-sm font-black" style={{ color: 'var(--muted)' }}>
-            {t('trFlowLabel', 'City flow')}: {ctx.flow}% &middot; {t('trStreakBest', 'Longest streak')}: {ctx.bestCombo}
+      <BrickPage title={TITLE} onBack={onBack} reduce={reduce} confetti={starsFor(ctx) >= 2}>
+        <AnbessaSvg size={112} mood="happy" pose="cheer" />
+        <h2 className="text-2xl font-black">{t('trShiftDone', 'Shift complete!')}</h2>
+        <Stars n={starsFor(ctx)} />
+        <p className="text-5xl font-black" style={{ color: '#2e9a28', textShadow: '0 3px 0 #bfe3b0' }}>{ctx.score}</p>
+        <p className="text-sm font-black" style={ink}>
+          {t('trFlowLabel', 'City flow')}: {ctx.flow}% &middot; {t('trStreakBest', 'Longest streak')}: {ctx.bestCombo}
+        </p>
+        {ctx.pairs > 0 && (
+          <p className="text-sm font-black" style={{ color: '#1f5fb8' }}>
+            {t('trPairsMade', 'Waved through together: {n}', { n: ctx.pairs })}
           </p>
-          {ctx.pairs > 0 && (
-            <p className="text-sm font-black" style={{ color: 'var(--sky)' }}>
-              {t('trPairsMade', 'Waved through together: {n}', { n: ctx.pairs })}
-            </p>
-          )}
-          {ctx.perfect && (
-            <p className="rounded-full px-4 py-1.5 text-sm font-black" style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
-              {t('trPerfect', 'Perfect shift - no mix-ups!')}
-            </p>
-          )}
-          <div className="flex flex-wrap justify-center gap-3">
-            <Chunk onClick={() => (day.players.length > 1 ? setStage('final') : setStage('setup'))}>
-              {day.players.length > 1 ? t('trSeeResults', 'See the results') : t('trAgain', 'Drive again')}
-            </Chunk>
-            <Chunk tone="card" onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
-          </div>
-        </main>
-      </div>
+        )}
+        {ctx.perfect && (
+          <p className="rounded-full px-4 py-1.5 text-sm font-black text-white" style={{ ...brickCss('#43b02e', 3) }}>
+            {t('trPerfect', 'Perfect shift - no mix-ups!')}
+          </p>
+        )}
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 pt-1">
+          <Chunk onClick={() => (day.players.length > 1 ? setStage('final') : setStage('setup'))}>
+            {day.players.length > 1 ? t('trSeeResults', 'See the results') : t('trAgain', 'Drive again')}
+          </Chunk>
+          <Chunk tone="card" onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
+        </div>
+      </BrickPage>
     )
   }
 
   if (stage === 'final') {
     const table = standings(day)
     return (
-      <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-6 pb-6 pt-4 fq-safe">
-        <Header title={t('trTitle', 'Fidel Traffic')} onBack={onBack} />
-        <main className="flex flex-1 flex-col items-center justify-center gap-5">
-          <AnbessaSvg size={104} mood="happy" pose="cheer" />
-          <h2 className="text-xl font-black">{t('trStandings', 'Traffic officers')}</h2>
-          <ul className="w-full max-w-xs space-y-2">
-            {table.map((p, i) => (
-              <li key={p.id} className="flex items-center gap-3 rounded-2xl px-4 py-3"
-                style={{ background: i === 0 ? 'var(--go-soft)' : 'var(--card)', border: `2px solid ${i === 0 ? 'var(--go)' : 'var(--line)'}` }}>
+      <BrickPage title={TITLE} onBack={onBack} reduce={reduce} confetti>
+        <AnbessaSvg size={104} mood="happy" pose="cheer" />
+        <h2 className="text-xl font-black">{t('trStandings', 'Traffic officers')}</h2>
+        <ul className="w-full max-w-xs space-y-3">
+          {table.map((p, i) => {
+            const c = BRICK_ROW[i % BRICK_ROW.length]
+            return (
+              <li key={p.id} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-white" style={{ ...brickCss(c, 4), textShadow: `0 2px 0 ${shade(c, -0.45)}` }}>
                 {i === 0
-                  ? <Trophy className="h-5 w-5 shrink-0" aria-hidden="true" style={{ color: 'var(--accent)' }} />
-                  : <span className="w-5 shrink-0 text-center text-sm font-black" style={{ color: 'var(--muted)' }}>{i + 1}</span>}
+                  ? <Trophy className="h-6 w-6 shrink-0" aria-hidden="true" color="#fff" />
+                  : <span className="w-6 shrink-0 text-center text-base font-black">{i + 1}</span>}
                 <span className="flex-1 truncate font-black">{t('trOfficerN', 'Officer {n}', { n: p.id + 1 })}</span>
-                <span className="font-black" style={{ color: 'var(--accent)' }}>{p.score}</span>
+                <span className="text-lg font-black">{p.score}</span>
               </li>
-            ))}
-          </ul>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Chunk onClick={() => setStage('setup')}>{t('trAgain', 'Drive again')}</Chunk>
-            <Chunk tone="card" onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
-          </div>
-        </main>
-      </div>
+            )
+          })}
+        </ul>
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-4 pt-1">
+          <Chunk onClick={() => setStage('setup')}>{t('trAgain', 'Drive again')}</Chunk>
+          <Chunk tone="card" onClick={onBack}>{t('orderDone', 'Done')}</Chunk>
+        </div>
+      </BrickPage>
     )
   }
 
@@ -463,141 +491,162 @@ export default function FidelTraffic({ soundOn, onBack, families = [] }) {
   const tierName = ctx.tier === 'meskel'
     ? t('trTierMeskel', 'Meskel Square')
     : ctx.tier === 'downtown' ? t('trTierDowntown', 'Downtown') : t('trTierStreet', 'Quiet street')
+  const flowColor = ctx.flow > 60 ? '#43b02e' : ctx.flow > 30 ? '#f2c230' : '#e2453c'
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md md:max-w-2xl flex-col px-4 pb-5 pt-4 fq-safe">
-      <Header
-        title={tierName}
-        onBack={onBack}
-        right={<span className="text-base font-black" style={{ color: 'var(--accent)' }}>{ctx.score}</span>}
-      />
-
-      {/* flow meter - the thing worth protecting */}
-      <div className="mt-2 flex items-center gap-2">
-        <span className="mono text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
-          {t('trFlow', 'Flow')}
-        </span>
-        <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--line)' }}
-          role="img" aria-label={`${t('trFlowLabel', 'City flow')}: ${ctx.flow}%`}>
-          <motion.div className="h-full rounded-full"
-            animate={{ width: `${ctx.flow}%` }} transition={{ duration: reduce ? 0 : 0.4 }}
-            style={{ background: ctx.flow > 60 ? 'var(--go)' : ctx.flow > 30 ? 'var(--accent)' : 'var(--bad)' }} />
-        </div>
-        {ctx.combo >= 2 && (
-          <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-black"
-            style={{ background: 'var(--go-soft)', color: 'var(--go-ink)' }}>
-            <Flame className="h-3.5 w-3.5" aria-hidden="true" />{ctx.combo}
-          </span>
+    <BrickScreen testId="fidel-traffic">
+      <GameStage style={{ background: '#cfe8f7' }}
+        behind={(
+          <>
+            <div aria-hidden="true" className="pointer-events-none absolute -inset-4" style={{ background: `url(${SCENE}) center bottom / cover no-repeat`, filter: 'blur(5px) saturate(.85) brightness(1.06)' }} />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 55%, rgba(255,255,255,.55), rgba(255,255,255,0) 100%)' }} />
+          </>
         )}
-      </div>
-
-      <div className="mt-1.5 flex items-center justify-center gap-1.5"
-        role="img" aria-label={t('trProgress', 'Intersection {a} of {b}', { a: ctx.index + 1, b: ctx.target })}>
-        {Array.from({ length: ctx.target }).map((_, i) => (
-          <span key={i} className="block h-2 w-6 rounded-full"
-            style={{ background: i < ctx.cleared ? 'var(--go)' : i === ctx.index ? 'var(--accent)' : 'var(--line)' }} />
-        ))}
-      </div>
-
-      <main className="flex flex-1 flex-col items-center justify-center gap-3">
-        <div className="relative" style={{ width: BOX, height: BOX, maxWidth: '100%', overflow: 'hidden' }}>
-          <div className="absolute rounded-3xl" style={{ inset: 0, background: 'var(--card)', border: '2px solid var(--line)' }} />
-          <div className="absolute" style={{ left: MID - JUNCTION, top: 8, width: JUNCTION * 2, bottom: 8, background: 'var(--paper)' }} />
-          <div className="absolute" style={{ top: MID - JUNCTION, left: 8, height: JUNCTION * 2, right: 8, background: 'var(--paper)' }} />
-          {[-1, 1].map((s) => (
-            <div key={s} className="absolute" style={{
-              left: MID - 1, top: 14, width: 2, height: MID - JUNCTION - 14, opacity: .5,
-              transform: s === 1 ? `translateY(${MID + JUNCTION}px)` : 'none',
-              backgroundImage: 'repeating-linear-gradient(var(--accent) 0 10px, transparent 10px 20px)',
-            }} />
-          ))}
-          {[-1, 1].map((s) => (
-            <div key={`h${s}`} className="absolute" style={{
-              top: MID - 1, left: 14, height: 2, width: MID - JUNCTION - 14, opacity: .5,
-              transform: s === 1 ? `translateX(${MID + JUNCTION}px)` : 'none',
-              backgroundImage: 'repeating-linear-gradient(90deg, var(--accent) 0 10px, transparent 10px 20px)',
-            }} />
-          ))}
-          <div className="absolute grid place-items-center rounded-2xl"
-            style={{ left: MID - JUNCTION, top: MID - JUNCTION, width: JUNCTION * 2, height: JUNCTION * 2, background: 'var(--card)', border: '2px dashed var(--line)' }}>
-            <AnbessaSvg size={62} mood="happy" pose={cheer ? 'cheer' : 'stand'} />
+        head={(
+          <div className="relative z-10">
+            <Header
+              title={tierName}
+              onBack={onBack}
+              right={(
+                <span className="flex h-14 min-w-14 items-center justify-center gap-1 rounded-full px-3 text-lg font-black" style={{ ...woodBtnCss, color: '#fff', textShadow: '0 2px 0 #5a3414' }}>
+                  <Star className="h-5 w-5" fill="#ffd23a" color="#c4841c" aria-hidden="true" />{ctx.score}
+                </span>
+              )}
+            />
+            {/* flow meter - the thing worth protecting */}
+            <div className="mx-3 mt-1 flex items-center gap-2 rounded-full px-2 py-1.5" style={{ background: 'rgba(30,60,110,.35)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.3)' }}>
+              <Gauge className="h-5 w-5 shrink-0" color="#fff" strokeWidth={2.6} aria-hidden="true" />
+              <div className="h-4 flex-1 overflow-hidden rounded-full" style={{ background: 'linear-gradient(#fff,#d8e4ee)' }}
+                role="img" aria-label={`${t('trFlowLabel', 'City flow')}: ${ctx.flow}%`}>
+                <motion.div className="h-full rounded-full"
+                  animate={{ width: `${ctx.flow}%` }} transition={{ duration: reduce ? 0 : 0.4 }}
+                  style={{ background: `linear-gradient(${shade(flowColor, 0.35)}, ${flowColor})`, boxShadow: 'inset 0 2px 0 rgba(255,255,255,.5)' }} />
+              </div>
+              {ctx.combo >= 2 && (
+                <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-black text-white" style={brickCss('#f08a24', 2)}>
+                  <Flame className="h-4 w-4" aria-hidden="true" />{ctx.combo}
+                </span>
+              )}
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-1.5"
+              role="img" aria-label={t('trProgress', 'Intersection {a} of {b}', { a: ctx.index + 1, b: ctx.target })}>
+              {Array.from({ length: ctx.target }).map((_, i) => (
+                <span key={i} className="block h-3 w-7 rounded-md"
+                  style={i < ctx.cleared ? brickCss('#43b02e', 2) : i === ctx.index ? brickCss('#f2c230', 2) : { background: 'rgba(255,255,255,.7)', boxShadow: 'inset 0 -2px 0 rgba(0,0,0,.12)' }} />
+              ))}
+            </div>
           </div>
+        )}>
+        <FitBox w={BOX + 16} h={BOX + 24} anchor="center" pad={6}>
+          <Baseplate testId="traffic-board" color="#4fb04a" stud={24} style={{ width: BOX + 8, height: BOX + 8, margin: 4 }}>
+            <div className="absolute" style={{ left: 4, top: 4, width: BOX, height: BOX, overflow: 'hidden', borderRadius: 14 }}>
+              {/* grey brick roads */}
+              <div className="absolute" style={{ left: MID - JUNCTION, top: 0, width: JUNCTION * 2, bottom: 0, background: `linear-gradient(90deg, ${shade(ROAD, -0.2)}, ${ROAD} 12%, ${ROAD} 88%, ${shade(ROAD, -0.2)})` }} />
+              <div className="absolute" style={{ top: MID - JUNCTION, left: 0, height: JUNCTION * 2, right: 0, background: `linear-gradient(180deg, ${shade(ROAD, -0.2)}, ${ROAD} 12%, ${ROAD} 88%, ${shade(ROAD, -0.2)})` }} />
+              {[-1, 1].map((sd) => (
+                <div key={sd} className="absolute" style={{
+                  left: MID - 3, top: 8, width: 6, height: MID - JUNCTION - 8,
+                  transform: sd === 1 ? `translateY(${MID + JUNCTION - 8}px)` : 'none',
+                  backgroundImage: 'repeating-linear-gradient(#ffd23a 0 12px, transparent 12px 24px)', borderRadius: 3,
+                }} />
+              ))}
+              {[-1, 1].map((sd) => (
+                <div key={`h${sd}`} className="absolute" style={{
+                  top: MID - 3, left: 8, height: 6, width: MID - JUNCTION - 8,
+                  transform: sd === 1 ? `translateX(${MID + JUNCTION - 8}px)` : 'none',
+                  backgroundImage: 'repeating-linear-gradient(90deg, #ffd23a 0 12px, transparent 12px 24px)', borderRadius: 3,
+                }} />
+              ))}
+              {/* zebra stop lines */}
+              {['N', 'S', 'E', 'W'].map((d) => {
+                const v = d === 'N' || d === 'S'
+                const off = d === 'N' || d === 'W' ? MID - JUNCTION - 10 : MID + JUNCTION + 2
+                return <div key={`z${d}`} className="absolute" style={v
+                  ? { left: MID - JUNCTION + 4, width: JUNCTION * 2 - 8, top: off, height: 8, backgroundImage: 'repeating-linear-gradient(90deg,#fff 0 8px,transparent 8px 14px)', opacity: 0.9 }
+                  : { top: MID - JUNCTION + 4, height: JUNCTION * 2 - 8, left: off, width: 8, backgroundImage: 'repeating-linear-gradient(#fff 0 8px,transparent 8px 14px)', opacity: 0.9 }} />
+              })}
+              {/* Anbessa on a round brick podium in the middle */}
+              <div className="absolute grid place-items-center rounded-full"
+                style={{ left: MID - 40, top: MID - 40, width: 80, height: 80, ...brickCss('#f2c230', 5) }}>
+                <AnbessaSvg size={62} mood="happy" pose={cheer ? 'cheer' : 'stand'} />
+              </div>
 
-          {ctx.lanes.map((lane, li) => lane.cars.map((car, slot) => {
-            const c = slotCentre(lane.dir, slot)
-            const isFront = slot === 0
-            const hidden = leaving && leaving.id === car.id
-            return (
-              <motion.div
-                key={car.id}
-                className="absolute"
-                initial={false}
-                animate={{
-                  left: c.x, top: c.y, opacity: hidden ? 0 : 1,
-                  x: shake === li && isFront && !reduce ? [0, -5, 5, -4, 0] : 0,
-                }}
-                transition={{ left: { duration: reduce ? 0 : 0.28 }, top: { duration: reduce ? 0 : 0.28 }, x: { duration: 0.3 } }}
-              >
-                <Car
-                  car={car}
-                  angle={ANGLE[lane.dir]}
-                  glowing={hintLane === li && isFront}
-                  disabled={!isFront || !!leaving}
-                  reduce={reduce}
-                  onClick={() => release(li)}
-                />
-                <AnimatePresence>
-                  {pops.filter((p) => p.id === car.id).map((p) => (
-                    <motion.span key={p.id} className="pointer-events-none absolute font-black"
-                      initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -34 }} exit={{ opacity: 0 }}
-                      transition={{ duration: 0.76 }}
-                      style={{ left: '50%', top: -6, transform: 'translateX(-50%)', color: 'var(--go)', fontSize: 17 }}>
-                      +{p.n}
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            )
-          }))}
+              {ctx.lanes.map((lane, li) => lane.cars.map((car, slot) => {
+                const c = slotCentre(lane.dir, slot)
+                const isFront = slot === 0
+                const hidden = leaving && leaving.id === car.id
+                return (
+                  <motion.div
+                    key={car.id}
+                    className="absolute"
+                    initial={false}
+                    animate={{
+                      left: c.x, top: c.y, opacity: hidden ? 0 : 1,
+                      x: shake === li && isFront && !reduce ? [0, -5, 5, -4, 0] : 0,
+                    }}
+                    transition={{ left: { duration: reduce ? 0 : 0.28 }, top: { duration: reduce ? 0 : 0.28 }, x: { duration: 0.3 } }}
+                  >
+                    <Car
+                      car={car}
+                      angle={ANGLE[lane.dir]}
+                      glowing={hintLane === li && isFront}
+                      disabled={!isFront || !!leaving}
+                      reduce={reduce}
+                      onClick={() => release(li)}
+                    />
+                    <AnimatePresence>
+                      {pops.filter((pp) => pp.id === car.id).map((pp) => (
+                        <motion.span key={pp.id} className="pointer-events-none absolute font-black"
+                          initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -34 }} exit={{ opacity: 0 }}
+                          transition={{ duration: 0.76 }}
+                          style={{ left: '50%', top: -6, transform: 'translateX(-50%)', color: '#fff', fontSize: 20, textShadow: '0 2px 0 #2e7a1e, 0 0 6px #2e7a1e' }}>
+                          +{pp.n}
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+                )
+              }))}
 
-          <AnimatePresence>
-            {leaving && (() => {
-              const from = slotCentre(leaving.dir, 0)
-              const to = exitCentre(leaving.dir)
-              return (
-                <motion.div key={`go-${leaving.id}`} className="absolute"
-                  initial={{ left: from.x, top: from.y, opacity: 1 }}
-                  animate={{ left: to.x, top: to.y, opacity: 0 }}
-                  exit={{ opacity: 0 }} transition={{ duration: 0.34, ease: 'easeIn' }}
-                  style={{ pointerEvents: 'none' }}>
-                  <Car car={leaving} angle={ANGLE[leaving.dir]} disabled reduce />
-                </motion.div>
-              )
-            })()}
-          </AnimatePresence>
-        </div>
+              <AnimatePresence>
+                {leaving && (() => {
+                  const from = slotCentre(leaving.dir, 0)
+                  const to = exitCentre(leaving.dir)
+                  return (
+                    <motion.div key={`go-${leaving.id}`} className="absolute"
+                      initial={{ left: from.x, top: from.y, opacity: 1 }}
+                      animate={{ left: to.x, top: to.y, opacity: 0 }}
+                      exit={{ opacity: 0 }} transition={{ duration: 0.34, ease: 'easeIn' }}
+                      style={{ pointerEvents: 'none' }}>
+                      <Car car={leaving} angle={ANGLE[leaving.dir]} disabled reduce />
+                    </motion.div>
+                  )
+                })()}
+              </AnimatePresence>
+            </div>
+          </Baseplate>
+        </FitBox>
+      </GameStage>
 
+      <WoodBottomBar>
         {/* three whistles a shift - knowing beats guessing */}
-        <button
-          type="button"
+        <RoundButton
           onClick={blowWhistle}
-          disabled={ctx.whistles <= 0}
-          aria-label={t('trWhistleLabel', 'Blow the whistle for a hint. {n} left', { n: ctx.whistles })}
-          className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-black ${FOCUS}`}
-          style={{
-            background: 'var(--card)', border: '2px solid var(--line)', boxShadow: '0 3px 0 var(--line)',
-            color: ctx.whistles > 0 ? 'var(--muted)' : 'var(--line)', opacity: ctx.whistles > 0 ? 1 : 0.55,
-          }}
+          label={t('trWhistleLabel', 'Blow the whistle for a hint. {n} left', { n: ctx.whistles })}
+          color={ctx.whistles > 0 ? '#f2c230' : '#9aa7b4'}
+          testId="whistle"
         >
-          {t('trWhistle', 'Whistle')}
-          <span className="flex gap-1" aria-hidden="true">
-            {Array.from({ length: WHISTLES_PER_SHIFT }).map((_, i) => (
-              <span key={i} className="block h-2.5 w-2.5 rounded-full"
-                style={{ background: i < ctx.whistles ? 'var(--accent)' : 'var(--line)' }} />
-            ))}
-          </span>
-        </button>
-      </main>
-    </div>
+          <Megaphone className="h-7 w-7" color="#fff" strokeWidth={2.8} aria-hidden="true" />
+        </RoundButton>
+        <span className="flex gap-2" aria-hidden="true">
+          {Array.from({ length: WHISTLES_PER_SHIFT }).map((_, i) => (
+            <span key={i} style={{ display: 'block', ...studCss(i < ctx.whistles ? '#f2c230' : '#7a6a58', 22) }} />
+          ))}
+        </span>
+        <span className="flex h-14 w-14 items-center justify-center rounded-full" aria-hidden="true" style={{ ...woodBtnCss }}>
+          <Star className="h-7 w-7" fill={ctx.combo >= 2 ? '#ffd23a' : '#f6c22c'} color="#c4841c" />
+        </span>
+      </WoodBottomBar>
+    </BrickScreen>
   )
 }
