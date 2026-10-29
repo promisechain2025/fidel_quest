@@ -3654,7 +3654,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6 fq-safe">
+    <div className="mx-auto min-h-dvh max-w-xl md:max-w-2xl px-4 min-[400px]:px-7 pb-12 pt-6 fq-safe fq-safe-x">
       <header className="flex items-center gap-3">
         <Chunky tone="card" className="flex h-11 w-11 shrink-0 items-center justify-center" aria-label="Back" onClick={() => { stopPlay(); if (tracing) setTracing(false); else if (family) setOpenFamily(null); else onBack() }} depth={3}>
           <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -3726,7 +3726,7 @@ export function Explore({ soundOn, onBack, initialFamily = null }) {
 
       <AnimatePresence mode="wait">
         {!family && abugida ? (
-          <motion.div key="abugida" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="-mx-3 mt-4 grid grid-cols-7 gap-1.5" data-testid="abugida-chart">
+          <motion.div key="abugida" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="mt-4 grid grid-cols-7 gap-1.5 sm:gap-2" data-testid="abugida-chart">
             {chart.flat().map((c, i) => {
               const cell = formOf(c.key)
               const face = exploreFace(c.order - 1) // colour = vowel order (column), so the rotation reads as diagonals
