@@ -214,7 +214,8 @@ describe('app shell', () => {
     expect(screen.queryByText('Order')).toBeNull()
     // The brick-building word game is named "Word Bricks" (i18n, English fallback), not a sample word.
     expect(screen.getByText('Word Bricks')).toBeInTheDocument()
-    expect(screen.getByText('፯')).toBeInTheDocument()
+    expect(screen.getByText('Letter Tower')).toBeInTheDocument()
+    expect(screen.queryByText('፯')).toBeNull()
     expect(screen.queryByText('ላም')).toBeNull()
   })
 })
