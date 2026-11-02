@@ -14,6 +14,7 @@
 import { progressChanged } from './childModel'
 import { srsReview } from './srs'
 import { noteAnswer } from './appProgress'
+import { noteWordHit } from './wordSteps'
 const KEY = 'fq.telemetry.v1'
 const CAP = 600
 
@@ -39,6 +40,7 @@ export function setAnswerHook(fn) { answerHook = typeof fn === 'function' ? fn :
 export function recordAnswer(heardKey, pickedKey, mode) {
   try { answerHook?.(heardKey === pickedKey, mode) } catch { /* never break play */ }
   noteAnswer(heardKey === pickedKey) // app-level progress (platform/appProgress.js)
+  if (heardKey === pickedKey && typeof heardKey === 'string' && heardKey.startsWith('word:')) noteWordHit(heardKey.slice(5))
   try {
     const events = loadLedger()
     events.push({ k: heardKey, p: pickedKey, m: mode, d: dayStamp() })

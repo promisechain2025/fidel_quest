@@ -26,6 +26,7 @@ import { uniqueBySound } from '../platform/sameSound'
 import { soloPool } from '../bingoPool'
 import { playForm, playEffect } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
+import { noteRound } from '../platform/appProgress'
 import { t } from '../platform/i18n'
 import { formOf, ALL_FORMS, FOCUS } from '../FidelQuestApp'
 import AnbessaSvg from './AnbessaSvg'
@@ -134,7 +135,7 @@ function SoloBingo({ soundOn, onBack, families, reduce }) {
     if (won) return
     recordAnswer(String(currentCall(ctx)), String(index), 'bingo')
     const r = bingoTransition(ctx, { type: BingoEvent.DAUB, payload: { index } })
-    if (r.accepted) { setCtx(r.next); if (r.won) setTimeout(() => playEffect('win', soundOn), 200); else playEffect('good', soundOn) } else { playEffect('bad', soundOn); setBuzz(index); setTimeout(() => setBuzz(-1), 320) }
+    if (r.accepted) { setCtx(r.next); if (r.won) { noteRound('bingo', 3); setTimeout(() => playEffect('win', soundOn), 200) } else playEffect('good', soundOn) } else { playEffect('bad', soundOn); setBuzz(index); setTimeout(() => setBuzz(-1), 320) }
   }
   const winSet = useMemo(() => new Set(won && ctx.winLine ? ctx.winLine : []), [won, ctx.winLine])
   return (
@@ -282,7 +283,7 @@ function PlayBingo({ soundOn, onBack, code, reduce }) {
     const ns = toggleMark(state, i)
     setState(ns)
     if (ns.marked[i]) playForm(formOf(state.card[i]), soundOn)
-    if (ns.phase === Phase.WIN) setTimeout(() => playEffect('win', soundOn), 160)
+    if (ns.phase === Phase.WIN) { noteRound('bingo', 3); setTimeout(() => playEffect('win', soundOn), 160) }
   }
   const winSet = useMemo(() => new Set(won && state.winLine ? state.winLine : []), [won, state.winLine])
   const newCard = () => { seedRef.current = (seedRef.current * 48271) % 2147483647; setState(dealCard(pool, seedRef.current, 3, pattern)) }

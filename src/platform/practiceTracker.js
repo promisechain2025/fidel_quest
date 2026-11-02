@@ -13,6 +13,8 @@
    the class sync queue to push today's row. Never throws into gameplay.
    ========================================================================== */
 import { step, emptyRuntime, loadPractice, savePractice } from './practice'
+import { noteDayMinutes } from './appProgress'
+import { dayStamp } from './streak'
 import { queueDaySync, installPracticeSync } from './practiceSync'
 import { setAnswerHook } from './telemetry'
 import { setListenHook } from './audioEngine'
@@ -39,6 +41,9 @@ function persist(force = false) {
   try {
     const p = loadPractice()
     savePractice({ days: state.days, goal: p.goal })
+    const today = dayStamp()
+    const row = state.days[today]
+    if (row) noteDayMinutes(Math.floor((row.activeMs || 0) / 60000), today)
     queueDaySync(Object.keys(state.days).sort().slice(-2))
   } catch { /* never break play */ }
 }

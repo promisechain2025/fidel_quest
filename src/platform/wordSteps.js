@@ -165,20 +165,42 @@ export function wordStepsTransition(ctx, ev) {
 
 const KEY = 'fq.words.v1'
 
-export function loadWordsPracticed() {
+function loadWordsRecord() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY)) || {}
-    return raw.practiced && typeof raw.practiced === 'object' ? raw.practiced : {}
+    return raw && typeof raw === 'object' ? raw : {}
   } catch {
     return {}
   }
 }
 
+export function loadWordsPracticed() {
+  const raw = loadWordsRecord()
+  return raw.practiced && typeof raw.practiced === 'object' ? raw.practiced : {}
+}
+
+const wordId = (latin) => typeof latin === 'string' && /^[a-z0-9'_-]{1,40}$/i.test(latin)
+
+/** A correct answer of one word (Brick Words, Market, First Words).
+    Learned once the same word is correct twice, or First Words marks it practiced. */
+export function noteWordHit(latin) {
+  if (!wordId(latin)) return
+  try {
+    const raw = loadWordsRecord()
+    const hits = raw.hits && typeof raw.hits === 'object' ? raw.hits : {}
+    hits[latin] = Math.min(99, Math.floor(Number(hits[latin]) || 0) + 1)
+    const learned = raw.learned && typeof raw.learned === 'object' ? raw.learned : {}
+    if (hits[latin] >= 2) learned[latin] = true
+    localStorage.setItem(KEY, JSON.stringify({ ...raw, v: 1, hits, learned }))
+  } catch { /* session-only */ }
+}
+
 export function markWordsPracticed(latins) {
   try {
-    const practiced = loadWordsPracticed()
-    for (const l of latins) practiced[l] = true
-    localStorage.setItem(KEY, JSON.stringify({ v: 1, practiced }))
+    const raw = loadWordsRecord()
+    const practiced = raw.practiced && typeof raw.practiced === 'object' ? { ...raw.practiced } : {}
+    for (const l of latins) if (wordId(l)) practiced[l] = true
+    localStorage.setItem(KEY, JSON.stringify({ ...raw, v: 1, practiced }))
   } catch {
     /* session-only */
   }

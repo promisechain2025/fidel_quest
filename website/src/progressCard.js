@@ -16,6 +16,22 @@ export const APP_AREA_COUNT = 30
 export const APP_GROUP_SIZES = [9, 13, 2, 6]
 const MAX_PRAYER_MIN = 7 * 24 * 60
 const clampInt = (x, max) => Math.max(0, Math.min(max, Math.round(Number(x) || 0)))
+const GAME_ID = /^[a-z]{2,16}$/
+function cleanGames(g) {
+  if (!Array.isArray(g) || !g.length) return null
+  const out = []
+  for (const row of g.slice(0, 20)) {
+    if (!Array.isArray(row) || !GAME_ID.test(String(row[0] || ''))) continue
+    out.push([String(row[0]), clampInt(row[1], 999), clampInt(row[2], 999), clampInt(row[3], 9999)])
+  }
+  return out.length ? out : null
+}
+function cleanListen(k) {
+  if (!k || typeof k !== 'object') return null
+  const pair = (x) => [clampInt(x?.[0], 9999), clampInt(x?.[1], 9999)]
+  const out = { p: pair(k.p), b: pair(k.b), s: pair(k.s), w: pair(k.w) }
+  return [out.p, out.b, out.s, out.w].some((x) => x[0] > 0) ? out : null
+}
 
 function b64urlDecode(s) {
   let t = String(s).replace(/-/g, '+').replace(/_/g, '/')
@@ -54,6 +70,8 @@ export function decodeProgressCard(token) {
       apps,
       prayerMin: clampInt(r[0], MAX_PRAYER_MIN),
       prayerPages: clampInt(r[1], 99999),
+      games: cleanGames(p.g),
+      listen: cleanListen(p.k),
     }
   } catch {
     return null

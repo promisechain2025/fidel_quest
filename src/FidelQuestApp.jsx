@@ -53,7 +53,7 @@ import { Confetti as BrickConfetti, BrickTile, BRICK_COLORS } from './components
 import { SpecialtyIcon, NodeEmblem } from './components/SpecialtyIcons'
 import { ChapterVista } from './components/HighlandScenery'
 import ZebraSvg from './components/ZebraSvg'
-import { JOURNEY, NodeKind, nextNode, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds } from './journey'
+import { JOURNEY, NodeKind, nextNode, nodeUnlocked, loadJourney, completeNode as applyNodeDone, NODE_BY_ID, wornLayers, equipItem, progressStats, nodeDoneCelebration, grantWearable, learnedFamilyIds } from './journey'
 import { schoolPathLabel } from './data/schoolPathGr1'
 import Closet from './components/Closet'
 import TeeShop from './components/TeeShop'
@@ -90,7 +90,8 @@ import { levelForIsland } from './letterCatchCore'
 import { hasOnboarded, markOnboarded, prefersReducedMotion, tutTargetCenter } from './platform/tutorial'
 import { challengeUrl, readChallengeFromHash, challengeOutcome, sanitizeName } from './utils/challenge'
 import { installPracticeTracker, notePractice } from './platform/practiceTracker'
-import { noteDone, trackScreen } from './platform/appProgress'
+import { noteDone, noteRound, trackScreen } from './platform/appProgress'
+import { applyExampleProgressSeed } from './platform/progressModel'
 import { setPracticeGoal } from './platform/practice'
 import { joinClassSync, flushSync, queueHomeworkSync } from './platform/practiceSync'
 import { readReportFromHash } from './platform/practiceReport'
@@ -1209,7 +1210,19 @@ export default function FidelQuestApp() {
     return undefined
   }, [paywallOpen])
   const [progress, setProgress] = useState(loadProgress)
-  const [journey, setJourney] = useState(loadJourney)
+  const [journey, setJourney] = useState(() => {
+    // QA preview (?seedprogress=1) writes example stores before the journey is read.
+    try {
+      if (typeof window !== 'undefined') {
+        const q = new URLSearchParams(window.location.search)
+        if (q.get('seedprogress') === '1' && sessionStorage.getItem('egeez-seedprogress') !== '1') {
+          applyExampleProgressSeed()
+          sessionStorage.setItem('egeez-seedprogress', '1')
+        }
+      }
+    } catch { /* preview only */ }
+    return loadJourney()
+  })
   const journeyRef = useRef(journey)
   journeyRef.current = journey
   const [justEarned, setJustEarned] = useState(null)
@@ -1473,6 +1486,13 @@ export default function FidelQuestApp() {
     }
     return go({ name: 'arcade', node }) // ARCADE gateway
   }, [setScreen])
+  const openNextForm = useCallback((next) => {
+    if (!next?.familyId) return
+    const p = journeyRef.current
+    const learn = JOURNEY.find((n) => n.kind === NodeKind.LEARN && n.familyId === next.familyId)
+    const node = learn && nodeUnlocked(p, learn) ? learn : nextNode(p)
+    if (node) openNode(node)
+  }, [openNode])
   // Lets the gate above retry itself once the daily window opens, without
   // openNode having to depend on (and re-create) itself.
   const openNodeRef = useRef(null)
@@ -1492,6 +1512,7 @@ export default function FidelQuestApp() {
               <JourneyPath
                 journey={journey}
                 onOpen={openNode}
+                onNextForm={openNextForm}
                 onPlacement={startPlacement}
                 onBackpack={() => setBackpackOpen(true)}
                 kid={kid}
@@ -1570,6 +1591,7 @@ export default function FidelQuestApp() {
                 onToggleSound={toggleSound}
                 onTrialChange={() => setTrialRev((n) => n + 1)}
                 onPracticeReport={() => setScreen({ name: 'practicelog' })}
+                onNextForm={openNextForm}
                 highlight={screen.highlight}
               />
             </Screen>
@@ -1710,7 +1732,7 @@ export default function FidelQuestApp() {
           )}
           {screen.name === 'twins' && (
             <Screen key={`twins-${runSeed}`}>
-              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={finishWords} onReplay={startTwins} />
+              <WordMatch seed={runSeed} soundOn={soundOn} twinsOnly onFinish={(r) => { noteRound('twins', (r?.stars ?? 1)); finishWords(r) }} onReplay={startTwins} />
             </Screen>
           )}
           {screen.name === 'ladder' && (
@@ -2554,7 +2576,7 @@ const holidayName = (id) =>
     eritrea: t('hol_eritrea', 'Eritrean Independence Day'),
   })[id] || id
 
-function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null, soundOn = true, onToggleSound = null }) {
+function JourneyPath({ journey, onOpen, onNextForm, onBackpack, kid = null, onWho = null, onCloset, giftReady, onGift, justEarned, streak = 0, huntDone = false, onHunt, coach = null, onWarmup, onPlanSetup, onAssignment, onPlacement = null, ethioDate = null, holiday = null, trialLimited = false, onTrial = null, soundOn = true, onToggleSound = null }) {
   const current = nextNode(journey)
   const currentRef = useRef(null)
   const doneCount = Object.keys(journey.done).length
@@ -2592,7 +2614,9 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
     setLangOpen(false)
   }
   const [streakOpen, setStreakOpen] = useState(false)
-  const [progressOpen, setProgressOpen] = useState(false)
+  const progressPreview = (() => { try { return new URLSearchParams(window.location.search).get('myprogress') } catch { return null } })()
+  const [progressOpen, setProgressOpen] = useState(progressPreview === 'kid' || progressPreview === 'grown')
+  const [progressMode, setProgressMode] = useState(progressPreview === 'grown' ? 'grown' : 'kid')
   // Theme lives on the header (and also in grown-ups settings); listen for the
   // change event so both stay in sync and the chapter-label ink re-resolves.
   const [theme, setThemeState] = useState(() => getTheme())
@@ -2702,7 +2726,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
           </button>
         </div>
         {/* App-level progress: one bar every lesson and game reports into. */}
-        <AppProgressChip onClick={() => setProgressOpen(true)} />
+        <AppProgressChip onClick={() => { setProgressMode('kid'); setProgressOpen(true) }} />
       </header>
 
       {trialLimited && onTrial && (
@@ -2731,7 +2755,7 @@ function JourneyPath({ journey, onOpen, onBackpack, kid = null, onWho = null, on
         )}
         {langOpen && <LanguageSheet key="lang-sheet" onClose={closeLang} />}
         {streakOpen && <StreakSheet key="streak-sheet" streak={streak} onClose={() => setStreakOpen(false)} />}
-        {progressOpen && <AppProgressSheet key="progress-sheet" onClose={() => setProgressOpen(false)} />}
+        {progressOpen && <AppProgressSheet key="progress-sheet" mode={progressMode} onNext={onNextForm} onClose={() => setProgressOpen(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>

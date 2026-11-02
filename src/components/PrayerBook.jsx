@@ -19,7 +19,7 @@ import WUDASE_THU from '../data/wudaseThursdayMarks.json'
 import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
-import { noteDone } from '../platform/appProgress'
+import { noteDone, noteFinished } from '../platform/appProgress'
 import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle, nextBookId } from '../platform/prayerBook'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
@@ -273,6 +273,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   // StrictMode's second dev run) sees the same page, so opening the book is not a "page turned".
   const lastPage = useRef(pageSafe)
   useEffect(() => { if (lastPage.current === pageSafe) return; lastPage.current = pageSafe; prayerPage(); noteDone('prayer') }, [pageSafe])
+  useEffect(() => { if (pages.length && pageSafe >= pages.length - 1) noteFinished('prayer', BOOK.id) }, [pageSafe, pages.length, BOOK.id])
   useEffect(() => { saveResume(BOOK.id, { page: pageSafe, unit: cur >= 0 ? cur : pages[pageSafe][0] }) }, [BOOK.id, pageSafe, cur, pages])
 
   /* ---- audio ------------------------------------------------------------ */

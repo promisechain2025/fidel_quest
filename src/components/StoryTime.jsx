@@ -15,7 +15,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Lock, BookOpen } from 'lucide-react'
 import { playEffect } from '../platform/audioEngine'
 import { INDEXES, getActivePackId } from '../platform/ethiopic'
-import { storyLibrary, storyShelves, storyWords, loadStoriesRead, markStoryRead } from '../platform/stories'
+import { storyLibrary, storyShelves, storyWords, loadStoriesRead, markStoryRead, isBibleStory } from '../platform/stories'
+import { noteFinished } from '../platform/appProgress'
 import { BIBLE_SHELF } from '../data/bibleStories'
 import { loadJourney, learnedFamilyIds } from '../journey'
 import { recordAnswer } from '../platform/telemetry'
@@ -102,6 +103,7 @@ export default function StoryTime({ soundOn, onBack, onStoryComplete = null }) {
   }
   const finishStory = () => {
     const count = markStoryRead(story.id)
+    noteFinished(isBibleStory(story) ? 'bible' : 'story', story.id)
     setReadCounts((r) => ({ ...r, [story.id]: count }))
     // A completed read is a correct 'story' event - together with the
     // sword: help taps this gives Grown-Ups a real reading signal.

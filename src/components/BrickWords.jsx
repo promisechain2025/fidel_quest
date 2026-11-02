@@ -19,6 +19,8 @@ import { publicUrl } from '../platform/publicUrl'
 import { playForm, playEffect, audio } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
+import { noteRound } from '../platform/appProgress'
+import { noteWordHit } from '../platform/wordSteps'
 import { BRICK_COLORS, BrickScreen, GameStage, FitBox, useShortScreen, GuideSign, useGuideFeedback, brickLabels, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, overRect, brickCss, studCss, shade, WOOD } from './brickKit'
 import { BRICK_SESSION, wordAt, initBrickWord, usedIndices, place } from '../brickWordsCore'
 
@@ -74,7 +76,7 @@ export default function BrickWords({ soundOn = true, onBack, seed }) {
       playForm(formOf(key), soundOn)
       setCtx(r.ctx)
       flash('ok', r.won ? 0 : 1100)
-      if (r.won) later(() => { playEffect('win', soundOn); sayWord() }, 380)
+      if (r.won) { noteRound('brickwords', 3); noteWordHit(word.latin); later(() => { playEffect('win', soundOn); sayWord() }, 380) }
     } else {
       bump(i)
       flashMiss()

@@ -62,7 +62,46 @@ export default function ProgressReport({ snap }) {
         {t('prpLegend', 'Gold tiles are learned families; each one is 7 letters mastered through play.')}
       </p>
       {snap.apps && <AppLevel snap={snap} />}
+      {(snap.games?.length || snap.listen) && <CardV2 snap={snap} />}
     </Card>
+  )
+}
+
+const LISTEN_LABELS = () => ({
+  p: t('prpListenPrayer', 'Prayers'),
+  b: t('prpListenBible', 'Bible stories'),
+  s: t('prpListenBooks', 'Story books'),
+  w: t('prpListenWords', 'Words'),
+})
+
+function CardV2({ snap }) {
+  const labels = LISTEN_LABELS()
+  return (
+    <div data-testid="prp-v2">
+      {snap.games?.length > 0 && (
+        <>
+          <h3 className="mt-6 text-xs font-black uppercase tracking-[0.18em]" style={{ color: 'var(--muted)' }}>{t('prpGames', 'Games')}</h3>
+          <ul className="mt-2 grid grid-cols-2 gap-2">
+            {snap.games.map((g) => (
+              <li key={g[0]} className="rounded-xl px-3 py-2 text-sm font-black" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
+                <span className="block text-xs font-bold capitalize" style={{ color: 'var(--muted)' }}>{g[0]}</span>
+                <span className="tabular-nums">{g[1]} / {g[2]} · {g[3]}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {snap.listen && (
+        <ul className="mt-3 grid grid-cols-2 gap-2">
+          {['p', 'b', 's', 'w'].filter((id) => snap.listen[id]?.[1] > 0).map((id) => (
+            <li key={id} className="rounded-xl px-3 py-2 text-sm font-black" style={{ background: 'var(--paper)', border: '1px solid var(--line)' }}>
+              <span className="block text-xs font-bold" style={{ color: 'var(--muted)' }}>{labels[id]}</span>
+              <span className="tabular-nums">{snap.listen[id][0]} / {snap.listen[id][1]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 

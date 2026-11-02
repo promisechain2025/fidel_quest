@@ -27,7 +27,7 @@ describe('appProgress core', () => {
     s = applyReport(s, { type: 'answer', area: 'echo', correct: false }, TODAY)
     s = applyReport(s, { type: 'done', area: 'echo' }, TODAY)
     expect(s.areas.echo).toEqual({ visits: 1, answers: 2, correct: 1, done: 1, last: TODAY })
-    expect(s.days[TODAY]).toEqual({ answers: 2, correct: 1, done: 1, areas: ['echo'] })
+    expect(s.days[TODAY]).toEqual({ answers: 2, correct: 1, done: 1, areas: ['echo'], minutes: 0 })
   })
 
   it('an answer from outside any area still counts for the day', () => {
@@ -54,7 +54,7 @@ describe('appProgress core', () => {
   it('normalize drops junk and clamps impossible numbers', () => {
     const n = normalize({ areas: { echo: { visits: -3, answers: 2, correct: 9, done: 'x', last: 'yesterday' }, evil: { visits: 5 } }, days: { '2026-10-28': { answers: 1, correct: 4, areas: ['echo', 'evil'] }, bad: {} } })
     expect(n.areas).toEqual({ echo: { visits: 0, answers: 2, correct: 2, done: 0, last: '' } })
-    expect(n.days).toEqual({ '2026-10-28': { answers: 1, correct: 1, done: 0, areas: ['echo'] } })
+    expect(n.days).toEqual({ '2026-10-28': { answers: 1, correct: 1, done: 0, areas: ['echo'], minutes: 0 } })
     expect(normalize(null)).toEqual(emptyAppProgress())
     expect(normalize('junk')).toEqual(emptyAppProgress())
   })

@@ -562,7 +562,7 @@ function CommunityCard() {
   )
 }
 
-export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport, highlight }) {
+export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacement, soundOn = true, onToggleSound, onTrialChange, onPracticeReport, highlight, onNextForm }) {
   const repWeb = repCodesAvailable()
   const [repLead, setRepLead] = useState(() => repFirst())
   const [open, setOpen] = useState(false)
@@ -635,7 +635,7 @@ export default function GrownUps({ onBack, onPractice, onReplayLevel, onPlacemen
             <h2 className="mb-3 text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
               {t('apTitle', 'My progress')}
             </h2>
-            <AppProgressPanel />
+            <AppProgressPanel onNext={onNextForm} />
           </section>
 
           {/* Verified practice time (platform/practice.js) + teacher share. */}
