@@ -48,18 +48,25 @@ with sync_playwright() as p:
     c = b.new_context(viewport={'width': 390, 'height': 844}); c.add_init_script(INIT)
     pg = c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     go_home(pg)
-    check(count(pg).startswith('0/'), 'home chip starts at 0/N')
-    # a game reports: Stories for >8s, then a Word Market tap-around counts as a visit too
+    check(count(pg).startswith('0/'), 'home chip starts at 0 rows (got %s)' % count(pg))
+    # a visit still records, but the chip counts fidel rows, not activities
     open_bp(pg, r'^Stories\s*$'); pg.wait_for_timeout(9000)
     go_home(pg)
-    check(count(pg).startswith('1/'), 'a game visited >8s moves the chip to 1/N (got %s)' % count(pg))
+    check(count(pg).startswith('0/'), 'a visit does not pretend a row was mastered (got %s)' % count(pg))
     check('stories' in key(pg).get('areas', {}), 'stories area recorded in fq.appprogress.v1')
+    # mastering a row moves the chip, and it survives reload
+    pg.evaluate("""() => {
+      const raw = JSON.parse(localStorage.getItem('fq.journey.v1') || '{"version":1,"done":{},"collection":{"owned":[],"worn":{}}}')
+      raw.version = 1; raw.done = raw.done || {}; raw.done['learn:ha'] = { stars: 3 }
+      localStorage.setItem('fq.journey.v1', JSON.stringify(raw))
+    }""")
     pg.reload(); pg.wait_for_timeout(2200)
-    check(count(pg).startswith('1/'), 'persists across reload')
+    check(count(pg).startswith('1/'), 'a learned row moves the chip to 1/N and persists (got %s)' % count(pg))
     # sheet
     pg.get_by_test_id('app-progress').click(); pg.wait_for_timeout(500)
     check(pg.get_by_test_id('app-progress-sheet').count() == 1, 'tap opens the sheet')
-    check(pg.get_by_test_id('ap-area-stories').get_attribute('data-tried') == 'true', 'sheet marks Stories tried')
+    check(pg.get_by_test_id('mp-rows').count() == 1, 'sheet shows the fidel row grid')
+    check(pg.get_by_test_id('mp-week').count() == 1, 'sheet shows the weekly time card')
     if SHOTS: pg.screenshot(path=f'{SHOTS}/progress-sheet-phone.png')
     pg.keyboard.press('Escape'); pg.wait_for_timeout(700)
     check(pg.get_by_test_id('app-progress-sheet').count() == 0, 'Escape closes the sheet')
@@ -70,12 +77,12 @@ with sync_playwright() as p:
     add.click(); pg.wait_for_timeout(500)
     pg.get_by_placeholder('e.g. Selam').fill('Abel'); pg.keyboard.press('Enter'); pg.wait_for_timeout(2500)
     pg.wait_for_selector('[data-testid=app-progress-count]', timeout=8000)
-    check(count(pg).startswith('0/'), 'second child starts at 0/N (own progress), got %s' % count(pg))
+    check(count(pg).startswith('0/'), 'second child starts at 0 rows (own progress), got %s' % count(pg))
     # child 2 plays something, then back to child 1: each keeps its own tally
     pg.get_by_role('button', name=re.compile('^Playing: ')).click(); pg.wait_for_timeout(600)
     pg.get_by_role('button', name=re.compile('^Play as ')).first.click(); pg.wait_for_timeout(2800)
     pg.wait_for_selector('[data-testid=app-progress-count]', timeout=8000)
-    check(count(pg).startswith('1/'), 'switching back to child 1 restores 1/N, got %s' % count(pg))
+    check(count(pg).startswith('1/'), 'switching back to child 1 restores 1 row, got %s' % count(pg))
     if SHOTS: pg.screenshot(path=f'{SHOTS}/progress-home-phone.png')
     print('console errors:', errs)
     check(not errs, 'no page errors')

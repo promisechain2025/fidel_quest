@@ -50,6 +50,7 @@ export const PROGRESS_KEYS = Object.freeze([
   'fq.practice.v1', // verified active practice time per day + teacher's daily goal
   'fq.church.v1', // Block Church: which consonant families the child has built (+ stars)
   'fq.appprogress.v1', // app-level progress: which activities were tried/finished, per day (platform/appProgress.js)
+  'fq.weektarget.v1', // per-child weekly practice target in minutes (platform/progressModel.js)
 ])
 // Additive only: restoreProgress ignores unknown keys, so snapshots made
 // before these five keys existed import cleanly, and old app versions

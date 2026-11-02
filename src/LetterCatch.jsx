@@ -17,6 +17,7 @@ import AnbessaSvg from './components/AnbessaSvg'
 import { INDEXES } from './platform/ethiopic'
 import { playForm, playEffect } from './platform/audioEngine'
 import { recordAnswer } from './platform/telemetry'
+import { noteLevel } from './platform/appProgress'
 import { t } from './platform/i18n'
 import { initCatch, catchTransition, Phase, CatchEvent } from './letterCatchCore'
 import {
@@ -116,7 +117,7 @@ export default function LetterCatch({ level = 'easy', seed = 1, soundOn = true, 
 
   /* announce the called letter (sound only) */
   useEffect(() => { if (ctx.phase === Phase.PLAY) playForm(targetForm, soundOn) }, [ctx.target]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (ctx.phase === Phase.WIN) { playEffect('win', soundOn); const id = setTimeout(() => onExit({ won: true }), reduce ? 900 : 2300); return () => clearTimeout(id) } }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (ctx.phase === Phase.WIN) { noteLevel('catch', ctx.level === 'hard' ? 2 : 1, 3); playEffect('win', soundOn); const id = setTimeout(() => onExit({ won: true }), reduce ? 900 : 2300); return () => clearTimeout(id) } }, [ctx.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const again = () => { setBin([]); setFlights([]); dispatch({ type: '__reset__' }) }
   const lives = (

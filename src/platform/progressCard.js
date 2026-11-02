@@ -16,7 +16,9 @@
        qe) '01' mask of learned families in FIDEL_FAMILIES order, c: journey nodes done,
        T: total journey nodes,
        a?: 30-char '01' mask of the app areas tried (AREA_IDS order),
-       r?: [prayer minutes in the last 7 days, prayer pages turned] }
+       r?: [prayer minutes in the last 7 days, prayer pages turned],
+       g?: [id, level, max, stars][] for games with progress (share card v2),
+       k?: { p, b, s, w } listen counts [done, max] for prayers, bible, story books, words }
    `a` and `r` are optional: older links still decode, and a malformed
    `a`/`r` is dropped (never fails the whole card). Only counts travel -
    no per-answer data, no timestamps beyond the card day.
@@ -27,6 +29,7 @@ import { FIDEL_FAMILIES } from './ethiopic'
 import { JOURNEY, NodeKind, loadJourney, isDone } from '../journey'
 import { activeProfile } from './profiles'
 import { AREA_IDS, AREA_GROUPS, loadAppProgress, summarize } from './appProgress'
+import { loadProgressModel } from './progressModel'
 
 const FAMILY_COUNT = FIDEL_FAMILIES.length // 33
 export const TOTAL_LETTERS = FAMILY_COUNT * 7 // 231 (Amharic pack)
@@ -61,6 +64,24 @@ export function buildProgressSnapshot(p = loadJourney(), today = dayStamp()) {
     apps: app.mask,
     prayerMin: app.prayer.minutes,
     prayerPages: app.prayer.pages,
+    ...cardExtras(today),
+  }
+}
+
+/** v2 extras. Omitted when empty so an older card (and the key-set test)
+    stays the same shape. */
+function cardExtras(today) {
+  let model
+  try { model = loadProgressModel(today) } catch { return {} }
+  const games = (model.games || []).filter((g) => g.level > 0 || g.stars > 0).slice(0, 20)
+    .map((g) => [String(g.id).slice(0, 16), g.level, g.max, g.stars])
+  const by = Object.fromEntries((model.listen || []).map((r) => [r.id, [r.done, r.max]]))
+  const pair = (id) => by[id] || [0, 0]
+  const listen = { p: pair('prayers'), b: pair('bible'), s: pair('books'), w: pair('words') }
+  const anyListen = [listen.p, listen.b, listen.s, listen.w].some((x) => x[0] > 0)
+  return {
+    ...(games.length ? { games } : {}),
+    ...(anyListen ? { listen } : {}),
   }
 }
 
@@ -77,7 +98,26 @@ export function encodeProgressCard(s) {
     c: Math.max(0, Math.round(Number(s.nodesDone) || 0)),
     T: Math.max(1, Math.round(Number(s.nodesTotal) || 1)),
     ...(hasApps ? { a: s.apps, r: [clampInt(s.prayerMin, MAX_PRAYER_MIN), clampInt(s.prayerPages, 99999)] } : {}),
+    ...(cleanGames(s.games) ? { g: cleanGames(s.games) } : {}),
+    ...(cleanListen(s.listen) ? { k: cleanListen(s.listen) } : {}),
   }))
+}
+
+const GAME_ID = /^[a-z]{2,16}$/
+function cleanGames(g) {
+  if (!Array.isArray(g) || !g.length) return null
+  const out = []
+  for (const row of g.slice(0, 20)) {
+    if (!Array.isArray(row) || !GAME_ID.test(String(row[0] || ''))) continue
+    out.push([String(row[0]), clampInt(row[1], 999), clampInt(row[2], 999), clampInt(row[3], 9999)])
+  }
+  return out.length ? out : null
+}
+function cleanListen(k) {
+  if (!k || typeof k !== 'object') return null
+  const pair = (x) => [clampInt(x?.[0], 9999), clampInt(x?.[1], 9999)]
+  const out = { p: pair(k.p), b: pair(k.b), s: pair(k.s), w: pair(k.w) }
+  return [out.p, out.b, out.s, out.w].some((x) => x[0] > 0) ? out : null
 }
 
 /** Untrusted-input decoder; the website ports this logic verbatim. */
@@ -102,6 +142,8 @@ export function decodeProgressCard(token) {
       apps,
       prayerMin: clampInt(r[0], MAX_PRAYER_MIN),
       prayerPages: clampInt(r[1], 99999),
+      games: cleanGames(p.g),
+      listen: cleanListen(p.k),
     }
   } catch {
     return null

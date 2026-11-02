@@ -41,11 +41,42 @@ const AREA_SET = new Set(AREA_IDS)
 export const isArea = (id) => AREA_SET.has(id)
 
 const blankArea = () => ({ visits: 0, answers: 0, correct: 0, done: 0, last: '' })
-const blankDay = () => ({ answers: 0, correct: 0, done: 0, areas: [] })
-export const emptyAppProgress = () => ({ v: 1, areas: {}, days: {} })
+const blankDay = () => ({ answers: 0, correct: 0, done: 0, areas: [], minutes: 0 })
+const blankFinished = () => ({ prayer: {}, bible: {}, story: {} })
+export const emptyAppProgress = () => ({ v: 1, areas: {}, days: {}, levels: {}, finished: blankFinished() })
 
 const num = (x) => (Number.isFinite(Number(x)) && Number(x) > 0 ? Math.floor(Number(x)) : 0)
 const isDay = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+const LEVEL_IDS = new Set(['tower', 'brickwords', 'runner', 'catch', 'bingo', 'twins', 'explore', 'traffic', 'hunt', 'mix'])
+const LEVEL_ID = (id) => LEVEL_IDS.has(id)
+const ITEM_ID = /^[a-z0-9:_-]{1,64}$/i
+const FINISHED_KINDS = ['prayer', 'bible', 'story']
+
+function normalizeLevels(raw) {
+  const out = {}
+  if (!raw || typeof raw !== 'object') return out
+  for (const [id, v] of Object.entries(raw)) {
+    if (!LEVEL_ID(id) || !v || typeof v !== 'object') continue
+    const level = num(v.level)
+    const stars = num(v.stars)
+    if (!level && !stars) continue
+    out[id] = { level, stars }
+  }
+  return out
+}
+
+function normalizeFinished(raw) {
+  const out = blankFinished()
+  if (!raw || typeof raw !== 'object') return out
+  for (const kind of FINISHED_KINDS) {
+    const bag = raw[kind]
+    if (!bag || typeof bag !== 'object') continue
+    for (const [id, v] of Object.entries(bag)) {
+      if (ITEM_ID.test(id) && v) out[kind][id] = 1
+    }
+  }
+  return out
+}
 
 /** Anything read from storage -> a clean state (junk is dropped, never thrown). */
 export function normalize(raw) {
@@ -58,8 +89,11 @@ export function normalize(raw) {
   for (const [d, v] of Object.entries(raw.days && typeof raw.days === 'object' ? raw.days : {})) {
     if (!isDay(d) || !v || typeof v !== 'object') continue
     const areas = Array.isArray(v.areas) ? [...new Set(v.areas.filter(isArea))] : []
-    out.days[d] = { answers: num(v.answers), correct: Math.min(num(v.correct), num(v.answers)), done: num(v.done), areas }
+    const minutes = Math.min(24 * 60, num(v.minutes))
+    out.days[d] = { answers: num(v.answers), correct: Math.min(num(v.correct), num(v.answers)), done: num(v.done), areas, minutes }
   }
+  out.levels = normalizeLevels(raw.levels)
+  out.finished = normalizeFinished(raw.finished)
   return out
 }
 
@@ -81,8 +115,10 @@ export function applyReport(state, report, today = dayStamp()) {
   } else if (report?.type === 'done') {
     day.done += 1
     if (a) a.done += 1
+  } else if (report?.type === 'minutes') {
+    day.minutes = Math.max(day.minutes || 0, Math.min(24 * 60, num(report.minutes)))
   } else return s
-  if (a) { a.last = today; s.areas[area] = a; if (!day.areas.includes(area)) day.areas.push(area) }
+  if (report?.type !== 'minutes' && a) { a.last = today; s.areas[area] = a; if (!day.areas.includes(area)) day.areas.push(area) }
   s.days[today] = day
   const keep = Object.keys(s.days).sort().slice(-KEEP_DAYS)
   for (const d of Object.keys(s.days)) if (!keep.includes(d)) delete s.days[d]
@@ -156,6 +192,61 @@ function report(type, area, extra = {}) {
 export const noteAnswer = (correct, area) => report('answer', area, { correct: !!correct })
 export const noteDone = (area) => report('done', area)
 export const noteVisit = (area) => report('visit', area)
+
+/** Foreground minutes for one local day (absolute total, never a guess).
+    Practice sync sends the day's verified active minutes; the stored value
+    only moves up, so a late write cannot wipe a longer earlier session. */
+export function noteDayMinutes(minutes, day = dayStamp()) {
+  if (!isDay(day)) return
+  try {
+    const next = applyReport(loadAppProgress(), { type: 'minutes', minutes }, day)
+    if (persist(next)) progressChanged()
+  } catch { /* progress must never break play */ }
+}
+
+const cleanLevelId = (id) => (LEVEL_ID(id) ? id : null)
+
+/** Remember a level index and the star total for one game that has no
+    roundStore of its own. Both fields keep the higher value, so a repeat
+    report (StrictMode, a replay) cannot double-count. */
+export function noteLevel(area, level, stars = 0) {
+  const id = cleanLevelId(area)
+  if (!id) return
+  const lv = Math.max(0, Math.min(999, Math.floor(Number(level) || 0)))
+  const st = Math.max(0, Math.min(9999, Math.floor(Number(stars) || 0)))
+  try {
+    const s = loadAppProgress()
+    const cur = s.levels[id] || { level: 0, stars: 0 }
+    const next = { level: Math.max(cur.level, lv), stars: Math.max(cur.stars, st) }
+    if (next.level === cur.level && next.stars === cur.stars) return
+    s.levels[id] = next
+    if (persist(s)) progressChanged()
+  } catch { /* progress must never break play */ }
+}
+
+/** One newly finished round: level count and stars both step forward. */
+export function noteRound(area, stars = 1) {
+  const id = cleanLevelId(area)
+  if (!id) return
+  const st = Math.max(0, Math.min(3, Math.floor(Number(stars) || 0)))
+  try {
+    const s = loadAppProgress()
+    const cur = s.levels[id] || { level: 0, stars: 0 }
+    s.levels[id] = { level: cur.level + 1, stars: cur.stars + st }
+    if (persist(s)) progressChanged()
+  } catch { /* progress must never break play */ }
+}
+
+/** A prayer, Bible story or story book finished (id read to the end, or listened through). */
+export function noteFinished(kind, id) {
+  if (!FINISHED_KINDS.includes(kind) || typeof id !== 'string' || !ITEM_ID.test(id)) return
+  try {
+    const s = loadAppProgress()
+    if (s.finished[kind][id]) return
+    s.finished = { ...s.finished, [kind]: { ...s.finished[kind], [id]: 1 } }
+    if (persist(s)) progressChanged()
+  } catch { /* progress must never break play */ }
+}
 
 /** Router seam: call with the current screen name whenever it changes.
     Returns a cleanup. A visit only counts after VISIT_MS on the screen, so a

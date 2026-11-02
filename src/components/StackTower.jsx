@@ -18,6 +18,7 @@ import { publicUrl } from '../platform/publicUrl'
 import { afterVoice, playForm, playEffect } from '../platform/audioEngine'
 import { INDEXES } from '../platform/ethiopic'
 import { recordAnswer } from '../platform/telemetry'
+import { noteRound } from '../platform/appProgress'
 import { t } from '../platform/i18n'
 import { initLadder, ladderTransition, LadderEvent, Phase } from '../ladderCore'
 import { BRICK_COLORS, BrickScreen, GameStage, FitBox, useShortScreen, WoodTopBar, WoodBottomBar, WoodTray, TrayWell, RoundButton, Baseplate, DragBrick, Confetti, GuideSign, Pips, useGuideFeedback, brickLabels, overRect, brickCss, studCss, shade } from './brickKit'
@@ -105,6 +106,7 @@ export default function StackTower({ soundOn = true, onBack, seed }) {
       flash('ok', r.next.phase === Phase.WIN ? 0 : 1100)
       say(k)
       afterVoice(() => playEffect(r.next.phase === Phase.WIN ? 'win' : 'good', soundOn), 300)
+      if (r.next.phase === Phase.WIN) noteRound('tower', 3)
       setCtx(r.next)
     } else {
       bump(k)
