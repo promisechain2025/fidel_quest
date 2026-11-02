@@ -122,7 +122,7 @@ describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
   })
 })
 
-describe('ውዳሴ ማርያም ዘሰሉስ data', () => {
+describe('ውዳሴ ማርያም ዘሠሉስ data', () => {
   it('every unit has a mark on a real letter, a clip on disk, and the ሰያፍ⇔ሳድስ rule holds', () => {
     const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
     expect(TUE.units.length).toBe(402)
