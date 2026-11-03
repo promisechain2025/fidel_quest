@@ -32,11 +32,11 @@ describe('PrayerBook', () => {
     expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰኑይ')
   })
 
-  it('shelf offers ውዳሴ ማርያም ዘሰሉስ as the third book', () => {
+  it('shelf offers ውዳሴ ማርያም ዘሠሉስ as the third book', () => {
     render(<PrayerBook onBack={() => {}} />)
     fireEvent.click(screen.getByTestId('book-picker'))
     fireEvent.click(screen.getByTestId('book-wudase-tuesday'))
-    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሰሉስ')
+    expect(screen.getByTestId('book-picker').textContent).toBe('ውዳሴ ማርያም ዘሠሉስ')
     expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
   })
 

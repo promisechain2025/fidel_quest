@@ -18,7 +18,7 @@ describe('PrayerBook Next continues from one day to the next (all days open)', (
     expect(next.disabled).toBe(false)
     expect(next.getAttribute('data-locked')).toBeNull()
     fireEvent.click(next)
-    expect(title()).toBe('ውዳሴ ማርያም ዘሰሉስ')
+    expect(title()).toBe('ውዳሴ ማርያም ዘሠሉስ')
     expect(localStorage.getItem('fq.prayer.book')).toBe('wudase-tuesday')
     expect(screen.getByTestId('page-back').disabled).toBe(true) // first page of Tuesday
   })
@@ -32,7 +32,7 @@ describe('PrayerBook Next continues from one day to the next (all days open)', (
       expect(screen.getByTestId('page-next').getAttribute('data-next-book')).toBe(`wudase-${days[i + 1]}`)
       fireEvent.click(screen.getByTestId('page-next'))
       expect(localStorage.getItem('fq.prayer.book')).toBe(`wudase-${days[i + 1]}`)
-      expect(title()).toContain(['ሰሉስ', 'ረቡዕ', 'ሐሙስ', 'ዓርብ', 'ቀዳሚት', 'እሁድ'][i])
+      expect(title()).toContain(['ሠሉስ', 'ረቡዕ', 'ሐሙስ', 'ዓርብ', 'ቀዳሚት', 'እሁድ'][i])
       // reopen on the new day's last page (the real reader gets there by turning pages)
       view.unmount(); lastPage(`wudase-${days[i + 1]}`); view = render(<PrayerBook onBack={() => {}} />)
     }
