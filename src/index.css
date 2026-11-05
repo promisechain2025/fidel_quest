@@ -410,8 +410,8 @@ input, textarea, [contenteditable='true'] {
 .pb-mode-item { display: flex; align-items: center; gap: 12px; text-align: start; }
 .pb-mode-demo { min-width: 64px; font-size: 22px; padding: 2px 8px; border-radius: 10px; color: var(--pb-ink); }
 .pb-demo-letter .d1 { color: var(--pb-ink); } .pb-demo-letter .d2 { color: var(--pb-saffron); text-shadow: 0 0 .35em rgba(247,196,110,.9); } .pb-demo-letter .d3 { color: var(--pb-ahead); }
-.pb-demo-letter, .pb-demo-word { background: radial-gradient(ellipse at 50% 60%, rgba(255,228,175,.85), rgba(255,228,175,0) 70%); }
-.pb-demo-word { color: var(--pb-saffron); }
+.pb-demo-word { background: radial-gradient(ellipse at 50% 60%, rgba(255,228,175,.85), rgba(255,228,175,0) 70%); color: var(--pb-saffron); }
+/* ንባብ paints the whole current word. ቅጽሪ uses .pb-glow on one letter and no wash. */
 [data-readmode="word"] .pb-current .pb-l { color: var(--pb-saffron); }
 
 /* Prayer Book shelf: a book not owned yet (free-download build only). */

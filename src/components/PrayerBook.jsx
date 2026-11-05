@@ -38,8 +38,9 @@ const SPEED_DEFAULT = 2
 const SPEED_KEY = 'fq.prayer.speed'
 const MARKS_KEY = 'fq.prayer.marks'
 // Three ways to follow the owner's voice; the choice is remembered per device.
-//  letter (ቅጽሪ): the word being read glows and its letters light up one by one (default)
-//  word (ንባብ):   the whole word being read glows at once (no letter run)
+// Highlights follow a sounding clip (the Play button or a tapped word).
+//  letter (ቅጽሪ): letters of the word light up one by one (default)
+//  word (ንባብ):   the whole word is highlighted at once
 //  listen (ወርድ): plain page, no highlight at all; the page still turns with the voice
 export const READ_MODES = [
   { id: 'letter', label: 'ቅጽሪ', icon: 'ቅ' },
@@ -86,9 +87,11 @@ function TitleLabel({ title }) {
 
 /* ---- one reading unit (a word, or joined words) ------------------------- */
 function Unit({ u, idx, mode, glow, onTap }) {
-  // mode: 'hidden' | 'all' | 'current' | 'next'
+  // mode: 'hidden' | 'all' | 'current' | 'next' | 'glow'
+  // 'current' is the whole-word wash (ንባብ). 'glow' shows the mark only;
+  // the per-letter light (ቅጽሪ) comes from `glow`.
   const show = mode !== 'hidden'
-  const tone = mode === 'current' ? 'var(--pb-saffron)' : mode === 'next' ? 'var(--pb-faint)' : 'var(--pb-ink)'
+  const tone = mode === 'current' || mode === 'glow' ? 'var(--pb-saffron)' : mode === 'next' ? 'var(--pb-faint)' : 'var(--pb-ink)'
   let flat = 0
   const last = u.w.length - 1
   return (
@@ -242,6 +245,9 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   useEffect(() => { try { localStorage.setItem(READ_KEY, readMode) } catch { /* ignore */ } }, [readMode])
   const [modeOpen, setModeOpen] = useState(false)
   const [playing, setPlaying] = useState(false)
+  // A clip is audible (Play or a tapped word). Marks and the letter glow follow
+  // this. `playing` stays the auto-advance / Play-Pause flag only.
+  const [sounding, setSounding] = useState(false)
   // Practice mode: prayer time is tracked, and playback stops after the current prayer.
   const [practice, setPractice] = useState(isPracticeMode)
   useEffect(() => subscribePracticeMode(setPractice), [])
@@ -280,6 +286,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(raf.current)
     if (audio.current) { try { audio.current.pause() } catch { /* ignore */ } }
+    setSounding(false)
   }, [])
   useEffect(() => () => stopAudio(), [stopAudio])
 
@@ -330,7 +337,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
 
   /* ---- playback ---------------------------------------------------------- */
   const playUnit = useCallback((i) => {
-    if (i < 0) { setPlaying(false); playingRef.current = false; setGlow(-1); prayerAudio(false); return }
+    if (i < 0) { setPlaying(false); playingRef.current = false; setSounding(false); setGlow(-1); prayerAudio(false); return }
     const p = pageOfUnit(pages, i)
     if (p !== pageRef.current) {
       if (p === pageRef.current + 1) return autoTurn(() => playUnit(i))
@@ -342,19 +349,28 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
     const u = UNITS[i]
     if (!audio.current) audio.current = new Audio()
     const el = audio.current
+    cancelAnimationFrame(raf.current)
     el.src = FIDEL_AUDIO_BASE + u.a
     applyRate(el, SPEEDS[speed])
     // In practice mode play ONLY the current prayer, then stop (no auto-advance, no loop).
     el.onended = () => {
       cancelAnimationFrame(raf.current)
-      if (playingRef.current) playUnit(practiceRef.current ? playCurrentPrayerOnly(UNITS, i) : nextRecorded(UNITS, i))
-      else prayerAudio(false)
+      if (playingRef.current) {
+        const next = practiceRef.current ? playCurrentPrayerOnly(UNITS, i) : nextRecorded(UNITS, i)
+        if (next < 0) setSounding(false)
+        playUnit(next)
+      } else {
+        setSounding(false)
+        prayerAudio(false)
+      }
     }
     const tick = () => {
       if (el.duration > 0) setGlow(glowLetter(u, el.currentTime / el.duration))
       raf.current = requestAnimationFrame(tick)
     }
-    el.play().then(() => { raf.current = requestAnimationFrame(tick) }).catch(() => { setPlaying(false); playingRef.current = false })
+    // The highlight starts with the clip (a tap or Play). A failed play clears it.
+    setSounding(true)
+    el.play().then(() => { raf.current = requestAnimationFrame(tick) }).catch(() => { setPlaying(false); playingRef.current = false; setSounding(false) })
   }, [UNITS, pages, speed, autoTurn])
 
   const togglePlay = () => {
@@ -381,7 +397,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   // A manual turn stops the reader first (turning used to be locked while playing).
   const stopForTurn = () => {
     if (!playingRef.current) return
-    playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); prayerAudio(false)
+    playingRef.current = false; setPlaying(false); setSounding(false); stopAudio(); setGlow(-1); prayerAudio(false)
   }
   const turning = useRef(false)
   // Animated turn for taps / arrows / keys. Forward = next page (swipe left).
@@ -471,12 +487,12 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const nextUnit = playing && cur >= 0 ? nextRecorded(UNITS, cur) : -1
   const markMode = (i) => {
     if (readMode === 'listen') return showAll ? 'all' : 'hidden'
-    if (playing && i === cur) return 'current'
+    if (sounding && i === cur) return readMode === 'word' ? 'current' : 'glow'
     if (showAll) return 'all'
-    if (playing && i === nextUnit) return 'next'
+    if (sounding && i === nextUnit) return 'next'
     return 'hidden'
   }
-  const glowFor = (i) => (playing && i === cur && readMode === 'letter' ? glow : -1)
+  const glowFor = (i) => (sounding && i === cur && readMode === 'letter' ? glow : -1)
   const face = (p) => <PageFace UNITS={UNITS} units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} />
 
   // Layers: base (what will be revealed) under the flap (the turning page).

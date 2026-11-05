@@ -84,6 +84,47 @@ describe('prayer book data', () => {
   })
 })
 
+describe('owner spelling follow-up', () => {
+  const cp = (s) => [...s].map((c) => c.codePointAt(0))
+  const books = [BOOK, MON, TUE, WED, THU, FRI, SAT, SUN]
+  const words = books.flatMap((b) => b.units.flatMap((u) => u.w))
+  it('locks ሕያዋነ, እምአንስት, አንስት, ቤተ ልሔም, and በኲሉ by code point', () => {
+    expect(cp(BOOK.units[224].w[0])).toEqual([0x1215, 0x12EB, 0x12CB, 0x1290]) // ሕያዋነ
+    expect(BOOK.units[224]).toMatchObject({ w: ['ሕያዋነ'], m: 'tenesh', li: 2 })
+    expect(cp(BOOK.units[126].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275]) // እምአንስት
+    expect(cp(FRI.units[9].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
+    expect(cp(SUN.units[11].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
+    expect(cp(FRI.units[109].w[0])).toEqual([0x12A0, 0x1295, 0x1235, 0x1275]) // አንስት
+    expect(cp(BOOK.units[393].w[0])).toEqual([0x1260, 0x12B2, 0x1209]) // በኲሉ, ኲ = U+12B2
+    expect(MON.units[132]).toMatchObject({ w: ['ቤተ', 'ልሔም'], m: 'tetay', li: 1, a: 'reader/wudase-mon/132.mp3' })
+    expect(cp(MON.units[132].w[0])).toEqual([0x1264, 0x1270])
+    expect(cp(MON.units[132].w[1])).toEqual([0x120D, 0x1214, 0x121D])
+    expect(THU.units[351]).toMatchObject({ w: ['ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/351.mp3' })
+    expect(THU.units[363]).toMatchObject({ w: ['ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/363.mp3' })
+    expect(THU.units[400]).toMatchObject({ w: ['እምዓዘቅተ', 'ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/400.mp3' })
+    // The prefixed form was already one word before #108; audio alignment stays.
+    expect(cp(THU.units[464].w[0])).toEqual([0x1260, 0x1264, 0x1270, 0x120D, 0x1214, 0x121D])
+    for (const bad of ['ህያዋነ', 'እምኣንስት', 'ኣንስት', 'ቤተልሔም', 'ብኲሉ']) expect(words).not.toContain(bad)
+    for (const w of words) {
+      const chars = [...w]
+      for (let i = 0; i < chars.length - 2; i++) {
+        if (chars[i + 1] === 'ን' && chars[i + 2] === 'ቲ' && (chars[i] === 'አ' || chars[i] === 'ኣ')) {
+          expect(chars[i].codePointAt(0)).toBe(0x12A0) // አንቲ stays U+12A0
+        }
+      }
+      if (w.endsWith('ንስት')) expect(chars[chars.length - 4].codePointAt(0)).toBe(0x12A0)
+    }
+    expect(BOOK.units).toHaveLength(471)
+    expect(MON.units).toHaveLength(228)
+    expect(TUE.units).toHaveLength(402)
+    expect(WED.units).toHaveLength(425)
+    expect(THU.units).toHaveLength(474)
+    expect(FRI.units).toHaveLength(319)
+    expect(SAT.units).toHaveLength(250)
+    expect(SUN.units).toHaveLength(279)
+  })
+})
+
 describe('owner rules', () => {
   const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
   it('ሰያፍ exactly when the last letter of the last word is ሳድስ (else ተነሽ)', () => {
