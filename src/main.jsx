@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import MamaPreview from './components/MamaPreview'
 import ErrorBoundary from './components/ErrorBoundary'
 import { initNative } from './platform/native'
 import { applyUrlUnlock } from './utils/devUnlock'
@@ -66,11 +67,17 @@ import('./platform/paidBuyer')
 // Re-arm the daily reminder if a grown-up opted in (native only).
 initReminder(reminderTexts())
 
+// Design mock for ማማ (Tower). Query only (?mama=preview) — not a menu item,
+// not a journey node. A merge to main auto-deploys, so this stays a draft.
+const mamaPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('mama') === 'preview'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    {mamaPreview ? <MamaPreview framed /> : (
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    )}
   </StrictMode>,
 )
 

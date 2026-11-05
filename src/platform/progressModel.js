@@ -18,6 +18,7 @@ import { FIDEL_FAMILIES, getActivePackId } from './ethiopic'
 import { JOURNEY, NodeKind } from '../journey'
 import { storyLibrary, isBibleStory, STORIES } from './stories'
 import { brickWordsFor } from '../brickWordsCore'
+import { mamaWordCount } from '../mamaCore'
 import { loadAppProgress } from './appProgress'
 
 export const WEEK_TARGET_KEY = 'fq.weektarget.v1'
@@ -56,7 +57,7 @@ export const GAME_MAX = Object.freeze({
 
 /** Order is the order the Games card lists them. */
 export const GAME_IDS = Object.freeze([
-  'echo', 'train', 'market', 'beats', 'tower', 'blocks', 'brickwords', 'runner',
+  'echo', 'train', 'market', 'beats', 'tower', 'blocks', 'brickwords', 'mama', 'runner',
   'catch', 'traffic', 'bingo', 'twins', 'mix', 'hunt', 'explore',
 ])
 
@@ -67,7 +68,7 @@ export const NOT_OPENED_IDS = Object.freeze(['traffic', 'twins', 'explore', 'bin
 
 const GAME_AREA = Object.freeze({
   echo: 'echo', train: 'train', market: 'market', beats: 'beats', tower: 'tower',
-  blocks: 'blocks', brickwords: 'brickwords', runner: 'arcade', traffic: 'traffic',
+  blocks: 'blocks', brickwords: 'brickwords', mama: 'mama', runner: 'arcade', traffic: 'traffic',
   bingo: 'bingo', twins: 'twins', hunt: 'hunt', explore: 'explore',
 })
 
@@ -220,6 +221,7 @@ export function progressModel(snapshot) {
     tower: levelOf(levels, 'tower', GAME_MAX.tower),
     blocks: { level: Math.min(total, churchIds.length), stars: churchIds.reduce((n, id) => n + Math.max(0, Math.floor(Number(church[id]) || 0)), 0) },
     brickwords: levelOf(levels, 'brickwords', brickMax || 1),
+    mama: levelOf(levels, 'mama', Math.max(0, Math.floor(Number(snap.mamaWordCount) || 0))),
     runner: {
       level: Math.min(GAME_MAX.runner, Math.max(Math.floor(Number(snap.runner?.level) || 0), Math.floor(Number(levels.runner?.level) || 0))),
       stars: Math.max(0, Math.floor(Number(levels.runner?.stars) || 0)),
@@ -240,7 +242,7 @@ export function progressModel(snapshot) {
   }
   const maxOf = {
     echo: GAME_MAX.echo, train: GAME_MAX.train, market: GAME_MAX.market, beats: GAME_MAX.beats,
-    tower: GAME_MAX.tower, blocks: total, brickwords: brickMax, runner: GAME_MAX.runner,
+    tower: GAME_MAX.tower, blocks: total, brickwords: brickMax, mama: Math.max(0, Math.floor(Number(snap.mamaWordCount) || 0)), runner: GAME_MAX.runner,
     catch: GAME_MAX.catch, traffic: GAME_MAX.traffic, bingo: GAME_MAX.bingo, twins: GAME_MAX.twins,
     mix: mixIds.length, hunt: GAME_MAX.hunt, explore: total,
   }
@@ -413,6 +415,7 @@ export function readSnapshot(today = dayStamp()) {
     bibleIds: lib.filter((s) => isBibleStory(s)).map((s) => s.id),
     bookIds: lib.filter((s) => !isBibleStory(s)).map((s) => s.id),
     brickWordCount: brickWordsFor(pack).length,
+    mamaWordCount: mamaWordCount(pack),
     finished: app.finished,
     levels: app.levels,
     areas: app.areas,

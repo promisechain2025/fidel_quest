@@ -15,7 +15,7 @@
        L: letters learned (0..231), m: 33- (Amharic) or 34-char (Tigrinya, +ቐ after
        qe) '01' mask of learned families in FIDEL_FAMILIES order, c: journey nodes done,
        T: total journey nodes,
-       a?: 30-char '01' mask of the app areas tried (AREA_IDS order),
+       a?: 31-char '01' mask of the app areas tried (AREA_IDS order),
        r?: [prayer minutes in the last 7 days, prayer pages turned],
        g?: [id, level, max, stars][] for games with progress (share card v2),
        k?: { p, b, s, w } listen counts [done, max] for prayers, bible, story books, words }
@@ -39,8 +39,8 @@ export const TOTAL_LETTERS = FAMILY_COUNT * 7 // 231 (Amharic pack)
    rejected as "No report in this link"). */
 export const CARD_FAMILY_COUNTS = Object.freeze([33, 34])
 export const MAX_CARD_LETTERS = 34 * 7 // 238
-export const APP_AREA_COUNT = AREA_IDS.length // 30
-export const APP_GROUP_SIZES = AREA_GROUPS.map((g) => g.areas.length) // [9,13,2,6]
+export const APP_AREA_COUNT = AREA_IDS.length // 31
+export const APP_GROUP_SIZES = AREA_GROUPS.map((g) => g.areas.length) // [9,14,2,6]
 const MAX_PRAYER_MIN = 7 * 24 * 60
 const clampInt = (x, max) => Math.max(0, Math.min(max, Math.round(Number(x) || 0)))
 

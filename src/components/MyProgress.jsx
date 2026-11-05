@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  BookOpen, Brain, Church, Clock, Drum, Flame, Footprints, Grid3x3, Layers,
+  BookOpen, Brain, Castle, Church, Clock, Drum, Flame, Footprints, Grid3x3, Layers,
   Library, Minus, Play, Plus, ScrollText, Share2, ShoppingBasket, Star, Target,
   ToyBrick, TrainFront, X,
 } from 'lucide-react'
@@ -33,6 +33,7 @@ const GAME_ICON = {
   tower: Layers,
   blocks: Church,
   brickwords: ToyBrick,
+  mama: Castle,
   runner: Footprints,
   catch: Star,
   traffic: Target,
@@ -44,7 +45,7 @@ const GAME_ICON = {
 }
 const GAME_TONE = {
   echo: '#cfe8ff', train: '#ffe9a6', market: '#d9f2cf', beats: '#ffd6cc', tower: '#f3e0ff',
-  blocks: '#ffe9a6', brickwords: '#cfe8ff', runner: '#d9f2cf', catch: '#d9f2cf', traffic: '#ffe9a6',
+  blocks: '#ffe9a6', brickwords: '#cfe8ff', mama: '#f3e0c0', runner: '#d9f2cf', catch: '#d9f2cf', traffic: '#ffe9a6',
   bingo: '#f3e0ff', twins: '#ffd6cc', mix: '#ffe9a6', hunt: '#ffe9a6', explore: '#cfe8ff',
 }
 const DAY_LABELS = [
@@ -61,6 +62,7 @@ function gameLabel(id) {
     case 'tower': return t('towerShort', 'Letter Tower')
     case 'blocks': return t('blockChurchShort', 'Block Church')
     case 'brickwords': return t('wordBricksShort', 'Word Bricks')
+    case 'mama': return t('mamaShort', 'Tower')
     case 'runner': return t('mpRunner', 'Letter Runner')
     case 'catch': return t('mpCatch', 'Letter Catch')
     case 'traffic': return t('trShort', 'Traffic')

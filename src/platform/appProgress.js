@@ -32,7 +32,7 @@ export const KEEP_DAYS = 60
     order is the order the progress sheet lists them in. */
 export const AREA_GROUPS = Object.freeze([
   { id: 'learn', areas: ['stone', 'lesson', 'findfidel', 'wordbuild', 'review-node', 'warmup', 'hunt', 'arcade', 'practice'] },
-  { id: 'games', areas: ['words', 'workshop', 'ladder', 'train', 'echo', 'market', 'bingo', 'twins', 'beats', 'traffic', 'blocks', 'brickwords', 'tower'] },
+  { id: 'games', areas: ['words', 'workshop', 'ladder', 'train', 'echo', 'market', 'bingo', 'twins', 'beats', 'traffic', 'blocks', 'brickwords', 'tower', 'mama'] },
   { id: 'read', areas: ['stories', 'prayer'] },
   { id: 'explore', areas: ['explore', 'name', 'postcard', 'family', 'familyvoice', 'closet'] },
 ])
@@ -47,7 +47,7 @@ export const emptyAppProgress = () => ({ v: 1, areas: {}, days: {}, levels: {}, 
 
 const num = (x) => (Number.isFinite(Number(x)) && Number(x) > 0 ? Math.floor(Number(x)) : 0)
 const isDay = (s) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
-const LEVEL_IDS = new Set(['tower', 'brickwords', 'runner', 'catch', 'bingo', 'twins', 'explore', 'traffic', 'hunt', 'mix'])
+const LEVEL_IDS = new Set(['tower', 'brickwords', 'runner', 'catch', 'bingo', 'twins', 'explore', 'traffic', 'hunt', 'mix', 'mama'])
 const LEVEL_ID = (id) => LEVEL_IDS.has(id)
 const ITEM_ID = /^[a-z0-9:_-]{1,64}$/i
 const FINISHED_KINDS = ['prayer', 'bible', 'story']
