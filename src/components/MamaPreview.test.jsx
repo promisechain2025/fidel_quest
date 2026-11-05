@@ -23,6 +23,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 beforeEach(() => {
   clips.length = 0
   localStorage.clear()
+  localStorage.setItem('fq.pack', 'am')
+  localStorage.setItem('fq.lang', 'en')
 })
 
 describe('ማማ game screen', () => {

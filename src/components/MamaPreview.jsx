@@ -15,26 +15,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { Ear, Hand, House, RotateCcw, Star, ThumbsUp, Volume2 } from 'lucide-react'
-import { t } from '../platform/i18n'
+import { t, getLang } from '../platform/i18n'
 import { publicUrl } from '../platform/publicUrl'
 import { audio, playEffect, playForm } from '../platform/audioEngine'
 import { recordAnswer } from '../platform/telemetry'
 import { noteDone, noteRound } from '../platform/appProgress'
-import { getActivePackId, INDEXES } from '../platform/ethiopic'
+import { getActivePackId } from '../platform/ethiopic'
 import { TibebFrame } from './Manuscript'
 import { Baseplate, BrickTile, GuideSign, WoodTopBar, brickCss, overRect, roundBtnCss, studCss, useLandscapeShort, useMedia, WOOD } from './brickKit'
 import {
-  IDLE_MS, LEVELS, MAMA_PIGMENTS, SPEED_MS, initRound, mamaPools, mamaTransition, previewRound, speedFor,
+  IDLE_MS, LEVELS, MAMA_PIGMENTS, SPEED_MS, initRound, mamaPools, mamaTransition, packIndex, previewRound, speedFor,
 } from '../mamaCore'
 import { addBuilding, loadMama, rememberSpeed } from '../mamaSave'
 import './mamaPreview.css'
 
 const MEADOW = publicUrl('/img/games/brick-meadow.webp')
 const picUrl = (name) => publicUrl(`/img/games/bw/${name}.webp`)
-const POOLS = mamaPools(getActivePackId())
-
-function wordByLatin(latin) {
-  for (const list of Object.values(POOLS)) {
+function wordByLatin(pools, latin) {
+  for (const list of Object.values(pools)) {
     const found = list.find((w) => w.latin === latin)
     if (found) return found
   }
@@ -242,8 +240,14 @@ export default function MamaPreview({ onBack, soundOn = true, framed = false, sc
     return { scene, seed: Number(q.get('seed')) || 4, still: q.get('still') === '1' }
   })()
   const still = !!(preview?.still || stillProp || reduce)
+  // Same stores as every other game: fq.pack for the learn language, fq.lang for the UI text.
+  // Read when the screen opens. A pack or UI-language change reloads the app first, and
+  // nothing here writes either key.
+  const [packId] = useState(() => getActivePackId())
+  const [uiLang] = useState(() => getLang())
+  const [pools] = useState(() => mamaPools(packId))
   const [view, setView] = useState(preview?.scene === 'city' ? 'city' : preview?.scene === 'pick' || !preview ? 'pick' : 'play')
-  const [round, setRound] = useState(() => (preview && preview.scene !== 'pick' && preview.scene !== 'city' ? previewRound(preview.scene, preview.seed, POOLS) : null))
+  const [round, setRound] = useState(() => (preview && preview.scene !== 'pick' && preview.scene !== 'city' ? previewRound(preview.scene, preview.seed, pools, packId) : null))
   const [speed, setSpeed] = useState(() => speedFor(loadMama().speed, round?.level || 1))
   const [armed, setArmed] = useState(false)
   const [nap, setNap] = useState(false)
@@ -285,7 +289,7 @@ export default function MamaPreview({ onBack, soundOn = true, framed = false, sc
       playEffect('win', soundOn)
       audio.play(round.word.clip, { enabled: soundOn, chime: { familyIndex: 0, order: 1 } })
     } else if (res.state.outcome === 'place') {
-      const form = INDEXES.byAudioKey.get(brick.key)
+      const form = packIndex(packId).byAudioKey.get(brick.key)
       if (form) playForm(form, soundOn)
     } else if (res.state.outcome === 'spit') {
       playEffect('bad', soundOn)
@@ -310,7 +314,7 @@ export default function MamaPreview({ onBack, soundOn = true, framed = false, sc
 
   const start = (id) => {
     poke()
-    const next = initRound(id, (Date.now() % 997) || 1, POOLS[id])
+    const next = initRound(id, (Date.now() % 997) || 1, pools[id], packId)
     if (!next) return
     setSpeed(speedFor(loadMama().speed, id))
     setRound(next)
@@ -333,12 +337,15 @@ export default function MamaPreview({ onBack, soundOn = true, framed = false, sc
       : guideFor(round, nap)
   const total = view === 'pick' ? 3 : view === 'city' ? Math.max(city.length, 1) : round?.letters.length || 1
   const value = view === 'pick' ? 0 : view === 'city' ? city.length : round?.phase === 'win' ? round.letters.length : round?.placed || 0
-  const buildings = city.map(wordByLatin).filter(Boolean)
+  const buildings = city.map((latin) => wordByLatin(pools, latin)).filter(Boolean)
 
   const screen = (
     <div
       className={`bk-screen mama-screen mx-auto flex h-[100dvh] min-h-[100dvh] w-full flex-col overflow-hidden${still ? ' is-still' : ''}${nap ? ' is-nap' : ''}`}
       data-testid="mama-preview"
+      data-pack={packId}
+      data-lang={uiLang}
+      data-word={round?.word?.geez || ''}
       data-scene={view === 'play' && round?.phase === 'win' ? 'win' : view}
       data-level={round?.level || 0}
       data-speed={speed}
@@ -364,7 +371,7 @@ export default function MamaPreview({ onBack, soundOn = true, framed = false, sc
               <div className="mama-cards">
                 {[1, 2, 3].map((id) => {
                   const spec = LEVELS[id]
-                  const sample = POOLS[id][0]
+                  const sample = pools[id][0]
                   return (
                     <button type="button" key={id} className="mama-card chunk" data-testid={`mama-level-${id}`} aria-label={t('mamaLevel', 'Level {n}', { n: id })} onClick={() => start(id)}>
                       <span className="mama-mini" aria-hidden="true">

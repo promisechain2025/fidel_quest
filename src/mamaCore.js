@@ -13,7 +13,8 @@
 import coverage from '../public/audio/fidel/manifest.json'
 import { packWordList } from './brickWordsCore'
 import { brickPicOf } from './brickPictures'
-import { ALL_FORMS, INDEXES } from './platform/ethiopic'
+import { deriveForms, deriveIndexes, getActivePackId, mergeFamilies, PACKS } from './platform/ethiopic'
+import { ETHIOPIC_SCRIPT } from './script/ethiopic'
 import { rngNext, rngShuffle } from './platform/rng'
 
 export const CLIPS = new Set(coverage.coverage)
@@ -34,6 +35,21 @@ export const SPEED_MS = Object.freeze({ slow: 9000, mid: 6000, fast: 3800 })
 /** No touch for this long and the fall freezes. */
 export const IDLE_MS = 6000
 
+const packCache = new Map()
+
+/** The same family table the app built for this learn pack (fq.pack). */
+export function packIndex(packId = getActivePackId()) {
+  const id = PACKS[packId] ? packId : 'am'
+  if (packCache.has(id)) return packCache.get(id)
+  const pack = PACKS[id]
+  const families = mergeFamilies(ETHIOPIC_SCRIPT, pack)
+  const forms = deriveForms(families, pack.orders)
+  const indexes = deriveIndexes(forms)
+  const data = { id, forms, ...indexes }
+  packCache.set(id, data)
+  return data
+}
+
 const clipFor = (latin, packId, clips) => {
   const ti = `words/${latin}-ti`
   const base = `words/${latin}`
@@ -47,7 +63,8 @@ function decorate(w, packId, clips) {
   if (!w || w.noAudio || !w.geez || !w.latin) return null
   const chars = Array.from(w.geez)
   if (chars.length < 2 || chars.length > 4) return null
-  if (!chars.every((ch) => INDEXES.byChar.has(ch))) return null
+  const byChar = packIndex(packId).byChar
+  if (!chars.every((ch) => byChar.has(ch))) return null
   const pic = brickPicOf(w.geez)
   if (!pic) return null
   const clip = clipFor(w.latin, packId, clips)
@@ -58,7 +75,7 @@ function decorate(w, packId, clips) {
     pic,
     len: chars.length,
     clip,
-    letters: chars.map((ch) => ({ char: ch, key: INDEXES.byChar.get(ch).audioKey })),
+    letters: chars.map((ch) => ({ char: ch, key: byChar.get(ch).audioKey })),
   }
 }
 
@@ -93,12 +110,13 @@ export function mamaWordCount(packId = 'am', clips = CLIPS) {
   return pools[1].length + pools[2].length + pools[3].length
 }
 
-/** Nearest other orders of the same family, skipping the answer letters. */
-export function nearestSiblings(char, avoid = [], n = 6) {
-  const form = INDEXES.byChar.get(char)
+/** Nearest other orders of the same family in THIS learn pack. */
+export function nearestSiblings(char, avoid = [], n = 6, packId = getActivePackId()) {
+  const data = packIndex(packId)
+  const form = data.byChar.get(char)
   if (!form) return []
   const skip = new Set([char, ...avoid])
-  return ALL_FORMS
+  return data.forms
     .filter((f) => f.familyId === form.familyId && !skip.has(f.char))
     .sort((a, b) => Math.abs(a.order - form.order) - Math.abs(b.order - form.order) || a.order - b.order)
     .slice(0, n)
@@ -112,12 +130,12 @@ function decoyCount(levelId, rng) {
   return [u < 0.5 ? 1 : 2, next]
 }
 
-function siblingBrick(need, letters, rng) {
-  const pool = nearestSiblings(need.char, letters.map((l) => l.char))
+function siblingBrick(need, letters, rng, packId) {
+  const pool = nearestSiblings(need.char, letters.map((l) => l.char), 6, packId)
   if (!pool.length) return null
   const [u, next] = rngNext(rng)
   const ch = pool[Math.floor(u * pool.length)]
-  const form = INDEXES.byChar.get(ch)
+  const form = packIndex(packId).byChar.get(ch)
   return { brick: { char: ch, key: form.audioKey, role: 'decoy' }, rng: next }
 }
 
@@ -127,7 +145,7 @@ function deal(state) {
   }
   const need = state.letters[state.placed]
   if (state.decoysLeft > 0) {
-    const picked = siblingBrick(need, state.letters, state.rng)
+    const picked = siblingBrick(need, state.letters, state.rng, state.packId)
     if (picked) {
       return { ...state, brick: picked.brick, rng: picked.rng, decoysLeft: state.decoysLeft - 1, outcome: state.outcome ?? null }
     }
@@ -135,7 +153,7 @@ function deal(state) {
   return { ...state, brick: { char: need.char, key: need.key, role: 'need' }, decoysLeft: 0, outcome: state.outcome ?? null }
 }
 
-export function initRound(levelId, seed, pool) {
+export function initRound(levelId, seed, pool, packId = getActivePackId()) {
   const level = LEVELS[levelId]
   const words = (pool || []).filter((w) => w && w.len === level.len)
   if (!words.length) return null
@@ -144,6 +162,7 @@ export function initRound(levelId, seed, pool) {
   const word = order[0]
   const [decoysLeft, rng] = decoyCount(levelId, s1)
   return deal({
+    packId,
     level: levelId,
     word,
     letters: word.letters,
@@ -200,10 +219,10 @@ function clearDecoy(state) {
 }
 
 /** A round stopped on a chosen frame, for screenshots and tests. Real states. */
-export function previewRound(scene, seed, pools) {
+export function previewRound(scene, seed, pools, packId = getActivePackId()) {
   if (scene === 'pick' || scene === 'city') return null
   const levelId = scene === 'win' ? 3 : 1
-  let state = initRound(levelId, seed, pools[levelId])
+  let state = initRound(levelId, seed, pools[levelId], packId)
   if (!state) return null
   const placeNeed = () => {
     state = clearDecoy(state)
@@ -216,8 +235,8 @@ export function previewRound(scene, seed, pools) {
   }
   if (scene === 'miss') {
     const need = state.letters[state.placed]
-    const sibs = nearestSiblings(need.char, state.letters.map((l) => l.char), 2)
-    const decoy = { char: sibs[0], key: INDEXES.byChar.get(sibs[0]).audioKey, role: 'decoy' }
+    const sibs = nearestSiblings(need.char, state.letters.map((l) => l.char), 2, state.packId)
+    const decoy = { char: sibs[0], key: packIndex(state.packId).byChar.get(sibs[0]).audioKey, role: 'decoy' }
     const bounced = mamaTransition({ ...state, brick: decoy, decoysLeft: 0 }, 'tower').state
     const biteChar = sibs[1] || sibs[0]
     return { ...bounced, fx: decoy, bite: { char: biteChar, role: 'decoy' }, brick: null, outcome: 'bounce' }
