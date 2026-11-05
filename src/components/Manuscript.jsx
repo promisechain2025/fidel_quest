@@ -219,14 +219,15 @@ function strokeManuscriptCross(g, x, y, arm = 4) {
   g.stroke()
 }
 
-/** Small diamond-tipped cross for the prayer refrain. The home lattice plus
-    has no diamond form; the lozenge tips follow the tibeb diamond. Decorative. */
+/** Prayer refrain mark: four tibeb diamonds (same polygon and pigments as the
+    home border) as arms, tips overlapping so the center is closed. Decorative. */
 export function ManuscriptCross({ className = '' }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" focusable="false">
-      <rect x="10.7" y="5.4" width="2.6" height="13.2" fill="currentColor" />
-      <rect x="5.4" y="10.7" width="13.2" height="2.6" fill="currentColor" />
-      <path fill="currentColor" d="M12 0.6 L14.5 3.8 L12 6.2 L9.5 3.8 Z M12 23.4 L14.5 20.2 L12 17.8 L9.5 20.2 Z M0.6 12 L3.8 9.5 L6.2 12 L3.8 14.5 Z M23.4 12 L20.2 9.5 L17.8 12 L20.2 14.5 Z" />
+    <svg viewBox="10 10 76 76" className={className} aria-hidden="true" focusable="false">
+      <polygon points="48.00,11.40 55.05,30.20 48.00,49.00 40.95,30.20" fill="#a8463d" />
+      <polygon points="84.60,48.00 65.80,55.05 47.00,48.00 65.80,40.95" fill="#c0983f" />
+      <polygon points="48.00,47.00 55.05,65.80 48.00,84.60 40.95,65.80" fill="#40608c" />
+      <polygon points="49.00,48.00 30.20,55.05 11.40,48.00 30.20,40.95" fill="#57854e" />
     </svg>
   )
 }
