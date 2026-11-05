@@ -1,53 +1,51 @@
 /* ============================================================================
-   ማማ (Tower) — design mock
+   ማማ — playable tower game
    ----------------------------------------------------------------------------
-   Open with ?mama=preview  (add &scene=pick|play|miss|win|city and &still=1).
-   Not linked from the backpack or the journey. Do not merge: main auto-deploys.
+   One fidel brick falls at a time. Drag it (or tap it, then tap the tower or
+   the bin) onto the tower or into the bin. A lookalike on the tower bounces
+   off. The letter the word needs, dropped in the bin, is spat back. Level 3
+   hides the picture until the word is done. The child's speed is remembered.
+   After IDLE_MS with no touch the fall freezes and the napping brick shows.
 
-   Toy-brick fidel fall one at a time. The child will drag a brick onto the
-   tower (the word grows from the bottom) or into the bin, whose lid chomps.
-   A wrong letter on the tower bounces off, with no penalty and no game over.
-   Decoys are vowel-order siblings. L1 glows the next slot and moves slowly,
-   L2 does not glow, L3 is faster and hear-only until the word is done.
-   The filled star and the new city building mark where a finished round would
-   be reported. A visit would be reported on enter. This mock reports neither.
+   Back on the picker returns to the backpack. A finished word is a building
+   in the city (fq.mama.v1) and a round on the app progress area `mama`.
+   Open ?mama=preview&scene=play|miss|win|city&still=1 to hold a real frame.
    UI copy is t(key, English). No Latin sits beside a fidel.
    ========================================================================== */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { Ear, Hand, House, RotateCcw, Star, ThumbsUp, Volume2 } from 'lucide-react'
 import { t } from '../platform/i18n'
 import { publicUrl } from '../platform/publicUrl'
-import { audio } from '../platform/audioEngine'
+import { audio, playEffect, playForm } from '../platform/audioEngine'
+import { recordAnswer } from '../platform/telemetry'
+import { noteDone, noteRound } from '../platform/appProgress'
+import { getActivePackId, INDEXES } from '../platform/ethiopic'
 import { TibebFrame } from './Manuscript'
-import { Baseplate, BrickTile, GuideSign, WoodTopBar, brickCss, roundBtnCss, studCss, useLandscapeShort, useMedia, WOOD } from './brickKit'
+import { Baseplate, BrickTile, GuideSign, WoodTopBar, brickCss, overRect, roundBtnCss, studCss, useLandscapeShort, useMedia, WOOD } from './brickKit'
 import {
-  CITY_WORDS, MAMA_LEVELS, MAMA_PIGMENTS, PROGRESS_HOOK, poseFor, sceneFromSearch,
-} from '../mamaMock'
+  IDLE_MS, LEVELS, MAMA_PIGMENTS, SPEED_MS, initRound, mamaPools, mamaTransition, previewRound, speedFor,
+} from '../mamaCore'
+import { addBuilding, loadMama, rememberSpeed } from '../mamaSave'
 import './mamaPreview.css'
 
 const MEADOW = publicUrl('/img/games/brick-meadow.webp')
 const picUrl = (name) => publicUrl(`/img/games/bw/${name}.webp`)
+const POOLS = mamaPools(getActivePackId())
 
-function readRoute(sceneProp, levelProp, stillProp) {
-  if (sceneProp) {
-    const scene = sceneProp
-    const level = levelProp || (scene === 'win' ? 3 : 1)
-    return { scene, level, still: !!stillProp }
+function wordByLatin(latin) {
+  for (const list of Object.values(POOLS)) {
+    const found = list.find((w) => w.latin === latin)
+    if (found) return found
   }
-  const q = new URLSearchParams(window.location.search)
-  const scene = sceneFromSearch(window.location.search)
-  let level = scene === 'win' ? 3 : 1
-  const asked = Number(q.get('level'))
-  if ((scene === 'play' || scene === 'miss') && [1, 2, 3].includes(asked)) level = asked
-  return { scene, level, still: q.get('still') === '1' }
+  return null
 }
 
 function useBox() {
   const tablet = useMedia('(min-width: 900px) and (min-height: 700px)')
   const land = useLandscapeShort()
   if (tablet) return { bw: 128, bh: 60, font: 36, dancer: 200, binW: 148, binH: 176, pic: 220, cityW: 104, cityH: 48, cityFont: 28, cityPic: 132 }
-  if (land) return { bw: 86, bh: 34, font: 20, dancer: 78, binW: 76, binH: 92, pic: 92, cityW: 52, cityH: 24, cityFont: 15, cityPic: 48 }
+  if (land) return { bw: 86, bh: 34, font: 20, dancer: 62, binW: 76, binH: 92, pic: 92, cityW: 52, cityH: 24, cityFont: 15, cityPic: 48 }
   return { bw: 112, bh: 52, font: 32, dancer: 138, binW: 108, binH: 128, pic: 150, cityW: 64, cityH: 30, cityFont: 20, cityPic: 68 }
 }
 
@@ -67,10 +65,6 @@ function FidelBrick({ char, color, w, h, font, lit, reading }) {
   )
 }
 
-function Slot({ w, h, next }) {
-  return <div className={`mama-slot${next ? ' is-next' : ''}`} data-next={next ? '1' : '0'} style={{ width: w, height: h }} />
-}
-
 function ToyTurtle({ className = 'h-10 w-10' }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
@@ -83,24 +77,22 @@ function ToyTurtle({ className = 'h-10 w-10' }) {
       <path d="M30 27 v14 M22 34 h16" stroke="#6e5318" strokeWidth="2" strokeLinecap="round" />
       <circle cx="50" cy="30" r="7" fill="#7eab72" />
       <circle cx="53" cy="28" r="1.6" fill="#24160c" />
-      <path d="M54 32 q3 1 4 0" fill="none" stroke="#3e6438" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   )
 }
 
-function ToyRabbit({ className = 'h-8 w-8' }) {
+function ToyRabbit({ className = 'h-10 w-10' }) {
   return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
-      <ellipse cx="18" cy="12" rx="3.2" ry="8" fill="#f4efe4" />
-      <ellipse cx="26" cy="12" rx="3.2" ry="8" fill="#f4efe4" />
-      <ellipse cx="18" cy="13" rx="1.5" ry="5" fill="#e7a0a8" />
-      <ellipse cx="26" cy="13" rx="1.5" ry="5" fill="#e7a0a8" />
-      <circle cx="24" cy="26" r="8" fill="#f4efe4" />
-      <ellipse cx="24" cy="36" rx="8" ry="6" fill="#f4efe4" />
-      <circle cx="38" cy="34" r="3" fill="#fff" />
-      <circle cx="21" cy="25" r="1.2" fill="#24160c" />
-      <circle cx="27" cy="25" r="1.2" fill="#24160c" />
-      <path d="M22 29 q2 1.6 4 0" fill="none" stroke="#a8463d" strokeWidth="1.2" strokeLinecap="round" />
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <ellipse cx="24" cy="16" rx="4" ry="12" fill="#f4efe4" />
+      <ellipse cx="36" cy="16" rx="4" ry="12" fill="#f4efe4" />
+      <ellipse cx="24" cy="17" rx="1.8" ry="7" fill="#e7a0a8" />
+      <ellipse cx="36" cy="17" rx="1.8" ry="7" fill="#e7a0a8" />
+      <circle cx="32" cy="34" r="11" fill="#f4efe4" />
+      <ellipse cx="32" cy="48" rx="10" ry="7" fill="#f4efe4" />
+      <circle cx="48" cy="46" r="4" fill="#fff" />
+      <circle cx="28" cy="33" r="1.5" fill="#24160c" />
+      <circle cx="36" cy="33" r="1.5" fill="#24160c" />
     </svg>
   )
 }
@@ -121,7 +113,7 @@ function NapBrick() {
   )
 }
 
-function SpeedButton({ on, label, testId, onClick, children, color }) {
+function SpeedButton({ on, label, testId, onClick, children }) {
   return (
     <button
       type="button"
@@ -130,26 +122,10 @@ function SpeedButton({ on, label, testId, onClick, children, color }) {
       aria-label={label}
       data-testid={testId}
       onClick={onClick}
-      style={{ ...roundBtnCss(on ? '#f2c230' : color), border: on ? '3px solid #a9832f' : '3px solid #fff' }}
+      style={{ ...roundBtnCss(on ? '#f2c230' : '#f6e6c4'), border: on ? '3px solid #a9832f' : '3px solid #fff' }}
     >
       {children}
     </button>
-  )
-}
-
-function SpeedBar({ speed, setSpeed }) {
-  return (
-    <div className="mama-bar" style={WOOD}>
-      <div className="mama-speeds">
-        <SpeedButton on={speed === 'slow'} label={t('mamaSlow', 'Slow')} testId="mama-slow" color="#f6e6c4" onClick={() => setSpeed('slow')}>
-          <ToyTurtle />
-        </SpeedButton>
-        <NapBrick />
-        <SpeedButton on={speed === 'fast'} label={t('mamaFast', 'Fast')} testId="mama-fast" color="#f6e6c4" onClick={() => setSpeed('fast')}>
-          <ToyRabbit />
-        </SpeedButton>
-      </div>
-    </div>
   )
 }
 
@@ -157,7 +133,7 @@ function PicturePrompt({ src, size, onHear }) {
   return (
     <button type="button" className="mama-board mama-prompt" style={WOOD} data-testid="mama-picture" aria-label={t('echoTapHear', 'Tap to hear')} onClick={onHear}>
       <span className="mama-board-well" style={{ width: size, height: size }}>
-        <img src={src} alt="" draggable={false} width={size} height={size} style={{ width: size - 12, height: size - 12 }} />
+        <img src={src} alt="" draggable={false} style={{ width: size - 12, height: size - 12 }} />
       </span>
       <span className="mama-vol" aria-hidden="true">
         <Volume2 className="h-6 w-6" color="#1f5fb8" strokeWidth={2.8} />
@@ -174,9 +150,9 @@ function HearPrompt({ size, onHear }) {
   )
 }
 
-function TrashCan({ w, h, bite, biteColor, metrics }) {
+function TrashCan({ w, h, bite, box, binRef, onBin }) {
   return (
-    <button type="button" className={`mama-bin${bite ? ' is-chomp' : ''}`} data-testid="mama-bin" aria-label={t('mamaBin', 'The bin')} style={{ width: w, height: h }}>
+    <button type="button" ref={binRef} className={`mama-bin${bite ? ' is-chomp' : ''}`} data-testid="mama-bin" aria-label={t('mamaBin', 'The bin')} style={{ width: w, height: h }} onClick={onBin}>
       <span className="mama-lid" aria-hidden="true">
         <span className="mama-studs">
           <span style={studCss('#c0983f', 16)} />
@@ -191,194 +167,314 @@ function TrashCan({ w, h, bite, biteColor, metrics }) {
       </span>
       {bite && (
         <span className="mama-bite" data-testid="mama-bite">
-          <FidelBrick char={bite} color={biteColor} w={Math.round(metrics.bw * 0.78)} h={Math.round(metrics.bh * 0.92)} font={Math.round(metrics.font * 0.72)} />
+          <FidelBrick char={bite.char} color={MAMA_PIGMENTS[2]} w={Math.round(box.bw * 0.72)} h={Math.round(box.bh * 0.86)} font={Math.round(box.font * 0.7)} />
         </span>
       )}
     </button>
   )
 }
 
-function Tower({ level, scene, box, onHear }) {
-  const pose = poseFor(scene, level)
-  const won = scene === 'win'
-  const { letters, placed, falling, bounce } = pose
+function FallingBrick({ brick, color, box, armed, speedMs, still, onArm, onRelease }) {
+  const drag = useRef(null)
+  const skipClick = useRef(false)
+  const [pos, setPos] = useState(null)
+  const down = (e) => {
+    drag.current = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+  const move = (e) => {
+    if (!drag.current) return
+    const dx = e.clientX - drag.current.x
+    const dy = e.clientY - drag.current.y
+    drag.current.dx = dx
+    drag.current.dy = dy
+    if (Math.hypot(dx, dy) > 8) setPos({ dx, dy })
+  }
+  const up = (e) => {
+    if (!drag.current) return
+    const moved = Math.hypot(drag.current.dx, drag.current.dy) > 12
+    const pt = { x: e.clientX, y: e.clientY }
+    drag.current = null
+    setPos(null)
+    if (moved) { skipClick.current = true; onRelease(pt) }
+  }
   return (
-    <div className="mama-tower" data-testid="mama-tower">
-      {won && (
-        <div className="mama-dancer-wrap">
-          <div className="mama-rays" aria-hidden="true" />
-          {[0, 1, 2, 3].map((i) => (
-            <Star key={i} className="mama-star h-7 w-7" fill="#ffd23a" color="#e0971c" strokeWidth={2} aria-hidden="true" style={{ left: `${12 + i * 22}%`, top: i % 2 ? -6 : 18 }} />
-          ))}
-          <img className="mama-dancer" data-testid="mama-dancer" src={picUrl(level.pic)} alt="" draggable={false} style={{ width: box.dancer, height: box.dancer }} />
-          <button type="button" className="mama-vol mama-hear-float" data-testid="mama-hear" aria-label={t('echoTapHear', 'Tap to hear')} onClick={onHear}>
-            <Volume2 className="h-6 w-6" color="#1f5fb8" strokeWidth={2.8} aria-hidden="true" />
-          </button>
-        </div>
-      )}
-      {falling && (
-        <div className="mama-fall" data-testid="mama-fall">
-          <span className="mama-lines" aria-hidden="true" />
-          <FidelBrick char={falling} color={MAMA_PIGMENTS[placed % 4]} w={box.bw} h={box.bh} font={box.font} />
-        </div>
-      )}
-      {bounce && (
-        <div className="mama-bounce" data-testid="mama-bounce">
-          <span className="mama-arc" aria-hidden="true" />
-          <FidelBrick char={bounce} color={MAMA_PIGMENTS[3]} w={box.bw} h={box.bh} font={box.font} />
-        </div>
-      )}
-      <div className="mama-stack">
-        {letters.map((ch, i) => {
-          const filled = i < placed
-          const next = !won && i === placed && level.glow
-          const reading = won && i === Math.min(2, letters.length - 1)
-          return (
-            <div key={`${ch}-${i}`} data-slot={i} data-filled={filled ? '1' : '0'}>
-              {filled
-                ? <FidelBrick char={ch} color={MAMA_PIGMENTS[i % 4]} w={box.bw} h={box.bh} font={box.font} lit={won} reading={reading} />
-                : <Slot w={box.bw} h={box.bh} next={next} />}
-            </div>
-          )
-        })}
-      </div>
-      <Baseplate className="mama-plate" style={{ width: box.bw + 56, height: Math.max(36, Math.round(box.bh * 0.78)) }} />
-    </div>
-  )
-}
-
-function LevelCard({ level, onPick }) {
-  const letters = Array.from(level.geez)
-  return (
-    <button type="button" className="mama-card chunk" data-testid={`mama-level-${level.id}`} aria-label={t('mamaLevel', 'Level {n}', { n: level.id })} onClick={() => onPick(level.id)}>
-      <span className="mama-mini" aria-hidden="true">
-        {letters.map((_, i) => <i key={i} className={level.glow && i === 1 ? 'is-next' : ''} style={{ background: level.glow && i === 1 ? undefined : MAMA_PIGMENTS[i % 4], opacity: level.glow && i === 1 ? 1 : 0.85, borderStyle: 'solid' }} />)}
-      </span>
-      {level.hearOnly
-        ? <span className="mama-ear" aria-hidden="true"><Ear color="#f8f2e2" strokeWidth={2.4} className="h-10 w-10" /></span>
-        : <img className="mama-card-pic" src={picUrl(level.pic)} alt="" draggable={false} />}
-      <span className="mama-badge" aria-hidden="true">
-        {level.speed === 'fast' ? <ToyRabbit className="h-9 w-9" /> : level.speed === 'slow' ? <ToyTurtle className="h-9 w-9" /> : <span className="mama-mini" style={{ gap: 3 }}><i style={{ width: 28, height: 10, background: MAMA_PIGMENTS[1] }} /><i style={{ width: 28, height: 10, background: MAMA_PIGMENTS[2] }} /></span>}
-      </span>
+    <button
+      type="button"
+      data-testid="mama-fall"
+      data-role={brick.role}
+      className={`mama-fall${armed ? ' is-armed' : ''}`}
+      aria-label={brick.char}
+      style={{ '--fall': `${speedMs}ms`, touchAction: 'none', transform: pos ? `translate(${pos.dx}px, ${pos.dy}px) scale(1.06)` : undefined, animation: pos || still ? 'none' : undefined, zIndex: pos ? 20 : 4 }}
+      onPointerDown={down}
+      onPointerMove={move}
+      onPointerUp={up}
+      onPointerCancel={() => { drag.current = null; setPos(null) }}
+      onClick={() => { if (skipClick.current) { skipClick.current = false; return } onArm() }}
+    >
+      <span className="mama-lines" aria-hidden="true" />
+      <FidelBrick char={brick.char} color={color} w={box.bw} h={box.bh} font={box.font} />
     </button>
   )
 }
 
-function Picker({ onPick }) {
-  return (
-    <div className="mama-pick">
-      <h1 className="mama-logo">
-        <FidelBrick char="ማ" color={MAMA_PIGMENTS[0]} w={116} h={52} font={34} />
-        <FidelBrick char="ማ" color={MAMA_PIGMENTS[1]} w={116} h={52} font={34} />
-      </h1>
-      <div className="mama-cards">
-        {MAMA_LEVELS.map((level) => <LevelCard key={level.id} level={level} onPick={onPick} />)}
-      </div>
-    </div>
-  )
+function guideFor(round, nap) {
+  if (nap) return { icon: Hand, text: t('mamaRest', 'Bricks rest when you wait'), tone: 'guide' }
+  if (!round) return { icon: Hand, text: t('mamaPick', 'Pick a tower'), tone: 'guide' }
+  if (round.phase === 'win') return { icon: ThumbsUp, text: t('nice', 'Nice!'), tone: 'ok' }
+  if (round.outcome === 'bounce') return { icon: RotateCcw, text: t('mamaMiss', 'It jumps off'), tone: 'try' }
+  if (round.outcome === 'spit') return { icon: RotateCcw, text: t('mamaSpit', 'It comes back'), tone: 'try' }
+  if (round.outcome === 'chomp') return { icon: ThumbsUp, text: t('mamaChomp', 'In the bin'), tone: 'ok' }
+  return { icon: Hand, text: t('mamaDrop', 'Drop it on the tower'), tone: 'guide' }
 }
 
-function Building({ word, box }) {
-  const letters = Array.from(word.geez)
-  return (
-    <div className={`mama-bldg${word.fresh ? ' is-fresh' : ''}`} data-testid="mama-building" data-fresh={word.fresh ? '1' : '0'} data-progress-hook={word.fresh ? PROGRESS_HOOK.round : undefined}>
-      <img className="mama-roof" src={picUrl(word.pic)} alt="" draggable={false} style={{ width: box.cityPic, height: box.cityPic }} />
-      {word.fresh && <Star className="mama-fresh-star h-8 w-8" fill="#ffd23a" color="#e0971c" strokeWidth={2} aria-hidden="true" />}
-      <div className="mama-stack">
-        {letters.map((ch, i) => (
-          <FidelBrick key={`${ch}-${i}`} char={ch} color={MAMA_PIGMENTS[i % 4]} w={box.cityW} h={box.cityH} font={box.cityFont} lit={!!word.fresh} reading={!!word.fresh && i === letters.length - 1} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function City({ box }) {
-  return (
-    <div className="mama-city" data-testid="mama-city">
-      <div className="mama-strip">
-        {CITY_WORDS.map((word) => <Building key={word.geez} word={word} box={box} />)}
-      </div>
-      <Baseplate className="mama-plate" style={{ width: '100%', height: 40, marginTop: 0 }} testId="mama-street" />
-    </div>
-  )
-}
-
-function guideFor(scene) {
-  if (scene === 'play') return { icon: Hand, text: t('mamaDrop', 'Drop it on the tower') }
-  if (scene === 'miss') return { icon: RotateCcw, text: t('mamaMiss', 'It jumps off') }
-  if (scene === 'win') return { icon: ThumbsUp, text: t('nice', 'Nice!') }
-  if (scene === 'city') return { icon: House, text: t('mamaCity', 'Your little city') }
-  return { icon: Hand, text: t('mamaPick', 'Pick a tower') }
-}
-
-function hear(latin) {
-  audio.play(`words/${latin}`, { enabled: true, chime: { familyIndex: 0, order: 1 } })
-}
-
-export default function MamaPreview({ scene: sceneProp, level: levelProp, still: stillProp } = {}) {
+export default function MamaPreview({ onBack, soundOn = true, framed = false, scene: sceneProp, seed: seedProp, still: stillProp } = {}) {
   const reduce = useReducedMotion()
   const land = useLandscapeShort()
   const box = useBox()
-  const [route, setRoute] = useState(() => readRoute(sceneProp, levelProp, stillProp))
-  const level = MAMA_LEVELS[route.level - 1]
-  const [speed, setSpeed] = useState(level.speed)
-  useEffect(() => { setSpeed(level.speed) }, [level.speed])
+  const preview = (() => {
+    if (sceneProp) return { scene: sceneProp, seed: seedProp || 4, still: !!stillProp }
+    if (typeof window === 'undefined') return null
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('mama') !== 'preview') return null
+    const scene = q.get('scene')
+    if (!['pick', 'play', 'miss', 'win', 'city'].includes(scene || '')) return { scene: 'pick', seed: 4, still: q.get('still') === '1' }
+    return { scene, seed: Number(q.get('seed')) || 4, still: q.get('still') === '1' }
+  })()
+  const still = !!(preview?.still || stillProp || reduce)
+  const [view, setView] = useState(preview?.scene === 'city' ? 'city' : preview?.scene === 'pick' || !preview ? 'pick' : 'play')
+  const [round, setRound] = useState(() => (preview && preview.scene !== 'pick' && preview.scene !== 'city' ? previewRound(preview.scene, preview.seed, POOLS) : null))
+  const [speed, setSpeed] = useState(() => speedFor(loadMama().speed, round?.level || 1))
+  const [armed, setArmed] = useState(false)
+  const [nap, setNap] = useState(false)
+  const [fallKey, setFallKey] = useState(0)
+  const [city, setCity] = useState(() => loadMama().city)
+  const lastTouch = useRef(Date.now())
+  const slotRef = useRef(null)
+  const binRef = useRef(null)
+  const level = LEVELS[round?.level || 1]
+  const speedMs = SPEED_MS[speed]
 
-  const { scene } = route
-  const playing = scene === 'play' || scene === 'miss' || scene === 'win'
-  const pose = playing ? poseFor(scene, level) : null
-  const guide = guideFor(scene)
-  const total = scene === 'pick' ? 3 : scene === 'city' ? CITY_WORDS.length : pose.letters.length
-  const value = scene === 'pick' ? 0 : scene === 'city' ? CITY_WORDS.length : pose.placed
-  const showPrompt = playing && scene !== 'win'
+  const poke = () => { lastTouch.current = Date.now(); setNap(false) }
 
-  return (
-    <>
-      <TibebFrame />
-      <div
-        className={`bk-screen mama-screen mx-auto flex h-[100dvh] min-h-[100dvh] w-full flex-col overflow-hidden${route.still || reduce ? ' is-still' : ''}`}
-        data-testid="mama-preview"
-        data-scene={scene}
-        data-level={route.level}
-        data-speed={playing ? speed : undefined}
-        data-progress-hook={PROGRESS_HOOK.visit}
-        data-area={PROGRESS_HOOK.area}
-      >
-        <div className="mama-stage" data-scene={scene}>
-          <div className="mama-meadow" style={{ backgroundImage: `url(${MEADOW})` }} aria-hidden="true" />
-          <div className="mama-shade" aria-hidden="true" />
-          <WoodTopBar
-            onBack={() => { if (scene !== 'pick') setRoute((r) => ({ ...r, scene: 'pick' })) }}
-            value={value}
-            total={total}
-            done={scene === 'win' || scene === 'city'}
-            guide={<GuideSign icon={guide.icon} text={guide.text} tone={scene === 'win' ? 'ok' : 'guide'} compact={land} />}
-          />
-          <div className={`mama-body${playing ? ' is-field' : ''}`}>
-            {scene === 'pick' && <Picker onPick={(n) => setRoute((r) => ({ ...r, scene: 'play', level: n }))} />}
-            {scene === 'city' && <City box={box} />}
-            {playing && (
-              <>
-                {showPrompt && (level.hearOnly
-                  ? <HearPrompt size={box.pic} onHear={() => hear(level.latin)} />
-                  : <PicturePrompt src={picUrl(level.pic)} size={box.pic} onHear={() => hear(level.latin)} />)}
-                <div className="mama-field">
-                  <Tower level={level} scene={scene} box={box} onHear={() => hear(level.latin)} />
-                  <TrashCan
-                    w={box.binW}
-                    h={box.binH}
-                    bite={pose.bite}
-                    biteColor={MAMA_PIGMENTS[2]}
-                    metrics={box}
-                  />
+  useEffect(() => {
+    if (view !== 'play' || still || round?.phase === 'win') return undefined
+    const id = setInterval(() => {
+      if (Date.now() - lastTouch.current >= IDLE_MS) setNap(true)
+    }, 400)
+    return () => clearInterval(id)
+  }, [view, still, round?.phase, fallKey])
+
+  const hear = () => { if (round?.word) audio.play(round.word.clip, { enabled: soundOn, chime: { familyIndex: 0, order: 1 } }) }
+
+  const drop = (type, fromDrag) => {
+    poke()
+    if (!fromDrag && !armed) return
+    if (!round?.brick) return
+    const brick = round.brick
+    const need = round.letters[round.placed]
+    const res = mamaTransition(round, type)
+    if (!res.accepted) return
+    setArmed(false)
+    const correct = (type === 'tower' && brick.role === 'need') || (type === 'bin' && brick.role === 'decoy')
+    recordAnswer(need?.key, brick.key, 'mama')
+    if (res.state.outcome === 'win') {
+      noteRound('mama', 3)
+      noteDone('mama')
+      setCity(addBuilding(round.word.latin).city)
+      playEffect('win', soundOn)
+      audio.play(round.word.clip, { enabled: soundOn, chime: { familyIndex: 0, order: 1 } })
+    } else if (res.state.outcome === 'place') {
+      const form = INDEXES.byAudioKey.get(brick.key)
+      if (form) playForm(form, soundOn)
+    } else if (res.state.outcome === 'spit') {
+      playEffect('bad', soundOn)
+      setFallKey((k) => k + 1)
+    } else {
+      playEffect(res.state.outcome === 'chomp' ? 'good' : 'bad', soundOn)
+    }
+    setRound(res.state)
+    if (res.state.outcome === 'bounce' || res.state.outcome === 'chomp') {
+      const mark = res.state.outcome
+      setTimeout(() => {
+        setRound((cur) => (cur && cur.outcome === mark ? mamaTransition(cur, 'settle').state : cur))
+      }, still ? 0 : 720)
+    }
+  }
+
+  const release = (pt) => {
+    poke()
+    if (overRect(slotRef.current, pt, 56)) drop('tower', true)
+    else if (overRect(binRef.current, pt, 56)) drop('bin', true)
+  }
+
+  const start = (id) => {
+    poke()
+    const next = initRound(id, (Date.now() % 997) || 1, POOLS[id])
+    if (!next) return
+    setSpeed(speedFor(loadMama().speed, id))
+    setRound(next)
+    setArmed(false)
+    setView('play')
+  }
+
+  const chooseSpeed = (next) => {
+    poke()
+    const value = speed === next ? 'mid' : next
+    setSpeed(value)
+    rememberSpeed(value)
+  }
+
+  const showPicture = view === 'play' && round && !(level.hearOnly && round.phase !== 'win')
+  const guide = view === 'city'
+    ? { icon: House, text: t('mamaCity', 'Your little city'), tone: 'guide' }
+    : view === 'pick'
+      ? { icon: Hand, text: t('mamaPick', 'Pick a tower'), tone: 'guide' }
+      : guideFor(round, nap)
+  const total = view === 'pick' ? 3 : view === 'city' ? Math.max(city.length, 1) : round?.letters.length || 1
+  const value = view === 'pick' ? 0 : view === 'city' ? city.length : round?.phase === 'win' ? round.letters.length : round?.placed || 0
+  const buildings = city.map(wordByLatin).filter(Boolean)
+
+  const screen = (
+    <div
+      className={`bk-screen mama-screen mx-auto flex h-[100dvh] min-h-[100dvh] w-full flex-col overflow-hidden${still ? ' is-still' : ''}${nap ? ' is-nap' : ''}`}
+      data-testid="mama-preview"
+      data-scene={view === 'play' && round?.phase === 'win' ? 'win' : view}
+      data-level={round?.level || 0}
+      data-speed={speed}
+      onPointerDown={poke}
+    >
+      <div className="mama-stage" data-scene={view}>
+        <div className="mama-meadow" style={{ backgroundImage: `url(${MEADOW})` }} aria-hidden="true" />
+        <div className="mama-shade" aria-hidden="true" />
+        <WoodTopBar
+          onBack={() => { if (view === 'pick') onBack?.(); else { setView('pick'); setRound(null) } }}
+          value={value}
+          total={total}
+          done={round?.phase === 'win' || view === 'city'}
+          guide={<GuideSign icon={guide.icon} text={guide.text} tone={guide.tone} compact={land} />}
+        />
+        <div className={`mama-body${view === 'play' ? ' is-field' : ''}`}>
+          {view === 'pick' && (
+            <div className="mama-pick">
+              <h1 className="mama-logo">
+                <FidelBrick char="ማ" color={MAMA_PIGMENTS[0]} w={116} h={52} font={34} />
+                <FidelBrick char="ማ" color={MAMA_PIGMENTS[1]} w={116} h={52} font={34} />
+              </h1>
+              <div className="mama-cards">
+                {[1, 2, 3].map((id) => {
+                  const spec = LEVELS[id]
+                  const sample = POOLS[id][0]
+                  return (
+                    <button type="button" key={id} className="mama-card chunk" data-testid={`mama-level-${id}`} aria-label={t('mamaLevel', 'Level {n}', { n: id })} onClick={() => start(id)}>
+                      <span className="mama-mini" aria-hidden="true">
+                        {Array.from({ length: spec.len }, (_, i) => <i key={i} className={spec.glow && i === spec.len - 1 ? 'is-next' : ''} style={{ background: spec.glow && i === spec.len - 1 ? undefined : MAMA_PIGMENTS[i % 4], borderStyle: 'solid' }} />)}
+                      </span>
+                      {spec.hearOnly
+                        ? <span className="mama-ear" aria-hidden="true"><Ear color="#f8f2e2" strokeWidth={2.4} className="h-10 w-10" /></span>
+                        : sample && <img className="mama-card-pic" src={picUrl(sample.pic)} alt="" draggable={false} />}
+                      <span className="mama-badge" aria-hidden="true">
+                        {spec.speed === 'fast' ? <ToyRabbit className="h-9 w-9" /> : spec.speed === 'slow' ? <ToyTurtle className="h-9 w-9" /> : <span className="mama-mini" style={{ gap: 3 }}><i style={{ width: 28, height: 10, background: MAMA_PIGMENTS[1] }} /><i style={{ width: 28, height: 10, background: MAMA_PIGMENTS[2] }} /></span>}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {view === 'city' && (
+            <div className="mama-city" data-testid="mama-city">
+              <div className="mama-strip">
+                {buildings.map((word, index) => (
+                  <div key={word.latin} className={`mama-bldg${index === buildings.length - 1 ? ' is-fresh' : ''}`} data-testid="mama-building" data-fresh={index === buildings.length - 1 ? '1' : '0'}>
+                    <img className="mama-roof" src={picUrl(word.pic)} alt="" draggable={false} style={{ width: box.cityPic, height: box.cityPic }} />
+                    {index === buildings.length - 1 && <Star className="mama-fresh-star h-8 w-8" fill="#ffd23a" color="#e0971c" strokeWidth={2} aria-hidden="true" />}
+                    <div className="mama-stack">
+                      {word.letters.map((letter, i) => (
+                        <FidelBrick key={`${letter.char}-${i}`} char={letter.char} color={MAMA_PIGMENTS[i % 4]} w={box.cityW} h={box.cityH} font={box.cityFont} lit={index === buildings.length - 1} reading={index === buildings.length - 1 && i === word.letters.length - 1} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Baseplate className="mama-plate" style={{ width: '100%', height: 40, marginTop: 0 }} testId="mama-street" />
+            </div>
+          )}
+          {view === 'play' && round && (
+            <>
+              {round.phase === 'win' ? null : showPicture
+                ? <PicturePrompt src={picUrl(round.word.pic)} size={box.pic} onHear={hear} />
+                : <HearPrompt size={box.pic} onHear={hear} />}
+              <div className="mama-field">
+                <div className="mama-tower" data-testid="mama-tower">
+                  {round.phase === 'win' && (
+                    <div className="mama-dancer-wrap">
+                      <div className="mama-rays" aria-hidden="true" />
+                      <button type="button" className="mama-dancer-hit" data-testid="mama-city-go" aria-label={t('mamaCity', 'Your little city')} onClick={() => setView('city')}>
+                        <img className="mama-dancer" data-testid="mama-dancer" src={picUrl(round.word.pic)} alt="" draggable={false} style={{ width: box.dancer, height: box.dancer }} />
+                      </button>
+                      <button type="button" className="mama-vol mama-hear-float" data-testid="mama-hear" aria-label={t('echoTapHear', 'Tap to hear')} onClick={hear}>
+                        <Volume2 className="h-6 w-6" color="#1f5fb8" strokeWidth={2.8} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                  {round.brick && (
+                    <FallingBrick
+                      key={`${round.brick.char}-${round.placed}-${fallKey}`}
+                      brick={round.brick}
+                      color={MAMA_PIGMENTS[round.placed % 4]}
+                      box={box}
+                      armed={armed}
+                      speedMs={speedMs}
+                      still={still}
+                      onArm={() => { poke(); setArmed((a) => !a) }}
+                      onRelease={release}
+                    />
+                  )}
+                  {round.fx && (
+                    <div className="mama-bounce" data-testid="mama-bounce">
+                      <span className="mama-arc" aria-hidden="true" />
+                      <FidelBrick char={round.fx.char} color={MAMA_PIGMENTS[3]} w={box.bw} h={box.bh} font={box.font} />
+                    </div>
+                  )}
+                  <div className="mama-stack">
+                    {round.letters.map((letter, i) => {
+                      const filled = i < round.placed
+                      const next = round.phase !== 'win' && i === round.placed
+                      const reading = round.phase === 'win' && i === Math.min(2, round.letters.length - 1)
+                      return (
+                        <div key={`${letter.char}-${i}`} data-filled={filled ? '1' : '0'}>
+                          {filled
+                            ? <FidelBrick char={letter.char} color={MAMA_PIGMENTS[i % 4]} w={box.bw} h={box.bh} font={box.font} lit={round.phase === 'win'} reading={reading} />
+                            : next
+                              ? <button type="button" ref={slotRef} data-testid="mama-slot" data-next={level.glow ? '1' : '0'} className={`mama-slot${level.glow ? ' is-next' : ''}`} style={{ width: box.bw, height: box.bh }} aria-label={t('mamaDrop', 'Drop it on the tower')} onClick={() => drop('tower')} />
+                              : <div className="mama-slot" style={{ width: box.bw, height: box.bh }} />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <Baseplate className="mama-plate" style={{ width: box.bw + 56, height: Math.max(36, Math.round(box.bh * 0.78)) }} />
                 </div>
-              </>
-            )}
+                <TrashCan w={box.binW} h={box.binH} bite={round.bite} box={box} binRef={binRef} onBin={() => drop('bin')} />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      {view === 'play' && round?.phase !== 'win' && (
+        <div className="mama-bar" style={WOOD}>
+          <div className="mama-speeds">
+            <SpeedButton on={speed === 'slow'} label={t('mamaSlow', 'Slow')} testId="mama-slow" onClick={() => chooseSpeed('slow')}>
+              <ToyTurtle />
+            </SpeedButton>
+            {nap && <NapBrick />}
+            <SpeedButton on={speed === 'fast'} label={t('mamaFast', 'Fast')} testId="mama-fast" onClick={() => chooseSpeed('fast')}>
+              <ToyRabbit />
+            </SpeedButton>
           </div>
         </div>
-        {playing && <SpeedBar speed={speed} setSpeed={setSpeed} />}
-      </div>
-    </>
+      )}
+    </div>
   )
+  return framed ? <><TibebFrame />{screen}</> : screen
 }

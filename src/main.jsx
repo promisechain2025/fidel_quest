@@ -73,7 +73,7 @@ const mamaPreview = typeof window !== 'undefined' && new URLSearchParams(window.
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {mamaPreview ? <MamaPreview /> : (
+    {mamaPreview ? <MamaPreview framed /> : (
       <ErrorBoundary>
         <App />
       </ErrorBoundary>

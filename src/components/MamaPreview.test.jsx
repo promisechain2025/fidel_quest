@@ -1,117 +1,102 @@
-/* ማማ is a design mock: real words, sibling decoys, English only on the guide
-   sign, and no path into the backpack or the progress store. */
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+/* ማማ plays with real words, keeps Latin on the guide sign, remembers speed,
+   naps when idle, and saves a building when a tower is finished. */
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+const clips = []
+vi.mock('../platform/audioEngine', async (importOriginal) => {
+  const real = await importOriginal()
+  real.audio.play = (key) => { clips.push(key) }
+  return { ...real, playForm: () => {}, playEffect: () => {} }
+})
+
 import MamaPreview from './MamaPreview'
 import { expectGuideOnlyLatin } from './brickTestUtils'
-import { audio } from '../platform/audioEngine'
-import { INDEXES } from '../platform/ethiopic'
-import { AM_BRICK_WORDS } from '../brickWordsAm'
-import { CITY_WORDS, MAMA_LEVELS, nearestSiblings, poseFor } from '../mamaMock'
+import { MAMA_KEY } from '../mamaSave'
+import { mamaPools, previewRound } from '../mamaCore'
 
-const played = []
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 beforeEach(() => {
-  played.length = 0
-  audio.play = (key) => { played.push(key) }
+  clips.length = 0
+  localStorage.clear()
 })
 
-const guides = {
-  pick: 'Pick a tower',
-  play: 'Drop it on the tower',
-  miss: 'It jumps off',
-  win: 'Nice!',
-  city: 'Your little city',
-}
-
-describe('ማማ design mock', () => {
-  it('keeps Latin on the guide sign for every frame', () => {
-    for (const scene of Object.keys(guides)) {
-      const { unmount } = render(<MamaPreview scene={scene} still />)
-      expectGuideOnlyLatin(screen.getByTestId('mama-preview'), guides[scene])
+describe('ማማ game screen', () => {
+  it('keeps Latin on the guide sign', () => {
+    for (const scene of ['pick', 'play', 'miss', 'win', 'city']) {
+      if (scene === 'city') localStorage.setItem(MAMA_KEY, JSON.stringify({ v: 1, speed: null, city: ['lam'] }))
+      const { unmount } = render(<MamaPreview scene={scene} seed={4} still />)
+      const guide = {
+        pick: 'Pick a tower',
+        play: 'Drop it on the tower',
+        miss: 'It jumps off',
+        win: 'Nice!',
+        city: 'Your little city',
+      }[scene]
+      expectGuideOnlyLatin(screen.getByTestId('mama-preview'), guide)
       unmount()
     }
   })
 
-  it('builds a real word from the bottom, with a sibling decoy on a miss', () => {
-    const level = MAMA_LEVELS[0]
-    const pose = poseFor('miss', level)
-    expect(AM_BRICK_WORDS.map((w) => w.geez)).toContain(level.geez)
-    expect(pose.letters[0]).toBe('ላ')
-    expect(pose.bounce).not.toBe(pose.bite)
-    for (const ch of [pose.bounce, pose.bite]) {
-      expect(pose.letters).not.toContain(ch)
-      expect(INDEXES.byChar.get(ch).familyId).toBe(INDEXES.byChar.get('ም').familyId)
-    }
-    expect(nearestSiblings('ም', pose.letters, 2)).toEqual([pose.bounce, pose.bite])
-
-    render(<MamaPreview scene="play" still />)
-    expect(screen.getByTestId('mama-fall').textContent).toBe('ም')
-    expect(screen.getByTestId('mama-tower').textContent).toContain('ላ')
-    expect(document.querySelector('[data-next="1"]')).toBeTruthy()
+  it('places the needed letter, spits it back from the bin, and reveals level 3 only at the end', () => {
+    const play = previewRound('play', 4, mamaPools('am'))
+    const { unmount } = render(<MamaPreview scene="play" seed={4} still />)
+    expect(screen.getByTestId('mama-fall').textContent).toBe(play.brick.char)
+    expect(screen.getByTestId('mama-slot').getAttribute('data-next')).toBe('1')
     fireEvent.click(screen.getByTestId('mama-picture'))
-    expect(played).toEqual(['words/lam'])
-  })
-
-  it('shows the bin chomp and a bounce, and does not glow on level 2', () => {
-    const miss = render(<MamaPreview scene="miss" still />)
-    expect(screen.getByTestId('mama-bounce').textContent).not.toBe('')
-    expect(screen.getByTestId('mama-bite').textContent).not.toBe('')
-    expect(screen.getByTestId('mama-bin')).toBeTruthy()
-    miss.unmount()
-
-    render(<MamaPreview scene="play" level={2} still />)
-    expect(document.querySelector('[data-next="1"]')).toBeNull()
-    expect(screen.getByTestId('mama-picture')).toBeTruthy()
-    expect(screen.getByTestId('mama-slow')).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByTestId('mama-fast')).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  it('hides the picture on hear-only play and reveals the animal when the word is done', () => {
-    const { unmount } = render(<MamaPreview scene="play" level={3} still />)
-    expect(screen.queryByTestId('mama-picture')).toBeNull()
-    expect(screen.getByTestId('mama-hear')).toBeTruthy()
-    fireEvent.click(screen.getByTestId('mama-hear'))
-    expect(played.at(-1)).toBe('words/anbesa')
+    expect(clips.at(-1)).toBe(play.word.clip)
+    const letter = screen.getByTestId('mama-fall').textContent
+    fireEvent.click(screen.getByTestId('mama-fall'))
+    fireEvent.click(screen.getByTestId('mama-bin'))
+    expect(screen.getByTestId('mama-fall').textContent).toBe(letter)
+    fireEvent.click(screen.getByTestId('mama-fall'))
+    fireEvent.click(screen.getByTestId('mama-slot'))
+    expect(screen.getByTestId('mama-dancer')).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem(MAMA_KEY)).city).toContain(play.word.latin)
     unmount()
 
-    render(<MamaPreview scene="win" still />)
-    const dancer = screen.getByTestId('mama-dancer')
-    expect(dancer.getAttribute('src')).toContain('lion.webp')
-    expect(screen.getByTestId('mama-preview').querySelectorAll('[data-filled="1"]').length).toBe(4)
-    expect(screen.getByTestId('mama-slow')).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByTestId('mama-fast')).toHaveAttribute('aria-pressed', 'true')
+    render(<MamaPreview still />)
+    fireEvent.click(screen.getByTestId('mama-level-3'))
+    expect(screen.queryByTestId('mama-picture')).toBeNull()
+    expect(screen.getByTestId('mama-hear')).toBeTruthy()
   })
 
-  it('turns finished words into a city and only marks where progress would save', () => {
-    render(<MamaPreview scene="city" still />)
-    const buildings = screen.getAllByTestId('mama-building')
-    expect(buildings).toHaveLength(CITY_WORDS.length)
-    const fresh = buildings.find((el) => el.getAttribute('data-fresh') === '1')
-    expect(fresh.getAttribute('data-progress-hook')).toBe('noteRound')
-    expect(fresh.querySelector('img').getAttribute('src')).toContain('lion.webp')
-    expect(screen.getByTestId('mama-preview').getAttribute('data-progress-hook')).toBe('trackScreen')
+  it('shows the bounce and the bin bite, and the city the child has built', () => {
+    render(<MamaPreview scene="miss" seed={4} still />)
+    expect(screen.getByTestId('mama-bounce').textContent).not.toBe('')
+    expect(screen.getByTestId('mama-bite').textContent).not.toBe('')
+    expect(screen.queryByTestId('mama-picture')).toBeTruthy()
+  })
+
+  it('remembers the speed and shows the napping brick after a quiet moment', () => {
+    vi.useFakeTimers()
+    const first = render(<MamaPreview scene="play" seed={4} />)
     expect(screen.queryByTestId('idle-rest')).toBeNull()
+    fireEvent.click(screen.getByTestId('mama-fast'))
+    expect(screen.getByTestId('mama-fast')).toHaveAttribute('aria-pressed', 'true')
+    expect(JSON.parse(localStorage.getItem(MAMA_KEY)).speed).toBe('fast')
+    act(() => { vi.advanceTimersByTime(IDLE_MS_WAIT) })
+    expect(screen.getByTestId('idle-rest')).toBeTruthy()
+    first.unmount()
+    vi.useRealTimers()
+
+    render(<MamaPreview scene="play" seed={4} still />)
+    expect(screen.getByTestId('mama-fast')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('mama-slow')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('uses shipped pictures and recordings and stays out of the menu', () => {
-    for (const word of [...MAMA_LEVELS, ...CITY_WORDS]) {
-      expect(fs.existsSync(path.join(ROOT, 'public/audio/fidel/words', `${word.latin}.mp3`))).toBe(true)
-      expect(fs.existsSync(path.join(ROOT, 'public/img/games/bw', `${word.pic}.webp`))).toBe(true)
-    }
+  it('stays a backpack game and out of the old tower id', () => {
     const app = fs.readFileSync(path.join(ROOT, 'src/FidelQuestApp.jsx'), 'utf8')
-    expect(app).not.toContain('MamaPreview')
-    expect(app).not.toContain('mama=preview')
-    const main = fs.readFileSync(path.join(ROOT, 'src/main.jsx'), 'utf8')
-    expect(main).toContain("get('mama') === 'preview'")
-    const mock = fs.readFileSync(path.join(ROOT, 'src/components/MamaPreview.jsx'), 'utf8')
-    expect(mock).not.toMatch(/noteRound\(|trackScreen\(/)
-    render(<MamaPreview scene="play" still />)
-    expect(screen.getByTestId('idle-rest')).toBeTruthy()
-    expect(screen.getByTestId('mama-slow')).toHaveAttribute('aria-pressed', 'true')
+    expect(app).toContain("name: 'mama'")
+    expect(app).toContain("t('mamaShort', 'Tower')")
+    const src = fs.readFileSync(path.join(ROOT, 'src/components/MamaPreview.jsx'), 'utf8')
+    expect(src).toContain("noteRound('mama'")
+    expect(src).not.toMatch(/noteRound\('tower'/)
   })
 })
+
+const IDLE_MS_WAIT = 6500

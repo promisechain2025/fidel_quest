@@ -65,11 +65,12 @@
 .mama-brickwrap.is-lit { filter: saturate(1.15) brightness(1.04); }
 .mama-brickwrap.is-reading { filter: saturate(1.2) brightness(1.12); }
 .mama-brickwrap.is-reading .mama-plaque { background: #fff4b0; box-shadow: 0 0 12px 3px rgba(255, 220, 80, 0.95), inset 0 -2px 0 rgba(60, 40, 16, 0.2); }
-.mama-slot {
+.mama-slot, button.mama-slot {
   box-sizing: border-box;
   border-radius: 10px;
   border: 3px dashed rgba(255, 255, 255, 0.85);
   background: rgba(20, 50, 20, 0.22);
+  padding: 0;
 }
 .mama-slot.is-next {
   border-color: #fff1a8;
@@ -241,10 +242,16 @@
   position: relative;
   z-index: 4;
   margin-bottom: 16px;
-  animation: mama-bob 2.4s ease-in-out infinite;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  animation: mama-drop var(--fall, 8s) linear forwards;
+  touch-action: none;
 }
-.mama-screen[data-speed="fast"] .mama-fall { animation-duration: 1.05s; }
-.mama-screen[data-speed="mid"] .mama-fall { animation-duration: 1.7s; }
+.mama-fall.is-armed { filter: drop-shadow(0 8px 0 rgba(40, 20, 0, 0.25)); }
+.mama-screen.is-nap .mama-fall { animation-play-state: paused; }
+.mama-dancer-hit { padding: 0; border: 0; background: transparent; cursor: pointer; }
+.mama-dancer-hit:focus-visible, .mama-fall:focus-visible { outline: 3px solid #e2c069; outline-offset: 3px; }
 .mama-lines {
   position: absolute;
   left: 50%;
@@ -487,9 +494,9 @@
 .mama-bldg .mama-stack { gap: 4px; }
 .mama-fresh-star { position: absolute; top: -6px; right: -10px; z-index: 3; }
 
-@keyframes mama-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(12px); }
+@keyframes mama-drop {
+  0% { transform: translateY(-28px); }
+  100% { transform: translateY(16px); }
 }
 @keyframes mama-wobble {
   0%, 100% { transform: rotate(-18deg) translate(-6px, 4px); }
@@ -508,7 +515,7 @@
 @media (prefers-reduced-motion: reduce) {
   .mama-fall, .mama-bounce, .mama-lid, .mama-dancer, .mama-bldg.is-fresh .mama-roof { animation: none; }
 }
-.mama-screen.is-still .mama-fall,
+.mama-screen.is-still .mama-fall { animation: none; transform: translateY(-10px); }
 .mama-screen.is-still .mama-bounce,
 .mama-screen.is-still .mama-lid,
 .mama-screen.is-still .mama-dancer,

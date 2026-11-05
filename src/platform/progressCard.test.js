@@ -150,14 +150,14 @@ describe('progress card (shareable child-progress snapshot)', () => {
       const base = { v: 1, n: 'A', d: '2026-07-26', s: 0, L: 0, m: '0'.repeat(33), c: 0, T: 5 }
       const mk = (x) => b64urlEncode(JSON.stringify({ ...base, ...x }))
       for (const decode of [decodeProgressCard, siteDecode]) {
-        expect(decode(mk({ a: '1'.repeat(29) })).apps).toBeNull()
-        expect(decode(mk({ a: 'x'.repeat(30) })).apps).toBeNull()
+        expect(decode(mk({ a: '1'.repeat(APP_AREA_COUNT - 2) })).apps).toBeNull()
+        expect(decode(mk({ a: 'x'.repeat(APP_AREA_COUNT) })).apps).toBeNull()
         expect(decode(mk({ a: 42 })).apps).toBeNull()
-        const d = decode(mk({ a: '1'.repeat(30), r: [9999999, -4] }))
-        expect(d.apps).toBe('1'.repeat(30))
+        const d = decode(mk({ a: '1'.repeat(APP_AREA_COUNT), r: [9999999, -4] }))
+        expect(d.apps).toBe('1'.repeat(APP_AREA_COUNT))
         expect(d.prayerMin).toBe(7 * 24 * 60)
         expect(d.prayerPages).toBe(0)
-        expect(decode(mk({ a: '1'.repeat(30), r: 'zz' })).prayerMin).toBe(0)
+        expect(decode(mk({ a: '1'.repeat(APP_AREA_COUNT), r: 'zz' })).prayerMin).toBe(0)
       }
     })
   })

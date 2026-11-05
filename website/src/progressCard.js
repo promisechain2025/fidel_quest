@@ -10,10 +10,10 @@ export const TOTAL_LETTERS = 231
 export const CARD_FAMILY_COUNTS = [33, 34]
 export const QHE_AFTER = 8 // index of 'Qe' in the 33 shared families
 export const QHE_CHARS = 'ቐቑቒቓቔቕቖ'
-/* App-level tracker: 30 areas in 4 groups (learn, games, read, explore).
+/* App-level tracker: 31 areas in 4 groups (learn, games, read, explore).
    The app's vitest suite asserts these equal the app's own constants. */
-export const APP_AREA_COUNT = 30
-export const APP_GROUP_SIZES = [9, 13, 2, 6]
+export const APP_AREA_COUNT = 31
+export const APP_GROUP_SIZES = [9, 14, 2, 6]
 const MAX_PRAYER_MIN = 7 * 24 * 60
 const clampInt = (x, max) => Math.max(0, Math.min(max, Math.round(Number(x) || 0)))
 const GAME_ID = /^[a-z]{2,16}$/
