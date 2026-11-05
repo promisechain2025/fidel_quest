@@ -27,6 +27,19 @@ export function splitTitle(title) {
   return w.length > 2 ? [w.slice(0, -1).join(' '), w[w.length - 1]] : [null, w.join(' ')]
 }
 
+const SEALI = new Set(['ሰአሊ', 'ሰኣሊ', 'ሠአሊ', 'ሠኣሊ'])
+/** Unit indexes of ቅድስት in the refrain ሰአሊ ለነ ቅድስት (አ or ኣ). A decorative
+    cross is drawn after these units; it is not itself a unit. */
+export function refrainCrossUnits(units) {
+  const words = []
+  for (let i = 0; i < units.length; i++) for (const w of units[i].w) words.push([i, w])
+  const out = []
+  for (let k = 0; k < words.length - 2; k++) {
+    if (SEALI.has(words[k][1]) && words[k + 1][1] === 'ለነ' && words[k + 2][1] === 'ቅድስት') out.push(words[k + 2][0])
+  }
+  return out
+}
+
 /** Letters (grapheme = one Ethiopic codepoint here) in a unit, all words. */
 export function unitLetterCount(u) {
   return u.w.reduce((n, w) => n + [...w].length, 0)

@@ -8,7 +8,7 @@ import THU from '../data/wudaseThursdayMarks.json'
 import FRI from '../data/wudaseFridayMarks.json'
 import SAT from '../data/wudaseSaturdayMarks.json'
 import SUN from '../data/wudaseSundayMarks.json'
-import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
+import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES, refrainCrossUnits } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
 describe('prayer book data', () => {
@@ -273,6 +273,22 @@ describe('helpers', () => {
     const units = [{ a: 'x' }, {}, {}, { a: 'y' }]
     expect(nextRecorded(units, 0)).toBe(3)
     expect(nextRecorded(units, 3)).toBe(-1)
+  })
+  it('puts a cross only after the full refrain ሰአሊ ለነ ቅድስት', () => {
+    expect(refrainCrossUnits(BOOK.units)).toEqual([])
+    expect(refrainCrossUnits(MON.units)).toEqual([18, 41, 57, 75, 97, 129, 162, 199, 227])
+    expect(refrainCrossUnits(TUE.units)).toEqual([35, 66, 84, 114, 142, 170, 198, 218, 252, 279, 300, 323, 341, 374, 401])
+    expect(refrainCrossUnits(WED.units)).toEqual([34, 70, 124, 145, 254, 349, 371, 424])
+    expect(refrainCrossUnits(THU.units)).toEqual([37, 147, 247, 315, 390, 447, 473])
+    expect(refrainCrossUnits(FRI.units)).toEqual([27, 79, 148, 172, 188, 318])
+    expect(refrainCrossUnits(SAT.units)).toEqual([23, 51, 73, 96, 114, 157, 175, 199, 220, 249])
+    expect(refrainCrossUnits(SUN.units)).toEqual([48, 101, 118, 135, 170, 199, 217, 234, 278])
+    // ሰአሊ ለነ ኀበ is a different line. ኣ is accepted the same as አ.
+    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ኀበ'] }])).toEqual([])
+    expect(refrainCrossUnits([{ w: ['ሰኣሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }])).toEqual([2])
+    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) {
+      for (const i of refrainCrossUnits(B.units)) expect(B.units[i].w).toEqual(['ቅድስት'])
+    }
   })
 })
 

@@ -132,12 +132,7 @@ function paintGround(canvas, theme) {
   g.strokeStyle = P.lat2
   g.lineWidth = 1.5
   for (let yy = 0; yy <= H + d; yy += d) {
-    for (let xx = (yy / d) % 2 ? d / 2 : 0; xx <= W + d; xx += d) {
-      g.beginPath()
-      g.moveTo(xx - 4, yy); g.lineTo(xx + 4, yy)
-      g.moveTo(xx, yy - 4); g.lineTo(xx, yy + 4)
-      g.stroke()
-    }
+    for (let xx = (yy / d) % 2 ? d / 2 : 0; xx <= W + d; xx += d) strokeManuscriptCross(g, xx, yy)
   }
 
   // one big, quiet illuminated letter — heritage as a graphic, not a texture
@@ -213,6 +208,24 @@ export function TibebFrame() {
       <div aria-hidden="true" style={band('left')} />
       <div aria-hidden="true" style={band('right')} />
     </>
+  )
+}
+
+/** The home-page lattice plus (paintGround): a small equal-arm cross, arm 4
+    on a 1.5 stroke. ManuscriptCross is that same mark, for inline use. */
+function strokeManuscriptCross(g, x, y, arm = 4) {
+  g.beginPath()
+  g.moveTo(x - arm, y); g.lineTo(x + arm, y)
+  g.moveTo(x, y - arm); g.lineTo(x, y + arm)
+  g.stroke()
+}
+
+/** Home-page lattice cross, sized by CSS. Decorative only. */
+export function ManuscriptCross({ className = '' }) {
+  return (
+    <svg viewBox="0 0 10 10" className={className} aria-hidden="true" focusable="false">
+      <path d="M1 5 H9 M5 1 V9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
   )
 }
 
