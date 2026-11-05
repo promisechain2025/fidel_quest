@@ -211,8 +211,7 @@ export function TibebFrame() {
   )
 }
 
-/** The home-page lattice plus (paintGround): a small equal-arm cross, arm 4
-    on a 1.5 stroke. ManuscriptCross is that same mark, for inline use. */
+/** Home-page lattice plus (paintGround): equal arms, no diamond tips. */
 function strokeManuscriptCross(g, x, y, arm = 4) {
   g.beginPath()
   g.moveTo(x - arm, y); g.lineTo(x + arm, y)
@@ -220,11 +219,14 @@ function strokeManuscriptCross(g, x, y, arm = 4) {
   g.stroke()
 }
 
-/** Home-page lattice cross, sized by CSS. Decorative only. */
+/** Small diamond-tipped cross for the prayer refrain. The home lattice plus
+    has no diamond form; the lozenge tips follow the tibeb diamond. Decorative. */
 export function ManuscriptCross({ className = '' }) {
   return (
-    <svg viewBox="0 0 10 10" className={className} aria-hidden="true" focusable="false">
-      <path d="M1 5 H9 M5 1 V9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" focusable="false">
+      <rect x="10.7" y="5.4" width="2.6" height="13.2" fill="currentColor" />
+      <rect x="5.4" y="10.7" width="13.2" height="2.6" fill="currentColor" />
+      <path fill="currentColor" d="M12 0.6 L14.5 3.8 L12 6.2 L9.5 3.8 Z M12 23.4 L14.5 20.2 L12 17.8 L9.5 20.2 Z M0.6 12 L3.8 9.5 L6.2 12 L3.8 14.5 Z M23.4 12 L20.2 9.5 L17.8 12 L20.2 14.5 Z" />
     </svg>
   )
 }

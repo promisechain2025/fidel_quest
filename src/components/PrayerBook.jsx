@@ -138,7 +138,7 @@ function PageFace({ UNITS, units, pageNo, markMode, glowFor, onTap, crossAfter }
           return [
             UNITS[i].s && k > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
             crossAfter.has(i)
-              ? <span key={`x${i}`} className="pb-keep">{unit}<RefrainCross /></span>
+              ? <span key={`x${i}`} className="pb-keep"><RefrainCross />{unit}</span>
               : unit,
           ]
         })}
@@ -601,7 +601,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
                   const unit = <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />
                   return [
                     u.s && i > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
-                    crossAfter.has(i) ? <span key={`x${i}`} className="pb-keep">{unit}<RefrainCross /></span> : unit,
+                    crossAfter.has(i) ? <span key={`x${i}`} className="pb-keep"><RefrainCross />{unit}</span> : unit,
                   ]
                 })}
               </div>

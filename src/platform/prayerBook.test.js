@@ -274,21 +274,27 @@ describe('helpers', () => {
     expect(nextRecorded(units, 0)).toBe(3)
     expect(nextRecorded(units, 3)).toBe(-1)
   })
-  it('puts a cross only after the full refrain ሰአሊ ለነ ቅድስት', () => {
+  it('leads the next paragraph after ሰአሊ ለነ ቅድስት, and skips a refrain that ends the prayer', () => {
     expect(refrainCrossUnits(BOOK.units)).toEqual([])
-    expect(refrainCrossUnits(MON.units)).toEqual([18, 41, 57, 75, 97, 129, 162, 199, 227])
-    expect(refrainCrossUnits(TUE.units)).toEqual([35, 66, 84, 114, 142, 170, 198, 218, 252, 279, 300, 323, 341, 374, 401])
-    expect(refrainCrossUnits(WED.units)).toEqual([34, 70, 124, 145, 254, 349, 371, 424])
-    expect(refrainCrossUnits(THU.units)).toEqual([37, 147, 247, 315, 390, 447, 473])
-    expect(refrainCrossUnits(FRI.units)).toEqual([27, 79, 148, 172, 188, 318])
-    expect(refrainCrossUnits(SAT.units)).toEqual([23, 51, 73, 96, 114, 157, 175, 199, 220, 249])
-    expect(refrainCrossUnits(SUN.units)).toEqual([48, 101, 118, 135, 170, 199, 217, 234, 278])
-    // ሰአሊ ለነ ኀበ is a different line. ኣ is accepted the same as አ.
-    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ኀበ'] }])).toEqual([])
-    expect(refrainCrossUnits([{ w: ['ሰኣሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }])).toEqual([2])
-    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) {
-      for (const i of refrainCrossUnits(B.units)) expect(B.units[i].w).toEqual(['ቅድስት'])
+    expect(refrainCrossUnits(MON.units)).toEqual([19, 42, 58, 76, 98, 130, 163, 200])
+    expect(refrainCrossUnits(TUE.units)).toEqual([36, 67, 85, 115, 143, 171, 199, 219, 253, 280, 301, 324, 342, 375])
+    expect(refrainCrossUnits(WED.units)).toEqual([35, 71, 125, 146, 255, 350, 372])
+    expect(refrainCrossUnits(THU.units)).toEqual([38, 148, 248, 316, 391, 448])
+    expect(refrainCrossUnits(FRI.units)).toEqual([28, 80, 149, 173, 189])
+    expect(refrainCrossUnits(SAT.units)).toEqual([24, 52, 74, 97, 115, 158, 176, 200, 221])
+    expect(refrainCrossUnits(SUN.units)).toEqual([49, 102, 119, 136, 171, 200, 218, 235])
+    // Closing refrain of each day: no paragraph follows, so no cross.
+    for (const [B, end] of [[MON, 227], [TUE, 401], [WED, 424], [THU, 473], [FRI, 318], [SAT, 249], [SUN, 278]]) {
+      expect(B.units[end].w).toEqual(['ቅድስት'])
+      expect(refrainCrossUnits(B.units)).not.toContain(end)
+      expect(end).toBe(B.units.length - 1)
     }
+    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) {
+      for (const i of refrainCrossUnits(B.units)) expect(B.units[i].s).toBe(1)
+    }
+    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ኀበ'] }, { w: ['ሀ'], s: 1 }])).toEqual([])
+    expect(refrainCrossUnits([{ w: ['ሰኣሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }, { w: ['ሀ'], s: 1 }])).toEqual([3])
+    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }])).toEqual([])
   })
 })
 

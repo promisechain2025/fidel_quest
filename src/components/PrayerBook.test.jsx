@@ -200,21 +200,23 @@ describe('PrayerBook', () => {
     for (const b of [back, next]) expect(b.getAttribute('aria-label')).not.toMatch(/[A-Za-z]/)
   })
 
-  it('ጸሎት has no refrain cross; ውዳሴ shows one after ቅድስት, outside the word', () => {
+  it('ጸሎት has no refrain cross; ውዳሴ leads the next paragraph with one, outside the word', () => {
     const plain = render(<PrayerBook onBack={() => {}} />)
     expect(plain.container.querySelector('.pb-cross')).toBeNull()
     plain.unmount()
     localStorage.setItem('fq.prayer.book', 'wudase-monday')
-    localStorage.setItem('fq.prayer.v1', JSON.stringify({ 'wudase-monday': { page: 0, unit: 18 } }))
+    localStorage.setItem('fq.prayer.v1', JSON.stringify({ 'wudase-monday': { page: 0, unit: 19 } }))
     const { container } = render(<PrayerBook onBack={() => {}} />)
     const base = container.querySelector('.pb-base')
-    const unit = base.querySelector('[data-unit="18"]')
-    expect(unit.textContent).toContain('ቅድስት')
+    const unit = base.querySelector('[data-unit="19"]')
     const cross = unit.parentElement.querySelector('.pb-cross')
     expect(cross).toBeTruthy()
     expect(cross.getAttribute('aria-hidden')).toBe('true')
     expect(cross.closest('[data-unit]')).toBeNull()
     expect(unit.parentElement.classList.contains('pb-keep')).toBe(true)
+    expect(unit.previousElementSibling).toBe(cross)
+    const qidsit = base.querySelector('[data-unit="18"]')
+    if (qidsit) expect(qidsit.parentElement.classList.contains('pb-keep')).toBe(false)
   })
 
   it('turning a page reports a ጸሎት page to the app-level tracker (the first page does not)', async () => {
