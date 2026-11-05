@@ -27,6 +27,31 @@ export function splitTitle(title) {
   return w.length > 2 ? [w.slice(0, -1).join(' '), w[w.length - 1]] : [null, w.join(' ')]
 }
 
+const SEALI = new Set(['ሰአሊ', 'ሰኣሊ', 'ሠአሊ', 'ሠኣሊ'])
+/** Where the decorative cross leads a line. The paragraph after each
+    ሰአሊ ለነ ቅድስት (አ or ኣ), and, on a ውዳሴ day, the first line of the prayer
+    after the day title. A refrain that ends the prayer gets no cross.
+    The cross is not itself a unit. */
+export function refrainCrossUnits(units) {
+  const words = []
+  for (let i = 0; i < units.length; i++) for (const w of units[i].w) words.push([i, w])
+  const out = []
+  if (units[0]?.w?.[0] === 'ዉዳሴሃ') {
+    let seen = 0
+    for (let i = 0; i < units.length; i++) {
+      if (!units[i].s) continue
+      if (++seen === 2) { out.push(i); break }
+    }
+  }
+  for (let k = 0; k < words.length - 2; k++) {
+    if (!(SEALI.has(words[k][1]) && words[k + 1][1] === 'ለነ' && words[k + 2][1] === 'ቅድስት')) continue
+    for (let j = words[k + 2][0] + 1; j < units.length; j++) {
+      if (units[j].s) { out.push(j); break }
+    }
+  }
+  return out
+}
+
 /** Letters (grapheme = one Ethiopic codepoint here) in a unit, all words. */
 export function unitLetterCount(u) {
   return u.w.reduce((n, w) => n + [...w].length, 0)

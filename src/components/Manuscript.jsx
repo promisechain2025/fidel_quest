@@ -132,12 +132,7 @@ function paintGround(canvas, theme) {
   g.strokeStyle = P.lat2
   g.lineWidth = 1.5
   for (let yy = 0; yy <= H + d; yy += d) {
-    for (let xx = (yy / d) % 2 ? d / 2 : 0; xx <= W + d; xx += d) {
-      g.beginPath()
-      g.moveTo(xx - 4, yy); g.lineTo(xx + 4, yy)
-      g.moveTo(xx, yy - 4); g.lineTo(xx, yy + 4)
-      g.stroke()
-    }
+    for (let xx = (yy / d) % 2 ? d / 2 : 0; xx <= W + d; xx += d) strokeManuscriptCross(g, xx, yy)
   }
 
   // one big, quiet illuminated letter — heritage as a graphic, not a texture
@@ -213,6 +208,27 @@ export function TibebFrame() {
       <div aria-hidden="true" style={band('left')} />
       <div aria-hidden="true" style={band('right')} />
     </>
+  )
+}
+
+/** Home-page lattice plus (paintGround): equal arms, no diamond tips. */
+function strokeManuscriptCross(g, x, y, arm = 4) {
+  g.beginPath()
+  g.moveTo(x - arm, y); g.lineTo(x + arm, y)
+  g.moveTo(x, y - arm); g.lineTo(x, y + arm)
+  g.stroke()
+}
+
+/** Prayer refrain mark: four tibeb diamonds (same polygon and pigments as the
+    home border) as arms, tips overlapping so the center is closed. Decorative. */
+export function ManuscriptCross({ className = '' }) {
+  return (
+    <svg viewBox="10 10 76 76" className={className} aria-hidden="true" focusable="false">
+      <polygon points="48.00,11.40 55.05,30.20 48.00,49.00 40.95,30.20" fill="#a8463d" />
+      <polygon points="84.60,48.00 65.80,55.05 47.00,48.00 65.80,40.95" fill="#c0983f" />
+      <polygon points="48.00,47.00 55.05,65.80 48.00,84.60 40.95,65.80" fill="#40608c" />
+      <polygon points="49.00,48.00 30.20,55.05 11.40,48.00 30.20,40.95" fill="#57854e" />
+    </svg>
   )
 }
 

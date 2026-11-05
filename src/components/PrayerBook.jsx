@@ -20,7 +20,8 @@ import WUDASE_FRI from '../data/wudaseFridayMarks.json'
 import WUDASE_SAT from '../data/wudaseSaturdayMarks.json'
 import WUDASE_SUN from '../data/wudaseSundayMarks.json'
 import { noteDone, noteFinished } from '../platform/appProgress'
-import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle, nextBookId } from '../platform/prayerBook'
+import { paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, loadResume, saveResume, markNames, splitTitle, nextBookId, refrainCrossUnits } from '../platform/prayerBook'
+import { ManuscriptCross } from './Manuscript'
 import { getActivePackId } from '../platform/ethiopic'
 import { startPractice, endPractice, isPracticeMode, subscribePracticeMode, prayerOpen, prayerClose, prayerPage, prayerAudio, prayerRange, playCurrentPrayerOnly, startUnitForPage } from '../platform/prayerPractice'
 import { FIDEL_AUDIO_BASE } from '../platform/publicUrl'
@@ -38,8 +39,9 @@ const SPEED_DEFAULT = 2
 const SPEED_KEY = 'fq.prayer.speed'
 const MARKS_KEY = 'fq.prayer.marks'
 // Three ways to follow the owner's voice; the choice is remembered per device.
-//  letter (ቅጽሪ): the word being read glows and its letters light up one by one (default)
-//  word (ንባብ):   the whole word being read glows at once (no letter run)
+// Highlights follow a sounding clip (the Play button or a tapped word).
+//  letter (ቅጽሪ): letters of the word light up one by one (default)
+//  word (ንባብ):   the whole word is highlighted at once
 //  listen (ወርድ): plain page, no highlight at all; the page still turns with the voice
 export const READ_MODES = [
   { id: 'letter', label: 'ቅጽሪ', icon: 'ቅ' },
@@ -86,9 +88,11 @@ function TitleLabel({ title }) {
 
 /* ---- one reading unit (a word, or joined words) ------------------------- */
 function Unit({ u, idx, mode, glow, onTap }) {
-  // mode: 'hidden' | 'all' | 'current' | 'next'
+  // mode: 'hidden' | 'all' | 'current' | 'next' | 'glow'
+  // 'current' is the whole-word wash (ንባብ). 'glow' shows the mark only;
+  // the per-letter light (ቅጽሪ) comes from `glow`.
   const show = mode !== 'hidden'
-  const tone = mode === 'current' ? 'var(--pb-saffron)' : mode === 'next' ? 'var(--pb-faint)' : 'var(--pb-ink)'
+  const tone = mode === 'current' || mode === 'glow' ? 'var(--pb-saffron)' : mode === 'next' ? 'var(--pb-faint)' : 'var(--pb-ink)'
   let flat = 0
   const last = u.w.length - 1
   return (
@@ -121,14 +125,23 @@ function Unit({ u, idx, mode, glow, onTap }) {
   )
 }
 
-function PageFace({ UNITS, units, pageNo, markMode, glowFor, onTap }) {
+function RefrainCross() {
+  return <span className="pb-cross" aria-hidden="true"><ManuscriptCross /></span>
+}
+
+function PageFace({ UNITS, units, pageNo, markMode, glowFor, onTap, crossAfter }) {
   return (
     <div className="pb-face">
       <div className="pb-text geez-book">
-        {units.map((i, k) => [
-          UNITS[i].s && k > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
-          <Unit key={i} u={UNITS[i]} idx={i} mode={markMode(i)} glow={glowFor(i)} onTap={onTap} />,
-        ])}
+        {units.map((i, k) => {
+          const unit = <Unit key={i} u={UNITS[i]} idx={i} mode={markMode(i)} glow={glowFor(i)} onTap={onTap} />
+          return [
+            UNITS[i].s && k > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
+            crossAfter.has(i)
+              ? <span key={`x${i}`} className="pb-keep"><RefrainCross />{unit}</span>
+              : unit,
+          ]
+        })}
       </div>
       <div className="pb-folio">{geezNumeral(pageNo)}</div>
     </div>
@@ -150,6 +163,7 @@ export default function PrayerBook({ onBack, pack, onLocked }) {
 
 function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const UNITS = BOOK.units
+  const crossAfter = useMemo(() => new Set(refrainCrossUnits(UNITS)), [UNITS])
   const [shelf, setShelf] = useState(false)
   const NAMES = markNames(pack || getActivePackId())
   // Pages are cut from REAL layout: every unit is laid out once in a hidden
@@ -242,6 +256,9 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   useEffect(() => { try { localStorage.setItem(READ_KEY, readMode) } catch { /* ignore */ } }, [readMode])
   const [modeOpen, setModeOpen] = useState(false)
   const [playing, setPlaying] = useState(false)
+  // A clip is audible (Play or a tapped word). Marks and the letter glow follow
+  // this. `playing` stays the auto-advance / Play-Pause flag only.
+  const [sounding, setSounding] = useState(false)
   // Practice mode: prayer time is tracked, and playback stops after the current prayer.
   const [practice, setPractice] = useState(isPracticeMode)
   useEffect(() => subscribePracticeMode(setPractice), [])
@@ -280,6 +297,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(raf.current)
     if (audio.current) { try { audio.current.pause() } catch { /* ignore */ } }
+    setSounding(false)
   }, [])
   useEffect(() => () => stopAudio(), [stopAudio])
 
@@ -330,7 +348,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
 
   /* ---- playback ---------------------------------------------------------- */
   const playUnit = useCallback((i) => {
-    if (i < 0) { setPlaying(false); playingRef.current = false; setGlow(-1); prayerAudio(false); return }
+    if (i < 0) { setPlaying(false); playingRef.current = false; setSounding(false); setGlow(-1); prayerAudio(false); return }
     const p = pageOfUnit(pages, i)
     if (p !== pageRef.current) {
       if (p === pageRef.current + 1) return autoTurn(() => playUnit(i))
@@ -342,19 +360,28 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
     const u = UNITS[i]
     if (!audio.current) audio.current = new Audio()
     const el = audio.current
+    cancelAnimationFrame(raf.current)
     el.src = FIDEL_AUDIO_BASE + u.a
     applyRate(el, SPEEDS[speed])
     // In practice mode play ONLY the current prayer, then stop (no auto-advance, no loop).
     el.onended = () => {
       cancelAnimationFrame(raf.current)
-      if (playingRef.current) playUnit(practiceRef.current ? playCurrentPrayerOnly(UNITS, i) : nextRecorded(UNITS, i))
-      else prayerAudio(false)
+      if (playingRef.current) {
+        const next = practiceRef.current ? playCurrentPrayerOnly(UNITS, i) : nextRecorded(UNITS, i)
+        if (next < 0) setSounding(false)
+        playUnit(next)
+      } else {
+        setSounding(false)
+        prayerAudio(false)
+      }
     }
     const tick = () => {
       if (el.duration > 0) setGlow(glowLetter(u, el.currentTime / el.duration))
       raf.current = requestAnimationFrame(tick)
     }
-    el.play().then(() => { raf.current = requestAnimationFrame(tick) }).catch(() => { setPlaying(false); playingRef.current = false })
+    // The highlight starts with the clip (a tap or Play). A failed play clears it.
+    setSounding(true)
+    el.play().then(() => { raf.current = requestAnimationFrame(tick) }).catch(() => { setPlaying(false); playingRef.current = false; setSounding(false) })
   }, [UNITS, pages, speed, autoTurn])
 
   const togglePlay = () => {
@@ -381,7 +408,7 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   // A manual turn stops the reader first (turning used to be locked while playing).
   const stopForTurn = () => {
     if (!playingRef.current) return
-    playingRef.current = false; setPlaying(false); stopAudio(); setGlow(-1); prayerAudio(false)
+    playingRef.current = false; setPlaying(false); setSounding(false); stopAudio(); setGlow(-1); prayerAudio(false)
   }
   const turning = useRef(false)
   // Animated turn for taps / arrows / keys. Forward = next page (swipe left).
@@ -471,13 +498,13 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
   const nextUnit = playing && cur >= 0 ? nextRecorded(UNITS, cur) : -1
   const markMode = (i) => {
     if (readMode === 'listen') return showAll ? 'all' : 'hidden'
-    if (playing && i === cur) return 'current'
+    if (sounding && i === cur) return readMode === 'word' ? 'current' : 'glow'
     if (showAll) return 'all'
-    if (playing && i === nextUnit) return 'next'
+    if (sounding && i === nextUnit) return 'next'
     return 'hidden'
   }
-  const glowFor = (i) => (playing && i === cur && readMode === 'letter' ? glow : -1)
-  const face = (p) => <PageFace UNITS={UNITS} units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} />
+  const glowFor = (i) => (sounding && i === cur && readMode === 'letter' ? glow : -1)
+  const face = (p) => <PageFace UNITS={UNITS} units={pages[p]} pageNo={p + 1} markMode={markMode} glowFor={glowFor} onTap={tapUnit} crossAfter={crossAfter} />
 
   // Layers: base (what will be revealed) under the flap (the turning page).
   const baseP = turn ? (turn.dir === 1 ? turn.to : turn.from) : pageSafe
@@ -570,10 +597,13 @@ function BookView({ book: BOOK, onBack, pack, onPick, onLocked }) {
           <div className="pb-page pb-measure" aria-hidden="true">
             <div className="pb-face">
               <div ref={measRef} className="pb-text geez-book">
-                {UNITS.map((u, i) => [
-                  u.s && i > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
-                  <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />,
-                ])}
+                {UNITS.map((u, i) => {
+                  const unit = <Unit key={i} u={u} idx={i} mode="hidden" glow={-1} onTap={() => {}} />
+                  return [
+                    u.s && i > 0 ? <span key={`p${i}`} className="pb-para" /> : null,
+                    crossAfter.has(i) ? <span key={`x${i}`} className="pb-keep"><RefrainCross />{unit}</span> : unit,
+                  ]
+                })}
               </div>
               <div className="pb-folio">፩</div>
             </div>

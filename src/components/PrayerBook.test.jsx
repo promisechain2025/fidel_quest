@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import PrayerBook from './PrayerBook'
 import { splitTitle } from '../platform/prayerBook'
 import { loadAppProgress } from '../platform/appProgress'
@@ -200,11 +200,114 @@ describe('PrayerBook', () => {
     for (const b of [back, next]) expect(b.getAttribute('aria-label')).not.toMatch(/[A-Za-z]/)
   })
 
+  it('ጸሎት has no refrain cross; ውዳሴ leads the next paragraph with one, outside the word', () => {
+    const plain = render(<PrayerBook onBack={() => {}} />)
+    expect(plain.container.querySelector('.pb-cross')).toBeNull()
+    plain.unmount()
+    localStorage.setItem('fq.prayer.book', 'wudase-monday')
+    localStorage.setItem('fq.prayer.v1', JSON.stringify({ 'wudase-monday': { page: 0, unit: 19 } }))
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    const base = container.querySelector('.pb-base')
+    const unit = base.querySelector('[data-unit="19"]')
+    const cross = unit.parentElement.querySelector('.pb-cross')
+    expect(cross).toBeTruthy()
+    expect(cross.getAttribute('aria-hidden')).toBe('true')
+    expect(cross.closest('[data-unit]')).toBeNull()
+    expect(unit.parentElement.classList.contains('pb-keep')).toBe(true)
+    expect(unit.previousElementSibling).toBe(cross)
+    const qidsit = base.querySelector('[data-unit="18"]')
+    if (qidsit) expect(qidsit.parentElement.classList.contains('pb-keep')).toBe(false)
+  })
+
   it('turning a page reports a ጸሎት page to the app-level tracker (the first page does not)', async () => {
     render(<PrayerBook onBack={() => {}} />)
     expect(loadAppProgress().areas.prayer?.done || 0).toBe(0)
     fireEvent.click(screen.getByTestId('page-next'))
     await waitFor(() => expect(loadAppProgress().areas.prayer?.done).toBe(1), { timeout: 4000 })
+  })
+})
+
+describe('PrayerBook reading modes highlight a sounding word', () => {
+  let failPlay = false
+  class FakeAudio {
+    constructor() { this.paused = true; this.duration = 1; this.currentTime = 0; this.onended = null; FakeAudio.latest = this }
+    set src(v) { this._src = v }
+    get src() { return this._src }
+    play() { this.paused = false; return failPlay ? Promise.reject(new Error('no audio')) : Promise.resolve() }
+    pause() { this.paused = true }
+  }
+  const flush = () => act(async () => { await Promise.resolve() })
+  const base = (container) => container.querySelector('.pb-base')
+  const pick = async (id) => {
+    if (screen.getByTestId('read-mode').dataset.mode === id) return
+    fireEvent.click(screen.getByTestId('read-mode'))
+    fireEvent.click(screen.getByTestId(`read-mode-${id}`))
+  }
+  const expectHighlight = (container, id) => {
+    const root = base(container)
+    const glow = root.querySelectorAll('.pb-glow').length
+    const current = root.querySelectorAll('.pb-current').length
+    if (id === 'letter') {
+      expect(glow).toBeGreaterThan(0)
+      expect(current).toBe(0)
+      expect(root.querySelector('[data-unit="0"] .pb-glow')).toBeTruthy()
+    } else if (id === 'word') {
+      expect(current).toBeGreaterThan(0)
+      expect(glow).toBe(0)
+      expect(root.querySelector('[data-unit="0"]').classList.contains('pb-current')).toBe(true)
+    } else {
+      expect(glow).toBe(0)
+      expect(current).toBe(0)
+    }
+  }
+
+  beforeEach(() => { failPlay = false; vi.stubGlobal('Audio', FakeAudio) })
+  afterEach(() => { vi.unstubAllGlobals() })
+
+  it.each(['letter', 'word', 'listen'])('a tapped word shows the %s highlight and does not start auto-advance', async (id) => {
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    await pick(id)
+    fireEvent.click(base(container).querySelector('[data-unit="0"]'))
+    await flush()
+    expectHighlight(container, id)
+    expect(screen.getByTestId('play').getAttribute('aria-label')).toBe('አንብብ')
+  })
+
+  it.each(['letter', 'word', 'listen'])('Play shows the %s highlight', async (id) => {
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    await pick(id)
+    fireEvent.click(screen.getByTestId('play'))
+    await flush()
+    expectHighlight(container, id)
+    expect(screen.getByTestId('play').getAttribute('aria-label')).toBe('አቁም')
+  })
+
+  it('a finished tap and a pause both clear the highlight', async () => {
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(base(container).querySelector('[data-unit="0"]'))
+    await flush()
+    expect(base(container).querySelector('.pb-glow')).toBeTruthy()
+    await act(async () => { FakeAudio.latest.onended() })
+    expect(base(container).querySelector('.pb-glow')).toBeNull()
+    expect(base(container).querySelector('.pb-current')).toBeNull()
+
+    await pick('word')
+    fireEvent.click(screen.getByTestId('play'))
+    await flush()
+    expect(base(container).querySelector('.pb-current')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('play'))
+    expect(base(container).querySelector('.pb-current')).toBeNull()
+    expect(base(container).querySelector('.pb-glow')).toBeNull()
+    expect(screen.getByTestId('play').getAttribute('aria-label')).toBe('አንብብ')
+  })
+
+  it('a play error leaves no highlight', async () => {
+    failPlay = true
+    const { container } = render(<PrayerBook onBack={() => {}} />)
+    fireEvent.click(base(container).querySelector('[data-unit="0"]'))
+    await flush()
+    expect(base(container).querySelector('.pb-glow')).toBeNull()
+    expect(base(container).querySelector('.pb-current')).toBeNull()
   })
 })
 

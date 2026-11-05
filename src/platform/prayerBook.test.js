@@ -8,7 +8,7 @@ import THU from '../data/wudaseThursdayMarks.json'
 import FRI from '../data/wudaseFridayMarks.json'
 import SAT from '../data/wudaseSaturdayMarks.json'
 import SUN from '../data/wudaseSundayMarks.json'
-import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES } from './prayerBook'
+import { markNames, paginate, pageOfUnit, nextRecorded, glowLetter, geezNumeral, unitLetterCount, MARK_TYPES, refrainCrossUnits } from './prayerBook'
 import { passageCoverage } from './passageTiming'
 
 describe('prayer book data', () => {
@@ -81,6 +81,47 @@ describe('prayer book data', () => {
   })
   it('clip paths stay under reader/', () => {
     for (const u of BOOK.units) if (u.a) expect(u.a).toMatch(/^reader\/tselot\/\d{3}\.mp3$/)
+  })
+})
+
+describe('owner spelling follow-up', () => {
+  const cp = (s) => [...s].map((c) => c.codePointAt(0))
+  const books = [BOOK, MON, TUE, WED, THU, FRI, SAT, SUN]
+  const words = books.flatMap((b) => b.units.flatMap((u) => u.w))
+  it('locks ሕያዋነ, እምአንስት, አንስት, ቤተ ልሔም, and በኲሉ by code point', () => {
+    expect(cp(BOOK.units[224].w[0])).toEqual([0x1215, 0x12EB, 0x12CB, 0x1290]) // ሕያዋነ
+    expect(BOOK.units[224]).toMatchObject({ w: ['ሕያዋነ'], m: 'tenesh', li: 2 })
+    expect(cp(BOOK.units[126].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275]) // እምአንስት
+    expect(cp(FRI.units[9].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
+    expect(cp(SUN.units[11].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
+    expect(cp(FRI.units[109].w[0])).toEqual([0x12A0, 0x1295, 0x1235, 0x1275]) // አንስት
+    expect(cp(BOOK.units[393].w[0])).toEqual([0x1260, 0x12B2, 0x1209]) // በኲሉ, ኲ = U+12B2
+    expect(MON.units[132]).toMatchObject({ w: ['ቤተ', 'ልሔም'], m: 'tetay', li: 1, a: 'reader/wudase-mon/132.mp3' })
+    expect(cp(MON.units[132].w[0])).toEqual([0x1264, 0x1270])
+    expect(cp(MON.units[132].w[1])).toEqual([0x120D, 0x1214, 0x121D])
+    expect(THU.units[351]).toMatchObject({ w: ['ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/351.mp3' })
+    expect(THU.units[363]).toMatchObject({ w: ['ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/363.mp3' })
+    expect(THU.units[400]).toMatchObject({ w: ['እምዓዘቅተ', 'ቤተ', 'ልሔም'], li: 1, a: 'reader/wudase-thu/400.mp3' })
+    // The prefixed form was already one word before #108; audio alignment stays.
+    expect(cp(THU.units[464].w[0])).toEqual([0x1260, 0x1264, 0x1270, 0x120D, 0x1214, 0x121D])
+    for (const bad of ['ህያዋነ', 'እምኣንስት', 'ኣንስት', 'ቤተልሔም', 'ብኲሉ']) expect(words).not.toContain(bad)
+    for (const w of words) {
+      const chars = [...w]
+      for (let i = 0; i < chars.length - 2; i++) {
+        if (chars[i + 1] === 'ን' && chars[i + 2] === 'ቲ' && (chars[i] === 'አ' || chars[i] === 'ኣ')) {
+          expect(chars[i].codePointAt(0)).toBe(0x12A0) // አንቲ stays U+12A0
+        }
+      }
+      if (w.endsWith('ንስት')) expect(chars[chars.length - 4].codePointAt(0)).toBe(0x12A0)
+    }
+    expect(BOOK.units).toHaveLength(471)
+    expect(MON.units).toHaveLength(228)
+    expect(TUE.units).toHaveLength(402)
+    expect(WED.units).toHaveLength(425)
+    expect(THU.units).toHaveLength(474)
+    expect(FRI.units).toHaveLength(319)
+    expect(SAT.units).toHaveLength(250)
+    expect(SUN.units).toHaveLength(279)
   })
 })
 
@@ -232,6 +273,35 @@ describe('helpers', () => {
     const units = [{ a: 'x' }, {}, {}, { a: 'y' }]
     expect(nextRecorded(units, 0)).toBe(3)
     expect(nextRecorded(units, 3)).toBe(-1)
+  })
+  it('leads the next paragraph after ሰአሊ ለነ ቅድስት, and skips a refrain that ends the prayer', () => {
+    expect(refrainCrossUnits(BOOK.units)).toEqual([])
+    expect(refrainCrossUnits(MON.units)).toEqual([7, 19, 42, 58, 76, 98, 130, 163, 200])
+    expect(refrainCrossUnits(TUE.units)).toEqual([7, 36, 67, 85, 115, 143, 171, 199, 219, 253, 280, 301, 324, 342, 375])
+    expect(refrainCrossUnits(WED.units)).toEqual([7, 35, 71, 125, 146, 255, 350, 372])
+    expect(refrainCrossUnits(THU.units)).toEqual([7, 38, 148, 248, 316, 391, 448])
+    expect(refrainCrossUnits(FRI.units)).toEqual([7, 28, 80, 149, 173, 189])
+    expect(refrainCrossUnits(SAT.units)).toEqual([7, 24, 52, 74, 97, 115, 158, 176, 200, 221])
+    expect(refrainCrossUnits(SUN.units)).toEqual([7, 49, 102, 119, 136, 171, 200, 218, 235])
+    expect(MON.units[7].w).toEqual(['ፈቀደ'])
+    expect(TUE.units[7].w).toEqual(['አክሊለ', 'ምክሕነ'])
+    expect(WED.units[7].w).toEqual(['ኲሉ'])
+    expect(THU.units[7].w).toEqual(['ዕፀ'])
+    expect(FRI.units[7].w).toEqual(['ቡርክት'])
+    expect(SAT.units[7].w).toEqual(['ሰንበት'])
+    expect(SUN.units[7].w).toEqual(['ተሰመይኪ'])
+    // Closing refrain of each day: no paragraph follows, so no cross.
+    for (const [B, end] of [[MON, 227], [TUE, 401], [WED, 424], [THU, 473], [FRI, 318], [SAT, 249], [SUN, 278]]) {
+      expect(B.units[end].w).toEqual(['ቅድስት'])
+      expect(refrainCrossUnits(B.units)).not.toContain(end)
+      expect(end).toBe(B.units.length - 1)
+    }
+    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) {
+      for (const i of refrainCrossUnits(B.units)) expect(B.units[i].s).toBe(1)
+    }
+    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ኀበ'] }, { w: ['ሀ'], s: 1 }])).toEqual([])
+    expect(refrainCrossUnits([{ w: ['ሰኣሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }, { w: ['ሀ'], s: 1 }])).toEqual([3])
+    expect(refrainCrossUnits([{ w: ['ሰአሊ'] }, { w: ['ለነ'] }, { w: ['ቅድስት'] }])).toEqual([])
   })
 })
 
