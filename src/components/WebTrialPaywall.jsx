@@ -53,6 +53,8 @@ function ReviewLinks() {
 function CodeForm({ onUnlocked, onDone }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState(false)
+  // A class code that starts with EGC but is the wrong length was almost always cut off when copied.
+  const tooShort = error && /^EGC/i.test(code.trim()) && !looksLikeClassUnlock(code)
   const submit = async (e) => {
     e.preventDefault()
     // A teacher's class code (EGC-...) unlocks too, until it expires.
@@ -92,7 +94,9 @@ function CodeForm({ onUnlocked, onDone }) {
       </div>
       {error && (
         <p id="wt-code-error" role="alert" className="mt-2 text-sm font-bold" style={{ color: 'var(--bad)' }}>
-          {t('wtCodeBad', 'That code did not work. Check the letters and try again.')}
+          {tooShort
+            ? t('wtClassCodeShort', 'That class code looks cut off. The full code has 18 letters, like EGC-ABCDEF-GHJKMNP. Copy the whole code from your teacher.')
+            : t('wtCodeBad', 'That code did not work. Check the letters and try again.')}
         </p>
       )}
     </form>
