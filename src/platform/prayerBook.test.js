@@ -180,6 +180,8 @@ describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
     expect(paras.length).toBe(10)
     for (const u of paras) expect(u.h).toContain(0)
     expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'ይሕየው'], m: 'seyaf' })
+    expect(MON.units[124]).toMatchObject({ w: ['መለኮት'], m: 'tetay', li: 3 })
+    expect(MON.units[125]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'wedaqi' })
     expect(MON.units.flatMap((u) => u.w)).not.toContain('ሕያዉ')
   })
 })
