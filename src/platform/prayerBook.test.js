@@ -26,23 +26,23 @@ describe('prayer book data', () => {
     const cov = passageCoverage(text)
     expect(cov.unknown).toEqual([])
   })
-  it('every unit, incl. 321-471, has a word clip that exists on disk', () => {
+  it('every unit has a word clip that exists on disk', () => {
     for (const [i, u] of BOOK.units.entries()) {
       expect(u.a).toBe(`reader/tselot/${String(i).padStart(3, '0')}.mp3`)
       expect(existsSync(`${process.cwd()}/public/audio/fidel/${u.a}`)).toBe(true)
     }
   })
   it('carries the owner review of 19 Oct: ትንሣኤ/ሰማያዊ ወዳቂ, ወላዲተ‿ኣምላክ joined ተጣይ, ለመንፈስ‿ቅዱስ ተጣይ', () => {
-    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ'], m: 'wedaqi', li: 3 })
-    expect(BOOK.units[274]).toMatchObject({ w: ['ሰማያዊ'], m: 'wedaqi', li: 3 })
-    expect(BOOK.units[326]).toMatchObject({ w: ['ለመንፈስ', 'ቅዱስ'], m: 'tetay' })
-    expect(BOOK.units[419]).toMatchObject({ w: ['ወላዲተ', 'ኣምላክ'], m: 'tetay', li: 2, p: '።' })
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤሙታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[273]).toMatchObject({ w: ['ሰማያዊ'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[325]).toMatchObject({ w: ['ለመንፈስ', 'ቅዱስ'], m: 'tetay' })
+    expect(BOOK.units[418]).toMatchObject({ w: ['ወላዲተ', 'ኣምላክ'], m: 'tetay', li: 2, p: '።' })
     expect(BOOK.units.some((u) => u.w.length === 1 && u.w[0] === 'ወላዲተ')).toBe(false)
     expect(BOOK.units[47]).toMatchObject({ w: ['ይትቀነይ'], m: 'seyaf' })
     expect(BOOK.units[79]).toMatchObject({ w: ['በከመ', 'በሰማይ'], m: 'tetay' })
     expect(BOOK.units[80]).toMatchObject({ w: ['ከማሁ'], m: 'wedaqi' })
     expect(BOOK.units[84]).toMatchObject({ w: ['ሃበነ'], m: 'tenesh' })
-    expect(BOOK.units[449]).toMatchObject({ w: ['ሕሊና', 'ልቦሙ'], m: 'tenesh' })
+    expect(BOOK.units[448]).toMatchObject({ w: ['ሕሊና', 'ልቦሙ'], m: 'tenesh' })
   })
   it('carries the owner review of 19 Oct (2nd round): ኦ always ወዳቂ, ድንግል always ተጣይ, እሁድ/ረቡዕ/ሠሉስ/ቀዳሚት answers', async () => {
     const files = ['tselot', 'wudaseMonday', 'wudaseTuesday', 'wudaseWednesday', 'wudaseThursday', 'wudaseFriday', 'wudaseSaturday', 'wudaseSunday']
@@ -63,8 +63,8 @@ describe('prayer book data', () => {
     expect(TUE[16]).toMatchObject({ w: ['ቃለ'], m: 'tenesh' })
     expect(TUE[31]).toMatchObject({ w: ['ኃይለ', 'ወሊዶታ'], m: 'wedaqi' })
     expect(TUE[60]).toMatchObject({ m: 'tetay' }); expect(TUE[72]).toMatchObject({ m: 'tetay' })
-    for (const i of [45, 96, 153, 293]) expect(BOOK.units[i].m).toBe('tetay')
-    expect(BOOK.units[293]).toMatchObject({ w: ['በመለኮት'], p: '።' })
+    for (const i of [45, 96, 153, 292]) expect(BOOK.units[i].m).toBe('tetay')
+    expect(BOOK.units[292]).toMatchObject({ w: ['በመለኮት'], p: '።' })
   })
   it('carries the owner review: #200 ብእሴ ወዳቂ, ወነበረ / በየማነ‿አቡሁ split', () => {
     expect(BOOK.units[200]).toMatchObject({ w: ['ብእሴ'], m: 'wedaqi' })
@@ -95,7 +95,7 @@ describe('owner spelling follow-up', () => {
     expect(cp(FRI.units[9].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
     expect(cp(SUN.units[11].w[0])).toEqual([0x12A5, 0x121D, 0x12A0, 0x1295, 0x1235, 0x1275])
     expect(cp(FRI.units[109].w[0])).toEqual([0x12A0, 0x1295, 0x1235, 0x1275]) // አንስት
-    expect(cp(BOOK.units[393].w[0])).toEqual([0x1260, 0x12B2, 0x1209]) // በኲሉ, ኲ = U+12B2
+    expect(cp(BOOK.units[392].w[0])).toEqual([0x1260, 0x12B2, 0x1209]) // በኲሉ, ኲ = U+12B2
     expect(MON.units[132]).toMatchObject({ w: ['ቤተ', 'ልሔም'], m: 'tetay', li: 1, a: 'reader/wudase-mon/132.mp3' })
     expect(cp(MON.units[132].w[0])).toEqual([0x1264, 0x1270])
     expect(cp(MON.units[132].w[1])).toEqual([0x120D, 0x1214, 0x121D])
@@ -114,7 +114,7 @@ describe('owner spelling follow-up', () => {
       }
       if (w.endsWith('ንስት')) expect(chars[chars.length - 4].codePointAt(0)).toBe(0x12A0)
     }
-    expect(BOOK.units).toHaveLength(471)
+    expect(BOOK.units).toHaveLength(470)
     expect(MON.units).toHaveLength(228)
     expect(TUE.units).toHaveLength(402)
     expect(WED.units).toHaveLength(425)
@@ -122,6 +122,27 @@ describe('owner spelling follow-up', () => {
     expect(FRI.units).toHaveLength(319)
     expect(SAT.units).toHaveLength(250)
     expect(SUN.units).toHaveLength(279)
+  })
+  it('locks the owner spelling pass: joined words, ኢታብአነ, ኲሎ, ጸሎተ, ው not ዉ in ውስተ/ውላጤ/ውልድ', () => {
+    const cp = (s) => [...s].map((c) => c.codePointAt(0))
+    expect(BOOK.units[92]).toMatchObject({ w: ['ለዘአበሰ'], li: 3 })
+    expect(cp(BOOK.units[94].w[0])).toEqual([0x12A2, 0x1273, 0x1265, 0x12A0, 0x1290]) // ኢታብአነ
+    expect(BOOK.units[196]).toMatchObject({ w: ['ወእማርያም'], li: 4, h: [0] })
+    expect(cp(BOOK.units[234].w[0])).toEqual([0x12A5, 0x121D, 0x12A3, 0x1265]) // እምኣብ
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤሙታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[367]).toMatchObject({ w: ['ኲሎ'] })
+    expect(BOOK.units[368].w).toEqual(['ኃጢአተነ'])
+    expect(BOOK.units[415].w[0]).toBe('ጸሎተ')
+    expect(BOOK.units[441].w).toEqual(['ለትውልደ', 'ትውልድ'])
+    expect(MON.units[86].w).toEqual(['ከመ', 'ይሕየው'])
+    const all = books.flatMap((b) => b.units.flatMap((u) => u.w))
+    for (const bad of ['ዉስተ', 'ዉስቴታ', 'ዉላጤ', 'ትዉልድ', 'ትዉልደ', 'ዉሉደ', 'ኢትአብአነ', 'የሕየው']) {
+      expect(all.filter((w) => w.includes(bad))).toEqual([])
+    }
+    expect(all.filter((w) => w === 'ለዘ' || w === 'ጸሎት')).toEqual([])
+    expect(all.some((w) => w.includes('ውስተ') || w.includes('ውስቴ'))).toBe(true)
+    expect(all).toContain('ውላጤ')
+    expect(all).toContain('ወኢውላጤ')
   })
 })
 
@@ -158,7 +179,9 @@ describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
     const paras = MON.units.filter((u) => u.s)
     expect(paras.length).toBe(10)
     for (const u of paras) expect(u.h).toContain(0)
-    expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'የሕየው'], m: 'seyaf' })
+    expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'ይሕየው'], m: 'seyaf' })
+    expect(MON.units[124]).toMatchObject({ w: ['መለኮት'], m: 'tetay', li: 3 })
+    expect(MON.units[125]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'wedaqi' })
     expect(MON.units.flatMap((u) => u.w)).not.toContain('ሕያዉ')
   })
 })
