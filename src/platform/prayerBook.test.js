@@ -33,7 +33,7 @@ describe('prayer book data', () => {
     }
   })
   it('carries the owner review of 19 Oct: ትንሣኤ/ሰማያዊ ወዳቂ, ወላዲተ‿ኣምላክ joined ተጣይ, ለመንፈስ‿ቅዱስ ተጣይ', () => {
-    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤሙታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'wedaqi', li: 3 })
     expect(BOOK.units[273]).toMatchObject({ w: ['ሰማያዊ'], m: 'wedaqi', li: 3 })
     expect(BOOK.units[325]).toMatchObject({ w: ['ለመንፈስ', 'ቅዱስ'], m: 'tetay' })
     expect(BOOK.units[418]).toMatchObject({ w: ['ወላዲተ', 'ኣምላክ'], m: 'tetay', li: 2, p: '።' })
@@ -129,15 +129,23 @@ describe('owner spelling follow-up', () => {
     expect(cp(BOOK.units[94].w[0])).toEqual([0x12A2, 0x1273, 0x1265, 0x12A0, 0x1290]) // ኢታብአነ
     expect(BOOK.units[196]).toMatchObject({ w: ['ወእማርያም'], li: 4, h: [0] })
     expect(cp(BOOK.units[234].w[0])).toEqual([0x12A5, 0x121D, 0x12A3, 0x1265]) // እምኣብ
-    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤሙታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'wedaqi', li: 3 })
     expect(BOOK.units[367]).toMatchObject({ w: ['ኲሎ'] })
+    expect(TUE.units[15]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'tetay', li: 7 })
+    expect(TUE.units[179]).toMatchObject({ w: ['ተላዓሊ'] })
+    expect(TUE.units[189].w).toEqual(['ነጊረ'])
+    expect(TUE.units[190].w).toEqual(['በእንተ', 'ዕበዩ'])
+    expect(TUE.units[191].w).toEqual(['ለውእቱ'])
     expect(BOOK.units[368].w).toEqual(['ኃጢአተነ'])
     expect(BOOK.units[415].w[0]).toBe('ጸሎተ')
     expect(BOOK.units[441].w).toEqual(['ለትውልደ', 'ትውልድ'])
     expect(MON.units[86].w).toEqual(['ከመ', 'ይሕየው'])
     const all = books.flatMap((b) => b.units.flatMap((u) => u.w))
-    for (const bad of ['ዉስተ', 'ዉስቴታ', 'ዉላጤ', 'ትዉልድ', 'ትዉልደ', 'ዉሉደ', 'ኢትአብአነ', 'የሕየው']) {
+    for (const bad of ['ዉስተ', 'ዉስቴታ', 'ዉላጤ', 'ትዉልድ', 'ትዉልደ', 'ዉሉደ', 'ዉእ', 'ዕበዮ', 'ኢትአብአነ', 'የሕየው', 'ትንሣኤሙታን']) {
       expect(all.filter((w) => w.includes(bad))).toEqual([])
+    }
+    for (const b of books) for (const u of b.units) {
+      if (u.w[u.w.length - 1] === 'እግዚአብሔር' || u.w[u.w.length - 1] === 'ዘእግዚአብሔር') expect(u.m).toBe('tetay')
     }
     expect(all.filter((w) => w === 'ለዘ' || w === 'ጸሎት')).toEqual([])
     expect(all.some((w) => w.includes('ውስተ') || w.includes('ውስቴ'))).toBe(true)
@@ -181,7 +189,7 @@ describe('ውዳሴ ማርያም ዘሰኑይ data', () => {
     for (const u of paras) expect(u.h).toContain(0)
     expect(MON.units[86]).toMatchObject({ w: ['ከመ', 'ይሕየው'], m: 'seyaf' })
     expect(MON.units[124]).toMatchObject({ w: ['መለኮት'], m: 'tetay', li: 3 })
-    expect(MON.units[125]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'wedaqi' })
+    expect(MON.units[125]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'tetay', li: 7 })
     expect(MON.units.flatMap((u) => u.w)).not.toContain('ሕያዉ')
   })
 })
