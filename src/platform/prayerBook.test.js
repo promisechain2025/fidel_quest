@@ -263,6 +263,14 @@ describe('ውዳሴ ማርያም ረቡዕ–እሁድ', () => {
   it('ወመጠዉ ወከዓዉ keep ዉ (Yosief) in every day; Tuesday reads ተሰዓተ (no numeral guide left)', () => {
     const thu = THU.units.flatMap((u) => u.w)
     expect(thu).toContain('ወመጠዉ'); expect(thu).toContain('ወከዓዉ')
+    expect(FRI.units.flatMap((u) => u.w)).toContain('ወቡሩክ')
+    for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) {
+      expect(B.units[0].w[0]).toBe('ውዳሴሃ')
+      for (const w of B.units.flatMap((u) => u.w)) {
+        if (w === 'ወመጠዉ' || w === 'ወከዓዉ') continue
+        expect(w.includes('ዉ')).toBe(false)
+      }
+    }
     for (const B of [MON, TUE, WED, THU, FRI, SAT, SUN]) { const all = B.units.flatMap((u) => u.w); expect(all).not.toContain('ወመጠው'); expect(all).not.toContain('ወከዓው') }
     expect(TUE.units[268]).toMatchObject({ w: ['ተሰዓተ'], a: 'reader/wudase-tue/268.mp3' })
     for (const u of TUE.units) for (const w of u.w) expect(/^[\u1200-\u137F]+$/.test(w)).toBe(true)

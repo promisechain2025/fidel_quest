@@ -36,7 +36,7 @@ export function refrainCrossUnits(units) {
   const words = []
   for (let i = 0; i < units.length; i++) for (const w of units[i].w) words.push([i, w])
   const out = []
-  if (units[0]?.w?.[0] === 'ዉዳሴሃ') {
+  if (units[0]?.w?.[0] === 'ውዳሴሃ') {
     let seen = 0
     for (let i = 0; i < units.length; i++) {
       if (!units[i].s) continue

@@ -84,7 +84,7 @@ describe('PrayerBook practice mode (practice tracking contract)', () => {
     fireEvent.click(screen.getByTestId('practice-toggle'))
     fireEvent.click(screen.getByTestId('play'))
     await flush()
-    expect(played[0]).toMatch(/reader\/wudase-wed\/001\.mp3$/) // ፩ ዉዳሴሃ has no clip (cut off in the recording)
+    expect(played[0]).toMatch(/reader\/wudase-wed\/001\.mp3$/) // ፩ ውዳሴሃ has no clip (cut off in the recording)
     for (let k = 0; k < 60 && last.onended; k++) {
       const n = played.length
       await act(async () => { last.onended() })
