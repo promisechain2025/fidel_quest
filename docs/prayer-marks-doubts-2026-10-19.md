@@ -18,7 +18,7 @@ Branch `fix/prayer-title-compact-marks`. **Update 19 Oct (EAT):** Yosief answere
 ## A. Possibly missed ተጣይ (source says ጣ, the app shows something else, and Yosief hasn't reviewed it)
 | # | Prayer | Section / unit (at audit) | Word (context) | App at audit | Suspected | Why | Resolution |
 |---|---|---|---|---|---|---|---|
-| A1 | ጸሎት ዘዘወትር (ጸሎተ ሃይማኖት) | §6 / #254 | **ትንሣኤ** (ወንሴፎ ትንሣኤ ሙታን) | ተነሽ | ተጣይ | Source ጣ. The first build had ሰያፍ by mistake, and the ሳድስ rule then flipped it to ተነሽ automatically. Nobody chose ተነሽ. | **RESOLVED 19 Oct (Yosief): ወዳቂ** (mark on the last letter). |
+| A1 | ጸሎት ዘዘወትር (ጸሎተ ሃይማኖት) | §6 / #254 | **ትንሣኤ** (ወንሴፎ ትንሣኤሙታን) | ተነሽ | ተጣይ | Source ጣ. The first build had ሰያፍ by mistake, and the ሳድስ rule then flipped it to ተነሽ automatically. Nobody chose ተነሽ. | **RESOLVED 19 Oct (Yosief): ወዳቂ** (mark on the last letter). |
 | A2 | ጸሎት ዘዘወትር | §7 / #274 | **ሰማያዊ** (ኄር ሰማያዊ ወመንፈስከ ቅዱስ) | ተነሽ | ተጣይ | Same as A1: source ጣ, wrong ሰያፍ at first, then flipped to ተነሽ by the rule. | **RESOLVED 19 Oct (Yosief): ወዳቂ** (mark on the last letter). |
 | A3 | ጸሎት ዘዘወትር (ጸሎተ ማርያም title) | §13 / #419 | **ወላዲተ** (ማርያም ድንግል ወላዲተ ኣምላክ።) | ተነሽ | ተጣይ | Same as A1. Also, ወላዲተ‿አምላክ is ተጣይ in all 24 other places in the app. | **RESOLVED 19 Oct (Yosief): joined as ተናባቢ with the next word, ወላዲተ‿ኣምላክ ተጣይ**, the same as the 24 other ወላዲተ‿አምላክ places. The clips 419 and 420 were joined into one, and the later clips were renumbered (the unit is now #419, and everything after it moves up by one). Flag: the next word is spelled **ኣምላክ** (with ኣ) here, not አምላክ. The spelling was left as it is. |
 | A4 | ጸሎት ዘዘወትር (ታዐብዮ) | §13 / #450 | **ሕሊና‿ልቦሙ** (ለእለ ያዐብዩ ሕሊና ልቦሙ) | ተነሽ | ተጣይ | Same as A1. | **RESOLVED 19 Oct (Yosief): keep joined, ተነሽ (ተለዓሊ).** It is now unit #449. |
@@ -30,7 +30,7 @@ Branch `fix/prayer-title-compact-marks`. **Update 19 Oct (EAT):** Yosief answere
 | A10 | ውዳሴ ማርያም ዘሰሉስ | §2 / #31 | **ኃይለ‿ወሊዶታ** (መንክር ኃይለ ወሊዶታ ዘኢይትነገር) | ወዳቂ | ተጣይ | Source ጣ. I found no owner note for this one. | **RESOLVED 19 Oct (Yosief): ወዳቂ, keep.** |
 | A11 | ውዳሴ ማርያም ዘረቡዕ | §9 / #392 | **ምሕረተ** (ዘአልቦ ምሕረተ) | ተነሽ | ተጣይ? | Source text is **ምሕረት** (ሳድስ) ጣ, the app text is ምሕረተ (ዕዝል). Please check both the spelling and the mark. | **RESOLVED 19 Oct (Yosief): ተነሽ (ተለዓሊ), keep the spelling ምሕረተ.** |
 | A12 | ውዳሴ ማርያም ዘእሁድ | §3 / #74, §7 / #187, §8 / #207 | **ዘእግዚአብሔር** (ዘእግዚአብሔር ቃል(ለ)) | ወዳቂ | ተጣይ | Source ጣ all 3 times. Sunday has no recording, so nobody has checked it by ear. ውዳሴ ሠሉስ #15 also has ወዳቂ (source ተ there). | **RESOLVED 19 Oct (Yosief): ተጣይ (#74, #187, #207 changed).** |
-| A13 | ውዳሴ ማርያም ዘእሁድ | §3 / #80 | **መለኮት** (ወኢዉላጤ መለኮት ንጹሕ) | ወዳቂ | ተጣይ | Source ጣ, and Sunday has no recording. | **RESOLVED 19 Oct (Yosief): ተጣይ (#80 changed).** |
+| A13 | ውዳሴ ማርያም ዘእሁድ | §3 / #80 | **መለኮት** (ወኢውላጤ መለኮት ንጹሕ) | ወዳቂ | ተጣይ | Source ጣ, and Sunday has no recording. | **RESOLVED 19 Oct (Yosief): ተጣይ (#80 changed).** |
 | A14 | ውዳሴ ማርያም ዘሰኑይ | §3 / #36 | **ልቡ** (ሠምረ ልቡ ኀበ ፍቅረ ሰብእ) | ወዳቂ | (ተጣይ?) | Source ጣ, but ሰኑይ is "fully confirmed" by Yosief, so this is probably his choice. Listed only so he can confirm. | **RESOLVED 19 Oct (Yosief): ወዳቂ, keep.** |
 Note against A1–A6: when Yosief reviewed three words from this same group (ብእሴ, ወኢምንትኒ, ዘበሰማይኒ, all source ጣ and first built wrongly as ሰያፍ), he chose **ወዳቂ**, not ተጣይ. That's why I didn't switch A1–A6 to ተጣይ myself.
 
