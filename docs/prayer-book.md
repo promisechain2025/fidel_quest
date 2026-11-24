@@ -12,6 +12,7 @@
 ## Marks
 - Hidden by default, so the text is clean.
 - Eye on: every mark shows (^ ተነሽ, ⁄· ሰያፍ, ▬ ተጣይ, ↷ ወዳቂ, ‿ ተናባቢ), plus a small legend row. The marks stay on during playback.
+- Owner rule (Nov 2026): a unit whose last letter is ሳድስ is never ወዳቂ (it is ተጣይ, or ሰያፍ like ይመጽእ), except words ending in ዝ, which stay ወዳቂ.
 - A mark sits above the letter at `li` from tselotMarks.json. ‿ is drawn under the whole joined group.
 
 ## Playing
@@ -43,7 +44,7 @@
 - 29 recordings (8 ረቡዕ, 7 ሐሙስ, 5 ዓርብ, 9 ቀዳሚት), one per prayer, except that ዓርብ ፬ + ፭ share one file (read ፭ first, then ፬). The clips follow the text order.
 - Same rules as ሰኑይ/ሠሉስ: one constant gain to -22 LUFS per recording, MMS forced alignment of the text to the audio, and contiguous word clips (onset to next onset, tails never cut). Breaths and noise are lowered by -30 dB only in pauses that both the pipeline's word-aware rule and the approved sample's voicing rule mark as gaps.
 - Units without a clip (shown as normal text, skipped on play):
-  - ረቡዕ: 0 ውዳሴሃ, 71 አንቲ and 146 ግብረ ድንግል are cut off at the start of their recordings.
+  - ረቡዕ: 0 ውዳሴሃ, 70 አንቲ and 144 ግብረ ድንግል are cut off at the start of their recordings.
   - ሐሙስ: 386–387 and 436–438 are lines the reading skips.
   - ቀዳሚት: ፯ (158–175) was not recorded.
 - እሁድ has no recording yet.

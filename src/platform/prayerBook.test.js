@@ -33,7 +33,7 @@ describe('prayer book data', () => {
     }
   })
   it('carries the owner review of 19 Oct: ትንሣኤ/ሰማያዊ ወዳቂ, ወላዲተ‿ኣምላክ joined ተጣይ, ለመንፈስ‿ቅዱስ ተጣይ', () => {
-    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'tetay', li: 3 })
     expect(BOOK.units[273]).toMatchObject({ w: ['ሰማያዊ'], m: 'wedaqi', li: 3 })
     expect(BOOK.units[325]).toMatchObject({ w: ['ለመንፈስ', 'ቅዱስ'], m: 'tetay' })
     expect(BOOK.units[418]).toMatchObject({ w: ['ወላዲተ', 'ኣምላክ'], m: 'tetay', li: 2, p: '።' })
@@ -58,7 +58,7 @@ describe('prayer book data', () => {
     const SUN = (await import('../data/wudaseSundayMarks.json')).default.units
     for (const i of [74, 187, 207]) expect(SUN[i]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'tetay', li: 6 })
     expect(SUN[80]).toMatchObject({ w: ['መለኮት'], m: 'tetay', li: 2 })
-    expect((await import('../data/wudaseWednesdayMarks.json')).default.units[392]).toMatchObject({ w: ['ምሕረተ'], m: 'tenesh' })
+    expect((await import('../data/wudaseWednesdayMarks.json')).default.units[388]).toMatchObject({ w: ['ምሕረተ'], m: 'tenesh' })
     const TUE = (await import('../data/wudaseTuesdayMarks.json')).default.units
     expect(TUE[16]).toMatchObject({ w: ['ቃለ'], m: 'tenesh' })
     expect(TUE[31]).toMatchObject({ w: ['ኃይለ', 'ወሊዶታ'], m: 'wedaqi' })
@@ -117,7 +117,7 @@ describe('owner spelling follow-up', () => {
     expect(BOOK.units).toHaveLength(470)
     expect(MON.units).toHaveLength(228)
     expect(TUE.units).toHaveLength(402)
-    expect(WED.units).toHaveLength(425)
+    expect(WED.units).toHaveLength(420)
     expect(THU.units).toHaveLength(474)
     expect(FRI.units).toHaveLength(319)
     expect(SAT.units).toHaveLength(250)
@@ -129,7 +129,7 @@ describe('owner spelling follow-up', () => {
     expect(cp(BOOK.units[94].w[0])).toEqual([0x12A2, 0x1273, 0x1265, 0x12A0, 0x1290]) // ኢታብአነ
     expect(BOOK.units[196]).toMatchObject({ w: ['ወእማርያም'], li: 4, h: [0] })
     expect(cp(BOOK.units[234].w[0])).toEqual([0x12A5, 0x121D, 0x12A3, 0x1265]) // እምኣብ
-    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'wedaqi', li: 3 })
+    expect(BOOK.units[254]).toMatchObject({ w: ['ትንሣኤ', 'ምውታን'], m: 'tetay', li: 3 })
     expect(BOOK.units[367]).toMatchObject({ w: ['ኲሎ'] })
     expect(TUE.units[15]).toMatchObject({ w: ['ዘእግዚአብሔር'], m: 'tetay', li: 7 })
     expect(TUE.units[179]).toMatchObject({ w: ['ተላዓሊ'] })
@@ -214,12 +214,12 @@ describe('ውዳሴ ማርያም ዘሠሉስ data', () => {
 
 describe('ውዳሴ ማርያም ረቡዕ–እሁድ', () => {
   const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
-  const DAYS = [[WED, 'wudase-wednesday', 425], [THU, 'wudase-thursday', 474], [FRI, 'wudase-friday', 319], [SAT, 'wudase-saturday', 250], [SUN, 'wudase-sunday', 279]]
-  // Units with no clip: cut-off first words (ረቡዕ 0, 71, 146), lines the reading skips (ሐሙስ 386–387, 436–438),
+  const DAYS = [[WED, 'wudase-wednesday', 420], [THU, 'wudase-thursday', 474], [FRI, 'wudase-friday', 319], [SAT, 'wudase-saturday', 250], [SUN, 'wudase-sunday', 279]]
+  // Units with no clip: cut-off first words (ረቡዕ 0, 70, 144), lines the reading skips (ሐሙስ 386–387, 436–438),
   // and ቀዳሚት ፯ (158–175, not recorded yet). ዓርብ is complete; እሁድ has no recording yet.
   const range = (a, b) => Array.from({ length: b - a + 1 }, (_, k) => a + k)
   const VOICED = [
-    [WED, 'wed', [0, 71, 146]],
+    [WED, 'wed', [0, 70, 144]],
     [THU, 'thu', [386, 387, 436, 437, 438]],
     [FRI, 'fri', []],
     [SAT, 'sat', range(158, 175)],
@@ -277,6 +277,54 @@ describe('ውዳሴ ማርያም ረቡዕ–እሁድ', () => {
   })
 })
 
+describe('round 3: ረቡዕ and ሐሙስ corrections (Yosief)', () => {
+  it('ረቡዕ joins, marks and spellings', () => {
+    const U = WED.units
+    expect(U[13]).toMatchObject({ w: ['ዳግሚት'], m: 'tetay', a: 'reader/wudase-wed/013.mp3' })
+    expect(U[14]).toMatchObject({ w: ['ዲበ', 'ምድር'], m: 'tetay', a: 'reader/wudase-wed/014.mp3' })
+    expect(U[15]).toMatchObject({ w: ['ኆኅተ', 'ምሥራቅ'], m: 'tetay', a: 'reader/wudase-wed/015.mp3' })
+    expect(U[52]).toMatchObject({ w: ['ኲሎሙ'] })
+    expect(U[53]).toMatchObject({ w: ['ነገሥተ', 'ምድር'], m: 'tetay' })
+    expect(U[129]).toMatchObject({ w: ['ወኃይለ', 'ልዑል'], m: 'tetay' })
+    expect(U[202]).toMatchObject({ w: ['እምኅፅነ', 'አቡሁ'] })
+    expect(U[342]).toMatchObject({ w: ['ንስግድ'], m: 'seyaf' })
+    expect(U[354]).toMatchObject({ w: ['ኆኀተ', 'ምሥራቅ'], m: 'tetay', a: 'reader/wudase-wed/354.mp3' })
+    expect(U[412]).toMatchObject({ w: ['ወመፍቀሬ', 'ሰብእ'] })
+    expect(U[413].w).toEqual(['አድኃነ'])
+    for (const w of ['አሕዛብ', 'ነውር', 'ትጉሃን', 'እምሱራፌል', 'ኢየሩሳሌም']) {
+      const hits = U.filter((u) => u.w.length === 1 && u.w[0] === w)
+      expect(hits.length).toBeGreaterThan(0)
+      for (const u of hits) expect([w, u.m]).toEqual([w, 'tetay'])
+    }
+    const all = U.flatMap((u) => u.w)
+    expect(all).not.toContain('ኲሉሙ'); expect(all).not.toContain('አምሱራፌል')
+  })
+  it('a ሳድስ ending is never ወዳቂ except after ዝ; ይመጽእ ሰያፍ', () => {
+    const sadis = (c) => { const o = c.codePointAt(0); return (o >= 0x1200 && o <= 0x1357 && (o - 0x1200) % 8 === 5) || 'ቍኍኵጕ'.includes(c) }
+    for (const B of [BOOK, MON, TUE, WED, THU, FRI, SAT, SUN]) for (const u of B.units) {
+      const last = [...u.w[u.w.length - 1]].pop()
+      if (u.m === 'wedaqi' && sadis(last)) expect([u.w.join(' '), last]).toEqual([u.w.join(' '), 'ዝ'])
+    }
+    expect(MON.units[102]).toMatchObject({ w: ['ይመጽእ'], m: 'seyaf' })
+  })
+  it('አማን is ተጣይ on every day', () => {
+    for (const B of [BOOK, MON, TUE, WED, THU, FRI, SAT, SUN]) for (const u of B.units) {
+      if (u.w[u.w.length - 1] === 'አማን') expect(u.m).toBe('tetay')
+    }
+  })
+  it('ሐሙስ marks and spellings', () => {
+    const U = THU.units
+    expect(U[58]).toMatchObject({ w: ['ብእሲት'], m: 'tetay' })
+    expect(U[60]).toMatchObject({ w: ['እምዕፅ'], m: 'tetay' })
+    expect(U[99]).toMatchObject({ w: ['እምቅድመ', 'ዓለም'], m: 'tetay' })
+    expect(U[120]).toMatchObject({ w: ['ብዕለ', 'ጥበቡ'], m: 'tetay' })
+    expect(U[251]).toMatchObject({ w: ['ነሥአ'], m: 'tenesh' })
+    expect(U[256].w).toEqual(['ወለሐኰ'])
+    expect(U[383].w).toEqual(['ምስለ', 'ኄር'])
+    expect(U.flatMap((u) => u.w)).not.toContain('ሔር')
+  })
+})
+
 describe('paginate', () => {
   const pages = paginate(BOOK.units)
   it('covers every unit once, in order', () => {
@@ -317,7 +365,7 @@ describe('helpers', () => {
     expect(refrainCrossUnits(BOOK.units)).toEqual([])
     expect(refrainCrossUnits(MON.units)).toEqual([7, 19, 42, 58, 76, 98, 130, 163, 200])
     expect(refrainCrossUnits(TUE.units)).toEqual([7, 36, 67, 85, 115, 143, 171, 199, 219, 253, 280, 301, 324, 342, 375])
-    expect(refrainCrossUnits(WED.units)).toEqual([7, 35, 71, 125, 146, 255, 350, 372])
+    expect(refrainCrossUnits(WED.units)).toEqual([7, 34, 70, 124, 144, 252, 347, 368])
     expect(refrainCrossUnits(THU.units)).toEqual([7, 38, 148, 248, 316, 391, 448])
     expect(refrainCrossUnits(FRI.units)).toEqual([7, 28, 80, 149, 173, 189])
     expect(refrainCrossUnits(SAT.units)).toEqual([7, 24, 52, 74, 97, 115, 158, 176, 200, 221])
@@ -330,7 +378,7 @@ describe('helpers', () => {
     expect(SAT.units[7].w).toEqual(['ሰንበት'])
     expect(SUN.units[7].w).toEqual(['ተሰመይኪ'])
     // Closing refrain of each day: no paragraph follows, so no cross.
-    for (const [B, end] of [[MON, 227], [TUE, 401], [WED, 424], [THU, 473], [FRI, 318], [SAT, 249], [SUN, 278]]) {
+    for (const [B, end] of [[MON, 227], [TUE, 401], [WED, 419], [THU, 473], [FRI, 318], [SAT, 249], [SUN, 278]]) {
       expect(B.units[end].w).toEqual(['ቅድስት'])
       expect(refrainCrossUnits(B.units)).not.toContain(end)
       expect(end).toBe(B.units.length - 1)
