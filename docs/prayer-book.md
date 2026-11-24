@@ -12,6 +12,7 @@
 ## Marks
 - Hidden by default, so the text is clean.
 - Eye on: every mark shows (^ ተነሽ, ⁄· ሰያፍ, ▬ ተጣይ, ↷ ወዳቂ, ‿ ተናባቢ), plus a small legend row. The marks stay on during playback.
+- Owner rule (Nov 2026): a unit whose last letter is ሳድስ is never ወዳቂ (it is ተጣይ, or ሰያፍ like ይመጽእ), except words ending in ዝ, which stay ወዳቂ.
 - A mark sits above the letter at `li` from tselotMarks.json. ‿ is drawn under the whole joined group.
 
 ## Playing
